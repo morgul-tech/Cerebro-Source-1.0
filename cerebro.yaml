@@ -47,6 +47,7 @@ standards:
   source_authority: standards/source-authority.yaml
   publication_gate: standards/publication-gate.yaml
   quality_gate: standards/quality-gate.yaml
+  valider_command: standards/valider-command.yaml
 tooling:
   builder: tooling/builder/
   validator: tooling/validator/
@@ -59,6 +60,7 @@ governance:
   quality_gate_required_for_publication: true
   generated_artifacts_authoritative: false
   source_folder_required: false
+  common_validation_entrypoint: valider
 integrity:
   manifest_checksum: null
 source_status:

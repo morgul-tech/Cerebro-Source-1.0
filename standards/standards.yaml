@@ -16,6 +16,9 @@ documents:
 - id: STD-QUALITY
   path: standards/quality-gate.yaml
   required: true
+- id: STD-VALIDER
+  path: standards/valider-command.yaml
+  required: true
 governance:
   source_authority: Cerebro Source 1.0
   policy_over_implementation: true
@@ -23,4 +26,5 @@ governance:
   write_once_authority: true
   implementation_disposable: true
   quality_gate_required_for_publication: true
+  common_validation_entrypoint: valider
   unregistered_standards_authoritative: false

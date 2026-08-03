@@ -1,0 +1,57 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-VALIDER
+  name: Cerebro Valider Command Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: A single, consistent entrypoint for fast and targeted Cerebro validation.
+  consumers:
+  - cerebro-cli
+  - repository-status
+  - source-validator
+  - release-validator
+  - quality-gate
+  - human-reporting
+rules:
+- id: STD-VALIDER-R001
+  statement: The command word valider shall be the common human and CLI entrypoint
+    for Cerebro validation.
+  priority: critical
+  verification:
+  - cerebro_tool.py accepts valider.
+- id: STD-VALIDER-R002
+  statement: valider without arguments shall perform a fast remote status check of
+    Source, Release, synchronization, standards, Quality Gate, and Publication Gate.
+  priority: critical
+  verification:
+  - Default mode returns a compact terminal report.
+- id: STD-VALIDER-R003
+  statement: Supported target modes shall include source, release, full, patch, pipeline,
+    standards, and runtime.
+  priority: critical
+  verification:
+  - All declared modes are accepted by the validation command.
+- id: STD-VALIDER-R004
+  statement: The terminal report shall use stable status symbols, colors when supported,
+    short commit identifiers, and one clear final result.
+  priority: high
+  verification:
+  - PASS, WARNING, FAIL, and NOT CHECKED have stable visual representations.
+- id: STD-VALIDER-R005
+  statement: The default and repository-targeted modes shall inspect the actual remote
+    main branches rather than relying on remembered or local-only state.
+  priority: critical
+  verification:
+  - Remote commit and required repository files are fetched during validation.
+- id: STD-VALIDER-R006
+  statement: valider full shall combine remote repository validation with local standards,
+    checksum, validation, and release pipeline checks.
+  priority: critical
+  verification:
+  - Full mode returns failure when any required local or remote check fails.
+- id: STD-VALIDER-R007
+  statement: Machine-readable output shall be available through --json.
+  priority: high
+  verification:
+  - The command emits cerebro-valider-report/v0.1 JSON.
