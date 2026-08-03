@@ -5,7 +5,7 @@ cerebro:
   status: source
   source_version: 1.0.0
 source:
-  repository: morgul-tech/Autorativ-Master
+  repository: morgul-tech/Cerebro-Source-1.0
   branch: main
   commit: null
 mcp:
