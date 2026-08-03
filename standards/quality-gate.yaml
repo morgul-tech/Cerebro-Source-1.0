@@ -1,0 +1,35 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-QUALITY
+  name: Cerebro Quality Gate Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: Mandatory pre-publication quality decision for Cerebro artifacts.
+  consumers:
+  - patch-installer
+  - publication-gate
+  - builder
+  - validator
+  - standards
+  - repository
+rules:
+- id: STD-QUALITY-R001
+  statement: Quality Gate is the only component authorized to declare an artifact
+    ready for publication.
+  priority: critical
+  verification:
+  - Publication is blocked on any failed Quality Gate check.
+- id: STD-QUALITY-R002
+  statement: Quality Gate shall check syntax, structured-data parsing, manifest integrity,
+    repository hygiene, smoke tests, selected pipeline, and approved publication paths.
+  priority: critical
+  verification:
+  - QG-001 through QG-007 pass.
+- id: STD-QUALITY-R003
+  statement: Quality Gate shall generate machine-readable and human-readable reports
+    before publication.
+  priority: critical
+  verification:
+  - reports/quality/quality-report.json exists.
+  - reports/quality/quality-report.txt exists.

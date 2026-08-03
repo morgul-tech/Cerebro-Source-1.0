@@ -8,6 +8,7 @@ source:
   repository: morgul-tech/Cerebro-Source-1.0
   branch: main
   commit: null
+  authority: sole
 mcp:
   path: mcp/
   version: 1.0.0
@@ -41,11 +42,23 @@ modules:
 - id: visual-language
   path: modules/visual-language/
   required: true
+standards:
+  manifest: standards/standards.yaml
+  source_authority: standards/source-authority.yaml
+  publication_gate: standards/publication-gate.yaml
+  quality_gate: standards/quality-gate.yaml
 tooling:
   builder: tooling/builder/
   validator: tooling/validator/
   loader: tooling/loader/
   publisher: tooling/publisher/
+governance:
+  single_source_of_truth: true
+  write_once_authority: true
+  implementation_disposable: true
+  quality_gate_required_for_publication: true
+  generated_artifacts_authoritative: false
+  source_folder_required: false
 integrity:
   manifest_checksum: null
 source_status:

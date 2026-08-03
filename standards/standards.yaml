@@ -1,0 +1,26 @@
+schema: cerebro-standards-manifest/v0.1
+standards_engine:
+  id: standards
+  version: 0.1.0
+  role: authoritative-policy-registry
+  runtime_engine: false
+  policy_owner: Cerebro Source 1.0
+  implementation_owner: generated implementations
+documents:
+- id: STD-SOURCE
+  path: standards/source-authority.yaml
+  required: true
+- id: STD-PUBLICATION
+  path: standards/publication-gate.yaml
+  required: true
+- id: STD-QUALITY
+  path: standards/quality-gate.yaml
+  required: true
+governance:
+  source_authority: Cerebro Source 1.0
+  policy_over_implementation: true
+  single_source_of_truth: true
+  write_once_authority: true
+  implementation_disposable: true
+  quality_gate_required_for_publication: true
+  unregistered_standards_authoritative: false

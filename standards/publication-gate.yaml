@@ -1,0 +1,37 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-PUBLICATION
+  name: Patch Publication Gate Standard
+  version: 0.1.1
+  status: approved
+  authority: authoritative
+  scope: Automatic scoped Git publication after verified patch installation.
+  consumers:
+  - patch-installer
+  - repository-publisher
+  - patch-builder
+  - patch-validator
+rules:
+- id: STD-PUBLICATION-R001
+  statement: Publication shall occur only after a passing Quality Gate.
+  priority: critical
+  verification:
+  - Quality Gate executes before repository publication.
+- id: STD-PUBLICATION-R002
+  statement: Publication shall support local working copies without Git metadata through
+    a temporary authenticated clone.
+  priority: critical
+  verification:
+  - The publisher clones the declared repository and branch.
+- id: STD-PUBLICATION-R003
+  statement: Only manifest destinations and explicitly approved generated paths shall
+    be published.
+  priority: critical
+  verification:
+  - Scoped staging is used.
+- id: STD-PUBLICATION-R004
+  statement: A push is successful only when the remote branch SHA equals the local
+    publication commit.
+  priority: critical
+  verification:
+  - Remote SHA confirmation passes.
