@@ -1,0 +1,54 @@
+schema: cerebro-component/v1
+component:
+  id: presentation
+  name: Presentation Engine
+  type: engine
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Velge presentasjonsform, informasjonsstruktur, detaljnivå, Styringsstatus og visuelle virkemidler.
+dependencies:
+  build:
+  - terminology
+  - core-rules
+  - visual-language
+  runtime: []
+interfaces:
+  input:
+  - information-type
+  - purpose
+  - working-mode
+  - dialog-state
+  - user-needs
+  - complexity
+  - status-request
+  - runtime-state
+  output:
+  - presentation-model
+  - format
+  - detail-level
+  - governance-status
+  - visual-elements
+  - information-order
+rules:
+  path: rules.yaml
+documentation:
+  path: specification.md
+migration:
+  source: MASTER_v1.1
+  sections:
+  - '0.4'
+  - '0.5'
+  - 3.5.5
+  - '3.8'
+  - 3.8.1
+  - 3.8.2
+  - 3.8.3
+  - 3.8.4
+  - 3.8.5
+boundaries:
+  must: []
+  must_not: []
+version:
+  component: 1.0.0
+  schema: 1

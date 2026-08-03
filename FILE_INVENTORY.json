@@ -1,0 +1,297 @@
+[
+  {
+    "path": "FILE_INVENTORY.json",
+    "sha256": "92dc43fd424b86cbe7102ac586c0ba26efb3bcd40816a24e7c761270c4d93617",
+    "bytes": 8755
+  },
+  {
+    "path": "README.md",
+    "sha256": "7d75e7dfe395d41fb59c7f2ce8a1ef2a2ee8f672b2c8a8ff342a16c48e39b375",
+    "bytes": 563
+  },
+  {
+    "path": "SOURCE_AUDIT_v1.0.json",
+    "sha256": "f2c4bf086cca5c52077e0edc2cbad7158086b9c8a59a381a36fffa88ecef1a94",
+    "bytes": 338
+  },
+  {
+    "path": "cerebro.yaml",
+    "sha256": "089552419af97be54c8312233fb982ec90daa53e66e2e90cff2784b73a3c847f",
+    "bytes": 1055
+  },
+  {
+    "path": "engines/collaboration/component.yaml",
+    "sha256": "4a20e751f3532cba630962a0f0c5cdf8410e009054ac8e7b5b46d6129486d5ff",
+    "bytes": 996
+  },
+  {
+    "path": "engines/collaboration/rules.yaml",
+    "sha256": "e1086d11833d9bb4a59d4d86937be4bba2992590b6b91c338b9bb8aef5563a19",
+    "bytes": 8107
+  },
+  {
+    "path": "engines/collaboration/specification.md",
+    "sha256": "1c643860c88461457361c6b715e9726ec73452af20631c14b0c7c9d4f713e287",
+    "bytes": 444
+  },
+  {
+    "path": "engines/context/component.yaml",
+    "sha256": "ffb20535c9a113b9a12e4584147aecb31c144d260841388b3b26a424ec3a5027",
+    "bytes": 783
+  },
+  {
+    "path": "engines/context/rules.yaml",
+    "sha256": "c7da642b3e96699be66987d399065459597bb4c1f4749e969bc441a43314b1c5",
+    "bytes": 5583
+  },
+  {
+    "path": "engines/context/specification.md",
+    "sha256": "2eead56386c308a4cfccdffaafefb1c26171fbe088b11130ebdd842ed438951f",
+    "bytes": 840
+  },
+  {
+    "path": "engines/dialog/component.yaml",
+    "sha256": "a4d7c614169fde1e10660b5bcb6ecbe11e133ac8ce0a13ef5ce86637febae5a3",
+    "bytes": 830
+  },
+  {
+    "path": "engines/dialog/rules.yaml",
+    "sha256": "6078f4a1b23c527f825917ae677f49caddb8e6c767e24f3d4d44ce2e35e40aec",
+    "bytes": 8805
+  },
+  {
+    "path": "engines/dialog/specification.md",
+    "sha256": "775df4770ee08a06b8ab5149816aa34ed012cb671f97a20166776edfad66b7ad",
+    "bytes": 1047
+  },
+  {
+    "path": "engines/presentation/component.yaml",
+    "sha256": "90d483cdd9c59d8ee4f67e43c985adfc8d2f798320a2ecf287f44354e156059a",
+    "bytes": 917
+  },
+  {
+    "path": "engines/presentation/rules.yaml",
+    "sha256": "b84ad829e89320ecb9cf378f8120f79199f54ca7b3a3ddc16db65c66e91c4c25",
+    "bytes": 10385
+  },
+  {
+    "path": "engines/presentation/specification.md",
+    "sha256": "a0ba749ed4a28a569fd15e9e313f25f62e6bfa07a648db38c085b954a92f54f1",
+    "bytes": 1466
+  },
+  {
+    "path": "engines/project/component.yaml",
+    "sha256": "f569441e6411d0687b3eab7730386f0030fddefd39c898f854cb5963030e051c",
+    "bytes": 1021
+  },
+  {
+    "path": "engines/project/rules.yaml",
+    "sha256": "d4b70d8cf5777b6ee0382379bef6450c2c8a41df9d6888fba11c2e63e6e30da3",
+    "bytes": 8964
+  },
+  {
+    "path": "engines/project/specification.md",
+    "sha256": "0670bfac32c0bd296e247d4d7eb27c25bd7ec09dc6908e32d072d13ac806bd79",
+    "bytes": 405
+  },
+  {
+    "path": "engines/quality/component.yaml",
+    "sha256": "ce612c1dfd3f0a3de52f12dd18d29e6b0e956b8cdc21b078aaeac182a8f84b97",
+    "bytes": 928
+  },
+  {
+    "path": "engines/quality/rules.yaml",
+    "sha256": "9a2c9b94f83951b6bb1f95d6ca4705b4734e3dbf81797d655ca69a465d6cb58a",
+    "bytes": 4452
+  },
+  {
+    "path": "engines/quality/specification.md",
+    "sha256": "5011ae226c1f56b54f030788cbe78e0afce0fc9391fcd1b7fe2e57914c46e6ae",
+    "bytes": 370
+  },
+  {
+    "path": "history/FINAL_VALIDATION.json",
+    "sha256": "5022d3c974cf873bb9fe032568e4f4f81bc6edc9472a73380dc15aee2eaefb4e",
+    "bytes": 386
+  },
+  {
+    "path": "history/FULL_LOCAL_VALIDATION.json",
+    "sha256": "bb54462c6b23c7c3086d6ac14506772ae1a11538d4b11278c801ee81e673e5e3",
+    "bytes": 108
+  },
+  {
+    "path": "history/MASTER_v1.1.txt",
+    "sha256": "540db1b2f6612e202cdcd1729b91ee8b3d1039f3351d247b3d812e38181dbb73",
+    "bytes": 37311
+  },
+  {
+    "path": "history/MASTER_v1.1_COVERAGE.json",
+    "sha256": "562520bb5ac97b11fa2497c5e371beb783c79b67e34854b0a85cbb64a49ff35e",
+    "bytes": 59689
+  },
+  {
+    "path": "history/MASTER_v1.1_COVERAGE.md",
+    "sha256": "35b97fbae0a8be0b74449076fed47bf587ace3d9953f2fb97ad97d489c583929",
+    "bytes": 4594
+  },
+  {
+    "path": "history/MASTER_v1.1_MIGRATION.md",
+    "sha256": "879917fe33a3d891643012c1589ec553a23bb9b8103a24c4326ebf5722ac7d03",
+    "bytes": 592
+  },
+  {
+    "path": "history/RULE_AUDIT_v1.0.json",
+    "sha256": "98ce21e68e055c3a333afaae13d2903c3c3d1bcfba87702db1b7c9dbe191dd77",
+    "bytes": 64354
+  },
+  {
+    "path": "mcp/activation.yaml",
+    "sha256": "7c3c29acc0258d829d2556318cd9ed127a5125f5736b7e3768af093508dc1ef2",
+    "bytes": 1829
+  },
+  {
+    "path": "mcp/architecture.yaml",
+    "sha256": "73314b3af24382dec6733afbfaba5e1b687e5cadfd82a399818556d6f4332c09",
+    "bytes": 1935
+  },
+  {
+    "path": "mcp/authority.yaml",
+    "sha256": "7df40e502a1a3e39ea00552707584ad270d628755189c45d7f633589d8d1072c",
+    "bytes": 1839
+  },
+  {
+    "path": "mcp/identity.yaml",
+    "sha256": "20de54eed0145352c8882d7d6dd611cb101c7de510060a95d2bd38fe90726d38",
+    "bytes": 1389
+  },
+  {
+    "path": "mcp/priorities.yaml",
+    "sha256": "eb7e96f8a1d935a9fcbfce013206d7865b70e7c75912f7926317a0d6831fabb9",
+    "bytes": 1615
+  },
+  {
+    "path": "modules/core-rules/authority-levels.yaml",
+    "sha256": "9f0fb5233f8d4ef72aab57c89089a72457734dbe2967a2fff19034431ea64c01",
+    "bytes": 396
+  },
+  {
+    "path": "modules/core-rules/component.yaml",
+    "sha256": "90c53856531d64022786905ec1301b3bf56ff6082beb8c47a562b771c6885cf6",
+    "bytes": 688
+  },
+  {
+    "path": "modules/core-rules/enums.yaml",
+    "sha256": "efd3d02d9071f00a05f09f6f228f323f8407c2740340fb07c069c4f506ea4bfa",
+    "bytes": 432
+  },
+  {
+    "path": "modules/core-rules/rules.yaml",
+    "sha256": "18c3c3f22daca62938a0448edbe1faa0bb43bcb01e0729268021f07383b741b3",
+    "bytes": 1770
+  },
+  {
+    "path": "modules/core-rules/specification.md",
+    "sha256": "d454052f1a43bf9b2170a758ec986083597e2ce539f222e40b5556c30a260930",
+    "bytes": 253
+  },
+  {
+    "path": "modules/terminology/component.yaml",
+    "sha256": "d5c3476d0719c025a6439b7ed4f3bd30db4f40b511c3e4491448618e9c663b97",
+    "bytes": 559
+  },
+  {
+    "path": "modules/terminology/rules.yaml",
+    "sha256": "56bf700344af783be67452c98567e2265c696831889430fba170fef24f41de01",
+    "bytes": 1454
+  },
+  {
+    "path": "modules/terminology/specification.md",
+    "sha256": "b1fbaf847ff08021463b4b57015f1ed0f86b564296659d7f14ec58e132058542",
+    "bytes": 326
+  },
+  {
+    "path": "modules/terminology/terms.yaml",
+    "sha256": "6f232be4fd481454b8d1fee42faba3bdc968415ea91735cacf71dc3ee106c97b",
+    "bytes": 4164
+  },
+  {
+    "path": "modules/visual-language/component.yaml",
+    "sha256": "2ad3afedbc00e7c469b1ea30cef7375dc8689ed67814c9127483b78b7dac7567",
+    "bytes": 631
+  },
+  {
+    "path": "modules/visual-language/semantics.yaml",
+    "sha256": "10eaff4ceac04f8ccf70e7c03b02e34e81a807e4a7abbdca79f37e6e23e763f0",
+    "bytes": 454
+  },
+  {
+    "path": "modules/visual-language/specification.md",
+    "sha256": "44e22d1c8bc3b7facbed23d8126316117c4ac3eb8d6e8b58ef7fc9b756d60ee5",
+    "bytes": 307
+  },
+  {
+    "path": "releases/README.md",
+    "sha256": "70e4bd86e1bfe7b0390ad25c401cf8aacd76868fb16b971edc5960236e9e5feb",
+    "bytes": 105
+  },
+  {
+    "path": "tooling/builder/README.md",
+    "sha256": "c7204b790ad660133f7e0095d3718346a27433d80efcdad78a8c3758c7f1b6ff",
+    "bytes": 230
+  },
+  {
+    "path": "tooling/builder/component.yaml",
+    "sha256": "3e34a15d9609a80a00b8f475feec661bc28238772457ca72a35e18d83024b975",
+    "bytes": 756
+  },
+  {
+    "path": "tooling/builder/pipeline.yaml",
+    "sha256": "176624c3f816f7df70a0da8a0e6d3a52298c96e31e8ebcfd22e3028b410d2641",
+    "bytes": 141
+  },
+  {
+    "path": "tooling/loader/README.md",
+    "sha256": "e12a3b2a5738066917620334733ffafe3c5084a114c1f22f230baae6d86276d9",
+    "bytes": 64
+  },
+  {
+    "path": "tooling/loader/component.yaml",
+    "sha256": "387246092b168275f873d519c5285d8cedfd962ba1278c0c25fbae1e2c9cc793",
+    "bytes": 573
+  },
+  {
+    "path": "tooling/loader/runtime-state-schema.yaml",
+    "sha256": "4e2c5286a0f861f624d94bf481d21ac5fa8d5b508344b5c38d4d23e0d84f3154",
+    "bytes": 175
+  },
+  {
+    "path": "tooling/publisher/README.md",
+    "sha256": "f8afe4f3ef53bef3d89b553a041276e41dd0159d4a511acec0634f1d64bc9b72",
+    "bytes": 82
+  },
+  {
+    "path": "tooling/publisher/component.yaml",
+    "sha256": "8d59d5b3251c984b9d58b90cc7eddbfb53f30f2a4f964db3cc24c8d1a9b56846",
+    "bytes": 603
+  },
+  {
+    "path": "tooling/publisher/history-policy.yaml",
+    "sha256": "73cc1fbf851a5193a7467814733bf24449c427958fc6d0934705245dcc6487ef",
+    "bytes": 148
+  },
+  {
+    "path": "tooling/validator/README.md",
+    "sha256": "d71d36afe5bcc1fc8265af24b6bded1d3544114dc1de5ff39ee9680a9f2e866e",
+    "bytes": 227
+  },
+  {
+    "path": "tooling/validator/checks.yaml",
+    "sha256": "086204b535e06073890c67b837799c3c4b666a96a163380ca5d49be47e1a9fcb",
+    "bytes": 340
+  },
+  {
+    "path": "tooling/validator/component.yaml",
+    "sha256": "7eb51e5929e142d30783c558b5e0d9c8fea572837da4244dab7fcf7fa269174e",
+    "bytes": 637
+  }
+]

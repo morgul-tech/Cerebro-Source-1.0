@@ -1,0 +1,357 @@
+schema: cerebro-rule-set/v1
+rules:
+- id: DIA-001
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    evaluate:
+    - complexity
+    - duration
+    - dependent_steps
+    - continuity_need
+    - misunderstanding_risk
+  statement: Dialog Engine SKAL vurdere behovet for struktur ut fra kompleksitet, varighet, avhengige steg, kontinuitetsbehov
+    og risiko for misforståelser.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: &id001
+    - '3.1'
+    - '3.2'
+    - '3.3'
+    - '3.4'
+    - '3.5'
+    - '3.7'
+    - '3.9'
+- id: DIA-002
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    simple_dialog_sufficient: true
+  action:
+    set_working_mode: standard
+  statement: Dialog Engine SKAL velge STANDARD når vanlig dialog gir tilstrekkelig resultat.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-003
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    any:
+    - shared_structure_required
+    - multiple_clarifications_required
+    - continuity_required
+  action:
+    set_working_mode: collaboration
+  statement: Dialog Engine SKAL velge SAMARBEID når arbeidet krever felles struktur, flere avklaringer eller kontinuitet over
+    tid.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-004
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    any:
+    - large_scope
+    - multiple_dependent_parts
+    - organized_progress_required
+  action:
+    set_working_mode: project
+  statement: Dialog Engine SKAL velge PROSJEKT når arbeidet har større omfang, flere avhengige deler eller krever organisert
+    fremdrift.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-005
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    always: true
+  action:
+    keep_distinct:
+    - working-mode
+    - dialog-state
+  statement: Arbeidsmodus SKAL beskrive arbeidsnivå og SKAL IKKE brukes som betegnelse på arbeidsfase.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-006
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    engine_activation_improves:
+    - quality
+    - efficiency
+  action:
+    activate_relevant_engines: true
+  statement: Dialog Engine SKAL aktivere relevante Engines når aktivering gir bedre kvalitet eller effektivitet.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-007
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    engine_activation_needed: false
+  action:
+    avoid_activation: true
+  statement: Dialog Engine SKAL IKKE aktivere Engines unødvendig.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-008
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    always: true
+  action:
+    set_dialog_state_from:
+    - information
+    - analysis
+    - recommendation
+    - clarification
+    - work
+    - verification
+    - completion
+  statement: Dialog Engine SKAL angi gjeldende dialogtilstand.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-009
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    required_information_or_choice_missing: true
+  action:
+    create_clarification_point: true
+  statement: Dialog Engine SKAL opprette et avklaringspunkt når nødvendig informasjon, valg eller bekreftelse mangler før
+    videre arbeid kan fortsette.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-010
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    clarification_point: true
+  action:
+    identify:
+    - missing_information
+    - required_user_input
+  statement: Ved avklaringspunkt SKAL Dialog Engine tydelig identifisere hva som mangler og hva som kreves for videre fremdrift.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-011
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    any:
+    - basis_unclear
+    - important_prerequisite_missing
+    - continued_work_may_misdirect
+  action:
+    create_control_stop: true
+  statement: Dialog Engine SKAL opprette kontrollstopp når grunnlaget er uklart, viktige forutsetninger mangler eller videre
+    arbeid kan gi feil retning.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-012
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    control_stop_needed: false
+  action:
+    avoid_control_stop: true
+  statement: Dialog Engine SKAL IKKE bruke kontrollstopp unødvendig.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-013
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    decision_detected: true
+  action:
+    send_to_context_engine: decision
+  statement: Når en beslutning skal påvirke videre arbeid, SKAL Dialog Engine sende beslutningen til Context Engine.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-014
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    status_improves_any:
+    - overview
+    - understanding
+    - control
+    - ability_to_choose
+  action:
+    request_status_presentation: true
+  statement: Dialog Engine SKAL be om statuspresentasjon når status gir bedre oversikt, forståelse, kontroll eller mulighet
+    for videre valg.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-015
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    simple_dialog: true
+    status_needed: false
+  action:
+    suppress_optional_status: true
+  statement: Dialog Engine SKAL IKKE be om unødvendig status i enkel dialog.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-016
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    cerebro_runtime_active: true
+  action:
+    request_governance_status: true
+  statement: Når Cerebro Runtime er aktiv, SKAL Dialog Engine be Presentation Engine vise autoritativ Styringsstatus.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-017
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    prioritize:
+    - correct_task_understanding
+    - correct_working_level
+    - relevant_structure
+    - effective_communication
+    - avoid_unnecessary_complexity
+  statement: Dialog Engine SKAL prioritere korrekt oppgaveforståelse, riktig arbeidsnivå, relevant struktur, effektiv kommunikasjon
+    og unngåelse av unødvendig kompleksitet i denne rekkefølgen.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-018
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    limit_structure_to_need: true
+  statement: Dialog Engine SKAL IKKE gjøre samarbeidet mer omfattende enn nødvendig.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: DIA-019
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition:
+    structure_improves_result: true
+  action:
+    activate_structure: true
+  statement: Dialog Engine SKAL aktivere struktur når dette gir bedre resultat.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001

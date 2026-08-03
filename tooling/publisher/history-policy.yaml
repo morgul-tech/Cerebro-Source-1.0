@@ -1,0 +1,8 @@
+schema: cerebro-history-policy/v1
+history_is_passive: true
+runtime_access: false
+uses:
+- documentation
+- revision
+- audit
+deletion_prohibited: true

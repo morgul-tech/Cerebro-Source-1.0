@@ -1,0 +1,36 @@
+schema: cerebro-component/v1
+component:
+  id: core-rules
+  name: Core Rules Module
+  type: module
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Definere felles regelstruktur, autoritetsnivåer og tillatte metadata.
+boundaries:
+  must:
+  - definere-regelstruktur
+  - definere-autoritet
+  - definere-metadata
+  must_not:
+  - eie-funksjonsspesifikke-regler
+  - utføre-validering
+dependencies:
+  build:
+  - terminology
+  runtime: []
+interfaces:
+  exports:
+  - rule-schema
+  - authority-levels
+  - validation-constraints
+  - enums
+documentation:
+  path: specification.md
+migration:
+  source: MASTER_v1.1
+  sections:
+  - Vedlegg B
+version:
+  component: 1.0.0
+  schema: 1

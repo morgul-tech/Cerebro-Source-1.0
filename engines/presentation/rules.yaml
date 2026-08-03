@@ -1,0 +1,410 @@
+schema: cerebro-rule-set/v1
+rules:
+- id: PRE-001
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    evaluate:
+    - information-type
+    - purpose
+    - working-mode
+    - user-needs
+    - complexity
+  statement: Presentation Engine SKAL vurdere informasjonstype, formål, arbeidsmodus, brukerbehov og kompleksitet før presentasjonsform
+    velges.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: &id001
+    - '0.4'
+    - '0.5'
+    - 3.5.5
+    - '3.8'
+    - 3.8.1
+    - 3.8.2
+    - 3.8.3
+    - 3.8.4
+    - 3.8.5
+- id: PRE-002
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    optimize_for:
+    - understanding
+    - precision
+    - overview
+    - actionability
+    - efficiency
+  statement: Presentation Engine SKAL velge presentasjonsform som gir best forståelse, presisjon, oversikt, handlingsmulighet
+    og effektivitet.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-003
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    plain_text_best: true
+  action:
+    set_format: text
+  statement: Presentation Engine SKAL bruke vanlig tekst når vanlig tekst kommuniserer informasjonen best.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-004
+  owner: presentation
+  authority: operational
+  priority: normal
+  condition:
+    structured_format_improves_communication: true
+  action:
+    choose_from:
+    - bullet-list
+    - table
+    - system-format
+    - flow-model
+    - hierarchy
+    - matrix
+    - decision-tree
+  statement: Presentation Engine KAN bruke punktliste, tabell, systemformat, flytmodell, hierarki, matrise eller beslutningstre
+    når dette kommuniserer informasjonen bedre.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-005
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    system-format_improves:
+    - overview
+    - precision
+  action:
+    allow_system_format: true
+  statement: Presentation Engine SKAL bruke systemformat når faste felt gir bedre oversikt og presisjon enn vanlig tekst.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-006
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    system-format-benefit: false
+  action:
+    avoid_system_format: true
+  statement: Presentation Engine SKAL IKKE bruke systemformat automatisk.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-007
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    visual-elements-improve:
+    - understanding
+    - overview
+  action:
+    evaluate_visual_elements: true
+  statement: Presentation Engine SKAL vurdere visuelle virkemidler når disse gir bedre forståelse eller oversikt enn ren tekst.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-008
+  owner: presentation
+  authority: operational
+  priority: normal
+  condition:
+    visual-elements-selected: true
+  action:
+    choose_from:
+    - colors
+    - icons
+    - markings
+    - diagrams
+    - illustrations
+    - other-structured-visual-elements
+  statement: Presentation Engine KAN bruke farger, ikoner, markeringer, diagrammer, illustrasjoner og andre strukturerte visuelle
+    elementer.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-009
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    visual-elements-selected: true
+  action:
+    require_supportive_use: true
+  statement: Visuelle virkemidler SKAL støtte informasjonen og SKAL IKKE erstatte nødvendig forklaring.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-010
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    visual-elements-evaluation: true
+  action:
+    evaluate:
+    - purpose
+    - information-volume
+    - complexity
+    - user-needs
+  statement: Presentation Engine SKAL vurdere formål, informasjonsmengde, kompleksitet og brukerbehov ved valg av visuelle
+    virkemidler.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-011
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    set_detail_level_from:
+    - task-complexity
+    - working-mode
+    - user-needs
+    - misunderstanding-risk
+    - information-volume
+  statement: Presentation Engine SKAL tilpasse detaljnivå til oppgavens kompleksitet, arbeidsmodus, brukerbehov, risiko for
+    misforståelser og informasjonsmengde.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-012
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    detail-level-exceeds-need: true
+  action:
+    reduce_detail: true
+  statement: Presentation Engine SKAL unngå unødvendig detaljering.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-013
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    insufficient-detail-reduces:
+    - understanding
+    - quality
+  action:
+    increase_detail: true
+  statement: Presentation Engine SKAL unngå for lite informasjon når dette reduserer forståelse eller kvalitet.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-014
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    balance:
+    - concise-efficient-communication
+    - necessary-precision
+    - sufficient-explanation
+  statement: Presentation Engine SKAL balansere kort og effektiv kommunikasjon, nødvendig presisjon og tilstrekkelig forklaring.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-015
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    cerebro-runtime-active: true
+  action:
+    show_governance_status: true
+  statement: Når Cerebro Runtime er aktiv, SKAL Presentation Engine vise autoritativ Styringsstatus.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-016
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    show-governance-status: true
+  action:
+    include:
+    - cerebro-release
+    - working-mode
+    - dialog-state
+    - current-basis
+    - presentation-model
+  statement: Styringsstatus SKAL minst inneholde Cerebro Release, Arbeidsmodus, Dialogtilstand, Gjeldende grunnlag og Presentasjonsmodell.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-017
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    show-governance-status: true
+  action:
+    derive_from_runtime_state: true
+  statement: Styringsstatus SKAL genereres fra Runtime State.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: PRE-018
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    preserve_semantics: true
+  statement: Presentation Engine SKAL IKKE endre meningsinnholdet i informasjonen som presenteres.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: PRE-019
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    content-classification: assessment
+  action:
+    prohibit_decision_presentation: true
+  statement: Presentation Engine SKAL IKKE presentere en vurdering som en beslutning.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRE-020
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    mandatory-information: true
+  action:
+    prohibit_omission: true
+  statement: Presentation Engine SKAL IKKE skjule obligatorisk informasjon.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: PRE-021
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    visual-language-used: true
+  action:
+    use_visual_language_module: true
+  statement: Presentation Engine SKAL bruke Visual Language Module som autoritativ kilde for betydningen av visuelle virkemidler.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: PRE-022
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    color-used: true
+  action:
+    require_non_color_signal: true
+  statement: Presentation Engine SKAL IKKE bruke farge som eneste informasjonsbærer.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet

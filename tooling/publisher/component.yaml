@@ -1,0 +1,32 @@
+schema: cerebro-component/v1
+component:
+  id: publisher
+  name: Publisher
+  type: tooling
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Publisere låste releases, dokumentasjon og historikk.
+boundaries:
+  must:
+  - preserve-history
+  - publish-identifiable-version
+  must_not:
+  - alter-locked-release
+  - activate-release
+dependencies:
+  build: []
+  runtime: []
+interfaces:
+  consumes:
+  - locked-release
+  - validation-report
+  produces:
+  - published-release
+  - reference-documentation
+  - history-entry
+documentation:
+  path: README.md
+version:
+  component: 1.0.0
+  schema: 1

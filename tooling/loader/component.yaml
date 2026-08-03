@@ -1,0 +1,30 @@
+schema: cerebro-component/v1
+component:
+  id: loader
+  name: Loader
+  type: tooling
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Laste en validert Cerebro Release og opprette Runtime State.
+boundaries:
+  must:
+  - verify-release-integrity
+  - load-required-components
+  - initialize-runtime
+  must_not:
+  - load-invalid-release
+  - load-unregistered-components
+dependencies:
+  build: []
+  runtime: []
+interfaces:
+  consumes:
+  - validated-release
+  produces:
+  - runtime-state
+documentation:
+  path: README.md
+version:
+  component: 1.0.0
+  schema: 1

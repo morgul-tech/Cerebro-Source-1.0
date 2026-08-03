@@ -1,0 +1,52 @@
+schema: cerebro-component/v1
+component:
+  id: quality
+  name: Quality Engine
+  type: engine
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Kontrollere arbeidskvalitet, konsistens, kontroll og sporbarhet.
+boundaries:
+  must:
+  - kontrollere-konsistens
+  - kontrollere-resultat
+  - sikre-sporbarhet
+  must_not:
+  - forvalte-systemversjonering
+  - publisere-releases
+  - endre-prosjektgrunnlag
+  - velge-presentasjonsformat
+dependencies:
+  build:
+  - terminology
+  - core-rules
+  runtime:
+  - context
+interfaces:
+  input:
+  - result
+  - goal
+  - requirements
+  - current-basis
+  - decision-history
+  - active-release
+  output:
+  - quality-status
+  - consistency-conflict
+  - verification-result
+  - traceability-record
+rules:
+  path: rules.yaml
+documentation:
+  path: specification.md
+migration:
+  source: MASTER_v1.1
+  sections:
+  - '6.1'
+  - '6.2'
+  - '6.3'
+  - '6.4'
+version:
+  component: 1.0.0
+  schema: 1

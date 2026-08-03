@@ -1,0 +1,220 @@
+schema: cerebro-rule-set/v1
+rules:
+- id: CTX-001
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    always: true
+  action:
+    classify_context_as:
+    - assessment
+    - decision
+    - current-basis
+    - history
+  statement: Context Engine SKAL skille mellom vurderinger, beslutninger, gjeldende grunnlag og historikk.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: &id001
+    - 3.5.4
+    - '3.6'
+    - 3.6.1
+    - 3.6.2
+    - 3.6.3
+- id: CTX-002
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    context_item_relevant_for_future_work: true
+  action:
+    add_to_active_context: true
+  statement: Context Engine SKAL legge informasjon som er gjeldende for videre arbeid inn i aktiv kontekst.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-003
+  owner: context
+  authority: normative
+  priority: normal
+  condition:
+    context_item_type_in:
+    - goal
+    - framework
+    - decision
+    - selected_solution
+    - constraint
+    - other_applicable_basis
+  action:
+    allow_active_context: true
+  statement: Aktiv kontekst KAN inneholde mål, rammer, beslutninger, valgte løsninger, begrensninger og andre forhold som
+    skal legges til grunn.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-004
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    information_confirmed_relevant: true
+  action:
+    classify_as_current_basis: true
+  statement: Context Engine SKAL klassifisere bekreftet relevant informasjon som skal brukes videre som gjeldende grunnlag.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-005
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    information_available: true
+    information_confirmed_relevant: false
+  action:
+    exclude_from_current_basis: true
+  statement: Tilgjengelig informasjon SKAL IKKE inngå automatisk i gjeldende grunnlag.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-006
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    new_information_candidate_for_active_context: true
+  action:
+    evaluate_before_activation: true
+  statement: Context Engine SKAL vurdere informasjon før den legges inn i aktiv kontekst.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-007
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    item_is_analysis_or_alternative: true
+    direction_selected: false
+  action:
+    classify_as_assessment: true
+  statement: Context Engine SKAL klassifisere analyser og alternativer som ikke er gjort gjeldende som vurderinger.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-008
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    item_classification: assessment
+  action:
+    prohibit_decision_treatment: true
+  statement: En vurdering SKAL IKKE behandles som en beslutning før retningen er valgt.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-009
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    any:
+    - user_choice
+    - user_assistant_agreement
+    - applicable_rule_or_framework
+    direction_clear: true
+  action:
+    classify_as_decision: true
+  statement: Context Engine SKAL klassifisere en valgt og avklart retning som beslutning.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-010
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    decision_affects_future_work: true
+  action:
+    add_to_active_context: true
+  statement: En beslutning som skal påvirke videre arbeid SKAL inngå i aktiv kontekst.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: CTX-011
+  owner: context
+  authority: normative
+  priority: high
+  condition:
+    explicit_user_override: true
+  action:
+    record:
+    - overridden_rule
+    - new_decision
+    - timestamp
+    - scope
+    - status
+  statement: Context Engine SKAL registrere brukerens eksplisitte overstyringer med overstyrt regel, ny beslutning, tidspunkt,
+    gyldighetsområde og status.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: CTX-012
+  owner: context
+  authority: normative
+  priority: normal
+  condition:
+    override_revoked: true
+  action:
+    set_override_status: revoked
+  statement: Context Engine SKAL bevare en opphevet overstyring som historikk og markere den som opphevet.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet

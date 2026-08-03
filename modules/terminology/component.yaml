@@ -1,0 +1,31 @@
+schema: cerebro-component/v1
+component:
+  id: terminology
+  name: Terminology Module
+  type: module
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Forvalte autoritative systembegreper.
+boundaries:
+  must:
+  - definere-autoritative-begreper
+  - forvalte-synonymer
+  must_not:
+  - utføre-behandling
+  - definere-regelprioritet
+dependencies:
+  build: []
+  runtime: []
+interfaces:
+  exports:
+  - terms
+documentation:
+  path: specification.md
+migration:
+  source: MASTER_v1.1
+  sections:
+  - Vedlegg A
+version:
+  component: 1.0.0
+  schema: 1

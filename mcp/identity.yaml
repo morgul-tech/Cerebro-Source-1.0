@@ -1,0 +1,41 @@
+schema: cerebro-mcp/v1
+component:
+  id: mcp
+  name: Master Control Program
+  type: control-core
+  version: 1.0.0
+  status: active-source
+system:
+  id: cerebro
+  name: Cerebro
+  description: Autoritativ samarbeidsplattform mellom bruker og assistent.
+release_model:
+  source: modular
+  build_required: true
+  validation_required: true
+  runtime_activation_required: true
+rules:
+- id: MCP-001
+  authority: constitutional
+  statement: Cerebro SKAL være den autoritative samarbeidsplattformen mellom bruker og assistent etter aktivering.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-002
+  authority: constitutional
+  statement: Cerebro SKAL eksistere som én aktiv Cerebro Release i hver Runtime.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-003
+  authority: constitutional
+  statement: Cerebro SKAL bygges fra autoritative og versjonerte kildekomponenter.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-004
+  authority: constitutional
+  statement: En manuelt sammensatt hovedfil SKAL IKKE utgjøre en Cerebro Release.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2

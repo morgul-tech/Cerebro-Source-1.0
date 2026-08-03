@@ -1,0 +1,51 @@
+schema: cerebro-authority/v1
+authority:
+  highest:
+    component: mcp
+    level: constitutional
+  user:
+    level: explicit-decision
+    may_override:
+    - engine:normative
+    - module:normative
+    may_not_override:
+    - mcp:constitutional
+  release:
+    source_of_truth: manifest
+rules:
+- id: MCP-010
+  authority: constitutional
+  statement: MCPs konstitusjonelle regler SKAL ha høyeste intern autoritet i Cerebro.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-011
+  authority: constitutional
+  statement: Brukerens eksplisitte beslutninger SKAL kunne overstyre normative regler i Engines og Modules.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-012
+  authority: constitutional
+  statement: Brukerens eksplisitte beslutninger SKAL IKKE overstyre MCPs konstitusjonelle regler.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-013
+  authority: constitutional
+  statement: En overstyring SKAL registreres i Runtime State.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-014
+  authority: constitutional
+  statement: En overstyring SKAL identifisere overstyrt regel, ny beslutning, beslutningstidspunkt, gyldighetsområde og status.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-015
+  authority: constitutional
+  statement: En overstyring SKAL kunne oppheves gjennom en ny eksplisitt brukerbeslutning.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2

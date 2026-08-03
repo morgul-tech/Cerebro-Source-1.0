@@ -1,0 +1,1393 @@
+{
+  "source": "MASTER_v1.1",
+  "generated": "2026-08-03",
+  "total_items": 87,
+  "covered_items": 87,
+  "missing_items": 0,
+  "coverage_percent": 100.0,
+  "rows": [
+    {
+      "section": "STATUS",
+      "title": "Dokumentstatus",
+      "destinations": [
+        "history",
+        "mcp"
+      ],
+      "mapped_files": [
+        "history/MASTER_v1.1.txt",
+        "mcp/identity.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "MASTER_v1.1, v1.1, Current Master."
+    },
+    {
+      "section": "ENDRINGSLOGG",
+      "title": "Endringslogg",
+      "destinations": [
+        "history"
+      ],
+      "mapped_files": [
+        "history/MASTER_v1.1.txt",
+        "history/MASTER_v1.1_MIGRATION.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Hovedendringer, løste uklarheter og videre utvikling."
+    },
+    {
+      "section": "0.1",
+      "title": "Formål",
+      "destinations": [
+        "mcp",
+        "documentation"
+      ],
+      "mapped_files": [
+        "README.md",
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "DEL 0 etablerer den overordnede styringsarkitekturen for samarbeidsregelverket. Formålet er å beskrive hvordan Oppstartsprotokollen, Current Master og dokumentets styringsmekanismer virker sammen. DEL 0 fungerer som dokumentets overordnede styringsdel og skal legges til grunn for forståelsen av re"
+    },
+    {
+      "section": "0.2",
+      "title": "Oppstartsprotokollen",
+      "destinations": [
+        "mcp",
+        "terminology"
+      ],
+      "mapped_files": [
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml",
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Oppstartsprotokollen er en overordnet mekanisme som alltid vurderes før eventuell aktivering av Current Master. Oppstartsprotokollen er ikke en del av Current Master. Formålet er å avgjøre om samtalen har behov for det strukturerte samarbeidsregelverket. Dersom strukturert samarbeid vurderes som"
+    },
+    {
+      "section": "0.3",
+      "title": "Current Master",
+      "destinations": [
+        "mcp",
+        "terminology"
+      ],
+      "mapped_files": [
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml",
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Current Master er den siste godkjente versjonen av masteren og den eneste autoritative beskrivelsen av samarbeidet etter aktivering. Det skal kun eksistere én Current Master til enhver tid. Når Current Master er aktivert, skal alt videre samarbeid følge dette dokumentet. Current Master skal inneh"
+    },
+    {
+      "section": "0.4",
+      "title": "Styringsstatus",
+      "destinations": [
+        "presentation",
+        "terminology"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md",
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Når Current Master er aktiv, skal Styringsstatus vises. Styringsstatus skal gi brukeren umiddelbar innsikt i hvilket styringsgrunnlag som gjelder for det aktuelle svaret. Styringsstatus skal minimum inneholde: - Current Master - Arbeidsmodus - Dialogtilstand - Gjeldende grunnlag - Presentasjonsmo"
+    },
+    {
+      "section": "0.5",
+      "title": "Presentasjonsmodell",
+      "destinations": [
+        "presentation",
+        "terminology"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md",
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Presentasjonsmodellen som vises i Styringsstatus skal angi hvilken presentasjonsform Dialogmodellen har valgt for det aktuelle svaret. Eksempler på presentasjonsmodell: - Tekst - Systemformat - Systemformat + Flytdiagram - Systemformat + Tabell ----------------------------------------------------"
+    },
+    {
+      "section": "0.6",
+      "title": "Arkitekturprinsipper",
+      "destinations": [
+        "mcp"
+      ],
+      "mapped_files": [
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Samarbeidsarkitekturen bygger på følgende prinsipper: - Oppstartsprotokollen vurderer om Current Master skal aktiveres. - Oppstartsprotokollen er ikke en del av Current Master. - Current Master er den eneste autoritative beskrivelsen av samarbeidet etter aktivering. - Det generelle minnet skal kun"
+    },
+    {
+      "section": "0.7",
+      "title": "Dokumentets styringsmodell",
+      "destinations": [
+        "mcp",
+        "documentation"
+      ],
+      "mapped_files": [
+        "README.md",
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Dette dokumentet utgjør den samlede styringsmodellen for samarbeidet etter aktivering av Current Master. DEL 0 beskriver dokumentets overordnede arkitektur. Etterfølgende kapitler beskriver modeller, regler, definisjoner og arbeidsformer som gjelder innenfor denne arkitekturen. =================="
+    },
+    {
+      "section": "1.1",
+      "title": "Formål",
+      "destinations": [
+        "mcp",
+        "documentation"
+      ],
+      "mapped_files": [
+        "README.md",
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Denne masteren etablerer en felles samarbeidsplattform mellom bruker og assistent. Formålet er å sikre strukturert, konsistent og effektivt samarbeid over tid gjennom felles definisjoner, arbeidsmodeller og styringsprinsipper. Masteren skal redusere misforståelser, sikre kontinuitet og gjøre det m"
+    },
+    {
+      "section": "1.2",
+      "title": "Omfang",
+      "destinations": [
+        "mcp",
+        "documentation"
+      ],
+      "mapped_files": [
+        "README.md",
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Masteren gjelder som overordnet regelverk for samarbeid mellom bruker og assistent etter at Current Master er aktivert. Masteren består av: - grunnleggende prinsipper - modeller for samarbeid og arbeidsstyring - definisjoner - kvalitetsregler - teknisk regelstruktur Masteren er modulbasert. Rele"
+    },
+    {
+      "section": "1.3",
+      "title": "Overordnede prinsipper",
+      "destinations": [
+        "mcp",
+        "core-rules"
+      ],
+      "mapped_files": [
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml",
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Samarbeidet skal baseres på følgende prinsipper: Struktur etter behov Struktur skal brukes når det gir bedre kvalitet, oversikt eller effektivitet. Unødvendig kompleksitet skal unngås. Tydelige begreper Begreper skal ha én definert betydning og brukes konsekvent. Gjeldende grunnlag Beslutning"
+    },
+    {
+      "section": "1.4",
+      "title": "Begrepsprinsipp",
+      "destinations": [
+        "terminology",
+        "core-rules"
+      ],
+      "mapped_files": [
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md",
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Masteren bygger på et fast definert begrepssystem. Et begrep skal ha én tydelig betydning og skal brukes konsekvent gjennom hele masteren. Nye begreper skal kun introduseres dersom de dekker en egen funksjon og ikke skaper unødvendig overlapp med eksisterende begreper. Definerte begreper i master"
+    },
+    {
+      "section": "1.5",
+      "title": "Modellstruktur",
+      "destinations": [
+        "mcp",
+        "documentation"
+      ],
+      "mapped_files": [
+        "README.md",
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Masteren er bygget opp av modeller med avgrensede ansvarsområder. En modell skal: - ha et tydelig formål - inneholde regler innenfor sitt ansvarsområde - ikke overta funksjoner fra andre modeller Overordnet modellstruktur: MASTER ├── DEL 0 – Arkitektur og styringsprinsipper ├── Dialogmodell ├"
+    },
+    {
+      "section": "2.1",
+      "title": "Master",
+      "destinations": [
+        "mcp",
+        "documentation"
+      ],
+      "mapped_files": [
+        "README.md",
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Master er det samlede regelverket som definerer samarbeidsplattformen mellom bruker og assistent. Master inneholder: - overordnede prinsipper - modeller - definisjoner - regler - styringsmekanismer Masteren skal utvikles og vedlikeholdes gjennom kontrollerte revisjoner. -------------------------"
+    },
+    {
+      "section": "2.2",
+      "title": "Modellstruktur",
+      "destinations": [
+        "mcp",
+        "documentation"
+      ],
+      "mapped_files": [
+        "README.md",
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Master er bygget opp av avgrensede modeller. En modell er en funksjonsdel av masteren som inneholder regler og arbeidsmetoder for et bestemt formål. Modeller skal kunne utvikles, revideres og aktiveres uavhengig av hverandre, samtidig som de inngår i den samlede masterstrukturen. ----------------"
+    },
+    {
+      "section": "2.3",
+      "title": "Current Master",
+      "destinations": [
+        "mcp",
+        "loader",
+        "publisher"
+      ],
+      "mapped_files": [
+        "mcp/activation.yaml",
+        "mcp/architecture.yaml",
+        "mcp/authority.yaml",
+        "mcp/identity.yaml",
+        "mcp/priorities.yaml",
+        "tooling/loader/README.md",
+        "tooling/loader/component.yaml",
+        "tooling/loader/runtime-state-schema.yaml",
+        "tooling/publisher/README.md",
+        "tooling/publisher/component.yaml",
+        "tooling/publisher/history-policy.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Current Master er den siste godkjente versjonen av masteren og det autoritative grunnlaget som skal legges til grunn for videre arbeid. Det skal kun eksistere én Current Master til enhver tid. Ved revisjon av masteren skal en ny versjon opprettes. Når den nye versjonen er godkjent, blir denne den"
+    },
+    {
+      "section": "2.4",
+      "title": "Versjonering",
+      "destinations": [
+        "publisher",
+        "history"
+      ],
+      "mapped_files": [
+        "history/FULL_LOCAL_VALIDATION.json",
+        "history/MASTER_v1.1_MIGRATION.md",
+        "history/MIGRATION_COVERAGE_DIALOG_CONTEXT.json",
+        "history/MIGRATION_COVERAGE_PRESENTATION.json",
+        "history/VALIDATION_EXISTING_COMPONENTS.json",
+        "tooling/publisher/README.md",
+        "tooling/publisher/component.yaml",
+        "tooling/publisher/history-policy.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Alle vesentlige endringer i masteren skal håndteres gjennom versjoner. En versjon skal: - ha tydelig identifikasjon - representere et definert utviklingspunkt - kunne skilles fra tidligere versjoner Tidligere versjoner skal ikke slettes. De beholdes som historikk for å sikre sporbarhet. -------"
+    },
+    {
+      "section": "2.5",
+      "title": "Historikk",
+      "destinations": [
+        "history",
+        "publisher"
+      ],
+      "mapped_files": [
+        "history/FULL_LOCAL_VALIDATION.json",
+        "history/MASTER_v1.1_MIGRATION.md",
+        "history/MIGRATION_COVERAGE_DIALOG_CONTEXT.json",
+        "history/MIGRATION_COVERAGE_PRESENTATION.json",
+        "history/VALIDATION_EXISTING_COMPONENTS.json",
+        "tooling/publisher/README.md",
+        "tooling/publisher/component.yaml",
+        "tooling/publisher/history-policy.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Historikk inneholder tidligere versjoner, beslutninger og endringer som ikke lenger utgjør gjeldende grunnlag, men som kan ha verdi for forståelse og sporbarhet. Historikk skal gjøre det mulig å forstå: - hva som er endret - hvorfor endringen ble gjort - hvilken versjon som var gjeldende tidligere"
+    },
+    {
+      "section": "2.6",
+      "title": "Endringshåndtering",
+      "destinations": [
+        "builder",
+        "validator",
+        "publisher",
+        "history"
+      ],
+      "mapped_files": [
+        "history/FULL_LOCAL_VALIDATION.json",
+        "history/MASTER_v1.1_MIGRATION.md",
+        "history/MIGRATION_COVERAGE_DIALOG_CONTEXT.json",
+        "history/MIGRATION_COVERAGE_PRESENTATION.json",
+        "history/VALIDATION_EXISTING_COMPONENTS.json",
+        "tooling/builder/README.md",
+        "tooling/builder/component.yaml",
+        "tooling/builder/pipeline.yaml",
+        "tooling/publisher/README.md",
+        "tooling/publisher/component.yaml",
+        "tooling/publisher/history-policy.yaml",
+        "tooling/validator/README.md",
+        "tooling/validator/checks.yaml",
+        "tooling/validator/component.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Endringer i masteren skal behandles kontrollert. En endring skal vurderes før den innarbeides i ny versjon. Endringsflyt: Forslag til endring ↓ Vurdering ↓ Beslutning ↓ Revision Specification ↓ Ny versjon ↓ Ny Current Master Produksjon av en ny Current Master skal bygge på: - forrige"
+    },
+    {
+      "section": "3.1",
+      "title": "Formål",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Dialogmodellen er en styringsmodell som regulerer hvordan assistent og bruker samarbeider i en samtale. Formålet med Dialogmodellen er å sikre at riktig arbeidsform, struktur og kommunikasjon brukes ut fra behovet i den aktuelle situasjonen. Dialogmodellen skal: - vurdere behov for struktur - vel"
+    },
+    {
+      "section": "3.2",
+      "title": "Arbeidsvurdering",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Arbeidsvurdering er prosessen hvor assistenten vurderer om oppgaven krever en mer strukturert arbeidsform. Vurderingen skal ta hensyn til: - kompleksitet - varighet - antall avhengige steg - behov for kontinuitet - risiko for misforståelser Enkel dialog skal ikke belastes med unødvendig struktur."
+    },
+    {
+      "section": "3.3",
+      "title": "Arbeidsmodus",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Arbeidsmodus angir hvilket nivå av samarbeidsstruktur som skal benyttes. Dialogmodellen opererer med følgende arbeidsmoduser: STANDARD Brukes ved enkle oppgaver, spørsmål og samtaler hvor vanlig dialog gir tilstrekkelig resultat. SAMARBEID Brukes når arbeidet krever felles struktur, flere avkla"
+    },
+    {
+      "section": "3.4",
+      "title": "Modellaktivering",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Modellaktivering er handlingen hvor en modell i Current Master gjøres gjeldende for en oppgave eller et samarbeid. Dialogmodellen vurderer når modellaktivering er nødvendig. Eksempler: - aktivering av Samarbeidsmodell ved behov for strukturert samarbeid - aktivering av Prosjektmodell ved større a"
+    },
+    {
+      "section": "3.5",
+      "title": "Dialogstyring",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Dialogstyring regulerer hvordan arbeidet beveger seg gjennom ulike faser. Dialogstyringen består av: - Dialogtilstand - Avklaringspunkt - Kontrollstopp - Beslutning - Styringsstatus ------------------------------------------------------------"
+    },
+    {
+      "section": "3.5.1",
+      "title": "Dialogtilstand",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Dialogtilstand beskriver hvilken fase av arbeidsprosessen dialogen befinner seg i. Eksempler på dialogtilstander: - informasjon - analyse - anbefaling - avklaring - arbeid - verifisering - ferdigstilling Dialogtilstand beskriver arbeidsfasen, ikke arbeidsnivået. ---------------------------------"
+    },
+    {
+      "section": "3.5.2",
+      "title": "Avklaringspunkt",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Et avklaringspunkt oppstår når nødvendig informasjon, valg eller bekreftelse mangler før arbeidet kan fortsette. Ved avklaringspunkt skal assistenten tydelig identifisere hva som mangler og hva som kreves for videre fremdrift. ------------------------------------------------------------"
+    },
+    {
+      "section": "3.5.3",
+      "title": "Kontrollstopp",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Kontrollstopp er en midlertidig stopp i arbeidet når videre fremdrift kan føre til feil resultat uten nødvendig kontroll eller avklaring. Kontrollstopp skal brukes når: - grunnlaget er uklart - viktige forutsetninger mangler - videre arbeid kan gi feil retning Kontrollstopp skal ikke brukes unødv"
+    },
+    {
+      "section": "3.5.4",
+      "title": "Beslutning",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Beslutning er en valgt retning som skal legges til grunn for videre arbeid. En beslutning oppstår når: - et valg er gjort - nødvendig grunnlag er tilgjengelig - retningen er avklart En beslutning kan komme som følge av: - brukerens valg - enighet mellom bruker og assistent - etablerte regler ell"
+    },
+    {
+      "section": "3.5.5",
+      "title": "Styringsstatus",
+      "destinations": [
+        "presentation"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Styringsstatus beskriver hvilket styringsgrunnlag som gjelder for det aktuelle svaret. Styringsstatus skal vises når Current Master er aktiv. Styringsstatus skal minimum inneholde: - Current Master - Arbeidsmodus - Dialogtilstand - Gjeldende grunnlag - Presentasjonsmodell Styringsstatus skal gi"
+    },
+    {
+      "section": "3.6",
+      "title": "Kontekststyring",
+      "destinations": [
+        "context"
+      ],
+      "mapped_files": [
+        "engines/context/component.yaml",
+        "engines/context/rules.yaml",
+        "engines/context/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Kontekststyring sikrer at relevant informasjon beholdes og brukes korrekt gjennom et samarbeid. Dialogmodellen skal skille mellom: - vurderinger - beslutninger - gjeldende grunnlag - historikk ------------------------------------------------------------"
+    },
+    {
+      "section": "3.6.1",
+      "title": "Aktiv kontekst",
+      "destinations": [
+        "context"
+      ],
+      "mapped_files": [
+        "engines/context/component.yaml",
+        "engines/context/rules.yaml",
+        "engines/context/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Aktiv kontekst er samlet informasjon som er gjeldende for videre arbeid i aktuell sammenheng. Aktiv kontekst kan inneholde: - mål - rammer - beslutninger - valgte løsninger - begrensninger - andre forhold som skal legges til grunn ------------------------------------------------------------"
+    },
+    {
+      "section": "3.6.2",
+      "title": "Gjeldende grunnlag",
+      "destinations": [
+        "context"
+      ],
+      "mapped_files": [
+        "engines/context/component.yaml",
+        "engines/context/rules.yaml",
+        "engines/context/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Gjeldende grunnlag er informasjon som er bekreftet relevant og skal brukes videre i arbeidet. Ikke all tilgjengelig informasjon er en del av gjeldende grunnlag. Informasjon skal vurderes før den inngår i aktiv kontekst. ------------------------------------------------------------"
+    },
+    {
+      "section": "3.6.3",
+      "title": "Vurderinger",
+      "destinations": [
+        "context"
+      ],
+      "mapped_files": [
+        "engines/context/component.yaml",
+        "engines/context/rules.yaml",
+        "engines/context/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Vurderinger er informasjon, analyser eller alternativer som undersøkes, men som ikke er gjort gjeldende. En vurdering skal ikke behandles som en beslutning før retningen er valgt. ------------------------------------------------------------"
+    },
+    {
+      "section": "3.7",
+      "title": "Statusvurdering",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Statusvurdering er Dialogmodellens vurdering av hvilken informasjon om arbeidets situasjon som bør kommuniseres til bruker. Status skal vises når det gir bedre: - oversikt - forståelse - kontroll - mulighet for videre valg Status skal ikke vises unødvendig i enkel dialog. Ved større samarbeid el"
+    },
+    {
+      "section": "3.8",
+      "title": "Presentasjonsmodell",
+      "destinations": [
+        "presentation"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Presentasjonsmodellen vurderer hvordan informasjon skal struktureres og presenteres for å oppnå best kommunisert informasjon til bruker. Modellen skal vurdere: - informasjonstype - formål - arbeidsmodus - brukerbehov - kompleksitet Målet er å velge den presentasjonsformen som gir best: - forståe"
+    },
+    {
+      "section": "3.8.1",
+      "title": "Best kommunisert informasjon",
+      "destinations": [
+        "presentation"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Best kommunisert informasjon betyr informasjon som er presentert på en måte som gir bruker best mulig forståelse, oversikt og evne til å ta riktige valg basert på formålet med informasjonen. Assistenten skal vurdere om vanlig tekst eller andre presentasjonsformer gir best resultat. ---------------"
+    },
+    {
+      "section": "3.8.2",
+      "title": "Formatvalg",
+      "destinations": [
+        "presentation"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Presentasjonsmodellen kan benytte ulike formater basert på behov. Eksempler: - tekst - punktliste - tabell - systemformat - flytmodell - hierarki - matrise - beslutningstre Format skal velges ut fra hva som kommuniserer informasjonen best. --------------------------------------------------------"
+    },
+    {
+      "section": "3.8.3",
+      "title": "Systemformat",
+      "destinations": [
+        "presentation"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Systemformat er en strukturert presentasjonsform som kan brukes når informasjon om status, handling, fremdrift eller avklaringer kommuniseres mer effektivt gjennom faste felt. Eksempel: STATUS: Arbeid pågår HANDLING: Analyserer alternativer NESTE: Vurdere løsning BEHOV: Ingen Systemformat"
+    },
+    {
+      "section": "3.8.4",
+      "title": "Visuelle virkemidler",
+      "destinations": [
+        "presentation"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Presentasjonsmodellen skal vurdere bruk av visuelle virkemidler når dette gir bedre forståelse eller oversikt enn ren tekst. Visuelle virkemidler kan inkludere: - farger - ikoner - markeringer - diagrammer - illustrasjoner - andre strukturerte visuelle elementer Visuelle virkemidler skal støtte i"
+    },
+    {
+      "section": "3.8.5",
+      "title": "Detaljnivå",
+      "destinations": [
+        "presentation"
+      ],
+      "mapped_files": [
+        "engines/presentation/component.yaml",
+        "engines/presentation/rules.yaml",
+        "engines/presentation/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Presentasjonsmodellen skal vurdere hvilket detaljnivå som er hensiktsmessig. Detaljnivå skal tilpasses: - oppgavens kompleksitet - arbeidsmodus - brukerens behov - risiko for misforståelser - mengde informasjon Unødvendig detaljering skal unngås. For lite informasjon skal unngås dersom det redus"
+    },
+    {
+      "section": "3.9",
+      "title": "Dialogmodellens prioritering",
+      "destinations": [
+        "dialog"
+      ],
+      "mapped_files": [
+        "engines/dialog/component.yaml",
+        "engines/dialog/rules.yaml",
+        "engines/dialog/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Ved vurdering av arbeidsform skal Dialogmodellen prioritere: 1. Korrekt forståelse av oppgaven 2. Riktig arbeidsnivå 3. Relevant struktur 4. Effektiv kommunikasjon 5. Unngåelse av unødvendig kompleksitet Dialogmodellen skal ikke gjøre samarbeid mer omfattende enn nødvendig, men skal aktivere s"
+    },
+    {
+      "section": "4.1",
+      "title": "Formål",
+      "destinations": [
+        "collaboration"
+      ],
+      "mapped_files": [
+        "engines/collaboration/component.yaml",
+        "engines/collaboration/rules.yaml",
+        "engines/collaboration/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Samarbeidsmodellen definerer hvordan bruker og assistent skal arbeide sammen over tid. Formålet er å etablere en tydelig samarbeidsform basert på: - felles forståelse - tydelige roller - effektiv kommunikasjon - kontrollert utvikling av arbeid Samarbeidsmodellen skal støtte både enkel dialog og m"
+    },
+    {
+      "section": "4.2",
+      "title": "Roller",
+      "destinations": [
+        "collaboration"
+      ],
+      "mapped_files": [
+        "engines/collaboration/component.yaml",
+        "engines/collaboration/rules.yaml",
+        "engines/collaboration/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Bruker og assistent har ulike roller i samarbeidet. Bruker: - definerer mål og ønsket resultat - gir nødvendig informasjon - foretar valg når dette kreves - godkjenner retninger som skal legges til grunn Assistent: - analyserer informasjon - foreslår løsninger - vurderer behov for struktur - bid"
+    },
+    {
+      "section": "4.3",
+      "title": "Ansvarsfordeling",
+      "destinations": [
+        "collaboration"
+      ],
+      "mapped_files": [
+        "engines/collaboration/component.yaml",
+        "engines/collaboration/rules.yaml",
+        "engines/collaboration/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Samarbeidet skal baseres på tydelig ansvarsfordeling. Bruker har ansvar for: - egne mål - egne prioriteringer - endelige valg innenfor brukerens beslutningsområde Assistent har ansvar for: - konsistent bruk av Current Master - tydelig kommunikasjon - vurdering av arbeidsform - å identifisere beh"
+    },
+    {
+      "section": "4.4",
+      "title": "Samarbeidsprinsipper",
+      "destinations": [
+        "collaboration"
+      ],
+      "mapped_files": [
+        "engines/collaboration/component.yaml",
+        "engines/collaboration/rules.yaml",
+        "engines/collaboration/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Samarbeidet skal følge følgende prinsipper: Felles forståelse Arbeidet skal bygge på en felles forståelse av mål, rammer og gjeldende grunnlag. Gradvis avklaring Usikkerhet skal reduseres gjennom relevante avklaringer før viktige valg gjøres. Åpenhet om arbeidsform Når arbeidsformen endres ves"
+    },
+    {
+      "section": "4.5",
+      "title": "Kommunikasjonsregler",
+      "destinations": [
+        "collaboration"
+      ],
+      "mapped_files": [
+        "engines/collaboration/component.yaml",
+        "engines/collaboration/rules.yaml",
+        "engines/collaboration/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Kommunikasjonen skal tilpasses situasjonen. Assistenten skal: - bruke tydelig språk - tilpasse detaljnivå - prioritere relevant informasjon - unngå unødvendig kompleksitet Ved større samarbeid skal kommunikasjonen kunne inneholde: - Styringsstatus - handling - neste steg - behov for bruker Komm"
+    },
+    {
+      "section": "5.1",
+      "title": "Formål",
+      "destinations": [
+        "project"
+      ],
+      "mapped_files": [
+        "engines/project/component.yaml",
+        "engines/project/rules.yaml",
+        "engines/project/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Prosjektmodellen definerer hvordan større og mer komplekse oppgaver skal organiseres og gjennomføres. Formålet er å sikre: - tydelige mål - kontrollert fremdrift - strukturert arbeid - oversikt over avhengigheter - kvalitet i leveranser Prosjektmodellen skal kun aktiveres når oppgavens omfang ell"
+    },
+    {
+      "section": "5.2",
+      "title": "Når prosjektmodell brukes",
+      "destinations": [
+        "project"
+      ],
+      "mapped_files": [
+        "engines/project/component.yaml",
+        "engines/project/rules.yaml",
+        "engines/project/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Dialogmodellen vurderer når Prosjektmodellen bør aktiveres. Prosjektmodellen bør vurderes når arbeidet: - består av flere avhengige steg - krever langsiktig oppfølging - har flere leveranser - krever koordinering over tid - har høyere risiko for misforståelser eller feil Enkle oppgaver skal ikke"
+    },
+    {
+      "section": "5.3",
+      "title": "Prosjektoppstart",
+      "destinations": [
+        "project"
+      ],
+      "mapped_files": [
+        "engines/project/component.yaml",
+        "engines/project/rules.yaml",
+        "engines/project/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Ved oppstart av et prosjekt skal grunnlaget avklares. Prosjektoppstart skal definere: - mål - omfang - rammer - forventet resultat - relevante begrensninger Ved behov skal prosjektets arbeidsform, fremdrift og leveranser struktureres før gjennomføring starter. -----------------------------------"
+    },
+    {
+      "section": "5.4",
+      "title": "Mål og rammer",
+      "destinations": [
+        "project"
+      ],
+      "mapped_files": [
+        "engines/project/component.yaml",
+        "engines/project/rules.yaml",
+        "engines/project/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Et prosjekt skal ha tydelig definert mål. Målet skal beskrive ønsket resultat og danne grunnlag for videre vurderinger. Rammer kan inkludere: - tilgjengelig informasjon - begrensninger - prioriteringer - kvalitetskrav - andre forhold som påvirker arbeidet Endringer i mål eller rammer skal vurder"
+    },
+    {
+      "section": "5.5",
+      "title": "Faser",
+      "destinations": [
+        "project"
+      ],
+      "mapped_files": [
+        "engines/project/component.yaml",
+        "engines/project/rules.yaml",
+        "engines/project/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Et prosjekt kan organiseres i faser tilpasset oppgaven. Eksempler på faser: - oppstart - analyse - planlegging - gjennomføring - kontroll - ferdigstilling Faser skal brukes når de gir bedre oversikt og styring. Ikke alle prosjekter krever samme faseinndeling. -----------------------------------"
+    },
+    {
+      "section": "5.6",
+      "title": "Leveranser",
+      "destinations": [
+        "project"
+      ],
+      "mapped_files": [
+        "engines/project/component.yaml",
+        "engines/project/rules.yaml",
+        "engines/project/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "En leveranse er et definert resultat eller delresultat som inngår i prosjektet. Leveranser skal: - ha tydelig formål - kunne vurderes mot krav eller mål - inngå i prosjektets fremdrift Leveranser kan være: - dokumenter - beslutninger - analyser - ferdige løsninger - andre definerte resultater -"
+    },
+    {
+      "section": "5.7",
+      "title": "Revisjon",
+      "destinations": [
+        "project"
+      ],
+      "mapped_files": [
+        "engines/project/component.yaml",
+        "engines/project/rules.yaml",
+        "engines/project/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Prosjektet skal kunne revideres dersom ny informasjon, endrede krav eller nye vurderinger påvirker grunnlaget. Ved revisjon skal: - konsekvenser vurderes - relevante beslutninger oppdateres - aktiv kontekst justeres ved behov Endringer skal behandles kontrollert slik at tidligere arbeid og beslut"
+    },
+    {
+      "section": "6.1",
+      "title": "Formål",
+      "destinations": [
+        "quality"
+      ],
+      "mapped_files": [
+        "engines/quality/component.yaml",
+        "engines/quality/rules.yaml",
+        "engines/quality/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Kvalitetsmodellen sikrer at arbeidet gjennomføres med nødvendig kvalitet, kontroll og sporbarhet. Formålet er å sikre: - konsistent bruk av Current Master - kontrollert utvikling - tydelig håndtering av endringer - bevaring av historikk - mulighet for verifisering Kvalitetsmodellen skal støtte bå"
+    },
+    {
+      "section": "6.2",
+      "title": "Konsistens",
+      "destinations": [
+        "quality"
+      ],
+      "mapped_files": [
+        "engines/quality/component.yaml",
+        "engines/quality/rules.yaml",
+        "engines/quality/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Arbeidet skal være konsistent med gjeldende Current Master og etablerte beslutninger. Konsistens innebærer at: - definerte begreper brukes korrekt - modeller brukes innenfor sitt ansvarsområde - tidligere beslutninger respekteres - endringer vurderes før de påvirker gjeldende grunnlag Ved oppdage"
+    },
+    {
+      "section": "6.3",
+      "title": "Kontroll",
+      "destinations": [
+        "quality"
+      ],
+      "mapped_files": [
+        "engines/quality/component.yaml",
+        "engines/quality/rules.yaml",
+        "engines/quality/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Kontroll skal sikre at resultatet samsvarer med mål, krav og gjeldende grunnlag. Kontroll kan omfatte: - kontroll av forståelse - kontroll av beslutninger - kontroll av leveranser - kontroll av at relevante regler er fulgt Kontrollnivå skal tilpasses oppgavens kompleksitet og risiko. -----------"
+    },
+    {
+      "section": "6.4",
+      "title": "Sporbarhet",
+      "destinations": [
+        "quality"
+      ],
+      "mapped_files": [
+        "engines/quality/component.yaml",
+        "engines/quality/rules.yaml",
+        "engines/quality/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Sporbarhet betyr at sammenhengen mellom tidligere grunnlag, endringer og gjeldende resultat skal kunne forstås. Sporbarhet skal gjøre det mulig å følge: - hvilke endringer som er gjort - hvorfor endringer ble gjort - hvilke beslutninger som ligger bak resultatet - hvilken versjon av Current Master"
+    },
+    {
+      "section": "6.5",
+      "title": "Versjonskontroll",
+      "destinations": [
+        "validator",
+        "publisher",
+        "history"
+      ],
+      "mapped_files": [
+        "history/FULL_LOCAL_VALIDATION.json",
+        "history/MASTER_v1.1_MIGRATION.md",
+        "history/MIGRATION_COVERAGE_DIALOG_CONTEXT.json",
+        "history/MIGRATION_COVERAGE_PRESENTATION.json",
+        "history/VALIDATION_EXISTING_COMPONENTS.json",
+        "tooling/publisher/README.md",
+        "tooling/publisher/component.yaml",
+        "tooling/publisher/history-policy.yaml",
+        "tooling/validator/README.md",
+        "tooling/validator/checks.yaml",
+        "tooling/validator/component.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Versjonskontroll sikrer at utvikling av Current Master skjer kontrollert. Alle vesentlige endringer skal knyttes til en ny versjon. En versjon skal: - identifiseres tydelig - kunne sammenlignes med tidligere versjoner - inneholde dokumenterte endringer ved behov Kun én versjon kan være Current M"
+    },
+    {
+      "section": "6.6",
+      "title": "Endringskontroll",
+      "destinations": [
+        "validator",
+        "publisher",
+        "history"
+      ],
+      "mapped_files": [
+        "history/FULL_LOCAL_VALIDATION.json",
+        "history/MASTER_v1.1_MIGRATION.md",
+        "history/MIGRATION_COVERAGE_DIALOG_CONTEXT.json",
+        "history/MIGRATION_COVERAGE_PRESENTATION.json",
+        "history/VALIDATION_EXISTING_COMPONENTS.json",
+        "tooling/publisher/README.md",
+        "tooling/publisher/component.yaml",
+        "tooling/publisher/history-policy.yaml",
+        "tooling/validator/README.md",
+        "tooling/validator/checks.yaml",
+        "tooling/validator/component.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Endringskontroll sikrer at endringer vurderes før de blir en del av gjeldende grunnlag. En endring skal vurderes med hensyn til: - konsekvens - påvirkning på eksisterende struktur - behov for oppdatering av andre deler av masteren Ved godkjent endring skal: - relevant innhold oppdateres - ny ver"
+    },
+    {
+      "section": "A.1",
+      "title": "Formål",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Begrepsregisteret inneholder autoritative definisjoner av sentrale begreper brukt i masteren. Formålet er å sikre at viktige begreper har én tydelig betydning og brukes konsekvent gjennom hele samarbeidet. Ved tvil om betydningen av et begrep skal definisjonen i dette registeret legges til grunn."
+    },
+    {
+      "section": "A.2",
+      "title": "Master",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "MASTER: Det samlede regelverket som definerer samarbeidsplattformen mellom bruker og assistent. Master inneholder: - overordnede prinsipper - modeller - definisjoner - regler - styringsmekanismer ------------------------------------------------------------"
+    },
+    {
+      "section": "A.3",
+      "title": "Current Master",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "CURRENT MASTER: Den siste godkjente versjonen av masteren og det autoritative grunnlaget som skal legges til grunn for videre arbeid. Det skal kun eksistere én Current Master til enhver tid. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.4",
+      "title": "Versjon",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "VERSJON: En identifisert utgave av masteren eller en annen struktur som representerer et bestemt utviklingspunkt. Versjoner skal kunne skilles fra hverandre og inngå i historikk. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.5",
+      "title": "Modell",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "MODELL: En avgrenset funksjonsdel av masteren som inneholder regler og arbeidsmetoder for et bestemt formål. En modell skal ha tydelig ansvar og ikke overlappe unødvendig med andre modeller. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.6",
+      "title": "Modellaktivering",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "MODELLAKTIVERING: Handlingen hvor en modell i Current Master gjøres gjeldende for en oppgave eller et samarbeid. Modellaktivering vurderes av Dialogmodellen basert på behov. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.7",
+      "title": "Dialogmodell",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "DIALOGMODELL: En styringsmodell som regulerer hvordan assistent og bruker samarbeider i en samtale. Dialogmodellen vurderer arbeidsform, dialogflyt, modellaktivering og presentasjon av informasjon. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.8",
+      "title": "Arbeidsmodus",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "ARBEIDSMODUS: Angir hvilket nivå av samarbeidsstruktur som skal benyttes. Arbeidsmodus beskriver arbeidsnivå, ikke arbeidsfase. Arbeidsmoduser: - Standard - Samarbeid - Prosjekt ------------------------------------------------------------"
+    },
+    {
+      "section": "A.9",
+      "title": "Dialogtilstand",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "DIALOGTILSTAND: Angir hvilken fase av arbeidsprosessen dialogen befinner seg i. Eksempler: - informasjon - analyse - anbefaling - avklaring - arbeid - verifisering - ferdigstilling ------------------------------------------------------------"
+    },
+    {
+      "section": "A.10",
+      "title": "Aktiv kontekst",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "AKTIV KONTEKST: Samlet informasjon som er gjeldende for videre arbeid i aktuell sammenheng. Aktiv kontekst kan inneholde mål, rammer, beslutninger og andre forhold som skal legges til grunn. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.11",
+      "title": "Gjeldende grunnlag",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "GJELDENDE GRUNNLAG: Informasjon som er bekreftet relevant og skal brukes videre i arbeidet. Ikke all tilgjengelig informasjon inngår automatisk i gjeldende grunnlag. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.12",
+      "title": "Vurdering",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "VURDERING: Informasjon, analyser eller alternativer som undersøkes, men som ikke er gjort gjeldende. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.13",
+      "title": "Anbefaling",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "ANBEFALING: En vurdert retning foreslått av assistenten basert på tilgjengelig informasjon og definerte kriterier. En anbefaling er ikke en beslutning. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.14",
+      "title": "Avklaringspunkt",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "AVKLARINGSPUNKT: Et punkt hvor nødvendig informasjon, valg eller bekreftelse mangler før videre arbeid kan fortsette. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.15",
+      "title": "Beslutning",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "BESLUTNING: En valgt retning som skal legges til grunn for videre arbeid. En beslutning kan oppstå gjennom brukerens valg, enighet mellom bruker og assistent eller etablerte regler og rammer. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.16",
+      "title": "Status",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "STATUS: Relevant informasjon om aktuell situasjon eller fremdrift som kommuniseres til bruker. Status skal vises når det gir bedre oversikt, forståelse eller kontroll. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.17",
+      "title": "Styringsstatus",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "STYRINGSSTATUS: Den autoritative statusvisningen som angir hvilket styringsgrunnlag som gjelder for det aktuelle svaret når Current Master er aktiv. Styringsstatus skal minimum inneholde: - Current Master - Arbeidsmodus - Dialogtilstand - Gjeldende grunnlag - Presentasjonsmodell ----------------"
+    },
+    {
+      "section": "A.18",
+      "title": "Presentasjonsmodell",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "PRESENTASJONSMODELL: En del av Dialogmodellen som vurderer hvordan informasjon skal struktureres og presenteres for å oppnå best kommunisert informasjon til bruker. Presentasjonsmodellen angir også hvilken presentasjonsform som benyttes når Styringsstatus vises. ----------------------------------"
+    },
+    {
+      "section": "A.19",
+      "title": "Samarbeidsmodell",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "SAMARBEIDSMODELL: En modell som definerer hvordan bruker og assistent arbeider sammen over tid. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.20",
+      "title": "Prosjektmodell",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "PROSJEKTMODELL: En modell som brukes når arbeid krever prosjektstruktur, flere steg eller langsiktig koordinering. ------------------------------------------------------------"
+    },
+    {
+      "section": "A.21",
+      "title": "Kvalitetsmodell",
+      "destinations": [
+        "terminology"
+      ],
+      "mapped_files": [
+        "modules/terminology/component.yaml",
+        "modules/terminology/rules.yaml",
+        "modules/terminology/specification.md",
+        "modules/terminology/terms.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "KVALITETSMODELL: En modell som sikrer kvalitet, kontroll, versjonering, endringshåndtering og sporbarhet. ============================================================ VEDLEGG B MASKINVENNLIG REGELSTRUKTUR ============================================================"
+    },
+    {
+      "section": "B.1",
+      "title": "Formål",
+      "destinations": [
+        "core-rules"
+      ],
+      "mapped_files": [
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Den maskinvennlige regelstrukturen beskriver hvordan regler i masteren kan uttrykkes på en tydelig og strukturert måte. Formålet er å gjøre regler enklere å forstå, vedlikeholde og kontrollere. Den tekniske strukturen skal støtte masteren, men skal ikke erstatte de overordnede prinsippene og model"
+    },
+    {
+      "section": "B.2",
+      "title": "Regelstruktur",
+      "destinations": [
+        "core-rules"
+      ],
+      "mapped_files": [
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "En regel kan beskrives gjennom følgende elementer: REGEL-ID Identifikasjon av regelen. TILSTAND Situasjonen eller arbeidsfasen hvor regelen gjelder. BETINGELSE Forutsetningen som må være oppfylt for at regelen skal gjelde. HANDLING Hva som skal utføres når betingelsen er oppfylt. PRIORITET"
+    },
+    {
+      "section": "B.3",
+      "title": "Eksempel på regelstruktur",
+      "destinations": [
+        "core-rules"
+      ],
+      "mapped_files": [
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "REGEL-ID: DM-001 TILSTAND: Arbeidsvurdering BETINGELSE: Oppgaven har flere avhengige steg eller krever kontinuitet over tid. HANDLING: Vurder om Samarbeidsmodell eller Prosjektmodell skal aktiveres. PRIORITET: Normal ------------------------------------------------------------"
+    },
+    {
+      "section": "B.4",
+      "title": "Regelprioritet",
+      "destinations": [
+        "core-rules"
+      ],
+      "mapped_files": [
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Dersom flere regler gjelder samtidig, skal følgende prioritering legges til grunn: 1. Overordnede prinsipper i masteren 2. Gjeldende beslutninger og aktiv kontekst 3. Den aktiverte modellen 4. Spesifikke regler innenfor den aktiverte modellen Regler skal ikke tolkes isolert dersom dette skaper"
+    },
+    {
+      "section": "B.5",
+      "title": "Regelendring",
+      "destinations": [
+        "core-rules",
+        "validator",
+        "publisher"
+      ],
+      "mapped_files": [
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md",
+        "tooling/publisher/README.md",
+        "tooling/publisher/component.yaml",
+        "tooling/publisher/history-policy.yaml",
+        "tooling/validator/README.md",
+        "tooling/validator/checks.yaml",
+        "tooling/validator/component.yaml"
+      ],
+      "status": "covered",
+      "source_excerpt": "Endringer i regelstrukturen skal behandles gjennom masterens endringshåndtering. En regelendring skal vurderes med hensyn til: - konsekvens for eksisterende modeller - påvirkning på begreper - påvirkning på arbeidsflyt - behov for ny versjon av Current Master ----------------------------------"
+    },
+    {
+      "section": "B.6",
+      "title": "Forholdet mellom menneskelig og teknisk struktur",
+      "destinations": [
+        "core-rules"
+      ],
+      "mapped_files": [
+        "modules/core-rules/authority-levels.yaml",
+        "modules/core-rules/component.yaml",
+        "modules/core-rules/enums.yaml",
+        "modules/core-rules/rules.yaml",
+        "modules/core-rules/specification.md"
+      ],
+      "status": "covered",
+      "source_excerpt": "Den maskinvennlige regelstrukturen er et støtteverktøy for organisering og kontroll. Den skal ikke føre til at kommunikasjonen mellom bruker og assistent blir unødvendig teknisk. Den overordnede målsettingen er fortsatt: Best kommunisert informasjon til bruker. =================================="
+    }
+  ]
+}

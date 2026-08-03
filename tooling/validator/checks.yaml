@@ -1,0 +1,21 @@
+schema: cerebro-validator-checks/v1
+phases:
+  structure:
+  - required-files
+  - valid-yaml
+  - component-manifest
+  consistency:
+  - unique-ids
+  - valid-references
+  - valid-dependencies
+  rules:
+  - owner
+  - authority
+  - priority
+  - scope
+  - lifecycle
+  - language
+severity:
+  error: block
+  warning: continue
+  information: continue

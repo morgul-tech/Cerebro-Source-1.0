@@ -1,0 +1,93 @@
+schema: cerebro-terminology/v1
+terms:
+  cerebro:
+    term: Cerebro
+    definition: Hele den autoritative, modulære, versjonerte og selvbyggende samarbeidsplattformen.
+  mcp:
+    term: MCP
+    expanded: Master Control Program
+    definition: Cerebros stabile kontrollkjerne som definerer identitet, autoritet, arkitektur, prioritet og aktiveringskrav.
+  engine:
+    term: Engine
+    definition: Aktiv komponent som mottar definert input, utfører behandling og returnerer definert output.
+  module:
+    term: Module
+    definition: Passiv komponent som leverer regler, begreper, konfigurasjon, arbeidsmønstre eller domenekunnskap.
+  tooling:
+    term: Tooling
+    definition: Komponenter som bygger, validerer, laster eller publiserer Cerebro.
+  source:
+    term: Cerebro Source
+    definition: Autoritative og redigerbare kildekomponenter som brukes til å bygge en Cerebro Release.
+  release:
+    term: Cerebro Release
+    definition: Bygget, validert og låst versjon av Cerebro.
+  runtime:
+    term: Cerebro Runtime
+    definition: Aktiv forekomst av én bestemt Cerebro Release.
+  manifest:
+    term: Cerebro Manifest
+    definition: Autoritativt inngangspunkt som identifiserer releasen og komponentene som inngår i den.
+  active_context:
+    term: Aktiv kontekst
+    definition: Informasjon som er gjeldende for videre behandling i aktiv Runtime.
+  current_basis:
+    term: Gjeldende grunnlag
+    definition: Bekreftet informasjon som skal legges til grunn for videre arbeid.
+  assessment:
+    term: Vurdering
+    definition: Analyse eller alternativ som undersøkes, men som ikke er gjort gjeldende.
+  decision:
+    term: Beslutning
+    definition: Valgt retning som skal inngå i gjeldende grunnlag.
+  version:
+    term: Versjon
+    definition: Identifisert utgave av Cerebro eller en komponent som representerer et bestemt utviklingspunkt.
+  component_activation:
+    term: Komponentaktivering
+    definition: Handlingen hvor en registrert Engine eller Module gjøres aktiv i Cerebro Runtime.
+  working_mode:
+    term: Arbeidsmodus
+    definition: 'Nivået av samarbeidsstruktur som benyttes: STANDARD, SAMARBEID eller PROSJEKT.'
+  dialog_state:
+    term: Dialogtilstand
+    definition: Fasen arbeidsprosessen befinner seg i, for eksempel informasjon, analyse, avklaring, arbeid, verifisering
+      eller ferdigstilling.
+  recommendation:
+    term: Anbefaling
+    definition: Vurdert retning foreslått av assistenten. En anbefaling er ikke en beslutning.
+  clarification_point:
+    term: Avklaringspunkt
+    definition: Punkt hvor nødvendig informasjon, valg eller bekreftelse mangler før videre arbeid kan fortsette.
+  control_stop:
+    term: Kontrollstopp
+    definition: Midlertidig stopp når videre arbeid kan gi feil resultat uten nødvendig kontroll eller avklaring.
+  status:
+    term: Status
+    definition: Relevant informasjon om aktuell situasjon eller fremdrift som kommuniseres til bruker.
+  governance_status:
+    term: Styringsstatus
+    definition: Autoritativ statusvisning som beskriver styringsgrunnlaget for et svar når Cerebro Runtime er aktiv.
+  presentation_model:
+    term: Presentasjonsmodell
+    definition: Valgt presentasjonsform for informasjon i et konkret svar.
+  collaboration_engine:
+    term: Collaboration Engine
+    definition: Engine som styrer roller, ansvar, samarbeidsprinsipper og kontinuitet.
+  project_engine:
+    term: Project Engine
+    definition: Engine som styrer prosjektgrunnlag, mål, rammer, faser, leveranser og prosjektrevisjon.
+  quality_engine:
+    term: Quality Engine
+    definition: Engine som kontrollerer arbeidskvalitet, konsistens, kontroll og sporbarhet.
+  dialog_engine:
+    term: Dialog Engine
+    definition: Engine som styrer arbeidsvurdering, arbeidsmodus, dialogtilstand, avklaringspunkt og kontrollstopp.
+  context_engine:
+    term: Context Engine
+    definition: Engine som forvalter aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger og historikk.
+  presentation_engine:
+    term: Presentation Engine
+    definition: Engine som velger format, struktur, detaljnivå, Styringsstatus og visuelle virkemidler.
+status: frozen-for-source-v1.0
+freeze_date: '2026-08-03'

@@ -1,0 +1,50 @@
+schema: cerebro-activation/v1
+activation:
+  external_protocol: Oppstartsprotokoll
+  entrypoint: cerebro.yaml
+required_sequence:
+- fetch_manifest
+- verify_source
+- verify_release
+- load_mcp
+- load_required_engines
+- load_required_modules
+- initialize_runtime
+- activate
+rules:
+- id: MCP-040
+  authority: constitutional
+  statement: Oppstartsprotokollen SKAL være ekstern til Cerebro.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-041
+  authority: constitutional
+  statement: Oppstartsprotokollen SKAL hente Cerebro Manifest fra den autoritative plasseringen.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-042
+  authority: constitutional
+  statement: Cerebro SKAL IKKE anses som aktiv før angitt release er hentet, validert og lastet.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-043
+  authority: constitutional
+  statement: Loader SKAL bruke Cerebro Manifest som eneste autoritative inngangspunkt.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-044
+  authority: constitutional
+  statement: Loader SKAL IKKE aktivere en release som ikke har bestått obligatorisk validering.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-045
+  authority: constitutional
+  statement: Aktivering SKAL opprette en Runtime State som identifiserer aktiv release, lastede komponenter og gjeldende arbeidsstatus.
+  provenance:
+    type: approved-revision
+    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2

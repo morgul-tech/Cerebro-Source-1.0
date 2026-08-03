@@ -1,0 +1,9 @@
+schema: cerebro-builder-pipeline/v1
+steps:
+- load
+- validate
+- build
+- verify
+- publish
+deterministic: true
+source_mutation_prohibited: true

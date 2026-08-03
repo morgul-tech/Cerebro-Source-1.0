@@ -1,0 +1,47 @@
+schema: cerebro-component/v1
+component:
+  id: context
+  name: Context Engine
+  type: engine
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Forvalte aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger og historikk.
+dependencies:
+  build:
+  - terminology
+  - core-rules
+  runtime: []
+interfaces:
+  input:
+  - context-update
+  - decision
+  - assessment
+  - basis-candidate
+  - history-entry
+  - override
+  output:
+  - active-context
+  - current-basis
+  - assessment-state
+  - decision-state
+  - history
+  - conflict
+rules:
+  path: rules.yaml
+documentation:
+  path: specification.md
+migration:
+  source: MASTER_v1.1
+  sections:
+  - 3.5.4
+  - '3.6'
+  - 3.6.1
+  - 3.6.2
+  - 3.6.3
+boundaries:
+  must: []
+  must_not: []
+version:
+  component: 1.0.0
+  schema: 1

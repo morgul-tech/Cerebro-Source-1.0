@@ -1,0 +1,54 @@
+schema: cerebro-manifest/v1
+cerebro:
+  name: Cerebro
+  release: null
+  status: source
+  source_version: 1.0.0
+source:
+  repository: morgul-tech/Autorativ-Master
+  branch: main
+  commit: null
+mcp:
+  path: mcp/
+  version: 1.0.0
+  required: true
+engines:
+- id: dialog
+  path: engines/dialog/
+  required: true
+- id: context
+  path: engines/context/
+  required: true
+- id: collaboration
+  path: engines/collaboration/
+  required: true
+- id: project
+  path: engines/project/
+  required: false
+- id: quality
+  path: engines/quality/
+  required: true
+- id: presentation
+  path: engines/presentation/
+  required: true
+modules:
+- id: terminology
+  path: modules/terminology/
+  required: true
+- id: core-rules
+  path: modules/core-rules/
+  required: true
+- id: visual-language
+  path: modules/visual-language/
+  required: true
+tooling:
+  builder: tooling/builder/
+  validator: tooling/validator/
+  loader: tooling/loader/
+  publisher: tooling/publisher/
+integrity:
+  manifest_checksum: null
+source_status:
+  stabilized: true
+  validated: true
+  release_built: false

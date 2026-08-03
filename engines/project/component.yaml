@@ -1,0 +1,59 @@
+schema: cerebro-component/v1
+component:
+  id: project
+  name: Project Engine
+  type: engine
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Styre prosjektoppstart, mål, rammer, faser, leveranser og prosjektendringer.
+boundaries:
+  must:
+  - forvalte-prosjektstruktur
+  - forvalte-faser
+  - forvalte-leveranser
+  - forvalte-prosjektrevisjon
+  must_not:
+  - velge-arbeidsmodus
+  - ta-brukerbeslutninger
+  - forvalte-aktiv-kontekst
+  - utføre-kvalitetskontroll
+dependencies:
+  build:
+  - terminology
+  - core-rules
+  runtime:
+  - dialog
+  - context
+  - quality
+interfaces:
+  input:
+  - project-activation
+  - goal
+  - scope
+  - framework
+  - constraints
+  - change-request
+  output:
+  - project-basis
+  - phase-model
+  - deliverable-register
+  - revision-impact
+  - project-status
+rules:
+  path: rules.yaml
+documentation:
+  path: specification.md
+migration:
+  source: MASTER_v1.1
+  sections:
+  - '5.1'
+  - '5.2'
+  - '5.3'
+  - '5.4'
+  - '5.5'
+  - '5.6'
+  - '5.7'
+version:
+  component: 1.0.0
+  schema: 1

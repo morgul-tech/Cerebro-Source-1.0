@@ -1,0 +1,37 @@
+schema: cerebro-enums/v1
+authority:
+- constitutional
+- normative
+- operational
+- advisory
+- example
+priority:
+- critical
+- high
+- normal
+- low
+scope:
+- build
+- release
+- runtime
+- documentation
+- migration
+lifecycle:
+- migration
+- candidate
+- active
+- deprecated
+validation:
+- error
+- warning
+- information
+component_status:
+- placeholder
+- candidate
+- active
+- deprecated
+component_type:
+- control-core
+- engine
+- module
+- tooling

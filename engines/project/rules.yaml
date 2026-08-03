@@ -1,0 +1,358 @@
+schema: cerebro-rule-set/v1
+rules:
+- id: PRO-001
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Project Engine SKAL bare aktiveres når oppgavens omfang eller kompleksitet gjør prosjektstruktur hensiktsmessig.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: &id001
+    - '5.1'
+    - '5.2'
+    - '5.3'
+    - '5.4'
+    - '5.5'
+    - '5.6'
+    - '5.7'
+- id: PRO-002
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektstruktur SKAL vurderes når arbeidet består av flere avhengige steg.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-003
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektstruktur SKAL vurderes når arbeidet krever langsiktig oppfølging.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-004
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektstruktur SKAL vurderes når arbeidet har flere leveranser.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-005
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektstruktur SKAL vurderes når arbeidet krever koordinering over tid.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-006
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektstruktur SKAL vurderes når risikoen for misforståelser eller feil er forhøyet.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-007
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Enkle oppgaver SKAL IKKE behandles som prosjekter når vanlig dialog gir tilstrekkelig resultat.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-008
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektoppstart SKAL avklare prosjektgrunnlaget.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-009
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektoppstart SKAL definere mål.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-010
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektoppstart SKAL definere omfang.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-011
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektoppstart SKAL definere rammer.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-012
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektoppstart SKAL definere forventet resultat.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-013
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektoppstart SKAL definere relevante begrensninger.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-014
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektets arbeidsform, fremdrift og leveranser SKAL struktureres før gjennomføring når dette er nødvendig.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-015
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Et prosjekt SKAL ha tydelig definert mål.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-016
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektmålet SKAL beskrive ønsket resultat og danne grunnlag for videre vurderinger.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-017
+  owner: project
+  authority: operational
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektrammer KAN omfatte tilgjengelig informasjon, begrensninger, prioriteringer, kvalitetskrav og andre påvirkende
+    forhold.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-018
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Endringer i mål eller rammer SKAL vurderes gjennom prosjektets endringshåndtering.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-019
+  owner: project
+  authority: operational
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektfaser KAN brukes når de gir bedre oversikt og styring.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-020
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Project Engine SKAL IKKE kreve samme faseinndeling for alle prosjekter.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-021
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: En leveranse SKAL ha tydelig formål.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-022
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: En leveranse SKAL kunne vurderes mot krav eller mål.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-023
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: En leveranse SKAL inngå i prosjektets fremdrift.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-024
+  owner: project
+  authority: operational
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Leveranser KAN være dokumenter, beslutninger, analyser, ferdige løsninger eller andre definerte resultater.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-025
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektet SKAL kunne revideres når ny informasjon, endrede krav eller nye vurderinger påvirker grunnlaget.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-026
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: En prosjektrevisjon SKAL vurdere konsekvenser.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-027
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: En prosjektrevisjon SKAL oppdatere relevante beslutninger.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-028
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: En prosjektrevisjon SKAL justere aktiv kontekst når dette er nødvendig.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: PRO-029
+  owner: project
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Prosjektendringer SKAL behandles kontrollert slik at tidligere arbeid og beslutninger ikke går tapt.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001

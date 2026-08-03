@@ -1,0 +1,15 @@
+{
+  "generated": "2026-08-03",
+  "status": "pass",
+  "yaml_files_checked": 35,
+  "components_checked": 13,
+  "rules_checked": 158,
+  "coverage_percent": 100.0,
+  "removed_temporary_files": [
+    "history/MIGRATION_COVERAGE_DIALOG_CONTEXT.json",
+    "history/MIGRATION_COVERAGE_PRESENTATION.json",
+    "history/VALIDATION_EXISTING_COMPONENTS.json"
+  ],
+  "errors": [],
+  "warnings": []
+}

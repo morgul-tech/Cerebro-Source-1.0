@@ -1,0 +1,12 @@
+schema: cerebro-visual-language/v1
+status: frozen-for-source-v1.0
+constraints:
+  color_only_prohibited: true
+  semantics_must_be_consistent: true
+  icon_must_have_textual_meaning: true
+  assessment_and_decision_must_be_distinct: true
+freeze_date: '2026-08-03'
+usage:
+  left_status_icon: Statusikonet skal plasseres til venstre og bruke definert statusfarge der grensesnittet støtter farge.
+  text_required: true
+  duplicate_status_icon_prohibited: true

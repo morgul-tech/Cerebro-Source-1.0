@@ -1,0 +1,9 @@
+schema: cerebro-runtime/v1
+runtime:
+  release: null
+  state: inactive
+  loaded_components: []
+  working_mode: null
+  dialog_state: null
+  active_context: null
+  overrides: []

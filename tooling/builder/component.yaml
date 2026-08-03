@@ -1,0 +1,38 @@
+schema: cerebro-component/v1
+component:
+  id: builder
+  name: Builder
+  type: tooling
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Bygge en deterministisk Cerebro Release fra gyldig Cerebro Source.
+boundaries:
+  must:
+  - load-declared-components
+  - build-deterministically
+  - preserve-source-meaning
+  must_not:
+  - guess-missing-values
+  - repair-invalid-source
+  - change-rule-authority
+  - move-rules-between-components
+dependencies:
+  build: []
+  runtime: []
+interfaces:
+  consumes:
+  - cerebro.yaml
+  - component.yaml
+  - rules.yaml
+  - specification.md
+  produces:
+  - release-manifest
+  - compiled-rule-set
+  - reference-manual
+  - release-directory
+documentation:
+  path: README.md
+version:
+  component: 1.0.0
+  schema: 1

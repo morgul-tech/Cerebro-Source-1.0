@@ -1,0 +1,33 @@
+schema: cerebro-component/v1
+component:
+  id: visual-language
+  name: Visual Language Module
+  type: module
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Definere semantisk betydning av visuelle virkemidler.
+boundaries:
+  must:
+  - definere-visuell-semantikk
+  - sikre-konsistent-betydning
+  must_not:
+  - velge-presentasjonsformat
+  - endre-informasjonsinnhold
+dependencies:
+  build:
+  - terminology
+  - core-rules
+  runtime: []
+interfaces:
+  exports:
+  - visual-semantics
+documentation:
+  path: specification.md
+migration:
+  source: MASTER_v1.1
+  sections:
+  - 3.8.4
+version:
+  component: 1.0.0
+  schema: 1

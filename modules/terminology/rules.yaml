@@ -1,0 +1,46 @@
+schema: cerebro-rule-set/v1
+rules:
+- id: TER-001
+  owner: terminology
+  authority: normative
+  priority: normal
+  statement: Et autoritativt Cerebro-begrep SKAL ha én definisjon i Terminology Module.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: TER-002
+  owner: terminology
+  authority: normative
+  priority: normal
+  statement: Engines og Modules SKAL referere til Terminology Module og SKAL IKKE opprette konkurrerende definisjoner.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: TER-003
+  owner: terminology
+  authority: normative
+  priority: normal
+  statement: Et nytt autoritativt begrep SKAL registreres før det brukes i en normativ regel.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: TER-004
+  owner: terminology
+  authority: operational
+  priority: normal
+  statement: Synonymer KAN registreres, men ett begrep SKAL være markert som autoritativ betegnelse.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: approved-revision
+    basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet

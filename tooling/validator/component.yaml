@@ -1,0 +1,35 @@
+schema: cerebro-component/v1
+component:
+  id: validator
+  name: Validator
+  type: tooling
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: Kontrollere struktur, konsistens, regler og release-integritet.
+boundaries:
+  must:
+  - validate-structure
+  - validate-consistency
+  - validate-rules
+  - block-on-error
+  must_not:
+  - modify-source
+  - silently-ignore-errors
+dependencies:
+  build: []
+  runtime: []
+interfaces:
+  consumes:
+  - cerebro-source
+  - candidate-release
+  produces:
+  - validation-report
+  - errors
+  - warnings
+  - information
+documentation:
+  path: README.md
+version:
+  component: 1.0.0
+  schema: 1

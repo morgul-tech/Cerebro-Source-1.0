@@ -1,0 +1,175 @@
+schema: cerebro-rule-set/v1
+rules:
+- id: QUA-001
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Arbeidet SKAL være konsistent med aktiv Cerebro Release og etablerte beslutninger.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: &id001
+    - '6.1'
+    - '6.2'
+    - '6.3'
+    - '6.4'
+- id: QUA-002
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Definerte begreper SKAL brukes korrekt.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-003
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Engines og Modules SKAL brukes innenfor sine ansvarsområder.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-004
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Tidligere beslutninger som inngår i gjeldende grunnlag SKAL respekteres.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-005
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Endringer SKAL vurderes før de påvirker gjeldende grunnlag.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-006
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Konflikt mellom informasjon, beslutninger eller regler SKAL avklares før videre arbeid når konflikten påvirker
+    resultatet.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-007
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Kontroll SKAL sikre at resultatet samsvarer med mål, krav og gjeldende grunnlag.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-008
+  owner: quality
+  authority: operational
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Kontroll KAN omfatte forståelse, beslutninger, leveranser og etterlevelse av relevante regler.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-009
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Kontrollnivå SKAL tilpasses oppgavens kompleksitet og risiko.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-010
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Sporbarhet SKAL gjøre sammenhengen mellom tidligere grunnlag, endringer og gjeldende resultat forståelig.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-011
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Sporbarhet SKAL gjøre det mulig å følge hvilke endringer som er gjort.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-012
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Sporbarhet SKAL gjøre det mulig å følge hvorfor endringer ble gjort.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-013
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Sporbarhet SKAL gjøre det mulig å følge hvilke beslutninger som ligger bak resultatet.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
+- id: QUA-014
+  owner: quality
+  authority: normative
+  priority: normal
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Sporbarhet SKAL gjøre det mulig å følge hvilken Cerebro Release som var aktiv.
+  provenance:
+    type: master-migration
+    source: MASTER_v1.1
+    sections: *id001
