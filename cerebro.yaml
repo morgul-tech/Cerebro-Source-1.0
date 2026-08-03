@@ -11,7 +11,11 @@ source:
   authority: sole
 mcp:
   path: mcp/
+  manifest: mcp/manifest.yaml
+  standard: standards/mcp.yaml
   version: 1.0.0
+  level: 1
+  default_state: active
   required: true
 engines:
 - id: dialog
@@ -61,6 +65,8 @@ governance:
   generated_artifacts_authoritative: false
   source_folder_required: false
   common_validation_entrypoint: valider
+  control_layer: MCP
+  mcp_default_state: active
 integrity:
   manifest_checksum: null
 source_status:

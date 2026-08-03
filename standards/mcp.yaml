@@ -1,0 +1,61 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-MCP
+  name: Master Control Program Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: The permanent domain-independent control layer governing how Cerebro works.
+  consumers:
+  - assistant-runtime
+  - cerebro-cli
+  - valider
+  - source-selection
+  - tool-selection
+  - working-method
+rules:
+- id: STD-MCP-R001
+  statement: MCP is level 1 and sits above Cerebro Source 1.0, Release, and Runtime.
+  priority: critical
+  verification:
+  - mcp/manifest.yaml declares level 1 and its architectural position.
+- id: STD-MCP-R002
+  statement: MCP shall be active by default from the start of every runtime context.
+  priority: critical
+  verification:
+  - default_state is active.
+  - active_on_start is true.
+- id: STD-MCP-R003
+  statement: MCP governs working method and control flow, but shall not replace or
+    duplicate Source specifications or domain rules.
+  priority: critical
+  verification:
+  - MCP ownership and non-ownership boundaries are declared.
+- id: STD-MCP-R004
+  statement: MCP shall apply consistently across software, construction, design, information,
+    planning, and other task domains.
+  priority: critical
+  verification:
+  - MCP scope is domain-independent-working-method.
+- id: STD-MCP-R005
+  statement: The user may deactivate MCP explicitly for the current runtime context
+    and reactivate it explicitly.
+  priority: critical
+  verification:
+  - "mcp av and mcp p\xE5 are supported."
+- id: STD-MCP-R006
+  statement: The command mcp shall show the current MCP state in a compact terminal-style
+    report.
+  priority: high
+  verification:
+  - cerebro_tool.py mcp returns state and authority.
+- id: STD-MCP-R007
+  statement: valider shall include MCP state and MCP architecture validation.
+  priority: critical
+  verification:
+  - valider quick and full include MCP.
+- id: STD-MCP-R008
+  statement: MCP shall add only as much process as the task requires.
+  priority: critical
+  verification:
+  - MCP-P007 is present.

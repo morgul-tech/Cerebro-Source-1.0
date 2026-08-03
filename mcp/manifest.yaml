@@ -1,0 +1,56 @@
+schema: cerebro-mcp/v1
+mcp:
+  name: Master Control Program
+  id: mcp
+  version: 1.0.0
+  level: 1
+  default_state: active
+  scope: domain-independent-working-method
+  authority: control-layer
+position:
+  above: Cerebro Source 1.0
+  controls:
+  - working_method
+  - analysis_process
+  - decision_process
+  - iteration
+  - validation_selection
+  - mode_selection
+  - tool_selection
+  does_not_own:
+  - source_specification
+  - release_definition
+  - domain_rules
+  - generated_implementation
+principles:
+- id: MCP-P001
+  statement: Analyze the task before selecting or producing a solution.
+- id: MCP-P002
+  statement: Use the smallest controlled step that advances the task.
+- id: MCP-P003
+  statement: Separate verified facts, assumptions, decisions, and proposals.
+- id: MCP-P004
+  statement: Prefer robust and reproducible solutions over fragile shortcuts.
+- id: MCP-P005
+  statement: Apply the working method consistently across all domains.
+- id: MCP-P006
+  statement: Validate when uncertainty, consequence, or system state makes validation
+    useful.
+- id: MCP-P007
+  statement: Avoid unnecessary process when a direct answer fully satisfies the task.
+state_commands:
+  status:
+  - mcp
+  activate:
+  - "mcp p\xE5"
+  - mcp pa
+  - aktiver mcp
+  deactivate:
+  - mcp av
+  - deaktiver mcp
+state_policy:
+  active_on_start: true
+  user_may_deactivate: true
+  deactivation_scope: current-runtime-context
+  reactivation_explicit: true
+  status_visible_on_request: true

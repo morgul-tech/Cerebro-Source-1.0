@@ -7,6 +7,9 @@ standards_engine:
   policy_owner: Cerebro Source 1.0
   implementation_owner: generated implementations
 documents:
+- id: STD-MCP
+  path: standards/mcp.yaml
+  required: true
 - id: STD-SOURCE
   path: standards/source-authority.yaml
   required: true
@@ -28,3 +31,5 @@ governance:
   quality_gate_required_for_publication: true
   common_validation_entrypoint: valider
   unregistered_standards_authoritative: false
+  control_layer: MCP
+  mcp_default_state: active
