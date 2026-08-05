@@ -1,0 +1,49 @@
+﻿schema: cerebro-runtime-development-context/v1
+
+id:
+  RUNTIME_DESIGN_LESSONS_PATCH_001A
+
+origin:
+  PATCH-001A
+
+purpose:
+  Preserve runtime development constraints discovered during PATCH-001A.
+
+principles:
+
+  - verify_before_assumption
+
+  - inspect_existing_capability_before_creation
+
+  - separate_diagnosis_design_execution
+
+  - require_alternative_analysis
+
+  - maintain_scope_control
+
+runtime_requirements:
+
+  reality_validation_gate:
+    required: true
+
+  decision_integrity_gate:
+    required: true
+
+  authority_validation:
+    required: true
+
+  execution_validation:
+    required: true
+
+constraints:
+
+  runtime:
+    implementation_not_included: true
+
+  authority:
+    Cerebro_remains_authority: true
+
+state:
+
+  artifact:
+    ready
