@@ -1,0 +1,46 @@
+﻿schema: cerebro-standard/v0.1
+
+physical_target_resolution:
+
+  id: PTR-001
+  introduced_by: PATCH-001A.PRE-007
+  owner: mcp
+  authority: cerebro-source
+
+  purpose:
+    - resolve_architecture_owner_to_physical_target
+    - provide_builder_ready_target
+    - prevent_file_location_assumptions
+
+  resolution_inputs:
+    - component_owner
+    - responsibility
+    - declared_architecture_contract
+
+  resolution_output:
+    - target_file
+    - operation
+    - baseline_requirement
+
+  rules:
+
+    must:
+      - use_declared_component_ownership
+      - require_explicit_target_resolution
+      - block_unknown_targets
+
+    must_not:
+      - guess_file_locations
+      - create_parallel_architecture
+      - override_component_ownership
+
+  bootstrap:
+    allowed_sources:
+      - cerebro.yaml
+      - component.yaml
+      - standards
+
+    cannot_require:
+      - runtime_state
+      - patch_registry
+      - physical_target_resolution
