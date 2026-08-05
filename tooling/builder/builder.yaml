@@ -425,3 +425,60 @@ pshell_sync_receipt_contract:
     - then_update_patch_status
 
 # END PATCH-001A.PRE-003 PSHELL RESULT AND SYNC RECEIPT CONTRACT
+
+# BEGIN PATCH-001A.PRE-006 PSHELL PAYLOAD PRESENTATION CONTRACT
+
+pshell_payload_presentation_contract:
+  introduced_by: PATCH-001A.PRE-006
+  short_handle: P1A-PR6
+  status: active
+  owner: presentation_boundary
+  scope:
+    - PSHELL_delivery_mode_only
+
+  purpose:
+    - optimize_copy_workflow
+    - reduce_large_code_block_visual_noise
+    - separate_payload_from_explanation
+
+  temporary_architecture:
+    true
+
+  migration_marker:
+    id: FUTURE-VISUAL-MIGRATION-POINT-001
+    purpose:
+      - identify_temporary_PSHELL_presentation_logic
+      - prevent_duplicate_future_visual_implementation
+      - allow_removal_when_visual_engine_exists
+
+  future_owner:
+    components:
+      - presentation_engine
+      - visual_language
+
+  current_owner:
+    tooling.builder:
+      responsibility:
+        - expose_copyable_payload
+      must_not:
+        - own_visual_semantics
+        - define_global_UI_rules
+        - replace_visual_engine
+
+  display_contract:
+    adaptive_height: true
+    maximum_display_height: true
+
+    requirements:
+      - preserve_complete_copy_payload
+      - support_single_copy_action
+      - support_multiple_named_code_blocks
+      - separate_metadata_from_payload
+
+  migration:
+    remove_when:
+      - visual_code_delivery_exists
+      - presentation_runtime_supports_structured_payload_views
+
+# END PATCH-001A.PRE-006 PSHELL PAYLOAD PRESENTATION CONTRACT
+
