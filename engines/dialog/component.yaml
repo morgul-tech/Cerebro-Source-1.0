@@ -6,8 +6,7 @@ component:
   version: 1.0.0
   status: active-source
 responsibility:
-  primary: Styre arbeidsvurdering, arbeidsmodus, dialogtilstand, avklaringspunkt, kontrollstopp og aktivering av relevante
-    Engines.
+  primary: Styre arbeidsvurdering, arbeidsmodus, dialogtilstand, operative fremdriftssignaler, avklaringspunkt, kontrollstopp og aktivering av relevante Engines.
 dependencies:
   build:
   - terminology
@@ -17,9 +16,12 @@ dependencies:
 interfaces:
   input:
   - task
+  - user-utterance
   - runtime-context
   - available-engines
   output:
+  - operative-progress-signal
+  - continuation-directive
   - working-mode
   - dialog-state
   - required-engines

@@ -318,3 +318,42 @@ rules:
     type: master-migration
     source: MASTER_v1.1
     sections: *id001
+- id: COL-027
+  owner: collaboration
+  authority: normative
+  priority: critical
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Assistent SKAL beholde ansvar for fremdrift mens trygt og autorisert arbeid mot det aktive mÃ¥let gjenstÃ¥r.
+  requirements:
+  - OFS-R009
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+- id: COL-028
+  owner: collaboration
+  authority: normative
+  priority: high
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: Bruker SKAL IKKE pÃ¥legges Ã¥ gjenta fremdriftsintensjon eller bekrefte autorisasjon som allerede er gitt.
+  requirements:
+  - OFS-R010
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+- id: COL-029
+  owner: collaboration
+  authority: normative
+  priority: high
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  statement: NÃ¥r assistenten mÃ¥ stoppe, SKAL den identifisere nÃ¸yaktig manglende informasjon, brukerforbeholdt valg, autorisasjon, forutsetning eller sikkerhetsbetingelse.
+  requirements:
+  - OFS-R011
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001

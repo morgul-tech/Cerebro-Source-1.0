@@ -22,6 +22,9 @@ documents:
 - id: STD-VALIDER
   path: standards/valider-command.yaml
   required: true
+- id: STD-PATCH
+  path: standards/patch-package.yaml
+  required: true
 governance:
   source_authority: Cerebro Source 1.0
   policy_over_implementation: true

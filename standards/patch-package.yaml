@@ -1,0 +1,102 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-PATCH
+  name: Cerebro Patch Package Standard
+  version: 1.0.0
+  status: approved
+  authority: authoritative
+  scope: Generation, validation, execution, verification, and result reporting for Cerebro patch packages.
+  consumers:
+  - patch-builder
+  - patch-installer
+  - quality-gate
+  - publication-gate
+  - validator
+rules:
+- id: STD-PATCH-R001
+  statement: Every patch shall be generated from declarative input and validated as both a directory and a packaged artifact.
+  closes:
+  - PTQ-016
+  priority: critical
+  verification:
+  - The builder validates both emitted forms against the required manifest shape.
+- id: STD-PATCH-R002
+  statement: Every manifest file entry shall contain one safe relative source, one destination contained by its declared root, one allowed operation, and one lowercase or uppercase SHA-256 digest of exactly 64 hexadecimal characters.
+  closes:
+  - PTQ-003
+  - PTQ-017
+  priority: critical
+  verification:
+  - Absolute paths, parent traversal, alternate data streams, and destinations escaping the declared root are rejected as INVALID_PACKAGE.
+  - Allowed operations are create, replace, and delete.
+- id: STD-PATCH-R003
+  statement: Verification commands shall use a constrained token-array form and reject unsupported executables, switches, shell operators, redirection, substitution, and environment expansion.
+  closes:
+  - PTQ-018
+  priority: critical
+  verification:
+  - Each command is a non-empty array of literal tokens accepted by an explicit allowlist.
+- id: STD-PATCH-R004
+  statement: Generation shall record the expected authoritative identity and complete destination baseline, and runtime shall equal that baseline before mutation.
+  closes:
+  - PTQ-005
+  priority: critical
+  verification:
+  - Missing or conflicting authoritative evidence returns UNKNOWN_AUTHORITATIVE_STATE.
+  - A runtime destination baseline difference returns BASELINE_MISMATCH before mutation.
+- id: STD-PATCH-R005
+  statement: One exclusive execution lock shall span runtime precheck, apply, Quality Gate, publication gate, confirmation, and execution recording.
+  closes:
+  - PTQ-006
+  - PTQ-007
+  priority: critical
+  verification:
+  - Lock acquisition failure returns PATCH_ALREADY_RUNNING without mutation.
+  - Destination baselines are verified after lock acquisition and immediately before apply.
+- id: STD-PATCH-R006
+  statement: Existing destinations shall be backed up before apply, and every applied mutation shall be rolled back in reverse order after any pre-confirmation failure.
+  closes:
+  - PTQ-004
+  priority: critical
+  verification:
+  - Successful rollback returns FAILED_ROLLED_BACK with evidence.
+  - Incomplete rollback returns FAILED_RECOVERY_REQUIRED and blocks publication.
+- id: STD-PATCH-R007
+  statement: Re-execution shall detect a complete target state and return ALREADY_APPLIED without mutation or publication.
+  closes:
+  - PTQ-008
+  priority: critical
+  verification:
+  - Partial target state is not already applied and is evaluated against the declared baseline.
+- id: STD-PATCH-R008
+  statement: Missing or conflicting authoritative evidence shall return UNKNOWN_AUTHORITATIVE_STATE and block mutation and publication.
+  closes:
+  - PTQ-009
+  priority: critical
+  verification:
+  - Authoritative repository, branch, and immutable commit identity are required evidence.
+- id: STD-PATCH-R009
+  statement: PATCH Specification v1.0 defines stable result names, exit codes, required evidence, and permitted transitions.
+  closes:
+  - PTQ-010
+  priority: critical
+  verification:
+  - SUCCESS maps to 0.
+  - ALREADY_APPLIED maps to 2.
+  - BLOCKED_PREREQUISITE maps to 20.
+  - PATCH_ALREADY_RUNNING maps to 21.
+  - BASELINE_MISMATCH maps to 22.
+  - UNKNOWN_AUTHORITATIVE_STATE maps to 23.
+  - VALIDATION_FAILED maps to 24.
+  - QUALITY_GATE_FAILED maps to 25.
+  - PUBLICATION_BLOCKED maps to 26.
+  - FAILED_ROLLED_BACK maps to 30.
+  - FAILED_RECOVERY_REQUIRED maps to 31.
+  - INVALID_PACKAGE maps to 40.
+  - Permitted transitions are precheck to apply, apply to quality gate, quality gate to publication gate, publication gate to confirmation, and any pre-confirmation failure to reverse rollback.
+  - Required evidence includes package identity, authoritative identity, generation baseline, runtime baseline, lock identity, backup inventory, mutation inventory, gate results, rollback result, confirmation, and execution record.
+- id: STD-PATCH-R010
+  statement: Automatic dependency installation is prohibited, and a missing prerequisite shall return BLOCKED_PREREQUISITE.
+  priority: critical
+  verification:
+  - Patch tooling does not install, upgrade, or download dependencies during generation or execution.

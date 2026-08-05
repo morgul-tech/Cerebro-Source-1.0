@@ -62,6 +62,13 @@ terms:
   control_stop:
     term: Kontrollstopp
     definition: Midlertidig stopp når videre arbeid kan gi feil resultat uten nødvendig kontroll eller avklaring.
+  operative_progress_signal:
+    term: Operativt fremdriftssignal
+    definition: En brukerytring som, tolket i aktiv kontekst, uttrykker at assistenten skal starte, gjenoppta eller fortsette arbeid mot det aktive mÃ¥let.
+    interpretation: Semantisk og kontekstavhengig; ikke begrenset til en lukket liste med ord eller formuleringer.
+    requirements:
+    - OFS-R001
+    - OFS-R002
   status:
     term: Status
     definition: Relevant informasjon om aktuell situasjon eller fremdrift som kommuniseres til bruker.

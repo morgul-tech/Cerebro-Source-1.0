@@ -355,3 +355,148 @@ rules:
     type: master-migration
     source: MASTER_v1.1
     sections: *id001
+- id: DIA-020
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    user_utterance_received: true
+  action:
+    evaluate_progress_intent_from:
+    - active_goal
+    - last_completed_work_point
+    - next_executable_action
+    - current_contract
+    - existing_authority
+    - prior_decisions
+    - remaining_work
+    - stop_conditions
+    - misdirection_risk
+  statement: Dialog Engine SKAL gjenkjenne direkte og indirekte operative fremdriftssignaler semantisk i aktiv kontekst og SKAL IKKE begrense gjenkjenningen til en lukket liste med ord.
+  requirements:
+  - OFS-R003
+  scenarios:
+  - id: OFS-T001
+    input: fortsett
+    expected: perform-next-authorized-action
+  - id: OFS-T002
+    input: neste steg etter Source-korreksjon
+    expected: perform-contract-work-until-genuine-boundary
+  - id: OFS-T003
+    input: ja eller kjÃ¸r etter konkret autorisert handling
+    expected: perform-without-reconfirmation
+  - id: OFS-T004
+    input: Bare forklar hva neste steg er; ikke gjÃ¸r noe.
+    expected: explain-without-execution
+  - id: OFS-T005
+    input: fortsett fÃ¸r uautorisert ekstern mutasjon
+    expected: complete-authorized-preparation-then-stop-at-authority-boundary
+  - id: OFS-T006
+    input: og sÃ¥?
+    expected: infer-orientation-execution-or-both-from-context
+  - id: OFS-T007
+    input: neste nÃ¥r to vesentlig ulike brukervalg finnes
+    expected: create-clarification-point
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+- id: DIA-021
+  owner: dialog
+  authority: normative
+  priority: critical
+  condition:
+    operative_progress_signal: true
+    valid_stop_condition: false
+  action:
+    emit_continuation_directive: true
+  statement: NÃ¥r et operativt fremdriftssignal foreligger og ingen gyldig stoppbetingelse finnes, SKAL Dialog Engine kreve videre utfÃ¸relse av neste mÃ¥lrettede handling innenfor gjeldende autorisasjon.
+  requirements:
+  - OFS-R004
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+- id: DIA-022
+  owner: dialog
+  authority: normative
+  priority: critical
+  condition:
+    continuation_directive: true
+    next_action_executable: true
+  action:
+    execute_next_action: true
+    description_only_satisfies_signal: false
+  statement: En ren beskrivelse av et utfÃ¸rbart neste steg SKAL IKKE oppfylle et operativt fremdriftssignal; handlingen SKAL utfÃ¸res.
+  requirements:
+  - OFS-R005
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+- id: DIA-023
+  owner: dialog
+  authority: normative
+  priority: high
+  condition:
+    continuation_directive: true
+  action:
+    continue_until_any:
+    - goal_completed
+    - genuine_clarification_point
+    - valid_control_stop
+    - authority_boundary
+  statement: Autorisert arbeid SKAL fortsette til mÃ¥let er fullfÃ¸rt eller et genuint avklaringspunkt, kontrollstopp eller autorisasjonsgrense nÃ¥s.
+  requirements:
+  - OFS-R006
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+- id: DIA-024
+  owner: dialog
+  authority: normative
+  priority: critical
+  condition:
+    operative_progress_signal: true
+  action:
+    preserve:
+    - active_goal
+    - current_contract
+    - defined_scope
+    - existing_authority
+  statement: Et operativt fremdriftssignal SKAL aktivere videre arbeid innenfor eksisterende myndighet og SKAL IKKE utvide mÃ¥l, kontrakt, omfang eller autorisasjon.
+  requirements:
+  - OFS-R007
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+- id: DIA-025
+  owner: dialog
+  authority: normative
+  priority: critical
+  condition:
+    explicit_information_only_or_do_not_execute: true
+  action:
+    suppress_execution: true
+    answer_informationally: true
+  statement: En uttrykkelig instruks om bare informasjon eller om ikke Ã¥ utfÃ¸re SKAL overstyre antatt fremdriftsintensjon.
+  requirements:
+  - OFS-R008
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: source-revision
+    source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
