@@ -1,4 +1,4 @@
-﻿schema: cerebro-builder-contract/v1
+schema: cerebro-builder-contract/v1
 
 builder:
   id: builder
@@ -119,3 +119,196 @@ dependency_rule:
 
 result_code_reference:
   source: standards/patch-package.yaml
+
+# BEGIN PATCH-001A.PRE-002 COMMAND AND DELIVERY MODES
+
+command_language_binding:
+  introduced_by: PATCH-001A.PRE-002
+  status: active
+  authority: cerebro-source
+  architecture_reopened: false
+
+  canonical_shape: COMMAND OBJECT MODE
+
+  command_terms:
+    BUILD:
+      owner: mcp.operations
+      builder_relevance: true
+      meaning: create_or_prepare_patch_artifact
+      must_not_imply:
+        - apply
+        - implement
+        - push
+        - runtime_activation
+
+  object_resolution:
+    rule: object_handle_must_resolve_to_registered_canonical_id
+    if_unknown: block_or_ask
+    must_not:
+      - infer_patch_from_similar_name
+      - auto_create_alias
+      - treat_short_handle_as_canonical_id
+
+  delivery_mode_semantics:
+    rule: mode_modifies_delivery_not_patch_identity
+    owner: tooling.builder
+    must_not:
+      - change_patch_identity
+      - change_source_authority
+      - define_new_patch_standard
+
+patch_reference_registry:
+  introduced_by: PATCH-001A.PRE-002
+  status: active
+
+  canonical_identity_rule:
+    rule: canonical_patch_id_remains_authoritative
+    applies_to:
+      - manifest_patch_id
+      - patch_filename
+      - roadmap_reference
+      - dependency_reference
+
+  short_handle_rule:
+    rule: short_handle_is_user_command_alias_only
+    must_resolve_to_registered_canonical_id: true
+    unknown_handle_result: block_or_ask
+
+  format:
+    main_patch:
+      canonical: PATCH-NNNX
+      handle: P<N>X
+      example:
+        canonical_id: PATCH-001A
+        short_handle: P1A
+
+    prerequisite_patch:
+      canonical: PATCH-NNNX.PRE-NNN
+      handle: P<N>X-PR<N>
+      example:
+        canonical_id: PATCH-001A.PRE-002
+        short_handle: P1A-PR2
+
+  registry:
+    - canonical_id: PATCH-001A
+      short_handle: P1A
+      title: cerebro_architecture_contracts
+
+    - canonical_id: PATCH-001A.PRE-001
+      short_handle: P1A-PR1
+      title: builder_contract_prerequisite
+      status: applied
+      commit: 5807dd2
+      trace_alias:
+        - PATCH-BUILDER-ARCH-001
+
+    - canonical_id: PATCH-001A.PRE-002
+      short_handle: P1A-PR2
+      title: command_language_and_delivery_modes
+      status: applied_by_this_patch
+
+    - canonical_id: PATCH-001B
+      short_handle: P1B
+      title: project_roadmap_contract
+
+    - canonical_id: PATCH-001C
+      short_handle: P1C
+      title: bootengine_alignment
+
+    - canonical_id: PATCH-002
+      short_handle: P2
+      title: universal_object_contract
+
+patch_delivery_modes:
+  introduced_by: PATCH-001A.PRE-002
+  owner: tooling.builder
+  governing_standard: standards/patch-package.yaml
+
+  authority_rule:
+    rule: execution_or_delivery_mode_does_not_change_patch_authority
+    generated_artifacts_authoritative: false
+
+  preferred_order:
+    - FULL
+    - EXEC
+    - PSHELL
+
+  modes:
+    FULL:
+      meaning: full_patch_package
+      status: canonical_patch_package_delivery
+      produces:
+        - patch_package_directory
+        - packaged_patch_artifact
+      requires:
+        - manifest
+        - payload
+        - sha256_digests
+        - generation_baseline_record
+        - validation_record
+      must_follow:
+        - standards/patch-package.yaml
+        - builder_contract
+
+    EXEC:
+      meaning: executable_or_self_running_local_patch_package
+      status: authorized_local_execution_delivery
+      produces:
+        - patch_package_with_runner_or_installer_entrypoint
+      requires:
+        - manifest_defined_scope
+        - baseline_verification
+        - digest_verification
+        - explicit_user_execution
+      must_not:
+        - define_new_patch_standard
+        - install_missing_dependencies
+        - bypass_patch_package_standard
+
+    PSHELL:
+      meaning: powershell_manual_transport
+      status: fallback_transport_mode
+      produces:
+        - visible_powershell_commands
+      allowed_when:
+        - file_download_delivery_fails
+        - direct_connected_execution_unavailable
+        - user_explicitly_selects_pshell
+      requires:
+        - same_declared_patch_content_as_builder_output
+        - visible_mutation_steps
+        - explicit_repo_path_or_workspace_binding
+        - git_commands_when_available
+      must_not:
+        - become_canonical_patch_format
+        - bypass_builder_contract
+        - hide_mutation_steps
+        - change_patch_identity
+
+example_commands:
+  - input: BUILD PATCH-001A FULL
+    resolves_to:
+      command: BUILD
+      canonical_id: PATCH-001A
+      mode: FULL
+
+  - input: BUILD PATCH-001A EXEC
+    resolves_to:
+      command: BUILD
+      canonical_id: PATCH-001A
+      mode: EXEC
+
+  - input: BUILD PATCH-001A PSHELL
+    resolves_to:
+      command: BUILD
+      canonical_id: PATCH-001A
+      mode: PSHELL
+
+  - input: build P1A-PR2 pshell
+    resolves_to:
+      command: BUILD
+      canonical_id: PATCH-001A.PRE-002
+      short_handle: P1A-PR2
+      mode: PSHELL
+
+# END PATCH-001A.PRE-002 COMMAND AND DELIVERY MODES
