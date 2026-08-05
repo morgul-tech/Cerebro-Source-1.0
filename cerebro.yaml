@@ -54,6 +54,7 @@ standards:
   valider_command: standards/valider-command.yaml
   patch_package: standards/patch-package.yaml
   operational_progress: standards/operational-progress.yaml
+  project_status: standards/project-status.yaml
 tooling:
   builder: tooling/builder/
   validator: tooling/validator/

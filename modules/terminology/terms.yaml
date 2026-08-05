@@ -118,7 +118,13 @@ terms:
     - OFS-R002
   status:
     term: Status
-    definition: Relevant informasjon om aktuell situasjon eller fremdrift som kommuniseres til bruker.
+    aliases: [prosjektstatus, gi meg status, hvor er vi, oversikt]
+    definition: Rask, prioritert og evidensbasert oversikt over Cerebro-prosjektets publiserte tilstand, aktive arbeid, neste arbeid, åpne notater og anbefalte neste steg.
+    default_depth: standard
+    depth_aliases:
+      brief: [kort status, liten status, status kort]
+      standard: [status, prosjektstatus]
+      deep: [dyp status, full status, detaljert status]
   governance_status:
     term: Styringsstatus
     definition: Autoritativ statusvisning som beskriver styringsgrunnlaget for et svar når Cerebro Runtime er aktiv.

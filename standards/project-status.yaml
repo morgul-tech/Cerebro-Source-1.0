@@ -1,0 +1,43 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-PROJECT-STATUS
+  name: Cerebro Project Status Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: Shared project status semantics for dialog, terminal, MCP, and HUD.
+  consumers: [dialog, terminal, mcp, hud, project-engine, reporting]
+rules:
+- id: STD-PROJECT-STATUS-R001
+  statement: Status without a depth qualifier shall return the standard project overview.
+  priority: critical
+  verification: [The no-argument Status result uses standard depth.]
+- id: STD-PROJECT-STATUS-R002
+  statement: Supported depths shall be brief, standard, and deep, with user aliases for kort status, status, and dyp status.
+  priority: high
+  verification: [Each depth has a stable machine value and user aliases.]
+- id: STD-PROJECT-STATUS-R003
+  statement: Standard Status shall include system health, latest implementations, active implementation, next implementation, notes, loose thoughts, blockers, and weighted recommendations.
+  priority: critical
+  verification: [The project status schema declares every required section.]
+- id: STD-PROJECT-STATUS-R004
+  statement: Recommendations shall use weights 3, 2, and 1 where 3 is highest priority, and each recommendation shall include a reason.
+  priority: high
+  verification: [Recommendations are ordered from highest to lowest weight.]
+- id: STD-PROJECT-STATUS-R005
+  statement: Status may be scoped to one named area without changing the selected depth.
+  priority: high
+  verification: [A scope is represented independently from depth.]
+- id: STD-PROJECT-STATUS-R006
+  statement: Status shall distinguish published facts, active work, next work, working notes, loose thoughts, and blockers.
+  priority: critical
+  verification: [Information classes are explicit in machine-readable output.]
+- id: STD-PROJECT-STATUS-R007
+  statement: Status shall be read-only, compress unchanged detail, and avoid fresh external checks not required by the requested claims.
+  priority: critical
+  verification: [Status produces no repository mutation.]
+- id: STD-PROJECT-STATUS-R008
+  statement: System health shall remain available as status health while project Status becomes the shared default.
+  priority: high
+  verification: [The existing health validator remains callable through status health.]
+
