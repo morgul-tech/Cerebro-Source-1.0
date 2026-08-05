@@ -1,0 +1,53 @@
+﻿schema: cerebro-standard/v0.1
+
+source_mapping_contract:
+
+  id: SM-001
+  introduced_by: PATCH-001A
+  owner: mcp
+  authority: cerebro-source
+
+  purpose:
+
+    - resolve_component_to_physical_location
+    - resolve_responsibility_to_target
+    - provide_builder_ready_targets
+
+
+  inputs:
+
+    - component_owner
+    - responsibility
+    - architecture_contract
+
+
+  outputs:
+
+    - target_file
+    - operation
+    - baseline_requirement
+
+
+  rules:
+
+    must:
+
+      - use_declared_component_ownership
+      - resolve_before_build
+      - preserve_source_authority
+
+
+    must_not:
+
+      - guess_paths
+      - infer_targets_from_chat
+      - create_parallel_architecture
+      - override_component_boundaries
+
+
+  consumers:
+
+    - patch_system
+    - builder
+    - validator
+    - quality_gate
