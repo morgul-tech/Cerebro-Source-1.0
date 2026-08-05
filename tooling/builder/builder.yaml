@@ -313,153 +313,6 @@ example_commands:
 
 # END PATCH-001A.PRE-002 COMMAND AND DELIVERY MODES
 
-# BEGIN PATCH-001A.PRE-003 PSHELL STATE RESULT CONTRACT
-
-pshell_state_result_contract:
-  introduced_by: PATCH-001A.PRE-003
-  short_handle: P1A-PR3
-  status: active
-  authority: cerebro-source
-  architecture_reopened: false
-  owner: tooling.builder
-  applies_to:
-    - PSHELL_delivery_mode
-    - manual_powershell_transport
-    - local_patch_execution
-
-  requirement:
-    every_pshell_patch_must_end_with_clear_state_report: true
-    raw_git_output_is_not_sufficient_as_final_patch_feedback: true
-    user_must_not_have_to_infer_patch_state_from_diff_or_git_output: true
-
-  state_report_must_include:
-    - patch_id
-    - short_handle
-    - delivery_mode
-    - repo_path
-    - files_changed
-    - baseline_status
-    - mutation_status
-    - git_add_status
-    - commit_status
-    - push_status
-    - final_worktree_status
-    - final_state
-    - user_action_required
-    - next_command
-
-  allowed_final_states:
-    SUCCESS_PUSHED:
-      meaning: mutation_commit_and_push_completed_and_worktree_clean
-      user_action_required: NONE
-
-    SUCCESS_LOCAL_COMMIT:
-      meaning: mutation_and_commit_completed_but_push_not_performed
-      user_action_required: PUSH_IF_REMOTE_UPDATE_IS_REQUIRED
-
-    SUCCESS_STAGED_ONLY:
-      meaning: mutation_completed_and_files_staged_but_not_committed
-      user_action_required: COMMIT_AND_OPTIONALLY_PUSH
-
-    SUCCESS_APPLIED_NOT_STAGED:
-      meaning: mutation_completed_but_git_add_not_completed
-      user_action_required: RUN_GIT_ADD_COMMIT_PUSH
-
-    ALREADY_APPLIED:
-      meaning: target_state_already_matches_patch
-      user_action_required: NONE_OR_VERIFY_PUSH_STATUS
-
-    BLOCKED_USER_INPUT_REQUIRED:
-      meaning: patch_cannot_continue_without_user_choice_or_missing_value
-      user_action_required: PROVIDE_REQUESTED_INPUT
-
-    BLOCKED_GIT_REQUIRED:
-      meaning: git_required_but_not_available
-      user_action_required: INSTALL_OR_ENABLE_GIT
-
-    BLOCKED_BASELINE_MISMATCH:
-      meaning: required_baseline_does_not_match_runtime_state
-      user_action_required: STOP_AND_REFINE
-
-    FAILED_NO_MUTATION:
-      meaning: failure_occurred_before_file_mutation
-      user_action_required: REVIEW_ERROR_AND_RETRY_AFTER_FIX
-
-    FAILED_PARTIAL_REQUIRES_ATTENTION:
-      meaning: mutation_or_git_state_is_partial
-      user_action_required: REVIEW_PATCH_OUTPUT_AND_REQUEST_HELP
-
-  required_output_template:
-    header: CEREBRO PATCH RESULT
-    fields:
-      - Patch
-      - Handle
-      - Mode
-      - Repo
-      - Baseline
-      - File changes
-      - Git add
-      - Commit
-      - Push
-      - Worktree
-      - Final state
-      - User action
-      - Next
-
-  pshell_script_requirements:
-    - print_result_block_at_end
-    - avoid_paging_diff_by_default
-    - do_not_leave_terminal_inside_interactive_diff_viewer
-    - show_git_diff_summary_not_full_paged_diff_unless_requested
-    - print_exact_next_command_when_user_action_required
-    - print_SUCCESS_PUSHED_only_after_push_succeeds_and_worktree_is_clean
-    - print_SUCCESS_LOCAL_COMMIT_when_commit_succeeds_but_push_is_not_requested
-    - print_SUCCESS_APPLIED_NOT_STAGED_when_file_mutation_succeeds_but_git_add_fails_or_is_not_requested
-    - print_BLOCKED_GIT_REQUIRED_when_git_is_missing
-    - print_BLOCKED_BASELINE_MISMATCH_when_required_files_or_target_state_do_not_match
-
-  example_success_pushed: |
-    ================ CEREBRO PATCH RESULT ================
-    Patch:        PATCH-001A.PRE-003
-    Handle:       P1A-PR3
-    Mode:         PSHELL
-    Repo:         D:\Cerebro\Source\Cerebro_Source_v1.0
-
-    Baseline:     PASS
-    File changes: PASS
-    Git add:      PASS
-    Commit:       PASS
-    Push:         PASS
-    Worktree:     CLEAN
-
-    Final state:  SUCCESS_PUSHED
-    User action:  NONE
-    Next:         build P1A pshell
-    ======================================================
-
-  example_user_action_required: |
-    ================ CEREBRO PATCH RESULT ================
-    Patch:        PATCH-001A.PRE-003
-    Handle:       P1A-PR3
-    Mode:         PSHELL
-    Repo:         D:\Cerebro\Source\Cerebro_Source_v1.0
-
-    Baseline:     PASS
-    File changes: PASS
-    Git add:      NOT_DONE
-    Commit:       NOT_DONE
-    Push:         NOT_DONE
-    Worktree:     DIRTY
-
-    Final state:  SUCCESS_APPLIED_NOT_STAGED
-    User action:  RUN_GIT_ADD_COMMIT_PUSH
-    Next:
-      git add tooling/builder/builder.yaml
-      git commit -m "Add PSHELL state result contract"
-      git push
-    ======================================================
-
-# END PATCH-001A.PRE-003 PSHELL STATE RESULT CONTRACT
 
 # BEGIN PATCH-001A.PRE-003 PSHELL RESULT AND SYNC RECEIPT CONTRACT
 
@@ -525,6 +378,15 @@ pshell_result_contract:
     - FAILED_PARTIAL_REQUIRES_ATTENTION
 
 pshell_sync_receipt_contract:
+  cleanup_record:
+    introduced_by: PATCH-001A.PRE-004
+    short_handle: P1A-PR4
+    action: removed_overlapping_previous_P1A_PR3_state_contract_block
+    retained_contract: PATCH-001A.PRE-003 PSHELL RESULT AND SYNC RECEIPT CONTRACT
+    reason:
+      - prevent_duplicate_pshell_result_contracts
+      - preserve_single_current_pshell_sync_receipt_contract
+      - remove_ambiguity_before_PATCH-001A
   introduced_by: PATCH-001A.PRE-003
   short_handle: P1A-PR3
   status: active
