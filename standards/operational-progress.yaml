@@ -1,0 +1,73 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-OPERATIONAL-PROGRESS
+  name: Cerebro Operational Progress Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: System-wide continuation, remediation, retry, escalation, and proportional verification.
+  consumers:
+  - dialog
+  - project
+  - patch-toolchain
+  - patch-learning-controller
+  - quality-gate
+  - terminal
+  - mcp
+  - hud
+rules:
+- id: STD-OPERATIONAL-PROGRESS-R001
+  statement: Cerebro shall continue toward an active authorized objective unless a documented safety, authority, or genuine user-decision condition requires a stop.
+  priority: critical
+  verification:
+  - Absence of a documented stop condition produces CONTINUE.
+- id: STD-OPERATIONAL-PROGRESS-R002
+  statement: Operational outcomes shall be CONTINUE, REMEDIATE_AND_CONTINUE, RETRY, USER_DECISION_REQUIRED, or SAFETY_BLOCK.
+  priority: critical
+  verification:
+  - Every recorded progress decision uses one declared outcome.
+- id: STD-OPERATIONAL-PROGRESS-R003
+  statement: Safety boundaries, authority boundaries, and genuine user preferences shall take precedence over automatic remediation and continuation.
+  priority: critical
+  verification:
+  - A safety condition produces SAFETY_BLOCK.
+  - Missing authority or a genuine user preference produces USER_DECISION_REQUIRED.
+- id: STD-OPERATIONAL-PROGRESS-R004
+  statement: Known bounded and reversible problems may be remediated automatically when an active qualified signature defines exact targets and verification.
+  priority: high
+  verification:
+  - Automatic remediation requires a qualified signature and produces REMEDIATE_AND_CONTINUE.
+- id: STD-OPERATIONAL-PROGRESS-R005
+  statement: A retry shall require changed state, added evidence, applied remediation, changed strategy, or refined scope.
+  priority: critical
+  verification:
+  - Repeating the same action against the same state without a progress delta is rejected.
+- id: STD-OPERATIONAL-PROGRESS-R006
+  statement: Evidence freshness shall depend on evidence type and relevant state changes rather than elapsed time alone.
+  priority: high
+  verification:
+  - Immutable commits remain valid.
+  - Remote branch heads are refreshed before writes.
+  - Qualification remains valid until relevant files change.
+- id: STD-OPERATIONAL-PROGRESS-R007
+  statement: Verification shall be proportional to affected behavior, with focused, standard, and full profiles selected from concrete impact.
+  priority: high
+  verification:
+  - Full canary is required when its tested mechanism changes and is not repeated when that mechanism is unchanged.
+- id: STD-OPERATIONAL-PROGRESS-R008
+  statement: Autonomy levels A through C shall proceed automatically within existing mandate, while level D and hard user gates require explicit approval.
+  priority: critical
+  verification:
+  - File count or technical complexity alone does not cause escalation.
+  - Aggregate effect is evaluated to prevent splitting a level D change into smaller changes.
+- id: STD-OPERATIONAL-PROGRESS-R009
+  statement: Automatic progress shall never weaken authority, security, rollback, traceability, Quality Gate, or Publication Gate requirements.
+  priority: critical
+  verification:
+  - Efficiency cannot override a mandatory safety or publication control.
+- id: STD-OPERATIONAL-PROGRESS-R010
+  statement: Automatic corrections shall normally be reported after the current work segment so that safe progress is not interrupted.
+  priority: normal
+  verification:
+  - The report records remediation, evidence, verification, and remaining user decisions.
+

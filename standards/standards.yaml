@@ -25,6 +25,9 @@ documents:
 - id: STD-PATCH
   path: standards/patch-package.yaml
   required: true
+- id: STD-OPERATIONAL-PROGRESS
+  path: standards/operational-progress.yaml
+  required: true
 governance:
   source_authority: Cerebro Source 1.0
   policy_over_implementation: true

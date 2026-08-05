@@ -53,6 +53,7 @@ standards:
   quality_gate: standards/quality-gate.yaml
   valider_command: standards/valider-command.yaml
   patch_package: standards/patch-package.yaml
+  operational_progress: standards/operational-progress.yaml
 tooling:
   builder: tooling/builder/
   validator: tooling/validator/
