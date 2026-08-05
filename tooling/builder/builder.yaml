@@ -1,0 +1,121 @@
+﻿schema: cerebro-builder-contract/v1
+
+builder:
+  id: builder
+  owner: tooling.builder
+  component_path: tooling/builder/component.yaml
+  status: active-source
+  authority: cerebro-source
+  introduced_by: PATCH-BUILDER-ARCH-001
+
+purpose:
+  - define_builder_operational_contract
+  - align_physical_patch_generation_with_existing_patch_package_standard
+  - prevent_ad_hoc_patch_script_generation
+  - preserve_existing_builder_component_ownership
+
+authoritative_references:
+  manifest_tooling_entry: cerebro.yaml:tooling.builder
+  governing_patch_standard: standards/patch-package.yaml
+  builder_component: tooling/builder/component.yaml
+
+ownership:
+  owns:
+    - deterministic_release_build_process
+    - declarative_patch_input_consumption
+    - physical_patch_package_generation
+    - patch_directory_artifact_generation
+    - packaged_patch_artifact_generation
+    - patch_manifest_generation
+    - payload_digest_generation
+    - generation_baseline_capture
+  must_not_own:
+    - source_authority
+    - source_rule_meaning
+    - source_repair
+    - release_publication_decision
+    - runtime_mutation
+    - patch_installation
+    - quality_gate_decision
+    - project_roadmap_decision
+
+patch_generation_contract:
+  governing_standard: standards/patch-package.yaml
+  input_type: declarative_patch_input
+  output_type:
+    - patch_package_directory
+    - packaged_patch_artifact
+  authority: non_authoritative_generated_artifact
+
+  required_input:
+    - patch_identity
+    - patch_version
+    - target_repository
+    - target_branch
+    - declared_file_operations
+    - declared_destination_roots
+    - generation_baseline
+    - payload_content
+
+  required_output:
+    - manifest
+    - payload
+    - sha256_digests
+    - generation_baseline_record
+    - package_identity
+    - validation_record
+
+  allowed_file_operations:
+    - create
+    - replace
+    - delete
+
+  required_generation_flow:
+    - load_declarative_patch_input
+    - load_governing_patch_package_standard
+    - verify_declared_authority_target
+    - verify_safe_relative_paths
+    - verify_allowed_operations
+    - capture_generation_baseline
+    - generate_payload_directory
+    - generate_manifest
+    - generate_sha256_digests
+    - validate_directory_artifact
+    - generate_packaged_artifact
+    - validate_packaged_artifact
+    - lock_generated_output
+
+  validation_requirements:
+    - directory_form_validates_against_patch_package_standard
+    - packaged_form_validates_against_patch_package_standard
+    - every_payload_digest_matches_manifest
+    - every_destination_is_under_declared_root
+    - no_absolute_paths
+    - no_parent_traversal
+    - no_alternate_data_streams
+    - no_shell_expansion_in_verification_commands
+    - no_automatic_dependency_installation
+
+  handoff:
+    install_owner: patch-installer
+    quality_owner: quality-gate
+    publication_owner: publication-gate
+    validator_owner: validator
+
+local_patch_rule:
+  rule: local_patch_artifacts_must_be_generated_from_builder_contract_and_patch_package_standard
+  consequence:
+    - ad_hoc_physical_patch_scripts_are_invalid
+    - local_execution_helpers_are_non_authoritative
+    - generated_artifacts_must_not_replace_source_authority
+
+baseline_rule:
+  rule: runtime_destination_baseline_must_match_generation_baseline_before_mutation
+  mismatch_result: BASELINE_MISMATCH
+
+dependency_rule:
+  rule: missing_dependency_must_not_be_auto_installed
+  missing_dependency_result: BLOCKED_PREREQUISITE
+
+result_code_reference:
+  source: standards/patch-package.yaml
