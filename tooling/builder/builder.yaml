@@ -460,3 +460,106 @@ pshell_state_result_contract:
     ======================================================
 
 # END PATCH-001A.PRE-003 PSHELL STATE RESULT CONTRACT
+
+# BEGIN PATCH-001A.PRE-003 PSHELL RESULT AND SYNC RECEIPT CONTRACT
+
+pshell_required_minimum_delivery:
+  introduced_by: PATCH-001A.PRE-003
+  short_handle: P1A-PR3
+  status: active
+  owner: tooling.builder
+  governing_standard: standards/patch-package.yaml
+
+  rule: PSHELL_delivery_mode_is_required_minimum_local_delivery_for_local_patches_unless_explicitly_excluded
+
+  rationale:
+    - regular_chat_has_no_local_terminal
+    - Work_or_DIRECT_mode_is_not_always_available
+    - downloadable_artifacts_may_fail
+    - user_local_powershell_execution_is_verified_working
+
+  constraints:
+    - PSHELL_is_transport_not_patch_authority
+    - PSHELL_must_use_registered_canonical_patch_id
+    - PSHELL_must_use_registered_short_handle
+    - PSHELL_must_not_create_new_patch_standard
+    - PSHELL_must_not_hide_mutation_steps
+    - PSHELL_must_follow_builder_contract_and_patch_package_standard
+
+pshell_result_contract:
+  introduced_by: PATCH-001A.PRE-003
+  short_handle: P1A-PR3
+  status: active
+  owner: tooling.builder
+
+  requirement:
+    every_pshell_patch_must_end_with_clear_human_readable_result_block: true
+    raw_git_output_is_not_sufficient_as_final_patch_feedback: true
+    user_must_not_have_to_infer_patch_state_from_diff_or_git_output: true
+
+  result_block_required_fields:
+    - patch_id
+    - short_handle
+    - delivery_mode
+    - repo_path
+    - baseline_status
+    - file_change_status
+    - git_add_status
+    - commit_status
+    - push_status
+    - worktree_status
+    - final_state
+    - user_action_required
+    - next_command
+
+  final_states:
+    - SUCCESS_PUSHED
+    - SUCCESS_LOCAL_COMMIT
+    - SUCCESS_STAGED_ONLY
+    - SUCCESS_APPLIED_NOT_STAGED
+    - ALREADY_APPLIED
+    - BLOCKED_USER_INPUT_REQUIRED
+    - BLOCKED_GIT_REQUIRED
+    - BLOCKED_BASELINE_MISMATCH
+    - FAILED_NO_MUTATION
+    - FAILED_PARTIAL_REQUIRES_ATTENTION
+
+pshell_sync_receipt_contract:
+  introduced_by: PATCH-001A.PRE-003
+  short_handle: P1A-PR3
+  status: active
+  owner: tooling.builder
+
+  purpose:
+    - provide_machine_friendly_patch_completion_confirmation
+    - allow_user_to_report_patch_state_compactly
+    - trigger_assistant_repo_refresh_before_next_patch_decision
+    - bind_patch_result_to_commit_worktree_and_target_file_hash
+
+  receipt_line:
+    canonical_prefix: CEREBRO_SYNC
+    format: CEREBRO_SYNC PATCH=<patch_id> HANDLE=<short_handle> MODE=<delivery_mode> STATE=<final_state> BRANCH=<branch> COMMIT=<commit> WORKTREE=<worktree> RECEIPT=<sha256>
+
+  receipt_hash:
+    algorithm: SHA256
+    generated_after:
+      - final_git_status_check
+      - final_state_resolution
+    includes:
+      - patch_id
+      - short_handle
+      - delivery_mode
+      - final_state
+      - branch
+      - commit
+      - worktree
+      - target_file_sha256_after
+
+  assistant_behavior_on_cerebro_sync:
+    - treat_sync_line_as_user_reported_execution_receipt_and_refresh_trigger
+    - do_not_treat_receipt_as_source_authority
+    - fetch_current_authoritative_repo_state_before_next_patch_decision
+    - verify_expected_file_or_commit_when_possible
+    - then_update_patch_status
+
+# END PATCH-001A.PRE-003 PSHELL RESULT AND SYNC RECEIPT CONTRACT
