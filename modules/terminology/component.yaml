@@ -3,7 +3,7 @@ component:
   id: terminology
   name: Terminology Module
   type: module
-  version: 1.0.0
+  version: 1.1.0
   status: active-source
 responsibility:
   primary: Forvalte autoritative systembegreper.
@@ -11,6 +11,7 @@ boundaries:
   must:
   - definere-autoritative-begreper
   - forvalte-synonymer
+  - forvalte-brukeraliaser
   must_not:
   - utføre-behandling
   - definere-regelprioritet
@@ -20,6 +21,7 @@ dependencies:
 interfaces:
   exports:
   - terms
+  - user-aliases
 documentation:
   path: specification.md
 migration:
@@ -27,5 +29,5 @@ migration:
   sections:
   - Vedlegg A
 version:
-  component: 1.0.0
+  component: 1.1.0
   schema: 1

@@ -44,3 +44,48 @@ rules:
   provenance:
     type: approved-revision
     basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+- id: TER-005
+  owner: terminology
+  authority: normative
+  priority: high
+  statement: Et brukeralias SKAL peke til ett kanonisk begrep eller én eksplisitt deklarert sammenligning og SKAL IKKE opprette en konkurrerende definisjon.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: approved-revision, basis: TERMINOLOGY-LEVEL-0-001}
+- id: TER-006
+  owner: terminology
+  authority: normative
+  priority: high
+  statement: Aliasoppløsning SKAL bruke aktiv oppgave, navngitt operasjon, lokalitetsord, aktivt repository og sist eksplisitte mål.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: approved-revision, basis: TERMINOLOGY-LEVEL-0-001}
+- id: TER-007
+  owner: terminology
+  authority: normative
+  priority: critical
+  statement: Et alias SKAL IKKE utvide autoritet, overstyre eksplisitt mål eller skjule flere materielt forskjellige mutasjonsmål.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: approved-revision, basis: TERMINOLOGY-LEVEL-0-001}
+- id: TER-008
+  owner: terminology
+  authority: operational
+  priority: high
+  statement: Når én trygg aliasbetydning kan utledes, SKAL Cerebro løse aliaset og fortsette uten unødvendig brukeravbrudd.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: approved-revision, basis: TERMINOLOGY-LEVEL-0-001}
+- id: TER-009
+  owner: terminology
+  authority: normative
+  priority: critical
+  statement: Policyautoritet, publikasjonsautoritet, runtimeautoritet og brukerautoritet SKAL angis som forskjellige autoritetsdimensjoner.
+  scope: system
+  lifecycle: active
+  validation: error
+  provenance: {type: approved-revision, basis: TERMINOLOGY-LEVEL-0-001}

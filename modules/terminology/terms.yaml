@@ -2,7 +2,8 @@ schema: cerebro-terminology/v1
 terms:
   cerebro:
     term: Cerebro
-    definition: Hele den autoritative, modulære, versjonerte og selvbyggende samarbeidsplattformen.
+    aliases: [systemet, hele systemet]
+    definition: Hele det styrte systemet som består av autoritativ Source, avledede Releases, Runtime, kontroll- og valideringsmekanismer, endringsverktøy og brukergrensesnitt.
   mcp:
     term: MCP
     expanded: Master Control Program
@@ -18,13 +19,59 @@ terms:
     definition: Komponenter som bygger, validerer, laster eller publiserer Cerebro.
   source:
     term: Cerebro Source
-    definition: Autoritative og redigerbare kildekomponenter som brukes til å bygge en Cerebro Release.
+    aliases: [source, kilden]
+    definition: Eneste redigerbare policyautoritet for Cerebros betydning, regler, arkitektur, standarder og kildekomponenter.
+    authority_dimension: policy
   release:
     term: Cerebro Release
-    definition: Bygget, validert og låst versjon av Cerebro.
+    aliases: [release]
+    definition: Bygget, validert, versjonert og publiserbar implementasjon avledet fra Cerebro Source.
+    authority_dimension: derived-implementation
   runtime:
     term: Cerebro Runtime
+    aliases: [runtime, aktiv cerebro, kjørende cerebro]
     definition: Aktiv forekomst av én bestemt Cerebro Release.
+  source_repository:
+    term: Source repository
+    aliases: [source repo, source-repoet, source github]
+    definition: Git-repositoriet som publiserer Cerebro Source-historikk og branches.
+  published_source_baseline:
+    term: Published Source baseline
+    aliases: [gjeldende source, publisert source, source baseline]
+    definition: Eksakt Source-repository, branch og uforanderlig commit som er gjeldende publisert Source-referanse.
+  working_source:
+    term: Working Source
+    aliases: [lokal source, arbeids-source]
+    definition: Utpekt lokal Git-arbeidskopi for inspeksjon og forberedelse av Source-endringer.
+  release_repository:
+    term: Release repository
+    aliases: [release repo, release-repoet, release github]
+    definition: Git-repositoriet som publiserer versjonert Cerebro Release-implementasjon.
+  published_release_baseline:
+    term: Published Release baseline
+    aliases: [gjeldende release, publisert release, release baseline, autoritativ release]
+    definition: Eksakt Release-repository, branch og uforanderlig commit som er gjeldende publisert implementasjonsreferanse.
+    authority_dimension: published-implementation-bytes
+  working_release:
+    term: Working Release
+    aliases: [lokal release, arbeids-release]
+    definition: Utpekt lokal Git-arbeidskopi for validering, installasjon og inspeksjon av Release-endringer.
+  cerebro_workspace:
+    term: Cerebro workspace
+    aliases: [workspace, cerebro-mappen, arbeidsområdet]
+    definition: Lokalt filområde for arbeidskopier, rapporter, backups, byggartefakter, scripts og midlertidige kjøredata; plasseringen gir ikke autoritet alene.
+  git_repository:
+    term: Git repository
+    aliases: [repo, repository, git-repo]
+    definition: Versjonskontrollert objekt med commits, referanser, historikk og lokal working tree når det er sjekket ut.
+  commit:
+    term: Commit
+    aliases: [commit-id, sha]
+    definition: Uforanderlig Git-objekt som identifiserer én eksakt repository-tilstand og dens historiske relasjon.
+  synchronization:
+    term: Synkronisering
+    aliases: [synk, synkron, synkronisert, samme versjon]
+    definition: Verifisert likhetsforhold mellom eksplisitt navngitte objekter for et deklarert scope og commit; aldri en frittstående systemstatus.
   manifest:
     term: Cerebro Manifest
     definition: Autoritativt inngangspunkt som identifiserer releasen og komponentene som inngår i den.
@@ -64,7 +111,7 @@ terms:
     definition: Midlertidig stopp når videre arbeid kan gi feil resultat uten nødvendig kontroll eller avklaring.
   operative_progress_signal:
     term: Operativt fremdriftssignal
-    definition: En brukerytring som, tolket i aktiv kontekst, uttrykker at assistenten skal starte, gjenoppta eller fortsette arbeid mot det aktive mÃ¥let.
+    definition: En brukerytring som, tolket i aktiv kontekst, uttrykker at assistenten skal starte, gjenoppta eller fortsette arbeid mot det aktive målet.
     interpretation: Semantisk og kontekstavhengig; ikke begrenset til en lukket liste med ord eller formuleringer.
     requirements:
     - OFS-R001
