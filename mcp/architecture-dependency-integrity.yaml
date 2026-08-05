@@ -1,0 +1,92 @@
+﻿schema: cerebro-standard/v0.1
+
+architecture_dependency_integrity:
+
+  id: ADI-001
+
+  introduced_by:
+    PATCH-001A
+
+
+  owner:
+    architecture-layer
+
+
+  purpose:
+
+    - detect_architecture_drift
+    - prevent_stale_patch_builds
+    - preserve_single_architecture_truth
+
+
+  tracked_state:
+
+    - component_contracts
+    - ownership_model
+    - source_mapping
+    - activation_contract
+    - builder_contract
+
+
+  before_build:
+
+    required:
+
+      - patch_identity_resolution
+      - dependency_snapshot_check
+      - architecture_state_check
+      - source_mapping_check
+
+
+  outcomes:
+
+    CURRENT:
+
+      action:
+        continue_build
+
+
+    REFRESH_REQUIRED:
+
+      action:
+        reopen_scope_review
+
+
+    BLOCKED:
+
+      action:
+        stop_build
+
+
+  ownership:
+
+    architecture_layer:
+
+      owns:
+
+        - architecture_state_definition
+        - compatibility_rules
+        - change_impact_classification
+
+
+    patch_system:
+
+      owns:
+
+        - dependency_snapshot
+        - patch_validity_state
+        - refresh_requirement
+
+
+    builder:
+
+      owns:
+
+        - artifact_generation_only
+
+
+    source_repository:
+
+      owns:
+
+        - authoritative_truth
