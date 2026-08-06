@@ -1,0 +1,65 @@
+schema: "cerebro-working-context-schema/v0.1"
+contract:
+  id: "CONTRACT-WORKING-CONTEXT"
+  owner: "context-engine"
+  target_schema: "cerebro-working-context/v0.1"
+  state_path: "engines/context/working-context.yaml"
+  state_scope: "working-source"
+  release_inclusion: true
+  state_release_inclusion: false
+required_root:
+  - "schema"
+  - "working_context"
+working_context_required_fields:
+  - "id"
+  - "project_ref"
+  - "records"
+  - "current_index"
+  - "next_sequence"
+record_required_fields:
+  - "id"
+  - "type"
+  - "scope"
+  - "statement"
+  - "payload"
+  - "provenance"
+  - "relations"
+  - "sequence"
+record_types:
+  - "DECISION"
+  - "CURRENT_BASIS"
+  - "ASSESSMENT"
+  - "OVERRIDE"
+  - "WISDOM_RECORD"
+conditional_requirements:
+  DECISION:
+    - "decision_status"
+    - "effective_scope"
+  CURRENT_BASIS:
+    - "applicability"
+    - "confirmation_basis"
+  OVERRIDE:
+    - "overridden_rule_ref"
+    - "new_decision_ref"
+    - "decided_at"
+    - "scope"
+    - "status"
+  WISDOM_RECORD:
+    - "maturity"
+    - "assessment"
+    - "confidence"
+    - "implementation_status"
+    - "relevance"
+    - "traceability"
+invariants:
+  - "records_are_append_only"
+  - "record_ids_are_unique"
+  - "record_sequences_are_unique_and_monotonic"
+  - "next_sequence_equals_highest_sequence_plus_one"
+  - "current_index_references_resolve"
+  - "superseded_records_are_not_current"
+  - "revoked_records_are_not_current"
+  - "correction_is_a_new_superseding_record"
+  - "revocation_is_a_new_revoking_record"
+  - "current_index_is_deterministically_rebuildable"
+  - "working_state_is_excluded_from_release"

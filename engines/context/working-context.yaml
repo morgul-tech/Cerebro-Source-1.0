@@ -1,0 +1,269 @@
+schema: "cerebro-working-context/v0.1"
+working_context:
+  id: "CEREBRO-DEVELOPMENT-CONTEXT"
+  project_ref: "CEREBRO-WORKPLAN"
+  records:
+    -
+      id: "CTX-DEC-P1B-PRE001"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-001"
+      statement: "Roadmap-skjemaet og roadmap-tilstanden eies semantisk av Project Engine."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "PATCH-001B"
+        roadmap_owner: "project-engine"
+        context_owner: "context-engine"
+        quality_owner: "quality-engine"
+        presentation_owner: "presentation-engine"
+        excluded_content:
+          - "system_health"
+          - "working_notes"
+          - "loose_thoughts"
+          - "weighted_recommendations"
+          - "presentation_formatting"
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-001"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 1
+    -
+      id: "CTX-DEC-P1B-PRE002"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-002"
+      statement: "Roadmap er den vedvarende utviklingskontrakten og skal støtte deterministisk gjenopptakelse uten samtalehistorikk."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "PATCH-001B"
+        persistent_between_sessions: true
+        append_only_history: true
+        deterministic_reload: true
+        no_chat_dependency: true
+        unique_execution_pointer: true
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-002"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 2
+    -
+      id: "CTX-DEC-P1B-PRE003"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-003"
+      statement: "Roadmap State, Context State og Runtime Projection er separate lag med eksplisitte eierskapsgrenser."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "PATCH-001B"
+        roadmap_contract_authority: "cerebro-source"
+        roadmap_state_owner: "project-engine"
+        context_state_owner: "context-engine"
+        runtime_projection_owner: "loader-and-runtime"
+        runtime_projection_authority: "derived"
+        runtime_projection_rebuildable: true
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-003"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 3
+    -
+      id: "CTX-DEC-P1B-PRE004"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-004"
+      statement: "Roadmap State skal lagres fysisk i Working Source på engines/project/roadmap.yaml."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "PATCH-001B"
+        canonical_path: "engines/project/roadmap.yaml"
+        format: "YAML"
+        validation_before_commit: true
+        git_commit_required: true
+        remote_push_required: true
+        remote_verification_required: true
+        release_inclusion: false
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-004"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 4
+    -
+      id: "CTX-DEC-P1B-PRE005"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-005"
+      statement: "Konkrete kanoniske neste kommandoer skal stå alene som siste element i en kopierbar tekstblokk."
+      payload:
+        decision_status: "IMPLEMENTED_AND_VERIFIED"
+        effective_scope: "presentation-runtime"
+        source_path: "engines/presentation/rules.yaml"
+        rule_ref: "PRE-023"
+        implementation_baseline: "310f37f6d22eabd66599673381637f6ed7e631bb"
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-005"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 5
+    -
+      id: "CTX-DEC-P1B-PRE006"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-006"
+      statement: "Vedvarende Context State skal lagres på engines/context/working-context.yaml og brukes som mål for roadmap-referanser."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "PATCH-001B"
+        canonical_path: "engines/context/working-context.yaml"
+        append_only_records: true
+        correction_by_superseding_record: true
+        revocation_by_new_record: true
+        required_reference_failure: "BLOCK_PROJECT_RESUME"
+        optional_reference_failure: "LOAD_WITH_DECLARED_DEGRADATION"
+        release_inclusion: false
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-006"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 6
+    -
+      id: "CTX-DEC-P1B-PRE007"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-007"
+      statement: "Eksakte roadmap- og Working Context-kontrakter, kryssfil-invarianter og initial tilstand er låst."
+      payload:
+        decision_status: "LOCKED_WITH_BOUNDED_REFINEMENT"
+        effective_scope: "PATCH-001B"
+        roadmap_schema_path: "engines/project/roadmap-schema.yaml"
+        roadmap_state_path: "engines/project/roadmap.yaml"
+        context_schema_path: "engines/context/working-context-schema.yaml"
+        context_state_path: "engines/context/working-context.yaml"
+        initial_checkpoint_separately_published: false
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-007"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 7
+    -
+      id: "CTX-DEC-P1B-PRE008"
+      type: "DECISION"
+      scope: "PATCH-001B.PRE-008"
+      statement: "PATCH-001B skal promoteres gjennom én effektiv transaksjon med én commit, én push og én fjernverifisering."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "PATCH-001B"
+        transaction_count: 1
+        commit_count: 1
+        push_count: 1
+        remote_verification_count: 1
+        intermediate_checkpoint_commit: false
+        complete_rollback_before_commit: true
+        preserve_local_commit_after_commit_failure: true
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-008"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 8
+    -
+      id: "CTX-BASIS-WORKPLAN"
+      type: "CURRENT_BASIS"
+      scope: "CEREBRO-WORKPLAN"
+      statement: "Gjeldende utviklingsrekkefølge er PATCH-001B, PATCH-001C, PATCH-002, PATCH-003 og PATCH-004."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "conversation-approved-and-locked"
+        active_phase: "PHASE-0"
+        active_milestone: "MS-001"
+        patch_sequence:
+          - "PATCH-001B"
+          - "PATCH-001C"
+          - "PATCH-002"
+          - "PATCH-003"
+          - "PATCH-004"
+        do_not_restart_architecture_analysis: true
+      provenance:
+        introduced_by_ref: "CEREBRO-WORKPLAN"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 9
+    -
+      id: "CTX-DEC-VERIFICATION-FRESHNESS"
+      type: "DECISION"
+      scope: "SOURCE-VERIFICATION"
+      statement: "En commit-bundet Source-verifisering kan gjenbrukes til relevant tilstand endres."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "development-process"
+        elapsed_time_alone_invalidates_evidence: false
+        refresh_required_when:
+          - "before_repository_mutation"
+          - "before_patch_generation_against_current_main"
+          - "before_commit_or_push"
+          - "after_CEREBRO_SYNC_receipt"
+          - "reported_source_change"
+          - "baseline_conflict"
+      provenance:
+        introduced_by_ref: "PATCH-001B.PRE-007"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 10
+    -
+      id: "CTX-BASIS-P1B-IMPLEMENTED"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-001B"
+      statement: "PATCH-001B er implementert som vedvarende roadmap- og Context State-kontrakter i Cerebro Source."
+      payload:
+        applicability: "CURRENT_AFTER_VERIFIED_PUBLICATION"
+        confirmation_basis: "remote-commit-and-file-verification"
+        implementation_result: "VERIFIED"
+        publication_evidence: "EXTERNAL_GIT_AND_PATCH_RECEIPT"
+        implementation_commit_embedded: false
+        next_active_patch: "PATCH-001C"
+      provenance:
+        introduced_by_ref: "PATCH-001B"
+        basis_refs: []
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 11
+  current_index:
+    decision_refs:
+      - "CTX-DEC-P1B-PRE001"
+      - "CTX-DEC-P1B-PRE002"
+      - "CTX-DEC-P1B-PRE003"
+      - "CTX-DEC-P1B-PRE004"
+      - "CTX-DEC-P1B-PRE005"
+      - "CTX-DEC-P1B-PRE006"
+      - "CTX-DEC-P1B-PRE007"
+      - "CTX-DEC-P1B-PRE008"
+      - "CTX-DEC-VERIFICATION-FRESHNESS"
+    current_basis_refs:
+      - "CTX-BASIS-WORKPLAN"
+      - "CTX-BASIS-P1B-IMPLEMENTED"
+    override_refs: []
+    current_wisdom_refs: []
+  next_sequence: 12

@@ -1,0 +1,327 @@
+schema: "cerebro-project-roadmap/v0.1"
+roadmap:
+  id: "CEREBRO-ROADMAP"
+  project_ref: "CEREBRO-WORKPLAN"
+  authority:
+    contract_owner: "project-engine"
+    state_scope: "working-source"
+  status: "ACTIVE"
+  objective: "Preserve the approved Cerebro architecture direction, implement the project roadmap contract, align BootEngine, establish the universal object contract, and prepare Runtime 0.1."
+  scope:
+    included:
+      - "project-roadmap-contract"
+      - "bootengine-alignment"
+      - "universal-object-contract"
+      - "runtime-0.1"
+      - "idea-object-pipeline"
+    excluded:
+      - "conversation-history-as-authority"
+      - "runtime-state-as-persistent-truth"
+      - "parallel-architecture"
+      - "unregistered-top-level-components"
+  phases:
+    -
+      id: "PHASE-0"
+      title: "architecture_consolidation"
+      purpose: "establish_prerequisites_for_runtime_0_1"
+      status: "ACTIVE"
+      dependency_refs: []
+      entry_criteria: []
+      exit_criteria:
+        - "PATCH-001B_VERIFIED"
+        - "PATCH-001C_VERIFIED"
+        - "PATCH-002_VERIFIED"
+      deliverable_refs: []
+      milestones:
+        -
+          id: "MS-001"
+          title: "architecture_consolidation"
+          status: "ACTIVE"
+          acceptance:
+            - "roadmap_contract_persisted"
+            - "architecture_dependencies_resolved"
+            - "continuation_without_chat_verified"
+  patches:
+    -
+      id: "PATCH-001A"
+      title: "cerebro_architecture_contracts"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs: []
+      decision_refs: []
+      source_refs: []
+    -
+      id: "PATCH-001B.PRE-001"
+      title: "roadmap_schema_and_ownership"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001A"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE001"
+      source_refs:
+        - "engines/project/roadmap-schema.yaml"
+        - "engines/project/component.yaml"
+        - "engines/project/rules.yaml"
+    -
+      id: "PATCH-001B.PRE-002"
+      title: "roadmap_persistence_contract"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-001"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE002"
+      source_refs:
+        - "engines/project/roadmap.yaml"
+    -
+      id: "PATCH-001B.PRE-003"
+      title: "project_state_boundary_and_runtime_projection"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-002"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE003"
+      source_refs:
+        - "tooling/loader/component.yaml"
+        - "tooling/loader/runtime-state-schema.yaml"
+    -
+      id: "PATCH-001B.PRE-004"
+      title: "project_state_lifecycle_and_physical_working_source_target"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-003"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE004"
+      source_refs:
+        - "engines/project/roadmap.yaml"
+    -
+      id: "PATCH-001B.PRE-005"
+      title: "copyable_next_action_footer"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-004"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE005"
+      source_refs:
+        - "engines/presentation/rules.yaml"
+    -
+      id: "PATCH-001B.PRE-006"
+      title: "persistent_reference_targets_and_resume_closure"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-004"
+        - "PATCH-001B.PRE-005"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE006"
+      source_refs:
+        - "engines/context/working-context-schema.yaml"
+        - "engines/context/working-context.yaml"
+    -
+      id: "PATCH-001B.PRE-007"
+      title: "exact_state_schemas_and_initial_persisted_state"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-006"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE007"
+      source_refs:
+        - "engines/project/roadmap-schema.yaml"
+        - "engines/context/working-context-schema.yaml"
+        - "engines/project/roadmap.yaml"
+        - "engines/context/working-context.yaml"
+    -
+      id: "PATCH-001B.PRE-008"
+      title: "efficient_single_transaction_promotion_contract"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-007"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE008"
+      source_refs:
+        - "tooling/validator/checks.yaml"
+        - "tooling/builder/builder.yaml"
+    -
+      id: "PATCH-001B"
+      title: "project_roadmap_contract"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001B.PRE-001"
+        - "PATCH-001B.PRE-002"
+        - "PATCH-001B.PRE-003"
+        - "PATCH-001B.PRE-004"
+        - "PATCH-001B.PRE-005"
+        - "PATCH-001B.PRE-006"
+        - "PATCH-001B.PRE-007"
+        - "PATCH-001B.PRE-008"
+      decision_refs:
+        - "CTX-DEC-P1B-PRE001"
+        - "CTX-DEC-P1B-PRE002"
+        - "CTX-DEC-P1B-PRE003"
+        - "CTX-DEC-P1B-PRE004"
+        - "CTX-DEC-P1B-PRE005"
+        - "CTX-DEC-P1B-PRE006"
+        - "CTX-DEC-P1B-PRE007"
+        - "CTX-DEC-P1B-PRE008"
+      source_refs:
+        - "engines/project/roadmap-schema.yaml"
+        - "engines/project/roadmap.yaml"
+        - "engines/context/working-context-schema.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/component.yaml"
+        - "engines/project/rules.yaml"
+        - "engines/context/component.yaml"
+        - "engines/context/rules.yaml"
+        - "tooling/validator/component.yaml"
+        - "tooling/validator/checks.yaml"
+        - "tooling/loader/component.yaml"
+        - "tooling/loader/runtime-state-schema.yaml"
+        - "tooling/builder/component.yaml"
+        - "tooling/builder/builder.yaml"
+        - "FILE_INVENTORY.json"
+    -
+      id: "PATCH-001C"
+      title: "bootengine_alignment"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "ACTIVE"
+      dependency_refs:
+        - "PATCH-001B"
+      decision_refs: []
+      source_refs: []
+    -
+      id: "PATCH-002"
+      title: "universal_object_contract"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-001C"
+      decision_refs: []
+      source_refs: []
+    -
+      id: "PATCH-003"
+      title: "runtime_0_1"
+      phase_ref: "PHASE-0"
+      milestone_ref: null
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-002"
+      decision_refs: []
+      source_refs: []
+    -
+      id: "PATCH-004"
+      title: "idea_object_pipeline"
+      phase_ref: "PHASE-0"
+      milestone_ref: null
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-003"
+      decision_refs: []
+      source_refs: []
+  execution:
+    current:
+      id: "EXEC-P1C-START"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      patch_ref: "PATCH-001C"
+      canonical_command: "continue with PATCH-001C bootengine alignment"
+      status: "ACTIVE"
+    next:
+      id: "EXEC-P2-START"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      patch_ref: "PATCH-002"
+      canonical_command: "continue with PATCH-002 universal object contract"
+      status: "PLANNED"
+  blockers: []
+  context_refs:
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE002"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE003"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE004"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE005"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE006"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE007"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1B-PRE008"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-WORKPLAN"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-VERIFICATION-FRESHNESS"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-P1B-IMPLEMENTED"
+      requirement: "REQUIRED"
+  traceability:
+    basis_refs:
+      - "CTX-BASIS-WORKPLAN"
+      - "CTX-BASIS-P1B-IMPLEMENTED"
+    revision_refs:
+      - "CTX-DEC-P1B-PRE001"
+      - "CTX-DEC-P1B-PRE002"
+      - "CTX-DEC-P1B-PRE003"
+      - "CTX-DEC-P1B-PRE004"
+      - "CTX-DEC-P1B-PRE005"
+      - "CTX-DEC-P1B-PRE006"
+      - "CTX-DEC-P1B-PRE007"
+      - "CTX-DEC-P1B-PRE008"
+      - "CTX-DEC-VERIFICATION-FRESHNESS"
+  revision:
+    sequence: 1
+    last_locked_patch_ref: "PATCH-001B.PRE-008"
