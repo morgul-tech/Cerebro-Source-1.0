@@ -1,0 +1,74 @@
+schema: cerebro-session-handoff-schema/v0.1
+
+contract:
+  id: CONTRACT-SESSION-HANDOFF
+  introduced_by: PATCH-002.PRE-002
+  owner: project-engine
+  artifact_authority: derived
+  source_authority_required: true
+
+required_root:
+  - schema
+  - handoff
+
+required_handoff_fields:
+  - id
+  - generated_at_utc
+  - authority
+  - integrity
+  - execution
+  - context
+  - repository_state
+  - continuation
+
+authority_required_fields:
+  - repository
+  - branch
+  - source_commit
+  - authority
+
+integrity_required_fields:
+  - roadmap_path
+  - roadmap_sha256
+  - working_context_path
+  - working_context_sha256
+
+execution_required_fields:
+  - current
+  - next
+
+current_execution_required_fields:
+  - phase_ref
+  - milestone_ref
+  - patch_ref
+  - canonical_command
+  - status
+
+context_required_fields:
+  - current_basis_refs
+  - decision_refs
+  - override_refs
+  - wisdom_refs
+
+repository_state_required_fields:
+  - worktree_clean
+  - local_head
+  - upstream_head
+  - local_equals_upstream
+
+continuation_required_fields:
+  - resume_command
+  - first_required_action
+  - fail_closed_conditions
+
+invariants:
+  - handoff_artifact_is_not_authoritative
+  - source_commit_is_required
+  - clean_worktree_is_required
+  - local_head_must_equal_upstream_head
+  - roadmap_hash_must_match_at_resume
+  - working_context_hash_must_match_at_resume
+  - execution_references_must_exist_in_source
+  - source_divergence_causes_resume_failure
+  - missing_required_capability_causes_resume_failure
+  - resume_receipt_is_deterministic

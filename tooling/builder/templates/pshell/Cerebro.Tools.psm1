@@ -363,5 +363,52 @@ function cerebro_sync {
 
     & $scriptPath @PSBoundParameters
 }
+
+function cerebro_handoff {
+    [CmdletBinding()]
+    param(
+        [string]$RepoPath = 'D:\Cerebro\Source\Cerebro_Source_v1.0',
+        [string]$OutputPath =
+            'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
+        [switch]$Force
+    )
+
+    $scriptPath = Join-Path `
+        $PSScriptRoot `
+        'cerebro_handoff.ps1'
+
+    if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+        throw "CEREBRO_HANDOFF_SCRIPT_NOT_FOUND:$scriptPath"
+    }
+
+    . $scriptPath
+
+    & cerebro_handoff @PSBoundParameters
+}
+
+function cerebro_resume {
+    [CmdletBinding()]
+    param(
+        [string]$HandoffPath =
+            'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
+        [string]$RepoPath = 'D:\Cerebro\Source\Cerebro_Source_v1.0'
+    )
+
+    $scriptPath = [IO.Path]::GetFullPath(
+        (
+            Join-Path `
+                $PSScriptRoot `
+                '..\..\..\loader\cerebro_resume.ps1'
+        )
+    )
+
+    if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+        throw "CEREBRO_RESUME_SCRIPT_NOT_FOUND:$scriptPath"
+    }
+
+    . $scriptPath
+
+    & cerebro_resume @PSBoundParameters
+}
 Export-ModuleMember `
-    -Function cerebro_receive, cerebro_sync, cerebro_tools_status
+    -Function cerebro_receive, cerebro_sync, cerebro_handoff, cerebro_resume, cerebro_tools_status

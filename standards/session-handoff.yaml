@@ -1,0 +1,90 @@
+schema: cerebro-session-handoff-standard/v0.1
+
+session_handoff:
+  id: CEREBRO-SESSION-HANDOFF-001
+  introduced_by: PATCH-002.PRE-002
+  status: LOCKED
+  maturity: MINIMUM_STRONG_SYSTEM
+
+  purpose: >
+    Preserve the minimum sufficient operational state required to resume
+    Cerebro project work safely in a new session without treating prior
+    conversation history or the handoff artifact as authority.
+
+  ownership:
+    project_state: project-engine
+    active_context: context-engine
+    source_authority: MCP-and-source-authority
+    artifact_generation: builder-tooling
+    artifact_validation: validator
+    resume_verification: loader-tooling
+
+  authority:
+    authoritative_source: Cerebro-Source
+    handoff_artifact: derived
+    conversation_history: non-authoritative
+    model_memory: non-authoritative
+    runtime_state: non-authoritative
+
+  supported_state:
+    - clean_worktree
+    - pushed_source_commit
+    - local_head_equal_to_upstream
+    - resolvable_roadmap_execution
+    - resolvable_working_context_index
+
+  unsupported_state_fail_closed:
+    - uncommitted_changes
+    - staged_but_uncommitted_changes
+    - unpushed_commits
+    - detached_head
+    - incomplete_level_3_transaction
+    - missing_upstream
+    - source_divergence
+    - roadmap_hash_mismatch
+    - working_context_hash_mismatch
+
+  generated_artifact:
+    default_path: D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json
+    schema_ref: standards/session-handoff-schema.yaml
+    format: JSON
+    overwrite_requires_force: true
+    contains:
+      - repository_identity
+      - exact_source_commit
+      - roadmap_and_context_hashes
+      - current_and_next_execution
+      - current_context_references
+      - repository_cleanliness
+      - canonical_resume_command
+      - deterministic_handoff_id
+
+  resume:
+    required_order:
+      - verify_required_tools
+      - verify_repository
+      - verify_branch
+      - verify_source_commit
+      - verify_upstream_alignment
+      - verify_clean_worktree
+      - verify_roadmap_hash
+      - verify_working_context_hash
+      - verify_execution_tokens
+      - emit_resume_receipt
+    success_effect: session_ready_for_continuation
+    failure_effect: no_project_mutation
+
+  minimum_storage_principle:
+    preserve:
+      - authority
+      - decisions
+      - current_basis
+      - execution
+      - dependencies
+      - exact_source_identity
+    exclude:
+      - full_conversation
+      - unselected_options
+      - superseded_reasoning
+      - conversational_repetition
+      - unverified_capability_assumptions

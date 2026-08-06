@@ -1016,6 +1016,69 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
       sequence: 33
+    -
+      id: "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
+      type: "DECISION"
+      scope: "PATCH-002.PRE-002"
+      statement: "Cerebro session handoff is locked as a derived fail-closed mechanism for clean pushed Source state, with exact commit, roadmap and context integrity, execution continuation and deterministic resume verification."
+      payload:
+        decision_status: "LOCKED_AND_IMPLEMENTED"
+        effective_scope: "session-continuity"
+        supported_state: "clean_pushed_source"
+        handoff_authority: "derived"
+        source_authority: "sole"
+        local_uncommitted_state_supported: false
+        source_divergence_allowed: false
+        implementation_refs:
+          - "standards/session-handoff-schema.yaml"
+          - "standards/session-handoff.yaml"
+          - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
+          - "tooling/loader/cerebro_resume.ps1"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-002"
+        basis_refs:
+          - "CTX-BASIS-RUNTIME-0-1-ENTRY"
+          - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-RUNTIME-0-1-ENTRY"
+      sequence: 34
+    -
+      id: "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
+      type: "WISDOM_RECORD"
+      scope: "SESSION-CONTINUITY"
+      statement: "A strong session handoff preserves the minimum sufficient authoritative references and execution state rather than the full conversation."
+      payload:
+        maturity: "LOCKED"
+        assessment: "IMPLEMENTED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-002.PRE-002"
+        relevance: "CEREBRO_SESSION_CONTINUITY"
+        traceability:
+          - "PATCH-002.PRE-002"
+        preserved:
+          - "source_commit"
+          - "roadmap_integrity"
+          - "working_context_integrity"
+          - "current_execution"
+          - "next_execution"
+          - "current_context_references"
+        excluded:
+          - "full_conversation"
+          - "unselected_options"
+          - "superseded_reasoning"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-002"
+        basis_refs:
+          - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
+      sequence: 35
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1035,6 +1098,7 @@ working_context:
       - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
       - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
+      - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     override_refs: []
@@ -1052,4 +1116,5 @@ working_context:
       - "CTX-WISDOM-SCOPE-REDUCTION-BEFORE-IMPLEMENTATION-001"
       - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
       - "CTX-WISDOM-LEVEL3-PAYLOAD-PARTITIONING-001"
-  next_sequence: 34
+      - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
+  next_sequence: 36

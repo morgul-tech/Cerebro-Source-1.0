@@ -10,6 +10,8 @@
     FunctionsToExport = @(
         'cerebro_receive',
         'cerebro_sync',
+        'cerebro_handoff',
+        'cerebro_resume',
         'cerebro_tools_status'
     )
     CmdletsToExport = @()

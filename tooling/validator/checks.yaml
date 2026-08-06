@@ -306,3 +306,41 @@ level_3_payload_partition_validation:
     - success_claim_before_remote_verification
 
 # END PATCH-002.PRE-001 LEVEL 3 PAYLOAD PARTITION VALIDATION
+# BEGIN PATCH-002.PRE-002 SESSION HANDOFF VALIDATION
+
+session_handoff_validation:
+  introduced_by: PATCH-002.PRE-002
+  severity: error
+  owner: tooling.validator
+
+  required_files:
+    - standards/session-handoff-schema.yaml
+    - standards/session-handoff.yaml
+    - tooling/builder/templates/pshell/cerebro_handoff.ps1
+    - tooling/loader/cerebro_resume.ps1
+
+  required_contracts:
+    - handoff_artifact_is_derived
+    - exact_source_commit_required
+    - clean_worktree_required
+    - local_head_equals_upstream
+    - roadmap_hash_required
+    - working_context_hash_required
+    - execution_tokens_required
+    - deterministic_resume_receipt
+
+  required_commands:
+    - cerebro_handoff
+    - cerebro_resume
+
+  fail_closed:
+    - dirty_worktree
+    - detached_head
+    - missing_upstream
+    - unpushed_commit
+    - source_divergence
+    - roadmap_hash_mismatch
+    - working_context_hash_mismatch
+    - execution_token_mismatch
+
+# END PATCH-002.PRE-002 SESSION HANDOFF VALIDATION
