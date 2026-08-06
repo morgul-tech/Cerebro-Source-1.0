@@ -244,13 +244,31 @@ roadmap:
         - "tooling/validator/checks.yaml"
         - "engines/project/roadmap.yaml"
     -
+      id: "PATCH-001C.POST-001"
+      title: "streamlined_patch_workform"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001C"
+      decision_refs:
+        - "PATCH-001C.POST-001-DEC-LOCK-WORKFORM-IMPROVEMENT"
+        - "PATCH-001C.POST-001-DEC-REUSE-VERIFIED-PIPELINE"
+        - "PATCH-001C.POST-001-DEC-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
+      source_refs:
+        - "standards/development/streamlined-patch-workform.yaml"
+        - "tooling/builder/builder.yaml"
+        - "tooling/validator/checks.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+    -
       id: "PATCH-002"
       title: "universal_object_contract"
       phase_ref: "PHASE-0"
       milestone_ref: "MS-001"
       status: "PLANNED"
       dependency_refs:
-        - "PATCH-001C"
+        - "PATCH-001C.POST-001"
       decision_refs: []
       source_refs: []
     -

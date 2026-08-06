@@ -1,0 +1,215 @@
+schema: cerebro-streamlined-patch-workform/v0.1
+
+streamlined_patch_workform:
+  id: "CEREBRO-WORKFORM-STREAMLINED-PATCH-001"
+  introduced_by: "PATCH-001C.POST-001"
+  classification: "WORKFORM_IMPROVEMENT"
+  status: "LOCKED"
+  maturity: "VERIFIED_PRACTICE"
+  applies_to_delivery_levels:
+    - 1
+    - 2
+    - 3
+
+  evidence_basis:
+    successful_runs:
+      - "PATCH-001C.PRE-002"
+      - "PATCH-001C"
+    observed_result:
+      - "low_user_assistant_roundtrip_count"
+      - "controlled_local_mutation"
+      - "early_failure_detection"
+      - "clean_source_sync"
+      - "successful_remote_verification"
+    retained_methods:
+      - "existing_PSHELL_commands"
+      - "git_preflight"
+      - "clean_worktree_gate"
+      - "expected_base_commit_gate"
+      - "targeted_source_mutation"
+      - "local_validation_before_sync"
+      - "cerebro_sync"
+      - "deterministic_receipts"
+      - "remote_commit_verification"
+
+  governing_principle: >
+    Patch implementation becomes reliable when uncertainty is removed before
+    mutation, scope is reduced to the smallest correct change, and the entire
+    development-to-sync path is prepared as one controlled transaction.
+
+  no_new_solution_constraint:
+    required: true
+    rule:
+      - "reuse_verified_existing_capabilities_before_creating_new_mechanisms"
+      - "do_not_create_new_transport_when_PSHELL_or_existing_delivery_is_sufficient"
+      - "do_not_redesign_architecture_to_improve_patch_delivery"
+      - "improve_ordering_validation_and_preparation_before adding_components"
+
+  pipeline:
+    - sequence: 1
+      stage: "locked_idea_resolution"
+      required:
+        - "resolve_one_patch_purpose"
+        - "identify_authoritative_basis"
+        - "separate_required_change_from_optional_ideas"
+        - "record_explicit_exclusions"
+        - "confirm_first_eligible_patch"
+      output: "bounded_patch_intent"
+
+    - sequence: 2
+      stage: "scope_critique_and_reduction"
+      required:
+        - "challenge_broad_or_ambiguous_scope"
+        - "retain_only_runtime_or_architecture_prerequisites"
+        - "reject_nonessential_work"
+        - "preserve_correct_prior_work"
+        - "define_measurable_acceptance"
+      output: "minimal_correct_scope"
+
+    - sequence: 3
+      stage: "environment_preparation"
+      required:
+        - "resolve_repository"
+        - "verify_branch"
+        - "verify_expected_base_commit"
+        - "require_clean_worktree"
+        - "verify_target_files"
+        - "verify_delivery_mode"
+        - "verify_local_commands_and_modules"
+        - "verify_sync_capability"
+        - "prepare_external_backup_location"
+      mutation_allowed: false
+      output: "locked_operating_environment"
+
+    - sequence: 4
+      stage: "development_plan"
+      required:
+        - "declare_exact_target_files"
+        - "declare_expected_changes"
+        - "declare prohibited_changes"
+        - "declare validation_tokens"
+        - "declare synchronization_paths"
+        - "declare final_receipt"
+      output: "transaction_plan"
+
+    - sequence: 5
+      stage: "physical_delivery_generation"
+      preferred_delivery:
+        level_1: "direct_capability_when_verified"
+        level_2: "self_running_file_when_user_access_verified"
+        level_3: "self_running_PSHELL"
+      level_3_policy:
+        - "prefer_one_self_running_payload_when_environment_is_verified"
+        - "use_multiple_small_payloads_when_partial_failure_risk_is_lower"
+        - "each_payload_must_be_idempotence_or_duplicate_guarded"
+        - "never_require_user_to_reconstruct_commands"
+      output: "copy_ready_delivery"
+
+    - sequence: 6
+      stage: "local_mutation"
+      required:
+        - "backup_before_write"
+        - "write_only_declared_targets"
+        - "fail_closed"
+        - "preserve_source_authority"
+        - "avoid_direct_GitHub_mutation"
+      output: "candidate_worktree"
+
+    - sequence: 7
+      stage: "local_validation"
+      required:
+        - "verify_required_tokens"
+        - "verify_exact_occurrence_counts"
+        - "verify_expected_changed_paths"
+        - "reject_unexpected_changed_paths"
+        - "run_git_diff_check"
+        - "set_final_patch_status_only_after_validation"
+      output: "validated_candidate"
+
+    - sequence: 8
+      stage: "synchronization"
+      required:
+        - "use_existing_cerebro_sync"
+        - "sync_only_declared_paths"
+        - "create_one_intentional_commit"
+        - "push_to_expected_branch"
+        - "require_clean_worktree_after_sync"
+      output: "pushed_commit"
+
+    - sequence: 9
+      stage: "external_verification"
+      required:
+        - "verify_commit_identity"
+        - "verify_commit_message"
+        - "verify_changed_files"
+        - "verify_locked_contracts"
+        - "verify_patch_status"
+      output: "verified_patch"
+
+  pre_mutation_readiness_gate:
+    required_state: "READY"
+    conditions:
+      - "patch_scope_locked"
+      - "authority_resolved"
+      - "target_files_resolved"
+      - "environment_verified"
+      - "delivery_mode_locked"
+      - "local_sync_capability_verified"
+      - "acceptance_defined"
+      - "rollback_or_backup_available"
+    failure_effect: "no_physical_mutation"
+
+  scope_reduction_rule:
+    trigger:
+      - "patch_contains_multiple_unbounded_objectives"
+      - "acceptance_cannot_be_stated_measurably"
+      - "patch_overlaps_later_roadmap_work"
+      - "implementation_requires_repeated_new_PRE_patches"
+    required_response:
+      - "critique_current_scope"
+      - "reject_nonessential_scope"
+      - "retain_valid_prerequisite"
+      - "keep_existing_patch_identity_when_semantically_sound"
+      - "implement_smallest_complete_result"
+
+  level_3_streamlining:
+    objective: "minimize_roundtrips_without_reducing_safety"
+    preferred_shape:
+      - "single_copy_ready_self_running_payload"
+      - "explicit_expected_base_commit"
+      - "preflight_before_write"
+      - "embedded_validation"
+      - "automatic_cerebro_sync"
+      - "compact_success_or_failure_receipt"
+    split_payload_when:
+      - "one_payload_would_be_format_sensitive"
+      - "failure_isolation_materially_improves_recovery"
+      - "source_structure_requires_observed_intermediate_state"
+    prohibited:
+      - "manual_reconstruction_of_partial_commands"
+      - "mutation_before_environment_verification"
+      - "repeated_user_confirmation_after_scope_lock"
+      - "new_delivery_system_created_without_gap"
+      - "unverified_success_claim"
+
+  runtime_0_1_relevance:
+    required_application:
+      - "lock_minimal_runtime_scope_before implementation"
+      - "prepare_runtime_build_environment before mutation"
+      - "separate runtime prerequisites from future capabilities"
+      - "prefer small verifiable runtime increments"
+      - "use deterministic state and receipts"
+      - "keep Source authoritative and runtime derived"
+    principle: >
+      Runtime stability begins with deterministic development and release
+      behavior before runtime execution logic is expanded.
+
+  acceptance:
+    - "verified_existing_methods_are_reused"
+    - "patch_scope_is_minimal_and_measurable"
+    - "environment_is_locked_before_mutation"
+    - "delivery_level_3_can_run_as_a_controlled_transaction"
+    - "local_validation_precedes_sync"
+    - "sync_uses_existing_Cerebro_tools"
+    - "remote_verification_closes_the_patch"
+    - "the_workform_is_reusable_for_runtime_0_1"

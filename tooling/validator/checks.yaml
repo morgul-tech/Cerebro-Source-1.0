@@ -226,3 +226,55 @@ minimal_runtime_bootstrap_validation:
     - Runtime_0_1_implementation_under_PATCH_001C
 
 # END PATCH-001C MINIMAL RUNTIME BOOTSTRAP VALIDATION
+# BEGIN PATCH-001C.POST-001 STREAMLINED PATCH WORKFORM VALIDATION
+
+streamlined_patch_workform_validation:
+  introduced_by: PATCH-001C.POST-001
+  contract_ref: standards/development/streamlined-patch-workform.yaml
+  severity: error
+  owner: tooling.validator
+
+  required_stage_order:
+    - locked_idea_resolution
+    - scope_critique_and_reduction
+    - environment_preparation
+    - development_plan
+    - physical_delivery_generation
+    - local_mutation
+    - local_validation
+    - synchronization
+    - external_verification
+
+  required_pre_mutation_evidence:
+    - patch_scope_locked
+    - authority_resolved
+    - expected_branch_verified
+    - expected_base_commit_verified
+    - clean_worktree_verified
+    - target_files_resolved
+    - delivery_mode_locked
+    - local_sync_capability_verified
+    - acceptance_defined
+    - backup_available
+
+  required_level_3_controls:
+    - self_running_or_explicitly_split_payload
+    - strict_failure_behavior
+    - duplicate_guard
+    - declared_targets_only
+    - embedded_validation
+    - unexpected_change_rejection
+    - existing_cerebro_sync
+    - deterministic_receipt
+
+  prohibited:
+    - mutation_before_environment_lock
+    - broad_patch_implementation_without_scope_critique
+    - new_transport_without_documented_gap
+    - direct_GitHub_source_mutation
+    - manual_command_reconstruction_required
+    - repeated_confirmation_after_scope_lock
+    - synchronization_before_local_validation
+    - success_without_remote_verification
+
+# END PATCH-001C.POST-001 STREAMLINED PATCH WORKFORM VALIDATION

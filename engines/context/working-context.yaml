@@ -677,6 +677,104 @@ working_context:
         derived_from_refs:
           - "PATCH-001C.PRE-002"
       sequence: 20
+    -
+      id: "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
+      type: "WISDOM_RECORD"
+      scope: "PATCH-DEVELOPMENT-ENVIRONMENT"
+      statement: "Patch reliability increases when repository state, authority, targets, delivery mode, local capabilities, synchronization and rollback conditions are verified and locked before physical mutation."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-001C.POST-001"
+        required_behavior:
+          - "verify_environment_before_mutation"
+          - "resolve_expected_base_commit"
+          - "require_clean_worktree"
+          - "verify_target_files"
+          - "verify_existing_local_commands"
+          - "verify_sync_capability"
+          - "prepare_backup"
+        prohibited:
+          - "mutation_before_environment_lock"
+          - "assuming_local_capability_without_verification"
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-001"
+        basis_refs:
+          - "PATCH-001C.PRE-002"
+          - "PATCH-001C"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-DELIVERY-SELECTION-BEFORE-SERIALIZATION-001"
+          - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+      sequence: 21
+    -
+      id: "CTX-WISDOM-SCOPE-REDUCTION-BEFORE-IMPLEMENTATION-001"
+      type: "WISDOM_RECORD"
+      scope: "PATCH-SCOPE-REFINEMENT"
+      statement: "When a patch is broad, ambiguous or overlaps later roadmap work, critique and reduce it before implementation, reject nonessential scope, retain valid prerequisites and implement the smallest complete result."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-001C.POST-001"
+        required_behavior:
+          - "critique_broad_scope"
+          - "separate_required_from_optional"
+          - "reject_nonessential_work"
+          - "retain_valid_existing_work"
+          - "preserve_patch_identity_when_semantically_sound"
+          - "define_measurable_acceptance"
+        prohibited:
+          - "implementing_unbounded_scope"
+          - "creating_repeated_PRE_patches_instead_of_reducing_scope"
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-001"
+        basis_refs:
+          - "PATCH-001C"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "PATCH-001C-DEC-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+          - "PATCH-001C-DEC-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+      sequence: 22
+    -
+      id: "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+      type: "WISDOM_RECORD"
+      scope: "PATCH-DELIVERY-WORKFORM"
+      statement: "A delivery-level-3 patch can be efficient and reliable when implemented as a prepared self-running transaction containing preflight, guarded mutation, embedded validation, existing Source synchronization and deterministic receipts."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-001C.POST-001"
+        applies_to:
+          - "DELIVERY_LEVEL_3"
+          - "DELIVERY_LEVEL_2_BY_ANALOGY"
+          - "DELIVERY_LEVEL_1_BY_ANALOGY"
+          - "RUNTIME_0_1_DEVELOPMENT"
+        preferred_behavior:
+          - "one_self_running_payload_when_environment_verified"
+          - "multiple_small_payloads_when_failure_isolation_is_safer"
+          - "reuse_existing_PSHELL_and_cerebro_sync"
+          - "minimize_user_roundtrips_after_scope_lock"
+          - "verify_remote_state_before_completion"
+        prohibited:
+          - "manual_command_reconstruction"
+          - "new_delivery_mechanism_without_gap"
+          - "unverified_success_claim"
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-001"
+        basis_refs:
+          - "PATCH-001C.PRE-002"
+          - "PATCH-001C"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-DELIVERY-SELECTION-BEFORE-SERIALIZATION-001"
+          - "CTX-WISDOM-NEXT-ACTION-COPYABLE-CANONICAL-COMMAND-001"
+      sequence: 23
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -702,4 +800,7 @@ working_context:
       - "CTX-WISDOM-LOCKED-WISDOM-FIRST-ELIGIBLE-PATCH-001"
       - "CTX-WISDOM-DELIVERY-SELECTION-BEFORE-SERIALIZATION-001"
       - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
-  next_sequence: 21
+      - "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
+      - "CTX-WISDOM-SCOPE-REDUCTION-BEFORE-IMPLEMENTATION-001"
+      - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+  next_sequence: 24

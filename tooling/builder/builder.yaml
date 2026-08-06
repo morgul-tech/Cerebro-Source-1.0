@@ -920,3 +920,64 @@ corrective_delivery_preflight:
       - delivery_locked
 
 # END PATCH-001C.PRE-002 CORRECTIVE DELIVERY PREFLIGHT
+# BEGIN PATCH-001C.POST-001 STREAMLINED PATCH WORKFORM
+
+streamlined_patch_workform:
+  introduced_by: PATCH-001C.POST-001
+  contract_ref: standards/development/streamlined-patch-workform.yaml
+  status: locked
+  owner: tooling.builder
+  architecture_change: false
+
+  required_before_physical_patch_generation:
+    - locked_patch_intent
+    - scope_critique_completed
+    - minimal_correct_scope_resolved
+    - authoritative_basis_resolved
+    - repository_verified
+    - expected_branch_verified
+    - expected_base_commit_verified
+    - clean_worktree_verified
+    - target_files_resolved
+    - delivery_mode_locked
+    - existing_local_capability_verified
+    - synchronization_capability_verified
+    - acceptance_criteria_defined
+    - backup_location_prepared
+
+  implementation_policy:
+    reuse_existing_methods_first: true
+    no_new_solution_without_documented_gap: true
+    mutation_before_readiness_gate: prohibited
+    broad_scope_without_measurable_acceptance: prohibited
+    user_roundtrips_after_scope_lock: minimize
+    direct_GitHub_source_mutation: prohibited
+
+  delivery_level_3:
+    preferred: self_running_PSHELL
+    single_payload_preferred_when_environment_verified: true
+    multiple_payloads_allowed_when_safer: true
+    required_payload_features:
+      - copy_ready_marker
+      - strict_error_handling
+      - expected_base_commit
+      - duplicate_guard
+      - preflight
+      - external_backup
+      - declared_target_paths
+      - embedded_validation
+      - git_diff_check
+      - expected_change_check
+      - unexpected_change_rejection
+      - automatic_cerebro_sync
+      - deterministic_receipt
+
+  completion:
+    required:
+      - local_validation_pass
+      - one_intentional_commit
+      - successful_push
+      - clean_worktree
+      - external_commit_verification
+
+# END PATCH-001C.POST-001 STREAMLINED PATCH WORKFORM
