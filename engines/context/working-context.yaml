@@ -250,6 +250,307 @@ working_context:
         revokes_ref: null
         derived_from_refs: []
       sequence: 11
+    -
+      id: "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+      type: "WISDOM_RECORD"
+      scope: "COMMAND-RESOLUTION-AND-CAPABILITY-DISCOVERY"
+      statement: "Hendelsen med inputen sync cerebro viste at manglende oppslag av den eksisterende cerebro_sync-kommandoen fÃ¸rte til feil synkretning og en unÃ¸dvendig erstatningslÃ¸sning."
+      payload:
+        maturity: "CONFIRMED_SINGLE_INCIDENT"
+        assessment:
+          incident:
+            date: "2026-08-06"
+            initial_user_input: "sync cerebro"
+            expected_first_action: "resolve_and_investigate_existing_cerebro_sync_command"
+            actual_first_action: "infer_sync_semantics_without_resolving_existing_command"
+            user_correction_required: true
+          observations:
+            - "Inputen var kort, kommando-lignende og brukte etablert Cerebro-terminologi."
+            - "cerebro_sync var allerede tilgjengelig og klar for bruk."
+            - "Den eksisterende kommandoen ble ikke undersÃ¸kt fÃ¸r synkretning ble tolket."
+            - "Synk ble fÃ¸rst tolket som kontroll eller innhenting fra GitHub i stedet for publisering fra lokal Working Source."
+            - "Brukeren mÃ¥tte eksplisitt forklare at lokal Working Source skulle overskrive autoritativ Source i repoet."
+            - "En ny PSHELL-synkroniseringslÃ¸sning ble konstruert selv om den kanoniske lÃ¸sningen allerede eksisterte."
+            - "ErstatningslÃ¸sningen introduserte i tillegg en unÃ¸dvendig feil med en uinitialisert failureMessage-variabel."
+          analysis:
+            primary_failure_mode: "EXISTING_COMMAND_NOT_RESOLVED_BEFORE_INTERPRETATION"
+            contributing_factors:
+              - "generic_sync_assumptions_overrode_project_specific_semantics"
+              - "available_Cerebro_capability_was_not_investigated"
+              - "command_like_input_was_treated_as_ordinary_natural_language"
+              - "replacement_design_started_before_existing_solution_discovery"
+            consequence:
+              - "wrong_initial_direction"
+              - "unnecessary_user_explanation"
+              - "duplicated_existing_capability"
+              - "avoidable_implementation_defect"
+              - "increased_interaction_cost"
+            preferred_future_reasoning_order:
+              - "detect_command_like_project_input"
+              - "resolve exact and normalized command candidates"
+              - "inspect active Cerebro command definitions and available execution interfaces"
+              - "prefer the existing canonical command when it satisfies the request"
+              - "only infer semantics or design a replacement if command resolution fails"
+            candidate_principle: "RESOLVE_EXISTING_COMMAND_BEFORE_INTERPRETING_OR_REBUILDING"
+            important_distinction: "This record is analysis input and is not itself an implemented rule."
+        confidence: "HIGH"
+        implementation_status: "NOTE_ONLY_DEFERRED_FOR_LATER_ANALYSIS"
+        relevance:
+          domains:
+            - "Cerebro-command-resolution"
+            - "capability-discovery"
+            - "Cerebro-source-sync"
+            - "PSHELL-delivery"
+            - "interaction-efficiency"
+          trigger_patterns:
+            - "short_command_like_user_input"
+            - "project_specific_term_with_possible_existing_command"
+            - "request_that_matches_an_available_Cerebro_operation"
+          future_questions:
+            - "Should Cerebro define a command-resolution-first stage before semantic inference?"
+            - "Where should the authoritative command registry and aliases be exposed?"
+            - "How should natural-language variants such as sync cerebro map to cerebro_sync?"
+            - "How should available local commands be checked before generating replacement PSHELL?"
+            - "How should command discovery failures be reported without creating unnecessary alternatives?"
+        traceability:
+          source_type: "USER_REPORTED_INTERACTION_INCIDENT"
+          conversation_date: "2026-08-06"
+          initiating_phrase: "sync cerebro"
+          related_command: "cerebro_sync"
+          related_working_source: "D:\Cerebro\Source\Cerebro_Source_v1.0"
+          related_repository: "morgul-tech/Cerebro-Source-1.0"
+          user_requested_follow_up_state: "NO_IMMEDIATE_ADDITIONAL_DESIGN"
+          intended_future_use:
+            - "later_analysis"
+            - "possible_command_resolution_design"
+            - "future_quality_review"
+      provenance:
+        introduced_by_ref: "USER-OBSERVATION-2026-08-06-CEREBRO-SYNC"
+        basis_refs:
+          - "CTX-DEC-P1B-PRE006"
+          - "CTX-BASIS-P1B-IMPLEMENTED"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P1B-PRE006"
+      sequence: 12
+    -
+      id: "CTX-WISDOM-PIPELINE-STEERING-001"
+      type: "WISDOM_RECORD"
+      scope: "PIPELINE-STEERING-AND-USER-GATING"
+      statement: "A recoverable command mismatch must not terminate an active pipeline when mandate and execution state uniquely identify the next valid action."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        assessment:
+          observations:
+            - "Literal command errors and stale references can occur while the active mandate and execution pointer remain unambiguous."
+            - "Stopping on every recoverable mismatch transfers avoidable control work to the user."
+            - "The command validator must not become the terminal controller of the project pipeline."
+          analysis:
+            primary_failure_mode: "RECOVERABLE_COMMAND_MISMATCH_TREATED_AS_TERMINAL_BLOCKER"
+            required_separation:
+              - "command_resolution"
+              - "project_execution_control"
+              - "user_input_gate"
+              - "local_execution_handoff"
+            preferred_behavior:
+              - "normalize_recoverable_input"
+              - "resolve_against_active_execution_state"
+              - "continue_when_next_action_is_unique"
+              - "stop_only_for_material_user_decision_or_required_local_result"
+        confidence: "HIGH"
+        implementation_status: "NOTE_ONLY_FOR_RUNTIME_0_1_DESIGN"
+        relevance:
+          domains:
+            - "runtime-control"
+            - "command-resolution"
+            - "project-pipeline"
+            - "interaction-efficiency"
+          trigger_patterns:
+            - "recoverable_typo"
+            - "stale_command_reference"
+            - "unique_active_execution_pointer"
+        traceability:
+          source_type: "USER_APPROVED_SESSION_RULE_AND_OBSERVED_INCIDENTS"
+          conversation_date: "2026-08-06"
+          related_patch: "PATCH-001C.PRE-001"
+          related_commit: "71b6bd69985a998069517d5efcf45ac993aecb0a"
+      provenance:
+        introduced_by_ref: "SESSION-RULE-CEREBRO-AUTONOMOUS-PIPELINE-001"
+        basis_refs:
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+      sequence: 13
+    -
+      id: "CTX-WISDOM-SEALED-TRANSPORT-SERIALIZATION-EFFICIENCY-001"
+      type: "WISDOM_RECORD"
+      scope: "SEALED-PSHELL-TRANSPORT-EFFICIENCY"
+      statement: "PSHELL delivery should minimize visible serialization while retaining full local integrity verification and deterministic installation."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        assessment:
+          observations:
+            - "Long raw Base64 payloads and full visible digests increase generation time, render time, copy size, visual noise, and user waiting."
+            - "Stateful clipboard workflows introduced avoidable overwrite and sequencing failures."
+            - "A producer digest mismatch was initially indistinguishable from transport corruption until decode and length evidence were considered."
+            - "Compression before Base64 materially reduces visible transport size."
+          analysis:
+            preferred_transport:
+              - "single_copy_single_paste"
+              - "gzip_before_base64"
+              - "short_visible_sha256_prefix"
+              - "full_sha256_derived_and_verified_locally"
+              - "digest_calculated_from_final_serialized_bytes"
+              - "producer_selfvalidation_before_delivery"
+            visible_integrity_token:
+              hexadecimal_characters: 12
+              purpose: "non_adversarial_transport_error_detection"
+            full_integrity:
+              algorithm: "SHA256"
+              visibility: "internal_or_authoritative"
+        confidence: "HIGH"
+        implementation_status: "PARTIALLY_IMPLEMENTED_BY_PATCH-001C.PRE-001"
+        relevance:
+          domains:
+            - "PSHELL-delivery"
+            - "serialization"
+            - "transport-integrity"
+            - "user-time-efficiency"
+          trigger_patterns:
+            - "large_visible_payload"
+            - "clipboard_state_dependency"
+            - "producer_digest_mismatch"
+        traceability:
+          source_type: "USER_OBSERVATION_AND_PATCH_IMPLEMENTATION"
+          conversation_date: "2026-08-06"
+          related_patch: "PATCH-001C.PRE-001"
+          related_commit: "71b6bd69985a998069517d5efcf45ac993aecb0a"
+      provenance:
+        introduced_by_ref: "PATCH-001C.PRE-001"
+        basis_refs:
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+      sequence: 14
+    -
+      id: "CTX-WISDOM-COPY-READINESS-SIGNAL-001"
+      type: "WISDOM_RECORD"
+      scope: "STREAMED-CODE-COPY-READINESS"
+      statement: "Visible code is not copy-ready until a terminal sentinel proves that the complete copyable block has finished rendering."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        assessment:
+          observations:
+            - "A code block can become visible before generation is complete."
+            - "The user can copy an incomplete payload or interrupt generation while believing delivery is finished."
+            - "A pre-block READY label alone can become visible before the payload is complete and therefore cannot be authoritative."
+            - "One delivery was incorrectly marked ready and was later observed to be truncated."
+          analysis:
+            state_model:
+              - "GENERATING"
+              - "VISIBLE_PARTIAL"
+              - "COMPLETE"
+              - "COPY_READY"
+            invariant: "COPY_READY_REQUIRES_TERMINAL_SENTINEL_INSIDE_THE_COPYABLE_BLOCK"
+            sentinel_format: "# CEREBRO_COPY_READY:<delivery_id>"
+            text_after_final_copyable_block: "PROHIBITED"
+            blocks_without_terminal_sentinel: "NOT_AUTHORIZED_FOR_COPY"
+        confidence: "HIGH"
+        implementation_status: "SESSION_RULE_ACTIVE_SOURCE_ENFORCEMENT_PENDING"
+        relevance:
+          domains:
+            - "presentation-boundary"
+            - "PSHELL-delivery"
+            - "streaming-output"
+            - "interaction-safety"
+          trigger_patterns:
+            - "copyable_code_block"
+            - "streamed_long_response"
+            - "user_execution_payload"
+        traceability:
+          source_type: "USER_REPORTED_COPY_TIMING_INCIDENT"
+          conversation_date: "2026-08-06"
+          related_patch: "PATCH-001C.PRE-001"
+          related_commit: "71b6bd69985a998069517d5efcf45ac993aecb0a"
+      provenance:
+        introduced_by_ref: "SESSION-RULE-COPY-READY-SIGNAL-001"
+        basis_refs:
+          - "PATCH-001C.PRE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "PATCH-001C.PRE-001"
+      sequence: 15
+    -
+      id: "CTX-WISDOM-PSHELL-FORMATTING-SENSITIVITY-001"
+      type: "WISDOM_RECORD"
+      scope: "PSHELL-FORMATTING-AND-LINE-ENDINGS"
+      statement: "Complex or format-sensitive PowerShell must be transported as a sealed script rather than pasted as direct multiline source."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        assessment:
+          observations:
+            - "Ordinary whitespace was not the primary cause of the observed failures."
+            - "Backtick continuation is vulnerable to trailing whitespace."
+            - "Here-string boundaries are vulnerable to partial copy and indentation mistakes."
+            - "Exact multiline replacement is fragile across LF and CRLF."
+            - "Git status aggregation and retained carriage returns caused validation failures unrelated to user copying."
+            - "A regex using whitespace class matched across a newline and produced a false validation failure."
+          analysis:
+            direct_multiline_delivery:
+              allowed_for:
+                - "short_read_only_diagnostics"
+                - "simple_low_sensitivity_commands"
+              prohibited_for:
+                - "source_mutation"
+                - "YAML_generation"
+                - "here_string_heavy_scripts"
+                - "backtick_dependent_scripts"
+                - "rollback_capable_patch_logic"
+            required_controls:
+              - "sealed_single_copy_single_paste"
+              - "local_parse_before_install"
+              - "atomic_install"
+              - "line_ending_normalization"
+              - "untracked_files_all_when_individual_paths_are_required"
+              - "same_line_regex_when_newline_matching_is_not_intended"
+        confidence: "HIGH"
+        implementation_status: "PARTIALLY_IMPLEMENTED_BY_PATCH-001C.PRE-001"
+        relevance:
+          domains:
+            - "PSHELL-delivery"
+            - "PowerShell-5.1"
+            - "line-ending-normalization"
+            - "builder-validation"
+          trigger_patterns:
+            - "complex_multiline_script"
+            - "exact_multiline_replacement"
+            - "CRLF_LF_boundary"
+            - "format_sensitive_PowerShell"
+        traceability:
+          source_type: "PATCH_FAILURE_ANALYSIS"
+          conversation_date: "2026-08-06"
+          related_patch: "PATCH-001C.PRE-001"
+          related_commit: "71b6bd69985a998069517d5efcf45ac993aecb0a"
+      provenance:
+        introduced_by_ref: "PATCH-001C.PRE-001-IMPLEMENTATION-INCIDENTS"
+        basis_refs:
+          - "PATCH-001C.PRE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "PATCH-001C.PRE-001"
+      sequence: 16
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -265,5 +566,10 @@ working_context:
       - "CTX-BASIS-WORKPLAN"
       - "CTX-BASIS-P1B-IMPLEMENTED"
     override_refs: []
-    current_wisdom_refs: []
-  next_sequence: 12
+    current_wisdom_refs:
+      - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+      - "CTX-WISDOM-PIPELINE-STEERING-001"
+      - "CTX-WISDOM-SEALED-TRANSPORT-SERIALIZATION-EFFICIENCY-001"
+      - "CTX-WISDOM-COPY-READINESS-SIGNAL-001"
+      - "CTX-WISDOM-PSHELL-FORMATTING-SENSITIVITY-001"
+  next_sequence: 17
