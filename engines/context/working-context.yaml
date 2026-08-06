@@ -1309,6 +1309,88 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
       sequence: 43
+    -
+      id: "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
+      type: "WISDOM_RECORD"
+      scope: "CANONICAL-OPERATION-AND-LOCAL-EXECUTION-RESPONSIBILITY"
+      statement: "When Cerebro must establish or verify an operational state, it must first resolve and applicability-check the existing canonical Source operation. Lack of direct host execution changes only the transport: Cerebro retains responsibility for command selection, preflight, acceptance criteria and receipt interpretation; the user may act only as the local execution channel. A replacement mechanism requires a documented capability gap, and VERIFIED requires valid machine evidence."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        assessment:
+          incident:
+            date: "2026-08-06"
+            initial_user_request: "verifiser"
+            expected_behavior: "resolve_and_use_existing_cerebro_source_sync_operation"
+            actual_behavior: "declare_local_state_unavailable_and_construct_parallel_verification"
+            user_correction_required: true
+          observations:
+            - "The canonical cerebro_sync operation already existed in Cerebro Source."
+            - "The user executed the existing operation and produced a complete machine-readable Source sync receipt."
+            - "The receipt established matching local and remote commits, a clean worktree and ALREADY_APPLIED state."
+            - "Capability discovery and verification design were incorrectly shifted from Cerebro to the user."
+            - "The same failure family had previously appeared when cerebro_sync was not resolved before replacement design."
+          analysis:
+            primary_failure_mode: "OPERATIONAL_RESPONSIBILITY_INVERSION"
+            contributing_failure_modes:
+              - "CANONICAL_OPERATION_NOT_RESOLVED"
+              - "DIRECT_HOST_ACCESS_CONFUSED_WITH_OPERATIONAL_CAPABILITY"
+              - "PARALLEL_MECHANISM_CREATED_BEFORE_GAP_PROOF"
+              - "USER_USED_AS_SOLUTION_DESIGNER_INSTEAD_OF_EXECUTION_CHANNEL"
+            required_reasoning_order:
+              - "identify_required_operational_state"
+              - "inspect_authoritative_Source_for_canonical_operation"
+              - "verify_operation_applicability_and_freshness"
+              - "define_preflight_and_acceptance"
+              - "select_the_minimum_execution_transport"
+              - "use_user_only_as_local_execution_channel_when_required"
+              - "interpret_machine_receipt"
+              - "claim_VERIFIED_only_from_valid_evidence"
+            replacement_gate:
+              requirement: "DOCUMENTED_CAPABILITY_GAP"
+              parallel_mechanism_before_gap_proof: "FORBIDDEN"
+            verified_gate:
+              requirement: "VALID_MACHINE_READABLE_EVIDENCE"
+              conversation_claim_alone: "INSUFFICIENT"
+        confidence: "HIGH"
+        implementation_status: "LOCKED_WISDOM_PENDING_CRITICAL_REORIENTATION_INTEGRATION"
+        relevance:
+          domains:
+            - "canonical-operation-resolution"
+            - "local-working-source"
+            - "source-verification"
+            - "execution-transport"
+            - "responsibility-boundaries"
+            - "critical-reorientation"
+          trigger_patterns:
+            - "operation_requires_local_execution"
+            - "assistant_lacks_direct_host_access"
+            - "existing_Cerebro_operation_may_exist"
+            - "replacement_tooling_is_being_considered"
+        traceability:
+          source_type: "USER_CORRECTED_OPERATIONAL_INCIDENT"
+          conversation_date: "2026-08-06"
+          related_command: "cerebro_sync"
+          related_working_source: "D:\Cerebro\Source\Cerebro_Source_v1.0"
+          related_repository: "morgul-tech/Cerebro-Source-1.0"
+          related_baseline_commit: "3764f71738de4ef2bcbeab52bd059fe95f205729"
+          related_receipt: "ba38caf9dcaa"
+          related_result: "ALREADY_APPLIED"
+      provenance:
+        introduced_by_ref: "USER-OBSERVATION-2026-08-06-CEREBRO-VERIFICATION"
+        basis_refs:
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+          - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+          - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
+          - "CEREBRO_SOURCE_SYNC_RECEIPT-ba38caf9dcaa"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+          - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+          - "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
+          - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
+      sequence: 44
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1355,4 +1437,5 @@ working_context:
       - "CTX-WISDOM-POWERSHELL-EMPTY-PIPELINE-ARRAY-SERIALIZATION-001"
       - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
       - "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
-  next_sequence: 44
+      - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
+  next_sequence: 45
