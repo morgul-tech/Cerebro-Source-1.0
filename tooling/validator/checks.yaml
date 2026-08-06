@@ -85,3 +85,57 @@ native_process_compatibility:
       failure_after_commit: report_local_commit
 
 # END PATCH-001A.PRE-010 NATIVE PROCESS VALIDATION
+
+# BEGIN PATCH-001C.PRE-001 SEALED PSHELL VALIDATION
+
+sealed_pshell_transport_compatibility:
+  introduced_by: PATCH-001C.PRE-001
+  short_handle: P1C-PR1
+  severity: error
+
+  required_contracts:
+    - single_copy_single_paste
+    - no_preserved_clipboard_state_dependency
+    - compact_visible_transport_token
+    - full_local_SHA256_derivation
+    - producer_selfvalidation
+    - exact_length_validation
+    - full_receiver_digest_validation
+    - allowed_target_root_validation
+    - powershell_parse_before_install
+    - atomic_install
+    - rollback_or_no_mutation_on_failure
+    - deterministic_machine_receipt
+
+  prohibited_patterns:
+    - explanation_inside_executable_payload
+    - markdown_fence_inside_installed_script
+    - manual_hash_replacement
+    - stateful_multistep_clipboard_delivery
+    - receiver_write_before_digest_validation
+    - full_visible_digest_when_short_transport_token_is_sufficient
+
+source_sync_recovery_validation:
+  introduced_by: PATCH-001C.PRE-001
+  short_handle: P1C-PR1
+  severity: error
+
+  required_contracts:
+    - local_to_authoritative_direction
+    - explicit_repository_binding
+    - fetch_only_baseline_refresh
+    - force_with_lease
+    - declared_path_staging
+    - remote_commit_verification
+    - remaining_change_gate
+    - separate_stdout_and_stderr
+    - allowed_exit_code_authority
+
+  prohibited_patterns:
+    - pull_during_sync
+    - reset_to_remote_during_sync
+    - automatic_merge_during_sync
+    - stderr_only_failure_classification
+    - unverified_remote_success
+
+# END PATCH-001C.PRE-001 SEALED PSHELL VALIDATION

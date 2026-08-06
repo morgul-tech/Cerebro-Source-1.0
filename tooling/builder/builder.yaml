@@ -211,6 +211,10 @@ patch_reference_registry:
       short_handle: P1B
       title: project_roadmap_contract
 
+    - canonical_id: PATCH-001C.PRE-001
+      short_handle: P1C-PR1
+      title: sealed_pshell_transport_and_source_sync_recovery
+      status: active
     - canonical_id: PATCH-001C
       short_handle: P1C
       title: bootengine_alignment
@@ -715,3 +719,113 @@ structured_state_compatibility:
   ownership_transfer: prohibited
 
 # END PATCH-001A.PRE-010 DELIVERY-AWARE NATIVE EXECUTION HOTFIX
+
+# BEGIN PATCH-001C.PRE-001 SEALED PSHELL TRANSPORT AND SOURCE SYNC RECOVERY
+
+sealed_pshell_transport_profile:
+  introduced_by: PATCH-001C.PRE-001
+  short_handle: P1C-PR1
+  status: active
+  owner: tooling.builder
+  delivery_mode: PSHELL
+  profile: SEALED_V1
+  architecture_change: false
+
+  purpose:
+    - remove_stateful_clipboard_handoffs
+    - enforce_single_copy_single_paste_delivery
+    - prevent_markdown_and_explanation_contamination
+    - minimize_visible_serialization_overhead
+    - preserve_deterministic_local_validation
+
+  user_flow:
+    required_actions:
+      - copy_one_complete_command
+      - paste_once_into_powershell
+    prohibited_dependencies:
+      - preserved_clipboard_state
+      - manual_payload_reassembly
+      - manual_hash_replacement
+      - manual_command_retyping_when_avoidable
+
+  envelope:
+    payload_encoding:
+      compression: gzip
+      transport: base64
+      decoded_text: UTF8
+    visible_integrity_token:
+      source: SHA256_prefix
+      hexadecimal_characters: 12
+      purpose: non_adversarial_transport_error_detection
+    full_integrity:
+      algorithm: SHA256
+      computed_locally_before_receiver_call: true
+      receiver_must_verify_full_digest: true
+    target_binding:
+      explicit_target_required: true
+      allowed_root_validation_required: true
+    validation_order:
+      - decode
+      - verify_visible_integrity_token
+      - derive_full_digest
+      - construct_receiver_envelope
+      - verify_length
+      - verify_full_digest
+      - validate_target
+      - parse_payload
+      - atomic_install
+
+  producer_requirements:
+    - calculate_digest_from_final_serialized_bytes
+    - selfvalidate_payload_before_delivery
+    - distinguish_producer_digest_error_from_transport_corruption
+    - emit_one_complete_copyable_command
+    - keep_explanation_outside_executable_payload
+
+  local_receiver:
+    canonical_command: cerebro_receive
+    implementation_template: tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    authority: non_authoritative_generated_helper
+
+source_sync_recovery_contract:
+  introduced_by: PATCH-001C.PRE-001
+  short_handle: P1C-PR1
+  status: active
+  owner: tooling.builder
+  implementation_template: tooling/builder/templates/pshell/cerebro_sync.ps1
+
+  direction:
+    source: verified_local_working_source
+    target: authoritative_source_remote
+
+  baseline:
+    establish_with:
+      - git_fetch
+      - remote_tracking_ref
+    must_not_use:
+      - git_pull
+      - git_reset_to_remote
+      - automatic_merge
+      - local_work_overwrite
+
+  publication:
+    stage_only_declared_paths_when_paths_are_supplied: true
+    commit_only_when_staged_diff_exists: true
+    push_mode: force_with_lease
+    verify_remote_commit_equals_local_head: true
+    allow_known_remaining_changes_only_when_explicit: true
+
+  native_process_semantics:
+    success_authority: allowed_exit_codes
+    stderr_on_exit_zero: diagnostic_not_failure
+    stdout_and_stderr_separate: true
+    immediate_exit_code_capture: true
+
+  machine_result:
+    human_readable_result_required: true
+    receipt_required: true
+    full_digest_visibility:
+      internal_or_authoritative_only: true
+      compact_user_visible_receipt_preferred: true
+
+# END PATCH-001C.PRE-001 SEALED PSHELL TRANSPORT AND SOURCE SYNC RECOVERY

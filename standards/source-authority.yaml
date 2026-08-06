@@ -46,3 +46,8 @@ rules:
   priority: critical
   verification:
   - implementation_disposable is true.
+- id: STD-SOURCE-R006
+  statement: Verified Working Source synchronization shall flow from local Working Source to the authoritative Source remote; remote state may establish the publication baseline but shall not overwrite local work during synchronization.
+  priority: critical
+  verification:
+  - synchronization uses fetch and force-with-lease without pull, reset-to-remote, or automatic merge.
