@@ -139,3 +139,39 @@ source_sync_recovery_validation:
     - unverified_remote_success
 
 # END PATCH-001C.PRE-001 SEALED PSHELL VALIDATION
+# BEGIN PATCH-001C.PRE-002 CORRECTIVE DELIVERY PREFLIGHT VALIDATION
+
+corrective_delivery_preflight_validation:
+  introduced_by: PATCH-001C.PRE-002
+  short_handle: P1C-PR2
+  severity: error
+  owner: tooling.validator
+
+  required_contracts:
+    - explicit_mandate_gate
+    - current_conversation_tool_discovery
+    - required_capability_resolution
+    - capability_invocation_verification
+    - output_surface_verification
+    - user_access_verification_when_required
+    - operating_conditions_lock
+    - existing_local_capability_resolution
+    - explicit_delivery_mode_resolution
+    - preserved_WORK_SELF_RUNNING_FILE_PSHELL_modes
+    - payload_class_separate_from_delivery_mode
+    - serialization_separate_from_payload_class
+    - delivery_lock_before_physical_serialization
+    - explicit_fallback_reason_for_large_or_sensitive_inline_PSHELL
+
+  prohibited_patterns:
+    - delivery_mode_selected_without_capability_evidence
+    - internal_artifact_creation_used_as_delivery_proof
+    - previous_conversation_capability_used_as_current_evidence
+    - user_access_required_but_not_verified
+    - rejected_delivery_mode_reused_without_verified_capability_change
+    - new_transport_generation_when_existing_capability_matches
+    - payload_generation_before_delivery_lock
+    - delivery_mode_used_as_payload_class
+    - payload_class_used_as_serialization_format
+
+# END PATCH-001C.PRE-002 CORRECTIVE DELIVERY PREFLIGHT VALIDATION

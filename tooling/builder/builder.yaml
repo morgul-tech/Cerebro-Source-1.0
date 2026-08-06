@@ -512,7 +512,11 @@ development_delivery_preflight:
 
   required_order:
     - explicit_mandate_gate
+    - existing_local_capability_resolution
+    - explicit_delivery_mode_resolution
     - current_context_capability_gate
+    - delivery_mode_selection
+    - payload_classification
     - delivery_mode_lock
     - target_host_compatibility_contract
     - physical_patch_generation
@@ -829,3 +833,90 @@ source_sync_recovery_contract:
       compact_user_visible_receipt_preferred: true
 
 # END PATCH-001C.PRE-001 SEALED PSHELL TRANSPORT AND SOURCE SYNC RECOVERY
+# BEGIN PATCH-001C.PRE-002 CORRECTIVE DELIVERY PREFLIGHT
+
+corrective_delivery_preflight:
+  introduced_by: PATCH-001C.PRE-002
+  short_handle: P1C-PR2
+  status: active
+  owner: tooling.builder
+  authority: cerebro-source
+  extends: development_delivery_preflight
+  architecture_change: false
+
+  existing_local_capability_resolution:
+    purpose: avoid_unnecessary_transport_generation
+    inspect:
+      - registered_cerebro_commands
+      - exported_pshell_functions
+      - existing_local_scripts
+      - active_patch_tools
+    outcomes:
+      CAPABILITY_MATCH:
+        generate_new_transport: false
+        action: use_existing_capability
+      NO_CAPABILITY_MATCH:
+        action: continue_delivery_preflight
+      AMBIGUOUS_MATCH:
+        action: resolve_from_active_state_or_control_stop
+
+  explicit_delivery_mode_resolution:
+    accepted_modes:
+      - WORK
+      - SELF_RUNNING_FILE
+      - PSHELL
+    explicit_valid_user_selection: honor
+    invalid_or_unavailable_selection: report_and_continue_only_if_authorized
+    safety_and_baseline_gates_remain_mandatory: true
+
+  rejection_scope:
+    key:
+      - candidate_ref
+      - development_run_ref
+      - delivery_mode
+    effect: mode_unavailable_for_current_run
+    reopen_when:
+      - explicit_user_reversal
+      - verified_capability_change
+      - new_development_run
+
+  pshell_classification:
+    payload_class:
+      - SMALL
+      - LARGE_OR_SENSITIVE
+    serialization:
+      - PLAIN
+      - SEALED
+    automatic_large_or_sensitive_triggers:
+      - contains_base64_or_compressed_blob
+      - creates_or_replaces_complete_file_content
+      - contains_here_string
+      - depends_on_backtick_line_continuation
+      - partial_copy_can_mutate_source
+      - partial_copy_can_create_invalid_artifact
+      - exceeds_configured_character_threshold
+
+  large_or_sensitive_inline_pshell:
+    classification: last_fallback
+    allowed_only_when:
+      - WORK_unavailable_or_rejected
+      - SELF_RUNNING_FILE_unavailable_or_unverified
+      - no_existing_local_capability_matches
+      - PSHELL_valid_for_target_host
+      - explicit_fallback_reason_recorded
+
+  decision_record:
+    required_before:
+      - final_physical_patch_structure
+      - physical_transport_generation
+    required_fields:
+      - candidate_ref
+      - existing_local_capability_result
+      - selected_delivery_mode
+      - payload_class
+      - serialization
+      - rejected_modes
+      - fallback_reason
+      - delivery_locked
+
+# END PATCH-001C.PRE-002 CORRECTIVE DELIVERY PREFLIGHT

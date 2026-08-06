@@ -551,6 +551,132 @@ working_context:
         derived_from_refs:
           - "PATCH-001C.PRE-001"
       sequence: 16
+    -
+      id: "CTX-WISDOM-NEXT-ACTION-COPYABLE-CANONICAL-COMMAND-001"
+      type: "WISDOM_RECORD"
+      scope: "NEXT-ACTION-PRESENTATION"
+      statement: "When the next action is unique and requires user action, the canonical command must stand alone as the final response element in a copyable block."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_AND_VERIFIED"
+        required_behavior:
+          - "resolve_one_unique_next_action"
+          - "present_the_canonical_command_alone"
+          - "place_it_as_the_final_response_element"
+          - "make_it_directly_copyable"
+      provenance:
+        introduced_by_ref: "USER-LOCKED-WISDOM-2026-08-06"
+        basis_refs:
+          - "CTX-DEC-P1B-PRE005"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P1B-PRE005"
+      sequence: 17
+    -
+      id: "CTX-WISDOM-LOCKED-WISDOM-FIRST-ELIGIBLE-PATCH-001"
+      type: "WISDOM_RECORD"
+      scope: "WISDOM-PERSISTENCE"
+      statement: "Every complete, valid, locked Wisdom record absent from authoritative Source must be included in the first eligible patch unless an explicit blocking gate applies."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-001C.PRE-002"
+        required_behavior:
+          - "enumerate_locked_unpersisted_wisdom_before_patch_finalization"
+          - "include_all_eligible_records_in_the_first_eligible_patch"
+          - "block_when_mandatory_wisdom_validation_fails"
+          - "record_any_explicit_exclusion_gate"
+      provenance:
+        introduced_by_ref: "USER-LOCKED-WISDOM-2026-08-06"
+        basis_refs:
+          - "CTX-DEC-P1B-PRE006"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P1B-PRE006"
+      sequence: 18
+    -
+      id: "CTX-WISDOM-DELIVERY-SELECTION-BEFORE-SERIALIZATION-001"
+      type: "WISDOM_RECORD"
+      scope: "DELIVERY-PREFLIGHT"
+      statement: "Delivery capability and mode must be resolved and locked before physical payload serialization; large or format-sensitive inline PSHELL is a last fallback."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-001C.PRE-002"
+        required_behavior:
+          - "resolve_existing_local_capability_first"
+          - "preserve_WORK_SELF_RUNNING_FILE_PSHELL"
+          - "separate_delivery_mode_payload_class_and_serialization"
+          - "lock_delivery_before_physical_generation"
+          - "require_reason_for_large_inline_PSHELL_fallback"
+      provenance:
+        introduced_by_ref: "PATCH-001C.PRE-002"
+        basis_refs:
+          - "CTX-WISDOM-SEALED-TRANSPORT-SERIALIZATION-EFFICIENCY-001"
+          - "CTX-WISDOM-PSHELL-FORMATTING-SENSITIVITY-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-SEALED-TRANSPORT-SERIALIZATION-EFFICIENCY-001"
+          - "CTX-WISDOM-PSHELL-FORMATTING-SENSITIVITY-001"
+      sequence: 19
+    -
+      id: "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+      type: "WISDOM_RECORD"
+      scope: "CONVERSATION-SPECIFIC-TOOL-AND-DELIVERY-CAPABILITY"
+      statement: "A tool or delivery surface must not be treated as available until the required capability and user-visible delivery state are verified in the current conversation."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-001C.PRE-002"
+        observations:
+          - "tool availability can differ between conversations"
+          - "internal artifact creation does not prove user-visible delivery"
+          - "a generated link does not prove user access"
+          - "success in another conversation is not transferable evidence"
+          - "environment handoff can change operating conditions"
+        capability_states:
+          - "UNKNOWN"
+          - "DECLARED"
+          - "INVOKABLE"
+          - "EXECUTION_VERIFIED"
+          - "OUTPUT_CREATED"
+          - "USER_ACCESS_UNVERIFIED"
+          - "USER_ACCESS_VERIFIED"
+          - "DEGRADED"
+          - "UNAVAILABLE"
+          - "REJECTED_FOR_CURRENT_RUN"
+        required_behavior:
+          - "discover_current_conversation_tools"
+          - "identify_required_capability"
+          - "verify_tool_invocation"
+          - "verify_required_output_surface"
+          - "verify_user_access_when_delivery_depends_on_access"
+          - "record_capability_evidence"
+          - "lock_operating_conditions"
+          - "select_delivery_mode_after_capability_lock"
+        prohibited:
+          - "assuming_tool_access_from_tool_name"
+          - "assuming_user_access_from_internal_file_creation"
+          - "presenting_unverified_download_links_as_working"
+          - "transferring_capability_evidence_between_conversations"
+          - "reusing_rejected_delivery_mode_without_capability_change"
+      provenance:
+        introduced_by_ref: "USER-REPORTED-FILE-DELIVERY-FAILURE-2026-08-06"
+        basis_refs:
+          - "PATCH-001C.PRE-002"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "PATCH-001C.PRE-002"
+      sequence: 20
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -572,4 +698,8 @@ working_context:
       - "CTX-WISDOM-SEALED-TRANSPORT-SERIALIZATION-EFFICIENCY-001"
       - "CTX-WISDOM-COPY-READINESS-SIGNAL-001"
       - "CTX-WISDOM-PSHELL-FORMATTING-SENSITIVITY-001"
-  next_sequence: 17
+      - "CTX-WISDOM-NEXT-ACTION-COPYABLE-CANONICAL-COMMAND-001"
+      - "CTX-WISDOM-LOCKED-WISDOM-FIRST-ELIGIBLE-PATCH-001"
+      - "CTX-WISDOM-DELIVERY-SELECTION-BEFORE-SERIALIZATION-001"
+      - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+  next_sequence: 21

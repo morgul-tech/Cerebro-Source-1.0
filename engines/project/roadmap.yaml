@@ -213,6 +213,20 @@ roadmap:
         - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
         - "tooling/builder/templates/pshell/cerebro_sync.ps1"
     -
+      id: "PATCH-001C.PRE-002"
+      title: "corrective_delivery_preflight_and_wisdom_persistence"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001C.PRE-001"
+      decision_refs: []
+      source_refs:
+        - "tooling/builder/builder.yaml"
+        - "tooling/validator/checks.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+    -
       id: "PATCH-001C"
       title: "bootengine_alignment"
       phase_ref: "PHASE-0"
@@ -220,6 +234,7 @@ roadmap:
       status: "ACTIVE"
       dependency_refs:
         - "PATCH-001C.PRE-001"
+        - "PATCH-001C.PRE-002"
       decision_refs: []
       source_refs: []
     -
