@@ -1,0 +1,116 @@
+schema: cerebro-handboot-runtime-state-schema/v0.1
+
+runtime_state_contract:
+  id: CONTRACT-HANDBOOT-RUNTIME-STATE
+  introduced_by: PATCH-002.PRE-003
+  owner: loader
+  authority: derived_non_authoritative
+  format: JSON
+
+required_root_fields:
+  - schema
+  - runtime
+
+required_runtime_fields:
+  - runtime_id
+  - profile
+  - created_at_utc
+  - activated_at_utc
+  - state
+  - operational
+  - authority
+  - bootengine
+  - working_source
+  - authoritative_source
+  - source_validation
+  - components
+  - execution
+  - handoff
+  - control
+  - receipt
+
+authority_required_fields:
+  - persistent_authority
+  - boot_authority
+  - runtime_authority
+  - handoff_authority
+
+bootengine_required_fields:
+  - source
+  - sha256
+  - validation_state
+
+working_source_required_fields:
+  - path
+  - branch
+  - commit
+  - worktree_state
+  - alignment_state
+
+authoritative_source_required_fields:
+  - repository
+  - remote
+  - branch
+  - commit
+  - fetch_state
+
+source_validation_required_fields:
+  - manifest_state
+  - activation_contract_state
+  - bootstrap_contract_state
+  - required_components_state
+
+execution_required_fields:
+  - current_patch
+  - next_patch
+  - canonical_command
+
+handoff_required_fields:
+  - requested
+  - path
+  - state
+  - handoff_id
+  - resume_receipt
+
+control_required_fields:
+  - runtime_constructed
+  - runtime_activated
+  - control_transferred
+  - failure_stage
+  - failure_code
+
+receipt_required_fields:
+  - algorithm
+  - value
+  - material_version
+
+invariants:
+  - operational_requires_state_active_control_transferred
+  - operational_requires_exact_source_alignment
+  - operational_requires_all_source_validation_pass
+  - operational_requires_runtime_activated
+  - operational_requires_control_transferred
+  - failed_handoff_prevents_operational_state
+  - runtime_state_must_not_mutate_source
+  - runtime_state_must_be_written_atomically
+  - receipt_must_be_deterministic_for_same_material
+
+allowed_runtime_states:
+  - CONSTRUCTED_INACTIVE
+  - ACTIVE
+  - ACTIVE_CONTROL_TRANSFERRED
+  - INACTIVE_CONTROL_RETAINED
+
+allowed_handoff_states:
+  - NONE
+  - SKIPPED_EXPLICITLY
+  - RESUMED
+  - FAILED
+
+success_condition:
+  state: ACTIVE_CONTROL_TRANSFERRED
+  operational: true
+
+failure_condition:
+  state: INACTIVE_CONTROL_RETAINED
+  operational: false

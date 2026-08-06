@@ -340,6 +340,18 @@ function cerebro_tools_status {
         cerebro_sync = [bool](
             Get-Command cerebro_sync -ErrorAction SilentlyContinue
         )
+        cerebro_handoff = [bool](
+            Get-Command cerebro_handoff -ErrorAction SilentlyContinue
+        )
+        cerebro_resume = [bool](
+            Get-Command cerebro_resume -ErrorAction SilentlyContinue
+        )
+        bootCerebro = [bool](
+            Get-Command bootCerebro -ErrorAction SilentlyContinue
+        )
+        bootini = [bool](
+            Get-Command bootini -ErrorAction SilentlyContinue
+        )
     }
 }
 
@@ -410,5 +422,75 @@ function cerebro_resume {
 
     Invoke-CerebroResumeCore @PSBoundParameters
 }
+
+function bootCerebro {
+    [CmdletBinding()]
+    param(
+        [string]$WorkingSourcePath =
+            'D:\Cerebro\Source\Cerebro_Source_v1.0',
+
+        [string]$Remote = 'origin',
+
+        [string]$Branch = 'main',
+
+        [string]$BootEngineUrl =
+            'https://raw.githubusercontent.com/morgul-tech/B/main/BootEngine',
+
+        [string]$HandoffPath =
+            'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
+
+        [string]$RuntimeStatePath =
+            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+
+        [switch]$SkipHandoff
+    )
+
+    $scriptPath = [IO.Path]::GetFullPath(
+        (
+            Join-Path `
+                $PSScriptRoot `
+                '..\..\..\loader\cerebro_boot.ps1'
+        )
+    )
+
+    if (
+        -not (
+            Test-Path `
+                -LiteralPath $scriptPath `
+                -PathType Leaf
+        )
+    ) {
+        throw "CEREBRO_BOOT_SCRIPT_NOT_FOUND:$scriptPath"
+    }
+
+    . $scriptPath
+
+    Invoke-CerebroBootCore @PSBoundParameters
+}
+
+function bootini {
+    [CmdletBinding()]
+    param(
+        [string]$WorkingSourcePath =
+            'D:\Cerebro\Source\Cerebro_Source_v1.0',
+
+        [string]$Remote = 'origin',
+
+        [string]$Branch = 'main',
+
+        [string]$BootEngineUrl =
+            'https://raw.githubusercontent.com/morgul-tech/B/main/BootEngine',
+
+        [string]$HandoffPath =
+            'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
+
+        [string]$RuntimeStatePath =
+            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+
+        [switch]$SkipHandoff
+    )
+
+    bootCerebro @PSBoundParameters
+}
 Export-ModuleMember `
-    -Function cerebro_receive, cerebro_sync, cerebro_handoff, cerebro_resume, cerebro_tools_status
+    -Function cerebro_receive, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, bootini, cerebro_tools_status

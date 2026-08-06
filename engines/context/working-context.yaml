@@ -1177,6 +1177,83 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-HANDOFF-YAML-LIST-SHAPES-001"
       sequence: 39
+    -
+      id: "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
+      type: "DECISION"
+      scope: "PATCH-002.PRE-003"
+      statement: "HandBoot is the locked controlled-session bootstrap integrating external BootEngine orchestration, authoritative Source verification, local Working Source alignment, atomic Cerebro activation, and handoff processing inside the activated Cerebro runtime."
+      payload:
+        decision_status: "LOCKED_AND_IMPLEMENTED"
+        short_name: "HandBoot"
+        canonical_command: "bootCerebro"
+        command_aliases:
+          - "bootini"
+        delivery_level: 3
+        implementation_mode: "self_running_powershell_payloads"
+        working_model:
+          working_source:
+            role: "mutable_local_development_surface"
+            authority: "NON_AUTHORITATIVE"
+          authoritative_source:
+            role: "sole_authority_and_verification_target"
+            repository: "morgul-tech/Cerebro-Source-1.0"
+            branch: "main"
+          publication:
+            command: "cerebro_sync"
+            boot_may_publish: false
+        startup_order:
+          - "fetch_and_verify_bootengine"
+          - "fetch_authoritative_source_reference"
+          - "verify_working_source_repository"
+          - "align_working_source_by_safe_fast_forward"
+          - "verify_manifest_and_required_components"
+          - "construct_derived_runtime_state"
+          - "atomically_activate_runtime"
+          - "process_handoff_inside_active_cerebro"
+          - "transfer_control"
+        success_state: "ACTIVE_CONTROL_TRANSFERRED"
+        failure_state: "INACTIVE_CONTROL_RETAINED"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-003"
+        basis_refs:
+          - "PATCH-002.PRE-002.POST-002"
+          - "CEREBRO-MINIMAL-RUNTIME-BOOTSTRAP-001"
+          - "CEREBRO-HANDBOOT-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
+          - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
+      sequence: 40
+    -
+      id: "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
+      type: "WISDOM_RECORD"
+      scope: "BOOT-HANDOFF-RUNTIME-INTEGRATION"
+      statement: "A session handoff is trustworthy only when it is processed after authoritative Source alignment and inside a successfully activated derived Cerebro runtime; resume validation alone does not initialize or control the execution environment."
+      payload:
+        maturity: "LOCKED"
+        assessment: "IMPLEMENTED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-002.PRE-003"
+        relevance: "CONTROLLED_SESSION_CONTINUITY"
+        implications:
+          - "cerebro_resume_is_subordinate_to_bootCerebro"
+          - "handoff_processing_requires_active_runtime"
+          - "machine_receipt_is_required_for_operational_claim"
+          - "conversation_text_alone_cannot_prove_activation"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-003"
+        basis_refs:
+          - "CEREBRO-HANDBOOT-001"
+          - "CONTRACT-HANDBOOT-RUNTIME-STATE"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
+          - "CTX-WISDOM-POWERSHELL-EMPTY-PIPELINE-ARRAY-SERIALIZATION-001"
+      sequence: 41
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1199,6 +1276,7 @@ working_context:
       - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
       - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
       - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
+      - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     override_refs: []
@@ -1219,4 +1297,5 @@ working_context:
       - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
       - "CTX-WISDOM-HANDOFF-YAML-LIST-SHAPES-001"
       - "CTX-WISDOM-POWERSHELL-EMPTY-PIPELINE-ARRAY-SERIALIZATION-001"
-  next_sequence: 40
+      - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
+  next_sequence: 42

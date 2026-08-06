@@ -48,3 +48,49 @@ rules:
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+# BEGIN PATCH-002.PRE-003 HANDBOOT ACTIVATION INTEGRATION
+
+handboot_activation:
+  introduced_by: PATCH-002.PRE-003
+  contract_ref: standards/runtime/handboot.yaml
+  runtime_state_contract_ref: standards/runtime/handboot-runtime-state-schema.yaml
+  canonical_command: bootCerebro
+  aliases:
+    - bootini
+
+  working_model:
+    working_source_role: mutable_local_development_surface
+    authoritative_source_role: sole_authority_and_verification_target
+    publication_command: cerebro_sync
+    boot_may_publish: false
+
+  required_order:
+    - fetch_and_verify_bootengine
+    - fetch_authoritative_source_reference
+    - verify_working_source_repository
+    - align_working_source_by_safe_fast_forward
+    - verify_manifest_and_required_components
+    - construct_derived_runtime_state
+    - atomically_activate_runtime
+    - process_handoff_inside_active_cerebro
+    - transfer_control
+
+  activation_gate:
+    required_state_before_handoff: ACTIVE
+    required_state_after_control_transfer: ACTIVE_CONTROL_TRANSFERRED
+    operational_requires_control_transfer: true
+    partial_activation_allowed: false
+
+  handoff_gate:
+    handoff_may_run_before_activation: false
+    handoff_must_run_inside_controlled_runtime: true
+    invalid_handoff_is_boot_failure: true
+    missing_handoff_is_allowed: true
+
+  failure_state:
+    runtime_state: INACTIVE_CONTROL_RETAINED
+    operational: false
+    source_preserved: true
+    control_retained: true
+
+# END PATCH-002.PRE-003 HANDBOOT ACTIVATION INTEGRATION

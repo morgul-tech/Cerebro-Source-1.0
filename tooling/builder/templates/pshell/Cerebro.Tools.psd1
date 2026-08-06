@@ -12,6 +12,8 @@
         'cerebro_sync',
         'cerebro_handoff',
         'cerebro_resume',
+        'bootCerebro',
+        'bootini',
         'cerebro_tools_status'
     )
     CmdletsToExport = @()

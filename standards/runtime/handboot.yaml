@@ -1,0 +1,271 @@
+schema: cerebro-handboot/v0.1
+
+handboot:
+  id: CEREBRO-HANDBOOT-001
+  introduced_by: PATCH-002.PRE-003
+  title: controlled_boot_and_handoff_initialization
+  status: LOCKED
+  maturity: OPERATIONAL_MINIMUM
+  delivery_level: 3
+
+  purpose: >
+    Initialize a fresh controlled Cerebro environment from local Working
+    Source, verify that Working Source is aligned with the sole authoritative
+    Source, activate a derived runtime, and process a valid session handoff
+    only after Cerebro activation has succeeded.
+
+  entrypoints:
+    canonical: bootCerebro
+    aliases:
+      - bootini
+
+  surfaces:
+    working_source:
+      default_path: D:\Cerebro\Source\Cerebro_Source_v1.0
+      role: mutable_local_development_surface
+      authority: non_authoritative
+    authoritative_source:
+      repository: morgul-tech/Cerebro-Source-1.0
+      branch: main
+      remote: origin
+      role: sole_authority_and_verification_target
+    bootengine:
+      source: https://raw.githubusercontent.com/morgul-tech/B/main/BootEngine
+      role: external_boot_orchestration
+      authority_over_cerebro_source: false
+    runtime_state:
+      default_path: D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json
+      role: derived_operational_state
+      authority: non_authoritative
+    handoff:
+      default_path: D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json
+      role: derived_session_continuity_input
+      authority: non_authoritative
+
+  authority_invariants:
+    - github_source_is_sole_persistent_authority
+    - working_source_is_never_promoted_by_boot
+    - runtime_state_is_never_promoted_to_source
+    - handoff_is_never_promoted_to_source
+    - bootengine_orchestrates_but_does_not_replace_source_authority
+    - source_mutation_requires_explicit_development_and_cerebro_sync
+    - boot_sequence_must_not_commit_or_push
+
+  required_sequence:
+    - sequence: 1
+      state: FETCHING
+      operation: fetch_and_verify_bootengine
+      failure_effect: inactive_control_retained
+    - sequence: 2
+      state: FETCHING
+      operation: fetch_authoritative_source_reference
+      failure_effect: inactive_control_retained
+    - sequence: 3
+      state: VERIFYING
+      operation: verify_working_source_repository
+      failure_effect: inactive_control_retained
+    - sequence: 4
+      state: VERIFYING
+      operation: align_working_source_by_safe_fast_forward
+      failure_effect: inactive_control_retained
+    - sequence: 5
+      state: ANALYZING
+      operation: verify_manifest_and_required_components
+      failure_effect: inactive_control_retained
+    - sequence: 6
+      state: ANALYZING
+      operation: construct_derived_runtime_state
+      failure_effect: discard_partial_runtime_state_and_stop
+    - sequence: 7
+      state: ACTIVATING
+      operation: atomically_activate_runtime
+      failure_effect: inactive_control_retained
+    - sequence: 8
+      state: ACTIVATING
+      operation: process_handoff_inside_active_cerebro
+      failure_effect: active_without_control_transfer
+    - sequence: 9
+      state: COMPLETE
+      operation: transfer_control
+      failure_effect: active_control_retained
+
+  source_alignment:
+    required_remote: origin
+    required_branch: main
+    fetch_required: true
+    working_tree_must_be_clean: true
+    detached_head_allowed: false
+
+    states:
+      equal:
+        action: continue
+      local_behind:
+        action: git_merge_ff_only
+        allowed: true
+      local_ahead:
+        action: reject
+        reason: local_only_commit_requires_explicit_development_review
+      diverged:
+        action: reject
+        reason: automatic_reconciliation_forbidden
+
+    prohibited_operations:
+      - reset_hard
+      - force_checkout
+      - rebase
+      - merge_commit
+      - commit
+      - push
+      - force_push
+      - automatic_conflict_resolution
+
+  bootengine_validation:
+    required_tokens:
+      - BOOTSTRAP ENGINE
+      - Configuration := IMMUTABLE
+      - CurrentMaster.Repository := morgul-tech/Cerebro-Source-1.0
+      - CurrentMaster.Branch := main
+      - CurrentMaster.Path := cerebro.yaml
+      - IDLE
+      - FETCHING
+      - VERIFYING
+      - ANALYZING
+      - ACTIVATING
+      - COMPLETE
+      - FAILED
+      - UndefinedTransition
+      - FORBIDDEN
+
+  required_source_components:
+    - cerebro.yaml
+    - mcp/activation.yaml
+    - standards/runtime/minimal-runtime-bootstrap.yaml
+    - standards/runtime/handboot.yaml
+    - standards/runtime/handboot-runtime-state-schema.yaml
+    - standards/session-handoff.yaml
+    - standards/session-handoff-schema.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+    - tooling/builder/templates/pshell/Cerebro.Tools.psd1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    - tooling/builder/templates/pshell/cerebro_handoff.ps1
+    - tooling/loader/cerebro_resume.ps1
+    - tooling/loader/cerebro_boot.ps1
+    - tooling/validator/checks.yaml
+
+  manifest_validation:
+    entrypoint: cerebro.yaml
+    required_tokens:
+      - schema:
+      - source
+      - components
+      - engines
+      - tooling
+
+  activation_contract_validation:
+    path: mcp/activation.yaml
+    required_tokens:
+      - external_protocol: Oppstartsprotokoll
+      - entrypoint: cerebro.yaml
+      - fetch_manifest
+      - verify_source
+      - verify_release
+      - load_mcp
+      - load_required_engines
+      - load_required_modules
+      - initialize_runtime
+      - activate
+
+  bootstrap_contract_validation:
+    path: standards/runtime/minimal-runtime-bootstrap.yaml
+    required_tokens:
+      - persistent_authority: "Cerebro Source"
+      - boot_authority: "orchestration_only"
+      - resolve_authoritative_source
+      - validate_required_contracts
+      - construct_derived_runtime_state
+      - activate_runtime
+      - transfer_control
+
+  runtime:
+    profile: cerebro-controlled-session/v0.1
+    construction_state: CONSTRUCTED_INACTIVE
+    activation_success_state: ACTIVE
+    control_transfer_success_state: ACTIVE_CONTROL_TRANSFERRED
+    failure_state: INACTIVE_CONTROL_RETAINED
+    partial_activation_allowed: false
+    temporary_file_required: true
+    atomic_replace_required: true
+
+  handoff_processing:
+    occurs_after_runtime_activation: true
+    missing_handoff:
+      disposition: NONE
+      boot_may_continue: true
+    valid_handoff:
+      disposition: RESUMED
+      resume_command: cerebro_resume
+    invalid_handoff:
+      disposition: FAILED
+      boot_must_fail: true
+      runtime_must_not_be_reported_operational: true
+    skip_switch:
+      name: SkipHandoff
+      allowed: true
+      disposition: SKIPPED_EXPLICITLY
+
+  operational_definition:
+    required:
+      - bootengine_verified
+      - authoritative_source_fetched
+      - working_source_aligned
+      - manifest_verified
+      - required_components_verified
+      - runtime_state_active
+      - handoff_resolved
+      - control_transferred
+      - deterministic_receipt_emitted
+
+  receipt:
+    deterministic: true
+    material_fields:
+      - command
+      - bootengine_sha256
+      - source_commit
+      - runtime_profile
+      - runtime_state
+      - handoff_state
+      - current_patch
+      - canonical_command
+    success_state: ACTIVE_CONTROL_TRANSFERRED
+    failure_state: INACTIVE_CONTROL_RETAINED
+
+  fail_closed_conditions:
+    - bootengine_fetch_failed
+    - bootengine_contract_invalid
+    - authoritative_source_fetch_failed
+    - working_source_missing
+    - working_source_dirty
+    - working_source_detached
+    - working_source_wrong_branch
+    - working_source_local_ahead
+    - working_source_diverged
+    - working_source_fast_forward_failed
+    - manifest_missing
+    - manifest_contract_invalid
+    - required_component_missing
+    - activation_contract_invalid
+    - bootstrap_contract_invalid
+    - runtime_construction_failed
+    - runtime_activation_failed
+    - handoff_resume_failed
+    - control_transfer_failed
+
+  explicit_non_goals:
+    - mutate_authoritative_source
+    - commit_working_source
+    - push_working_source
+    - recover_uncommitted_development
+    - reconcile_diverged_git_history
+    - activate_chat_conversation_without_machine_execution
+    - replace_external_bootengine

@@ -344,3 +344,115 @@ session_handoff_validation:
     - execution_token_mismatch
 
 # END PATCH-002.PRE-002 SESSION HANDOFF VALIDATION
+# BEGIN PATCH-002.PRE-003 HANDBOOT VALIDATION
+
+handboot_validation:
+  introduced_by: PATCH-002.PRE-003
+  contract_ref: standards/runtime/handboot.yaml
+  runtime_state_contract_ref: standards/runtime/handboot-runtime-state-schema.yaml
+  severity: error
+  owner: tooling.validator
+
+  required_files:
+    - standards/runtime/handboot.yaml
+    - standards/runtime/handboot-runtime-state-schema.yaml
+    - tooling/loader/cerebro_boot.ps1
+    - tooling/loader/cerebro_resume.ps1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psd1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+
+  required_commands:
+    - bootCerebro
+    - bootini
+    - cerebro_resume
+    - cerebro_sync
+
+  required_authority_assertions:
+    - github_source_is_sole_persistent_authority
+    - working_source_is_mutable_non_authoritative_surface
+    - bootengine_is_external_orchestration_only
+    - runtime_state_is_derived_non_authoritative
+    - handoff_is_derived_non_authoritative
+    - boot_sequence_cannot_commit
+    - boot_sequence_cannot_push
+    - source_publication_requires_cerebro_sync
+
+  required_boot_order:
+    - fetch_and_verify_bootengine
+    - fetch_authoritative_source_reference
+    - verify_working_source_repository
+    - align_working_source_by_safe_fast_forward
+    - verify_manifest_and_required_components
+    - construct_derived_runtime_state
+    - atomically_activate_runtime
+    - process_handoff_inside_active_cerebro
+    - transfer_control
+
+  required_source_alignment:
+    - clean_worktree
+    - attached_head
+    - required_branch
+    - required_remote
+    - fetch_before_comparison
+    - equal_commit_allowed
+    - strict_local_behind_allows_ff_only
+    - local_ahead_rejected
+    - divergence_rejected
+    - no_automatic_conflict_resolution
+
+  required_runtime_controls:
+    - constructed_inactive_before_activation
+    - atomic_runtime_state_write
+    - runtime_active_before_handoff
+    - failed_handoff_prevents_operational_state
+    - control_transfer_after_handoff_resolution
+    - deterministic_operational_receipt
+    - failure_receipt_contains_stage_and_code
+
+  required_runtime_states:
+    success: ACTIVE_CONTROL_TRANSFERRED
+    failure: INACTIVE_CONTROL_RETAINED
+    operational_success: true
+    operational_failure: false
+
+  required_handoff_states:
+    - NONE
+    - SKIPPED_EXPLICITLY
+    - RESUMED
+    - FAILED
+
+  fail_closed:
+    - bootengine_fetch_failure
+    - bootengine_contract_failure
+    - authoritative_source_fetch_failure
+    - dirty_worktree
+    - detached_head
+    - wrong_branch
+    - wrong_remote
+    - local_ahead
+    - diverged_history
+    - failed_fast_forward
+    - missing_manifest
+    - invalid_manifest
+    - missing_required_component
+    - invalid_activation_contract
+    - invalid_bootstrap_contract
+    - runtime_construction_failure
+    - runtime_activation_failure
+    - handoff_resume_failure
+    - control_transfer_failure
+
+  prohibited:
+    - direct_GitHub_source_mutation
+    - boot_commit
+    - boot_push
+    - reset_hard
+    - force_checkout
+    - automatic_rebase
+    - automatic_merge_commit
+    - automatic_conflict_resolution
+    - handoff_before_runtime_activation
+    - operational_true_without_control_transfer
+    - conversational_activation_without_machine_receipt
+
+# END PATCH-002.PRE-003 HANDBOOT VALIDATION
