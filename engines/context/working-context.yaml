@@ -254,7 +254,7 @@ working_context:
       id: "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
       type: "WISDOM_RECORD"
       scope: "COMMAND-RESOLUTION-AND-CAPABILITY-DISCOVERY"
-      statement: "Hendelsen med inputen sync cerebro viste at manglende oppslag av den eksisterende cerebro_sync-kommandoen fÃ¸rte til feil synkretning og en unÃ¸dvendig erstatningslÃ¸sning."
+      statement: "Hendelsen med inputen sync cerebro viste at manglende oppslag av den eksisterende cerebro_sync-kommandoen førte til feil synkretning og en unødvendig erstatningsløsning."
       payload:
         maturity: "CONFIRMED_SINGLE_INCIDENT"
         assessment:
@@ -267,11 +267,11 @@ working_context:
           observations:
             - "Inputen var kort, kommando-lignende og brukte etablert Cerebro-terminologi."
             - "cerebro_sync var allerede tilgjengelig og klar for bruk."
-            - "Den eksisterende kommandoen ble ikke undersÃ¸kt fÃ¸r synkretning ble tolket."
-            - "Synk ble fÃ¸rst tolket som kontroll eller innhenting fra GitHub i stedet for publisering fra lokal Working Source."
-            - "Brukeren mÃ¥tte eksplisitt forklare at lokal Working Source skulle overskrive autoritativ Source i repoet."
-            - "En ny PSHELL-synkroniseringslÃ¸sning ble konstruert selv om den kanoniske lÃ¸sningen allerede eksisterte."
-            - "ErstatningslÃ¸sningen introduserte i tillegg en unÃ¸dvendig feil med en uinitialisert failureMessage-variabel."
+            - "Den eksisterende kommandoen ble ikke undersøkt før synkretning ble tolket."
+            - "Synk ble først tolket som kontroll eller innhenting fra GitHub i stedet for publisering fra lokal Working Source."
+            - "Brukeren måtte eksplisitt forklare at lokal Working Source skulle overskrive autoritativ Source i repoet."
+            - "En ny PSHELL-synkroniseringsløsning ble konstruert selv om den kanoniske løsningen allerede eksisterte."
+            - "Erstatningsløsningen introduserte i tillegg en unødvendig feil med en uinitialisert failureMessage-variabel."
           analysis:
             primary_failure_mode: "EXISTING_COMMAND_NOT_RESOLVED_BEFORE_INTERPRETATION"
             contributing_factors:
