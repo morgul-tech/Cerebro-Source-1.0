@@ -345,13 +345,29 @@ roadmap:
         - "engines/context/working-context.yaml"
         - "engines/project/roadmap.yaml"
     -
+      id: "PATCH-002.PRE-002.POST-001"
+      title: "handoff_parser_and_module_invocation_correction"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-002.PRE-002"
+      decision_refs:
+        - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
+      source_refs:
+        - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
+        - "tooling/loader/cerebro_resume.ps1"
+        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+    -
       id: "PATCH-002"
       title: "runtime_0_1_scope_and_minimum_contracts"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-002.PRE-002"
+        - "PATCH-002.PRE-002.POST-001"
       decision_refs:
         - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       source_refs: []
@@ -497,6 +513,11 @@ roadmap:
       object_type: "DECISION"
       object_ref: "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -521,6 +542,7 @@ roadmap:
       - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
       - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
+      - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
   revision:
-    sequence: 6
-    last_locked_patch_ref: "PATCH-002.PRE-002"
+    sequence: 7
+    last_locked_patch_ref: "PATCH-002.PRE-002.POST-001"

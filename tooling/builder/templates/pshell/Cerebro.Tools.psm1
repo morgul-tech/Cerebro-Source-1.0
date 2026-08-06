@@ -383,7 +383,7 @@ function cerebro_handoff {
 
     . $scriptPath
 
-    & cerebro_handoff @PSBoundParameters
+    Invoke-CerebroHandoffCore @PSBoundParameters
 }
 
 function cerebro_resume {
@@ -408,7 +408,7 @@ function cerebro_resume {
 
     . $scriptPath
 
-    & cerebro_resume @PSBoundParameters
+    Invoke-CerebroResumeCore @PSBoundParameters
 }
 Export-ModuleMember `
     -Function cerebro_receive, cerebro_sync, cerebro_handoff, cerebro_resume, cerebro_tools_status

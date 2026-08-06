@@ -1079,6 +1079,55 @@ working_context:
         derived_from_refs:
           - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
       sequence: 35
+    -
+      id: "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
+      type: "DECISION"
+      scope: "PATCH-002.PRE-002.POST-001"
+      statement: "Session handoff context-index parsing was corrected to support both empty inline lists and block lists, and public module commands were separated from internal core function names."
+      payload:
+        decision_status: "LOCKED_AND_IMPLEMENTED"
+        effective_scope: "session-handoff-v0.1"
+        corrected_failures:
+          - "empty_inline_context_index_not_supported"
+          - "public_and_internal_function_name_collision"
+        preserved_contract:
+          - "clean_pushed_source_only"
+          - "fail_closed_source_verification"
+          - "deterministic_resume_receipt"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-002.POST-001"
+        basis_refs:
+          - "PATCH-002.PRE-002"
+          - "HANDOFF_CONTEXT_INDEX_NOT_FOUND:override_refs"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
+      sequence: 36
+    -
+      id: "CTX-WISDOM-HANDOFF-YAML-LIST-SHAPES-001"
+      type: "WISDOM_RECORD"
+      scope: "SESSION-HANDOFF"
+      statement: "Handoff extraction must recognize all schema-valid representations used by authoritative Source, including empty inline lists and populated block lists."
+      payload:
+        maturity: "LOCKED"
+        assessment: "IMPLEMENTED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-002.PRE-002.POST-001"
+        relevance: "HANDOFF_CONTEXT_EXTRACTION"
+        traceability:
+          - "PATCH-002.PRE-002.POST-001"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-002.POST-001"
+        basis_refs:
+          - "HANDOFF_CONTEXT_INDEX_NOT_FOUND:override_refs"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
+      sequence: 37
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1099,6 +1148,7 @@ working_context:
       - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
       - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
+      - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     override_refs: []
@@ -1117,4 +1167,5 @@ working_context:
       - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
       - "CTX-WISDOM-LEVEL3-PAYLOAD-PARTITIONING-001"
       - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
-  next_sequence: 36
+      - "CTX-WISDOM-HANDOFF-YAML-LIST-SHAPES-001"
+  next_sequence: 38

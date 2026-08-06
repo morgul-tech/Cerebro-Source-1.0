@@ -68,20 +68,54 @@ function Get-CerebroContextIndexValues {
         [Parameter(Mandatory)][string]$Name
     )
 
-    $pattern = (
-        '(?ms)^\s{4}' + [regex]::Escape($Name) +
-        ':\s*\r?\n(?<items>(?:^\s{6}-\s+"[^"]+"\s*\r?\n?)*)'
+    $inlinePattern = (
+        '(?m)^\s{4}' +
+        [regex]::Escape($Name) +
+        ':\s*\[\s*(?<items>[^\]]*)\s*\]\s*$'
     )
 
-    $match = [regex]::Match($Context, $pattern)
+    $inlineMatch = [regex]::Match(
+        $Context,
+        $inlinePattern
+    )
 
-    if (-not $match.Success) {
+    if ($inlineMatch.Success) {
+        $inlineItems = $inlineMatch.Groups['items'].Value
+
+        if ([string]::IsNullOrWhiteSpace($inlineItems)) {
+            return @()
+        }
+
+        return @(
+            [regex]::Matches(
+                $inlineItems,
+                '"([^"]+)"'
+            ) |
+                ForEach-Object {
+                    $_.Groups[1].Value
+                }
+        )
+    }
+
+    $blockPattern = (
+        '(?ms)^\s{4}' +
+        [regex]::Escape($Name) +
+        ':\s*\r?\n' +
+        '(?<items>(?:^\s{6}-\s+"[^"]+"\s*\r?\n?)*)'
+    )
+
+    $blockMatch = [regex]::Match(
+        $Context,
+        $blockPattern
+    )
+
+    if (-not $blockMatch.Success) {
         throw "HANDOFF_CONTEXT_INDEX_NOT_FOUND:$Name"
     }
 
     return @(
         [regex]::Matches(
-            $match.Groups['items'].Value,
+            $blockMatch.Groups['items'].Value,
             '"([^"]+)"'
         ) |
             ForEach-Object {
@@ -90,7 +124,7 @@ function Get-CerebroContextIndexValues {
     )
 }
 
-function cerebro_handoff {
+function Invoke-CerebroHandoffCore {
     [CmdletBinding()]
     param(
         [string]$RepoPath = 'D:\Cerebro\Source\Cerebro_Source_v1.0',

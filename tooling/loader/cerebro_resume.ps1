@@ -19,7 +19,7 @@ function Get-CerebroResumeFileSha256 {
     }
 }
 
-function cerebro_resume {
+function Invoke-CerebroResumeCore {
     [CmdletBinding()]
     param(
         [string]$HandoffPath =
