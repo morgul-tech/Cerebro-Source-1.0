@@ -1128,6 +1128,55 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
       sequence: 37
+    -
+      id: "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
+      type: "DECISION"
+      scope: "PATCH-002.PRE-002.POST-002"
+      statement: "Session handoff context-index values are explicitly materialized as arrays so empty, single-value and multi-value indexes retain one consistent JSON array contract."
+      payload:
+        decision_status: "LOCKED_AND_IMPLEMENTED"
+        effective_scope: "session-handoff-v0.1"
+        corrected_failure: "empty_pipeline_result_serialized_as_object"
+        required_json_shapes:
+          current_basis_refs: "array"
+          decision_refs: "array"
+          override_refs: "array"
+          wisdom_refs: "array"
+        powershell_rule: "wrap_function_output_in_array_subexpression_at_artifact_assignment"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-002.POST-002"
+        basis_refs:
+          - "PATCH-002.PRE-002.POST-001"
+          - "HANDOFF_ARTIFACT_OVERRIDE_REFS_INVALID"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
+      sequence: 38
+    -
+      id: "CTX-WISDOM-POWERSHELL-EMPTY-PIPELINE-ARRAY-SERIALIZATION-001"
+      type: "WISDOM_RECORD"
+      scope: "POWERSHELL-JSON-SERIALIZATION"
+      statement: "An empty PowerShell function result must be explicitly wrapped at assignment when the output contract requires a JSON array; returning an empty array alone does not emit an array object through the pipeline."
+      payload:
+        maturity: "LOCKED"
+        assessment: "IMPLEMENTED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-002.PRE-002.POST-002"
+        relevance: "SESSION_HANDOFF_JSON_INTEGRITY"
+        traceability:
+          - "PATCH-002.PRE-002.POST-002"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-002.POST-002"
+        basis_refs:
+          - "HANDOFF_ARTIFACT_OVERRIDE_REFS_INVALID"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-HANDOFF-YAML-LIST-SHAPES-001"
+      sequence: 39
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1149,6 +1198,7 @@ working_context:
       - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
       - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
       - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
+      - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     override_refs: []
@@ -1168,4 +1218,5 @@ working_context:
       - "CTX-WISDOM-LEVEL3-PAYLOAD-PARTITIONING-001"
       - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
       - "CTX-WISDOM-HANDOFF-YAML-LIST-SHAPES-001"
-  next_sequence: 38
+      - "CTX-WISDOM-POWERSHELL-EMPTY-PIPELINE-ARRAY-SERIALIZATION-001"
+  next_sequence: 40

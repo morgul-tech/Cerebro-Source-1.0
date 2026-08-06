@@ -264,22 +264,26 @@ function Invoke-CerebroHandoffCore {
                     next = $next
                 }
                 context = [ordered]@{
-                    current_basis_refs =
+                    current_basis_refs = @(
                         Get-CerebroContextIndexValues `
                             $context `
                             'current_basis_refs'
-                    decision_refs =
+                    )
+                    decision_refs = @(
                         Get-CerebroContextIndexValues `
                             $context `
                             'decision_refs'
-                    override_refs =
+                    )
+                    override_refs = @(
                         Get-CerebroContextIndexValues `
                             $context `
                             'override_refs'
-                    wisdom_refs =
+                    )
+                    wisdom_refs = @(
                         Get-CerebroContextIndexValues `
                             $context `
                             'current_wisdom_refs'
+                    )
                 }
                 repository_state = [ordered]@{
                     worktree_clean = $true
