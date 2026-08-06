@@ -413,6 +413,30 @@ roadmap:
         - "engines/context/working-context.yaml"
         - "engines/project/roadmap.yaml"
     -
+      id: "PATCH-002.PRE-004.R3-PRE-001"
+      title: "powershell_level_3_delivery_assurance"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-002.PRE-003"
+      decision_refs:
+        - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
+      source_refs:
+        - "standards/development/powershell-level3-delivery-assurance.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+      acceptance:
+        - "failure_chain_persisted_as_process_wisdom"
+        - "first_implementation_assessment_mandatory"
+        - "functional_testing_required_beyond_parser_validation"
+        - "native_command_contract_standardized"
+        - "automatic_variable_collision_prevented"
+        - "pipeline_cardinality_explicit"
+        - "cross_language_execution_removed_by_default"
+        - "repeated_failure_triggers_rebuild"
+        - "user_host_not_used_as_development_environment"
+    -
       id: "PATCH-002"
       title: "runtime_0_1_scope_and_minimum_contracts"
       phase_ref: "PHASE-1"

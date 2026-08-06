@@ -1391,6 +1391,36 @@ working_context:
           - "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
           - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
       sequence: 44
+    -
+      id: "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
+      type: "WISDOM_RECORD"
+      scope: "POWERSHELL-LEVEL3-DELIVERY-ASSURANCE"
+      statement: "Repeated PATCH-002.PRE-004 PowerShell failures prove that parse validation alone is insufficient. First implementation must assess language and transport risk; high-risk Level 3 source mutations require native-command, transaction, rollback, duplicate-execution and transport tests before delivery. The user host is an execution channel, not the development test environment."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        standard_ref: "standards/development/powershell-level3-delivery-assurance.yaml"
+        required_for:
+          - "first-implementation-assessment"
+          - "level-3-payload-design"
+          - "corrective-delivery"
+          - "source-mutation"
+          - "sync-and-handoff"
+        efficiency:
+          detailed_policy_single_source: true
+          roadmap_and_context_reference_only: true
+          generic_tooling_separated_from_semantic_patch: true
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-004.R3-PRE-001"
+        basis_refs:
+          - "PATCH-002.PRE-004"
+          - "PATCH-002.PRE-004-R2"
+          - "USER-CRITIQUE-REFINE-2026-08-07"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
+      sequence: 45
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1438,4 +1468,4 @@ working_context:
       - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
       - "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
       - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
-  next_sequence: 45
+  next_sequence: 46

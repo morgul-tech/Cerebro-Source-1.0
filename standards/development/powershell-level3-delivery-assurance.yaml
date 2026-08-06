@@ -1,0 +1,175 @@
+schema: "cerebro-powershell-delivery-assurance/v0.1"
+
+power_shell_delivery_assurance:
+  id: "CEREBRO-POWERSHELL-LEVEL3-ASSURANCE-001"
+  status: "LOCKED"
+  authority_scope:
+    - "level-3-payloads"
+    - "self-running-source-mutations"
+    - "corrective-payloads"
+    - "sync-and-handoff-transactions"
+
+  objective:
+    - "prevent-user-host-from-becoming-development-environment"
+    - "prevent-repeated-powershell-failure-chains"
+    - "separate-parse-validity-from-execution-validity"
+    - "require-first-implementation-risk-assessment"
+    - "require-complete-transaction-validation-before-delivery"
+
+  incident_basis:
+    patch_family:
+      - "PATCH-002.PRE-004"
+      - "PATCH-002.PRE-004-R2"
+    failure_classes:
+      - "generated-script-parse-failure"
+      - "native-stderr-misclassification"
+      - "strict-mode-null-collection-failure"
+      - "cross-language-quoting-failure"
+      - "automatic-variable-collision"
+      - "splatting-reference-mismatch"
+      - "incomplete-recovery-validation"
+
+  governing_rules:
+    - id: "PS-L3-001"
+      rule: "parse-success-is-not-execution-proof"
+    - id: "PS-L3-002"
+      rule: "user-host-is-execution-channel-not-test-environment"
+    - id: "PS-L3-003"
+      rule: "first-implementation-requires-language-and-transport-risk-assessment"
+    - id: "PS-L3-004"
+      rule: "source-mutating-level-3-payloads-require-functional-transaction-testing"
+    - id: "PS-L3-005"
+      rule: "native-command-failure-is-determined-by-immediate-exit-code-not-stderr"
+    - id: "PS-L3-006"
+      rule: "potential-null-pipeline-results-must-be-array-normalized"
+    - id: "PS-L3-007"
+      rule: "automatic-variable-and-splatting-collisions-are-prohibited"
+    - id: "PS-L3-008"
+      rule: "cross-language-execution-is-prohibited-unless-necessity-is-proven"
+    - id: "PS-L3-009"
+      rule: "repeated-failure-requires-critical-reorientation-and-rebuild"
+    - id: "PS-L3-010"
+      rule: "rejected-payloads-must-not-become-new-implementation-bases"
+
+  first_implementation_assessment:
+    timing: "before-implementation-design-lock"
+    required_questions:
+      - "is-powershell-required"
+      - "are-native-executables-invoked"
+      - "is-dynamic-code-generated-or-executed"
+      - "are-language-boundaries-crossed"
+      - "is-authoritative-source-mutated"
+      - "are-commit-push-or-handoff-operations-required"
+      - "is-rollback-required"
+      - "does-pipeline-cardinality-affect-correctness"
+      - "does-existing-canonical-tooling-remove-custom-code"
+    risk_classes:
+      low: "no-native-commands-no-source-mutation-no-dynamic-code"
+      medium: "native-read-operations-or-local-mutation"
+      high: "source-mutation-with-sync-handoff-or-dynamic-execution"
+
+  prohibited_constructs:
+    automatic_variable_names:
+      - "Args"
+      - "Error"
+      - "Input"
+      - "Matches"
+      - "MyInvocation"
+      - "PSBoundParameters"
+      - "PSScriptRoot"
+      - "LASTEXITCODE"
+      - "ExecutionContext"
+      - "Host"
+      - "Home"
+      - "PID"
+      - "Profile"
+      - "ShellId"
+      - "StackTrace"
+    unsafe_patterns:
+      - "stderr-as-failure-without-exit-code"
+      - "LASTEXITCODE-read-after-unrelated-command"
+      - "Count-on-potential-null"
+      - "blind-text-repair-as-final-recovery"
+      - "unverified-cross-language-one-liner"
+      - "renamed-parameter-with-stale-splat-reference"
+
+  native_command_contract:
+    requirements:
+      - "explicit-executable"
+      - "explicit-argument-list"
+      - "capture-output"
+      - "capture-exit-code-immediately"
+      - "restore-error-action-preference"
+      - "throw-only-from-allowed-exit-code-policy"
+      - "preserve-command-arguments-exit-code-and-output-in-receipt"
+
+  collection_contract:
+    requirements:
+      - "array-wrap-variable-cardinality-results"
+      - "explicit-null-check-required-values"
+      - "compare-object-output-array-normalized"
+
+  required_test_harness:
+    applies_to:
+      - "high-risk-first-implementations"
+      - "source-mutating-level-3-payloads"
+      - "corrective-payloads-after-previous-failure"
+    environment: "temporary-local-git-repository"
+    scenarios:
+      - "success-path"
+      - "dirty-worktree-fail-closed"
+      - "wrong-branch-fail-closed"
+      - "wrong-baseline-fail-closed"
+      - "native-command-failure"
+      - "mid-mutation-rollback"
+      - "duplicate-execution"
+      - "handoff-failure-after-successful-sync"
+
+  pre_delivery_gates:
+    - "minimal-scope-confirmed"
+    - "canonical-operations-resolved-first"
+    - "powershell-parser-zero-errors"
+    - "prohibited-variable-and-splatting-check"
+    - "native-command-contract-test"
+    - "collection-cardinality-test"
+    - "temporary-repository-transaction-test"
+    - "rollback-test"
+    - "duplicate-execution-test"
+    - "transport-reconstruction-and-hash-test"
+
+  recovery_policy:
+    first_failure:
+      - "stop"
+      - "classify"
+      - "verify-mutation-state"
+      - "validate-rollback"
+      - "inspect-unreached-stages"
+    repeated_failure:
+      threshold: 2
+      actions:
+        - "critical-reorientation"
+        - "reject-current-implementation"
+        - "prohibit-incremental-recovery"
+        - "preserve-specification"
+        - "assign-new-implementation-identity"
+        - "rebuild-from-clean-basis"
+        - "rerun-complete-test-harness"
+
+  efficiency_optimization:
+    - "persist-detailed-policy-once"
+    - "store-only-references-in-roadmap-and-working-context"
+    - "avoid-generic-tooling-inside-semantic-patches"
+    - "split-prerequisite-tooling-from-semantic-runtime-work"
+    - "prefer-canonical-operations-over-parallel-implementations"
+    - "minimize-language-and-transport-boundaries"
+
+  acceptance:
+    - "failure-chain-persisted-as-process-wisdom"
+    - "first-implementation-assessment-mandatory"
+    - "functional-testing-required-beyond-parser-validation"
+    - "native-command-invocation-contract-standardized"
+    - "automatic-variable-collision-prevented"
+    - "pipeline-cardinality-explicit"
+    - "cross-language-execution-removed-by-default"
+    - "repeated-failure-causes-rebuild"
+    - "user-host-not-used-as-development-environment"
