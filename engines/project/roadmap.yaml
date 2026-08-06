@@ -6,41 +6,75 @@ roadmap:
     contract_owner: "project-engine"
     state_scope: "working-source"
   status: "ACTIVE"
-  objective: "Preserve the approved Cerebro architecture direction, implement the project roadmap contract, align BootEngine, establish the universal object contract, and prepare Runtime 0.1."
+  objective: "Complete the verified architecture prerequisites, define the smallest stable Runtime 0.1 contract, implement Runtime 0.1, and defer later object pipelines until the runtime baseline is verified."
   scope:
     included:
       - "project-roadmap-contract"
-      - "bootengine-alignment"
-      - "universal-object-contract"
-      - "runtime-0.1"
-      - "idea-object-pipeline"
+      - "minimal-runtime-bootstrap"
+      - "streamlined-patch-workform"
+      - "runtime-0.1-scope-and-minimum-contracts"
+      - "runtime-0.1-implementation"
+      - "idea-object-pipeline-after-runtime-baseline"
     excluded:
       - "conversation-history-as-authority"
       - "runtime-state-as-persistent-truth"
       - "parallel-architecture"
       - "unregistered-top-level-components"
+      - "broad-universal-object-model-before-runtime-need"
+      - "speculative-runtime-capabilities"
   phases:
     -
       id: "PHASE-0"
       title: "architecture_consolidation"
       purpose: "establish_prerequisites_for_runtime_0_1"
-      status: "ACTIVE"
+      status: "COMPLETED"
       dependency_refs: []
       entry_criteria: []
       exit_criteria:
         - "PATCH-001B_VERIFIED"
         - "PATCH-001C_VERIFIED"
-        - "PATCH-002_VERIFIED"
-      deliverable_refs: []
+        - "PATCH-001C.POST-001_VERIFIED"
+        - "PATCH-001C.POST-002_VERIFIED"
+      deliverable_refs:
+        - "standards/runtime/minimal-runtime-bootstrap.yaml"
+        - "standards/development/streamlined-patch-workform.yaml"
       milestones:
         -
           id: "MS-001"
           title: "architecture_consolidation"
-          status: "ACTIVE"
+          status: "COMPLETED"
           acceptance:
             - "roadmap_contract_persisted"
             - "architecture_dependencies_resolved"
             - "continuation_without_chat_verified"
+            - "minimal_runtime_bootstrap_locked"
+            - "streamlined_patch_workform_locked"
+    -
+      id: "PHASE-1"
+      title: "runtime_0_1"
+      purpose: "define_and_implement_stable_minimal_runtime"
+      status: "ACTIVE"
+      dependency_refs:
+        - "PHASE-0"
+      entry_criteria:
+        - "PHASE-0_COMPLETED"
+        - "PATCH-001C.POST-002_VERIFIED"
+      exit_criteria:
+        - "PATCH-002_VERIFIED"
+        - "PATCH-003_VERIFIED"
+        - "RUNTIME_0_1_STABLE_MINIMAL_BASELINE_VERIFIED"
+      deliverable_refs: []
+      milestones:
+        -
+          id: "MS-002"
+          title: "runtime_0_1_definition_and_implementation"
+          status: "ACTIVE"
+          acceptance:
+            - "runtime_0_1_scope_locked"
+            - "minimum_runtime_contracts_locked"
+            - "nonessential_runtime_scope_deferred"
+            - "runtime_0_1_implemented"
+            - "stable_minimal_runtime_verified"
   patches:
     -
       id: "PATCH-001A"
@@ -236,9 +270,9 @@ roadmap:
         - "PATCH-001C.PRE-001"
         - "PATCH-001C.PRE-002"
       decision_refs:
-        - "PATCH-001C-DEC-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
-        - "PATCH-001C-DEC-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
-        - "PATCH-001C-DEC-DEFER-RUNTIME-IMPLEMENTATION"
+        - "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+        - "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+        - "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
       source_refs:
         - "standards/runtime/minimal-runtime-bootstrap.yaml"
         - "tooling/validator/checks.yaml"
@@ -252,9 +286,9 @@ roadmap:
       dependency_refs:
         - "PATCH-001C"
       decision_refs:
-        - "PATCH-001C.POST-001-DEC-LOCK-WORKFORM-IMPROVEMENT"
-        - "PATCH-001C.POST-001-DEC-REUSE-VERIFIED-PIPELINE"
-        - "PATCH-001C.POST-001-DEC-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
+        - "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
+        - "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
+        - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
       source_refs:
         - "standards/development/streamlined-patch-workform.yaml"
         - "tooling/builder/builder.yaml"
@@ -262,20 +296,34 @@ roadmap:
         - "engines/context/working-context.yaml"
         - "engines/project/roadmap.yaml"
     -
-      id: "PATCH-002"
-      title: "universal_object_contract"
+      id: "PATCH-001C.POST-002"
+      title: "runtime_0_1_roadmap_realignment"
       phase_ref: "PHASE-0"
       milestone_ref: "MS-001"
-      status: "PLANNED"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-001C.POST-001"
-      decision_refs: []
+      decision_refs:
+        - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
+      source_refs:
+        - "engines/project/roadmap.yaml"
+        - "engines/context/working-context.yaml"
+    -
+      id: "PATCH-002"
+      title: "runtime_0_1_scope_and_minimum_contracts"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "ACTIVE"
+      dependency_refs:
+        - "PATCH-001C.POST-002"
+      decision_refs:
+        - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       source_refs: []
     -
       id: "PATCH-003"
-      title: "runtime_0_1"
-      phase_ref: "PHASE-0"
-      milestone_ref: null
+      title: "runtime_0_1_implementation"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
       status: "PLANNED"
       dependency_refs:
         - "PATCH-002"
@@ -284,7 +332,7 @@ roadmap:
     -
       id: "PATCH-004"
       title: "idea_object_pipeline"
-      phase_ref: "PHASE-0"
+      phase_ref: "PHASE-1"
       milestone_ref: null
       status: "PLANNED"
       dependency_refs:
@@ -293,18 +341,18 @@ roadmap:
       source_refs: []
   execution:
     current:
-      id: "EXEC-P1C-START"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      patch_ref: "PATCH-001C"
-      canonical_command: "continue with PATCH-001C bootengine alignment"
+      id: "EXEC-P2-RUNTIME-SCOPE"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      patch_ref: "PATCH-002"
+      canonical_command: "begin PATCH-002 Runtime 0.1 ideation and minimum contract definition"
       status: "ACTIVE"
     next:
-      id: "EXEC-P2-START"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      patch_ref: "PATCH-002"
-      canonical_command: "continue with PATCH-002 universal object contract"
+      id: "EXEC-P3-RUNTIME-IMPLEMENTATION"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      patch_ref: "PATCH-003"
+      canonical_command: "implement PATCH-003 Runtime 0.1 after PATCH-002 scope lock"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -363,10 +411,51 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-P1B-IMPLEMENTED"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-RUNTIME-0-1-ENTRY"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
       - "CTX-BASIS-P1B-IMPLEMENTED"
+      - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -377,6 +466,13 @@ roadmap:
       - "CTX-DEC-P1B-PRE007"
       - "CTX-DEC-P1B-PRE008"
       - "CTX-DEC-VERIFICATION-FRESHNESS"
+      - "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+      - "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+      - "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
+      - "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
+      - "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
+      - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
+      - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
   revision:
-    sequence: 3
-    last_locked_patch_ref: "PATCH-001C.PRE-001"
+    sequence: 4
+    last_locked_patch_ref: "PATCH-001C.POST-002"

@@ -775,6 +775,190 @@ working_context:
           - "CTX-WISDOM-DELIVERY-SELECTION-BEFORE-SERIALIZATION-001"
           - "CTX-WISDOM-NEXT-ACTION-COPYABLE-CANONICAL-COMMAND-001"
       sequence: 23
+    -
+      id: "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+      type: "DECISION"
+      scope: "PATCH-001C"
+      statement: "The broad BootEngine alignment scope was rejected because it was unbounded, overlapped later runtime work and lacked measurable acceptance."
+      payload:
+        decision_status: "IMPLEMENTED_AND_VERIFIED"
+        effective_scope: "PATCH-001C"
+        rejected_scope: "broad_bootengine_alignment"
+        retained_scope: "minimal_runtime_bootstrap_prerequisite"
+      provenance:
+        introduced_by_ref: "PATCH-001C"
+        basis_refs:
+          - "PATCH-001C.PRE-001"
+          - "PATCH-001C.PRE-002"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "PATCH-001C.PRE-001"
+          - "PATCH-001C.PRE-002"
+      sequence: 24
+    -
+      id: "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+      type: "DECISION"
+      scope: "PATCH-001C"
+      statement: "PATCH-001C was redefined and locked as the minimal runtime bootstrap prerequisite for Runtime 0.1."
+      payload:
+        decision_status: "IMPLEMENTED_AND_VERIFIED"
+        effective_scope: "PATCH-001C"
+        contract_ref: "standards/runtime/minimal-runtime-bootstrap.yaml"
+        source_authority: "Cerebro Source"
+        runtime_authority: "derived"
+        release_authority: "derived"
+      provenance:
+        introduced_by_ref: "PATCH-001C"
+        basis_refs:
+          - "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+      sequence: 25
+    -
+      id: "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
+      type: "DECISION"
+      scope: "PATCH-001C"
+      statement: "Runtime 0.1 implementation and its internal object model were explicitly deferred beyond PATCH-001C."
+      payload:
+        decision_status: "IMPLEMENTED_AND_VERIFIED"
+        effective_scope: "PATCH-001C"
+        deferred_to:
+          - "PATCH-002"
+          - "PATCH-003"
+        prohibited_under_patch_001c:
+          - "Runtime_0_1_implementation"
+          - "universal_object_contract_design"
+          - "runtime_internal_object_model"
+      provenance:
+        introduced_by_ref: "PATCH-001C"
+        basis_refs:
+          - "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+      sequence: 26
+    -
+      id: "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
+      type: "DECISION"
+      scope: "PATCH-001C.POST-001"
+      statement: "The streamlined patch workform was locked as verified development practice."
+      payload:
+        decision_status: "IMPLEMENTED_AND_VERIFIED"
+        effective_scope: "Cerebro patch development"
+        contract_ref: "standards/development/streamlined-patch-workform.yaml"
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-001"
+        basis_refs:
+          - "PATCH-001C.PRE-002"
+          - "PATCH-001C"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+      sequence: 27
+    -
+      id: "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
+      type: "DECISION"
+      scope: "PATCH-001C.POST-001"
+      statement: "Verified PowerShell, Git and cerebro_sync capabilities must be reused before new delivery mechanisms are considered."
+      payload:
+        decision_status: "IMPLEMENTED_AND_VERIFIED"
+        effective_scope: "patch delivery pipeline"
+        new_solution_requires_documented_gap: true
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-001"
+        basis_refs:
+          - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+      sequence: 28
+    -
+      id: "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
+      type: "DECISION"
+      scope: "PATCH-001C.POST-001"
+      statement: "Patch scope, repository state, targets, delivery mode, synchronization and rollback conditions must be prepared before mutation."
+      payload:
+        decision_status: "IMPLEMENTED_AND_VERIFIED"
+        effective_scope: "patch development"
+        readiness_gate_required: true
+        mutation_before_readiness: false
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-001"
+        basis_refs:
+          - "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
+      sequence: 29
+    -
+      id: "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
+      type: "DECISION"
+      scope: "PATCH-001C.POST-002"
+      statement: "The roadmap is realigned from completed architecture consolidation to active Runtime 0.1 scope definition and minimum contract work."
+      payload:
+        decision_status: "LOCKED_AND_IMPLEMENTED"
+        completed_phase: "PHASE-0"
+        active_phase: "PHASE-1"
+        completed_milestone: "MS-001"
+        active_milestone: "MS-002"
+        current_patch: "PATCH-002"
+        next_patch: "PATCH-003"
+        patch_002_previous_title: "universal_object_contract"
+        patch_002_refined_title: "runtime_0_1_scope_and_minimum_contracts"
+        broad_universal_object_contract_deferred: true
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-002"
+        basis_refs:
+          - "PATCH-001C"
+          - "PATCH-001C.POST-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
+          - "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
+      sequence: 30
+    -
+      id: "CTX-BASIS-RUNTIME-0-1-ENTRY"
+      type: "CURRENT_BASIS"
+      scope: "RUNTIME-0.1"
+      statement: "Current Cerebro development is positioned at PATCH-002: Runtime 0.1 ideation, scope reduction and minimum contract definition."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "verified-roadmap-realignment"
+        completed_phase: "PHASE-0"
+        active_phase: "PHASE-1"
+        active_milestone: "MS-002"
+        current_patch: "PATCH-002"
+        next_patch: "PATCH-003"
+        implementation_not_started: true
+      provenance:
+        introduced_by_ref: "PATCH-001C.POST-002"
+        basis_refs:
+          - "CTX-BASIS-WORKPLAN"
+          - "CTX-BASIS-P1B-IMPLEMENTED"
+          - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
+      relations:
+        supersedes_ref: "CTX-BASIS-WORKPLAN"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-WORKPLAN"
+          - "CTX-BASIS-P1B-IMPLEMENTED"
+          - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
+      sequence: 31
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -786,9 +970,15 @@ working_context:
       - "CTX-DEC-P1B-PRE007"
       - "CTX-DEC-P1B-PRE008"
       - "CTX-DEC-VERIFICATION-FRESHNESS"
+      - "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+      - "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+      - "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
+      - "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
+      - "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
+      - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
+      - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
     current_basis_refs:
-      - "CTX-BASIS-WORKPLAN"
-      - "CTX-BASIS-P1B-IMPLEMENTED"
+      - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -803,4 +993,4 @@ working_context:
       - "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
       - "CTX-WISDOM-SCOPE-REDUCTION-BEFORE-IMPLEMENTATION-001"
       - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
-  next_sequence: 24
+  next_sequence: 32
