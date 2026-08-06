@@ -408,3 +408,28 @@ rules:
   provenance:
     type: approved-revision
     basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+
+# BEGIN PATCH-001B.PRE-005 COPYABLE NEXT-ACTION FOOTER
+
+- id: PRE-023
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    next_action:
+      user_executable: true
+      canonical_command_available: true
+  action:
+    append_copyable_command_footer:
+      position: response-end
+      content: canonical-next-command
+      prohibit_content_after: true
+  statement: Når neste handling er en konkret kanonisk kommando brukeren kan utføre, SKAL Presentation Engine vise kommandoen som siste element i en kopierbar tekstblokk, og SKAL IKKE plassere innhold etter blokken.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance:
+    type: conversation-approved-development
+    basis: WI-RESPONSE-FOOTER-001
+
+# END PATCH-001B.PRE-005 COPYABLE NEXT-ACTION FOOTER
