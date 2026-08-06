@@ -309,13 +309,29 @@ roadmap:
         - "engines/project/roadmap.yaml"
         - "engines/context/working-context.yaml"
     -
+      id: "PATCH-002.PRE-001"
+      title: "patch_lvl3_improvement"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-001C.POST-002"
+      decision_refs:
+        - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
+      source_refs:
+        - "standards/development/streamlined-patch-workform.yaml"
+        - "tooling/builder/builder.yaml"
+        - "tooling/validator/checks.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+    -
       id: "PATCH-002"
       title: "runtime_0_1_scope_and_minimum_contracts"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-001C.POST-002"
+        - "PATCH-002.PRE-001"
       decision_refs:
         - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       source_refs: []
@@ -451,6 +467,11 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-RUNTIME-0-1-ENTRY"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -473,6 +494,7 @@ roadmap:
       - "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
       - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
       - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
+      - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
   revision:
-    sequence: 4
-    last_locked_patch_ref: "PATCH-001C.POST-002"
+    sequence: 5
+    last_locked_patch_ref: "PATCH-002.PRE-001"

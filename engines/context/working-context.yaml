@@ -959,6 +959,63 @@ working_context:
           - "CTX-BASIS-P1B-IMPLEMENTED"
           - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       sequence: 31
+    -
+      id: "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
+      type: "DECISION"
+      scope: "PATCH-002.PRE-001"
+      statement: "Large delivery-level-3 changes shall preserve one semantic patch and one final synchronization while using partitioned self-running payloads when this lowers total user and recovery risk."
+      payload:
+        decision_status: "LOCKED_AND_IMPLEMENTED"
+        effective_scope: "delivery-level-3"
+        semantic_patch_count: 1
+        final_commit_count: 1
+        final_push_count: 1
+        partitioning_default_from_lines: 600
+        single_payload_justification_from_lines: 1000
+        user_transport_is_delivery_risk: true
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-001"
+        basis_refs:
+          - "PATCH-001C.POST-001"
+          - "PATCH-001C.POST-002"
+          - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+      sequence: 32
+    -
+      id: "CTX-WISDOM-LEVEL3-PAYLOAD-PARTITIONING-001"
+      type: "WISDOM_RECORD"
+      scope: "LEVEL-3-DELIVERY"
+      statement: "For large level-3 changes, several short validated payloads can be faster and safer for the user than one very long copy operation, even when all payloads belong to one final transaction."
+      payload:
+        maturity: "LOCKED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-002.PRE-001"
+        observations:
+          - "long_copy_payloads_increase_transport_and_review_risk"
+          - "late_validation_failure_can_force_unnecessary_repetition"
+          - "partitioned_stages_reduce_recovery_scope"
+          - "payload_count_alone_does_not_measure_user_efficiency"
+        user_benefits:
+          - "shorter_copy_operations"
+          - "clearer_progress"
+          - "smaller_error_surface"
+          - "smaller_recovery_actions"
+          - "less_repeated_work"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-001"
+        basis_refs:
+          - "FAILED-PATCH-001C.POST-002-LARGE-PAYLOAD"
+          - "PATCH-001C.POST-002-RECOVERY-01"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
+      sequence: 33
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -977,6 +1034,7 @@ working_context:
       - "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
       - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
       - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
+      - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     override_refs: []
@@ -993,4 +1051,5 @@ working_context:
       - "CTX-WISDOM-PRE-MUTATION-ENVIRONMENT-LOCK-001"
       - "CTX-WISDOM-SCOPE-REDUCTION-BEFORE-IMPLEMENTATION-001"
       - "CTX-WISDOM-STREAMLINED-LEVEL3-PATCH-TRANSACTION-001"
-  next_sequence: 32
+      - "CTX-WISDOM-LEVEL3-PAYLOAD-PARTITIONING-001"
+  next_sequence: 34

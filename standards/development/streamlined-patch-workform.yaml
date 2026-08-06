@@ -192,6 +192,82 @@ streamlined_patch_workform:
       - "new_delivery_system_created_without_gap"
       - "unverified_success_claim"
 
+  level_3_payload_partitioning:
+    introduced_by: "PATCH-002.PRE-001"
+    status: "LOCKED"
+    purpose: >
+      Preserve one semantic patch and one final synchronization while
+      partitioning large level-3 delivery into shorter validated stages
+      when this reduces user transport, formatting, rollback or recovery risk.
+
+    decision_priority:
+      - "total_user_effort"
+      - "transport_reliability"
+      - "failure_isolation"
+      - "recovery_cost"
+      - "transaction_integrity"
+      - "minimum_roundtrips"
+
+    delivery_selection:
+      single_payload_preferred_when:
+        - "estimated_lines_below_250"
+        - "small_target_set"
+        - "simple_cross_file_relations"
+        - "low_formatting_risk"
+        - "simple_rollback"
+      partitioning_evaluation_required_when:
+        - "estimated_lines_at_least_250"
+        - "multiple_state_domains"
+        - "cross_file_invariants"
+        - "large_text_replacements"
+        - "late_failure_can_discard_valid_work"
+      partitioned_payloads_default_when:
+        - "estimated_lines_at_least_600"
+        - "payload_difficult_for_user_to_copy_or_review"
+        - "independent_domain_validation_available"
+      single_payload_over_1000_lines:
+        explicit_justification_required: true
+
+    partition_contract:
+      semantic_patch_count: 1
+      commit_count: 1
+      push_count: 1
+      remote_verification_count: 1
+      required_stage_order:
+        - "prepare_and_lock_environment"
+        - "domain_mutation_and_validation"
+        - "cross_file_consolidation"
+        - "single_synchronization"
+        - "remote_verification"
+      stage_rules:
+        - "every_payload_is_self_running"
+        - "every_payload_has_preconditions"
+        - "every_payload_emits_a_deterministic_receipt"
+        - "completed_stages_are_not_repeated_without_recovery_need"
+        - "no_intermediate_commit"
+        - "no_intermediate_push"
+        - "preserve_valid_intermediate_work_when_safe"
+        - "rollback_only_uncommitted_failed_scope_when_possible"
+
+    user_perspective:
+      optimize_for:
+        - "short_copy_operations"
+        - "clear_visible_progress"
+        - "small_failure_surface"
+        - "small_recovery_payload"
+        - "no_manual_command_reconstruction"
+        - "no_repetition_of_completed_stages"
+      recognize:
+        - "more_payloads_can_be_faster_in_total_when_recovery_risk_is_material"
+        - "fewer_payloads_are_not_automatically_more_efficient"
+        - "copy_transport_is_part_of_the_delivery_risk"
+
+    prohibited:
+      - "splitting_one_semantic_change_into_unnecessary_patch_identifiers"
+      - "commit_before_cross_file_consolidation"
+      - "push_before_complete_local_validation"
+      - "partitioning_without_stage_state"
+      - "large_single_payload_selected_only_to_reduce_message_count"
   runtime_0_1_relevance:
     required_application:
       - "lock_minimal_runtime_scope_before implementation"

@@ -981,3 +981,33 @@ streamlined_patch_workform:
       - external_commit_verification
 
 # END PATCH-001C.POST-001 STREAMLINED PATCH WORKFORM
+# BEGIN PATCH-002.PRE-001 LEVEL 3 PAYLOAD PARTITIONING
+
+level_3_payload_partitioning:
+  introduced_by: PATCH-002.PRE-001
+  contract_ref: standards/development/streamlined-patch-workform.yaml
+  owner: tooling.builder
+  status: locked
+
+  selection_required_before_serialization: true
+  thresholds:
+    evaluate_partitioning_lines: 250
+    default_partitioning_lines: 600
+    require_single_payload_justification_lines: 1000
+
+  required_partition_properties:
+    - one_semantic_patch
+    - one_transaction_state
+    - self_running_stages
+    - explicit_stage_preconditions
+    - deterministic_stage_receipts
+    - no_intermediate_commit
+    - no_intermediate_push
+    - one_final_cerebro_sync
+
+  preferred_stages:
+    - prepare
+    - mutate
+    - consolidate_and_sync
+
+# END PATCH-002.PRE-001 LEVEL 3 PAYLOAD PARTITIONING

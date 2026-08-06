@@ -278,3 +278,31 @@ streamlined_patch_workform_validation:
     - success_without_remote_verification
 
 # END PATCH-001C.POST-001 STREAMLINED PATCH WORKFORM VALIDATION
+# BEGIN PATCH-002.PRE-001 LEVEL 3 PAYLOAD PARTITION VALIDATION
+
+level_3_payload_partition_validation:
+  introduced_by: PATCH-002.PRE-001
+  contract_ref: standards/development/streamlined-patch-workform.yaml
+  severity: error
+  owner: tooling.validator
+
+  required:
+    - semantic_patch_identity_preserved
+    - payload_selection_performed_before_serialization
+    - user_transport_risk_considered
+    - stage_state_persisted
+    - stage_preconditions_verified
+    - cross_file_validation_before_sync
+    - one_final_commit
+    - one_final_push
+    - deterministic_receipts
+
+  prohibited:
+    - unnecessary_patch_identity_fragmentation
+    - intermediate_commit
+    - intermediate_push
+    - repetition_of_completed_stage_without_recovery_reason
+    - single_payload_over_1000_lines_without_justification
+    - success_claim_before_remote_verification
+
+# END PATCH-002.PRE-001 LEVEL 3 PAYLOAD PARTITION VALIDATION
