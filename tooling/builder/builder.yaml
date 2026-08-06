@@ -219,6 +219,20 @@ patch_reference_registry:
       short_handle: P2
       title: universal_object_contract
 
+    - canonical_id: PATCH-001A.PRE-009
+      short_handle: P1A-PR9
+      title: early_delivery_capability_and_mode_lock
+      status: superseded_unapplied
+      superseded_by: PATCH-001A.PRE-010
+
+    - canonical_id: PATCH-001A.PRE-010
+      short_handle: P1A-PR10
+      title: delivery_aware_native_execution_hotfix
+      status: applied_by_this_patch
+      artifact_revision: 3
+      trigger_alias:
+        - ORDER66
+
 patch_delivery_modes:
   introduced_by: PATCH-001A.PRE-002
   owner: tooling.builder
@@ -482,3 +496,222 @@ pshell_payload_presentation_contract:
 
 # END PATCH-001A.PRE-006 PSHELL PAYLOAD PRESENTATION CONTRACT
 
+# BEGIN PATCH-001A.PRE-010 DELIVERY-AWARE NATIVE EXECUTION HOTFIX
+
+development_delivery_preflight:
+  introduced_by: PATCH-001A.PRE-010
+  short_handle: P1A-PR10
+  artifact_revision: 3
+  owner: tooling.builder
+  authority: cerebro-source
+  architecture_change: false
+
+  required_order:
+    - explicit_mandate_gate
+    - current_context_capability_gate
+    - delivery_mode_lock
+    - target_host_compatibility_contract
+    - physical_patch_generation
+    - generated_helper_validation
+    - delivery
+    - delivery_access_verification
+
+  mandate_gate:
+    artifact_generation_requires_explicit_user_authorization: true
+
+  delivery_paths:
+    WORK:
+      requires:
+        - Work_active
+        - Work_accepted
+        - workspace_or_repository_tools_available
+
+    SELF_RUNNING_FILE:
+      requires:
+        - file_generation_available_in_current_context
+        - user_download_delivery_verified
+      output:
+        - one_self_running_local_script
+      user_flow:
+        - download
+        - run
+      prohibited:
+        - archive_without_explicit_request
+        - internal_only_artifact
+        - unverified_download_claim
+        - manual_file_relocation
+
+    PSHELL:
+      select_when:
+        - Work_unavailable_or_not_accepted
+        - self_running_file_delivery_unavailable_or_unverified
+      output:
+        - one_complete_copyable_PowerShell_payload
+
+  delivery_mode_lock:
+    required_before:
+      - final_physical_patch_structure
+      - physical_transport_generation
+    reopen_only_on:
+      - verified_capability_change
+      - explicit_user_instruction
+      - selected_mode_validation_failure
+    must_not_change:
+      - logical_architecture
+      - component_ownership
+      - source_authority
+      - patch_identity
+
+  delivery_state_separation:
+    states:
+      - artifact_created
+      - artifact_published
+      - artifact_delivered
+      - artifact_accessible
+    rule: artifact_creation_does_not_prove_user_access
+
+native_process_execution_contract:
+  introduced_by: PATCH-001A.PRE-010
+  short_handle: P1A-PR10
+  owner: tooling.builder
+  applies_to:
+    - generated_local_execution_helpers
+    - EXEC_delivery_helpers
+    - PSHELL_delivery_helpers
+
+  minimum_host:
+    - Windows_PowerShell_5_1
+
+  canonical_result:
+    fields:
+      - executable
+      - argument_tokens
+      - start_status
+      - exit_code
+      - allowed_exit_codes
+      - stdout
+      - stderr
+      - timeout_status
+      - classification
+      - success
+
+  classifications:
+    - SUCCESS
+    - EXPECTED_ALTERNATIVE_EXIT
+    - PROCESS_START_FAILED
+    - PROCESS_EXIT_FAILED
+    - NATIVE_ADAPTER_SELFTEST_FAILED
+
+  success_resolution:
+    authority: declared_allowed_exit_codes
+    stderr_presence_implies_failure: false
+    stdout_presence_implies_success: false
+
+  stream_contract:
+    - preserve_argument_tokens
+    - capture_stdout_and_stderr_separately
+    - preserve_both_streams_for_diagnostics
+    - read_LASTEXITCODE_immediately_after_process_completion
+    - restore_PowerShell_error_state_in_finally
+    - redact_credentials_before_user_visible_reporting
+
+  command_exit_contracts:
+    git_default:
+      allowed_exit_codes:
+        - 0
+
+    git_diff_quiet:
+      allowed_exit_codes:
+        - 0
+        - 1
+      meaning:
+        exit_0: no_difference
+        exit_1: difference_present
+
+    git_grep:
+      allowed_exit_codes:
+        - 0
+        - 1
+      meaning:
+        exit_0: match_found
+        exit_1: no_match
+
+  prohibited:
+    - ProcessStartInfo_ArgumentList_dependency
+    - manual_single_argument_string_construction
+    - stderr_only_failure_classification
+    - ErrorActionPreference_as_exit_code_authority
+    - hidden_native_process_failure
+    - hidden_repository_assessment_failure
+    - git_fetch_special_case
+
+  generated_helper_selftest:
+    required_before_repository_assessment: true
+    cases:
+      - stdout_exit_0
+      - stderr_exit_0
+      - separated_stdout_and_stderr
+      - allowed_exit_1
+      - rejected_exit_7
+      - missing_executable
+      - argument_with_spaces
+
+repository_assessment_contract:
+  introduced_by: PATCH-001A.PRE-010
+  owner: tooling.builder
+
+  statuses:
+    - VALID
+    - PATH_REQUIRED
+    - PATH_NOT_FOUND
+    - CEREBRO_MANIFEST_MISSING
+    - NOT_GIT_REPOSITORY
+    - GIT_EXECUTION_FAILED
+    - REMOTE_MISMATCH
+    - BRANCH_MISMATCH
+    - TARGET_FILE_MISSING
+
+  requirements:
+    - preserve_underlying_native_failure
+    - distinguish_repository_state_from_process_state
+    - use_explicit_repository_binding
+    - block_before_mutation_on_non_VALID_status
+
+order66_command:
+  trigger: ORDER66
+  canonical_patch: PATCH-001A.PRE-010
+  short_handle: P1A-PR10
+  action: start_delivery_aware_native_execution_hotfix_pipeline
+
+  requires:
+    - refresh_authoritative_source
+    - verify_failed_patch_did_not_mutate_source
+    - run_development_delivery_preflight
+    - validate_native_execution_adapter
+    - resolve_repository_state
+    - build_one_selected_delivery_payload
+
+  must_not:
+    - reuse_failed_native_wrapper
+    - continue_superseded_PATCH_001A_PRE_009
+    - generate_unrequested_archive
+    - assume_tools_from_another_context
+    - continue_after_failed_adapter_selftest
+
+structured_state_compatibility:
+  introduced_by: PATCH-001A.PRE-010
+  implementation_status: deferred
+  future_consumers:
+    - runtime
+    - visual_engine
+  consumable_fields:
+    - mandate_status
+    - capability_status
+    - delivery_path
+    - delivery_mode_lock
+    - native_process_result
+    - repository_assessment
+    - delivery_state
+  ownership_transfer: prohibited
+
+# END PATCH-001A.PRE-010 DELIVERY-AWARE NATIVE EXECUTION HOTFIX

@@ -19,3 +19,69 @@ severity:
   error: block
   warning: continue
   information: continue
+
+# BEGIN PATCH-001A.PRE-010 NATIVE PROCESS VALIDATION
+
+native_process_compatibility:
+  introduced_by: PATCH-001A.PRE-010
+  short_handle: P1A-PR10
+  severity: error
+
+  supported_hosts:
+    - Windows_PowerShell_5_1
+    - PowerShell_7_plus
+
+  required_contracts:
+    - literal_argument_tokens
+    - separate_stdout_and_stderr
+    - immediate_exit_code_capture
+    - declared_allowed_exit_codes
+    - native_adapter_selftest
+    - structured_repository_assessment
+    - explicit_repository_binding
+    - execution_lock
+    - rollback
+    - machine_readable_result
+
+  prohibited_patterns:
+    - ProcessStartInfo_ArgumentList_dependency
+    - stderr_only_failure_classification
+    - ErrorActionPreference_as_exit_code_authority
+    - hidden_repository_verification_error
+    - delivery_without_verified_access
+    - unrequested_archive_generation
+
+  required_selftests:
+    - stdout_exit_0
+    - stderr_exit_0
+    - separated_streams
+    - allowed_exit_1
+    - rejected_exit_7
+    - missing_executable
+    - argument_with_spaces
+
+  git_semantics:
+    git_fetch:
+      allowed_exit_codes:
+        - 0
+      stderr_on_exit_0: informational_or_diagnostic
+
+    git_status:
+      allowed_exit_codes:
+        - 0
+
+    git_diff_quiet:
+      allowed_exit_codes:
+        - 0
+        - 1
+
+    git_commit:
+      allowed_exit_codes:
+        - 0
+
+    git_push:
+      allowed_exit_codes:
+        - 0
+      failure_after_commit: report_local_commit
+
+# END PATCH-001A.PRE-010 NATIVE PROCESS VALIDATION

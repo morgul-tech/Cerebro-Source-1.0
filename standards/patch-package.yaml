@@ -100,3 +100,76 @@ rules:
   priority: critical
   verification:
   - Patch tooling does not install, upgrade, or download dependencies during generation or execution.
+
+# BEGIN PATCH-001A.PRE-010 DELIVERY-AWARE NATIVE EXECUTION RULES
+
+- id: STD-PATCH-R011
+  statement: Physical patch generation shall require explicit user authorization and a current-context delivery capability assessment.
+  priority: critical
+  verification:
+  - Tools available only in another conversation or environment are not treated as available.
+  - Artifact generation is blocked when no actual delivery path has been resolved.
+
+- id: STD-PATCH-R012
+  statement: Delivery mode shall be locked before final physical patch design and reopened only after a verified capability change, explicit user instruction, or selected-mode validation failure.
+  priority: critical
+  verification:
+  - Delivery transport does not change patch identity, component ownership, logical architecture, or source authority.
+
+- id: STD-PATCH-R013
+  statement: When Work is unavailable or unaccepted and real downloadable self-running delivery is unavailable or unverified, PSHELL shall be selected before physical payload generation.
+  priority: critical
+  verification:
+  - PSHELL output contains one complete copyable PowerShell payload.
+  - No unrequested archive is generated.
+
+- id: STD-PATCH-R014
+  statement: Artifact creation, publication, delivery, and user accessibility shall be represented as separate states.
+  priority: critical
+  verification:
+  - BUILD_COMPLETE does not imply DELIVERY_VERIFIED.
+  - An internal file path does not prove user accessibility.
+
+- id: STD-PATCH-R015
+  statement: Native process success or failure shall be resolved from process start status and declared allowed exit codes, not from the presence of stderr output.
+  priority: critical
+  verification:
+  - Exit code zero remains successful when stderr contains normal status output.
+  - Allowed nonzero exit codes preserve command-specific meaning.
+  - Unexpected exit codes fail the active operation.
+
+- id: STD-PATCH-R016
+  statement: Native stdout, stderr, exit code, allowed exit codes, process start status, classification, and timeout status shall remain separate execution evidence.
+  priority: critical
+  verification:
+  - Process start failure is distinct from completed-process failure.
+  - Stderr evidence is preserved without becoming the sole failure classifier.
+
+- id: STD-PATCH-R017
+  statement: Generated PowerShell native adapters shall support Windows PowerShell 5.1 and shall not depend on ProcessStartInfo.ArgumentList.
+  priority: critical
+  verification:
+  - Literal argument tokens are preserved.
+  - Manual construction of one native argument string is prohibited.
+  - LASTEXITCODE is read immediately after native process completion.
+
+- id: STD-PATCH-R018
+  statement: Generated native execution helpers shall complete a native adapter selftest before repository assessment or mutation.
+  priority: critical
+  verification:
+  - Tests cover stdout with exit zero.
+  - Tests cover stderr with exit zero.
+  - Tests cover separated stdout and stderr.
+  - Tests cover one allowed nonzero exit code.
+  - Tests cover one rejected exit code.
+  - Tests cover a missing executable.
+  - Tests cover an argument containing spaces.
+
+- id: STD-PATCH-R019
+  statement: Repository assessment shall return stable machine-readable classifications and preserve the underlying native process failure.
+  priority: critical
+  verification:
+  - Path, Git repository, Cerebro manifest, remote, branch, and target-file failures remain distinguishable.
+  - Repository invalidity is not inferred from an unreported Git execution failure.
+
+# END PATCH-001A.PRE-010 DELIVERY-AWARE NATIVE EXECUTION RULES

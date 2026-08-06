@@ -7,3 +7,45 @@ steps:
 - publish
 deterministic: true
 source_mutation_prohibited: true
+
+# BEGIN PATCH-001A.PRE-010 GENERATED HELPER VALIDATION PIPELINE
+
+generated_helper_validation:
+  introduced_by: PATCH-001A.PRE-010
+  short_handle: P1A-PR10
+  owner: tooling.builder
+  source_mutation_authorized: false
+
+  applies_to:
+    - EXEC
+    - PSHELL
+
+  before_generation:
+    - explicit_mandate_gate
+    - current_context_capability_gate
+    - delivery_mode_lock
+
+  before_delivery:
+    - target_host_compatibility_contract
+    - native_execution_adapter_contract
+    - native_adapter_selftest_contract
+    - repository_assessment_contract
+    - baseline_verification_contract
+    - rollback_contract
+    - result_reporting_contract
+    - sync_receipt_contract
+
+  block_generation_on:
+    - mandate_missing
+    - delivery_path_unresolved
+    - delivery_mode_unlocked
+
+  block_delivery_on:
+    - target_host_incompatible
+    - native_adapter_selftest_failed
+    - repository_assessment_contract_missing
+    - baseline_contract_missing
+    - rollback_contract_missing
+    - result_contract_missing
+
+# END PATCH-001A.PRE-010 GENERATED HELPER VALIDATION PIPELINE
