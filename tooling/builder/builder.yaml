@@ -214,7 +214,7 @@ patch_reference_registry:
     - canonical_id: PATCH-001C.PRE-001
       short_handle: P1C-PR1
       title: sealed_pshell_transport_and_source_sync_recovery
-      status: active
+      status: verified
     - canonical_id: PATCH-001C
       short_handle: P1C
       title: bootengine_alignment

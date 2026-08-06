@@ -201,7 +201,7 @@ roadmap:
       title: "sealed_pshell_transport_and_source_sync_recovery"
       phase_ref: "PHASE-0"
       milestone_ref: "MS-001"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-001B"
       decision_refs: []
@@ -211,12 +211,13 @@ roadmap:
         - "standards/source-authority.yaml"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
-        - "tooling/builder/templates/pshell/cerebro_sync.ps1"    -
+        - "tooling/builder/templates/pshell/cerebro_sync.ps1"
+    -
       id: "PATCH-001C"
       title: "bootengine_alignment"
       phase_ref: "PHASE-0"
       milestone_ref: "MS-001"
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-001C.PRE-001"
       decision_refs: []
@@ -253,18 +254,18 @@ roadmap:
       source_refs: []
   execution:
     current:
-      id: "EXEC-P1C-PRE001"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      patch_ref: "PATCH-001C.PRE-001"
-      canonical_command: "continue with PATCH-001C.PRE-001 sealed pshell transport and source sync recovery"
-      status: "ACTIVE"
-    next:
       id: "EXEC-P1C-START"
       phase_ref: "PHASE-0"
       milestone_ref: "MS-001"
       patch_ref: "PATCH-001C"
       canonical_command: "continue with PATCH-001C bootengine alignment"
+      status: "ACTIVE"
+    next:
+      id: "EXEC-P2-START"
+      phase_ref: "PHASE-0"
+      milestone_ref: "MS-001"
+      patch_ref: "PATCH-002"
+      canonical_command: "continue with PATCH-002 universal object contract"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -338,5 +339,5 @@ roadmap:
       - "CTX-DEC-P1B-PRE008"
       - "CTX-DEC-VERIFICATION-FRESHNESS"
   revision:
-    sequence: 2
-    last_locked_patch_ref: "PATCH-001B.PRE-008"
+    sequence: 3
+    last_locked_patch_ref: "PATCH-001C.PRE-001"
