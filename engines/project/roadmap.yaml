@@ -228,15 +228,21 @@ roadmap:
         - "engines/project/roadmap.yaml"
     -
       id: "PATCH-001C"
-      title: "bootengine_alignment"
+      title: "minimal_runtime_bootstrap_prerequisite"
       phase_ref: "PHASE-0"
       milestone_ref: "MS-001"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-001C.PRE-001"
         - "PATCH-001C.PRE-002"
-      decision_refs: []
-      source_refs: []
+      decision_refs:
+        - "PATCH-001C-DEC-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
+        - "PATCH-001C-DEC-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
+        - "PATCH-001C-DEC-DEFER-RUNTIME-IMPLEMENTATION"
+      source_refs:
+        - "standards/runtime/minimal-runtime-bootstrap.yaml"
+        - "tooling/validator/checks.yaml"
+        - "engines/project/roadmap.yaml"
     -
       id: "PATCH-002"
       title: "universal_object_contract"

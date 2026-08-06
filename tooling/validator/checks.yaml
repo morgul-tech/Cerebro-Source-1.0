@@ -175,3 +175,54 @@ corrective_delivery_preflight_validation:
     - payload_class_used_as_serialization_format
 
 # END PATCH-001C.PRE-002 CORRECTIVE DELIVERY PREFLIGHT VALIDATION
+# BEGIN PATCH-001C MINIMAL RUNTIME BOOTSTRAP VALIDATION
+
+minimal_runtime_bootstrap_validation:
+  introduced_by: PATCH-001C
+  contract_ref: standards/runtime/minimal-runtime-bootstrap.yaml
+  severity: error
+  owner: tooling.validator
+
+  required_authority_assertions:
+    - source_is_single_persistent_authority
+    - runtime_is_derived
+    - release_is_derived
+    - boot_is_orchestration_only
+    - runtime_cannot_promote_state_to_source
+
+  required_order:
+    - resolve_authoritative_source
+    - load_minimal_runtime_inputs
+    - validate_required_contracts
+    - construct_derived_runtime_state
+    - activate_runtime
+    - transfer_control
+
+  required_atomicity:
+    - no_partial_activation
+    - no_partial_control_transfer
+    - failed_runtime_state_is_discarded
+    - failure_preserves_source
+    - failure_retains_boot_control
+
+  required_receipt_fields:
+    - runtime_version
+    - source_identity
+    - source_validation_state
+    - runtime_construction_state
+    - activation_state
+    - control_transfer_state
+    - failure_stage
+    - failure_code
+
+  prohibited:
+    - runtime_as_persistent_authority
+    - release_as_persistent_authority
+    - runtime_state_promoted_to_source
+    - activation_before_validation
+    - control_transfer_before_activation
+    - parallel_bootstrap_authority
+    - broad_bootengine_redesign_under_PATCH_001C
+    - Runtime_0_1_implementation_under_PATCH_001C
+
+# END PATCH-001C MINIMAL RUNTIME BOOTSTRAP VALIDATION

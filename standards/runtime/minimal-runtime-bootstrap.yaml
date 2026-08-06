@@ -1,0 +1,149 @@
+schema: cerebro-runtime-bootstrap/v0.1
+
+runtime_bootstrap:
+  id: "CEREBRO-MINIMAL-RUNTIME-BOOTSTRAP-001"
+  introduced_by: "PATCH-001C"
+  title: "minimal_runtime_bootstrap_prerequisite"
+  status: "LOCKED"
+  maturity: "MINIMAL"
+  target_runtime: "Runtime-0.1"
+
+  patch_decision:
+    previous_scope: "broad_bootengine_alignment"
+    previous_scope_disposition: "REJECTED"
+    retained_patch_identity: "PATCH-001C"
+    replacement_scope: "minimal_runtime_bootstrap_prerequisite"
+    reason:
+      - "broad_alignment_was_not_bounded_or_measurable"
+      - "runtime_0_1_requires_a_small_stable_boot_boundary"
+      - "source_authority_must_not_be_transferred_to_boot_or_runtime"
+      - "runtime_design_is_explicitly_deferred"
+
+  authority:
+    persistent_authority: "Cerebro Source"
+    boot_authority: "orchestration_only"
+    release_authority: "derived"
+    runtime_authority: "derived"
+    runtime_state_may_mutate_source: false
+    release_state_may_mutate_source: false
+    duplicate_bootstrap_authority_allowed: false
+
+  bootengine_reference:
+    source: "https://raw.githubusercontent.com/morgul-tech/B/refs/heads/main/BootEngine"
+    baseline_state: "FETCHED_AND_HASHED"
+    baseline_sha256: "2c45bd692b96326fceff4d23e206fb5fd73f46b2b752bd80472ec7c6060edbeb"
+    interpretation:
+      - "reference_for_startup_and_control_transfer_semantics"
+      - "not_persistent_Cerebro_authority"
+      - "not_embedded_or_duplicated_by_this_patch"
+    baseline_fetch_required_for_runtime_activation: false
+    runtime_implementation_must_define_its_own_pinned_release_input: true
+
+  required_startup_sequence:
+    - sequence: 1
+      operation: "resolve_authoritative_source"
+      failure_effect: "stop"
+    - sequence: 2
+      operation: "load_minimal_runtime_inputs"
+      failure_effect: "stop"
+    - sequence: 3
+      operation: "validate_required_contracts"
+      failure_effect: "stop"
+    - sequence: 4
+      operation: "construct_derived_runtime_state"
+      failure_effect: "discard_partial_runtime_state_and_stop"
+    - sequence: 5
+      operation: "activate_runtime"
+      failure_effect: "remain_inactive_and_stop"
+    - sequence: 6
+      operation: "transfer_control"
+      failure_effect: "retain_boot_control_and_stop"
+
+  mandatory_gates:
+    source_resolution:
+      required: true
+      pass_condition: "one_authoritative_source_resolved"
+    source_validation:
+      required: true
+      pass_condition: "all_runtime_required_source_contracts_valid"
+    runtime_construction:
+      required: true
+      pass_condition: "runtime_state_complete_for_declared_runtime_profile"
+    activation:
+      required: true
+      pass_condition: "runtime_constructed_and_inactive_before_atomic_activation"
+    control_transfer:
+      required: true
+      pass_condition: "runtime_active_and_control_target_verified"
+
+  atomicity:
+    partial_activation_allowed: false
+    partial_control_transfer_allowed: false
+    failed_runtime_state_promotable: false
+    runtime_to_source_promotion_allowed: false
+    failure_must_preserve_source: true
+
+  deterministic_receipt:
+    required: true
+    required_fields:
+      - "runtime_version"
+      - "source_identity"
+      - "source_validation_state"
+      - "runtime_construction_state"
+      - "activation_state"
+      - "control_transfer_state"
+      - "failure_stage"
+      - "failure_code"
+    success_state: "ACTIVE_CONTROL_TRANSFERRED"
+    failure_state: "INACTIVE_CONTROL_RETAINED"
+
+  minimum_runtime_inputs:
+    required:
+      - "runtime_profile"
+      - "source_identity"
+      - "source_contract_set"
+      - "runtime_configuration"
+      - "runtime_entrypoint"
+    explicitly_not_defined_by_this_patch:
+      - "universal_object_contract"
+      - "runtime_internal_object_model"
+      - "runtime_storage_model"
+      - "runtime_scheduler"
+      - "runtime_tool_or_plugin_system"
+      - "runtime_user_interface"
+
+  scope:
+    included:
+      - "authority_boundary"
+      - "startup_order"
+      - "mandatory_validation_gates"
+      - "derived_runtime_construction"
+      - "atomic_activation"
+      - "atomic_control_transfer"
+      - "deterministic_boot_receipt"
+    excluded:
+      - "broad_BootEngine_redesign"
+      - "BootEngine_source_mutation"
+      - "Runtime_0_1_implementation"
+      - "universal_object_contract_design"
+      - "generalized_loader_framework"
+      - "new_top_level_architecture"
+      - "delivery_transport_changes"
+
+  runtime_0_1_entry_gate:
+    patch_001c_must_be_verified: true
+    bootstrap_contract_must_be_locked: true
+    runtime_brainstorming_allowed_after_patch_close: true
+    runtime_implementation_allowed_after_explicit_runtime_scope_lock: true
+
+  acceptance:
+    - "persistent_source_authority_is_explicit"
+    - "runtime_and_release_are_derived"
+    - "startup_sequence_is_deterministic"
+    - "validation_precedes_runtime_construction"
+    - "activation_is_atomic"
+    - "control_transfer_is_atomic"
+    - "failure_preserves_source_and_retains_control"
+    - "receipt_contract_is_defined"
+    - "runtime_implementation_is_not_included"
+    - "broad_bootengine_alignment_is_closed"
