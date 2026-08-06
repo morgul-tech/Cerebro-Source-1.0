@@ -396,13 +396,30 @@ roadmap:
         - "engines/context/working-context.yaml"
         - "engines/project/roadmap.yaml"
     -
+      id: "PATCH-002.PRE-003.POST-001"
+      title: "HandBoot_manifest_contract_correction"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-002.PRE-003"
+      decision_refs:
+        - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
+      source_refs:
+        - "cerebro.yaml"
+        - "standards/runtime/handboot.yaml"
+        - "tooling/loader/cerebro_boot.ps1"
+        - "tooling/validator/checks.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+    -
       id: "PATCH-002"
       title: "runtime_0_1_scope_and_minimum_contracts"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-002.PRE-003"
+        - "PATCH-002.PRE-003.POST-001"
       decision_refs:
         - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
       source_refs: []
@@ -563,6 +580,11 @@ roadmap:
       object_type: "DECISION"
       object_ref: "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       requirement: "REQUIRED"
+    -
+      owner: "loader"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -590,6 +612,7 @@ roadmap:
       - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
       - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
+      - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
   revision:
-    sequence: 9
-    last_locked_patch_ref: "PATCH-002.PRE-003"
+    sequence: 10
+    last_locked_patch_ref: "PATCH-002.PRE-003.POST-001"

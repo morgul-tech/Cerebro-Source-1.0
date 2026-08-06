@@ -155,12 +155,18 @@ handboot:
 
   manifest_validation:
     entrypoint: cerebro.yaml
-    required_tokens:
-      - schema:
+    schema: cerebro-manifest/v1
+    required_top_level_sections:
+      - cerebro
       - source
-      - components
+      - mcp
       - engines
+      - modules
+      - standards
       - tooling
+      - governance
+      - integrity
+      - source_status
 
   activation_contract_validation:
     path: mcp/activation.yaml

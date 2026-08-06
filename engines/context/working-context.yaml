@@ -1254,6 +1254,61 @@ working_context:
           - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
           - "CTX-WISDOM-POWERSHELL-EMPTY-PIPELINE-ARRAY-SERIALIZATION-001"
       sequence: 41
+    -
+      id: "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
+      type: "DECISION"
+      scope: "PATCH-002.PRE-003.POST-001"
+      statement: "HandBoot manifest validation is bound to the actual authoritative cerebro-manifest/v1 structure and must validate cerebro, source, mcp, engines, modules, standards, tooling, governance, integrity and source_status rather than assuming a generic components section."
+      payload:
+        decision_status: "LOCKED_AND_IMPLEMENTED"
+        corrected_failure: "MANIFEST_CONTRACT_TOKEN_MISSING:components"
+        manifest_schema: "cerebro-manifest/v1"
+        required_top_level_sections:
+          - "cerebro"
+          - "source"
+          - "mcp"
+          - "engines"
+          - "modules"
+          - "standards"
+          - "tooling"
+          - "governance"
+          - "integrity"
+          - "source_status"
+        rejected_assumption: "components"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-003.POST-001"
+        basis_refs:
+          - "PATCH-002.PRE-003"
+          - "cerebro.yaml"
+          - "MANIFEST_CONTRACT_TOKEN_MISSING:components"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
+      sequence: 42
+    -
+      id: "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
+      type: "WISDOM_RECORD"
+      scope: "SOURCE-CONTRACT-VALIDATION"
+      statement: "Validation contracts must be derived from the inspected authoritative object shape; generic architecture labels must not be introduced as required source tokens without evidence in the authoritative source."
+      payload:
+        maturity: "LOCKED"
+        assessment: "IMPLEMENTED"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-002.PRE-003.POST-001"
+        relevance: "HANDBOOT_MANIFEST_VALIDATION"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-003.POST-001"
+        basis_refs:
+          - "cerebro.yaml"
+          - "MANIFEST_CONTRACT_TOKEN_MISSING:components"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
+      sequence: 43
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1277,6 +1332,7 @@ working_context:
       - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
       - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
+      - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
     override_refs: []
@@ -1298,4 +1354,5 @@ working_context:
       - "CTX-WISDOM-HANDOFF-YAML-LIST-SHAPES-001"
       - "CTX-WISDOM-POWERSHELL-EMPTY-PIPELINE-ARRAY-SERIALIZATION-001"
       - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
-  next_sequence: 42
+      - "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
+  next_sequence: 44

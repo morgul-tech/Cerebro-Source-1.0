@@ -456,3 +456,38 @@ handboot_validation:
     - conversational_activation_without_machine_receipt
 
 # END PATCH-002.PRE-003 HANDBOOT VALIDATION
+# BEGIN PATCH-002.PRE-003.POST-001 MANIFEST CONTRACT CORRECTION
+
+handboot_manifest_contract_validation:
+  introduced_by: PATCH-002.PRE-003.POST-001
+  parent_patch: PATCH-002.PRE-003
+  severity: error
+  owner: tooling.validator
+  manifest_ref: cerebro.yaml
+
+  required_schema:
+    - cerebro-manifest/v1
+
+  required_top_level_sections:
+    - cerebro
+    - source
+    - mcp
+    - engines
+    - modules
+    - standards
+    - tooling
+    - governance
+    - integrity
+    - source_status
+
+  prohibited_assumptions:
+    - generic_components_section_required
+    - manifest_shape_inferred_without_source_inspection
+    - substring_validation_used_as_schema_substitute
+
+  correction:
+    failed_assumption: components
+    authoritative_manifest_section: modules
+    disposition: CORRECTED
+
+# END PATCH-002.PRE-003.POST-001 MANIFEST CONTRACT CORRECTION

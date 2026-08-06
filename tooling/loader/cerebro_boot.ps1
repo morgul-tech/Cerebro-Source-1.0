@@ -471,11 +471,17 @@ function Invoke-CerebroBootCore {
             $manifest = Test-CerebroBootRequiredTokens `
                 -Path $manifestPath `
                 -Tokens @(
-                    'schema:',
-                    'source',
-                    'components',
-                    'engines',
-                    'tooling'
+                    'schema: cerebro-manifest/v1',
+                    'cerebro:',
+                    'source:',
+                    'mcp:',
+                    'engines:',
+                    'modules:',
+                    'standards:',
+                    'tooling:',
+                    'governance:',
+                    'integrity:',
+                    'source_status:'
                 ) `
                 -FailurePrefix 'MANIFEST_CONTRACT'
 
