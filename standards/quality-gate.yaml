@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-QUALITY
   name: Cerebro Quality Gate Standard
-  version: 0.1.2
+  version: 0.1.3
   status: approved
   authority: authoritative
   scope: Mandatory pre-publication quality decision for Cerebro artifacts.
@@ -44,12 +44,12 @@ rules:
   - Applicable stages have explicit evidence before delivery.
   - A skipped stage is explicitly classified not applicable.
 - id: STD-QUALITY-R006
-  statement: Level 2 delivery shall represent artifact creation, artifact registration, user-visible presentation, and user access as separate states, and DELIVERY_VERIFIED requires user-visible presentation plus user-access evidence.
+  statement: Level 2 delivery shall represent artifact creation, artifact registration, user-visible surface presentation, and user access as separate states; DELIVERY_VERIFIED requires verified user access to the exact artifact through at least one declared Level 2 surface.
   priority: critical
   verification:
   - BUILD_COMPLETE does not imply DELIVERY_VERIFIED.
-  - ARTIFACT_REGISTERED does not imply USER_VISIBLE_PRESENTATION.
-  - USER_VISIBLE_PRESENTATION without user-access evidence does not imply DELIVERY_VERIFIED.
+  - ARTIFACT_REGISTERED does not imply USER_ACCESS_VERIFIED.
+  - Chat presentation and Library presentation are evaluated as distinct user-visible surfaces.
 - id: STD-QUALITY-R007
   statement: Internal paths, upload identifiers, sandbox references, or tool-success signals shall not by themselves prove that a downloadable artifact is accessible to the user.
   priority: critical
@@ -57,11 +57,12 @@ rules:
   - Delivery evidence identifies the user-visible surface actually exercised.
   - Negative user access evidence overrides conflicting internal delivery-success inference.
 - id: STD-QUALITY-R008
-  statement: Failure of a selected Level 2 delivery surface shall reopen delivery-mode selection and use the smallest verified fallback without changing semantic payload, patch identity, or Source authority solely to work around transport.
+  statement: Failure of one Level 2 presentation surface shall first permit another declared Level 2 surface to satisfy delivery when exact-artifact user access is verified; delivery-mode selection reopens only when no Level 2 surface provides verified access.
   priority: critical
   verification:
-  - STD-PATCH-R012 is reapplied after selected-mode validation failure.
-  - STD-PATCH-R013 selects PSHELL when downloadable self-running delivery is unavailable or unverified.
+  - Chat presentation failure does not invalidate verified Library access to the exact artifact.
+  - STD-PATCH-R012 is reapplied only when the selected delivery mode as a whole fails validation.
+  - STD-PATCH-R013 selects PSHELL when no downloadable self-running Level 2 surface is available or verified.
 - id: STD-QUALITY-R009
   statement: Delivery and execution verification claims shall be bounded to the exact capability and conditions exercised in the current conversation and execution environment.
   priority: critical
@@ -73,3 +74,10 @@ rules:
   priority: critical
   verification:
   - Completion language matches recorded delivery evidence.
+- id: STD-QUALITY-R011
+  statement: A generated file registered in ChatGPT Library may satisfy Level 2 delivery when the user verifies that the exact artifact is present and can be opened or downloaded from Library, even if the chat attachment surface is degraded.
+  priority: critical
+  verification:
+  - Library registration alone is insufficient without user-access evidence.
+  - Verified Library access records surface=LIBRARY and chat_surface may remain DEGRADED.
+  - Level 3 fallback is not required solely because the chat attachment is non-clickable when Library access is verified.

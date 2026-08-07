@@ -233,7 +233,7 @@ patch_reference_registry:
       short_handle: P1A-PR10
       title: delivery_aware_native_execution_hotfix
       status: applied_by_this_patch
-      artifact_revision: 4
+      artifact_revision: 5
       trigger_alias:
         - ORDER66
 
@@ -505,7 +505,7 @@ pshell_payload_presentation_contract:
 development_delivery_preflight:
   introduced_by: PATCH-001A.PRE-010
   short_handle: P1A-PR10
-  artifact_revision: 3
+  artifact_revision: 5
   owner: tooling.builder
   authority: cerebro-source
   architecture_change: false
@@ -537,16 +537,33 @@ development_delivery_preflight:
     SELF_RUNNING_FILE:
       requires:
         - file_generation_available_in_current_context
-        - user_download_delivery_verified
+        - exact_artifact_registration_verified
+        - user_download_delivery_verified_on_at_least_one_declared_surface
+      declared_surfaces:
+        CHAT_ATTACHMENT:
+          success_requires:
+            - artifact_presented_in_chat
+            - user_access_verified
+        LIBRARY:
+          success_requires:
+            - exact_artifact_registered_in_library
+            - user_open_or_download_verified
+          chat_attachment_may_be: DEGRADED
+      surface_resolution:
+        rule: any_verified_declared_level2_surface_satisfies_delivery
+        prefer_chat_when_verified: true
+        library_is_valid_fallback_within_level2: true
+        reopen_delivery_mode_only_when_no_level2_surface_is_verified: true
       output:
         - one_self_running_local_script
       user_flow:
-        - download
+        - obtain_from_verified_surface
         - run
       prohibited:
         - archive_without_explicit_request
         - internal_only_artifact
         - unverified_download_claim
+        - treating_chat_surface_failure_as_total_level2_failure_when_library_access_is_verified
         - manual_file_relocation
 
     PSHELL:
