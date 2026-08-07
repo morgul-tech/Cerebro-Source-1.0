@@ -1421,6 +1421,41 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
       sequence: 45
+    -
+      id: "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
+      type: "BASIS_RECORD"
+      scope: "RUNTIME-0-1-SCOPE-AND-MINIMUM-CONTRACTS"
+      statement: "Runtime 0.1 is locked as a non-resident, single-event deterministic execution kernel. PATCH-002 must define the minimum contracts, states, transitions, capability bindings, evidence and receipts required for PATCH-003 implementation without reopening the runtime architecture."
+      payload:
+        maturity: "LOCKED_ANALYSIS_BASIS"
+        basis_ref: "engines/context/runtime-0.1-analysis-basis.yaml"
+        target_patch_ref: "PATCH-002"
+        implementation_patch_ref: "PATCH-003"
+        execution_ref: "EXEC-P2-RUNTIME-SCOPE"
+        minimum_cycle:
+          - "LOAD_RELEASE"
+          - "LOAD_STATE"
+          - "ACCEPT_ONE_EVENT"
+          - "RESOLVE"
+          - "EXECUTE"
+          - "VERIFY"
+          - "REDUCE_STATE"
+          - "WRITE_RECEIPT"
+          - "EXIT"
+        first_implementation_assurance_ref:
+          "standards/development/powershell-level3-delivery-assurance.yaml"
+      provenance:
+        introduced_by_ref: "PATCH-002.PRE-004-R3"
+        basis_refs:
+          - "CTX-BASIS-RUNTIME-0-1-ENTRY"
+          - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
+          - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-RUNTIME-0-1-ENTRY"
+      sequence: 46
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1447,6 +1482,7 @@ working_context:
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
+      - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -1468,4 +1504,5 @@ working_context:
       - "CTX-WISDOM-HANDBOOT-CONTROLLED-ENVIRONMENT-001"
       - "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
       - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
-  next_sequence: 46
+      - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
+  next_sequence: 47

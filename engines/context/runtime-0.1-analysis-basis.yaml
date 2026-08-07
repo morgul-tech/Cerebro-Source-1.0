@@ -1,0 +1,275 @@
+schema: "cerebro-runtime-analysis-basis/v0.1"
+
+runtime_analysis_basis:
+  id: "CEREBRO-RUNTIME-0-1-ANALYSIS-BASIS-001"
+  status: "LOCKED"
+  patch_ref: "PATCH-002.PRE-004-R3"
+  target_patch_ref: "PATCH-002"
+  implementation_patch_ref: "PATCH-003"
+
+  purpose:
+    - "preserve-semantically-lossless-runtime-analysis"
+    - "establish-minimum-buildable-runtime-boundary"
+    - "prevent-analysis-loss-across-session-handoff"
+    - "prevent-parallel-runtime-architecture"
+    - "provide-authoritative-input-to-PATCH-002"
+
+  authority:
+    semantic_owner: "context-engine"
+    project_owner: "project-engine"
+    persistence_scope: "working-source"
+    conversation_is_authority: false
+    source_is_authority: true
+
+  runtime_definition:
+    statement: >
+      Runtime 0.1 is the smallest deterministic execution kernel that loads a
+      verified Release and state, accepts one event, resolves one transition,
+      executes only declared capability bindings, verifies the result, reduces
+      state, writes a receipt and exits in a known state.
+
+  minimum_execution_cycle:
+    - "LOAD_RELEASE"
+    - "LOAD_STATE"
+    - "ACCEPT_ONE_EVENT"
+    - "RESOLVE"
+    - "EXECUTE"
+    - "VERIFY"
+    - "REDUCE_STATE"
+    - "WRITE_RECEIPT"
+    - "EXIT"
+
+  implementation_boundary:
+    included:
+      - "single-event-deterministic-kernel"
+      - "verified-release-loading"
+      - "runtime-state-loading"
+      - "event-validation"
+      - "transition-resolution"
+      - "declared-capability-dispatch"
+      - "execution-result-verification"
+      - "deterministic-state-reduction"
+      - "machine-readable-runtime-receipt"
+      - "fail-closed-control"
+      - "user-wait-boundary"
+      - "critical-reorientation-boundary"
+
+    deferred:
+      - "resident-runtime-host"
+      - "continuous-daemon-operation"
+      - "parallel-event-processing"
+      - "distributed-execution"
+      - "speculative-capability-discovery"
+      - "universal-object-pipeline"
+      - "idea-object-pipeline"
+      - "self-modifying-runtime"
+      - "implicit-capability-execution"
+      - "conversation-history-as-runtime-state"
+
+  invocation_model:
+    version_0_1: "ONE_INVOCATION_ONE_EVENT_ONE_RECEIPT"
+    host_model: "NON_RESIDENT_PROCESS"
+    resident_host_compatibility: "REQUIRED_BUT_DEFERRED"
+    repeated_invocation: "ALLOWED_FROM_PERSISTED_STATE"
+    hidden_background_state: "PROHIBITED"
+
+  projections:
+    - id: "IDENTITY"
+      purpose: "bind-runtime-instance-release-and-authority"
+    - id: "BOOT"
+      purpose: "record-load-and-start-preconditions"
+    - id: "GOVERNANCE"
+      purpose: "bind-rules-capabilities-and-control-gates"
+    - id: "SESSION"
+      purpose: "represent-current-event-and-user-boundary"
+    - id: "EXECUTION"
+      purpose: "represent-transition-dispatch-and-result"
+    - id: "EVIDENCE"
+      purpose: "represent-verification-failure-and-receipt"
+
+  minimum_objects:
+    - "release_descriptor"
+    - "runtime_profile"
+    - "runtime_instance"
+    - "runtime_event"
+    - "transition_decision"
+    - "capability_binding"
+    - "runtime_projection"
+    - "failure_ledger_entry"
+    - "runtime_receipt"
+
+  runtime_states:
+    - "ACTIVE_READY"
+    - "EVALUATING"
+    - "DISPATCHING"
+    - "EXECUTING"
+    - "VERIFYING"
+    - "WAITING_USER"
+    - "REORIENTING"
+    - "CONTROL_STOPPED"
+    - "COMPLETED"
+    - "FAILED_CLOSED"
+
+  transition_constraints:
+    - "every-transition-requires-current-state-and-event"
+    - "every-transition-must-resolve-deterministically"
+    - "undeclared-capability-dispatch-is-prohibited"
+    - "failed-verification-cannot-reduce-success-state"
+    - "WAITING_USER-requires-a-material-user-boundary"
+    - "CONTROL_STOPPED-requires-explicit-control-reason"
+    - "COMPLETED-requires-valid-runtime-receipt"
+    - "FAILED_CLOSED-preserves-failure-evidence"
+
+  capability_contract:
+    requirements:
+      - "capability-is-declared-in-release"
+      - "binding-is-resolved-before-dispatch"
+      - "inputs-match-declared-contract"
+      - "outputs-match-declared-contract"
+      - "exit-or-result-status-is-captured"
+      - "evidence-is-attached-to-execution"
+      - "side-effects-are-declared"
+      - "authority-boundary-is-respected"
+
+  event_contract:
+    required_fields:
+      - "event_id"
+      - "event_type"
+      - "issued_at"
+      - "source"
+      - "payload"
+      - "authority"
+    constraints:
+      - "one-event-per-runtime-invocation"
+      - "event-type-must-be-supported"
+      - "authority-must-be-resolvable"
+      - "invalid-event-fails-before-dispatch"
+
+  receipt_contract:
+    required_fields:
+      - "receipt_id"
+      - "runtime_instance_id"
+      - "release_id"
+      - "event_id"
+      - "initial_state"
+      - "resolved_transition"
+      - "capability_binding"
+      - "execution_result"
+      - "verification_result"
+      - "final_state"
+      - "evidence_refs"
+      - "failure_refs"
+      - "started_at"
+      - "completed_at"
+    constraints:
+      - "receipt-is-machine-readable"
+      - "receipt-is-written-for-success-and-failure"
+      - "receipt-does-not-create-authority"
+      - "receipt-must-distinguish-execution-from-verification"
+
+  failure_and_reorientation:
+    repeated_failure_gate:
+      required: true
+      trigger_basis:
+        - "same-failure-family"
+        - "cross-layer-failure-chain"
+        - "recovery-introduces-new-failure"
+      action:
+        - "stop-unchanged-retry"
+        - "preserve-evidence"
+        - "enter-REORIENTING"
+        - "reassess-implementation-boundary"
+        - "require-new-implementation-identity-when-current-one-is-rejected"
+
+    critical_reorientation:
+      state: "REORIENTING"
+      exit_requires:
+        - "failure-classification"
+        - "mutation-state-known"
+        - "authority-state-known"
+        - "new-execution-basis"
+        - "acceptance-gates-defined"
+
+  user_boundary:
+    principle: >
+      Cerebro controls mechanical progression and automates everything that
+      does not require actual user authority, unavailable local evidence or a
+      material decision.
+
+    WAITING_USER_allowed_for:
+      - "material-scope-choice"
+      - "new-authority-grant"
+      - "destructive-or-irreversible-action"
+      - "conflicting-authoritative-evidence"
+      - "local-machine-receipt-required"
+      - "ambiguous-mutation-target"
+
+    WAITING_USER_prohibited_for:
+      - "known-parameter-discovery"
+      - "canonical-command-resolution"
+      - "routine-validation-design"
+      - "mechanical-file-generation"
+      - "known-next-patch-progression"
+
+  first_implementation_requirements:
+    assurance_ref:
+      "standards/development/powershell-level3-delivery-assurance.yaml"
+    required:
+      - "resolve-canonical-operations-before-custom-tooling"
+      - "assess-language-and-transport-risk"
+      - "minimize-runtime-and-language-boundaries"
+      - "separate-semantic-contract-from-implementation"
+      - "define-success-failure-and-user-boundary-receipts"
+      - "prove-deterministic-single-event-cycle"
+      - "preserve-resident-host-compatibility-without-implementing-it"
+
+  PATCH_002_acceptance_input:
+    required_scope_outputs:
+      - "runtime-profile-contract"
+      - "runtime-instance-contract"
+      - "runtime-event-contract"
+      - "transition-decision-contract"
+      - "capability-binding-contract"
+      - "runtime-projection-contract"
+      - "failure-ledger-contract"
+      - "runtime-receipt-contract"
+      - "state-transition-table"
+      - "deferred-scope-register"
+
+    acceptance:
+      - "scope-is-minimum-buildable"
+      - "all-minimum-objects-have-contracts"
+      - "all-runtime-states-have-entry-and-exit-rules"
+      - "failure-path-is-first-class"
+      - "user-boundary-is-explicit"
+      - "PATCH-003-can-implement-without-reopening-runtime-architecture"
+
+  handoff_contract:
+    handoff_is:
+      - "minimal-pointer"
+      - "resume-gate"
+      - "source-authority-reference"
+    handoff_is_not:
+      - "duplicate-runtime-analysis"
+      - "conversation-transcript"
+      - "parallel-authority"
+    required_resume_target:
+      patch_ref: "PATCH-002"
+      execution_ref: "EXEC-P2-RUNTIME-SCOPE"
+
+  decisions_locked:
+    - "minimum-runtime-is-a-single-event-deterministic-kernel"
+    - "non-resident-host-is-version-0-1-default"
+    - "resident-host-is-compatible-but-deferred"
+    - "runtime-state-is-derived-not-authoritative"
+    - "release-and-source-remain-authoritative"
+    - "failure-and-reorientation-are-runtime-contracts"
+    - "PATCH-002-defines-contracts"
+    - "PATCH-003-implements-contracts"
+
+  acceptance:
+    - "analysis-basis-is-persisted-in-source"
+    - "working-context-indexes-analysis-basis"
+    - "roadmap-registers-R3-as-verified-prerequisite"
+    - "PATCH-002-depends-on-R3"
+    - "handoff-resumes-at-PATCH-002"
