@@ -61,6 +61,8 @@ power_shell_delivery_assurance:
       rule: "native-stderr-must-remain-separate-from-stdout-when-stdout-is-semantic-data"
     - id: "PS-L3-015"
       rule: "structured-text-mutation-must-not-depend-on-incidental-serialization-characteristics"
+    - id: "PS-L3-016"
+      rule: "delivery-level-selection-requires-current-session-end-to-end-capability-proof"
   first_implementation_assessment:
     timing: "before-implementation-design-lock"
     required_questions:
