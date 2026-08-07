@@ -530,6 +530,8 @@ roadmap:
         - "apply_reflective_adjustment_loop_as_process_gate"
         - "keep_verification_claims_explicitly_scoped"
         - "do_not_implement_reflective_adjustment_as_runtime_subsystem"
+        - "development_process_architecture_frozen_during_PATCH_003"
+        - "process_refinement_deferred_until_after_PATCH_003_unless_governing_validation_fails_or_new_conflicting_evidence_emerges"
     -
       id: "PATCH-004"
       title: "idea_object_pipeline"
