@@ -6,23 +6,34 @@ component:
   version: 1.0.0
   status: active-source
 responsibility:
-  primary: Laste en validert Cerebro Release og opprette Runtime State.
+  primary: Laste en validert Cerebro Release, opprette Runtime State og kjøre Runtime 0.1 som en deterministisk enkelt-event prosess.
 boundaries:
   must:
   - verify-release-integrity
   - load-required-components
   - initialize-runtime
+  - accept-one-runtime-event
+  - resolve-declared-capability-binding
+  - verify-runtime-result-before-success
+  - write-runtime-receipt-for-success-and-failure
   must_not:
   - load-invalid-release
   - load-unregistered-components
+  - mutate-source-from-runtime
+  - execute-undeclared-capability
+  - retain-hidden-resident-runtime-state
 dependencies:
   build: []
   runtime: []
 interfaces:
   consumes:
   - validated-release
+  - runtime-profile
+  - runtime-event
   produces:
   - runtime-state
+  - runtime-receipt
+  - runtime-failure-ledger
 documentation:
   path: README.md
 version:
