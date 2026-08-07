@@ -507,13 +507,34 @@ roadmap:
         - "engines/project/roadmap.yaml"
 
     -
+      id: "PATCH-003.PRE-002"
+      title: "pre_runtime_catchup_consolidation"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-003.PRE-001"
+      decision_refs:
+        - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+        - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
+      source_refs:
+        - "engines/context/working-context.yaml"
+        - "standards/development/streamlined-patch-workform.yaml"
+        - "engines/project/roadmap.yaml"
+      acceptance:
+        - "Level_2_Library_surface_result_consolidated"
+        - "troubleshooting_first_resolution_locked"
+        - "self_running_exact_rerun_semantics_locked"
+        - "catchup_closed_without_runtime_mutation"
+        - "PATCH_003_remains_the_single_active_main_patch"
+    -
       id: "PATCH-003"
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-003.PRE-001"
+        - "PATCH-003.PRE-002"
       decision_refs:
         - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
         - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
@@ -684,6 +705,16 @@ roadmap:
       object_type: "DECISION"
       object_ref: "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "WISDOM"
+      object_ref: "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "WISDOM"
+      object_ref: "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -713,5 +744,5 @@ roadmap:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
   revision:
-    sequence: 10
-    last_locked_patch_ref: "PATCH-002.PRE-003.POST-001"
+    sequence: 11
+    last_locked_patch_ref: "PATCH-003.PRE-002"

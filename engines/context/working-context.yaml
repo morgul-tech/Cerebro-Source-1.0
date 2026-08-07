@@ -1547,20 +1547,21 @@ working_context:
       scope: "USER-VISIBLE-ARTIFACT-DELIVERY-AND-COMPLETION-CLAIMS"
       statement: "Artifact creation, registration, presentation and user access are separate completion states; a file-delivery claim is valid only when user-visible presentation and access are proven."
       payload:
-        maturity: "PROVISIONAL_MULTI_INCIDENT"
+        maturity: "CONFIRMED_MULTI_SURFACE"
         confidence: "HIGH"
-        implementation_status: "NOTE_ONLY_DEFERRED_FOR_BROAD_AUDIT"
-        user_observation: "Repeated Cerebro interactions reported generated files while the user could not obtain a clickable or downloadable artifact in chat."
-        primary_failure_mode: "INTERNAL_ARTIFACT_STATE_REPORTED_AS_USER_DELIVERY"
-        communication_failure: "Explanations answered internal generation state instead of whether delivery to the user had actually succeeded."
+        implementation_status: "IMPLEMENTED_BY_PATCH-001A.PRE-010-R5_AND_CONSOLIDATED_BY_PATCH-003.PRE-002"
+        user_observation: "Repeated chat attachment failures coexisted with successful file creation, Library registration and user access; generated images also remained directly accessible."
+        primary_failure_mode: "CHAT_PRESENTATION_SURFACE_DEGRADED_WHILE_LIBRARY_DELIVERY_REMAINED_AVAILABLE"
+        communication_failure: "Cerebro escalated from a presentation symptom before exhausting existing supported user-visible surfaces and initially treated chat-link failure as total Level 2 failure."
         consequence:
-          - "user_misinterpreted_failure_as_intermittent_platform_availability"
-          - "level_2_success_claims_were_premature"
-          - "avoidable_retries_and_transport_experiments"
-        provisional_principle: "USER_ACCESS_IS_REQUIRED_FOR_DELIVERY_COMPLETION"
-        deferred_analysis:
-          required: true
-          scope: "Audit Cerebro for other cases where internal or tool state can be mistaken for user-visible capability, completion, authority, or successful delivery."
+          - "false_total_level2_failure_classification"
+          - "avoidable_delivery_mode_escalation"
+          - "avoidable_user_roundtrips_and_transport_experiments"
+        confirmed_principle: "LEVEL2_SUCCESS_REQUIRES_VERIFIED_USER_ACCESS_ON_AT_LEAST_ONE_DECLARED_LEVEL2_SURFACE"
+        consolidation:
+          completed: true
+          result: "Library access proved that generation, registration and user access were operational while chat attachment presentation was degraded."
+          broad_audit_scope_retained: "Apply the same internal-state-versus-user-visible-state distinction to other Cerebro capabilities when evidence warrants it."
       provenance:
         introduced_by_ref: "PATCH-001A.PRE-010-R4"
         basis_refs:
@@ -1573,6 +1574,75 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
       sequence: 51
+    -
+      id: "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      type: "WISDOM_RECORD"
+      scope: "CAPABILITY-FAILURE-DIAGNOSIS-AND-DELIVERY-RECOVERY"
+      statement: "When an existing capability appears to fail, Cerebro should isolate the failing layer and exhaust simple supported diagnostic and recovery surfaces before creating, escalating or redesigning a delivery mechanism."
+      payload:
+        maturity: "CONFIRMED_MULTI_STEP_INCIDENT"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-003.PRE-002"
+        diagnostic_order:
+          - "state_the_observed_symptom_without_inferring_root_cause"
+          - "separate_generation_registration_storage_presentation_and_user_access"
+          - "check_existing_supported_surfaces_and_standard_troubleshooting"
+          - "run_the_smallest_safe_discriminating_test"
+          - "classify_only_the_failed_layer"
+          - "reuse_an_existing_verified_surface_when_available"
+          - "escalate_delivery_mode_or_create_new_mechanism_only_after_the_capability_as_a_whole_is_unavailable"
+        prohibited:
+          - "architectural_escalation_from_single_surface_failure"
+          - "invented_platform_cause_without_evidence"
+          - "repeated_similar_tests_without_new_discriminating_value"
+          - "using_the_user_as_a_defect_detector_for_large_unproven_payloads"
+        evidence_summary:
+          - "chat_text_file_links_failed_in_multiple_clean_conversations"
+          - "the_same_files_were_present_and_openable_in_ChatGPT_Library"
+          - "generated_image_delivery_remained_user_visible"
+          - "Level_2_Library_hotfix_revision_5_was_applied_and_verified"
+      provenance:
+        introduced_by_ref: "PATCH-003.PRE-002"
+        basis_refs:
+          - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
+          - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+          - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
+      sequence: 52
+    -
+      id: "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
+      type: "WISDOM_RECORD"
+      scope: "SELF-RUNNING-PATCH-RERUN-SEMANTICS"
+      statement: "A self-running patch rerun must distinguish an unexpected baseline change from the exact patch already being applied; verified exact already-applied state is a terminal success classification, not a failure."
+      payload:
+        maturity: "CONFIRMED_INCIDENT"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-003.PRE-002"
+        required_behavior:
+          - "check_exact_already_applied_state_before_reporting_baseline_mismatch"
+          - "require_expected_commit_identity_or_semantic_markers"
+          - "require_remote_equals_local"
+          - "require_clean_worktree"
+          - "return_ALREADY_APPLIED_without_mutation_when_all_checks_pass"
+        prohibited:
+          - "treating_any_newer_commit_as_already_applied"
+          - "bypassing_baseline_protection"
+          - "reporting_FAIL_for_exact_verified_duplicate_execution"
+      provenance:
+        introduced_by_ref: "PATCH-003.PRE-002"
+        basis_refs:
+          - "PATCH-001A.PRE-010-R5"
+          - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+      sequence: 53
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1627,4 +1697,6 @@ working_context:
       - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
       - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
       - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
-  next_sequence: 52
+      - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
+  next_sequence: 54

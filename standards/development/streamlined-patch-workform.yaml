@@ -289,6 +289,52 @@ streamlined_patch_workform:
       - "select-smallest-justified-adjustment"
       - "extend-existing-wisdom-before-creating-parallel-policy"
       - "keep-provisional-guards-non-authoritative"
+  troubleshooting_first_resolution:
+    introduced_by: "PATCH-003.PRE-002"
+    status: "LOCKED"
+    objective: "resolve capability and delivery failures at the smallest proven layer before transport escalation or architecture change"
+    applies_when:
+      - "delivery_surface_fails"
+      - "tool_result_conflicts_with_user_observation"
+      - "generated_artifact_exists_but_user_access_is_unclear"
+      - "repeated_execution_or_delivery_failure"
+    required_order:
+      - "record_observed_symptom"
+      - "separate_backend_creation_registration_storage_presentation_and_access_states"
+      - "inspect_existing_supported_surfaces_and_standard_troubleshooting"
+      - "run_smallest_discriminating_test"
+      - "classify_exact_failed_layer"
+      - "reuse_existing_verified_capability"
+      - "escalate_only_if_the_required_capability_as_a_whole_remains_unavailable"
+    delivery_surface_rule:
+      - "failure_of_CHAT_ATTACHMENT_does_not_imply_failure_of_LIBRARY"
+      - "verified_LIBRARY_access_can_complete_Level_2"
+      - "fallback_to_Level_3_only_when_no_declared_Level_2_surface_provides_verified_access"
+    stop_conditions:
+      - "a_supported_existing_surface_satisfies_the_user_goal"
+      - "further_testing_would_not_change_the_next_action"
+    prohibited:
+      - "new_delivery_mechanism_before_supported_surface_check"
+      - "root_cause_claim_without_discriminating_evidence"
+      - "repeating_non_discriminating_tests"
+      - "large_corrective_payload_before_isolated_failure_mechanism_proof"
+
+  self_running_rerun_semantics:
+    introduced_by: "PATCH-003.PRE-002"
+    status: "LOCKED"
+    purpose: "make duplicate execution safe and correctly classified without weakening baseline protection"
+    before_baseline_mismatch_failure:
+      - "check_for_exact_patch_already_applied"
+      - "verify_expected_semantic_markers_or_commit_message"
+      - "verify_remote_equals_local"
+      - "verify_clean_worktree"
+    exact_already_applied_result:
+      classification: "ALREADY_APPLIED"
+      success_equivalent: true
+      mutation_allowed: false
+    mismatch_rule:
+      - "a_different_or_unverified_newer_state_remains_BASELINE_MISMATCH"
+      - "never_treat_arbitrary_newer_HEAD_as_success"
   runtime_0_1_relevance:
     required_application:
       - "lock_minimal_runtime_scope_before implementation"
