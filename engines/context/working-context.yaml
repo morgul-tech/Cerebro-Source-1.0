@@ -1643,6 +1643,36 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-VERIFICATION-SCOPE-001"
       sequence: 53
+    -
+      id: "CTX-WISDOM-USER-HOST-VISIBILITY-001"
+      type: "WISDOM_RECORD"
+      scope: "USER-FACING-POWERSHELL-EXECUTION"
+      statement: "User-facing PowerShell runs must preserve terminal output until explicit user dismissal so success, failure and diagnostic evidence remain observable."
+      payload:
+        maturity: "USER_LOCKED_REQUIREMENT"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-003.PRE-003"
+        required_behavior:
+          - "do_not_close_existing_interactive_shell"
+          - "pause_user_facing_disposable_host_after_success"
+          - "pause_user_facing_disposable_host_after_failure"
+          - "allow_explicit_NoPause_only_for_nested_or_machine_invocation"
+          - "emit_terminal_receipt_before_pause"
+        rationale:
+          - "failure_messages_must_remain_visible"
+          - "user_must_be_able_to_capture_terminal_receipt"
+          - "automatic_window_close_hides_diagnostic_evidence"
+      provenance:
+        introduced_by_ref: "PATCH-003.PRE-003"
+        basis_refs:
+          - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
+          - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
+      sequence: 54
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1699,4 +1729,5 @@ working_context:
       - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
       - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
-  next_sequence: 54
+      - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
+  next_sequence: 55

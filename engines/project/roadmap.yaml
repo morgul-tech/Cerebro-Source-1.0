@@ -528,13 +528,36 @@ roadmap:
         - "catchup_closed_without_runtime_mutation"
         - "PATCH_003_remains_the_single_active_main_patch"
     -
+      id: "PATCH-003.PRE-003"
+      title: "user_facing_powershell_host_visibility_and_runner_compliance"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-003.PRE-002"
+      decision_refs:
+        - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
+      source_refs:
+        - "standards/development/powershell-level3-delivery-assurance.yaml"
+        - "standards/development/streamlined-patch-workform.yaml"
+        - "tooling/builder/templates/pshell/cerebro_level3_runner.ps1"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+      acceptance:
+        - "user_facing_terminal_receipt_remains_visible_until_explicit_dismissal"
+        - "success_and_failure_paths_preserve_visibility"
+        - "nested_machine_invocation_can_explicitly_disable_pause"
+        - "canonical_runner_uses_literal_native_argument_tokens"
+        - "manual_single_native_argument_string_removed"
+        - "PATCH_003_remains_active_and_unmodified"
+    -
       id: "PATCH-003"
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-003.PRE-002"
+        - "PATCH-003.PRE-003"
       decision_refs:
         - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
         - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
@@ -744,5 +767,5 @@ roadmap:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
   revision:
-    sequence: 11
-    last_locked_patch_ref: "PATCH-003.PRE-002"
+    sequence: 12
+    last_locked_patch_ref: "PATCH-003.PRE-003"

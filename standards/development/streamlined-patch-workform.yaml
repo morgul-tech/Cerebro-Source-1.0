@@ -335,6 +335,20 @@ streamlined_patch_workform:
     mismatch_rule:
       - "a_different_or_unverified_newer_state_remains_BASELINE_MISMATCH"
       - "never_treat_arbitrary_newer_HEAD_as_success"
+  user_facing_terminal_visibility:
+    introduced_by: "PATCH-003.PRE-003"
+    standard_ref: "standards/development/powershell-level3-delivery-assurance.yaml"
+    required_for:
+      - "user-facing-self-running-powershell"
+    generation_contract:
+      - "default-to-visible-terminal-receipt"
+      - "default-to-explicit-user-dismissal-before-process-exit"
+      - "nested-or-machine-callers-must-opt-out-explicitly"
+      - "success-and-failure-paths-must-both-obey-the-visibility-contract"
+    acceptance:
+      - "user-can-read-terminal-failure-before-window-exit"
+      - "user-can-read-terminal-success-before-window-exit"
+      - "existing-interactive-shell-is-never-closed-by-payload"
   runtime_0_1_relevance:
     required_application:
       - "lock_minimal_runtime_scope_before implementation"

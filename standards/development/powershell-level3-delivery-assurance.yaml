@@ -63,6 +63,39 @@ power_shell_delivery_assurance:
       rule: "structured-text-mutation-must-not-depend-on-incidental-serialization-characteristics"
     - id: "PS-L3-016"
       rule: "delivery-level-selection-requires-current-session-end-to-end-capability-proof"
+    - id: "PS-L3-017"
+      rule: "user-facing-self-running-powershell-must-preserve-terminal-visibility-until-explicit-user-dismissal"
+
+  user_host_visibility_contract:
+    introduced_by: "PATCH-003.PRE-003"
+    status: "LOCKED"
+    applies_to:
+      - "user-facing-self-running-patches"
+      - "user-facing-corrective-payloads"
+      - "user-facing-diagnostic-runs"
+      - "user-facing-sync-or-handoff-runs"
+    governing_rule: >
+      A user-facing PowerShell execution must not terminate a disposable console
+      before the terminal SUCCESS or FAIL receipt and diagnostics remain visible
+      long enough for explicit user dismissal.
+    default_behavior:
+      - "emit-terminal-machine-readable-receipt"
+      - "preserve-visible-diagnostics"
+      - "pause-before-process-exit-when-running-as-user-facing-entrypoint"
+      - "require-explicit-user-dismissal"
+    nested_or_machine_invocation:
+      - "may-explicitly-disable-pause"
+      - "must-preserve-output-and-exit-status-for-caller"
+      - "must-not-disable-pause-implicitly"
+    failure_behavior:
+      - "show-failure-classification"
+      - "show-actionable-diagnostic"
+      - "pause-before-exit"
+    prohibited:
+      - "exit-or-close-user-facing-console-immediately-after-failure"
+      - "exit-or-close-user-facing-console-immediately-after-success"
+      - "hide-terminal-receipt-behind-window-close"
+      - "use-pause-in-nested-machine-invocation-without-user-surface"
   first_implementation_assessment:
     timing: "before-implementation-design-lock"
     required_questions:
