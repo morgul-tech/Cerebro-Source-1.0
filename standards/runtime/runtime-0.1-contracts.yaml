@@ -1,0 +1,377 @@
+schema: "cerebro-runtime-contract-set/v0.1"
+
+runtime_contract_set:
+  id: "CEREBRO-RUNTIME-0-1-CONTRACT-SET-001"
+  version: "0.1"
+  status: "LOCKED"
+  patch_ref: "PATCH-002"
+  implementation_patch_ref: "PATCH-003"
+  analysis_basis_ref:
+    "engines/context/runtime-0.1-analysis-basis.yaml"
+  bootstrap_ref:
+    "standards/runtime/minimal-runtime-bootstrap.yaml"
+
+  objective:
+    - "define-the-smallest-buildable-runtime-contract-set"
+    - "make-PATCH-003-an-implementation-only-patch"
+    - "preserve-source-and-release-authority"
+    - "make-success-failure-and-user-boundaries-deterministic"
+
+  authority:
+    persistent_authority: "Cerebro-Source"
+    release_authority: "derived-and-pinned"
+    runtime_state_authority: "derived"
+    receipt_authority: "evidence-only"
+    conversation_authority: false
+    runtime_may_mutate_source: false
+
+  invocation:
+    model: "ONE_INVOCATION_ONE_EVENT_ONE_RECEIPT"
+    host: "NON_RESIDENT_PROCESS"
+    initial_state: "ACTIVE_READY"
+    terminal_states:
+      - "WAITING_USER"
+      - "CONTROL_STOPPED"
+      - "COMPLETED"
+      - "FAILED_CLOSED"
+
+  runtime_profile_contract:
+    id: "RUNTIME-PROFILE-CONTRACT-001"
+    required_fields:
+      - "profile_id"
+      - "runtime_version"
+      - "release_ref"
+      - "entrypoint"
+      - "supported_event_types"
+      - "capability_binding_refs"
+      - "projection_requirements"
+      - "state_contract_ref"
+      - "receipt_contract_ref"
+      - "failure_policy_ref"
+    constraints:
+      - "runtime_version-must-equal-0.1"
+      - "release_ref-must-be-pinned-and-verified"
+      - "entrypoint-must-resolve-before-activation"
+      - "all-capability-bindings-must-be-declared"
+      - "unknown-profile-fields-must-not-create-authority"
+
+  runtime_instance_contract:
+    id: "RUNTIME-INSTANCE-CONTRACT-001"
+    required_fields:
+      - "runtime_instance_id"
+      - "profile_id"
+      - "release_id"
+      - "source_identity"
+      - "created_at"
+      - "current_state"
+      - "projection_refs"
+      - "active_event_id"
+      - "failure_ledger_ref"
+    constraints:
+      - "instance-is-derived-from-verified-profile-and-release"
+      - "one-instance-processes-at-most-one-event-per-invocation"
+      - "current_state-must-be-a-declared-runtime-state"
+      - "instance-does-not-persist-hidden-process-memory"
+
+  runtime_event_contract:
+    id: "RUNTIME-EVENT-CONTRACT-001"
+    required_fields:
+      - "event_id"
+      - "event_type"
+      - "issued_at"
+      - "source"
+      - "authority"
+      - "payload"
+      - "correlation_ref"
+    validation_order:
+      - "required-fields"
+      - "event-identity"
+      - "supported-event-type"
+      - "authority-resolution"
+      - "payload-contract"
+      - "single-event-gate"
+    failure_effect: "FAILED_CLOSED_BEFORE_DISPATCH"
+
+  transition_decision_contract:
+    id: "TRANSITION-DECISION-CONTRACT-001"
+    required_fields:
+      - "decision_id"
+      - "runtime_instance_id"
+      - "event_id"
+      - "initial_state"
+      - "selected_transition"
+      - "target_state"
+      - "capability_binding_ref"
+      - "decision_basis"
+      - "resolved_at"
+    constraints:
+      - "exactly-one-transition-is-selected-or-failure-is-recorded"
+      - "selection-is-deterministic-for-equal-input"
+      - "target-state-must-be-declared"
+      - "capability-binding-is-required-before-dispatch"
+      - "decision-does-not-execute-side-effects"
+
+  capability_binding_contract:
+    id: "CAPABILITY-BINDING-CONTRACT-001"
+    required_fields:
+      - "binding_id"
+      - "capability_id"
+      - "implementation_ref"
+      - "input_contract"
+      - "output_contract"
+      - "allowed_side_effects"
+      - "authority_requirement"
+      - "timeout_policy"
+      - "exit_policy"
+      - "verification_policy"
+    constraints:
+      - "binding-must-exist-in-pinned-release"
+      - "implementation-ref-must-resolve-before-dispatch"
+      - "undeclared-side-effects-are-prohibited"
+      - "input-contract-failure-prevents-execution"
+      - "output-contract-failure-prevents-success-reduction"
+      - "native-exit-code-or-result-state-is-captured-immediately"
+
+  runtime_projection_contract:
+    id: "RUNTIME-PROJECTION-CONTRACT-001"
+    projection_types:
+      IDENTITY:
+        required:
+          - "runtime_instance_id"
+          - "profile_id"
+          - "release_id"
+          - "source_identity"
+      BOOT:
+        required:
+          - "startup_stage"
+          - "input_validation"
+          - "activation_state"
+          - "control_state"
+      GOVERNANCE:
+        required:
+          - "authority"
+          - "rules"
+          - "capability_bindings"
+          - "control_gates"
+      SESSION:
+        required:
+          - "event_id"
+          - "event_type"
+          - "user_boundary"
+          - "correlation_ref"
+      EXECUTION:
+        required:
+          - "decision_id"
+          - "binding_id"
+          - "execution_state"
+          - "execution_result"
+      EVIDENCE:
+        required:
+          - "verification_result"
+          - "evidence_refs"
+          - "failure_refs"
+          - "receipt_ref"
+    constraints:
+      - "projections-are-derived-views"
+      - "projections-do-not-create-persistent-authority"
+      - "required-projections-must-be-complete-before-receipt"
+
+  failure_ledger_contract:
+    id: "FAILURE-LEDGER-CONTRACT-001"
+    required_fields:
+      - "failure_id"
+      - "runtime_instance_id"
+      - "event_id"
+      - "failure_stage"
+      - "failure_class"
+      - "failure_code"
+      - "message"
+      - "evidence_refs"
+      - "mutation_state"
+      - "authority_state"
+      - "recorded_at"
+    repeated_failure_fields:
+      - "failure_family"
+      - "prior_failure_refs"
+      - "reorientation_required"
+      - "new_implementation_identity_required"
+    constraints:
+      - "failure-entry-is-written-before-failure-receipt"
+      - "failure-evidence-is-not-discarded-by-rollback"
+      - "same-family-retry-is-blocked-when-reorientation-is-required"
+
+  runtime_receipt_contract:
+    id: "RUNTIME-RECEIPT-CONTRACT-001"
+    required_fields:
+      - "receipt_id"
+      - "runtime_instance_id"
+      - "runtime_version"
+      - "profile_id"
+      - "release_id"
+      - "source_identity"
+      - "event_id"
+      - "initial_state"
+      - "transition_decision"
+      - "capability_binding"
+      - "execution_result"
+      - "verification_result"
+      - "final_state"
+      - "projection_refs"
+      - "evidence_refs"
+      - "failure_refs"
+      - "started_at"
+      - "completed_at"
+    final_state_rules:
+      WAITING_USER:
+        requires:
+          - "material-user-boundary"
+          - "copyable-next-action"
+      CONTROL_STOPPED:
+        requires:
+          - "control-stop-reason"
+          - "authority-preserved"
+      COMPLETED:
+        requires:
+          - "execution-succeeded"
+          - "verification-passed"
+          - "state-reduction-completed"
+      FAILED_CLOSED:
+        requires:
+          - "failure-ledger-entry"
+          - "authority-preserved"
+          - "failure-stage-recorded"
+    constraints:
+      - "one-terminal-receipt-per-invocation"
+      - "receipt-is-machine-readable"
+      - "receipt-distinguishes-execution-from-verification"
+      - "receipt-is-written-for-success-and-failure"
+
+  state_transition_table:
+    id: "RUNTIME-STATE-TRANSITION-TABLE-001"
+    transitions:
+      - from: "ACTIVE_READY"
+        event: "VALID_EVENT"
+        to: "EVALUATING"
+      - from: "ACTIVE_READY"
+        event: "INVALID_EVENT"
+        to: "FAILED_CLOSED"
+      - from: "EVALUATING"
+        event: "TRANSITION_RESOLVED"
+        to: "DISPATCHING"
+      - from: "EVALUATING"
+        event: "MATERIAL_USER_BOUNDARY"
+        to: "WAITING_USER"
+      - from: "EVALUATING"
+        event: "REORIENTATION_REQUIRED"
+        to: "REORIENTING"
+      - from: "EVALUATING"
+        event: "NO_VALID_TRANSITION"
+        to: "FAILED_CLOSED"
+      - from: "DISPATCHING"
+        event: "BINDING_VALID"
+        to: "EXECUTING"
+      - from: "DISPATCHING"
+        event: "BINDING_INVALID"
+        to: "FAILED_CLOSED"
+      - from: "EXECUTING"
+        event: "EXECUTION_RETURNED"
+        to: "VERIFYING"
+      - from: "EXECUTING"
+        event: "CONTROL_STOP"
+        to: "CONTROL_STOPPED"
+      - from: "EXECUTING"
+        event: "EXECUTION_FAILED"
+        to: "FAILED_CLOSED"
+      - from: "VERIFYING"
+        event: "VERIFICATION_PASSED"
+        to: "COMPLETED"
+      - from: "VERIFYING"
+        event: "VERIFICATION_FAILED"
+        to: "FAILED_CLOSED"
+      - from: "REORIENTING"
+        event: "NEW_EXECUTION_BASIS_READY"
+        to: "CONTROL_STOPPED"
+      - from: "REORIENTING"
+        event: "REORIENTATION_FAILED"
+        to: "FAILED_CLOSED"
+    invariants:
+      - "terminal-states-have-no-automatic-outbound-transition"
+      - "success-cannot-bypass-VERIFYING"
+      - "execution-cannot-bypass-DISPATCHING"
+      - "invalid-event-cannot-enter-EXECUTING"
+      - "WAITING_USER-requires-material-user-authority-or-evidence-boundary"
+      - "REORIENTING-prohibits-unchanged-retry"
+
+  deterministic_execution_order:
+    - sequence: 1
+      operation: "LOAD_RELEASE"
+      failure_state: "FAILED_CLOSED"
+    - sequence: 2
+      operation: "LOAD_STATE"
+      failure_state: "FAILED_CLOSED"
+    - sequence: 3
+      operation: "ACCEPT_ONE_EVENT"
+      failure_state: "FAILED_CLOSED"
+    - sequence: 4
+      operation: "RESOLVE"
+      failure_state: "FAILED_CLOSED_OR_WAITING_USER_OR_REORIENTING"
+    - sequence: 5
+      operation: "EXECUTE"
+      failure_state: "FAILED_CLOSED_OR_CONTROL_STOPPED"
+    - sequence: 6
+      operation: "VERIFY"
+      failure_state: "FAILED_CLOSED"
+    - sequence: 7
+      operation: "REDUCE_STATE"
+      failure_state: "FAILED_CLOSED"
+    - sequence: 8
+      operation: "WRITE_RECEIPT"
+      failure_state: "FAILED_CLOSED_WITH_EMERGENCY_RECEIPT"
+    - sequence: 9
+      operation: "EXIT"
+      failure_state: "PROCESS_EXIT_FAILURE_RECORDED"
+
+  deferred_scope_register:
+    id: "RUNTIME-0-1-DEFERRED-SCOPE-001"
+    deferred:
+      - item: "resident-runtime-host"
+        target: "post-runtime-0.1"
+      - item: "continuous-daemon-operation"
+        target: "post-runtime-0.1"
+      - item: "parallel-event-processing"
+        target: "post-runtime-0.1"
+      - item: "distributed-execution"
+        target: "future-architecture"
+      - item: "speculative-capability-discovery"
+        target: "future-governed-capability-work"
+      - item: "universal-object-pipeline"
+        target: "after-runtime-baseline"
+      - item: "idea-object-pipeline"
+        target: "PATCH-004"
+      - item: "self-modifying-runtime"
+        target: "not-approved"
+      - item: "implicit-capability-execution"
+        target: "prohibited"
+      - item: "conversation-history-as-runtime-state"
+        target: "prohibited"
+
+  PATCH_003_implementation_acceptance:
+    - "loads-a-pinned-verified-release"
+    - "loads-or-constructs-valid-derived-state"
+    - "accepts-exactly-one-event"
+    - "resolves-one-deterministic-transition"
+    - "dispatches-only-a-declared-capability-binding"
+    - "captures-execution-result"
+    - "verifies-result-before-success-reduction"
+    - "writes-success-and-failure-receipts"
+    - "implements-all-declared-terminal-states"
+    - "passes-one-success-and-one-failure-canary"
+    - "does-not-implement-deferred-scope"
+
+  acceptance:
+    - "all-ten-required-scope-outputs-are-defined"
+    - "minimum-buildable-runtime-boundary-is-locked"
+    - "runtime-state-transitions-are-deterministic"
+    - "failure-and-reorientation-are-first-class"
+    - "user-boundary-is-explicit"
+    - "PATCH-003-can-implement-without-architecture-reopen"

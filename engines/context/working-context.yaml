@@ -1456,6 +1456,40 @@ working_context:
         derived_from_refs:
           - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       sequence: 46
+    -
+      id: "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
+      type: "DECISION_RECORD"
+      scope: "PATCH-002-RUNTIME-0-1-SCOPE-AND-MINIMUM-CONTRACTS"
+      statement: "Runtime 0.1 minimum contracts are locked as one non-resident, single-event deterministic kernel contract set. PATCH-003 is restricted to implementing the declared profiles, instances, events, transitions, capability bindings, projections, failure ledger, receipts and state table without adding deferred scope."
+      payload:
+        maturity: "LOCKED"
+        contract_ref: "standards/runtime/runtime-0.1-contracts.yaml"
+        analysis_basis_ref: "engines/context/runtime-0.1-analysis-basis.yaml"
+        completed_patch_ref: "PATCH-002"
+        next_patch_ref: "PATCH-003"
+        required_outputs:
+          - "runtime-profile-contract"
+          - "runtime-instance-contract"
+          - "runtime-event-contract"
+          - "transition-decision-contract"
+          - "capability-binding-contract"
+          - "runtime-projection-contract"
+          - "failure-ledger-contract"
+          - "runtime-receipt-contract"
+          - "state-transition-table"
+          - "deferred-scope-register"
+      provenance:
+        introduced_by_ref: "PATCH-002"
+        basis_refs:
+          - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
+          - "CEREBRO-RUNTIME-0-1-ANALYSIS-BASIS-001"
+          - "CEREBRO-POWERSHELL-LEVEL3-ASSURANCE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
+      sequence: 47
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1480,6 +1514,7 @@ working_context:
       - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
+      - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
@@ -1505,4 +1540,4 @@ working_context:
       - "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
       - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
       - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
-  next_sequence: 47
+  next_sequence: 48

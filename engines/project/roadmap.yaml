@@ -462,24 +462,47 @@ roadmap:
       title: "runtime_0_1_scope_and_minimum_contracts"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-002.PRE-004-R3"
       decision_refs:
         - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
         - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
+        - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
       source_refs:
         - "engines/context/runtime-0.1-analysis-basis.yaml"
+        - "standards/runtime/runtime-0.1-contracts.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+      acceptance:
+        - "runtime_profile_contract_locked"
+        - "runtime_instance_contract_locked"
+        - "runtime_event_contract_locked"
+        - "transition_decision_contract_locked"
+        - "capability_binding_contract_locked"
+        - "runtime_projection_contract_locked"
+        - "failure_ledger_contract_locked"
+        - "runtime_receipt_contract_locked"
+        - "state_transition_table_locked"
+        - "deferred_scope_register_locked"
+        - "PATCH_003_can_implement_without_architecture_reopen"
     -
       id: "PATCH-003"
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-002"
-      decision_refs: []
-      source_refs: []
+      decision_refs:
+        - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
+      source_refs:
+        - "standards/runtime/runtime-0.1-contracts.yaml"
+      implementation_constraints:
+        - "implement_declared_contracts_only"
+        - "do_not_reopen_runtime_architecture"
+        - "do_not_implement_deferred_scope"
+        - "success_and_failure_canaries_required"
     -
       id: "PATCH-004"
       title: "idea_object_pipeline"
@@ -492,18 +515,18 @@ roadmap:
       source_refs: []
   execution:
     current:
-      id: "EXEC-P2-RUNTIME-SCOPE"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      patch_ref: "PATCH-002"
-      canonical_command: "begin PATCH-002 Runtime 0.1 ideation and minimum contract definition"
-      status: "ACTIVE"
-    next:
       id: "EXEC-P3-RUNTIME-IMPLEMENTATION"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       patch_ref: "PATCH-003"
-      canonical_command: "implement PATCH-003 Runtime 0.1 after PATCH-002 scope lock"
+      canonical_command: "implement PATCH-003 Runtime 0.1 from the locked PATCH-002 contract set"
+      status: "ACTIVE"
+    next:
+      id: "EXEC-P4-IDEA-OBJECT-PIPELINE"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      patch_ref: "PATCH-004"
+      canonical_command: "begin PATCH-004 only after Runtime 0.1 implementation and baseline verification"
       status: "PLANNED"
   blockers: []
   context_refs:
