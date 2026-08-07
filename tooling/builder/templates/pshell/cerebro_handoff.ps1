@@ -68,60 +68,85 @@ function Get-CerebroContextIndexValues {
         [Parameter(Mandatory)][string]$Name
     )
 
-    $inlinePattern = (
-        '(?m)^\s{4}' +
-        [regex]::Escape($Name) +
-        ':\s*\[\s*(?<items>[^\]]*)\s*\]\s*$'
-    )
+    $namePattern = [regex]::Escape($Name)
+    $lines = @($Context -split '\r?\n', -1)
 
-    $inlineMatch = [regex]::Match(
-        $Context,
-        $inlinePattern
-    )
+    $keyIndex = -1
+    $tail = $null
 
-    if ($inlineMatch.Success) {
-        $inlineItems = $inlineMatch.Groups['items'].Value
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $match = [regex]::Match(
+            $lines[$i],
+            '^[ ]{4}' + $namePattern + ':[ \t]*(?<tail>.*)$'
+        )
 
-        if ([string]::IsNullOrWhiteSpace($inlineItems)) {
+        if ($match.Success) {
+            if ($keyIndex -ne -1) {
+                throw "HANDOFF_CONTEXT_INDEX_DUPLICATE:$Name"
+            }
+
+            $keyIndex = $i
+            $tail = $match.Groups['tail'].Value
+        }
+    }
+
+    if ($keyIndex -lt 0) {
+        throw "HANDOFF_CONTEXT_INDEX_NOT_FOUND:$Name"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($tail)) {
+        $inline = $tail.Trim()
+
+        if (
+            -not $inline.StartsWith('[') -or
+            -not $inline.EndsWith(']')
+        ) {
+            throw "HANDOFF_CONTEXT_INDEX_INLINE_INVALID:$Name"
+        }
+
+        $inner = $inline.Substring(
+            1,
+            $inline.Length - 2
+        ).Trim()
+
+        if ([string]::IsNullOrWhiteSpace($inner)) {
             return @()
         }
 
+        $matches = [regex]::Matches(
+            $inner,
+            '"([^"\r\n]+)"'
+        )
+
+        if ($matches.Count -eq 0) {
+            throw "HANDOFF_CONTEXT_INDEX_INLINE_ITEMS_INVALID:$Name"
+        }
+
         return @(
-            [regex]::Matches(
-                $inlineItems,
-                '"([^"]+)"'
-            ) |
+            $matches |
                 ForEach-Object {
                     $_.Groups[1].Value
                 }
         )
     }
 
-    $blockPattern = (
-        '(?ms)^\s{4}' +
-        [regex]::Escape($Name) +
-        ':\s*\r?\n' +
-        '(?<items>(?:^\s{6}-\s+"[^"]+"\s*\r?\n?)*)'
-    )
+    $values = @()
 
-    $blockMatch = [regex]::Match(
-        $Context,
-        $blockPattern
-    )
+    for ($i = $keyIndex + 1; $i -lt $lines.Count; $i++) {
+        $item = [regex]::Match(
+            $lines[$i],
+            '^[ ]{6}-[ \t]+"([^"\r\n]+)"[ \t]*$'
+        )
 
-    if (-not $blockMatch.Success) {
-        throw "HANDOFF_CONTEXT_INDEX_NOT_FOUND:$Name"
+        if ($item.Success) {
+            $values += $item.Groups[1].Value
+            continue
+        }
+
+        break
     }
 
-    return @(
-        [regex]::Matches(
-            $blockMatch.Groups['items'].Value,
-            '"([^"]+)"'
-        ) |
-            ForEach-Object {
-                $_.Groups[1].Value
-            }
-    )
+    return @($values)
 }
 
 function Invoke-CerebroHandoffCore {
