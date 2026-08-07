@@ -1490,6 +1490,57 @@ working_context:
         derived_from_refs:
           - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
       sequence: 47
+    -
+      id: "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+      type: "WISDOM_RECORD"
+      scope: "DEVELOPMENT-DELIVERY-VALIDATION-RECOVERY"
+      statement: "Significant outcomes and failures must be assessed against observed evidence, explicit assumptions and governing contracts before unchanged retry or broad correction. The smallest justified adjustment is selected, while persistent authority changes only through controlled Source mutation."
+      payload:
+        standard_ref: "standards/development/reflective-adjustment-loop.yaml"
+        runtime_scope_effect: "NONE"
+      provenance:
+        introduced_by_ref: "PATCH-003.PRE-001"
+      sequence: 48
+
+    -
+      id: "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+      type: "WISDOM_RECORD"
+      scope: "STRUCTURED-ARTIFACT-VALIDATION-AND-MUTATION"
+      statement: "Structured artifacts must be interpreted, validated and mutated through declared schema, canonical generator or structurally bounded semantic context. Incidental serialization characteristics such as newline encoding, presentation labels, whitespace or globally coincident raw-text tokens must not be treated as semantic structure unless the governing contract explicitly assigns them meaning."
+      payload:
+        confidence: "HIGH"
+        incident_refs:
+          - "HANDOFF_SCHEMA_ASSUMPTION"
+          - "WISDOM_INDEX_ANCHOR_ASSUMPTION"
+          - "NEWLINE_SENSITIVE_STRUCTURED_REPLACEMENT"
+      provenance:
+        introduced_by_ref: "PATCH-003.PRE-001"
+      sequence: 49
+
+    -
+      id: "CTX-WISDOM-VERIFICATION-SCOPE-001"
+      type: "WISDOM_RECORD"
+      scope: "VERIFICATION-CLAIMS-READINESS-AND-DEPENDENCY-CHAINS"
+      statement: "A successful observation verifies only the exact capability, state transition, artifact property or contract exercised. Known blockers being resolved must not be promoted to environment or transaction verification, and downstream assumptions remain unverified until supported by explicit scoped evidence."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        principle: "VERIFICATION_CLAIMS_CARRY_SCOPE"
+        evidence_contract:
+          required_fields:
+            - "claim"
+            - "scope"
+            - "evidence"
+            - "dependencies"
+            - "state"
+        required_states:
+          - "VERIFIED"
+          - "KNOWN_BLOCKERS_RESOLVED"
+          - "UNVERIFIED"
+          - "FAILED"
+        confidence: "HIGH"
+      provenance:
+        introduced_by_ref: "PATCH-003.PRE-001"
+      sequence: 50
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1521,7 +1572,10 @@ working_context:
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
-      - "CTX-WISDOM-PIPELINE-STEERING-001"
+      - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+      - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+      - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+- "CTX-WISDOM-PIPELINE-STEERING-001"
       - "CTX-WISDOM-SEALED-TRANSPORT-SERIALIZATION-EFFICIENCY-001"
       - "CTX-WISDOM-COPY-READINESS-SIGNAL-001"
       - "CTX-WISDOM-PSHELL-FORMATTING-SENSITIVITY-001"
@@ -1540,4 +1594,4 @@ working_context:
       - "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
       - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
       - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
-  next_sequence: 48
+  next_sequence: 51

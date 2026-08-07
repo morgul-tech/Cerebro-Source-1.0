@@ -1,0 +1,92 @@
+schema: "cerebro-reflective-adjustment-loop/v0.1"
+
+reflective_adjustment_loop:
+  id: "CEREBRO-REFLECTIVE-ADJUSTMENT-LOOP-001"
+  status: "LOCKED"
+  maturity: "PROCESS_GOVERNANCE_STANDARD"
+
+  definition: >
+    Significant outcomes, failures, corrections and recurring inefficiencies
+    are evaluated against observed evidence, explicit assumptions and governing
+    contracts. Necessary reactive safeguards are applied first, followed by
+    selection of the smallest justified adjustment.
+
+  stages:
+    - "REACTIVE_SAFEGUARD"
+    - "REFLECTIVE_ASSESSMENT"
+    - "ADJUSTMENT_SELECTION"
+    - "PERSISTENCE_EVALUATION"
+    - "EFFECT_VERIFICATION"
+
+  adjustment_classes:
+    - "NO_CHANGE"
+    - "LOCAL_FIX"
+    - "PROCESS_ADJUSTMENT"
+    - "PROVISIONAL_GUARD"
+    - "WISDOM_CANDIDATE"
+    - "REORIENTATION_REQUIRED"
+
+  verification_scope:
+    principle: >
+      A successful observation verifies only the exact capability, state
+      transition, artifact property or contract exercised by its evidence.
+
+    evidence_contract:
+      required_fields:
+        - "claim"
+        - "scope"
+        - "evidence"
+        - "dependencies"
+        - "state"
+
+    states:
+      - "VERIFIED"
+      - "KNOWN_BLOCKERS_RESOLVED"
+      - "UNVERIFIED"
+      - "FAILED"
+
+    governing_rules:
+      - "verification-claims-must-declare-scope"
+      - "observed-success-verifies-only-the-exercised-scope"
+      - "known-blockers-resolved-is-not-environment-verified"
+      - "downstream-dependencies-remain-unverified-until-exercised"
+      - "absence-of-observed-failure-is-not-general-proof"
+      - "closure-requires-evidence-for-each-required-dependency"
+
+    prerequisite_chain:
+      before_mutation: >
+        Exercise required prerequisite dependencies to the maximum safe extent
+        available without Source mutation.
+
+  structural_basis:
+    rule: >
+      Structured artifacts must be interpreted, validated and mutated through
+      declared schema, canonical generator or structurally bounded semantic
+      context. Incidental serialization characteristics must not be treated as
+      semantic structure unless the governing contract assigns them meaning.
+
+    incidental_serialization_examples:
+      - "newline-encoding"
+      - "presentation-label"
+      - "whitespace-layout"
+      - "global-token-cardinality"
+      - "presentation-alias"
+
+  persistence:
+    automatic_wisdom_promotion: false
+    automatic_source_mutation: false
+    provisional_guard_authority: "SESSION_LOCAL_NON_AUTHORITATIVE"
+
+  boundary:
+    current_form: "PROCESS_AND_GOVERNANCE_STANDARD"
+    PATCH_003_scope_expansion: false
+    runtime_subsystem_created: false
+
+  incident_basis:
+    - "HANDOFF_SCHEMA_ASSUMPTION"
+    - "WISDOM_INDEX_ANCHOR_ASSUMPTION"
+    - "PREMATURE_VERIFICATION_CLOSURE"
+    - "POWERSHELL_MODULE_DISCOVERABLE_BUT_NOT_IMPORTABLE"
+    - "HANDOFF_COMMAND_NAME_ASSUMPTION"
+    - "NATIVE_STDERR_STDOUT_CHANNEL_COLLISION"
+    - "NEWLINE_SENSITIVE_STRUCTURED_REPLACEMENT"

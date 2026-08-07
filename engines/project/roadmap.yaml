@@ -487,22 +487,49 @@ roadmap:
         - "deferred_scope_register_locked"
         - "PATCH_003_can_implement_without_architecture_reopen"
     -
+      id: "PATCH-003.PRE-001"
+      title: "reflective_adjustment_loop_and_verification_scope"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-002"
+      decision_refs:
+        - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+        - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+        - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+        - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
+      source_refs:
+        - "standards/development/reflective-adjustment-loop.yaml"
+        - "standards/development/streamlined-patch-workform.yaml"
+        - "standards/development/powershell-level3-delivery-assurance.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+
+    -
       id: "PATCH-003"
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-002"
+        - "PATCH-003.PRE-001"
       decision_refs:
         - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
+        - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+        - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+        - "CTX-WISDOM-VERIFICATION-SCOPE-001"
       source_refs:
         - "standards/runtime/runtime-0.1-contracts.yaml"
+        - "standards/development/reflective-adjustment-loop.yaml"
       implementation_constraints:
         - "implement_declared_contracts_only"
         - "do_not_reopen_runtime_architecture"
         - "do_not_implement_deferred_scope"
         - "success_and_failure_canaries_required"
+        - "apply_reflective_adjustment_loop_as_process_gate"
+        - "keep_verification_claims_explicitly_scoped"
+        - "do_not_implement_reflective_adjustment_as_runtime_subsystem"
     -
       id: "PATCH-004"
       title: "idea_object_pipeline"

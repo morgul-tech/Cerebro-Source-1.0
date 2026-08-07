@@ -51,6 +51,16 @@ power_shell_delivery_assurance:
     - id: "PS-L3-010"
       rule: "rejected-payloads-must-not-become-new-implementation-bases"
 
+    - id: "PS-L3-011"
+      rule: "command-discovery-is-not-capability-proof"
+    - id: "PS-L3-012"
+      rule: "module-dependent-capabilities-require-successful-import-and-command-resolution-before-source-mutation"
+    - id: "PS-L3-013"
+      rule: "verification-claims-must-remain-bounded-to-the-exercised-capability-or-state"
+    - id: "PS-L3-014"
+      rule: "native-stderr-must-remain-separate-from-stdout-when-stdout-is-semantic-data"
+    - id: "PS-L3-015"
+      rule: "structured-text-mutation-must-not-depend-on-incidental-serialization-characteristics"
   first_implementation_assessment:
     timing: "before-implementation-design-lock"
     required_questions:
@@ -63,6 +73,10 @@ power_shell_delivery_assurance:
       - "is-rollback-required"
       - "does-pipeline-cardinality-affect-correctness"
       - "does-existing-canonical-tooling-remove-custom-code"
+      - "does-required-module-import-succeed-in-the-execution-process"
+      - "are-required-commands-executable-after-module-activation"
+      - "what-exact-scope-does-each-readiness-check-verify"
+      - "does-structured-mutation-depend-on-incidental-serialization"
     risk_classes:
       low: "no-native-commands-no-source-mutation-no-dynamic-code"
       medium: "native-read-operations-or-local-mutation"
@@ -103,6 +117,9 @@ power_shell_delivery_assurance:
       - "throw-only-from-allowed-exit-code-policy"
       - "preserve-command-arguments-exit-code-and-output-in-receipt"
 
+      - "keep-stdout-and-stderr-as-separate-semantic-channels"
+      - "never-merge-stderr-into-stdout-when-stdout-is-parsed-or-compared"
+      - "capture-stderr-as-diagnostics-without-promoting-it-to-semantic-output"
   collection_contract:
     requirements:
       - "array-wrap-variable-cardinality-results"
@@ -137,6 +154,11 @@ power_shell_delivery_assurance:
     - "duplicate-execution-test"
     - "transport-reconstruction-and-hash-test"
 
+    - "required-module-importability-verified"
+    - "required-command-resolution-after-activation-verified"
+    - "verification-scope-explicit"
+    - "native-stdout-stderr-channel-separation-verified"
+    - "structured-mutation-serialization-independence-verified"
   recovery_policy:
     first_failure:
       - "stop"

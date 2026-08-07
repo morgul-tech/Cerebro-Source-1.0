@@ -268,6 +268,27 @@ streamlined_patch_workform:
       - "push_before_complete_local_validation"
       - "partitioning_without_stage_state"
       - "large_single_payload_selected_only_to_reduce_message_count"
+  reflective_adjustment_loop:
+    standard_ref: "standards/development/reflective-adjustment-loop.yaml"
+    required_when:
+      - "significant-outcome"
+      - "failure-or-correction"
+      - "unchanged-retry-after-failure"
+      - "structured-validation-or-mutation"
+      - "verification-readiness-claim"
+    verification_scope_rules:
+      - "declare-exact-evidence-scope"
+      - "do-not-propagate-verification-to-unexercised-dependencies"
+      - "known-blockers-resolved-does-not-equal-environment-verified"
+      - "exercise-prerequisite-chain-to-maximum-safe-pre-mutation-extent"
+      - "retain-downstream-state-as-unverified-until-exercised"
+    adjustment_rules:
+      - "establish-actual-state"
+      - "identify-explicit-assumption"
+      - "distinguish-symptom-from-cause"
+      - "select-smallest-justified-adjustment"
+      - "extend-existing-wisdom-before-creating-parallel-policy"
+      - "keep-provisional-guards-non-authoritative"
   runtime_0_1_relevance:
     required_application:
       - "lock_minimal_runtime_scope_before implementation"
