@@ -1541,6 +1541,38 @@ working_context:
       provenance:
         introduced_by_ref: "PATCH-003.PRE-001"
       sequence: 50
+    -
+      id: "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
+      type: "WISDOM_RECORD"
+      scope: "USER-VISIBLE-ARTIFACT-DELIVERY-AND-COMPLETION-CLAIMS"
+      statement: "Artifact creation, registration, presentation and user access are separate completion states; a file-delivery claim is valid only when user-visible presentation and access are proven."
+      payload:
+        maturity: "PROVISIONAL_MULTI_INCIDENT"
+        confidence: "HIGH"
+        implementation_status: "NOTE_ONLY_DEFERRED_FOR_BROAD_AUDIT"
+        user_observation: "Repeated Cerebro interactions reported generated files while the user could not obtain a clickable or downloadable artifact in chat."
+        primary_failure_mode: "INTERNAL_ARTIFACT_STATE_REPORTED_AS_USER_DELIVERY"
+        communication_failure: "Explanations answered internal generation state instead of whether delivery to the user had actually succeeded."
+        consequence:
+          - "user_misinterpreted_failure_as_intermittent_platform_availability"
+          - "level_2_success_claims_were_premature"
+          - "avoidable_retries_and_transport_experiments"
+        provisional_principle: "USER_ACCESS_IS_REQUIRED_FOR_DELIVERY_COMPLETION"
+        deferred_analysis:
+          required: true
+          scope: "Audit Cerebro for other cases where internal or tool state can be mistaken for user-visible capability, completion, authority, or successful delivery."
+      provenance:
+        introduced_by_ref: "PATCH-001A.PRE-010-R4"
+        basis_refs:
+          - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+          - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+          - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
+      sequence: 51
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1594,4 +1626,5 @@ working_context:
       - "CTX-WISDOM-VALIDATE-AUTHORITATIVE-SHAPE-001"
       - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
       - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
-  next_sequence: 51
+      - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
+  next_sequence: 52

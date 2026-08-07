@@ -233,7 +233,7 @@ patch_reference_registry:
       short_handle: P1A-PR10
       title: delivery_aware_native_execution_hotfix
       status: applied_by_this_patch
-      artifact_revision: 3
+      artifact_revision: 4
       trigger_alias:
         - ORDER66
 

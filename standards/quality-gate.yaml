@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-QUALITY
   name: Cerebro Quality Gate Standard
-  version: 0.1.1
+  version: 0.1.2
   status: approved
   authority: authoritative
   scope: Mandatory pre-publication quality decision for Cerebro artifacts.
@@ -37,3 +37,39 @@ rules:
   priority: critical
   verification:
   - Hashes and paths of evaluated Release and patch content are identical before and after Quality Gate evaluation.
+- id: STD-QUALITY-R005
+  statement: For user-executable code or downloadable artifacts, Quality Gate shall run GENERATE, REFINE, CRITIQUE, VALIDATE, verify applicable execution conditions, make a delivery-readiness decision, and only then permit DELIVER.
+  priority: critical
+  verification:
+  - Applicable stages have explicit evidence before delivery.
+  - A skipped stage is explicitly classified not applicable.
+- id: STD-QUALITY-R006
+  statement: Level 2 delivery shall represent artifact creation, artifact registration, user-visible presentation, and user access as separate states, and DELIVERY_VERIFIED requires user-visible presentation plus user-access evidence.
+  priority: critical
+  verification:
+  - BUILD_COMPLETE does not imply DELIVERY_VERIFIED.
+  - ARTIFACT_REGISTERED does not imply USER_VISIBLE_PRESENTATION.
+  - USER_VISIBLE_PRESENTATION without user-access evidence does not imply DELIVERY_VERIFIED.
+- id: STD-QUALITY-R007
+  statement: Internal paths, upload identifiers, sandbox references, or tool-success signals shall not by themselves prove that a downloadable artifact is accessible to the user.
+  priority: critical
+  verification:
+  - Delivery evidence identifies the user-visible surface actually exercised.
+  - Negative user access evidence overrides conflicting internal delivery-success inference.
+- id: STD-QUALITY-R008
+  statement: Failure of a selected Level 2 delivery surface shall reopen delivery-mode selection and use the smallest verified fallback without changing semantic payload, patch identity, or Source authority solely to work around transport.
+  priority: critical
+  verification:
+  - STD-PATCH-R012 is reapplied after selected-mode validation failure.
+  - STD-PATCH-R013 selects PSHELL when downloadable self-running delivery is unavailable or unverified.
+- id: STD-QUALITY-R009
+  statement: Delivery and execution verification claims shall be bounded to the exact capability and conditions exercised in the current conversation and execution environment.
+  priority: critical
+  verification:
+  - Cross-conversation success is not current delivery proof.
+  - Unexercised transport, runtime, execution-policy, and user-access assumptions remain unverified.
+- id: STD-QUALITY-R010
+  statement: Cerebro shall not describe an artifact as delivered, downloadable, clickable, user-accessible, or Level 2 verified without evidence for that exact completion claim.
+  priority: critical
+  verification:
+  - Completion language matches recorded delivery evidence.
