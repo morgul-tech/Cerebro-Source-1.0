@@ -639,3 +639,41 @@ consolidate_operation_validation:
     - analytical_complexity_forced_into_user_output
     - fixed_report_section_count
 # END PATCH-003.PRE-006 CONSOLIDATE VALIDATION
+
+# BEGIN PATCH-003 RUNTIME 0.1 IMPLEMENTATION VALIDATION
+runtime_0_1_implementation_validation:
+  introduced_by: PATCH-003
+  contract_ref: standards/runtime/runtime-0.1-contracts.yaml
+  severity: error
+  owner: tooling.validator
+
+  required_files:
+    - tooling/builder/cerebro_runtime_release.ps1
+    - tooling/loader/cerebro_runtime.ps1
+    - tooling/loader/cerebro_runtime_host.ps1
+
+  required_contracts:
+    - pinned_verified_release
+    - one_invocation_one_event_one_receipt
+    - deterministic_transition_resolution
+    - declared_capability_binding_only
+    - verification_before_success
+    - success_and_failure_receipts
+    - explicit_terminal_states
+    - source_authority_preserved
+    - runtime_profile_entrypoint_resolves_before_activation
+
+  required_canaries:
+    - success_event_completes_after_verification
+    - invalid_event_fails_closed_with_receipt
+
+  prohibited:
+    - resident_runtime_host
+    - parallel_event_processing
+    - distributed_runtime
+    - speculative_capability_discovery
+    - runtime_source_mutation
+    - implicit_capability_execution
+    - conversation_history_as_runtime_state
+    - reflective_adjustment_runtime_subsystem
+# END PATCH-003 RUNTIME 0.1 IMPLEMENTATION VALIDATION

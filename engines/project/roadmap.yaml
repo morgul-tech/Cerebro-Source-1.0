@@ -661,6 +661,10 @@ roadmap:
       source_refs:
         - "standards/runtime/runtime-0.1-contracts.yaml"
         - "standards/development/reflective-adjustment-loop.yaml"
+        - "tooling/builder/cerebro_runtime_release.ps1"
+        - "tooling/loader/cerebro_runtime.ps1"
+        - "tooling/loader/cerebro_runtime_host.ps1"
+        - "tooling/validator/checks.yaml"
       implementation_constraints:
         - "implement_declared_contracts_only"
         - "do_not_reopen_runtime_architecture"
