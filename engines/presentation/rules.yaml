@@ -433,3 +433,75 @@ rules:
     basis: WI-RESPONSE-FOOTER-001
 
 # END PATCH-001B.PRE-005 COPYABLE NEXT-ACTION FOOTER
+# BEGIN PATCH-003.PRE-006 CONSOLIDATE
+- id: PRE-024
+  owner: presentation
+  authority: normative
+  priority: high
+  condition: {content_classification: consolidation-result}
+  action: {set_output_budget_default: ADAPTIVE, allow: [ADAPTIVE, COMPACT, EXPANDED]}
+  statement: CONSOLIDATE SKAL ha eget OUTPUT-budsjett uavhengig av analyseomfang og analysebudsjett.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: PRE-025
+  owner: presentation
+  authority: normative
+  priority: high
+  condition: {content_classification: consolidation-result}
+  action:
+    optimize_for: [decision-quality, information-density, low-cognitive-load, clear-priority, minimum-sufficient-length]
+  statement: Analytisk kompleksitet SKAL IKKE overføres direkte til brukeren; resultatet SKAL komprimeres uten semantisk tap.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: PRE-026
+  owner: presentation
+  authority: normative
+  priority: high
+  condition: {content_classification: consolidation-result}
+  action:
+    prioritize_information: [bottom-line, what-matters-most, important-changes-or-conflicts-when-needed, synthesis, recommended-direction, material-uncertainty-only]
+  statement: Konklusjon og anbefalt retning SKAL være tilgjengelig tidlig.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: PRE-027
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition: {content_classification: consolidation-result}
+  action:
+    progressive_disclosure: {level_1: core-result, level_2: supporting-findings-when-needed, level_3: deep-detail-on-request-or-material-need}
+    require_special_UI: false
+  statement: Progressive disclosure er en informasjonsregel og SKAL IKKE kreve spesielle UI-elementer.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: PRE-028
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition: {content_classification: consolidation-result}
+  action: {avoid_fixed_report_template_when_shorter_is_clearer: true, prefer_synthesis_over_chronology: true}
+  statement: Struktur SKAL tjene forståelse; standardsseksjoner og kronologisk replay SKAL IKKE være ritual.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: PRE-029
+  owner: presentation
+  authority: normative
+  priority: high
+  condition: {content_classification: consolidation-result}
+  action: {stop_output_when_additional_text_has_low_material_value: true}
+  statement: Rapporten SKAL stoppe når mer tekst ikke vesentlig forbedrer forståelse, beslutningskvalitet, confidence-kalibrering eller neste handling.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+# END PATCH-003.PRE-006 CONSOLIDATE

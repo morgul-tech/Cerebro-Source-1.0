@@ -500,3 +500,62 @@ rules:
   provenance:
     type: source-revision
     source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+# BEGIN PATCH-003.PRE-006 CONSOLIDATE
+- id: DIA-026
+  owner: dialog
+  authority: normative
+  priority: high
+  condition: {consolidate_intent_detected: true}
+  action:
+    emit_consolidation_request:
+      selectors: [TOPICS, MARKERS, WINDOW, BUDGET, OUTPUT, LENS]
+  statement: Dialog Engine SKAL gjenkjenne CONSOLIDATE semantisk og oversette naturlig avgrensning til en strukturert konsolideringsforespørsel.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: DIA-027
+  owner: dialog
+  authority: normative
+  priority: high
+  condition: {consolidation_bare_duration_without_explicit_budget: true}
+  action: {interpret_duration_as: WINDOW}
+  statement: En umerket varighet i CONSOLIDATE SKAL tolkes som historisk WINDOW; analysebudsjett krever eksplisitt BUDGET eller entydig naturlig språk.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: DIA-028
+  owner: dialog
+  authority: normative
+  priority: high
+  condition: {consolidation_window_missing: true}
+  action: {set_window: RECENT}
+  statement: Manglende WINDOW SKAL gi adaptiv RECENT, ikke fast én time eller hele samtalen.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: DIA-029
+  owner: dialog
+  authority: normative
+  priority: normal
+  condition: {selector_matches_known_marker: true}
+  action: {resolve_as: MARKER, marker_precedence_over_topic_word: true}
+  statement: Kjente markør-IDer SKAL prioriteres som MARKERS fremfor ordinære temaord.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: DIA-030
+  owner: dialog
+  authority: normative
+  priority: high
+  condition: {consolidation_scope_safely_resolvable: true}
+  action: {avoid_unnecessary_clarification: true}
+  statement: Dialog Engine SKAL bare be om avklaring når CONSOLIDATE-scope er materielt tvetydig.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+# END PATCH-003.PRE-006 CONSOLIDATE

@@ -611,13 +611,48 @@ roadmap:
         - "Runtime_0_1_not_mutated"
         - "PATCH_003_returns_ACTIVE_READY"
     -
+      id: "PATCH-003.PRE-006"
+      title: "bounded_consolidate_operation"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-003.PRE-005"
+      decision_refs:
+        - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+        - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+      source_refs:
+        - "standards/development/consolidate.yaml"
+        - "standards/standards.yaml"
+        - "engines/dialog/component.yaml"
+        - "engines/dialog/rules.yaml"
+        - "engines/context/component.yaml"
+        - "engines/context/rules.yaml"
+        - "engines/presentation/component.yaml"
+        - "engines/presentation/rules.yaml"
+        - "tooling/validator/checks.yaml"
+        - "engines/project/roadmap.yaml"
+      acceptance:
+        - "CONSOLIDATE_is_cross_engine_operation_not_new_component"
+        - "TOPICS_MARKERS_WINDOW_BUDGET_OUTPUT_are_independent"
+        - "RECENT_is_adaptive_not_fixed_one_hour"
+        - "bare_duration_means_WINDOW_unless_budget_explicit"
+        - "markers_are_conversation_local_non_authoritative"
+        - "bounded_context_escape_preserves_window"
+        - "analysis_prioritizes_decision_value"
+        - "human_machine_deliberation_available_when_material"
+        - "output_budget_independent_from_analysis_depth"
+        - "human_output_compressed_without_semantic_loss"
+        - "Runtime_0_1_not_mutated"
+        - "PATCH_003_returns_ACTIVE_READY"
+    -
       id: "PATCH-003"
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-003.PRE-005"
+        - "PATCH-003.PRE-006"
       decision_refs:
         - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
         - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
@@ -827,5 +862,5 @@ roadmap:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
   revision:
-    sequence: 14
-    last_locked_patch_ref: "PATCH-003.PRE-005"
+    sequence: 15
+    last_locked_patch_ref: "PATCH-003.PRE-006"

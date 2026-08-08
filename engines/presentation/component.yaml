@@ -3,10 +3,10 @@ component:
   id: presentation
   name: Presentation Engine
   type: engine
-  version: 1.0.0
+  version: 1.1.0
   status: active-source
 responsibility:
-  primary: Velge presentasjonsform, informasjonsstruktur, detaljnivå, Styringsstatus og visuelle virkemidler.
+  primary: Velge presentasjonsform, informasjonsstruktur, detaljnivå, output-budsjett, Styringsstatus og visuelle virkemidler.
 dependencies:
   build:
   - terminology
@@ -23,6 +23,8 @@ interfaces:
   - complexity
   - status-request
   - runtime-state
+  - consolidation-result
+  - output-budget
   output:
   - presentation-model
   - format
@@ -30,6 +32,7 @@ interfaces:
   - governance-status
   - visual-elements
   - information-order
+  - consolidation-report
 rules:
   path: rules.yaml
 documentation:
@@ -47,8 +50,9 @@ migration:
   - 3.8.4
   - 3.8.5
 boundaries:
-  must: []
+  must:
+  - compress-without-changing-semantics
   must_not: []
 version:
-  component: 1.0.0
+  component: 1.1.0
   schema: 1

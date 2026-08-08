@@ -602,3 +602,40 @@ cpatch_execution_handoff_validation:
     - process_exit_promoted_to_patch_verification
 
 # END PATCH-003.PRE-005 CPATCH EXECUTION HANDOFF VALIDATION
+# BEGIN PATCH-003.PRE-006 CONSOLIDATE VALIDATION
+consolidate_operation_validation:
+  introduced_by: PATCH-003.PRE-006
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/development/consolidate.yaml
+  required_contracts:
+    - topics_markers_window_budget_output_independent
+    - lens_changes_weighting_not_scope
+    - recent_adaptive_not_fixed_one_hour
+    - convo_expands_eligibility_not_equal_attention
+    - bare_duration_defaults_to_window
+    - budget_is_analysis_strategy
+    - bounded_dependency_escape
+    - recency_is_not_authority
+    - markers_stable_conversation_local_non_authoritative
+    - marker_creation_no_automatic_promotion
+    - prioritize_by_expected_decision_value
+    - reserve_capacity_for_synthesis_and_convergence
+    - human_machine_deliberation_when_material
+    - output_independent_from_analysis_depth
+    - progressive_disclosure_ui_independent
+    - synthesis_over_chronological_replay
+    - minimum_sufficient_cognitive_load
+  prohibited:
+    - new_top_level_consolidate_engine
+    - fixed_one_hour_default_window
+    - entire_conversation_default
+    - exhaustive_analysis_by_default
+    - equal_attention_to_all_retrieved_information
+    - automatic_marker_persistence_to_source
+    - automatic_marker_to_wisdom_promotion
+    - automatic_consolidation_result_to_decision
+    - automatic_consolidation_result_to_wisdom
+    - analytical_complexity_forced_into_user_output
+    - fixed_report_section_count
+# END PATCH-003.PRE-006 CONSOLIDATE VALIDATION

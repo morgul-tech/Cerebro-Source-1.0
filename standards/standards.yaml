@@ -31,6 +31,9 @@ documents:
 - id: STD-PROJECT-STATUS
   path: standards/project-status.yaml
   required: true
+- id: STD-CONSOLIDATE
+  path: standards/development/consolidate.yaml
+  required: true
 governance:
   source_authority: Cerebro Source 1.0
   policy_over_implementation: true

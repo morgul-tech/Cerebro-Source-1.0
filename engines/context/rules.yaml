@@ -218,3 +218,79 @@ rules:
   provenance:
     type: approved-revision
     basis: Godkjente Cerebro-revisjonsbeslutninger i migreringsprosjektet
+# BEGIN PATCH-003.PRE-006 CONSOLIDATE
+- id: CTX-013
+  owner: context
+  authority: normative
+  priority: high
+  condition: {explicit_marker_request: true}
+  action:
+    create_conversation_marker: {authority: non-authoritative-reference, scope: current-conversation, stable_identity: true}
+  statement: Flagg/markering av en idé SKAL opprette en stabil samtalelokal referanse uten å gjøre idéen til Wisdom, beslutning eller Source.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: CTX-014
+  owner: context
+  authority: normative
+  priority: high
+  condition: {conversation_marker_exists: true}
+  action:
+    prohibit_automatic_promotion: [wisdom, decision, source-authority]
+  statement: En samtalemarkør SKAL forbli referanse og SKAL IKKE automatisk promoteres.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: CTX-015
+  owner: context
+  authority: normative
+  priority: high
+  condition: {consolidation_request: true}
+  action:
+    retrieve_by: [selected-topics, selected-markers, selected-window]
+    prioritize_by_expected_decision_value: true
+    bounded_dependency_escape: true
+  statement: Context Engine SKAL hente etter TOPICS, MARKERS og WINDOW, prioritere etter beslutningsverdi og bare gå utenfor WINDOW for direkte materielle avhengigheter.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: CTX-016
+  owner: context
+  authority: normative
+  priority: normal
+  condition: {consolidation_window_RECENT: true}
+  action:
+    expand_backward_while_materially_useful: true
+    stop_on: [clear-topic-boundary, major-task-transition, semantic-independence, low-expected-effect, sufficient-context]
+  statement: RECENT SKAL være adaptivt og kort, og utvides bakover bare mens konteksten fortsatt kan påvirke syntesen.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: CTX-017
+  owner: context
+  authority: normative
+  priority: high
+  condition: {consolidation_context_selection: true}
+  action:
+    prioritize: [explicit-decisions, user-corrections, direction-changes, contradictions, strong-critique-findings, model-changing-refine-results, significant-human-feedback, machine-constraints, governing-authority-or-wisdom, unresolved-disagreement, implementation-consequences]
+  statement: Begrenset analyseoppmerksomhet SKAL brukes på informasjon med høyest forventet effekt på sluttforståelsen eller beslutningen.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+- id: CTX-018
+  owner: context
+  authority: normative
+  priority: high
+  condition: {consolidation_context_selection: true}
+  action: {prohibit_recency_as_authority: true}
+  statement: Nyere informasjon SKAL IKKE veie tyngre bare fordi den er nyere.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
+# END PATCH-003.PRE-006 CONSOLIDATE

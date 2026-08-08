@@ -3,10 +3,10 @@ component:
   id: dialog
   name: Dialog Engine
   type: engine
-  version: 1.0.0
+  version: 1.1.0
   status: active-source
 responsibility:
-  primary: Styre arbeidsvurdering, arbeidsmodus, dialogtilstand, operative fremdriftssignaler, avklaringspunkt, kontrollstopp og aktivering av relevante Engines.
+  primary: Styre arbeidsvurdering, arbeidsmodus, dialogtilstand, operative fremdriftssignaler, avklaringspunkt, kontrollstopp, avgrenset konsolideringsintensjon og aktivering av relevante Engines.
 dependencies:
   build:
   - terminology
@@ -28,6 +28,7 @@ interfaces:
   - clarification-point
   - control-stop
   - presentation-request
+  - consolidation-request
 rules:
   path: rules.yaml
 documentation:
@@ -46,5 +47,5 @@ boundaries:
   must: []
   must_not: []
 version:
-  component: 1.0.0
+  component: 1.1.0
   schema: 1

@@ -1,0 +1,172 @@
+schema: "cerebro-consolidate-contract/v0.1"
+consolidate:
+  id: "CONSOLIDATE-001"
+  version: "0.1"
+  status: "ACTIVE"
+  authority: "cerebro-source"
+  introduced_by: "PATCH-003.PRE-006"
+
+  purpose:
+    core_objective: "MAXIMIZE_DECISION_QUALITY_PER_UNIT_OF_ANALYSIS_TIME"
+    human_output_objective: "MAXIMIZE_HUMAN_UNDERSTANDING_AND_DECISION_VALUE_PER_UNIT_OF_READING_EFFORT"
+    not_exhaustive_by_default: true
+    not_a_transcript: true
+
+  architecture:
+    new_top_level_component: false
+    owners:
+      dialog: ["recognize_intent", "resolve_selectors", "coordinate_existing_engines"]
+      context: ["bounded_retrieval", "conversation_local_markers", "prioritized_context"]
+      presentation: ["independent_output_budget", "semantic_preserving_compression", "decision_hierarchy"]
+      validator: ["contract_integrity"]
+    prohibited:
+      - "parallel_context_engine"
+      - "parallel_learning_engine"
+      - "conversation_history_as_source_authority"
+
+  scope_model:
+    independent: ["TOPICS", "MARKERS", "WINDOW", "BUDGET", "OUTPUT"]
+    optional: ["LENS"]
+
+  topics:
+    rule: "Selected topics define the semantic analysis field; multiple topics are analyzed both individually and for relevant interaction."
+    unrelated_content_inside_window: "DEPRIORITIZE"
+
+  markers:
+    user_aliases: ["FLAG", "MARK", "MARKER"]
+    authority: "NON_AUTHORITATIVE_REFERENCE"
+    default_scope: "CURRENT_CONVERSATION"
+    stable_identity: true
+    bind_to:
+      - "referenced_idea_or_coherent_idea_cluster"
+      - "originating_conversation_location"
+      - "creation_time_when_available"
+      - "necessary_interpretive_context"
+      - "topic_associations_when_identifiable"
+    lineage: ["refined_by", "superseded_by", "derived_from"]
+    silent_mutation_of_original_identity: false
+    automatic_source_persistence: false
+    automatic_wisdom_promotion: false
+    automatic_decision_promotion: false
+
+  selector_resolution:
+    known_marker_precedence_over_topic_word: true
+    avoid_clarification_when_safely_resolvable: true
+    clarify_only_when_materially_ambiguous: true
+
+  window:
+    meaning: "PRIMARY_HISTORICAL_RETRIEVAL_BOUNDARY"
+    explicit_overrides_default: true
+    default: "RECENT"
+    RECENT:
+      rule: "Begin with the current coherent relevant work episode and expand backward only while context remains materially useful."
+      must_not_default_to_fixed_one_hour: true
+      must_not_default_to_entire_conversation: true
+      stop_on:
+        - "clear_topic_boundary"
+        - "major_task_transition"
+        - "semantic_independence"
+        - "low_expected_effect_on_synthesis"
+        - "sufficient_context"
+        - "budget_favors_synthesis"
+    CONVO:
+      rule: "Entire current conversation becomes eligible; prioritization still applies."
+    duration_examples: ["20m", "40m", "60m", "2h"]
+    since_marker_example: "SINCE:A"
+    bare_duration_default_semantics: "WINDOW"
+    budget_requires_explicit_label_or_unambiguous_language: true
+    bounded_context_escape:
+      allowed_only_for_direct_material_dependency: true
+      examples: ["governing_authority", "earlier_locked_decision", "referenced_wisdom", "architecture_contract", "marker_definition", "required_technical_state"]
+      rule: "A dependency may pierce the window; it must not dissolve the window."
+
+  budget:
+    meaning: "ANALYSIS_EFFORT_BOUND"
+    independent_from_window: true
+    default: "ADAPTIVE_BOUNDED"
+    explicit_examples: ["BUDGET=3m", "BUDGET=8m", "BUDGET=15m"]
+    strategy_not_merely_timeout: true
+    protect_capacity_for: ["synthesis", "challenge", "convergence"]
+    core_rule: "Deliberately choose what not to analyze."
+
+  prioritization:
+    principle: "INFORMATION_IS_EFFECTIVELY_UNBOUNDED_ATTENTION_IS_NOT"
+    high_value:
+      - "explicit_decisions"
+      - "user_corrections"
+      - "direction_changes"
+      - "contradictions"
+      - "strong_critique_findings"
+      - "model_changing_refine_results"
+      - "significant_human_feedback"
+      - "machine_constraints"
+      - "governing_authority_or_wisdom"
+      - "unresolved_disagreement"
+      - "implementation_consequences"
+      - "evidence_capable_of_reversing_conclusion"
+    low_value:
+      - "repetition"
+      - "stylistic_rewording"
+      - "analytically_exhausted_examples"
+      - "duplicate_arguments"
+      - "unrelated_tangents"
+      - "settled_details_unable_to_change_synthesis"
+    recency_is_authority: false
+
+  pipeline:
+    ordered: ["MAP", "PRIORITIZE", "SELECT", "ANALYZE", "SYNTHESIZE", "CHALLENGE", "CONVERGE"]
+    internal_operations_may_include: ["REFINE", "CRITIQUE", "XREFINE", "comparison", "dependency_analysis", "evidence_review", "human_machine_deliberation"]
+
+  human_machine_deliberation:
+    activate_when_material: true
+    human_sources: ["lived_experience", "practical_friction", "intention", "intuition", "natural_workflow", "cognitive_load", "qualitative_judgment"]
+    machine_sources: ["formal_consistency", "architecture", "authority", "evidence", "edge_cases", "dependency_relationships", "generalization", "implementation_feasibility", "long_term_system_consequences"]
+    neither_side_automatically_wins: true
+    disagreement_is_analytical_material: true
+    prefer_synthesis_when_both_contain_value: true
+
+  lens:
+    optional: true
+    changes_weighting_not_scope: true
+    examples: ["WISDOM", "ARCHITECTURE", "UX", "IMPLEMENTATION", "DECISION"]
+
+  output:
+    independent_from_analysis_depth: true
+    default: "ADAPTIVE"
+    modes: ["ADAPTIVE", "COMPACT", "EXPANDED"]
+    core_principle: "EXPAND_INTERNALLY_COMPRESS_INTELLIGENTLY_PRESENT_CLEARLY"
+    adaptive_rule: "Use the shortest presentation preserving correct understanding of state, material conflicts, synthesis and recommended direction."
+    optimize_for: ["HIGH_DECISION_QUALITY", "HIGH_INFORMATION_DENSITY", "LOW_COGNITIVE_LOAD", "CLEAR_PRIORITY", "MINIMUM_SUFFICIENT_LENGTH"]
+    default_hierarchy: ["BOTTOM_LINE", "WHAT_MATTERS_MOST", "IMPORTANT_CHANGES_OR_CONFLICTS_WHEN_NEEDED", "SYNTHESIS", "RECOMMENDED_DIRECTION", "MATERIAL_UNCERTAINTY_ONLY"]
+    progressive_disclosure:
+      ui_dependency: false
+      LEVEL_1: "CORE_RESULT_ALWAYS_SHOWN"
+      LEVEL_2: "SUPPORTING_FINDINGS_WHEN_NEEDED"
+      LEVEL_3: "DEEP_DETAIL_ON_REQUEST_OR_MATERIAL_NEED"
+    fixed_section_count: false
+    chronology_default: "SYNTHESIS_NOT_MEETING_MINUTES"
+    redundancy_rule: "Explain conclusions fully once; compress repeated evidence into higher-order findings."
+    stop_condition: "Stop when more text is unlikely to materially improve understanding, challengeability, decision quality, confidence calibration or next-action clarity."
+
+  convergence:
+    stop_exploration_when:
+      - "remaining_material_unlikely_to_change_synthesis"
+      - "remaining_branches_have_low_expected_decision_value"
+      - "strong_convergence_exists"
+      - "budget_requires_synthesis"
+      - "further_retrieval_adds_completeness_more_than_decision_quality"
+    maximize_exhaustive_coverage: false
+    maximize_useful_convergence: true
+
+  authority:
+    conversation_history_is_source_authority: false
+    consolidate_result_is_automatic_decision: false
+    consolidate_result_is_automatic_wisdom: false
+    marker_is_authority: false
+
+  examples:
+    - "CONSOLIDATE Wisdom 40m"
+    - "CONSOLIDATE runtime visual builder"
+    - "CONSOLIDATE A B C CONVO"
+    - "CONSOLIDATE A B C 60m"
+    - "CONSOLIDATE runtime A B 90m BUDGET=8m OUTPUT=COMPACT"
