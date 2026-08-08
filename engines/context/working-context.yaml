@@ -1964,6 +1964,90 @@ working_context:
         derived_from_refs:
           - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
       sequence: 60
+    -
+      id: "CTX-ASSESS-P4-IDEA-OBJECT-OPERATIONAL-VERIFICATION-001"
+      type: "ASSESSMENT"
+      scope: "PATCH-004-IDEA-OBJECT-PIPELINE-OPERATIONAL-VERIFICATION"
+      statement: "PATCH-004 Idea Object Pipeline is verified through a pinned clean-source Runtime 0.1 release across valid persistence and invalid-payload fail-closed paths; claims remain scoped to the exercised Idea Object capability."
+      payload:
+        implementation_source_commit: "
+05c8fd21cf27972928121b09b5ac48e29387030b
+"
+        release_id: "
+sha256:d94b50c6d3407a006288358d78cc7a1f40f498f86a63ea8e1a38ce06ac887576
+"
+        success:
+          final_state: "COMPLETED"
+          verification_state: "PASSED"
+          verification_scope: "IDEA_OBJECT_PERSISTENCE_AND_CONTENT"
+          receipt_id: "
+RECEIPT-98adb4359ef0926981b96d66
+"
+          receipt_sha256: "
+cd1f6fe70c8236564fedb45bc5a76236bbefb89884d8d4782f46f9679ffea43f
+"
+          idea_id: "
+IDEA-a08151bc54c6d2b747b0e4a6
+"
+          idea_object_sha256: "
+2494ae112d9ee4b0b3ea6a26b27829fb2aeb75457910fcafa4b119c61550df21
+"
+        failure:
+          final_state: "FAILED_CLOSED"
+          verification_state: "FAILED"
+          failure_scope: "DISPATCH"
+          receipt_id: "
+RECEIPT-76656fa9d8e617e98414c9fe
+"
+          receipt_sha256: "
+805710e572301b2aa237a98cfc565e0d87f4104b56952eaf529597e8550fd0db
+"
+        authority_state: "SOURCE_PRESERVED"
+        verification_limit: "does_not_verify_unimplemented_deferred_object_features"
+      provenance:
+        introduced_by_ref: "PATCH-004-OPERATIONAL-CANARY"
+        basis_refs:
+          - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+          - "standards/runtime/idea-object-pipeline.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
+      sequence: 61
+    -
+      id: "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-005-POST-IDEA-EVIDENCE-ASSESSMENT"
+      statement: "PATCH-004 is verified; assess its real execution evidence before selecting any Runtime hardening or additional capability, and choose only the smallest evidence-justified next step."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "PATCH_004_OPERATIONAL_VERIFICATION_PASSED"
+        previous_patch: "PATCH-004"
+        current_patch: "PATCH-005"
+        active_work: "POST_IDEA_OBJECT_RUNTIME_EVIDENCE_ASSESSMENT"
+        sole_priority: true
+        evidence_ref: "CTX-ASSESS-P4-IDEA-OBJECT-OPERATIONAL-VERIFICATION-001"
+        governing_direction:
+          - "inspect_real_PATCH_004_execution_friction"
+          - "reuse_existing_runtime_kernel"
+          - "do_not_add_speculative_runtime_capabilities"
+          - "select_smallest_evidence_justified_next_step"
+        do_not_reopen:
+          - "runtime_architecture_without_governing_failure_or_conflicting_evidence"
+          - "wisdom_architecture"
+          - "universal_object_model"
+      provenance:
+        introduced_by_ref: "PATCH-004-CLOSURE"
+        basis_refs:
+          - "CTX-ASSESS-P4-IDEA-OBJECT-OPERATIONAL-VERIFICATION-001"
+          - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
+      sequence: 62
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1996,6 +2080,7 @@ working_context:
       - "CTX-BASIS-RUNTIME-0-1-SESSION-RESUME-AFTER-CONSOLIDATE-001"
       - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
       - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
+      - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -2026,4 +2111,4 @@ working_context:
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
       - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-  next_sequence: 61
+  next_sequence: 63

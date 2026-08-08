@@ -680,7 +680,7 @@ roadmap:
       title: "idea_object_pipeline"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-003"
       decision_refs:
@@ -707,20 +707,35 @@ roadmap:
         - "success_and_failure_canaries_pass"
         - "existing_Runtime_0_1_canaries_remain_passing"
         - "operational_pinned_release_canary_required_before_PATCH_004_closure"
+    -
+      id: "PATCH-005"
+      title: "post_idea_object_runtime_evidence_assessment"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      status: "ACTIVE"
+      dependency_refs:
+        - "PATCH-004"
+      decision_refs: []
+      source_refs: []
+      implementation_constraints:
+        - "assessment_only_until_PATCH_004_execution_evidence_is_reviewed"
+        - "no_speculative_runtime_capability"
+        - "no_runtime_architecture_reopen_without_governing_failure_or_conflicting_evidence"
+        - "select_smallest_evidence_justified_next_step"
   execution:
     current:
-      id: "EXEC-P4-IDEA-OBJECT-PIPELINE-IMPLEMENTATION"
+      id: "EXEC-P5-POST-IDEA-EVIDENCE-ASSESSMENT"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      patch_ref: "PATCH-004"
-      canonical_command: "implement the locked minimum PATCH-004 Idea Object Pipeline through the existing Runtime 0.1 kernel"
+      patch_ref: "PATCH-005"
+      canonical_command: "assess PATCH-004 execution evidence and identify only evidence-justified Runtime friction or the next useful capability"
       status: "ACTIVE"
     next:
-      id: "EXEC-P4-IDEA-OBJECT-PIPELINE-OPERATIONAL-VERIFICATION"
+      id: "EXEC-P5-EVIDENCE-GROUNDED-NEXT-SELECTION"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      patch_ref: "PATCH-004"
-      canonical_command: "verify IDEA_CAPTURE through a pinned clean-source Runtime 0.1 release before closing PATCH-004"
+      patch_ref: "PATCH-005"
+      canonical_command: "select the smallest justified next development step without speculative Runtime expansion"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -874,6 +889,11 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -881,6 +901,7 @@ roadmap:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
       - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
+      - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -906,5 +927,5 @@ roadmap:
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
   revision:
-    sequence: 17
-    last_locked_patch_ref: "PATCH-003"
+    sequence: 18
+    last_locked_patch_ref: "PATCH-004"
