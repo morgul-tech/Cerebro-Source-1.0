@@ -47,13 +47,21 @@ function Get-CerebroRuntimeProperty {
         [string]$Context
     )
 
-    $property = $Object.PSObject.Properties[$Name]
+    # RUNTIME_PROPERTY_DICTIONARY_SUPPORT
+    if ($Object -is [System.Collections.IDictionary]) {
+        if ($Object.Contains($Name)) {
+            return $Object[$Name]
+        }
+    }
+    else {
+        $property = $Object.PSObject.Properties[$Name]
 
-    if ($null -eq $property) {
-        throw "RUNTIME_REQUIRED_FIELD_MISSING:$Context`:$Name"
+        if ($null -ne $property) {
+            return $property.Value
+        }
     }
 
-    return $property.Value
+    throw "RUNTIME_REQUIRED_FIELD_MISSING:$Context`:$Name"
 }
 
 function Assert-CerebroRuntimeFields {
@@ -615,6 +623,7 @@ function Invoke-CerebroRuntimeCore {
             if (
                 @(
                     'builtin:echo',
+                    'builtin:idea-capture',
                     'builtin:control-stop'
                 ) -notcontains
                 [string]$declared[0].implementation_ref
@@ -900,6 +909,44 @@ function Invoke-CerebroRuntimeCore {
             $failureStage = 'DISPATCH'
             $instance.current_state = 'DISPATCHING'
 
+            $payloadRequiredProperty = `
+                $binding.input_contract.PSObject.Properties['payload_required']
+
+            if (
+                $null -ne $payloadRequiredProperty -and
+                [bool]$payloadRequiredProperty.Value -and
+                $null -eq $event.payload
+            ) {
+                throw 'RUNTIME_INPUT_PAYLOAD_REQUIRED'
+            }
+
+            $requiredPayloadFieldsProperty = `
+                $binding.input_contract.PSObject.Properties['required_payload_fields']
+
+            if ($null -ne $requiredPayloadFieldsProperty) {
+                foreach ($requiredPayloadField in @($requiredPayloadFieldsProperty.Value)) {
+                    $requiredPayloadFieldName = [string]$requiredPayloadField
+                    $payloadFieldProperty = `
+                        $event.payload.PSObject.Properties[$requiredPayloadFieldName]
+
+                    if ($null -eq $payloadFieldProperty) {
+                        throw (
+                            'RUNTIME_INPUT_REQUIRED_FIELD_MISSING:' +
+                            [string]$requiredPayloadField
+                        )
+                    }
+
+                    if (
+                        $payloadFieldProperty.Value -is [string] -and
+                        [string]::IsNullOrWhiteSpace([string]$payloadFieldProperty.Value)
+                    ) {
+                        throw (
+                            'RUNTIME_INPUT_REQUIRED_FIELD_EMPTY:' +
+                            [string]$requiredPayloadField
+                        )
+                    }
+                }
+            }
             $authorityRequirement = `
                 [string]$binding.authority_requirement
 
@@ -925,6 +972,72 @@ function Invoke-CerebroRuntimeCore {
                     }
                 }
 
+                'builtin:idea-capture' {
+                    if (
+                        @($binding.allowed_side_effects) -notcontains
+                        'runtime-artifact:ideas'
+                    ) {
+                        throw 'IDEA_CAPTURE_SIDE_EFFECT_NOT_DECLARED'
+                    }
+
+                    $content = [string]$event.payload.content
+                    if ([string]::IsNullOrWhiteSpace($content)) {
+                        throw 'IDEA_CAPTURE_CONTENT_EMPTY'
+                    }
+
+                    $stateDirectory = Split-Path -Parent ([IO.Path]::GetFullPath($StatePath))
+                    if ((Split-Path -Leaf $stateDirectory) -eq 'active') {
+                        $runtimeRoot = Split-Path -Parent $stateDirectory
+                    }
+                    else {
+                        $runtimeRoot = $stateDirectory
+                    }
+
+                    $ideaRoot = Join-Path $runtimeRoot 'ideas'
+                    [IO.Directory]::CreateDirectory($ideaRoot) | Out-Null
+
+                    $ideaId = New-CerebroRuntimeId `
+                        -Prefix 'IDEA' `
+                        -Material (
+                            '{0}|{1}' -f
+                            [string]$event.event_id,
+                            $content
+                        )
+
+                    $ideaPath = Join-Path $ideaRoot ($ideaId + '.json')
+                    if (Test-Path -LiteralPath $ideaPath -PathType Leaf) {
+                        throw ('IDEA_OBJECT_ID_COLLISION:' + $ideaId)
+                    }
+
+                    $ideaObject = [ordered]@{
+                        schema = 'cerebro-idea-object/v0.1'
+                        idea_id = $ideaId
+                        created_at = [string]$event.issued_at
+                        source = [string]$event.source
+                        authority = 'CAPTURED_NON_AUTHORITATIVE'
+                        content = $content
+                        correlation_ref = [string]$event.correlation_ref
+                        state = 'CAPTURED'
+                    }
+
+                    Write-CerebroRuntimeJson `
+                        -Path $ideaPath `
+                        -Value $ideaObject
+
+                    $ideaHash = Get-CerebroRuntimeFileSha256 `
+                        -Path $ideaPath
+
+                    $evidenceRefs += ('idea-object-sha256:' + $ideaHash)
+
+                    $executionResult = [ordered]@{
+                        state = 'SUCCESS'
+                        result_type = 'IDEA_OBJECT_CAPTURED'
+                        idea_id = $ideaId
+                        object_path = $ideaPath
+                        object_sha256 = $ideaHash
+                        side_effects = @($ideaPath)
+                    }
+                }
                 'builtin:control-stop' {
                     $executionResult = [ordered]@{
                         state = 'CONTROL_STOP'
@@ -974,10 +1087,13 @@ function Invoke-CerebroRuntimeCore {
                 $verificationMode = `
                     [string]$binding.verification_policy.mode
 
+                $verificationScope = 'EXECUTION_RESULT'
+
                 if (
                     $verificationMode -eq
                     'exact-payload-echo'
                 ) {
+                    $verificationScope = 'EXACT_PAYLOAD_ECHO'
                     $inputJson = (
                         $event.payload |
                         ConvertTo-Json -Depth 32 -Compress
@@ -993,15 +1109,71 @@ function Invoke-CerebroRuntimeCore {
                     }
                 }
                 elseif (
-                    $verificationMode -ne
+                    $verificationMode -eq
+                    'idea-object-persisted'
+                ) {
+                    $verificationScope = 'IDEA_OBJECT_PERSISTENCE_AND_CONTENT'
+
+                    Assert-CerebroRuntimeFields `
+                        -Object $executionResult `
+                        -Fields @('idea_id','object_path','object_sha256') `
+                        -Context 'IDEA_CAPTURE_EXECUTION_RESULT'
+
+                    $ideaPath = [string]$executionResult.object_path
+                    if (-not (Test-Path -LiteralPath $ideaPath -PathType Leaf)) {
+                        throw 'IDEA_OBJECT_VERIFICATION_FILE_MISSING'
+                    }
+
+                    $actualIdeaHash = Get-CerebroRuntimeFileSha256 -Path $ideaPath
+                    if ($actualIdeaHash -ne [string]$executionResult.object_sha256) {
+                        throw 'IDEA_OBJECT_VERIFICATION_HASH_MISMATCH'
+                    }
+
+                    $ideaObject = Read-CerebroRuntimeJson `
+                        -Path $ideaPath `
+                        -Context 'IDEA_OBJECT'
+
+                    Assert-CerebroRuntimeFields `
+                        -Object $ideaObject `
+                        -Fields @('schema','idea_id','created_at','source','authority','content','correlation_ref','state') `
+                        -Context 'IDEA_OBJECT'
+
+                    if ([string]$ideaObject.schema -ne 'cerebro-idea-object/v0.1') {
+                        throw 'IDEA_OBJECT_SCHEMA_INVALID'
+                    }
+                    if ([string]$ideaObject.idea_id -ne [string]$executionResult.idea_id) {
+                        throw 'IDEA_OBJECT_ID_MISMATCH'
+                    }
+                    if ([string]$ideaObject.content -ne [string]$event.payload.content) {
+                        throw 'IDEA_OBJECT_CONTENT_MISMATCH'
+                    }
+                    if ([string]$ideaObject.source -ne [string]$event.source) {
+                        throw 'IDEA_OBJECT_SOURCE_MISMATCH'
+                    }
+                    if ([string]$ideaObject.authority -ne 'CAPTURED_NON_AUTHORITATIVE') {
+                        throw 'IDEA_OBJECT_AUTHORITY_MISMATCH'
+                    }
+                    if ([string]$ideaObject.correlation_ref -ne [string]$event.correlation_ref) {
+                        throw 'IDEA_OBJECT_CORRELATION_MISMATCH'
+                    }
+                    if ([string]$ideaObject.state -ne 'CAPTURED') {
+                        throw 'IDEA_OBJECT_STATE_INVALID'
+                    }
+                }
+                elseif (
+                    $verificationMode -eq
                     'result-state-only'
                 ) {
+                    $verificationScope = 'RESULT_STATE_ONLY'
+                }
+                else {
                     throw 'RUNTIME_VERIFICATION_POLICY_UNSUPPORTED'
                 }
 
                 $verificationResult = [ordered]@{
                     state = 'PASSED'
                     policy = $verificationMode
+                    scope = $verificationScope
                     execution_state = `
                         [string]$executionResult.state
                 }

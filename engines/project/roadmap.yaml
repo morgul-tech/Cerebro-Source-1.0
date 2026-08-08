@@ -683,22 +683,44 @@ roadmap:
       status: "ACTIVE"
       dependency_refs:
         - "PATCH-003"
-      decision_refs: []
-      source_refs: []
+      decision_refs:
+        - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+      source_refs:
+        - "standards/runtime/idea-object-pipeline.yaml"
+        - "standards/standards.yaml"
+        - "tooling/builder/cerebro_runtime_release.ps1"
+        - "tooling/loader/cerebro_runtime.ps1"
+        - "tooling/loader/cerebro_runtime_host.ps1"
+        - "tooling/validator/checks.yaml"
+      implementation_constraints:
+        - "reuse_existing_runtime_0_1_kernel"
+        - "one_IDEA_CAPTURE_event_one_declared_binding"
+        - "idea_object_is_non_authoritative"
+        - "runtime_may_not_mutate_Source"
+        - "verification_claim_scope_is_idea_object_persistence_and_content"
+        - "no_universal_object_model"
+        - "no_automatic_wisdom_or_project_promotion"
+      acceptance:
+        - "minimum_idea_object_contract_locked"
+        - "IDEA_CAPTURE_binding_declared"
+        - "idea_object_persists_outside_Source"
+        - "success_and_failure_canaries_pass"
+        - "existing_Runtime_0_1_canaries_remain_passing"
+        - "operational_pinned_release_canary_required_before_PATCH_004_closure"
   execution:
     current:
-      id: "EXEC-P4-IDEA-OBJECT-PIPELINE-SCOPE"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      patch_ref: "PATCH-004"
-      canonical_command: "critique and reduce PATCH-004 Idea Object Pipeline scope against the verified Runtime 0.1 baseline and current Wisdom"
-      status: "ACTIVE"
-    next:
       id: "EXEC-P4-IDEA-OBJECT-PIPELINE-IMPLEMENTATION"
       phase_ref: "PHASE-1"
       milestone_ref: null
       patch_ref: "PATCH-004"
-      canonical_command: "implement PATCH-004 Idea Object Pipeline only after the minimum buildable scope is locked and governing validation passes"
+      canonical_command: "implement the locked minimum PATCH-004 Idea Object Pipeline through the existing Runtime 0.1 kernel"
+      status: "ACTIVE"
+    next:
+      id: "EXEC-P4-IDEA-OBJECT-PIPELINE-OPERATIONAL-VERIFICATION"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      patch_ref: "PATCH-004"
+      canonical_command: "verify IDEA_CAPTURE through a pinned clean-source Runtime 0.1 release before closing PATCH-004"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -842,12 +864,23 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
       - "CTX-BASIS-P1B-IMPLEMENTED"
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+      - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -871,6 +904,7 @@ roadmap:
       - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
+      - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
   revision:
-    sequence: 16
+    sequence: 17
     last_locked_patch_ref: "PATCH-003"

@@ -1,0 +1,86 @@
+schema: "cerebro-idea-object-pipeline/v0.1"
+
+idea_object_pipeline:
+  id: "CEREBRO-IDEA-OBJECT-PIPELINE-001"
+  version: "0.1"
+  status: "LOCKED"
+  patch_ref: "PATCH-004"
+
+  objective:
+    - "capture-one-user-idea-as-one-verified-non-authoritative-object"
+    - "exercise-runtime-0.1-with-a-real-persistent-capability"
+    - "preserve-source-authority-and-defer-unproven-object-complexity"
+
+  authority:
+    persistent_source_authority: "Cerebro-Source"
+    idea_object_authority: "captured-non-authoritative-artifact"
+    runtime_may_mutate_source: false
+    automatic_wisdom_promotion: false
+    automatic_project_mutation: false
+
+  event_contract:
+    event_type: "IDEA_CAPTURE"
+    authority_requirement: "USER"
+    required_payload_fields:
+      - "content"
+
+  object_contract:
+    schema: "cerebro-idea-object/v0.1"
+    required_fields:
+      - "schema"
+      - "idea_id"
+      - "created_at"
+      - "source"
+      - "authority"
+      - "content"
+      - "correlation_ref"
+      - "state"
+    initial_state: "CAPTURED"
+    authority_value: "CAPTURED_NON_AUTHORITATIVE"
+    identity_rule: "event-identity-plus-content-hash"
+    content_rule: "non-empty-user-content-preserved-exactly"
+
+  persistence_contract:
+    target: "runtime-run-root/ideas"
+    file_shape: "one-json-file-per-idea-id"
+    overwrite_existing_identity: false
+    source_tree_write: false
+    atomic_write_required: true
+
+  verification_contract:
+    policy: "idea-object-persisted"
+    required_checks:
+      - "artifact-exists"
+      - "artifact-hash-matches-execution-result"
+      - "required-fields-present"
+      - "schema-matches"
+      - "idea-id-matches"
+      - "content-matches-event"
+      - "source-and-correlation-match-event"
+      - "authority-is-CAPTURED_NON_AUTHORITATIVE"
+      - "state-is-CAPTURED"
+    success_claim_scope: "IDEA_OBJECT_PERSISTENCE_AND_CONTENT"
+
+  deferred:
+    - "universal-object-model"
+    - "automatic-categorization"
+    - "scoring"
+    - "tags"
+    - "embeddings"
+    - "semantic-search"
+    - "deduplication-by-content"
+    - "automatic-project-linking"
+    - "automatic-wisdom-promotion"
+    - "autonomous-follow-up"
+    - "visual-development"
+    - "new-runtime-subsystem"
+
+  acceptance:
+    - "IDEA_CAPTURE-is-a-declared-runtime-event"
+    - "BIND-IDEA-CAPTURE-is-the-only-binding-for-IDEA_CAPTURE"
+    - "one-valid-event-creates-one-CAPTURED-idea-object"
+    - "invalid-idea-payload-fails-closed"
+    - "idea-object-write-is-declared-and-outside-Source"
+    - "verification-precedes-COMPLETED"
+    - "receipt-distinguishes-execution-from-verification"
+    - "existing-runtime-canaries-remain-passing"

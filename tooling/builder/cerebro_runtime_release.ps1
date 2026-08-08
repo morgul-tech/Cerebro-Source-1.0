@@ -252,6 +252,7 @@ function New-CerebroRuntimeRelease0_1 {
             'mcp/activation.yaml',
             'standards/runtime/minimal-runtime-bootstrap.yaml',
             'standards/runtime/runtime-0.1-contracts.yaml',
+            'standards/runtime/idea-object-pipeline.yaml',
             'tooling/builder/component.yaml',
             'tooling/builder/cerebro_runtime_release.ps1',
             'tooling/loader/component.yaml',
@@ -325,6 +326,25 @@ function New-CerebroRuntimeRelease0_1 {
                     verification_policy = [ordered]@{ mode = 'exact-payload-echo' }
                 },
                 [ordered]@{
+                    binding_id = 'BIND-IDEA-CAPTURE'
+                    capability_id = 'IDEA-CAPTURE'
+                    implementation_ref = 'builtin:idea-capture'
+                    input_contract = [ordered]@{
+                        event_types = @('IDEA_CAPTURE')
+                        payload_required = $true
+                        required_payload_fields = @('content')
+                    }
+                    output_contract = [ordered]@{
+                        result_type = 'IDEA_OBJECT_CAPTURED'
+                        require_success = $true
+                    }
+                    allowed_side_effects = @('runtime-artifact:ideas')
+                    authority_requirement = 'USER'
+                    timeout_policy = [ordered]@{ milliseconds = 5000 }
+                    exit_policy = [ordered]@{ success_states = @('SUCCESS') }
+                    verification_policy = [ordered]@{ mode = 'idea-object-persisted' }
+                },
+                [ordered]@{
                     binding_id = 'BIND-RUNTIME-CONTROL-STOP'
                     capability_id = 'RUNTIME-CONTROL-STOP'
                     implementation_ref = 'builtin:control-stop'
@@ -358,7 +378,7 @@ function New-CerebroRuntimeRelease0_1 {
                 commit = $sourceCommit
             }
             contract_set = 'CEREBRO-RUNTIME-0-1-CONTRACT-SET-001'
-            purpose = 'PATCH-003 Runtime 0.1 pinned deterministic release'
+            purpose = 'Runtime 0.1 pinned deterministic release with declared capabilities'
         }
 
         Write-CerebroRuntimeReleaseJson `
@@ -399,11 +419,13 @@ function New-CerebroRuntimeRelease0_1 {
             supported_event_types = @(
                 'RUNTIME_START',
                 'RUNTIME_ECHO',
+                'IDEA_CAPTURE',
                 'RUNTIME_CONTROL_STOP'
             )
             capability_binding_refs = @(
                 'BIND-RUNTIME-START',
                 'BIND-RUNTIME-ECHO',
+                'BIND-IDEA-CAPTURE',
                 'BIND-RUNTIME-CONTROL-STOP'
             )
             projection_requirements = @(

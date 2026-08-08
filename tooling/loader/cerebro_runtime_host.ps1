@@ -5,6 +5,7 @@ param(
     [string]$Remote = 'origin',
     [string]$Branch = 'main',
     [string]$EventPath,
+    [string]$Idea,
     [switch]$Start,
     [switch]$NoPause
 )
@@ -22,11 +23,21 @@ $receiptPath = $null
 $statePath = $null
 
 try {
-    if ($Start -and -not [string]::IsNullOrWhiteSpace($EventPath)) {
+    $ideaBound = $PSBoundParameters.ContainsKey('Idea')
+    $eventSourceCount = 0
+    if ($Start) { $eventSourceCount++ }
+    if (-not [string]::IsNullOrWhiteSpace($EventPath)) { $eventSourceCount++ }
+    if ($ideaBound) { $eventSourceCount++ }
+
+    if ($eventSourceCount -gt 1) {
         throw 'RUNTIME_HOST_ACCEPTS_ONE_EVENT_SOURCE_ONLY'
     }
 
-    if (-not $Start -and [string]::IsNullOrWhiteSpace($EventPath)) {
+    if ($ideaBound -and [string]::IsNullOrWhiteSpace($Idea)) {
+        throw 'IDEA_CAPTURE_CONTENT_EMPTY'
+    }
+
+    if ($eventSourceCount -eq 0) {
         $Start = $true
     }
 
@@ -98,6 +109,36 @@ try {
             [Text.UTF8Encoding]::new($false)
         )
     }
+    elseif ($ideaBound) {
+        $eventId = (
+            'IDEA-CAPTURE-' +
+            [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' +
+            [guid]::NewGuid().ToString('N').Substring(0,8)
+        )
+
+        $resolvedEventPath = Join-Path `
+            (Join-Path $run 'events') `
+            ($eventId + '.json')
+
+        $event = [ordered]@{
+            event_id = $eventId
+            event_type = 'IDEA_CAPTURE'
+            issued_at = [DateTime]::UtcNow.ToString('o')
+            source = 'USER'
+            authority = 'USER'
+            payload = [ordered]@{
+                content = $Idea
+            }
+            correlation_ref = 'IDEA-CAPTURE'
+        }
+
+        $json = ($event | ConvertTo-Json -Depth 16) + "`n"
+        [IO.File]::WriteAllText(
+            $resolvedEventPath,
+            $json,
+            [Text.UTF8Encoding]::new($false)
+        )
+    }
     else {
         $resolvedEventPath = [IO.Path]::GetFullPath($EventPath)
         if (-not (Test-Path -LiteralPath $resolvedEventPath -PathType Leaf)) {
@@ -136,6 +177,14 @@ try {
         }
         if ($verificationState -ne 'PASSED') {
             throw "RUNTIME_START_VERIFICATION_NOT_PASSED:$verificationState"
+        }
+    }
+    elseif ($ideaBound) {
+        if ($finalState -ne 'COMPLETED') {
+            throw "IDEA_CAPTURE_NOT_COMPLETED:$finalState"
+        }
+        if ($verificationState -ne 'PASSED') {
+            throw "IDEA_CAPTURE_VERIFICATION_NOT_PASSED:$verificationState"
         }
     }
 

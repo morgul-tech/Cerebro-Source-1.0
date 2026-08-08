@@ -677,3 +677,43 @@ runtime_0_1_implementation_validation:
     - conversation_history_as_runtime_state
     - reflective_adjustment_runtime_subsystem
 # END PATCH-003 RUNTIME 0.1 IMPLEMENTATION VALIDATION
+# BEGIN PATCH-004 IDEA OBJECT PIPELINE VALIDATION
+patch_004_idea_object_pipeline_validation:
+  introduced_by: PATCH-004
+  contract_ref: standards/runtime/idea-object-pipeline.yaml
+  severity: error
+  owner: tooling.validator
+
+  required_files:
+    - standards/runtime/idea-object-pipeline.yaml
+    - tooling/builder/cerebro_runtime_release.ps1
+    - tooling/loader/cerebro_runtime.ps1
+    - tooling/loader/cerebro_runtime_host.ps1
+
+  required_contracts:
+    - declared_IDEA_CAPTURE_event
+    - single_Bind_IDEA_CAPTURE_binding
+    - non_authoritative_idea_object
+    - runtime_run_root_persistence
+    - no_source_mutation
+    - atomic_object_write
+    - verification_before_completed
+    - scoped_idea_object_verification
+    - invalid_payload_fails_closed
+    - existing_runtime_canaries_preserved
+
+  required_canaries:
+    - valid_idea_capture_completes_and_persists_verified_object
+    - missing_content_fails_closed_without_new_idea_object
+    - runtime_0_1_regression_canary_passes
+
+  prohibited:
+    - universal_object_model
+    - automatic_wisdom_promotion
+    - automatic_project_mutation
+    - content_deduplication_as_identity
+    - semantic_search
+    - embeddings
+    - autonomous_follow_up
+    - new_runtime_subsystem
+# END PATCH-004 IDEA OBJECT PIPELINE VALIDATION

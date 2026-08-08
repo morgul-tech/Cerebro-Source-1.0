@@ -34,6 +34,9 @@ documents:
 - id: STD-CONSOLIDATE
   path: standards/development/consolidate.yaml
   required: true
+- id: STD-RUNTIME-IDEA-OBJECT-PIPELINE
+  path: standards/runtime/idea-object-pipeline.yaml
+  required: true
 governance:
   source_authority: Cerebro Source 1.0
   policy_over_implementation: true

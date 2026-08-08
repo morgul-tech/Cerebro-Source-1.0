@@ -1898,6 +1898,72 @@ working_context:
         derived_from_refs:
           - "CTX-BASIS-RUNTIME-0-1-SESSION-RESUME-AFTER-CONSOLIDATE-001"
       sequence: 58
+    -
+      id: "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+      type: "DECISION"
+      scope: "PATCH-004-IDEA-OBJECT-PIPELINE"
+      statement: "PATCH-004 is locked to one declared IDEA_CAPTURE capability that persists one minimal verified non-authoritative Idea Object outside Cerebro Source through the existing Runtime 0.1 kernel."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "PATCH-004"
+        contract_ref: "standards/runtime/idea-object-pipeline.yaml"
+        event_type: "IDEA_CAPTURE"
+        binding_ref: "BIND-IDEA-CAPTURE"
+        object_schema: "cerebro-idea-object/v0.1"
+        initial_state: "CAPTURED"
+        persistence_target: "runtime-run-root/ideas"
+        authority: "captured-non-authoritative-artifact"
+        verification_scope: "IDEA_OBJECT_PERSISTENCE_AND_CONTENT"
+        excluded:
+          - "universal_object_model"
+          - "automatic_wisdom_promotion"
+          - "automatic_project_mutation"
+          - "semantic_search"
+          - "embeddings"
+          - "autonomous_follow_up"
+          - "new_runtime_subsystem"
+      provenance:
+        introduced_by_ref: "PATCH-004-SCOPE-CRITIQUE-AND-REDUCTION"
+        basis_refs:
+          - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+          - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+          - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
+          - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+      sequence: 59
+    -
+      id: "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-004-IDEA-OBJECT-PIPELINE-IMPLEMENTATION"
+      statement: "Implement the locked minimum Idea Object Pipeline through the existing Runtime 0.1 kernel, then require pinned clean-source operational verification before PATCH-004 closure."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "LOCKED_PATCH_004_MINIMUM_SCOPE"
+        current_patch: "PATCH-004"
+        active_work: "IDEA_OBJECT_PIPELINE_IMPLEMENTATION"
+        sole_priority: true
+        scope_decision_ref: "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+        contract_ref: "standards/runtime/idea-object-pipeline.yaml"
+        operational_verification_required: true
+        do_not_reopen:
+          - "runtime_architecture"
+          - "wisdom_architecture"
+          - "universal_object_model"
+      provenance:
+        introduced_by_ref: "PATCH-004"
+        basis_refs:
+          - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+          - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+      sequence: 60
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1923,11 +1989,13 @@ working_context:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
+      - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
       - "CTX-BASIS-RUNTIME-0-1-SESSION-RESUME-AFTER-CONSOLIDATE-001"
       - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+      - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -1958,4 +2026,4 @@ working_context:
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
       - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-  next_sequence: 59
+  next_sequence: 61
