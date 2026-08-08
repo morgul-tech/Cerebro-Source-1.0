@@ -1,0 +1,46 @@
+schema: cerebro-canonical-definition-system/v0.1
+
+canonical_definition_system:
+  id: CEREBRO-CANONICAL-DEFINITION-SYSTEM-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+
+  purpose: >
+    Resolve human language and aliases into canonical Cerebro terms and
+    canonical system types before architecture, ownership, authority, or
+    control decisions are made.
+
+  authority:
+    canonical_definitions: Cerebro Source 1.0
+    user_need_authority: USER
+    user_wording_classification_authority: false
+
+  layers:
+    terminology_registry:
+      responsibility:
+        - canonical-terms
+        - aliases
+        - human-meaning
+    system_metamodel:
+      responsibility:
+        - entity-kind
+        - component-subtype
+        - ownership-dimensions
+        - lifecycle
+        - authority-scope
+        - structural-prohibitions
+
+  resolution:
+    - resolve-user-phrase
+    - map-alias-to-canonical-term
+    - resolve-canonical-kind
+    - resolve-authority-owner
+    - resolve-operational-steward
+    - apply-to-control-or-architecture
+
+  constraints:
+    - no-user-alias-may-expand-authority
+    - no-user-wording-may-create-a-new-component-kind
+    - unresolved-canonical-type-blocks-authoritative-classification
+    - historical-aliases-may-resolve-for-reading-without-reactivating-superseded-architecture

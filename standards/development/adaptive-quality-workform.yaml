@@ -1,0 +1,178 @@
+schema: cerebro-adaptive-quality-workform/v0.1
+
+adaptive_quality_workform:
+  id: CEREBRO-ADAPTIVE-QUALITY-WORKFORM-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+  kind: STANDARD
+  new_component: false
+
+  purpose: >
+    Scale analysis and development depth to the consequence and uncertainty of
+    the work while preserving explicit challenge, convergence, verification,
+    and calibrated decision readiness.
+
+  canonical_stages:
+    - UNDERSTAND_FRAME
+    - EXPLORE_RESEARCH
+    - REFINE
+    - CRITIQUE
+    - COMPARE_CONVERGE
+    - DECIDE
+    - EXECUTE_GENERATE
+    - VERIFY
+    - LEARN
+
+  depth_profiles:
+    LIGHT:
+      required:
+        - UNDERSTAND_FRAME
+        - EXECUTE_GENERATE
+        - VERIFY
+      use_when: low-consequence-bounded-and-well-understood
+    STANDARD:
+      required:
+        - UNDERSTAND_FRAME
+        - EXPLORE_RESEARCH
+        - REFINE
+        - CRITIQUE
+        - COMPARE_CONVERGE
+        - EXECUTE_GENERATE
+        - VERIFY
+      use_when: material-choice-or-moderate-uncertainty
+    DEEP:
+      required:
+        - UNDERSTAND_FRAME
+        - EXPLORE_RESEARCH
+        - REFINE
+        - CRITIQUE
+        - COMPARE_CONVERGE
+        - DECIDE
+        - EXECUTE_GENERATE
+        - VERIFY
+        - LEARN
+      additional_requirements:
+        - consolidate-relevant-evidence
+        - generate-material-alternatives
+        - zero-base-model-when-architecture-is-material
+        - multidimensional-quality-assessment
+        - falsification-or-attack
+        - explicit-convergence
+        - implementation-verification
+      use_when: architecture-major-phase-high-impact-or-high-uncertainty
+
+  decision_assurance:
+    id: CEREBRO-DECISION-ASSURANCE-001
+    kind: GATE
+    component: false
+    purpose: pre-decision-lock-assurance
+    sequence:
+      - FRAME
+      - DEFINE_DECISION_CRITERIA
+      - GENERATE_MATERIAL_CANDIDATES
+      - COLLECT_EVIDENCE
+      - ASSESS_SAME_CRITERIA
+      - CHALLENGE
+      - RE_ASSESS
+      - COMPARE
+      - READINESS
+      - RECOMMEND_DECIDE
+
+    criterion_rule:
+      criteria_defined_before_candidate_rating: true
+      same_criteria_across_material_candidates: true
+      criterion_change_must_be_explicit: true
+
+    maturity:
+      states:
+        - OPEN
+        - CANDIDATE
+        - STRONG
+        - VERY_STRONG
+        - RESOLVED
+
+    evidence_states:
+      - CONCEPTUAL
+      - SOURCE_XREF
+      - EVIDENCE_SUPPORTED
+      - STATIC_VALIDATED
+      - IMPLEMENTED
+      - OPERATIONALLY_VERIFIED
+
+    readiness_states:
+      - NOT_READY
+      - READY_WITH_KNOWN_RISK
+      - READY_TO_LOCK
+
+    readiness_object_required_fields:
+      - readiness_id
+      - decision_ref
+      - decision_basis_fingerprint
+      - maturity
+      - evidence_state
+      - quality_profile
+      - hard_blockers
+      - known_risks
+      - readiness
+      - assessed_at
+
+    material_lock_rule:
+      required_readiness: READY_TO_LOCK
+      fingerprint_must_match_current_basis: true
+      stale_effect: INVALIDATE_READINESS_AND_REASSESS
+
+    hard_blockers:
+      - authority_violation
+      - safety_violation
+      - unresolved_governing_conflict
+      - critical_ownership_conflict
+      - required_capability_impossible
+      - required_evidence_absent
+      - non_enforceable_mandatory_requirement
+
+  solution_quality_profile:
+    dimensions:
+      - Outcome_Fit
+      - System_Coherence
+      - Operational_Enforceability
+      - Complexity_Efficiency
+      - Resilience_Recovery
+      - Evolution_Fit
+      - Resource_Fit
+      - Human_Fit
+    rating_scale: 1_to_5
+    authoritative_aggregate_average: false
+
+  architectural_regrounding_profile:
+    trigger: MAJOR_PHASE_BOUNDARY
+    dedicated_contract_ref: standards/development/architectural-regrounding.yaml
+    required_state: REGROUNDING_REQUIRED
+    flow:
+      - CONSOLIDATE_REAL_EVIDENCE
+      - ZERO_BASE_MODEL
+      - REFINE
+      - CRITIQUE_ATTACK
+      - XREF_CURRENT
+      - GENERATE_ALTERNATIVES
+      - CONVERGE
+    outcomes:
+      - KEEP
+      - REFINE
+      - RESTRUCTURE
+      - NO_CHANGE
+
+  self_hosting:
+    patch_005:
+      required_depth: DEEP
+      decision_assurance_required_before_scope_lock: true
+      implementation_verification_required_before_closure: true
+
+  claim_calibration:
+    invariant: CLAIM_SCOPE_LESS_THAN_OR_EQUAL_TO_VERIFIED_SCOPE
+    root_cause_rule: current-failure-root-cause-does-not-imply-whole-problem-root-cause
+
+  boundaries:
+    quality_gate_owns_publication_readiness: true
+    decision_assurance_owns_pre-decision-lock-readiness: true
+    wisdom_automation_deferred_to_patch_006: true

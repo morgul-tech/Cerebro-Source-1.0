@@ -20,17 +20,17 @@
     "bytes": 1055
   },
   {
-    "path": "engines/collaboration/component.yaml",
+    "path": "engines/interaction/component.yaml",
     "sha256": "4a20e751f3532cba630962a0f0c5cdf8410e009054ac8e7b5b46d6129486d5ff",
     "bytes": 996
   },
   {
-    "path": "engines/collaboration/rules.yaml",
+    "path": "engines/interaction/rules.yaml",
     "sha256": "e1086d11833d9bb4a59d4d86937be4bba2992590b6b91c338b9bb8aef5563a19",
     "bytes": 8107
   },
   {
-    "path": "engines/collaboration/specification.md",
+    "path": "engines/interaction/specification.md",
     "sha256": "1c643860c88461457361c6b715e9726ec73452af20631c14b0c7c9d4f713e287",
     "bytes": 444
   },
@@ -50,17 +50,17 @@
     "bytes": 840
   },
   {
-    "path": "engines/dialog/component.yaml",
+    "path": "engines/interaction/component.yaml",
     "sha256": "a4d7c614169fde1e10660b5bcb6ecbe11e133ac8ce0a13ef5ce86637febae5a3",
     "bytes": 830
   },
   {
-    "path": "engines/dialog/rules.yaml",
+    "path": "engines/interaction/rules.yaml",
     "sha256": "6078f4a1b23c527f825917ae677f49caddb8e6c767e24f3d4d44ce2e35e40aec",
     "bytes": 8805
   },
   {
-    "path": "engines/dialog/specification.md",
+    "path": "engines/interaction/specification.md",
     "sha256": "775df4770ee08a06b8ab5149816aa34ed012cb671f97a20166776edfad66b7ad",
     "bytes": 1047
   },
@@ -170,27 +170,27 @@
     "bytes": 1615
   },
   {
-    "path": "modules/core-rules/authority-levels.yaml",
+    "path": "standards/source-authority.yaml",
     "sha256": "9f0fb5233f8d4ef72aab57c89089a72457734dbe2967a2fff19034431ea64c01",
     "bytes": 396
   },
   {
-    "path": "modules/core-rules/component.yaml",
+    "path": "standards/rule-model.yaml",
     "sha256": "90c53856531d64022786905ec1301b3bf56ff6082beb8c47a562b771c6885cf6",
     "bytes": 688
   },
   {
-    "path": "modules/core-rules/enums.yaml",
+    "path": "standards/system-metamodel.yaml",
     "sha256": "efd3d02d9071f00a05f09f6f228f323f8407c2740340fb07c069c4f506ea4bfa",
     "bytes": 432
   },
   {
-    "path": "modules/core-rules/rules.yaml",
+    "path": "standards/rule-model.yaml",
     "sha256": "18c3c3f22daca62938a0448edbe1faa0bb43bcb01e0729268021f07383b741b3",
     "bytes": 1770
   },
   {
-    "path": "modules/core-rules/specification.md",
+    "path": "standards/rule-model.yaml",
     "sha256": "d454052f1a43bf9b2170a758ec986083597e2ce539f222e40b5556c30a260930",
     "bytes": 253
   },
@@ -250,17 +250,17 @@
     "bytes": 141
   },
   {
-    "path": "tooling/loader/README.md",
+    "path": "tooling/runtime-host/README.md",
     "sha256": "e12a3b2a5738066917620334733ffafe3c5084a114c1f22f230baae6d86276d9",
     "bytes": 64
   },
   {
-    "path": "tooling/loader/component.yaml",
+    "path": "tooling/runtime-host/component.yaml",
     "sha256": "387246092b168275f873d519c5285d8cedfd962ba1278c0c25fbae1e2c9cc793",
     "bytes": 573
   },
   {
-    "path": "tooling/loader/runtime-state-schema.yaml",
+    "path": "tooling/runtime-host/runtime-state-schema.yaml",
     "sha256": "4e2c5286a0f861f624d94bf481d21ac5fa8d5b508344b5c38d4d23e0d84f3154",
     "bytes": 175
   },

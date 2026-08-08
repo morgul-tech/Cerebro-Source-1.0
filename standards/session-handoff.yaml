@@ -14,10 +14,10 @@ session_handoff:
   ownership:
     project_state: project-engine
     active_context: context-engine
-    source_authority: MCP-and-source-authority
+    source_authority: Cerebro-Source
     artifact_generation: builder-tooling
     artifact_validation: validator
-    resume_verification: loader-tooling
+    resume_verification: runtime-host-tooling
 
   authority:
     authoritative_source: Cerebro-Source

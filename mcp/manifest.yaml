@@ -2,15 +2,24 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.0.0
-  level: 1
+  version: 1.1.0
+  component_kind: CONTROL
   default_state: active
-  scope: domain-independent-working-method
-  authority: control-layer
+  scope: domain-independent-control
+  authority_scope: highest-internal-control
+  control_contract: standards/control-architecture.yaml
+  decision_contract: MCP_CONTROL_DECISION
+  execution_profile_owner: MCP
+  defined_by: Cerebro Source 1.0
 position:
-  above: Cerebro Source 1.0
+  within: Cerebro
+  defined_by: Cerebro Source 1.0
   controls:
   - working_method
+  - control_resolution
+  - final_control_resolution
+  - execution_profile_resolution
+  - decision_freshness_resolution
   - analysis_process
   - decision_process
   - iteration
@@ -19,6 +28,7 @@ position:
   - tool_selection
   does_not_own:
   - source_specification
+  - persistent_definition_authority
   - release_definition
   - domain_rules
   - generated_implementation
@@ -34,15 +44,14 @@ principles:
 - id: MCP-P005
   statement: Apply the working method consistently across all domains.
 - id: MCP-P006
-  statement: Validate when uncertainty, consequence, or system state makes validation
-    useful.
+  statement: Validate when uncertainty, consequence, or system state makes validation useful.
 - id: MCP-P007
   statement: Avoid unnecessary process when a direct answer fully satisfies the task.
 state_commands:
   status:
   - mcp
   activate:
-  - "mcp p\xE5"
+  - "mcp pÃ¥"
   - mcp pa
   - aktiver mcp
   deactivate:
@@ -52,5 +61,6 @@ state_policy:
   active_on_start: true
   user_may_deactivate: true
   deactivation_scope: current-runtime-context
+  deactivation_effect: exit-cerebro-controlled-operation
   reactivation_explicit: true
   status_visible_on_request: true

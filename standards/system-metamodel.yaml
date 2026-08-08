@@ -1,0 +1,115 @@
+schema: cerebro-system-metamodel/v0.1
+
+system_metamodel:
+  id: CEREBRO-SYSTEM-METAMODEL-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+
+  purpose: >
+    Define the canonical kinds, authority dimensions, ownership dimensions,
+    lifecycle states, and structural invariants used to classify Cerebro
+    concepts without allowing user wording or legacy component names to
+    create system authority.
+
+  authority:
+    definitional_authority: Cerebro Source 1.0
+    persistent_authority_scope: SOLE
+    internal_control_authority: MCP
+    derived_implementations_authoritative: false
+    runtime_state_authoritative: false
+    evidence_authoritative: false
+
+  entity_kinds:
+    - SYSTEM
+    - SOURCE
+    - RELEASE
+    - RUNTIME
+    - STANDARD
+    - METAMODEL
+    - COMPONENT
+    - CONTRACT
+    - SCHEMA
+    - CAPABILITY
+    - GATE
+    - STATE
+    - CONFIGURATION
+    - EVIDENCE
+    - ARTIFACT
+    - RECEIPT
+    - HISTORY
+
+  component_subtypes:
+    - CONTROL
+    - ENGINE
+    - MODULE
+    - TOOLING
+
+  ownership_dimensions:
+    authority_owner:
+      meaning: entity whose authority determines the value or definition
+    operational_steward:
+      meaning: component responsible for operational handling
+    implementation_owner:
+      meaning: component or tooling responsible for executable realization
+
+  authority_scopes:
+    - SOURCE_DEFINITIONAL
+    - INTERNAL_CONSTITUTIONAL
+    - USER_CONFIGURATION
+    - NORMATIVE_POLICY
+    - DERIVED_IMPLEMENTATION
+    - RUNTIME_DERIVED
+    - EVIDENCE_ONLY
+    - NON_AUTHORITATIVE
+
+  lifecycle_states:
+    - CANDIDATE
+    - ACTIVE
+    - TEMPORARY
+    - SUPERSEDED
+    - REVOKED
+    - HISTORICAL
+
+  canonical_definition_system:
+    resolution_order:
+      - HUMAN_TERM
+      - ALIAS_RESOLUTION
+      - CANONICAL_TERM
+      - CANONICAL_SYSTEM_TYPE
+      - AUTHORITY_AND_OWNER_RESOLUTION
+      - CONTROL_OR_ARCHITECTURE_USE
+    constraints:
+      - user-wording-does-not-create-authoritative-classification
+      - aliases-do-not-expand-authority
+      - kind-authority-lifecycle-and-owner-are-orthogonal
+      - one-active-canonical-definition-per-canonical-id
+
+  invariants:
+    - id: META-001
+      statement: Cerebro Source 1.0 is the sole persistent definitional authority.
+    - id: META-002
+      statement: MCP is the highest internal operational control authority defined by Cerebro Source and is not authority above Source.
+    - id: META-003
+      statement: Derived Release, Runtime state, evidence, receipts, artifacts, conversation history, and model memory do not create persistent Source authority.
+    - id: META-004
+      statement: Every active canonical entity shall have one kind and an explicit lifecycle.
+    - id: META-005
+      statement: Authority ownership and operational stewardship shall be represented separately when they differ.
+    - id: META-006
+      statement: Gates are policy-defined decision contracts and are not components solely by being gates.
+    - id: META-007
+      statement: Historical entities may preserve superseded terminology without becoming active consumers.
+temporary_definition_lifecycle:
+  applies_to_lifecycle_state: TEMPORARY
+  required_metadata:
+    - introduced_by
+    - reason
+    - owner
+    - replacement_condition
+    - retirement_trigger
+  review_bound:
+    one_of:
+      - latest_allowed_milestone
+      - review_trigger
+  retirement_trigger_reached_effect: VALIDATION_FAILURE

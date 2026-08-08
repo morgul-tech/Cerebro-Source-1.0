@@ -1,7 +1,7 @@
 schema: cerebro-standards-manifest/v0.1
 standards_engine:
   id: standards
-  version: 0.1.0
+  version: 0.2.0
   role: authoritative-policy-registry
   runtime_engine: false
   policy_owner: Cerebro Source 1.0
@@ -12,6 +12,24 @@ documents:
   required: true
 - id: STD-SOURCE
   path: standards/source-authority.yaml
+  required: true
+- id: STD-SYSTEM-LIFECYCLE
+  path: standards/system-lifecycle.yaml
+  required: true
+- id: STD-CONTROL-ARCHITECTURE
+  path: standards/control-architecture.yaml
+  required: true
+- id: STD-USER-OPERATING-PROFILE
+  path: standards/user-operating-profile.yaml
+  required: true
+- id: STD-SYSTEM-METAMODEL
+  path: standards/system-metamodel.yaml
+  required: true
+- id: STD-RULE-MODEL
+  path: standards/rule-model.yaml
+  required: true
+- id: STD-CANONICAL-DEFINITION-SYSTEM
+  path: standards/canonical-definition-system.yaml
   required: true
 - id: STD-PUBLICATION
   path: standards/publication-gate.yaml
@@ -34,11 +52,25 @@ documents:
 - id: STD-CONSOLIDATE
   path: standards/development/consolidate.yaml
   required: true
+- id: STD-ADAPTIVE-QUALITY-WORKFORM
+  path: standards/development/adaptive-quality-workform.yaml
+  required: true
+- id: STD-WISDOM-CONTROL-BINDING
+  path: standards/development/wisdom-control-binding.yaml
+  required: true
+- id: STD-ARCHITECTURAL-REGROUNDING
+  path: standards/development/architectural-regrounding.yaml
+  required: true
+- id: STD-ACTIVE-SOURCE-CLOSURE
+  path: standards/active-source-closure.yaml
+  required: true
 - id: STD-RUNTIME-IDEA-OBJECT-PIPELINE
   path: standards/runtime/idea-object-pipeline.yaml
   required: true
 governance:
   source_authority: Cerebro Source 1.0
+  definitional_authority: Cerebro Source 1.0
+  internal_control_authority: MCP
   policy_over_implementation: true
   single_source_of_truth: true
   write_once_authority: true

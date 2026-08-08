@@ -250,22 +250,28 @@ function New-CerebroRuntimeRelease0_1 {
             'mcp/architecture.yaml',
             'mcp/priorities.yaml',
             'mcp/activation.yaml',
+            'standards/system-lifecycle.yaml',
             'standards/runtime/minimal-runtime-bootstrap.yaml',
             'standards/runtime/runtime-0.1-contracts.yaml',
             'standards/runtime/idea-object-pipeline.yaml',
             'tooling/builder/component.yaml',
             'tooling/builder/cerebro_runtime_release.ps1',
-            'tooling/loader/component.yaml',
-            'tooling/loader/cerebro_runtime.ps1',
-            'tooling/loader/cerebro_runtime_host.ps1',
-            'engines/dialog/component.yaml',
+            'tooling/runtime-host/component.yaml',
+            'tooling/runtime-host/cerebro_runtime.ps1',
+            'tooling/runtime-host/cerebro_runtime_host.ps1',
+            'engines/interaction/component.yaml',
             'engines/context/component.yaml',
-            'engines/collaboration/component.yaml',
             'engines/quality/component.yaml',
             'engines/presentation/component.yaml',
             'modules/terminology/component.yaml',
-            'modules/core-rules/component.yaml',
-            'modules/visual-language/component.yaml'
+            'modules/visual-language/component.yaml',
+            'tooling/runtime-host/cerebro_user_profile.ps1',
+            'standards/control-architecture.yaml',
+            'standards/user-operating-profile.yaml',
+            'standards/development/adaptive-quality-workform.yaml',
+            'standards/development/wisdom-control-binding.yaml',
+            'standards/active-source-closure.yaml'
+
         )
 
         foreach ($relative in $relativeFiles) {
@@ -415,7 +421,7 @@ function New-CerebroRuntimeRelease0_1 {
             profile_id = $profileId
             runtime_version = '0.1'
             release_ref = "sha256:$finalDigest"
-            entrypoint = 'source/tooling/loader/cerebro_runtime.ps1'
+            entrypoint = 'source/tooling/runtime-host/cerebro_runtime.ps1'
             supported_event_types = @(
                 'RUNTIME_START',
                 'RUNTIME_ECHO',

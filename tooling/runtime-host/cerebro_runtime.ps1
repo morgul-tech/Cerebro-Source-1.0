@@ -1554,7 +1554,7 @@ function Invoke-CerebroRuntimeCanary {
         profile_id = 'runtime-0.1-canary'
         runtime_version = '0.1'
         release_ref = "sha256:$releaseDigest"
-        entrypoint = 'tooling/loader/cerebro_runtime.ps1'
+        entrypoint = 'tooling/runtime-host/cerebro_runtime.ps1'
         supported_event_types = @(
             'CANARY_ECHO'
         )

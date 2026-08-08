@@ -1,41 +1,47 @@
 schema: cerebro-component/v1
 component:
-  id: loader
-  name: Loader
+  id: runtime-host
+  name: Runtime Host
   type: tooling
   version: 1.0.0
   status: active-source
 responsibility:
-  primary: Laste en validert Cerebro Release, opprette Runtime State og kjøre Runtime 0.1 som en deterministisk enkelt-event prosess.
+  primary: >
+    Hoste Ã©n deterministisk Runtime 0.1-invokasjon fra validert Release,
+    forberede og verifisere bootstrap-input, konstruere avledet operasjonell
+    state, prosessere Ã©n event, verifisere resultat og skrive evidence/receipt.
 boundaries:
   must:
   - verify-release-integrity
-  - load-required-components
+  - prepare-bootstrap-environment
+  - transfer-control-to-runtime
   - initialize-runtime
   - accept-one-runtime-event
   - resolve-declared-capability-binding
   - verify-runtime-result-before-success
   - write-runtime-receipt-for-success-and-failure
   must_not:
-  - load-invalid-release
-  - load-unregistered-components
   - mutate-source-from-runtime
+  - create-source-authority
   - execute-undeclared-capability
   - retain-hidden-resident-runtime-state
-dependencies:
-  build: []
-  runtime: []
+  - reinterpret-bootstrap-state-as-runtime-state
 interfaces:
   consumes:
   - validated-release
   - runtime-profile
+  - bootstrap-state
   - runtime-event
   produces:
   - runtime-state
   - runtime-receipt
   - runtime-failure-ledger
+  - control-transfer-evidence
 documentation:
   path: README.md
+migration:
+  introduced_by: PATCH-005
+  supersedes: loader
 version:
   component: 1.0.0
   schema: 1

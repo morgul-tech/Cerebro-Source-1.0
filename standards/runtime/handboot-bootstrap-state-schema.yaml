@@ -1,0 +1,59 @@
+schema: cerebro-handboot-bootstrap-state-schema/v0.1
+
+bootstrap_state_contract:
+  id: CONTRACT-HANDBOOT-BOOTSTRAP-STATE
+  introduced_by: PATCH-005
+  operational_steward: runtime-host
+  authority: derived_non_authoritative
+  format: JSON
+
+required_root_fields:
+  - schema
+  - bootstrap
+
+required_bootstrap_fields:
+  - bootstrap_id
+  - profile
+  - created_at_utc
+  - activated_at_utc
+  - state
+  - operational
+  - authority
+  - bootengine
+  - working_source
+  - authoritative_source
+  - source_validation
+  - components
+  - execution
+  - handoff
+  - control
+  - receipt
+
+authority_required_fields:
+  - persistent_authority
+  - boot_authority
+  - bootstrap_authority
+  - runtime_authority
+  - handoff_authority
+
+invariants:
+  - bootstrap_state_is_pre_runtime_derived_state
+  - bootstrap_state_must_not_be_treated_as_runtime_instance_state
+  - bootstrap_state_must_not_mutate_source
+  - exact_source_alignment_required_for_control_transfer
+  - failed_handoff_prevents_operational_control_transfer
+  - control_transfer_precedes_runtime_operation
+
+allowed_bootstrap_states:
+  - CONSTRUCTED_INACTIVE
+  - ACTIVE
+  - ACTIVE_CONTROL_TRANSFERRED
+  - INACTIVE_CONTROL_RETAINED
+
+success_condition:
+  state: ACTIVE_CONTROL_TRANSFERRED
+  operational: true
+
+failure_condition:
+  state: INACTIVE_CONTROL_RETAINED
+  operational: false

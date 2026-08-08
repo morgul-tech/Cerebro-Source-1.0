@@ -1,0 +1,82 @@
+schema: cerebro-rule-model/v0.1
+
+rule_model:
+  id: CEREBRO-RULE-MODEL-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+
+  purpose: >
+    Define the common canonical structure and authority classes for Cerebro
+    rules without assigning function-specific policy to a generic Core Rules
+    component.
+
+  definitional_authority: Cerebro Source 1.0
+
+  authority_classes:
+    constitutional:
+      meaning: highest internal Cerebro control rule class
+      defined_by: Cerebro Source 1.0
+      operationally_enforced_by: MCP
+      does_not_outrank_source: true
+    normative:
+      meaning: binding policy within its declared scope
+    operational:
+      meaning: declared permitted or available action
+    advisory:
+      meaning: non-binding recommendation
+    example:
+      meaning: illustration without rule authority
+
+  required_rule_fields:
+    - id
+    - statement
+    - authority
+    - scope
+    - lifecycle
+    - owner
+
+  optional_rule_fields:
+    - priority
+    - validation
+    - provenance
+    - verification
+    - operational_steward
+    - supersedes
+    - introduced_by
+    - retirement_trigger
+
+  normative_language:
+    binding:
+      - SKAL
+      - SKAL IKKE
+      - shall
+      - shall not
+    permission:
+      - KAN
+      - KAN IKKE
+      - may
+      - may not
+
+  constraints:
+    - authoritative-rule-defined-once
+    - advisory-does-not-become-normative-by-wording
+    - example-does-not-affect-execution
+    - rule-owner-does-not-imply-persistent-authority
+    - constitutional-means-highest-internal-control-not-authority-above-source
+    - validator-enforces-structure-but-does-not-own-policy
+  legacy_core_rules_migration:
+    source_component: core-rules
+    disposition: DECOMPOSED_AND_SUPERSEDED
+    semantic_targets:
+    - standards/rule-model.yaml
+    - standards/system-metamodel.yaml
+    - modules/terminology/terms.yaml
+    validator_enforcement_target: tooling/validator
+    legacy_rule_ids:
+    - CR-001
+    - CR-002
+    - CR-003
+    - CR-004
+    - CR-005
+    historical_source_preserved_by_git: true

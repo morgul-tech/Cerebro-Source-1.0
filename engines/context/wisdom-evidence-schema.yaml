@@ -8,6 +8,7 @@ contract:
   authority: "evidence-only"
   release_inclusion: true
   state_release_inclusion: false
+  control_binding_ref: "standards/development/wisdom-control-binding.yaml"
 
 required_root:
   - "schema"
@@ -120,3 +121,7 @@ invariants:
   - "low_impact_micro_signal_does_not_require_standalone_patch"
   - "state_is_evidence_not_rule_authority"
   - "runtime_subsystem_is_not_created"
+patch_005_binding_invariants:
+  - automatic_retrieval_deferred_to_PATCH_006
+  - automatic_control_promotion_is_prohibited
+  - applicability_does_not_change_evidence_authority

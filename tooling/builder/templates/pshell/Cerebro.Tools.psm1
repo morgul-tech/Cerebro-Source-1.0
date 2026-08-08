@@ -730,7 +730,7 @@ function cerebro_resume {
         (
             Join-Path `
                 $PSScriptRoot `
-                '..\..\..\loader\cerebro_resume.ps1'
+                '..\..\..\runtime-host\cerebro_resume.ps1'
         )
     )
 
@@ -769,7 +769,7 @@ function bootCerebro {
         (
             Join-Path `
                 $PSScriptRoot `
-                '..\..\..\loader\cerebro_boot.ps1'
+                '..\..\..\runtime-host\cerebro_boot.ps1'
         )
     )
 
@@ -814,3 +814,31 @@ function bootini {
 }
 Export-ModuleMember `
     -Function cerebro_receive, cpatch, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, bootini, cerebro_tools_status
+
+function cerebro_profile {
+    [CmdletBinding()]
+    param(
+        [ValidateSet('view','set','revoke')][string]$Action='view',
+        [string]$CanonicalDomain,
+        [string]$CanonicalKey,
+        $Value,
+        [ValidateSet('GLOBAL','PROJECT')][string]$Scope='GLOBAL',
+        [string]$PreferenceId,
+        [string]$Path='D:\Cerebro\User\user-operating-profile.json'
+    )
+    $scriptPath=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\runtime-host\cerebro_user_profile.ps1'))
+    if(-not(Test-Path -LiteralPath $scriptPath -PathType Leaf)){throw "CEREBRO_PROFILE_SCRIPT_NOT_FOUND:$scriptPath"}
+    . $scriptPath
+    switch($Action){
+        'view' { Read-CerebroUserOperatingProfile -Path $Path }
+        'set' {
+            if([string]::IsNullOrWhiteSpace($CanonicalDomain)-or[string]::IsNullOrWhiteSpace($CanonicalKey)){throw 'CEREBRO_PROFILE_SET_REQUIRES_DOMAIN_AND_KEY'}
+            Set-CerebroUserPreference -CanonicalDomain $CanonicalDomain -CanonicalKey $CanonicalKey -Value $Value -Scope $Scope -Path $Path
+        }
+        'revoke' {
+            if([string]::IsNullOrWhiteSpace($PreferenceId)){throw 'CEREBRO_PROFILE_REVOKE_REQUIRES_ID'}
+            Revoke-CerebroUserPreference -PreferenceId $PreferenceId -Path $Path
+        }
+    }
+}
+Export-ModuleMember -Function cerebro_profile

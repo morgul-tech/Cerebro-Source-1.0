@@ -32,19 +32,19 @@ rules:
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-043
   authority: constitutional
-  statement: Loader SKAL bruke Cerebro Manifest som eneste autoritative inngangspunkt.
+  statement: Runtime Host SKAL bruke Cerebro Manifest som eneste autoritative inngangspunkt.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-044
   authority: constitutional
-  statement: Loader SKAL IKKE aktivere en release som ikke har bestått obligatorisk validering.
+  statement: Runtime Host SKAL IKKE aktivere en release som ikke har bestått obligatorisk validering.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-045
   authority: constitutional
-  statement: Aktivering SKAL opprette en Runtime State som identifiserer aktiv release, lastede komponenter og gjeldende arbeidsstatus.
+  statement: Aktivering SKAL opprette en avledet Bootstrap State for source/release-verifikasjon og kontrolloverfÃ¸ring; Runtime State tilhÃ¸rer den pÃ¥fÃ¸lgende Runtime 0.1-invokasjonen.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
@@ -53,7 +53,7 @@ rules:
 handboot_activation:
   introduced_by: PATCH-002.PRE-003
   contract_ref: standards/runtime/handboot.yaml
-  runtime_state_contract_ref: standards/runtime/handboot-runtime-state-schema.yaml
+  bootstrap_state_contract_ref: standards/runtime/handboot-bootstrap-state-schema.yaml
   canonical_command: bootCerebro
   aliases:
     - bootini
@@ -70,8 +70,8 @@ handboot_activation:
     - verify_working_source_repository
     - align_working_source_by_safe_fast_forward
     - verify_manifest_and_required_components
-    - construct_derived_runtime_state
-    - atomically_activate_runtime
+    - construct_derived_bootstrap_state
+    - atomically_activate_control
     - process_handoff_inside_active_cerebro
     - transfer_control
 
@@ -88,7 +88,7 @@ handboot_activation:
     missing_handoff_is_allowed: true
 
   failure_state:
-    runtime_state: INACTIVE_CONTROL_RETAINED
+    bootstrap_state: INACTIVE_CONTROL_RETAINED
     operational: false
     source_preserved: true
     control_retained: true

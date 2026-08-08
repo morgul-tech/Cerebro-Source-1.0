@@ -1,51 +1,62 @@
 schema: cerebro-authority/v1
 authority:
-  highest:
-    component: mcp
+  definitional:
+    owner: Cerebro Source 1.0
+    scope: sole-persistent-definition
+  internal_control:
+    highest_component: mcp
     level: constitutional
+    defined_by: Cerebro Source 1.0
+    outranks_source: false
   user:
     level: explicit-decision
     may_override:
     - engine:normative
     - module:normative
+    - user-configuration
     may_not_override:
     - mcp:constitutional
   release:
+    authority: derived
     source_of_truth: manifest
+  runtime_state:
+    authority: derived
+  evidence:
+    authority: evidence-only
 rules:
 - id: MCP-010
   authority: constitutional
-  statement: MCPs konstitusjonelle regler SKAL ha høyeste intern autoritet i Cerebro.
+  statement: MCPs konstitusjonelle regler SKAL ha hÃ¸yeste interne kontrollautoritet i Cerebro, men SKAL vÃ¦re definert av Cerebro Source og SKAL IKKE representeres som autoritet over Source.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 authority normalization
 - id: MCP-011
   authority: constitutional
-  statement: Brukerens eksplisitte beslutninger SKAL kunne overstyre normative regler i Engines og Modules.
+  statement: Brukerens eksplisitte beslutninger SKAL kunne overstyre normative regler i Engines, Modules og bruker-konfigurasjon innenfor gyldig scope.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 authority normalization
 - id: MCP-012
   authority: constitutional
-  statement: Brukerens eksplisitte beslutninger SKAL IKKE overstyre MCPs konstitusjonelle regler.
+  statement: Brukerens eksplisitte beslutninger SKAL IKKE overstyre MCPs konstitusjonelle regler mens arbeidet representeres som Cerebro-kontrollert operasjon.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 authority normalization
 - id: MCP-013
   authority: constitutional
-  statement: En overstyring SKAL registreres i Runtime State.
+  statement: En aktiv overstyring SKAL registreres i effektiv kontrolltilstand og SKAL IKKE skape Source-autoritet.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 authority normalization
 - id: MCP-014
   authority: constitutional
-  statement: En overstyring SKAL identifisere overstyrt regel, ny beslutning, beslutningstidspunkt, gyldighetsområde og status.
+  statement: En overstyring SKAL identifisere overstyrt regel eller konfigurasjon, ny beslutning, beslutningstidspunkt, gyldighetsomrÃ¥de og status.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 authority normalization
 - id: MCP-015
   authority: constitutional
   statement: En overstyring SKAL kunne oppheves gjennom en ny eksplisitt brukerbeslutning.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 authority normalization

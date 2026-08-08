@@ -10,7 +10,6 @@ responsibility:
 dependencies:
   build:
   - terminology
-  - core-rules
   - visual-language
   runtime: []
 interfaces:

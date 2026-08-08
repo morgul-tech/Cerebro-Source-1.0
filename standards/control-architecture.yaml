@@ -1,0 +1,175 @@
+schema: cerebro-control-architecture/v0.1
+
+control_architecture:
+  id: CEREBRO-CONTROL-ARCHITECTURE-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+
+  purpose: >
+    Define one coherent control path from current evidence and configuration
+    through MCP resolution to a fresh execution policy without conflating
+    MCP Control Decisions with Runtime 0.1 Transition Decisions.
+
+  authority:
+    definitional_authority: Cerebro Source 1.0
+    control_resolver: MCP
+    runtime_executor: Runtime Host
+    runtime_transition_owner: Runtime 0.1
+
+  flow:
+    - CONTROL_EVENT
+    - CONTROL_STATE
+    - CONTROL_RESOLUTION
+    - MCP_CONTROL_DECISION
+    - EXECUTION_PROFILE
+    - CAPABILITY_BINDING
+    - EXECUTE
+    - VERIFY
+    - EVIDENCE
+    - NEXT_CONTROL_EVENT
+
+  control_state_contract:
+    kind: STATE
+    authority: DERIVED
+    required_fields:
+      - control_state_id
+      - domain
+      - objective_ref
+      - governing_basis_refs
+      - effective_user_configuration
+      - execution_profile_ref
+      - applicable_wisdom_refs
+      - progress_state
+      - failure_state
+      - verification_state
+      - capability_state
+      - human_boundary
+      - basis_fingerprint
+
+  mcp_control_decision_contract:
+    kind: CONTRACT
+    resolver: MCP
+    required_fields:
+      - control_decision_id
+      - control_state_ref
+      - objective_ref
+      - basis_refs
+      - basis_fingerprint
+      - effective_user_config_ref
+      - execution_profile_ref
+      - applicable_control_refs
+      - outcome
+      - invalidates
+      - verification_requirement
+      - human_boundary
+      - evidence_scope
+      - resolved_at
+    outcomes:
+      - CONTINUE
+      - REMEDIATE
+      - RETRY
+      - REORIENT
+      - USER_DECISION_REQUIRED
+      - BLOCK
+
+  execution_profile_contract:
+    kind: CONFIGURATION
+    authority: DERIVED
+    required_fields:
+      - execution_profile_id
+      - working_mode
+      - delivery_mode
+      - autonomy
+      - verification_depth
+      - execution_mechanism
+      - human_boundary
+      - mutation_scope
+      - publication_path
+      - basis_fingerprint
+    constraints:
+      - execution-profile-is-not-runtime-profile
+      - level-1-level-2-level-3-are-human-aliases-not-canonical-system-types
+      - stale-profile-must-not-authorize-execution
+
+  freshness:
+    decision_basis_fingerprint_required: true
+    executor_rule: current-basis-must-equal-decision-basis
+    mismatch_state: STALE_CONTROL_DECISION
+    mismatch_effect:
+      - INVALIDATE_DECISION
+      - RE_RESOLVE_CONTROL
+
+  retry:
+    requires_material_delta: true
+    acceptable_delta:
+      - changed_state
+      - added_evidence
+      - applied_remediation
+      - changed_strategy
+      - refined_scope
+
+  reorient:
+    meaning: current_path_is_invalid_and_a_materially_different_path_is_required
+    requires_material_delta: true
+    acceptable_delta:
+      - execution_mechanism
+      - implementation_identity
+      - delivery_path
+      - recovery_strategy
+      - bounded_scope
+      - execution_profile
+    unchanged_path_state: REORIENTATION_INVALID_UNCHANGED_PATH
+
+  remediation:
+    meaning: repair_current_mechanism_without_replacing_the_path
+
+  runtime_separation:
+    mcp_control_decision:
+      scope: pre-execution-control-policy
+      owner: MCP
+    runtime_transition_decision:
+      scope: Runtime-0.1-invocation-transition
+      owner: Runtime-0.1
+    invariant: MCP_CONTROL_DECISION_IS_NOT_RUNTIME_TRANSITION_DECISION
+
+  invariants:
+    - Source-defines-control-contracts
+    - MCP-resolves-active-control
+    - Runtime-Host-does-not-own-control-policy
+    - decision-freshness-is-verified-before-execution
+    - retry-requires-progress-delta
+    - reorient-requires-material-path-delta
+    - unchanged-reorientation-is-invalid
+    - control-evidence-does-not-create-Source-authority
+  user_profile_resolution:
+    precedence:
+      - HARD_SYSTEM_AUTHORITY
+      - CURRENT_EXPLICIT_USER_INSTRUCTION
+      - SESSION_TASK_OVERLAY
+      - PROJECT_USER_PROFILE
+      - GLOBAL_USER_PROFILE
+      - CEREBRO_DEFAULT
+    degraded_profile_effect:
+      - continue_when_safe
+      - do_not_claim-normal-personalization
+      - do_not-change-Source-or-project-authority
+  decision_assurance_readiness:
+    contract_ref: standards/development/adaptive-quality-workform.yaml
+    material_lock_requires: READY_TO_LOCK
+    basis_field: decision_basis_fingerprint
+    stale_readiness_effect: INVALIDATE_READINESS_AND_REASSESS
+  wisdom_control_binding:
+    contract_ref: standards/development/wisdom-control-binding.yaml
+    context_assesses_applicability: true
+    MCP_resolves_control_effect: true
+    evidence_authority: EVIDENCE_ONLY
+  architectural_regrounding:
+    contract_ref: standards/development/architectural-regrounding.yaml
+    trigger_event: MAJOR_PHASE_BOUNDARY
+    required_control_state: ARCHITECTURAL_REGROUNDING_REQUIRED
+  active_source_closure:
+    contract_ref: standards/active-source-closure.yaml
+    required_before_patch_close: true
+    failure_outcome: BLOCK
+    full_source_pass_required: true

@@ -1,0 +1,49 @@
+schema: cerebro-user-operating-profile-schema/v0.1
+
+profile:
+  required_fields:
+    - schema
+    - profile_id
+    - scope
+    - owner
+    - preferences
+    - updated_at
+
+  scope_values:
+    - GLOBAL
+    - PROJECT
+
+  owner_required: USER
+
+preference:
+  required_fields:
+    - preference_id
+    - canonical_domain
+    - canonical_key
+    - value
+    - scope
+    - origin
+    - created_at
+    - updated_at
+    - status
+    - evidence_refs
+
+  origin_values:
+    - EXPLICIT_USER
+    - REPEATED_CONFIRMED
+    - MIGRATED
+
+  status_values:
+    - ACTIVE
+    - SUSPENDED
+    - SUPERSEDED
+    - REVOKED
+
+  optional_fields:
+    - confidence
+    - supersedes
+
+resolution:
+  effective_only_when_status: ACTIVE
+  global_scope: GLOBAL
+  project_scope: PROJECT

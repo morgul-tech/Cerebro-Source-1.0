@@ -2,19 +2,18 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-OPERATIONAL-PROGRESS
   name: Cerebro Operational Progress Standard
-  version: 0.1.0
+  version: 0.2.0
   status: approved
   authority: authoritative
-  scope: System-wide continuation, remediation, retry, escalation, and proportional verification.
+  scope: System-wide continuation, remediation, retry, reorientation, escalation, and proportional verification.
   consumers:
-  - dialog
+  - interaction
   - project
   - patch-toolchain
-  - patch-learning-controller
   - quality-gate
   - terminal
   - mcp
-  - hud
+  - runtime-host
 rules:
 - id: STD-OPERATIONAL-PROGRESS-R001
   statement: Cerebro shall continue toward an active authorized objective unless a documented safety, authority, or genuine user-decision condition requires a stop.
@@ -22,52 +21,61 @@ rules:
   verification:
   - Absence of a documented stop condition produces CONTINUE.
 - id: STD-OPERATIONAL-PROGRESS-R002
-  statement: Operational outcomes shall be CONTINUE, REMEDIATE_AND_CONTINUE, RETRY, USER_DECISION_REQUIRED, or SAFETY_BLOCK.
+  statement: MCP Control Decision outcomes shall be CONTINUE, REMEDIATE, RETRY, REORIENT, USER_DECISION_REQUIRED, or BLOCK.
   priority: critical
   verification:
-  - Every recorded progress decision uses one declared outcome.
+  - Every recorded MCP Control Decision uses one declared outcome.
 - id: STD-OPERATIONAL-PROGRESS-R003
-  statement: Safety boundaries, authority boundaries, and genuine user preferences shall take precedence over automatic remediation and continuation.
+  statement: Safety boundaries, authority boundaries, and genuine user decisions shall take precedence over automatic remediation, retry, reorientation, and continuation.
   priority: critical
   verification:
-  - A safety condition produces SAFETY_BLOCK.
-  - Missing authority or a genuine user preference produces USER_DECISION_REQUIRED.
+  - A safety or governing authority prohibition produces BLOCK.
+  - A genuine unresolved user-only decision produces USER_DECISION_REQUIRED.
 - id: STD-OPERATIONAL-PROGRESS-R004
-  statement: Known bounded and reversible problems may be remediated automatically when an active qualified signature defines exact targets and verification.
+  statement: Known bounded and reversible problems may be remediated automatically when the current mechanism remains valid and exact targets and verification are defined.
   priority: high
   verification:
-  - Automatic remediation requires a qualified signature and produces REMEDIATE_AND_CONTINUE.
+  - REMEDIATE repairs the current path rather than silently replacing it.
 - id: STD-OPERATIONAL-PROGRESS-R005
-  statement: A retry shall require changed state, added evidence, applied remediation, changed strategy, or refined scope.
+  statement: RETRY shall require changed state, added evidence, applied remediation, changed strategy, or refined scope.
   priority: critical
   verification:
   - Repeating the same action against the same state without a progress delta is rejected.
 - id: STD-OPERATIONAL-PROGRESS-R006
+  statement: REORIENT shall be used when the current path is invalid and shall require a material delta in execution mechanism, implementation identity, delivery path, recovery strategy, bounded scope, or execution profile.
+  priority: critical
+  verification:
+  - Unchanged-path reorientation is rejected as REORIENTATION_INVALID_UNCHANGED_PATH.
+- id: STD-OPERATIONAL-PROGRESS-R007
   statement: Evidence freshness shall depend on evidence type and relevant state changes rather than elapsed time alone.
   priority: high
   verification:
   - Immutable commits remain valid.
   - Remote branch heads are refreshed before writes.
-  - Qualification remains valid until relevant files change.
-- id: STD-OPERATIONAL-PROGRESS-R007
+  - Qualification remains valid until relevant basis changes.
+- id: STD-OPERATIONAL-PROGRESS-R008
   statement: Verification shall be proportional to affected behavior, with focused, standard, and full profiles selected from concrete impact.
   priority: high
   verification:
   - Full canary is required when its tested mechanism changes and is not repeated when that mechanism is unchanged.
-- id: STD-OPERATIONAL-PROGRESS-R008
-  statement: Autonomy levels A through C shall proceed automatically within existing mandate, while level D and hard user gates require explicit approval.
+- id: STD-OPERATIONAL-PROGRESS-R009
+  statement: Autonomy shall proceed automatically within existing mandate while genuine user-only decisions and hard authority gates require explicit user input.
   priority: critical
   verification:
   - File count or technical complexity alone does not cause escalation.
-  - Aggregate effect is evaluated to prevent splitting a level D change into smaller changes.
-- id: STD-OPERATIONAL-PROGRESS-R009
-  statement: Automatic progress shall never weaken authority, security, rollback, traceability, Quality Gate, or Publication Gate requirements.
+  - Aggregate effect is evaluated to prevent scope splitting around a user gate.
+- id: STD-OPERATIONAL-PROGRESS-R010
+  statement: Automatic progress shall never weaken authority, security, rollback, traceability, Quality Gate, Publication Gate, or Source synchronization requirements.
   priority: critical
   verification:
-  - Efficiency cannot override a mandatory safety or publication control.
-- id: STD-OPERATIONAL-PROGRESS-R010
+  - Efficiency cannot override a mandatory governing control.
+- id: STD-OPERATIONAL-PROGRESS-R011
+  statement: A Control Decision and its Execution Profile shall be invalidated when their basis fingerprint no longer matches the current governing basis.
+  priority: critical
+  verification:
+  - Stale decisions are re-resolved before execution.
+- id: STD-OPERATIONAL-PROGRESS-R012
   statement: Automatic corrections shall normally be reported after the current work segment so that safe progress is not interrupted.
   priority: normal
   verification:
   - The report records remediation, evidence, verification, and remaining user decisions.
-

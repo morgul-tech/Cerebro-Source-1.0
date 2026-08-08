@@ -21,9 +21,8 @@ boundaries:
 dependencies:
   build:
   - terminology
-  - core-rules
   runtime:
-  - dialog
+  - interaction
   - context
   - quality
 interfaces:

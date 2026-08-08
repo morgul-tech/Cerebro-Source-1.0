@@ -182,7 +182,7 @@ function Invoke-CerebroBootCore {
             'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
 
         [string]$RuntimeStatePath =
-            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+            'D:\Cerebro\Run\active\CEREBRO_BOOTSTRAP_STATE_v1.json',
 
         [switch]$SkipHandoff
     )
@@ -435,7 +435,7 @@ function Invoke-CerebroBootCore {
                 'mcp/activation.yaml',
                 'standards/runtime/minimal-runtime-bootstrap.yaml',
                 'standards/runtime/handboot.yaml',
-                'standards/runtime/handboot-runtime-state-schema.yaml',
+                'standards/runtime/handboot-bootstrap-state-schema.yaml',
                 'standards/session-handoff.yaml',
                 'standards/session-handoff-schema.yaml',
                 'engines/context/working-context.yaml',
@@ -443,8 +443,8 @@ function Invoke-CerebroBootCore {
                 'tooling/builder/templates/pshell/Cerebro.Tools.psd1',
                 'tooling/builder/templates/pshell/Cerebro.Tools.psm1',
                 'tooling/builder/templates/pshell/cerebro_handoff.ps1',
-                'tooling/loader/cerebro_resume.ps1',
-                'tooling/loader/cerebro_boot.ps1',
+                'tooling/runtime-host/cerebro_resume.ps1',
+                'tooling/runtime-host/cerebro_boot.ps1',
                 'tooling/validator/checks.yaml'
             )
 
@@ -694,7 +694,7 @@ function Invoke-CerebroBootCore {
             ) {
                 $resumeScriptPath = Join-Path `
                     $WorkingSourcePath `
-                    'tooling\loader\cerebro_resume.ps1'
+                    'tooling\runtime-host\cerebro_resume.ps1'
 
                 . $resumeScriptPath
 

@@ -1,0 +1,66 @@
+schema: cerebro-architectural-regrounding/v0.1
+
+architectural_regrounding:
+  id: CEREBRO-ARCHITECTURAL-REGROUNDING-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+  kind: STANDARD
+
+  purpose: >
+    Treat the current architecture as a hypothesis at major phase boundaries,
+    reassess it against real evidence, and prevent local patch accumulation from
+    becoming unchallenged architectural sediment.
+
+  trigger:
+    event: MAJOR_PHASE_BOUNDARY
+    required_control_state: ARCHITECTURAL_REGROUNDING_REQUIRED
+
+  scope:
+    local_source_closure:
+      purpose: keep active Source definitions current and internally coherent
+      frequency: every-material-source-change
+    global_architectural_regrounding:
+      purpose: challenge whether the architecture itself remains the best model
+      frequency: major-phase-boundary-or-material-contradictory-evidence
+
+  required_flow:
+    - CONSOLIDATE_REAL_EVIDENCE
+    - ZERO_BASE_MODEL
+    - REFINE
+    - CRITIQUE_ATTACK
+    - XREF_CURRENT_ARCHITECTURE
+    - GENERATE_MATERIAL_ALTERNATIVES
+    - SAME_CRITERIA_COMPARE
+    - CONVERGE
+    - DECISION_ASSURANCE
+
+  zero_base_rule:
+    current_architecture_is_candidate_not_default_winner: true
+    preserve_only-when-evidence-justifies: true
+
+  evidence_inputs:
+    - operational-evidence
+    - failure-and-recovery-evidence
+    - user-friction-evidence
+    - implementation-complexity
+    - control-and-authority-conflicts
+    - Wisdom-evidence
+    - Source-cross-reference
+
+  outcomes:
+    - KEEP
+    - REFINE
+    - RESTRUCTURE
+    - REPLACE
+
+  decision_requirement:
+    readiness_ref: standards/development/adaptive-quality-workform.yaml
+    material_outcome_requires: READY_TO_LOCK
+    basis_fingerprint_required: true
+
+  invariants:
+    - local-cleanup-does-not-substitute-for-global-regrounding
+    - global-regrounding-does-not-rewrite-history
+    - architecture-change-requires-evidence-and-decision-readiness
+    - no-change-is-valid-only-after-challenge

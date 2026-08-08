@@ -1,0 +1,58 @@
+schema: cerebro-system-lifecycle/v0.1
+
+system_lifecycle:
+  id: CEREBRO-SYSTEM-LIFECYCLE-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+
+  authority:
+    definition: Cerebro Source 1.0
+    bootstrap_orchestration: Runtime Host
+    active_control: MCP
+    runtime_execution: Runtime 0.1
+
+  lifecycle:
+    - RESOLVE_SOURCE
+    - VERIFY_SOURCE_AND_RELEASE
+    - LOAD_USER_PROFILE
+    - VALIDATE_USER_PROFILE
+    - LOAD_PROJECT_CONTEXT_IF_APPLICABLE
+    - CREATE_SESSION_TASK_OVERLAY
+    - RESOLVE_EFFECTIVE_USER_CONFIGURATION
+    - CONSTRUCT_BOOTSTRAP_STATE
+    - ACTIVATE_CONTROL
+    - TRANSFER_CONTROL
+    - HOST_RUNTIME_INVOCATION
+    - VERIFY_EVIDENCE
+    - EXIT
+
+  state_separation:
+    bootstrap_state:
+      kind: STATE
+      authority: DERIVED
+      steward: runtime-host
+      role: pre-runtime-environment-and-control-transfer
+    runtime_state:
+      kind: STATE
+      authority: DERIVED
+      steward: runtime-host
+      role: runtime-0.1-invocation-state
+
+  invariants:
+    - Cerebro Source remains sole persistent definitional authority
+    - bootstrap-state-does-not-become-runtime-state
+    - runtime-host-does-not-become-control-authority
+    - MCP-control-begins-only-after-valid-activation
+    - MCP-deactivation-exits-Cerebro-controlled-operation
+    - Runtime-0.1-remains-one-invocation-one-event-one-receipt
+    - Source-mutation-is-prohibited-from-runtime
+
+  deactivation:
+    mcp_off_effect: EXIT_CEREBRO_CONTROLLED_OPERATION
+    outside_cerebro_work_may_continue: true
+    active_cerebro_without_mcp: false
+  user_profile_states:
+    - PROFILE_LOADED
+    - PROFILE_ABSENT
+    - PROFILE_DEGRADED

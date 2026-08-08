@@ -1,0 +1,75 @@
+schema: cerebro-user-operating-profile-standard/v0.1
+
+user_operating_profile:
+  id: CEREBRO-USER-OPERATING-PROFILE-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+  kind: CONFIGURATION
+
+  definition: >
+    User-owned persistent configuration describing stable preferences for how
+    Cerebro collaborates, steers work, presents information, and involves the user.
+
+  authority:
+    authority_owner: USER
+    operational_steward: interaction
+    source_defines_mechanism: true
+    source_owns_values: false
+    profile_creates_source_authority: false
+
+  storage:
+    global_default: D:\Cerebro\User\user-operating-profile.json
+    project_pattern: D:\Cerebro\User\projects\<project-id>.json
+    session_task_overlay_persistent: false
+
+  precedence:
+    - HARD_SYSTEM_AUTHORITY
+    - CURRENT_EXPLICIT_USER_INSTRUCTION
+    - SESSION_TASK_OVERLAY
+    - PROJECT_USER_PROFILE
+    - GLOBAL_USER_PROFILE
+    - CEREBRO_DEFAULT
+
+  profile_states:
+    - PROFILE_LOADED
+    - PROFILE_ABSENT
+    - PROFILE_DEGRADED
+
+  preference_domains:
+    - COLLABORATION
+    - CONTROL_STEERING
+    - DECISION_INTERACTION
+    - INFORMATION
+    - PRESENTATION
+    - VISUALIZATION
+    - DEVELOPMENT_WORKFORM
+    - DELIVERY_ARTIFACT
+    - TERMINOLOGY_COMMUNICATION
+    - PROGRESS_STATUS
+    - CORRECTION_LEARNING
+
+  promotion:
+    explicit_stable_user_preference: GLOBAL_ALLOWED
+    explicit_project_preference: PROJECT_ALLOWED
+    temporary_instruction: SESSION_TASK_ONLY
+    repeated_pattern: CANDIDATE_ONLY
+    assistant_inference_alone: PERSISTENCE_PROHIBITED
+
+  user_controls:
+    - VIEW
+    - SET
+    - CORRECT
+    - REVOKE
+    - RESET
+    - SCOPE
+
+  invariants:
+    - stable-explicit-preference-persists-across-conversations
+    - current-explicit-user-instruction-overrides-stored-preference-in-scope
+    - inference-alone-cannot-silently-become-strong-persistent-preference
+    - revoked-or-superseded-preference-is-not-effective
+    - user-can-inspect-correct-and-revoke
+    - scope-expansion-requires-user-evidence
+    - profile-failure-does-not-change-Source-or-project-authority
+    - PROFILE_DEGRADED-must-not-be-reported-as-PROFILE_LOADED

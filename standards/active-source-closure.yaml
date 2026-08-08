@@ -1,0 +1,88 @@
+schema: cerebro-active-source-closure/v0.1
+
+active_source_closure:
+  id: CEREBRO-ACTIVE-SOURCE-CLOSURE-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+  kind: STANDARD
+
+  purpose: >
+    Ensure that active Source represents the current Cerebro system rather than
+    an accumulation of obsolete patch scaffolding, superseded references,
+    expired temporary structures, or stale generated metadata.
+
+  scope:
+    active_source: true
+    history: immutable_reference_not_rewritten
+    generated_artifacts: freshness_checked_not_authoritative
+
+  active_definition_requirements:
+    - canonical_identity
+    - valid_system_kind
+    - authority_owner
+    - operational_steward_when_applicable
+    - lifecycle_state
+    - active_reference_integrity
+
+  lifecycle_states:
+    - ACTIVE
+    - TEMPORARY
+    - DEPRECATED
+    - SUPERSEDED
+    - HISTORICAL
+
+  temporary_definition_contract:
+    required_fields:
+      - introduced_by
+      - reason
+      - owner
+      - replacement_condition
+      - retirement_trigger
+    at_least_one_review_bound:
+      - latest_allowed_milestone
+      - review_trigger
+    expired_effect: VALIDATION_FAILURE
+
+  supersession:
+    active_reference_to_superseded_definition: PROHIBITED
+    superseded_definition_may_remain_in_history: true
+    explicit_migration_record_allowed: true
+
+  generated_metadata:
+    required_freshness_fields:
+      - source_commit
+      - generated_from
+    active_authority: false
+    stale_effect: VALIDATION_FAILURE_WHEN_USED_AS_ACTIVE_INPUT
+
+  closure:
+    required_before_patch_close: true
+    full_source_pass_stage_for_patch_005: P5-S12
+    implementation_stage: P5-S8
+    legacy_cleanup_stage: P5-S9
+    cross_file_validation_stage: P5-S10
+
+  deterministic_validator:
+    implementation_ref: tooling/validator/cerebro_active_source_closure.ps1
+    checks:
+      - expired_temporary_definition
+      - active_reference_to_superseded_path
+      - stale_generated_metadata
+      - duplicate_canonical_definition_key
+      - prohibited_active_legacy_path
+
+  patch_005_prohibited_active_paths:
+    - engines/dialog/
+    - engines/collaboration/
+    - modules/core-rules/
+    - tooling/loader/
+    - standards/runtime/handboot-runtime-state-schema.yaml
+
+  invariants:
+    - active-Source-describes-current-system
+    - history-is-not-rewritten-to-fake-currentness
+    - generated-metadata-never-becomes-Source-authority
+    - patch-closure-requires-ASC-pass
+    - deterministic-checks-do-not-claim-semantic-fuzzy-coherence
+    - semantic-coherence-remains-Quality-and-Decision-Assurance-responsibility

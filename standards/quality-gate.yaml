@@ -15,7 +15,7 @@ standard:
   - repository
 rules:
 - id: STD-QUALITY-R001
-  statement: Quality Gate is the only component authorized to declare an artifact ready for publication.
+  statement: Quality Gate is the publication-readiness gate for Cerebro artifacts and is distinct from pre-decision-lock Decision Assurance.
   priority: critical
   verification:
   - Publication is blocked on any failed Quality Gate check.
@@ -81,3 +81,9 @@ rules:
   - Library registration alone is insufficient without user-access evidence.
   - Verified Library access records surface=LIBRARY and chat_surface may remain DEGRADED.
   - Level 3 fallback is not required solely because the chat attachment is non-clickable when Library access is verified.
+
+- id: STD-QUALITY-R012
+  statement: Decision Assurance readiness does not imply publication readiness, and Quality Gate publication readiness does not retroactively establish decision quality.
+  priority: critical
+  verification:
+  - Pre-decision-lock and pre-publication gates remain distinct.

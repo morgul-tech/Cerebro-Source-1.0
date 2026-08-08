@@ -15,7 +15,8 @@
         'cerebro_resume',
         'bootCerebro',
         'bootini',
-        'cerebro_tools_status'
+        'cerebro_tools_status',
+        'cerebro_profile'
     )
     CmdletsToExport = @()
     VariablesToExport = @()

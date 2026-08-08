@@ -33,8 +33,8 @@ handboot:
       source: https://raw.githubusercontent.com/morgul-tech/B/main/BootEngine
       role: external_boot_orchestration
       authority_over_cerebro_source: false
-    runtime_state:
-      default_path: D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json
+    bootstrap_state:
+      default_path: D:\Cerebro\Run\active\CEREBRO_BOOTSTRAP_STATE_v1.json
       role: derived_operational_state
       authority: non_authoritative
     handoff:
@@ -45,7 +45,7 @@ handboot:
   authority_invariants:
     - github_source_is_sole_persistent_authority
     - working_source_is_never_promoted_by_boot
-    - runtime_state_is_never_promoted_to_source
+    - bootstrap_state_is_never_promoted_to_source
     - handoff_is_never_promoted_to_source
     - bootengine_orchestrates_but_does_not_replace_source_authority
     - source_mutation_requires_explicit_development_and_cerebro_sync
@@ -74,7 +74,7 @@ handboot:
       failure_effect: inactive_control_retained
     - sequence: 6
       state: ANALYZING
-      operation: construct_derived_runtime_state
+      operation: construct_derived_bootstrap_state
       failure_effect: discard_partial_runtime_state_and_stop
     - sequence: 7
       state: ACTIVATING
@@ -141,7 +141,7 @@ handboot:
     - mcp/activation.yaml
     - standards/runtime/minimal-runtime-bootstrap.yaml
     - standards/runtime/handboot.yaml
-    - standards/runtime/handboot-runtime-state-schema.yaml
+    - standards/runtime/handboot-bootstrap-state-schema.yaml
     - standards/session-handoff.yaml
     - standards/session-handoff-schema.yaml
     - engines/context/working-context.yaml
@@ -149,8 +149,8 @@ handboot:
     - tooling/builder/templates/pshell/Cerebro.Tools.psd1
     - tooling/builder/templates/pshell/Cerebro.Tools.psm1
     - tooling/builder/templates/pshell/cerebro_handoff.ps1
-    - tooling/loader/cerebro_resume.ps1
-    - tooling/loader/cerebro_boot.ps1
+    - tooling/runtime-host/cerebro_resume.ps1
+    - tooling/runtime-host/cerebro_boot.ps1
     - tooling/validator/checks.yaml
 
   manifest_validation:
@@ -189,7 +189,7 @@ handboot:
       - boot_authority: "orchestration_only"
       - resolve_authoritative_source
       - validate_required_contracts
-      - construct_derived_runtime_state
+      - construct_derived_bootstrap_state
       - activate_runtime
       - transfer_control
 
@@ -227,7 +227,7 @@ handboot:
       - working_source_aligned
       - manifest_verified
       - required_components_verified
-      - runtime_state_active
+      - bootstrap_state_active
       - handoff_resolved
       - control_transferred
       - deterministic_receipt_emitted

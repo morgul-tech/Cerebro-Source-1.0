@@ -36,6 +36,7 @@ reflective_adjustment_loop:
     schema_ref: "engines/context/wisdom-evidence-schema.yaml"
     state_ref: "engines/context/wisdom-evidence.yaml"
     authority: "EVIDENCE_ONLY"
+    control_binding_ref: "standards/development/wisdom-control-binding.yaml"
 
     governing_principle: >
       Cerebro shall use a low threshold for capturing useful experience and a

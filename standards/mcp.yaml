@@ -2,10 +2,10 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-MCP
   name: Master Control Program Standard
-  version: 0.1.0
+  version: 0.2.0
   status: approved
   authority: authoritative
-  scope: The permanent domain-independent control layer governing how Cerebro works.
+  scope: The domain-independent internal control layer governing active Cerebro operation.
   consumers:
   - assistant-runtime
   - cerebro-cli
@@ -13,39 +13,38 @@ standard:
   - source-selection
   - tool-selection
   - working-method
+  - runtime-host
 rules:
 - id: STD-MCP-R001
-  statement: MCP is level 1 and sits above Cerebro Source 1.0, Release, and Runtime.
+  statement: MCP is the highest internal operational control authority in Cerebro, is defined by Cerebro Source 1.0, and shall not be represented as authority above Source.
   priority: critical
   verification:
-  - mcp/manifest.yaml declares level 1 and its architectural position.
+  - mcp/manifest.yaml declares defined_by Cerebro Source 1.0.
+  - mcp/manifest.yaml declares authority_scope highest-internal-control.
 - id: STD-MCP-R002
-  statement: MCP shall be active by default from the start of every runtime context.
+  statement: MCP shall be active by default during Cerebro-controlled operation.
   priority: critical
   verification:
   - default_state is active.
   - active_on_start is true.
 - id: STD-MCP-R003
-  statement: MCP governs working method and control flow, but shall not replace or
-    duplicate Source specifications or domain rules.
+  statement: MCP shall resolve working method and control flow from Source-defined policy and current control state, but shall not replace, duplicate, or mutate Source specifications.
   priority: critical
   verification:
   - MCP ownership and non-ownership boundaries are declared.
 - id: STD-MCP-R004
-  statement: MCP shall apply consistently across software, construction, design, information,
-    planning, and other task domains.
+  statement: MCP control semantics shall apply consistently across software, construction, design, information, planning, and other task domains.
   priority: critical
   verification:
-  - MCP scope is domain-independent-working-method.
+  - MCP scope is domain-independent-control.
 - id: STD-MCP-R005
-  statement: The user may deactivate MCP explicitly for the current runtime context
-    and reactivate it explicitly.
+  statement: Explicit MCP deactivation shall end Cerebro-controlled operation for the affected runtime context; work may continue outside Cerebro control but shall not be represented as active Cerebro.
   priority: critical
   verification:
-  - "mcp av and mcp p\xE5 are supported."
+  - deactivation_effect is exit-cerebro-controlled-operation.
+  - no active Cerebro state exists without its declared control resolver.
 - id: STD-MCP-R006
-  statement: The command mcp shall show the current MCP state in a compact terminal-style
-    report.
+  statement: The command mcp shall show the current MCP state in a compact terminal-style report.
   priority: high
   verification:
   - cerebro_tool.py mcp returns state and authority.

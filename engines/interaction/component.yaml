@@ -1,0 +1,68 @@
+schema: cerebro-component/v1
+component:
+  id: interaction
+  name: Interaction Engine
+  type: engine
+  version: 1.0.0
+  status: active-source
+responsibility:
+  primary: >
+    Tolke brukerens aktuelle intensjon, instruksjon, preferansesignaler,
+    avklaringsbehov, beslutningssignaler, roller, ansvar og menneskelig
+    beslutningsgrense og levere en Interaction Assessment til MCP.
+boundaries:
+  must:
+  - interpret-current-user-intent
+  - distinguish-instruction-from-preference-signal
+  - identify-genuine-clarification-need
+  - identify-user-decision-boundary
+  - maintain-role-and-responsibility-clarity
+  - steward-user-operating-profile-signals
+  must_not:
+  - make-final-control-decision
+  - own-working-mode-resolution
+  - own-engine-activation
+  - own-presentation-format
+  - own-project-state
+  - own-active-context
+  - create-source-authority
+dependencies:
+  build:
+  - terminology
+  runtime:
+  - context
+interfaces:
+  input:
+  - user-utterance
+  - active-goal
+  - current-basis
+  - runtime-context
+  - effective-user-configuration
+  - user-profile-write-request
+  - user-profile-revoke-request
+  output:
+  - interaction-assessment
+  - current-intent
+  - current-instruction
+  - preference-signal
+  - user-profile-operation
+  - effective-user-configuration-candidate
+  - clarification-need
+  - decision-signal
+  - role-assessment
+  - responsibility-assessment
+  - human-boundary-assessment
+  - presentation-request
+  - consolidation-request
+rules:
+  path: rules.yaml
+documentation:
+  path: specification.md
+migration:
+  introduced_by: PATCH-005
+  supersedes:
+  - dialog
+  - collaboration
+version:
+  component: 1.0.0
+  schema: 1

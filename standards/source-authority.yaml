@@ -2,10 +2,10 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-SOURCE
   name: Cerebro Source Authority Standard
-  version: 0.1.0
+  version: 0.2.0
   status: approved
   authority: authoritative
-  scope: Authority, derivation, and reproducibility rules for Cerebro Source 1.0.
+  scope: Authority, derivation, reproducibility, and control-authority boundaries for Cerebro Source 1.0.
   consumers:
   - runtime
   - builder
@@ -17,32 +17,31 @@ standard:
   - acceptance
   - release
   - documentation
+  - mcp
 rules:
 - id: STD-SOURCE-R001
-  statement: Cerebro Source 1.0 is the sole authoritative definition of Cerebro.
+  statement: Cerebro Source 1.0 is the sole persistent and definitional authority for Cerebro.
   priority: critical
   verification:
   - cerebro.yaml identifies Cerebro Source 1.0 and sole authority.
 - id: STD-SOURCE-R002
-  statement: Cerebro Source 1.0 is an architectural authority and shall not be represented
-    by a top-level Source folder.
+  statement: Cerebro Source 1.0 is an architectural authority and shall not be represented by a top-level Source folder.
   priority: critical
   verification:
   - source_folder_required is false.
 - id: STD-SOURCE-R003
-  statement: No implementation or generated artifact shall become authoritative.
+  statement: No implementation, Release, Runtime state, evidence, receipt, generated artifact, conversation history, or model memory shall become persistent Source authority.
   priority: critical
   verification:
   - generated_artifacts_authoritative is false.
+  - runtime and release authority remain derived.
 - id: STD-SOURCE-R004
-  statement: An authoritative rule shall be defined once; other representations shall
-    be derived or generated.
+  statement: An authoritative rule shall be defined once; other representations shall be derived or generated.
   priority: critical
   verification:
   - write_once_authority is true.
 - id: STD-SOURCE-R005
-  statement: Disposable implementations shall be reproducible from Cerebro Source
-    1.0 without loss of authoritative knowledge.
+  statement: Disposable implementations shall be reproducible from Cerebro Source 1.0 without loss of authoritative knowledge.
   priority: critical
   verification:
   - implementation_disposable is true.
@@ -51,3 +50,14 @@ rules:
   priority: critical
   verification:
   - synchronization uses fetch and force-with-lease without pull, reset-to-remote, or automatic merge.
+- id: STD-SOURCE-R007
+  statement: MCP is the highest internal operational control authority defined by Cerebro Source and shall not be represented as authority above Cerebro Source.
+  priority: critical
+  verification:
+  - standards/mcp.yaml does not place MCP above Source.
+  - mcp/manifest.yaml declares Source as the definition authority for MCP.
+- id: STD-SOURCE-R008
+  statement: Persistent definitional authority, internal operational control authority, user configuration authority, derived implementation state, and evidence authority shall be represented as distinct authority dimensions.
+  priority: critical
+  verification:
+  - standards/system-metamodel.yaml defines separate authority scopes and ownership dimensions.

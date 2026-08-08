@@ -12,6 +12,8 @@ boundaries:
   - kontrollere-konsistens
   - kontrollere-resultat
   - sikre-sporbarhet
+  - assess-solution-quality-profile
+  - assess-decision-assurance-evidence
   must_not:
   - forvalte-systemversjonering
   - publisere-releases
@@ -20,7 +22,6 @@ boundaries:
 dependencies:
   build:
   - terminology
-  - core-rules
   runtime:
   - context
 interfaces:
@@ -36,6 +37,9 @@ interfaces:
   - consistency-conflict
   - verification-result
   - traceability-record
+  - solution-quality-profile
+  - decision-assurance-assessment
+  - readiness-object
 rules:
   path: rules.yaml
 documentation:

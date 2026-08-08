@@ -1,0 +1,85 @@
+schema: cerebro-wisdom-control-binding/v0.1
+
+wisdom_control_binding:
+  id: CEREBRO-WISDOM-CONTROL-BINDING-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-005
+  kind: CONTRACT
+
+  purpose: >
+    Bind applicable Context-owned Wisdom evidence into MCP control resolution
+    without converting evidence counts, model inference, or prior experience
+    into Source authority.
+
+  ownership:
+    evidence_owner: context
+    applicability_assessor: context
+    control_resolver: MCP
+    source_authority_owner: Cerebro-Source
+
+  input:
+    evidence_schema_ref: engines/context/wisdom-evidence-schema.yaml
+    evidence_state_ref: engines/context/wisdom-evidence.yaml
+    authority: EVIDENCE_ONLY
+
+  applicability_contract:
+    required_inputs:
+      - current_objective
+      - current_scope
+      - current_failure_or_decision_state
+      - candidate_wisdom_profiles
+    output:
+      kind: wisdom-applicability-assessment
+      required_fields:
+        - assessment_id
+        - objective_ref
+        - applicable_profile_refs
+        - rejected_profile_refs
+        - basis_refs
+        - evidence_authority
+        - assessed_at
+
+    rules:
+      - scope-match-is-required
+      - subject-kind-CANDIDATE-never-exceeds-OBSERVE
+      - current-evidence-may-narrow-applicability
+      - applicability-does-not-promote-control-tier
+      - absence-of-retrieval-is-not-proof-of-no-applicable-wisdom
+
+  control_tier_binding:
+    OBSERVE:
+      effect: evidence-visible-no-control-effect
+    ADVISORY:
+      effect: include-in-control-basis-without-blocking
+    PREFLIGHT:
+      effect: preflight-check-required-before-selected-action
+      failure_outcome: REMEDIATE_OR_REORIENT_OR_BLOCK_AS_GOVERNING_BASIS_REQUIRES
+    GATE:
+      effect: gate-decision-required-before-selected-action
+      authoritative_basis_required: true
+      signal_counts_alone_sufficient: false
+      missing_authoritative_basis_effect: treat-as-non-gate-and-flag-governance-defect
+
+  mcp_binding:
+    control_state_field: applicable_wisdom_refs
+    control_decision_basis_includes_applicable_wisdom: true
+    wisdom_may_override_source: false
+    wisdom_may_create-authority: false
+
+  patch_005_minimum:
+    applicability_assessment_contract: REQUIRED
+    PREFLIGHT_binding: REQUIRED
+    GATE_binding: REQUIRED
+    automatic_retrieval: DEFERRED_PATCH_006
+    automatic_ranking: DEFERRED_PATCH_006
+    automatic_control_promotion: PROHIBITED
+    automatic_source_mutation: PROHIBITED
+
+  invariants:
+    - Context-owns-Wisdom-evidence
+    - MCP-resolves-control-effect
+    - Wisdom-evidence-remains-non-authoritative
+    - candidate-never-silently-becomes-governing
+    - GATE-requires-explicit-authoritative-basis
+    - signal-count-does-not-create-governance

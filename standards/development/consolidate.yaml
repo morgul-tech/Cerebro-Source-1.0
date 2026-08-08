@@ -15,7 +15,7 @@ consolidate:
   architecture:
     new_top_level_component: false
     owners:
-      dialog: ["recognize_intent", "resolve_selectors", "coordinate_existing_engines"]
+      interaction: ["recognize_intent", "resolve_selectors", "coordinate_existing_engines"]
       context: ["bounded_retrieval", "conversation_local_markers", "prioritized_context"]
       presentation: ["independent_output_budget", "semantic_preserving_compression", "decision_hierarchy"]
       validator: ["contract_integrity"]
@@ -170,3 +170,6 @@ consolidate:
     - "CONSOLIDATE A B C CONVO"
     - "CONSOLIDATE A B C 60m"
     - "CONSOLIDATE runtime A B 90m BUDGET=8m OUTPUT=COMPACT"
+
+  adaptive_quality_workform_ref: "standards/development/adaptive-quality-workform.yaml"
+  role_in_deep_workform: "evidence-consolidation-and-convergence-support"

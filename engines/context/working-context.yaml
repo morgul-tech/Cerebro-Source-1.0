@@ -1033,7 +1033,7 @@ working_context:
           - "standards/session-handoff-schema.yaml"
           - "standards/session-handoff.yaml"
           - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
-          - "tooling/loader/cerebro_resume.ps1"
+          - "tooling/runtime-host/cerebro_resume.ps1"
       provenance:
         introduced_by_ref: "PATCH-002.PRE-002"
         basis_refs:
@@ -1246,7 +1246,7 @@ working_context:
         introduced_by_ref: "PATCH-002.PRE-003"
         basis_refs:
           - "CEREBRO-HANDBOOT-001"
-          - "CONTRACT-HANDBOOT-RUNTIME-STATE"
+          - "CONTRACT-HANDBOOT-BOOTSTRAP-STATE"
       relations:
         supersedes_ref: null
         revokes_ref: null
@@ -2112,3 +2112,15 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
       - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
   next_sequence: 63
+patch_005_operational_architecture:
+  authority: NON_AUTHORITATIVE_WORKING_CONTEXT
+  current_control: MCP
+  current_interaction_engine: interaction
+  current_runtime_host: tooling/runtime-host
+  bootstrap_state_schema: standards/runtime/handboot-bootstrap-state-schema.yaml
+  runtime_0_1_contract: standards/runtime/runtime-0.1-contracts.yaml
+  user_operating_profile: standards/user-operating-profile.yaml
+  adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
+  wisdom_control_binding: standards/development/wisdom-control-binding.yaml
+  active_source_closure: standards/active-source-closure.yaml
+  publication_state: NOT_YET_SYNCED

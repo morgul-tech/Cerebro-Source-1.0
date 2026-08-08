@@ -317,7 +317,7 @@ session_handoff_validation:
     - standards/session-handoff-schema.yaml
     - standards/session-handoff.yaml
     - tooling/builder/templates/pshell/cerebro_handoff.ps1
-    - tooling/loader/cerebro_resume.ps1
+    - tooling/runtime-host/cerebro_resume.ps1
 
   required_contracts:
     - handoff_artifact_is_derived
@@ -349,15 +349,15 @@ session_handoff_validation:
 handboot_validation:
   introduced_by: PATCH-002.PRE-003
   contract_ref: standards/runtime/handboot.yaml
-  runtime_state_contract_ref: standards/runtime/handboot-runtime-state-schema.yaml
+  runtime_state_contract_ref: standards/runtime/handboot-bootstrap-state-schema.yaml
   severity: error
   owner: tooling.validator
 
   required_files:
     - standards/runtime/handboot.yaml
-    - standards/runtime/handboot-runtime-state-schema.yaml
-    - tooling/loader/cerebro_boot.ps1
-    - tooling/loader/cerebro_resume.ps1
+    - standards/runtime/handboot-bootstrap-state-schema.yaml
+    - tooling/runtime-host/cerebro_boot.ps1
+    - tooling/runtime-host/cerebro_resume.ps1
     - tooling/builder/templates/pshell/Cerebro.Tools.psd1
     - tooling/builder/templates/pshell/Cerebro.Tools.psm1
 
@@ -649,8 +649,8 @@ runtime_0_1_implementation_validation:
 
   required_files:
     - tooling/builder/cerebro_runtime_release.ps1
-    - tooling/loader/cerebro_runtime.ps1
-    - tooling/loader/cerebro_runtime_host.ps1
+    - tooling/runtime-host/cerebro_runtime.ps1
+    - tooling/runtime-host/cerebro_runtime_host.ps1
 
   required_contracts:
     - pinned_verified_release
@@ -687,8 +687,8 @@ patch_004_idea_object_pipeline_validation:
   required_files:
     - standards/runtime/idea-object-pipeline.yaml
     - tooling/builder/cerebro_runtime_release.ps1
-    - tooling/loader/cerebro_runtime.ps1
-    - tooling/loader/cerebro_runtime_host.ps1
+    - tooling/runtime-host/cerebro_runtime.ps1
+    - tooling/runtime-host/cerebro_runtime_host.ps1
 
   required_contracts:
     - declared_IDEA_CAPTURE_event
@@ -717,3 +717,25 @@ patch_004_idea_object_pipeline_validation:
     - autonomous_follow_up
     - new_runtime_subsystem
 # END PATCH-004 IDEA OBJECT PIPELINE VALIDATION
+active_source_closure_validation:
+  introduced_by: PATCH-005
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/active-source-closure.yaml
+  implementation_ref: tooling/validator/cerebro_active_source_closure.ps1
+
+  required_checks:
+    - expired_temporary_definition
+    - active_reference_to_superseded_path
+    - stale_generated_metadata
+    - duplicate_canonical_definition_key
+    - prohibited_active_legacy_path
+
+  required_closure_state:
+    - full_source_ASC_PASS_before_patch_close
+
+  prohibited:
+    - history_rewrite_as_cleanup
+    - generated_inventory_as_authority
+    - patch_close_with_ASC_fail
+    - fuzzy_semantic_claim_from_deterministic_validator_only

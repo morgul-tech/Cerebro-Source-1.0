@@ -10,7 +10,6 @@ responsibility:
 dependencies:
   build:
   - terminology
-  - core-rules
   runtime: []
 interfaces:
   input:
@@ -31,6 +30,8 @@ interfaces:
   - history
   - conflict
   - wisdom-evidence-profile
+  - wisdom-applicability-assessment
+  - applicable-wisdom-refs
   - wisdom-friction-state
   - consolidation-context
   - conversation-marker
@@ -54,6 +55,8 @@ migration:
 boundaries:
   must:
   - keep-wisdom-evidence-separate-from-governing-authority
+  - assess-wisdom-applicability
+  - preserve-wisdom-evidence-authority-boundary
   - use-event-driven-signal-capture
   - keep-micro-signal-storage-bounded
   - keep-conversation-markers-non-authoritative-and-conversation-local

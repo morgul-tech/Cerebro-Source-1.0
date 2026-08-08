@@ -17,7 +17,6 @@ boundaries:
 dependencies:
   build:
   - terminology
-  - core-rules
   runtime: []
 interfaces:
   exports:

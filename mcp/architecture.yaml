@@ -1,8 +1,8 @@
 schema: cerebro-architecture/v1
 architecture:
-  components:
+  top_level:
   - id: mcp
-    type: control-core
+    type: CONTROL
     required: true
   - id: engines
     type: processing-layer
@@ -13,44 +13,71 @@ architecture:
   - id: tooling
     type: build-and-distribution-layer
     required: true
+
+  active_component_topology:
+    control:
+    - mcp
+    engines:
+    - interaction
+    - context
+    - project
+    - quality
+    - presentation
+    modules:
+    - terminology
+    - visual-language
+    tooling:
+    - builder
+    - validator
+    - runtime-host
+    - publisher
+
+  topology_state:
+    dialog: SUPERSEDED_BY_INTERACTION
+    collaboration: SUPERSEDED_BY_INTERACTION
+    core-rules: DECOMPOSED_AND_SUPERSEDED
+    loader: SUPERSEDED_BY_RUNTIME_HOST
+    runtime-host: ACTIVE
+
 constraints:
   single_primary_responsibility: true
   defined_interfaces: true
   no_unregistered_components: true
+  no_new_top_level_component_when_existing_type_suffices: true
 rules:
 - id: MCP-020
   authority: constitutional
-  statement: Cerebro SKAL bestå av MCP, Engines, Modules og Tooling.
+  statement: Cerebro SKAL bestÃ¥ av MCP, Engines, Modules og Tooling.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 component topology normalization
 - id: MCP-021
   authority: constitutional
   statement: Hver komponent SKAL ha ett definert hovedansvar.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 component topology normalization
 - id: MCP-022
   authority: constitutional
   statement: En komponent SKAL IKKE overta et hovedansvar som er tildelt en annen komponent.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 component topology normalization
 - id: MCP-023
   authority: constitutional
   statement: Kommunikasjon mellom komponenter SKAL skje gjennom definerte grensesnitt.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 component topology normalization
 - id: MCP-024
   authority: constitutional
-  statement: Kun komponenter registrert i Cerebro Manifest SKAL inngå i en Cerebro Release.
+  statement: Kun komponenter registrert i Cerebro Manifest SKAL inngÃ¥ i en Cerebro Release.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 component topology normalization
 - id: MCP-025
   authority: constitutional
-  statement: Nye toppnivåkomponenter SKAL IKKE innføres dersom kravet kan løses innenfor eksisterende arkitektur.
+  statement: Nye toppnivÃ¥komponenter SKAL IKKE innfÃ¸res dersom kravet kan lÃ¸ses innenfor eksisterende arkitektur.
   provenance:
     type: approved-revision
-    basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+    basis: PATCH-005 component topology normalization

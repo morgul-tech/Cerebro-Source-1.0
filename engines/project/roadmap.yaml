@@ -122,8 +122,8 @@ roadmap:
       decision_refs:
         - "CTX-DEC-P1B-PRE003"
       source_refs:
-        - "tooling/loader/component.yaml"
-        - "tooling/loader/runtime-state-schema.yaml"
+        - "tooling/runtime-host/component.yaml"
+        - "tooling/runtime-host/runtime-state-schema.yaml"
     -
       id: "PATCH-001B.PRE-004"
       title: "project_state_lifecycle_and_physical_working_source_target"
@@ -225,8 +225,8 @@ roadmap:
         - "engines/context/rules.yaml"
         - "tooling/validator/component.yaml"
         - "tooling/validator/checks.yaml"
-        - "tooling/loader/component.yaml"
-        - "tooling/loader/runtime-state-schema.yaml"
+        - "tooling/runtime-host/component.yaml"
+        - "tooling/runtime-host/runtime-state-schema.yaml"
         - "tooling/builder/component.yaml"
         - "tooling/builder/builder.yaml"
         - "FILE_INVENTORY.json"
@@ -338,7 +338,7 @@ roadmap:
         - "standards/session-handoff-schema.yaml"
         - "standards/session-handoff.yaml"
         - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
-        - "tooling/loader/cerebro_resume.ps1"
+        - "tooling/runtime-host/cerebro_resume.ps1"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
         - "tooling/validator/checks.yaml"
@@ -356,7 +356,7 @@ roadmap:
         - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
       source_refs:
         - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
-        - "tooling/loader/cerebro_resume.ps1"
+        - "tooling/runtime-host/cerebro_resume.ps1"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
         - "engines/context/working-context.yaml"
         - "engines/project/roadmap.yaml"
@@ -386,9 +386,9 @@ roadmap:
         - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       source_refs:
         - "standards/runtime/handboot.yaml"
-        - "standards/runtime/handboot-runtime-state-schema.yaml"
-        - "tooling/loader/cerebro_boot.ps1"
-        - "tooling/loader/cerebro_resume.ps1"
+        - "standards/runtime/handboot-bootstrap-state-schema.yaml"
+        - "tooling/runtime-host/cerebro_boot.ps1"
+        - "tooling/runtime-host/cerebro_resume.ps1"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
         - "mcp/activation.yaml"
@@ -408,7 +408,7 @@ roadmap:
       source_refs:
         - "cerebro.yaml"
         - "standards/runtime/handboot.yaml"
-        - "tooling/loader/cerebro_boot.ps1"
+        - "tooling/runtime-host/cerebro_boot.ps1"
         - "tooling/validator/checks.yaml"
         - "engines/context/working-context.yaml"
         - "engines/project/roadmap.yaml"
@@ -624,8 +624,8 @@ roadmap:
       source_refs:
         - "standards/development/consolidate.yaml"
         - "standards/standards.yaml"
-        - "engines/dialog/component.yaml"
-        - "engines/dialog/rules.yaml"
+        - "engines/interaction/component.yaml"
+        - "engines/interaction/rules.yaml"
         - "engines/context/component.yaml"
         - "engines/context/rules.yaml"
         - "engines/presentation/component.yaml"
@@ -662,8 +662,8 @@ roadmap:
         - "standards/runtime/runtime-0.1-contracts.yaml"
         - "standards/development/reflective-adjustment-loop.yaml"
         - "tooling/builder/cerebro_runtime_release.ps1"
-        - "tooling/loader/cerebro_runtime.ps1"
-        - "tooling/loader/cerebro_runtime_host.ps1"
+        - "tooling/runtime-host/cerebro_runtime.ps1"
+        - "tooling/runtime-host/cerebro_runtime_host.ps1"
         - "tooling/validator/checks.yaml"
       implementation_constraints:
         - "implement_declared_contracts_only"
@@ -689,8 +689,8 @@ roadmap:
         - "standards/runtime/idea-object-pipeline.yaml"
         - "standards/standards.yaml"
         - "tooling/builder/cerebro_runtime_release.ps1"
-        - "tooling/loader/cerebro_runtime.ps1"
-        - "tooling/loader/cerebro_runtime_host.ps1"
+        - "tooling/runtime-host/cerebro_runtime.ps1"
+        - "tooling/runtime-host/cerebro_runtime_host.ps1"
         - "tooling/validator/checks.yaml"
       implementation_constraints:
         - "reuse_existing_runtime_0_1_kernel"
@@ -929,3 +929,44 @@ roadmap:
   revision:
     sequence: 18
     last_locked_patch_ref: "PATCH-004"
+
+patch_005_workform:
+  adaptive_quality_self_hosting: DEEP
+  decision_assurance_required: true
+  lock_readiness: READY_TO_LOCK
+  claim_calibration: CLAIM_SCOPE_LESS_THAN_OR_EQUAL_TO_VERIFIED_SCOPE
+patch_005_s7:
+  wisdom_binding_stage: P5-S7
+  wisdom_automation: DEFERRED_PATCH_006
+  architectural_regrounding_contract: standards/development/architectural-regrounding.yaml
+  wisdom_state_mutation_in_s7: false
+patch_005_asc:
+  asc_implementation_stage: P5-S8
+  legacy_cleanup_stage: P5-S9
+  cross_file_validation_stage: P5-S10
+  full_source_closure_stage: P5-S12
+  closure_requires_ASC_PASS: true
+patch_005_current_execution_state:
+  patch_ref: PATCH-005
+  scope: CEREBRO_OPERATIONAL_ARCHITECTURE_NORMALIZATION
+  source_state: LOCAL_WORKING_SOURCE_UNPUBLISHED
+  completed_stages:
+    - P5-S0
+    - P5-S1
+    - P5-S2
+    - P5-S3
+    - P5-S4
+    - P5-S5
+    - P5-S6
+    - P5-S7
+    - P5-S8
+  active_stage: P5-S9
+  next_stages:
+    - P5-S10
+    - P5-S11
+    - P5-S12
+    - P5-S13
+    - P5-S14
+  patch_006:
+    title: WISDOM_OPERATIONALIZATION_AND_ADAPTIVE_AUTOMATION
+    status: DEFERRED

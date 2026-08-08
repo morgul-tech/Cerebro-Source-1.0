@@ -13,19 +13,17 @@ mcp:
   path: mcp/
   manifest: mcp/manifest.yaml
   standard: standards/mcp.yaml
-  version: 1.0.0
-  level: 1
+  version: 1.1.0
+  component_kind: CONTROL
+  authority_scope: highest-internal-control
   default_state: active
   required: true
 engines:
-- id: dialog
-  path: engines/dialog/
+- id: interaction
+  path: engines/interaction/
   required: true
 - id: context
   path: engines/context/
-  required: true
-- id: collaboration
-  path: engines/collaboration/
   required: true
 - id: project
   path: engines/project/
@@ -40,28 +38,39 @@ modules:
 - id: terminology
   path: modules/terminology/
   required: true
-- id: core-rules
-  path: modules/core-rules/
-  required: true
+
 - id: visual-language
   path: modules/visual-language/
   required: true
 standards:
   manifest: standards/standards.yaml
   source_authority: standards/source-authority.yaml
+  system_lifecycle: standards/system-lifecycle.yaml
+  control_architecture: standards/control-architecture.yaml
+  user_operating_profile: standards/user-operating-profile.yaml
+  user_operating_profile_schema: standards/user-operating-profile-schema.yaml
+  system_metamodel: standards/system-metamodel.yaml
+  rule_model: standards/rule-model.yaml
+  canonical_definition_system: standards/canonical-definition-system.yaml
   publication_gate: standards/publication-gate.yaml
   quality_gate: standards/quality-gate.yaml
   valider_command: standards/valider-command.yaml
   patch_package: standards/patch-package.yaml
   operational_progress: standards/operational-progress.yaml
   project_status: standards/project-status.yaml
+  adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
+  wisdom_control_binding: standards/development/wisdom-control-binding.yaml
+  architectural_regrounding: standards/development/architectural-regrounding.yaml
+  active_source_closure: standards/active-source-closure.yaml
 tooling:
   builder: tooling/builder/
   validator: tooling/validator/
-  loader: tooling/loader/
+  runtime_host: tooling/runtime-host/
   publisher: tooling/publisher/
 governance:
   single_source_of_truth: true
+  definitional_authority: Cerebro Source 1.0
+  internal_control_authority: MCP
   write_once_authority: true
   implementation_disposable: true
   quality_gate_required_for_publication: true
@@ -70,6 +79,7 @@ governance:
   common_validation_entrypoint: valider
   control_layer: MCP
   mcp_default_state: active
+  mcp_deactivation_effect: exit-cerebro-controlled-operation
 integrity:
   manifest_checksum: null
 source_status:
