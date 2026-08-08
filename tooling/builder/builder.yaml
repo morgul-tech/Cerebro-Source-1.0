@@ -557,8 +557,45 @@ development_delivery_preflight:
       output:
         - one_self_running_local_script
       user_flow:
-        - obtain_from_verified_surface
-        - run
+        - obtain_exact_artifact_from_verified_surface
+        - use_cpatch_exact_file_execution_when_available
+        - return_terminal_patch_receipt
+      cpatch_execution_handoff:
+        introduced_by: PATCH-003.PRE-005
+        command_shape: "cpatch <exact_filename.ps1> <sha256>"
+        canonical_run_root: "D:\Cerebro\Run"
+        discovery_roots:
+          - "D:\Cerebro\Run"
+          - "current_user_windows_downloads"
+        requires:
+          - exact_filename
+          - full_sha256
+          - ps1_extension
+          - CEREBRO_artifact_filename
+          - file_under_declared_discovery_root
+          - sha256_match_before_execution
+          - powershell_parser_zero_errors
+        behavior:
+          - stage_verified_copy_to_canonical_run_root_when_downloaded_elsewhere
+          - unblock_file_when_supported
+          - execute_in_child_powershell_attached_to_same_visible_parent_terminal
+          - preserve_parent_terminal_after_child_exit
+          - expose_child_exit_code
+          - do_not_claim_patch_success_from_process_exit_alone
+        host_visibility:
+          environment_signal: CEREBRO_CPATCH_HOST
+          value: "1"
+          meaning: parent_user_terminal_is_preserved
+          generated_payload_may_skip_internal_ReadHost_when_signal_is_exactly_1: true
+        fallback_when_cpatch_unavailable:
+          - provide_one_copyable_exact_path_Unblock_File_and_execution_command
+        must_not:
+          - execute_latest_file
+          - use_wildcard_patch_selection
+          - scan_and_execute_arbitrary_ps1
+          - execute_without_digest_verification
+          - require_manual_file_relocation
+          - require_file_explorer_or_run_as_powershell
       prohibited:
         - archive_without_explicit_request
         - internal_only_artifact

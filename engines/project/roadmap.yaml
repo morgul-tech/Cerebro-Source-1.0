@@ -580,13 +580,44 @@ roadmap:
         - "no_runtime_subsystem_created"
         - "PATCH_003_returns_as_single_active_main_patch"
     -
+      id: "PATCH-003.PRE-005"
+      title: "level2_cpatch_execution_handoff"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-003.PRE-004"
+      decision_refs:
+        - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
+        - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
+        - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+      source_refs:
+        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
+        - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
+        - "tooling/builder/builder.yaml"
+        - "standards/development/streamlined-patch-workform.yaml"
+        - "tooling/validator/checks.yaml"
+        - "engines/context/wisdom-evidence.yaml"
+        - "engines/project/roadmap.yaml"
+      acceptance:
+        - "cpatch_requires_exact_filename_and_full_sha256"
+        - "cpatch_resolves_Run_or_standard_Downloads"
+        - "verified_download_is_staged_to_D_Cerebro_Run"
+        - "PowerShell_parser_runs_before_execution"
+        - "child_patch_cannot_close_parent_user_terminal"
+        - "assistant_can_deliver_one_pasteable_execution_command"
+        - "no_automatic_latest_file_execution"
+        - "no_browser_configuration_mutation"
+        - "Runtime_0_1_not_mutated"
+        - "PATCH_003_returns_ACTIVE_READY"
+    -
       id: "PATCH-003"
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-003.PRE-004"
+        - "PATCH-003.PRE-005"
       decision_refs:
         - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
         - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
@@ -796,5 +827,5 @@ roadmap:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
   revision:
-    sequence: 13
-    last_locked_patch_ref: "PATCH-003.PRE-004"
+    sequence: 14
+    last_locked_patch_ref: "PATCH-003.PRE-005"

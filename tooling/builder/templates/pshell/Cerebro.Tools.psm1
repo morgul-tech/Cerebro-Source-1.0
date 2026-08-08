@@ -325,17 +325,337 @@ function cerebro_receive {
     )
 }
 
+function Get-CerebroDownloadsDirectory {
+    $downloads = $null
+
+    try {
+        $key = Get-ItemProperty `
+            -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders' `
+            -ErrorAction Stop
+
+        $raw = $key.'{374DE290-123F-4565-9164-39C4925E467B}'
+
+        if (-not [string]::IsNullOrWhiteSpace([string]$raw)) {
+            $downloads =
+                [Environment]::ExpandEnvironmentVariables(
+                    [string]$raw
+                )
+        }
+    }
+    catch {}
+
+    if ([string]::IsNullOrWhiteSpace($downloads)) {
+        $downloads = Join-Path $env:USERPROFILE 'Downloads'
+    }
+
+    return [IO.Path]::GetFullPath($downloads)
+}
+
+function Test-CerebroPathUnderRoot {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+
+        [Parameter(Mandatory)]
+        [string]$Root
+    )
+
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    $fullRoot = [IO.Path]::GetFullPath($Root).TrimEnd('\')
+
+    return (
+        $fullPath.Equals(
+            $fullRoot,
+            [StringComparison]::OrdinalIgnoreCase
+        ) -or
+        $fullPath.StartsWith(
+            $fullRoot + '\',
+            [StringComparison]::OrdinalIgnoreCase
+        )
+    )
+}
+
+function Get-CerebroFileSha256 {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path
+    )
+
+    $bytes = [IO.File]::ReadAllBytes($Path)
+    Get-CerebroSha256 -Bytes $bytes
+}
+
+function cpatch {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FileName,
+
+        [Parameter(Mandatory, Position=1)]
+        [ValidatePattern('^[A-Fa-f0-9]{64}$')]
+        [string]$Sha256,
+
+        [string]$RunRoot = 'D:\Cerebro\Run'
+    )
+
+    $ErrorActionPreference = 'Stop'
+
+    $expectedHash = $Sha256.ToLowerInvariant()
+    $runRootFull = [IO.Path]::GetFullPath($RunRoot)
+    [IO.Directory]::CreateDirectory($runRootFull) | Out-Null
+
+    $downloadsRoot = Get-CerebroDownloadsDirectory
+
+    $leaf = [IO.Path]::GetFileName($FileName)
+
+    if (
+        [string]::IsNullOrWhiteSpace($leaf) -or
+        [IO.Path]::GetExtension($leaf) -ne '.ps1'
+    ) {
+        throw 'CPATCH_FILE_MUST_BE_PS1'
+    }
+
+    if ($leaf -notmatch '^CEREBRO_[A-Za-z0-9_.-]+\.ps1$') {
+        throw 'CPATCH_FILENAME_NOT_CEREBRO_ARTIFACT'
+    }
+
+    $candidates = @()
+
+    if ([IO.Path]::IsPathRooted($FileName)) {
+        $fullRequested = [IO.Path]::GetFullPath($FileName)
+
+        $allowed = (
+            (Test-CerebroPathUnderRoot -Path $fullRequested -Root $runRootFull) -or
+            (Test-CerebroPathUnderRoot -Path $fullRequested -Root $downloadsRoot)
+        )
+
+        if (-not $allowed) {
+            throw 'CPATCH_ROOTED_PATH_OUTSIDE_ALLOWED_ROOTS'
+        }
+
+        if (Test-Path -LiteralPath $fullRequested -PathType Leaf) {
+            $candidates += $fullRequested
+        }
+    }
+    else {
+        if ($FileName -ne $leaf) {
+            throw 'CPATCH_RELATIVE_SUBPATH_NOT_ALLOWED'
+        }
+
+        $runCandidate = Join-Path $runRootFull $leaf
+        $downloadCandidate = Join-Path $downloadsRoot $leaf
+
+        if (Test-Path -LiteralPath $runCandidate -PathType Leaf) {
+            $candidates += $runCandidate
+        }
+
+        if (
+            -not $downloadCandidate.Equals(
+                $runCandidate,
+                [StringComparison]::OrdinalIgnoreCase
+            ) -and
+            (Test-Path -LiteralPath $downloadCandidate -PathType Leaf)
+        ) {
+            $candidates += $downloadCandidate
+        }
+    }
+
+    $candidates = @($candidates | Select-Object -Unique)
+
+    if ($candidates.Count -eq 0) {
+        throw (
+            'CPATCH_FILE_NOT_FOUND:' +
+            $leaf +
+            ':RUN=' + $runRootFull +
+            ':DOWNLOADS=' + $downloadsRoot
+        )
+    }
+
+    $matching = @()
+
+    foreach ($candidate in $candidates) {
+        $actual = Get-CerebroFileSha256 -Path $candidate
+
+        if ($actual -eq $expectedHash) {
+            $matching += $candidate
+        }
+    }
+
+    if ($matching.Count -eq 0) {
+        throw 'CPATCH_SHA256_MISMATCH'
+    }
+
+    $sourcePath = $null
+    $runExact = Join-Path $runRootFull $leaf
+
+    foreach ($candidate in $matching) {
+        if (
+            [IO.Path]::GetFullPath($candidate).Equals(
+                [IO.Path]::GetFullPath($runExact),
+                [StringComparison]::OrdinalIgnoreCase
+            )
+        ) {
+            $sourcePath = $candidate
+            break
+        }
+    }
+
+    if (-not $sourcePath) {
+        $sourcePath = $matching[0]
+    }
+
+    $stagedPath = $runExact
+
+    if (
+        -not (
+            [IO.Path]::GetFullPath($sourcePath).Equals(
+                [IO.Path]::GetFullPath($stagedPath),
+                [StringComparison]::OrdinalIgnoreCase
+            )
+        )
+    ) {
+        if (Test-Path -LiteralPath $stagedPath -PathType Leaf) {
+            $existingHash = Get-CerebroFileSha256 -Path $stagedPath
+
+            if ($existingHash -ne $expectedHash) {
+                throw 'CPATCH_RUN_DESTINATION_CONFLICT'
+            }
+        }
+        else {
+            $temporary = Join-Path $runRootFull (
+                '.' + $leaf + '.stage-' +
+                [guid]::NewGuid().ToString('N')
+            )
+
+            try {
+                Copy-Item `
+                    -LiteralPath $sourcePath `
+                    -Destination $temporary `
+                    -Force
+
+                $temporaryHash =
+                    Get-CerebroFileSha256 -Path $temporary
+
+                if ($temporaryHash -ne $expectedHash) {
+                    throw 'CPATCH_STAGE_HASH_MISMATCH'
+                }
+
+                [IO.File]::Move(
+                    $temporary,
+                    $stagedPath
+                )
+            }
+            finally {
+                if (Test-Path -LiteralPath $temporary) {
+                    Remove-Item `
+                        -LiteralPath $temporary `
+                        -Force `
+                        -ErrorAction SilentlyContinue
+                }
+            }
+        }
+    }
+
+    $finalHash = Get-CerebroFileSha256 -Path $stagedPath
+
+    if ($finalHash -ne $expectedHash) {
+        throw 'CPATCH_FINAL_HASH_MISMATCH'
+    }
+
+    try {
+        Unblock-File `
+            -LiteralPath $stagedPath `
+            -ErrorAction SilentlyContinue
+    }
+    catch {}
+
+    $tokens = $null
+    $parseErrors = $null
+
+    [Management.Automation.Language.Parser]::ParseFile(
+        $stagedPath,
+        [ref]$tokens,
+        [ref]$parseErrors
+    ) | Out-Null
+
+    if ($parseErrors.Count -gt 0) {
+        $parseMessage = (
+            $parseErrors |
+                ForEach-Object { $_.Message }
+        ) -join ' | '
+
+        throw ('CPATCH_POWERSHELL_PARSE_FAILED:' + $parseMessage)
+    }
+
+    $powershell = (
+        Get-Command powershell.exe -ErrorAction Stop |
+            Select-Object -First 1
+    ).Source
+
+    $childArgs = @(
+        '-NoLogo',
+        '-NoProfile',
+        '-ExecutionPolicy',
+        'Bypass',
+        '-File',
+        $stagedPath
+    )
+
+    $priorCpatchHost = $env:CEREBRO_CPATCH_HOST
+    $oldPreference = $ErrorActionPreference
+    $childExit = $null
+
+    try {
+        $env:CEREBRO_CPATCH_HOST = '1'
+        $ErrorActionPreference = 'Continue'
+
+        & $powershell @childArgs
+        $childExit = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $oldPreference
+
+        if ($null -eq $priorCpatchHost) {
+            Remove-Item Env:CEREBRO_CPATCH_HOST `
+                -ErrorAction SilentlyContinue
+        }
+        else {
+            $env:CEREBRO_CPATCH_HOST = $priorCpatchHost
+        }
+    }
+
+    if ($childExit -ne 0) {
+        throw ('CPATCH_CHILD_EXIT_NOT_ZERO:' + $childExit)
+    }
+
+    [ordered]@{
+        state = 'CPATCH_PROCESS_COMPLETED'
+        file = $leaf
+        staged_path = $stagedPath
+        sha256 = $finalHash
+        parse_valid = $true
+        child_exit_code = $childExit
+        parent_terminal_preserved = $true
+        patch_success_claimed = $false
+        next_action = 'RETURN_PATCH_RECEIPT_TO_ASSISTANT'
+    } | ConvertTo-Json -Compress
+}
+
 function cerebro_tools_status {
     $config = Get-CerebroToolsConfig
 
     [pscustomobject]@{
-        module_version = '1.0.0'
+        module_version = '1.1.0'
         module_path = $PSScriptRoot
         config_path = 'D:\Cerebro\Config\Cerebro.Tools.json'
         working_source_path = $config.working_source_path
         scripts_root = $config.scripts_root
         cerebro_receive = [bool](
             Get-Command cerebro_receive -ErrorAction SilentlyContinue
+        )
+        cpatch = [bool](
+            Get-Command cpatch -ErrorAction SilentlyContinue
         )
         cerebro_sync = [bool](
             Get-Command cerebro_sync -ErrorAction SilentlyContinue
@@ -493,4 +813,4 @@ function bootini {
     bootCerebro @PSBoundParameters
 }
 Export-ModuleMember `
-    -Function cerebro_receive, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, bootini, cerebro_tools_status
+    -Function cerebro_receive, cpatch, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, bootini, cerebro_tools_status

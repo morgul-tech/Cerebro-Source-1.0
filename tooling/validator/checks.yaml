@@ -561,3 +561,44 @@ semantic_anchor_preflight_validation:
     - reject_generic_anchor_when_object_identity_known
 
 # END PATCH-003.PRE-004 ADAPTIVE WISDOM EVIDENCE VALIDATION
+# BEGIN PATCH-003.PRE-005 CPATCH EXECUTION HANDOFF VALIDATION
+
+cpatch_execution_handoff_validation:
+  introduced_by: PATCH-003.PRE-005
+  severity: error
+  owner: tooling.validator
+  command: cpatch
+  module_ref: tooling/builder/templates/pshell/Cerebro.Tools.psm1
+  manifest_ref: tooling/builder/templates/pshell/Cerebro.Tools.psd1
+
+  required_contracts:
+    - exact_filename
+    - full_sha256
+    - canonical_run_root
+    - current_user_downloads_discovery
+    - allowed_root_enforcement
+    - verified_staging_to_run_root
+    - powershell_parse_before_execution
+    - unblock_when_supported
+    - child_process_execution
+    - parent_terminal_preservation
+    - child_exit_code_capture
+    - patch_success_not_inferred_from_process_exit
+
+  required_user_flow:
+    - download_exact_artifact
+    - paste_one_cpatch_command
+    - return_patch_receipt
+
+  prohibited:
+    - latest_file_execution
+    - wildcard_patch_selection
+    - arbitrary_ps1_scan_and_execute
+    - digest_optional_for_cpatch
+    - manual_file_relocation_required
+    - file_explorer_required
+    - right_click_run_as_powershell_required
+    - parent_terminal_exit_by_child
+    - process_exit_promoted_to_patch_verification
+
+# END PATCH-003.PRE-005 CPATCH EXECUTION HANDOFF VALIDATION

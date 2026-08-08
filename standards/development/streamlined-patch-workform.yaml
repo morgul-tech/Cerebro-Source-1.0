@@ -394,6 +394,34 @@ streamlined_patch_workform:
       incident_ref: "PATCH-003.PRE-003-R1-ROADMAP_DEPENDENCY_INVALID"
       corrected_ref: "PATCH-003.PRE-003-R2-OBJECT_BOUND_ANCHOR_SUCCESS"
       friction_after_adjustment: "NORMAL"
+  level2_execution_handoff:
+    introduced_by: "PATCH-003.PRE-005"
+    objective: "minimize user actions between verified artifact access and local patch execution"
+    preferred_command: "cpatch <exact_filename.ps1> <sha256>"
+    canonical_run_root: "D:\Cerebro\Run"
+    interaction_target:
+      normal_user_actions_after_artifact_download:
+        - "paste_one_exact_execution_command"
+      eliminate_when_cpatch_available:
+        - "manual_folder_navigation"
+        - "manual_file_relocation"
+        - "right_click_run_as_powershell"
+        - "search_for_latest_patch"
+    safety:
+      - "exact_file_identity_required"
+      - "full_digest_required"
+      - "allowed_roots_only"
+      - "parser_validation_before_execution"
+      - "parent_terminal_preserved"
+      - "process_completion_does_not_equal_patch_verification"
+    host_behavior:
+      - "cpatch_executes_child_process_in_existing_user_terminal"
+      - "CEREBRO_CPATCH_HOST_1_allows_child_payload_to_skip_redundant_pause"
+      - "direct_or_double_click_execution_keeps_existing_pause_requirement"
+    assistant_delivery_behavior:
+      - "when_cpatch_is_verified_available_emit_exact_cpatch_command_with_artifact_sha256"
+      - "do_not_require_user_to_reconstruct_filename_or_hash"
+      - "fallback_to_one_copyable_exact_execution_command_if_cpatch_is_unavailable"
   runtime_0_1_relevance:
     required_application:
       - "lock_minimal_runtime_scope_before implementation"
