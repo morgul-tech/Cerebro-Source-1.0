@@ -1673,6 +1673,77 @@ working_context:
         derived_from_refs:
           - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
       sequence: 54
+    -
+      id: "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+      type: "WISDOM_RECORD"
+      scope: "WISDOM-LEARNING-FEEDBACK-AND-GOVERNANCE"
+      statement: "Cerebro shall capture small reusable experience at low cost, preserve support and friction as separate evidence, and require stronger evidence before increasing governing force; repeated conflict with valid Wisdom triggers review of placement or control before duplicate Wisdom or new rules."
+      payload:
+        maturity: "CONFIRMED_USER_APPROVED_ARCHITECTURE"
+        assessment:
+          observations:
+            - "small useful lessons can disappear if only held in conversation reasoning"
+            - "self-correction is positive but repeated starts toward a known bad direction remain valuable friction evidence"
+            - "positive reuse and repeated conflict answer different questions and must remain separate"
+            - "full Wisdom records are too heavy for every micro-observation"
+          analysis:
+            primary_model: "LOW_CAPTURE_THRESHOLD_HIGH_GOVERNANCE_THRESHOLD"
+            evidence_layer: "LIGHTWEIGHT_AGGREGATED_PROFILES"
+            friction_model: "NORMAL_WATCH_REVIEW_ESCALATE"
+            control_model: "OBSERVE_ADVISORY_PREFLIGHT_GATE"
+            maturity_model: "CANDIDATE_PROVISIONAL_CONFIRMED"
+            governing_constraint: "EVIDENCE_NEVER_AUTOMATICALLY_CREATES_AUTHORITY"
+            preferred_review_order:
+              - "placement"
+              - "scope"
+              - "merge"
+              - "control-strength"
+              - "supersession"
+            efficiency:
+              - "event-driven-not-continuous"
+              - "bounded-recent-signals"
+              - "aggregate-counts"
+              - "piggyback-low-impact-persistence"
+              - "compact-or-silent-user-surface"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-003.PRE-004"
+        relevance:
+          domains:
+            - "refine"
+            - "critique"
+            - "context"
+            - "wisdom"
+            - "patch-selection"
+            - "development-governance"
+            - "interaction-efficiency"
+          trigger_patterns:
+            - "refine_changes_direction_due_to_known_lesson"
+            - "repeated_conflict_with_existing_wisdom"
+            - "small_reusable_observation"
+            - "user_correction_of_known_pattern"
+            - "positive_reuse_of_existing_wisdom"
+        traceability:
+          source_type: "USER_APPROVED_DEEP_REFINE"
+          conversation_date: "2026-08-08"
+          architecture_ref: "PATCH-003.PRE-004"
+          policy_ref: "standards/development/reflective-adjustment-loop.yaml"
+          state_ref: "engines/context/wisdom-evidence.yaml"
+          explicit_user_requirement:
+            - "small_lessons_must_have_a_path_to_persistence"
+            - "system_must_not_become_heavier_or_less_user_friendly"
+            - "repeated_known_traps_should_raise_an_alarm_for_review"
+      provenance:
+        introduced_by_ref: "PATCH-003.PRE-004"
+        basis_refs:
+          - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+          - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+          - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+      sequence: 55
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1730,4 +1801,5 @@ working_context:
       - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
-  next_sequence: 55
+      - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+  next_sequence: 56

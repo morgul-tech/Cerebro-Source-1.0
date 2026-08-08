@@ -3,10 +3,10 @@ component:
   id: context
   name: Context Engine
   type: engine
-  version: 1.0.0
+  version: 1.1.0
   status: active-source
 responsibility:
-  primary: Forvalte aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger og historikk.
+  primary: Forvalte aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger, historikk og lettvekts evidens rundt Wisdom.
 dependencies:
   build:
   - terminology
@@ -20,6 +20,7 @@ interfaces:
   - basis-candidate
   - history-entry
   - override
+  - wisdom-signal
   output:
   - active-context
   - current-basis
@@ -27,8 +28,15 @@ interfaces:
   - decision-state
   - history
   - conflict
+  - wisdom-evidence-profile
+  - wisdom-friction-state
 rules:
   path: rules.yaml
+state:
+  wisdom_evidence:
+    path: wisdom-evidence.yaml
+    schema: wisdom-evidence-schema.yaml
+    authority: evidence-only
 documentation:
   path: specification.md
 migration:
@@ -40,8 +48,14 @@ migration:
   - 3.6.2
   - 3.6.3
 boundaries:
-  must: []
-  must_not: []
+  must:
+  - keep-wisdom-evidence-separate-from-governing-authority
+  - use-event-driven-signal-capture
+  - keep-micro-signal-storage-bounded
+  must_not:
+  - create-parallel-learning-engine
+  - auto-promote-wisdom-from-signal-count
+  - auto-mutate-source-from-evidence-threshold
 version:
-  component: 1.0.0
+  component: 1.1.0
   schema: 1

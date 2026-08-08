@@ -1,4 +1,4 @@
-schema: "cerebro-reflective-adjustment-loop/v0.1"
+schema: "cerebro-reflective-adjustment-loop/v0.2"
 
 reflective_adjustment_loop:
   id: "CEREBRO-REFLECTIVE-ADJUSTMENT-LOOP-001"
@@ -6,10 +6,10 @@ reflective_adjustment_loop:
   maturity: "PROCESS_GOVERNANCE_STANDARD"
 
   definition: >
-    Significant outcomes, failures, corrections and recurring inefficiencies
-    are evaluated against observed evidence, explicit assumptions and governing
-    contracts. Necessary reactive safeguards are applied first, followed by
-    selection of the smallest justified adjustment.
+    Significant outcomes, failures, corrections, recurring inefficiencies and
+    small reusable experiential signals are evaluated against observed evidence,
+    explicit assumptions and governing contracts. Necessary reactive safeguards
+    are applied first, followed by the smallest justified adjustment.
 
   stages:
     - "REACTIVE_SAFEGUARD"
@@ -24,7 +24,134 @@ reflective_adjustment_loop:
     - "PROCESS_ADJUSTMENT"
     - "PROVISIONAL_GUARD"
     - "WISDOM_CANDIDATE"
+    - "WISDOM_REPOSITION"
+    - "WISDOM_CONTROL_REVIEW"
+    - "WISDOM_MERGE_REVIEW"
+    - "WISDOM_SUPERSEDE_REVIEW"
     - "REORIENTATION_REQUIRED"
+
+  wisdom_evidence_feedback:
+    introduced_by: "PATCH-003.PRE-004"
+    owner: "context-engine"
+    schema_ref: "engines/context/wisdom-evidence-schema.yaml"
+    state_ref: "engines/context/wisdom-evidence.yaml"
+    authority: "EVIDENCE_ONLY"
+
+    governing_principle: >
+      Cerebro shall use a low threshold for capturing useful experience and a
+      higher threshold for increasing governing force. Evidence that a Wisdom
+      item is useful and evidence that Cerebro repeatedly conflicts with that
+      Wisdom are separate dimensions and must not cancel each other.
+
+    capture_mode: "EVENT_DRIVEN"
+    capture_triggers:
+      - "significant-outcome"
+      - "failure-or-correction"
+      - "refine-or-critique-changes-direction"
+      - "user-correction"
+      - "validator-or-execution-failure"
+      - "clear-positive-reuse-of-existing-wisdom"
+      - "new-reusable-pattern"
+
+    signal_model:
+      kinds:
+        - "SUPPORT"
+        - "CONFLICT"
+        - "CONTRADICTION"
+        - "NOVEL_PATTERN"
+      origins:
+        - "REFINE"
+        - "CRITIQUE"
+        - "USER_CORRECTION"
+        - "VALIDATOR"
+        - "EXECUTION"
+        - "VERIFICATION"
+      impacts:
+        - "LOW"
+        - "MEDIUM"
+        - "HIGH"
+      resolutions:
+        - "PREVENTED"
+        - "CORRECTED"
+        - "ESCAPED"
+        - "NOT_APPLICABLE"
+
+    evidence_maturity:
+      states:
+        - "CANDIDATE"
+        - "PROVISIONAL"
+        - "CONFIRMED"
+      rule: "evidence-maturity-does-not-automatically-set-control-tier"
+
+    control_tiers:
+      states:
+        - "OBSERVE"
+        - "ADVISORY"
+        - "PREFLIGHT"
+        - "GATE"
+      rules:
+        - "candidate-subjects-remain-OBSERVE-until-promoted-to-Wisdom"
+        - "GATE-requires-explicit-authoritative-basis"
+        - "signal-counts-never-automatically-increase-control-tier"
+
+    friction:
+      states:
+        - "NORMAL"
+        - "WATCH"
+        - "REVIEW"
+        - "ESCALATE"
+      transition_rules:
+        - "first-low-impact-CONFLICT-resolved-PREVENTED-may-move-NORMAL-to-WATCH"
+        - "repeated-CONFLICT-while-WATCH-moves-to-REVIEW"
+        - "MEDIUM-or-HIGH-CONFLICT-or-CORRECTED-or-ESCAPED-conflict-moves-to-REVIEW"
+        - "USER_CORRECTION-or-VALIDATOR-conflict-moves-to-REVIEW"
+        - "CONTRADICTION-moves-to-REVIEW-without-automatic-demotion"
+        - "same-family-CONFLICT-after-completed-REVIEW-and-effect-verification-moves-to-ESCALATE"
+        - "successful-adjustment-and-effect-verification-may-return-friction-to-NORMAL-with-history-preserved"
+
+    review_actions:
+      allowed:
+        - "NO_CHANGE"
+        - "REPOSITION"
+        - "PROMOTE_CONTROL"
+        - "NARROW_SCOPE"
+        - "MERGE"
+        - "SUPERSEDE_REVIEW"
+        - "DEMOTE_REVIEW"
+      priority:
+        - "check-placement-before-creating-new-Wisdom"
+        - "check-existing-Wisdom-before-new-rule"
+        - "prefer-reposition-or-scope-correction-before-harder-control"
+        - "increase-control-only-when-evidence-justifies-it"
+
+    persistence_efficiency:
+      - "aggregate-counts-instead-of-unbounded-event-log"
+      - "retain-at-most-five-recent-signals-per-profile"
+      - "keep-detailed-evidence-by-reference"
+      - "piggyback-low-impact-evidence-on-next-eligible-Source-transaction"
+      - "do-not-create-standalone-patch-solely-for-low-impact-micro-signal"
+      - "flush-REVIEW-or-ESCALATE-state-at-next-safe-governance-checkpoint"
+      - "do-not-run-Wisdom-evaluation-on-every-thought"
+
+    user_experience:
+      default_visibility: "COMPACT_OR_SILENT"
+      compact_examples:
+        - "Wisdom: signal captured; no governance change."
+        - "Wisdom: evidence updated; no action required."
+      explain_when:
+        - "review-changes-current-direction"
+        - "control-tier-change-is-recommended"
+        - "user-decision-is-materially-required"
+
+    prohibited:
+      - "single-net-Wisdom-score-as-lossy-authority"
+      - "positive-support-cancelling-recorded-friction"
+      - "automatic-Wisdom-promotion"
+      - "automatic-rule-creation-from-threshold"
+      - "automatic-Source-mutation"
+      - "parallel-learning-engine"
+      - "unbounded-micro-signal-history"
+      - "hard-block-on-first-low-impact-conflict"
 
   verification_scope:
     principle: >
@@ -76,11 +203,14 @@ reflective_adjustment_loop:
     automatic_wisdom_promotion: false
     automatic_source_mutation: false
     provisional_guard_authority: "SESSION_LOCAL_NON_AUTHORITATIVE"
+    low_impact_signal_flush: "NEXT_ELIGIBLE_SOURCE_TRANSACTION"
+    review_signal_flush: "NEXT_SAFE_GOVERNANCE_CHECKPOINT"
 
   boundary:
     current_form: "PROCESS_AND_GOVERNANCE_STANDARD"
     PATCH_003_scope_expansion: false
     runtime_subsystem_created: false
+    learning_engine_created: false
 
   incident_basis:
     - "HANDOFF_SCHEMA_ASSUMPTION"
@@ -90,3 +220,6 @@ reflective_adjustment_loop:
     - "HANDOFF_COMMAND_NAME_ASSUMPTION"
     - "NATIVE_STDERR_STDOUT_CHANNEL_COLLISION"
     - "NEWLINE_SENSITIVE_STRUCTURED_REPLACEMENT"
+    - "LEVEL2_CHAT_SURFACE_MISCLASSIFICATION"
+    - "REPEATED_MECHANISM_ESCALATION_BEFORE_SIMPLE_TROUBLESHOOTING"
+    - "PATCH_PRE003_GENERIC_ROADMAP_ANCHOR_FAILURE"

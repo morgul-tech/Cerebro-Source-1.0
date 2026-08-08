@@ -349,6 +349,51 @@ streamlined_patch_workform:
       - "user-can-read-terminal-failure-before-window-exit"
       - "user-can-read-terminal-success-before-window-exit"
       - "existing-interactive-shell-is-never-closed-by-payload"
+  wisdom_evidence_integration:
+    introduced_by: "PATCH-003.PRE-004"
+    policy_ref: "standards/development/reflective-adjustment-loop.yaml"
+    state_ref: "engines/context/wisdom-evidence.yaml"
+    objective: "capture reusable experience cheaply without making normal patch work heavier"
+    evaluate_only_on:
+      - "RAL-triggered-event"
+      - "clear-positive-reuse"
+      - "refine-or-critique-direction-change"
+    required:
+      - "separate-support-from-friction"
+      - "capture-conflict-even-when-self-corrected"
+      - "prefer-existing-Wisdom-subject-ref"
+      - "use-CANDIDATE-subject-for-small-unpromoted-pattern"
+      - "keep-control-tier-independent-from-evidence-maturity"
+      - "review-repeated-friction-before-creating-new-Wisdom-or-rule"
+    persistence:
+      - "batch-low-impact-signals"
+      - "piggyback-on-next-eligible-Source-transaction"
+      - "do-not-create-standalone-PRE-patch-for-micro-signal-alone"
+      - "persist-REVIEW-or-ESCALATE-at-next-safe-governance-checkpoint"
+    user_surface:
+      - "micro-signal-capture-may-be-silent"
+      - "compact-confirmation-is-sufficient-when-visible"
+      - "explain-only-when-governance-or-current-direction-changes"
+    prohibited:
+      - "continuous-Wisdom-scanning"
+      - "one-net-score"
+      - "automatic-promotion"
+      - "automatic-rule-generation"
+      - "automatic-Source-mutation"
+
+  semantic_anchor_preflight:
+    introduced_by: "PATCH-003.PRE-004"
+    derived_from_ref: "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+    purpose: "move known structured-mutation Wisdom earlier after repeated friction"
+    required_before_structured_text_mutation:
+      - "bind-anchor-to-object-identity"
+      - "include-neighboring-semantic-fields-when-needed-for-uniqueness"
+      - "verify-exactly-one-object-bound-match"
+      - "reject-generic-global-token-anchor-when-semantic-object-is-known"
+    effect_verification:
+      incident_ref: "PATCH-003.PRE-003-R1-ROADMAP_DEPENDENCY_INVALID"
+      corrected_ref: "PATCH-003.PRE-003-R2-OBJECT_BOUND_ANCHOR_SUCCESS"
+      friction_after_adjustment: "NORMAL"
   runtime_0_1_relevance:
     required_application:
       - "lock_minimal_runtime_scope_before implementation"

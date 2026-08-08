@@ -551,13 +551,42 @@ roadmap:
         - "manual_single_native_argument_string_removed"
         - "PATCH_003_remains_active_and_unmodified"
     -
+      id: "PATCH-003.PRE-004"
+      title: "adaptive_wisdom_evidence_and_friction_feedback"
+      phase_ref: "PHASE-1"
+      milestone_ref: "MS-002"
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-003.PRE-003"
+      decision_refs:
+        - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+      source_refs:
+        - "standards/development/reflective-adjustment-loop.yaml"
+        - "engines/context/component.yaml"
+        - "engines/context/wisdom-evidence-schema.yaml"
+        - "engines/context/wisdom-evidence.yaml"
+        - "standards/development/streamlined-patch-workform.yaml"
+        - "tooling/validator/checks.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+      acceptance:
+        - "low_threshold_signal_capture_is_bounded_and_event_driven"
+        - "support_and_friction_are_independent"
+        - "evidence_maturity_and_control_tier_are_independent"
+        - "repeated_friction_triggers_review_not_automatic_rule_creation"
+        - "canonical_structure_wisdom_is_repositioned_to_preflight"
+        - "micro_signal_persistence_does_not_require_standalone_patch"
+        - "no_parallel_learning_engine_created"
+        - "no_runtime_subsystem_created"
+        - "PATCH_003_returns_as_single_active_main_patch"
+    -
       id: "PATCH-003"
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-003.PRE-003"
+        - "PATCH-003.PRE-004"
       decision_refs:
         - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
         - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
@@ -767,5 +796,5 @@ roadmap:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
   revision:
-    sequence: 12
-    last_locked_patch_ref: "PATCH-003.PRE-003"
+    sequence: 13
+    last_locked_patch_ref: "PATCH-003.PRE-004"

@@ -1,0 +1,172 @@
+schema: "cerebro-wisdom-evidence/v0.1"
+wisdom_evidence:
+  id: "CEREBRO-WISDOM-EVIDENCE-STATE-001"
+  owner: "context-engine"
+  authority: "EVIDENCE_ONLY"
+  policy_ref: "standards/development/reflective-adjustment-loop.yaml"
+  capture_mode: "EVENT_DRIVEN"
+
+  profiles:
+    -
+      id: "WEP-CANONICAL-STRUCTURE-001"
+      subject_ref: "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
+      subject_kind: "WISDOM"
+      scope: "STRUCTURED-ARTIFACT-VALIDATION-AND-MUTATION"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 2
+        conflict_prevented: 0
+        conflict_corrected: 0
+        conflict_escaped: 1
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-003.PRE-004"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "PATCH-003.PRE-003-R1-ROADMAP_DEPENDENCY_INVALID"
+          kind: "CONFLICT"
+          origin: "EXECUTION"
+          impact: "MEDIUM"
+          resolution: "ESCAPED"
+        -
+          ref: "PATCH-003.PRE-003-R2-OBJECT_BOUND_ANCHOR_SUCCESS"
+          kind: "SUPPORT"
+          origin: "VERIFICATION"
+          impact: "MEDIUM"
+          resolution: "NOT_APPLICABLE"
+      pending_action: "NONE"
+
+    -
+      id: "WEP-TROUBLESHOOTING-FIRST-001"
+      subject_ref: "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      subject_kind: "WISDOM"
+      scope: "CAPABILITY-FAILURE-DIAGNOSIS-AND-DELIVERY-RECOVERY"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 2
+        conflict_prevented: 0
+        conflict_corrected: 2
+        conflict_escaped: 0
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-003.PRE-002"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "LEVEL2-LIBRARY-DIAGNOSTIC-2026-08-08"
+          kind: "SUPPORT"
+          origin: "VERIFICATION"
+          impact: "HIGH"
+          resolution: "NOT_APPLICABLE"
+        -
+          ref: "PRE002-TROUBLESHOOTING-FIRST-LOCK"
+          kind: "SUPPORT"
+          origin: "CRITIQUE"
+          impact: "MEDIUM"
+          resolution: "CORRECTED"
+      pending_action: "NONE"
+
+    -
+      id: "WEP-IDEMPOTENT-RERUN-001"
+      subject_ref: "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
+      subject_kind: "WISDOM"
+      scope: "SELF-RUNNING-PATCH-RERUN-SEMANTICS"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 1
+        conflict_prevented: 0
+        conflict_corrected: 1
+        conflict_escaped: 0
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-003.PRE-002"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "PATCH-001A.PRE-010-R5-SECOND-RUN-BASELINE-MISCLASSIFICATION"
+          kind: "CONFLICT"
+          origin: "EXECUTION"
+          impact: "MEDIUM"
+          resolution: "CORRECTED"
+      pending_action: "NONE"
+
+    -
+      id: "WEP-USER-HOST-VISIBILITY-001"
+      subject_ref: "CTX-WISDOM-USER-HOST-VISIBILITY-001"
+      subject_kind: "WISDOM"
+      scope: "USER-FACING-POWERSHELL-EXECUTION"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 1
+        conflict_prevented: 0
+        conflict_corrected: 0
+        conflict_escaped: 1
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-003.PRE-003"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "USER-REQUIREMENT-POWERSHELL-WINDOW-STAYS-VISIBLE-2026-08-08"
+          kind: "CONFLICT"
+          origin: "USER_CORRECTION"
+          impact: "HIGH"
+          resolution: "ESCAPED"
+        -
+          ref: "PATCH-003.PRE-003-R2-VISIBILITY-VERIFIED"
+          kind: "SUPPORT"
+          origin: "VERIFICATION"
+          impact: "HIGH"
+          resolution: "NOT_APPLICABLE"
+      pending_action: "NONE"
+
+    -
+      id: "WEP-MAIN-PATCH-CONTINUATION-CANDIDATE-001"
+      subject_ref: "WISDOM-CANDIDATE-MAIN-PATCH-CONTINUATION-001"
+      subject_kind: "CANDIDATE"
+      scope: "PATCH-SELECTION-AND-PRE-PATCH-PROLIFERATION"
+      evidence_maturity: "CANDIDATE"
+      control_tier: "OBSERVE"
+      friction_state: "WATCH"
+      counts:
+        support: 1
+        conflict_prevented: 1
+        conflict_corrected: 0
+        conflict_escaped: 0
+        contradiction: 0
+      review:
+        review_count: 0
+        last_review_ref: null
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "USER-REFINE-MAIN-PATCH-CONTINUATION-2026-08-08"
+          kind: "CONFLICT"
+          origin: "REFINE"
+          impact: "LOW"
+          resolution: "PREVENTED"
+        -
+          ref: "USER-APPROVAL-LOW-CAPTURE-HIGH-GOVERNANCE-THRESHOLD-2026-08-08"
+          kind: "SUPPORT"
+          origin: "CRITIQUE"
+          impact: "MEDIUM"
+          resolution: "NOT_APPLICABLE"
+      pending_action: "NONE"
+
+  revision:
+    sequence: 1
+    last_patch_ref: "PATCH-003.PRE-004"
+    profile_count: 5

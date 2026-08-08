@@ -1,0 +1,122 @@
+schema: "cerebro-wisdom-evidence-schema/v0.1"
+contract:
+  id: "CONTRACT-WISDOM-EVIDENCE"
+  owner: "context-engine"
+  target_schema: "cerebro-wisdom-evidence/v0.1"
+  state_path: "engines/context/wisdom-evidence.yaml"
+  state_scope: "working-source"
+  authority: "evidence-only"
+  release_inclusion: true
+  state_release_inclusion: false
+
+required_root:
+  - "schema"
+  - "wisdom_evidence"
+
+wisdom_evidence_required_fields:
+  - "id"
+  - "owner"
+  - "authority"
+  - "policy_ref"
+  - "capture_mode"
+  - "profiles"
+  - "revision"
+
+profile_required_fields:
+  - "id"
+  - "subject_ref"
+  - "subject_kind"
+  - "scope"
+  - "evidence_maturity"
+  - "control_tier"
+  - "friction_state"
+  - "counts"
+  - "review"
+  - "recent_signals"
+  - "pending_action"
+
+count_fields:
+  - "support"
+  - "conflict_prevented"
+  - "conflict_corrected"
+  - "conflict_escaped"
+  - "contradiction"
+
+review_required_fields:
+  - "review_count"
+  - "last_review_ref"
+  - "conflicts_after_last_review"
+
+signal_required_fields:
+  - "ref"
+  - "kind"
+  - "origin"
+  - "impact"
+  - "resolution"
+
+enums:
+  subject_kind:
+    - "WISDOM"
+    - "CANDIDATE"
+  evidence_maturity:
+    - "CANDIDATE"
+    - "PROVISIONAL"
+    - "CONFIRMED"
+  control_tier:
+    - "OBSERVE"
+    - "ADVISORY"
+    - "PREFLIGHT"
+    - "GATE"
+  friction_state:
+    - "NORMAL"
+    - "WATCH"
+    - "REVIEW"
+    - "ESCALATE"
+  signal_kind:
+    - "SUPPORT"
+    - "CONFLICT"
+    - "CONTRADICTION"
+    - "NOVEL_PATTERN"
+  signal_origin:
+    - "REFINE"
+    - "CRITIQUE"
+    - "USER_CORRECTION"
+    - "VALIDATOR"
+    - "EXECUTION"
+    - "VERIFICATION"
+  signal_impact:
+    - "LOW"
+    - "MEDIUM"
+    - "HIGH"
+  signal_resolution:
+    - "PREVENTED"
+    - "CORRECTED"
+    - "ESCAPED"
+    - "NOT_APPLICABLE"
+  pending_action:
+    - "NONE"
+    - "REPOSITION"
+    - "PROMOTE_CONTROL"
+    - "NARROW_SCOPE"
+    - "MERGE"
+    - "SUPERSEDE_REVIEW"
+    - "DEMOTE_REVIEW"
+
+limits:
+  recent_signals_max_items: 5
+
+invariants:
+  - "profile_ids_are_unique"
+  - "subject_refs_are_unique_within_active_profiles"
+  - "counts_are_nonnegative_integers"
+  - "recent_signals_count_is_at_most_five"
+  - "CANDIDATE_subject_requires_OBSERVE_control_tier"
+  - "evidence_maturity_does_not_automatically_change_control_tier"
+  - "support_does_not_cancel_conflict_counts"
+  - "GATE_requires_explicit_authoritative_basis_outside_signal_counts"
+  - "CONTRADICTION_requires_review_not_automatic_supersession"
+  - "ESCALATE_requires_post_review_same_family_conflict_or_equivalent_strong_evidence"
+  - "review_may_return_friction_to_NORMAL_only_after_effect_verification"
+  - "low_impact_micro_signal_does_not_require_standalone_patch"
+  - "state_is_evidence_not_rule_authority"
+  - "runtime_subsystem_is_not_created"

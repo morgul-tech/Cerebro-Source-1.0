@@ -491,3 +491,73 @@ handboot_manifest_contract_validation:
     disposition: CORRECTED
 
 # END PATCH-002.PRE-003.POST-001 MANIFEST CONTRACT CORRECTION
+# BEGIN PATCH-003.PRE-004 ADAPTIVE WISDOM EVIDENCE VALIDATION
+
+adaptive_wisdom_evidence_validation:
+  introduced_by: PATCH-003.PRE-004
+  severity: error
+  owner: tooling.validator
+  policy_ref: standards/development/reflective-adjustment-loop.yaml
+  schema_ref: engines/context/wisdom-evidence-schema.yaml
+  state_ref: engines/context/wisdom-evidence.yaml
+
+  required_files:
+    - engines/context/wisdom-evidence-schema.yaml
+    - engines/context/wisdom-evidence.yaml
+
+  required_contracts:
+    - event_driven_capture
+    - evidence_only_authority
+    - separate_support_and_friction
+    - bounded_recent_signal_window
+    - independent_evidence_maturity_and_control_tier
+    - candidate_requires_observe
+    - repeated_friction_review
+    - post_review_conflict_escalation
+    - explicit_authority_for_gate
+    - piggyback_low_impact_persistence
+    - compact_user_surface
+    - no_runtime_subsystem
+
+  required_friction_states:
+    - NORMAL
+    - WATCH
+    - REVIEW
+    - ESCALATE
+
+  required_control_tiers:
+    - OBSERVE
+    - ADVISORY
+    - PREFLIGHT
+    - GATE
+
+  required_signal_dimensions:
+    - kind
+    - origin
+    - impact
+    - resolution
+
+  prohibited:
+    - single_net_wisdom_score
+    - support_cancels_friction
+    - automatic_wisdom_promotion
+    - automatic_rule_creation
+    - automatic_source_mutation
+    - unbounded_micro_signal_history
+    - parallel_learning_engine
+    - standalone_patch_for_low_impact_signal_only
+    - candidate_with_non_observe_control
+    - gate_from_signal_count_alone
+
+semantic_anchor_preflight_validation:
+  introduced_by: PATCH-003.PRE-004
+  severity: error
+  owner: tooling.validator
+  wisdom_ref: CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001
+  required:
+    - object_identity_bound_anchor
+    - semantic_neighbor_context_when_needed
+    - exact_single_match
+    - reject_generic_anchor_when_object_identity_known
+
+# END PATCH-003.PRE-004 ADAPTIVE WISDOM EVIDENCE VALIDATION
