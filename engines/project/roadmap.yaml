@@ -68,7 +68,7 @@ roadmap:
         -
           id: "MS-002"
           title: "runtime_0_1_definition_and_implementation"
-          status: "ACTIVE"
+          status: "COMPLETED"
           acceptance:
             - "runtime_0_1_scope_locked"
             - "minimum_runtime_contracts_locked"
@@ -650,7 +650,7 @@ roadmap:
       title: "runtime_0_1_implementation"
       phase_ref: "PHASE-1"
       milestone_ref: "MS-002"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-003.PRE-006"
       decision_refs:
@@ -680,25 +680,25 @@ roadmap:
       title: "idea_object_pipeline"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-003"
       decision_refs: []
       source_refs: []
   execution:
     current:
-      id: "EXEC-P3-RUNTIME-IMPLEMENTATION"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      patch_ref: "PATCH-003"
-      canonical_command: "implement PATCH-003 Runtime 0.1 from the locked PATCH-002 contract set"
-      status: "ACTIVE"
-    next:
-      id: "EXEC-P4-IDEA-OBJECT-PIPELINE"
+      id: "EXEC-P4-IDEA-OBJECT-PIPELINE-SCOPE"
       phase_ref: "PHASE-1"
       milestone_ref: null
       patch_ref: "PATCH-004"
-      canonical_command: "begin PATCH-004 only after Runtime 0.1 implementation and baseline verification"
+      canonical_command: "critique and reduce PATCH-004 Idea Object Pipeline scope against the verified Runtime 0.1 baseline and current Wisdom"
+      status: "ACTIVE"
+    next:
+      id: "EXEC-P4-IDEA-OBJECT-PIPELINE-IMPLEMENTATION"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      patch_ref: "PATCH-004"
+      canonical_command: "implement PATCH-004 Idea Object Pipeline only after the minimum buildable scope is locked and governing validation passes"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -837,11 +837,17 @@ roadmap:
       object_type: "WISDOM"
       object_ref: "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
       - "CTX-BASIS-P1B-IMPLEMENTED"
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
+      - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -866,5 +872,5 @@ roadmap:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
   revision:
-    sequence: 15
-    last_locked_patch_ref: "PATCH-003.PRE-006"
+    sequence: 16
+    last_locked_patch_ref: "PATCH-003"

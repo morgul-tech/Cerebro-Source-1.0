@@ -1843,6 +1843,61 @@ working_context:
           - "CTX-ASSESS-CONSOLIDATE-WISDOM-T0-M90-P15-001"
           - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
       sequence: 57
+    -
+      id: "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY"
+      statement: "PATCH-003 Runtime 0.1 baseline is locally verified across success, controlled-stop and fail-closed paths; PATCH-004 Idea Object Pipeline is now the sole active development priority, beginning with scope critique and reduction before implementation."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "USER_APPROVED_REFINED_RUNTIME_CONTINUATION"
+        previous_patch: "PATCH-003"
+        current_patch: "PATCH-004"
+        active_work: "IDEA_OBJECT_PIPELINE_SCOPE_CRITIQUE_AND_REDUCTION"
+        sole_priority: true
+        runtime_baseline:
+          runtime_version: "0.1"
+          source_commit: "cf2e183db1779c4e60ef063bd1d8e29bdd8a43a7"
+          release_sha256: "eaece1c7d460d784be45b26d48a09c46006d9fef1e234cd1d366efba68a454af"
+          verification_scope:
+            - "RUNTIME_START_COMPLETED_PASSED"
+            - "RUNTIME_ECHO_COMPLETED_PASSED"
+            - "RUNTIME_CONTROL_STOP_CONTROL_STOPPED"
+            - "INVALID_EVENT_FAILED_CLOSED_FAILED"
+        governing_direction:
+          - "reuse_existing_runtime_kernel"
+          - "do_not_add_speculative_runtime_capabilities"
+          - "canonical_operation_first"
+          - "preflight_before_execution"
+          - "verification_claims_explicitly_scoped"
+          - "localize_failure_before_redesign"
+          - "explicit_user_boundary_only_when_material"
+          - "use_PATCH_004_execution_evidence_to_justify_later_runtime_improvements"
+        do_not_reopen:
+          - "runtime_architecture_without_governing_failure_or_conflicting_evidence"
+          - "wisdom_architecture"
+          - "process_architecture_without_evidence_gap"
+        session_resume_order:
+          - "verify_current_Cerebro_Source"
+          - "load_current_roadmap_execution_pointer"
+          - "load_CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
+          - "critique_and_reduce_PATCH_004_scope"
+          - "lock_minimum_buildable_idea_object_pipeline"
+          - "implement_only_after_scope_validation"
+      provenance:
+        introduced_by_ref: "USER-TAKE-STYRING-2026-08-08"
+        basis_refs:
+          - "CTX-BASIS-RUNTIME-0-1-SESSION-RESUME-AFTER-CONSOLIDATE-001"
+          - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
+          - "CTX-WISDOM-VERIFICATION-SCOPE-001"
+          - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
+          - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-RUNTIME-0-1-SESSION-RESUME-AFTER-CONSOLIDATE-001"
+      sequence: 58
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -1872,6 +1927,7 @@ working_context:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
       - "CTX-BASIS-RUNTIME-0-1-SESSION-RESUME-AFTER-CONSOLIDATE-001"
+      - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -1902,4 +1958,4 @@ working_context:
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
       - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-  next_sequence: 58
+  next_sequence: 59
