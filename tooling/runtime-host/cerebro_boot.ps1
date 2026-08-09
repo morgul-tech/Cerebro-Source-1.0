@@ -35,44 +35,54 @@ function Get-CerebroBootExecutionValue {
         [string]$Name
     )
 
-    $sectionPattern = (
-        '(?ms)^\s{2}execution:\s*\r?\n' +
-        '(?:^\s{4}.*\r?\n?)*?' +
-        '^\s{4}' +
-        [regex]::Escape($Section) +
-        ':\s*\r?\n' +
-        '(?<block>(?:^\s{6,}.*\r?\n?)+)'
-    )
+    $lines = $Roadmap -split "\r?\n"
+    $executionFound = $false
+    $sectionFound = $false
+    $sectionLine = ('    {0}:' -f $Section)
+    $namePrefix = ('      {0}:' -f $Name)
 
-    $sectionMatch = [regex]::Match(
-        $Roadmap,
-        $sectionPattern
-    )
+    foreach ($line in $lines) {
+        if (-not $executionFound) {
+            if ($line -eq '  execution:') {
+                $executionFound = $true
+            }
+            continue
+        }
 
-    if (-not $sectionMatch.Success) {
+        if (-not $sectionFound) {
+            if ($line -eq $sectionLine) {
+                $sectionFound = $true
+                continue
+            }
+            if ($line -match '^\s{0,2}\S') {
+                break
+            }
+            continue
+        }
+
+        if ($line.StartsWith($namePrefix)) {
+            $raw = $line.Substring($namePrefix.Length).Trim()
+            if ($raw -match '^"(?<value>[^"]*)"$') {
+                return $Matches['value']
+            }
+            $comment = $raw.IndexOf('#')
+            if ($comment -ge 0) {
+                $raw = $raw.Substring(0, $comment).Trim()
+            }
+            if (-not [string]::IsNullOrWhiteSpace($raw)) {
+                return $raw
+            }
+        }
+
+        if ($line -match '^\s{0,4}\S') {
+            break
+        }
+    }
+
+    if (-not $sectionFound) {
         throw "BOOT_EXECUTION_SECTION_NOT_FOUND:$Section"
     }
-
-    $valuePattern = (
-        '(?m)^\s*' +
-        [regex]::Escape($Name) +
-        ':\s*(?:"(?<quoted>[^"]*)"|(?<plain>[^\r\n#]+))\s*$'
-    )
-
-    $valueMatch = [regex]::Match(
-        $sectionMatch.Groups['block'].Value,
-        $valuePattern
-    )
-
-    if (-not $valueMatch.Success) {
-        throw "BOOT_EXECUTION_VALUE_NOT_FOUND:$Section`:$Name"
-    }
-
-    if ($valueMatch.Groups['quoted'].Success) {
-        return $valueMatch.Groups['quoted'].Value
-    }
-
-    return $valueMatch.Groups['plain'].Value.Trim()
+    throw "BOOT_EXECUTION_VALUE_NOT_FOUND:$Section`:$Name"
 }
 
 function Test-CerebroBootRequiredTokens {
