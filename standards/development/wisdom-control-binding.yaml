@@ -2,7 +2,7 @@ schema: cerebro-wisdom-control-binding/v0.1
 
 wisdom_control_binding:
   id: CEREBRO-WISDOM-CONTROL-BINDING-001
-  version: "0.1"
+  version: "0.2"
   status: ACTIVE
   introduced_by: PATCH-005
   kind: CONTRACT
@@ -22,6 +22,7 @@ wisdom_control_binding:
     evidence_schema_ref: engines/context/wisdom-evidence-schema.yaml
     evidence_state_ref: engines/context/wisdom-evidence.yaml
     authority: EVIDENCE_ONLY
+    retrieval_contract_ref: standards/development/relevance-retrieval.yaml
 
   applicability_contract:
     required_inputs:
@@ -62,6 +63,7 @@ wisdom_control_binding:
       missing_authoritative_basis_effect: treat-as-non-gate-and-flag-governance-defect
 
   mcp_binding:
+    control_state_knowledge_field: applicable_knowledge_refs
     control_state_field: applicable_wisdom_refs
     control_decision_basis_includes_applicable_wisdom: true
     wisdom_may_override_source: false
@@ -73,6 +75,18 @@ wisdom_control_binding:
     GATE_binding: REQUIRED
     automatic_retrieval: DEFERRED_PATCH_006
     automatic_ranking: DEFERRED_PATCH_006
+    automatic_control_promotion: PROHIBITED
+    automatic_source_mutation: PROHIBITED
+
+  patch_006_binding:
+    automatic_retrieval: REQUIRED
+    automatic_ranking: REQUIRED
+    relevance_contract_ref: standards/development/relevance-retrieval.yaml
+    implementation_ref: tooling/context/relevance_engine.py
+    maximum_results_per_kind: 5
+    basis_fingerprint_includes_retrieved_refs: true
+    changed_basis_requires_re_resolution: true
+    knowledge_authority: EVIDENCE_ONLY
     automatic_control_promotion: PROHIBITED
     automatic_source_mutation: PROHIBITED
 

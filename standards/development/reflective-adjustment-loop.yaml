@@ -18,6 +18,18 @@ reflective_adjustment_loop:
     - "PERSISTENCE_EVALUATION"
     - "EFFECT_VERIFICATION"
 
+  patch_006_effect_feedback:
+    retrieval_contract_ref: standards/development/relevance-retrieval.yaml
+    implementation_ref: tooling/context/relevance_engine.py
+    verified_execution_result_emits: BOUNDED_EVIDENCE_CANDIDATE
+    evidence_candidate_next_event: RETRIEVAL_REASSESSMENT
+    material_user_insight_emits:
+      - CRITIQUE_AND_REASSESS
+      - RE_RESOLVE_CONTROL
+    automatic_knowledge_admission: false
+    automatic_wisdom_promotion: false
+    automatic_source_mutation: false
+
   adjustment_classes:
     - "NO_CHANGE"
     - "LOCAL_FIX"

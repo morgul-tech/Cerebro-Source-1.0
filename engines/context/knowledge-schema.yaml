@@ -1,0 +1,34 @@
+schema: cerebro-knowledge-schema/v0.1
+contract:
+  id: CONTRACT-KNOWLEDGE-EVIDENCE
+  owner: context-engine
+  target_schema: cerebro-knowledge/v0.1
+  state_path: engines/context/knowledge.yaml
+  authority: EVIDENCE_ONLY
+  control_tier: NONE
+required_root: [schema, knowledge]
+knowledge_required_fields: [id, owner, authority, records, revision]
+record_required_fields:
+  - id
+  - claim
+  - knowledge_type
+  - scope
+  - provenance
+  - verification
+  - contradiction
+  - status
+  - tags
+enums:
+  knowledge_type: [ENVIRONMENT_FACT, PROCEDURE, INVARIANT, COMPATIBILITY_FACT, API_CONTRACT]
+  status: [ACTIVE, DISPUTED, SUPERSEDED, EXPIRED]
+  verification_state: [VERIFIED, FAILED, EXPIRED]
+invariants:
+  - unverified-claim-is-not-Knowledge
+  - Knowledge-is-evidence-only
+  - Knowledge-has-no-direct-control-tier
+  - provenance-and-validity-scope-are-required
+  - contradiction-path-is-required
+  - disputed-expired-and-superseded-records-are-not-retrieval-eligible
+  - verification-does-not-create-Wisdom-or-Source-authority
+  - external-or-version-sensitive-Knowledge-declares-validity-scope
+  - records-are-bounded-and-reference-detailed-evidence

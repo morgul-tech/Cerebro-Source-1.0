@@ -790,3 +790,40 @@ change_delivery_platform_validation:
     - validation-generated-live-release-diff
     - closure-engine-state-repair
     - knowledge-candidate-automatic-promotion
+
+patch_006_relevance_retrieval_validation:
+  introduced_by: PATCH-006
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - engines/context/knowledge-schema.yaml
+    - standards/development/relevance-retrieval.yaml
+    - standards/development/wisdom-control-binding.yaml
+    - standards/control-architecture.yaml
+  required_files:
+    - engines/context/knowledge-schema.yaml
+    - engines/context/knowledge.yaml
+    - standards/development/relevance-retrieval.yaml
+    - tooling/context/relevance_engine.py
+  required_contracts:
+    - evidence-only-Knowledge-with-no-direct-control-tier
+    - provenance-scope-verification-and-contradiction-path
+    - deterministic-bounded-Knowledge-and-Wisdom-ranking
+    - retrieval-output-bound-into-Control-State-and-basis-fingerprint
+    - changed-retrieval-invalidates-stale-control-decision
+    - execution-effect-produces-bounded-evidence-candidate
+    - material-user-insight-checkpoint-and-re-resolution
+  required_canaries:
+    - eligible-relevant-Knowledge-is-retrieved
+    - failed-or-disputed-Knowledge-is-rejected
+    - relevant-Wisdom-is-retrieved
+    - basis-fingerprint-is-deterministic
+    - material-user-insight-re-resolves-control
+    - effect-feedback-remains-evidence-only
+  prohibited:
+    - parallel-learning-engine
+    - parallel-research-engine
+    - parallel-decision-engine
+    - automatic-Knowledge-admission
+    - automatic-Wisdom-promotion
+    - automatic-Source-mutation

@@ -3,7 +3,7 @@ component:
   id: context
   name: Context Engine
   type: engine
-  version: 1.2.0
+  version: 1.3.0
   status: active-source
 responsibility:
   primary: Forvalte aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger, historikk, samtalelokale markører, avgrenset konsolideringskontekst og lettvekts evidens rundt Wisdom.
@@ -20,6 +20,8 @@ interfaces:
   - history-entry
   - override
   - wisdom-signal
+  - relevance-retrieval-request
+  - execution-effect-feedback
   - change-failure-observation
   - consolidation-request
   - marker-create
@@ -33,6 +35,10 @@ interfaces:
   - wisdom-evidence-profile
   - wisdom-applicability-assessment
   - applicable-wisdom-refs
+  - applicable-knowledge-refs
+  - relevance-assessment
+  - basis-fingerprint-input
+  - effect-feedback-candidate
   - wisdom-friction-state
   - cumulative-change-learning-evidence
   - consolidation-context
@@ -40,6 +46,10 @@ interfaces:
 rules:
   path: rules.yaml
 state:
+  knowledge:
+    path: knowledge.yaml
+    schema: knowledge-schema.yaml
+    authority: evidence-only
   wisdom_evidence:
     path: wisdom-evidence.yaml
     schema: wisdom-evidence-schema.yaml
@@ -59,6 +69,10 @@ boundaries:
   - keep-wisdom-evidence-separate-from-governing-authority
   - keep-change-learning-evidence-non-authoritative-until-explicit-consolidation
   - assess-wisdom-applicability
+  - retrieve-and-rank-relevant-knowledge-and-wisdom
+  - bind-retrieval-output-to-control-basis
+  - checkpoint-material-user-insight
+  - emit-bounded-effect-feedback
   - preserve-wisdom-evidence-authority-boundary
   - use-event-driven-signal-capture
   - keep-micro-signal-storage-bounded
@@ -68,6 +82,10 @@ boundaries:
   - auto-promote-wisdom-from-signal-count
   - auto-mutate-source-from-evidence-threshold
   - persist-conversation-markers-to-source-automatically
+  - give-knowledge-direct-control-authority
+  - bulk-retrieve-history-by-default
+  - auto-admit-effect-feedback-as-knowledge
+  - create-parallel-learning-research-or-decision-engine
 version:
-  component: 1.2.0
+  component: 1.3.0
   schema: 1

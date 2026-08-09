@@ -1,0 +1,88 @@
+schema: cerebro-relevance-retrieval/v0.1
+relevance_retrieval:
+  id: CEREBRO-RELEVANCE-RETRIEVAL-001
+  version: "0.1"
+  status: ACTIVE
+  introduced_by: PATCH-006
+  owner: context-engine
+  purpose: >
+    Retrieve and rank only materially relevant evidence-only Knowledge and
+    Context-owned Wisdom for the current objective, scope and failure or
+    decision state, then bind accepted references into the existing Control
+    State and MCP basis.
+  inputs:
+    required: [current_objective, current_scope]
+    optional: [current_failure_state, current_decision_state, tags, material_user_insight]
+  sources:
+    knowledge: engines/context/knowledge.yaml
+    wisdom: engines/context/working-context.yaml
+    wisdom_evidence: engines/context/wisdom-evidence.yaml
+  eligibility:
+    knowledge:
+      - status-is-ACTIVE
+      - verification-state-is-VERIFIED
+      - validity-scope-is-current
+      - unresolved-material-contradiction-is-absent
+    wisdom:
+      - type-is-WISDOM_RECORD
+      - record-is-not-superseded-or-revoked
+      - candidate-subject-never-exceeds-OBSERVE
+  ranking:
+    deterministic: true
+    dimensions:
+      objective_term_match: 4
+      scope_term_match: 3
+      explicit_tag_match: 3
+      failure_or_decision_state_match: 2
+      active_friction_review: 2
+    minimum_score: 3
+    maximum_results_per_kind: 5
+    tie_break: lexical-record-id
+    rule: score-orders-eligible-candidates-but-never-creates-authority
+  output:
+    required:
+      - assessment_id
+      - objective_ref
+      - applicable_knowledge_refs
+      - applicable_wisdom_refs
+      - rejected_refs
+      - basis_refs
+      - basis_fingerprint
+      - evidence_authority
+      - human_insight_checkpoint
+      - next_control_event
+  control_binding:
+    control_state_fields:
+      - applicable_knowledge_refs
+      - applicable_wisdom_refs
+      - basis_fingerprint
+    MCP_must_resolve_effect: true
+    evidence_may_override_Source: false
+    changed_retrieval_invalidates_prior_basis: true
+  human_insight:
+    materiality_signals:
+      - challenges-current-premise
+      - identifies-repeated-failure
+      - changes-objective-or-scope
+      - alleges-existing-learning-was-not-applied
+      - presents-new-decision-relevant-evidence
+    material_effect:
+      checkpoint: CRITIQUE_AND_REASSESS
+      next_control_event: RE_RESOLVE_CONTROL
+    nonmaterial_effect: CONTINUE
+  effect_feedback:
+    input: execution-and-verification-result
+    output: bounded-evidence-candidate
+    next_event: RETRIEVAL_REASSESSMENT
+    automatic_Source_mutation: false
+    automatic_Knowledge_admission: false
+    automatic_Wisdom_promotion: false
+  prohibited:
+    - bulk-history-retrieval-by-default
+    - semantic-authority-inference
+    - automatic-control-promotion
+    - automatic-rule-creation
+    - automatic-Source-mutation
+    - parallel-Learning-Engine
+    - parallel-Research-Engine
+    - parallel-Decision-Engine

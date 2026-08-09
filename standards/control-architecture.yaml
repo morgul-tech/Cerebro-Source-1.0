@@ -40,6 +40,7 @@ control_architecture:
       - effective_user_configuration
       - execution_profile_ref
       - applicable_wisdom_refs
+      - applicable_knowledge_refs
       - progress_state
       - failure_state
       - verification_state
@@ -164,6 +165,28 @@ control_architecture:
     context_assesses_applicability: true
     MCP_resolves_control_effect: true
     evidence_authority: EVIDENCE_ONLY
+  relevance_retrieval:
+    contract_ref: standards/development/relevance-retrieval.yaml
+    implementation_ref: tooling/context/relevance_engine.py
+    context_retrieves_and_ranks: true
+    MCP_resolves_control_effect: true
+    control_basis_fields:
+      - applicable_knowledge_refs
+      - applicable_wisdom_refs
+      - basis_fingerprint
+    changed_retrieval_effect: INVALIDATE_DECISION_AND_RE_RESOLVE
+    knowledge_authority: EVIDENCE_ONLY
+  human_insight_checkpoint:
+    material_insight_effect:
+      - CRITIQUE_AND_REASSESS
+      - RE_RESOLVE_CONTROL
+    nonmaterial_insight_effect: CONTINUE
+    insight_is_automatic_authority: false
+  effect_feedback:
+    result_to_evidence_candidate: true
+    next_control_event: RETRIEVAL_REASSESSMENT
+    automatic_source_mutation: false
+    automatic_promotion: false
   architectural_regrounding:
     contract_ref: standards/development/architectural-regrounding.yaml
     trigger_event: MAJOR_PHASE_BOUNDARY

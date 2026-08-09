@@ -1,0 +1,7 @@
+schema: cerebro-knowledge/v0.1
+knowledge:
+  id: CEREBRO-KNOWLEDGE-STATE-001
+  owner: context-engine
+  authority: EVIDENCE_ONLY
+  records: []
+  revision: 1

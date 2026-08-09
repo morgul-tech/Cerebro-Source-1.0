@@ -63,6 +63,7 @@ standards:
   project_status: standards/project-status.yaml
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
   wisdom_control_binding: standards/development/wisdom-control-binding.yaml
+  relevance_retrieval: standards/development/relevance-retrieval.yaml
   architectural_regrounding: standards/development/architectural-regrounding.yaml
   active_source_closure: standards/active-source-closure.yaml
 tooling:
@@ -74,6 +75,7 @@ tooling:
   change: tooling/change/
   delivery: tooling/delivery/
   closure: tooling/closure/
+  context: tooling/context/
 governance:
   single_source_of_truth: true
   definitional_authority: Cerebro Source 1.0

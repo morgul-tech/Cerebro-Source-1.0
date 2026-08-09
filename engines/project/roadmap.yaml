@@ -764,10 +764,15 @@ roadmap:
       status: "ACTIVE"
       dependency_refs:
         - "PATCH-005.POST-001"
-      decision_refs: []
+      decision_refs:
+        - "PATCH-006-BOUNDED-RELEVANCE-IMPLEMENTATION"
       source_refs:
         - "engines/context/change-learning-evidence.yaml"
+        - "engines/context/knowledge-schema.yaml"
+        - "engines/context/knowledge.yaml"
         - "standards/development/wisdom-control-binding.yaml"
+        - "standards/development/relevance-retrieval.yaml"
+        - "tooling/context/relevance_engine.py"
       implementation_constraints:
         - "activation_requires_PATCH_005_POST_001_Closure_PASS"
         - "automatic_authority_promotion_prohibited"
@@ -775,18 +780,18 @@ roadmap:
         - "Final_Learning_Consolidation_approved_only_the_bounded_evidence_scope"
   execution:
     current:
-      id: "EXEC-P6-WISDOM-KNOWLEDGE-DESIGN"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      patch_ref: "PATCH-006"
-      canonical_command: "bound the evidence-only Knowledge model and Wisdom retrieval contract before implementation"
-      status: "ACTIVE"
-    next:
       id: "EXEC-P6-WISDOM-KNOWLEDGE-IMPLEMENTATION"
       phase_ref: "PHASE-1"
       milestone_ref: null
       patch_ref: "PATCH-006"
-      canonical_command: "implement only the approved bounded evidence model after explicit work authorization"
+      canonical_command: "install and locally validate the assured PATCH-006 STANDARD runner"
+      status: "READY_FOR_INSTALL"
+    next:
+      id: "EXEC-P6-LOCAL-VALIDATION-AND-PUBLICATION"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      patch_ref: "PATCH-006"
+      canonical_command: "after user-local install, validate explicitly and publish only by explicit user action"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -1040,14 +1045,17 @@ patch_005_current_execution_state:
     - P5P001-FINAL-LEARNING-CONSOLIDATION
     - P5P001-INTERNAL-CONTROL-REVIEW
     - P5P001-CLOSURE-PASS-CANDIDATE
-  active_stage: PATCH-006-BOUNDED-DESIGN
+  active_stage: PATCH-006-READY-FOR-INSTALL
   closure_receipt_authority: EXTERNAL_SHA256_BOUND_CLOSURE_ENGINE_RECEIPT
   next_stages:
     - P6-BOUND-KNOWLEDGE-EVIDENCE-MODEL
     - P6-BOUND-WISDOM-RETRIEVAL-CONTRACT
   patch_006:
     title: WISDOM_OPERATIONALIZATION_AND_KNOWLEDGE_EVIDENCE
-    status: ACTIVE_DESIGN_ONLY
+    status: READY_FOR_INSTALL
+    delivery_profile: STANDARD
+    execution_owner: USER_LOCAL_RUNNER
+    publication: EXPLICIT_USER_ACTION
   corrective_patch:
     id: PATCH-005.POST-003
     delivery_profile: STANDARD

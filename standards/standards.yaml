@@ -67,6 +67,9 @@ documents:
 - id: STD-WISDOM-CONTROL-BINDING
   path: standards/development/wisdom-control-binding.yaml
   required: true
+- id: STD-RELEVANCE-RETRIEVAL
+  path: standards/development/relevance-retrieval.yaml
+  required: true
 - id: STD-ARCHITECTURAL-REGROUNDING
   path: standards/development/architectural-regrounding.yaml
   required: true
