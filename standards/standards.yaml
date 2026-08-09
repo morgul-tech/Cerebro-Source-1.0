@@ -43,6 +43,12 @@ documents:
 - id: STD-PATCH
   path: standards/patch-package.yaml
   required: true
+- id: STD-CHANGE-ARCHITECTURE
+  path: standards/change-architecture.yaml
+  required: true
+- id: STD-CHANGE-DELIVERY
+  path: standards/change-delivery.yaml
+  required: true
 - id: STD-OPERATIONAL-PROGRESS
   path: standards/operational-progress.yaml
   required: true

@@ -1,0 +1,202 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-CHANGE-ARCHITECTURE
+  name: Cerebro Change Architecture Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: Definition of the stable Host, versioned Change Engine, Development Lab, failure knowledge, stability gating, and change execution boundaries.
+  consumers:
+    - host
+    - change-engine
+    - quality-gate
+    - validator
+    - builder
+    - project-engine
+    - context-engine
+
+architecture:
+  outcome: REPLACE
+  replaces:
+    - bespoke-per-patch-bootstrap
+    - bootstrap-owned-change-generation
+    - bootstrap-owned-source-transformation
+  preserves:
+    - Cerebro-Source-as-sole-persistent-authority
+    - MCP-as-highest-internal-control-authority
+    - Release-as-derived-implementation
+    - Runtime-0.1-separation
+    - cerebro_sync-as-Source-publication-path
+
+components:
+  host:
+    kind: TOOLING
+    role: stable-minimal-local-entrypoint
+    authority: NON_AUTHORITATIVE
+    responsibilities:
+      - resolve-working-source
+      - verify-repository-identity
+      - select-exact-source-commit
+      - materialize-or-reuse-immutable-tooling-snapshot
+      - delegate-command-with-live-output
+    prohibited:
+      - parse-roadmap
+      - interpret-Source-policy
+      - generate-Source-content
+      - mutate-Working-Source
+      - own-quality-policy
+      - own-publication-policy
+      - own-runtime-transition-semantics
+
+  change_engine:
+    kind: TOOLING
+    role: versioned-change-execution-and-assurance
+    authority: DERIVED_IMPLEMENTATION
+    execution_surface: immutable-tooling-snapshot
+    responsibilities:
+      - verify-change-capsule
+      - run-development-lab
+      - run-adaptive-test-campaigns
+      - classify-failure-families
+      - perform-root-producer-analysis-support
+      - maintain-derived-failure-knowledge
+      - resolve-stability-gate
+      - verify-exact-candidate-scope
+    prohibited:
+      - create-persistent-Source-authority
+      - silently-promote-Wisdom
+      - mutate-Source-from-Runtime
+      - bypass-Quality-Gate
+      - bypass-cerebro_sync
+
+change_model:
+  capsule:
+    format: JSON
+    contract_ref: standards/change-delivery.yaml
+    schema_ref: tooling/change/capsule-schema.json
+    content_rule: final-payload-bytes-only
+    production_machine_transformation: prohibited
+  repository_identity:
+    tracked_identity: git-blob-sha
+    candidate_identity: exact-payload-sha256
+    base_identity: immutable-git-commit
+  development_lab:
+    source_fixture_priority:
+      - exact-current-Source
+      - derived-disposable-worktree
+      - synthetic-fixture-as-supplement
+    mutation_target: disposable-worktree-only
+    working_source_mutation: prohibited
+  delivery_sandbox:
+    exact-delivered-payload-required: true
+    user-environment-exercise_required_before_authoritative_mutation: true
+  working_source:
+    role: mutable-local-development-surface
+    publication_path: cerebro_sync
+
+failure_learning:
+  authority: EVIDENCE_ONLY
+  state_kind: DERIVED
+  source_mutation_allowed: false
+  iteration_inheritance_required: true
+  failure_family_escalation_required: true
+  repeated_related_failure_requires_root_producer_analysis: true
+  unresolved_systemic_failure_blocks_dependent_development: true
+  operationalization_rule:
+    machine_enforceable_learning:
+      - regression
+      - preflight
+      - validator-check
+      - quality-check
+      - campaign-scenario
+    non_machine_enforceable_learning:
+      - Wisdom-evidence
+      - decision-guidance
+  legacy_plc:
+    disposition: EVIDENCE_ADAPTER
+    parallel_authority: false
+
+campaigns:
+  policy_ref: tooling/change/campaign-policy.yaml
+  profiles:
+    FAST: 1
+    STANDARD: 2
+    DEEP: 3
+  repeated_runs_purpose:
+    - state-leakage-detection
+    - cleanup-defect-detection
+    - idempotence-detection
+    - stale-lock-detection
+    - cross-run-failure-family-correlation
+  one-pass-is-not-stability-proof: true
+
+stability_gate:
+  kind: GATE
+  required_before: READY_TO_LOCK
+  pass_requires:
+    - required-campaign-count-completed
+    - current-candidate-has-no-failing-required-scenario
+    - no-unresolved-systemic-failure-family
+    - iteration-inheritance-evidence-present
+    - exact-final-serialization-validated
+  failure_effect: BLOCK_DEPENDENT_DEVELOPMENT
+
+learning_lifecycle:
+  during_patch:
+    authority: EVIDENCE_ONLY
+    cumulative: true
+    may_change-implementation: true
+    may_change-architecture-only-through-regrounding: true
+  final_pass_gate:
+    id: FINAL_LEARNING_CONSOLIDATION
+    required_before_patch_close: true
+    classify:
+      - local-defect
+      - failure-family
+      - systemic-Cerebro-defect
+      - false-hypothesis
+      - confirmed-reusable-learning
+    output:
+      - regression-promotions
+      - Wisdom-candidates
+      - control-review-input
+  post_verified_review:
+    required: true
+    name: CEREBRO_INTERNAL_CONTROL_REVIEW
+    blocks_POST_002_until_completed: true
+
+legacy_bootstrap:
+  patch_bootstrap:
+    status: RETIRED_BY_THIS_STANDARD
+    extension_allowed: false
+  handboot_bootengine:
+    status: LEGACY_ACTIVATION_PATH
+    extension_allowed: false
+    mutation_in_this_patch: false
+    future_regrounding_required: true
+
+rules:
+  - id: STD-CHANGE-R001
+    statement: Normal Cerebro change development shall not require a bespoke per-patch bootstrap.
+    priority: critical
+  - id: STD-CHANGE-R002
+    statement: The Host shall remain smaller and less capable than the versioned Change Engine it dispatches.
+    priority: critical
+  - id: STD-CHANGE-R003
+    statement: New change implementations shall execute from an immutable tooling snapshot bound to one exact Source commit.
+    priority: critical
+  - id: STD-CHANGE-R004
+    statement: Repeated related failures shall be analyzed for a common producer before another dependent implementation iteration is permitted.
+    priority: critical
+  - id: STD-CHANGE-R005
+    statement: Every iteration shall inherit all applicable prior failure evidence, rejected approaches, regressions, and environment facts.
+    priority: critical
+  - id: STD-CHANGE-R006
+    statement: Machine-enforceable learning shall become executable assurance rather than documentation only.
+    priority: critical
+  - id: STD-CHANGE-R007
+    statement: Final learning consolidation is required after operational PASS and before PATCH-005.POST-001 closure.
+    priority: critical
+  - id: STD-CHANGE-R008
+    statement: Runtime 0.1 remains outside the mutation scope of PATCH-005.POST-001.
+    priority: critical

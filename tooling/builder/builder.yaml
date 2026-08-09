@@ -563,9 +563,9 @@ development_delivery_preflight:
       cpatch_execution_handoff:
         introduced_by: PATCH-003.PRE-005
         command_shape: "cpatch <exact_filename.ps1> <sha256>"
-        canonical_run_root: "D:\Cerebro\Run"
+        canonical_run_root: 'D:\Cerebro\Run'
         discovery_roots:
-          - "D:\Cerebro\Run"
+          - 'D:\Cerebro\Run'
           - "current_user_windows_downloads"
         requires:
           - exact_filename

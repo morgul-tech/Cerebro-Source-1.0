@@ -398,7 +398,7 @@ streamlined_patch_workform:
     introduced_by: "PATCH-003.PRE-005"
     objective: "minimize user actions between verified artifact access and local patch execution"
     preferred_command: "cpatch <exact_filename.ps1> <sha256>"
-    canonical_run_root: "D:\Cerebro\Run"
+    canonical_run_root: 'D:\Cerebro\Run'
     interaction_target:
       normal_user_actions_after_artifact_download:
         - "paste_one_exact_execution_command"

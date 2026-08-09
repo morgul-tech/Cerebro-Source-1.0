@@ -2,10 +2,10 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-QUALITY
   name: Cerebro Quality Gate Standard
-  version: 0.1.3
+  version: 0.2.0
   status: approved
   authority: authoritative
-  scope: Mandatory pre-publication quality decision for Cerebro artifacts.
+  scope: Mandatory pre-publication quality decision for Cerebro artifacts and Source changes.
   consumers:
   - patch-installer
   - publication-gate
@@ -13,6 +13,7 @@ standard:
   - validator
   - standards
   - repository
+  - change-engine
 rules:
 - id: STD-QUALITY-R001
   statement: Quality Gate is the publication-readiness gate for Cerebro artifacts and is distinct from pre-decision-lock Decision Assurance.
@@ -81,9 +82,27 @@ rules:
   - Library registration alone is insufficient without user-access evidence.
   - Verified Library access records surface=LIBRARY and chat_surface may remain DEGRADED.
   - Level 3 fallback is not required solely because the chat attachment is non-clickable when Library access is verified.
-
 - id: STD-QUALITY-R012
   statement: Decision Assurance readiness does not imply publication readiness, and Quality Gate publication readiness does not retroactively establish decision quality.
   priority: critical
   verification:
   - Pre-decision-lock and pre-publication gates remain distinct.
+- id: STD-QUALITY-R013
+  statement: A material Source change governed by the Change Architecture shall not be READY_TO_LOCK until the applicable Stability Gate has passed.
+  priority: critical
+  verification:
+  - required Change Engine campaigns completed.
+  - current candidate has no failing required scenario.
+  - no unresolved systemic failure family remains.
+  - iteration inheritance evidence is present.
+- id: STD-QUALITY-R014
+  statement: Delivery of final Source bytes is separate from Change Engine assurance and does not by itself establish publication readiness.
+  priority: critical
+  verification:
+  - STANDARD_A or STANDARD_B delivery success yields READY_FOR_LOCAL_VALIDATION, not VERIFIED.
+- id: STD-QUALITY-R015
+  statement: Final learning consolidation is required after operational PASS and before PATCH-005.POST-001 closure.
+  priority: critical
+  verification:
+  - final learning distinguishes local defects, failure families, systemic defects, false hypotheses, and reusable learning.
+  - CEREBRO_INTERNAL_CONTROL_REVIEW input is emitted before dependent POST-002 work.

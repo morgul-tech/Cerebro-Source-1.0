@@ -1,0 +1,43 @@
+schema: cerebro-change-campaign-policy/v0.1
+policy:
+  id: CEREBRO-CHANGE-CAMPAIGN-POLICY-001
+  version: 0.2.0
+  authority: SOURCE_DEFINED_POLICY
+profiles:
+  FAST:
+    required_clean_campaigns: 1
+    use_when: low-consequence-bounded-change
+  STANDARD:
+    required_clean_campaigns: 2
+    use_when: material-change-or-moderate-uncertainty
+  DEEP:
+    required_clean_campaigns: 3
+    use_when: architecture-high-impact-high-uncertainty-or-reorientation
+common_required_scenarios:
+- exact-capsule-integrity
+- exact-base-commit
+- target-baseline
+- final-serialized-structured-parse
+- code-syntax
+- exact-changed-path-scope
+- git-diff-check
+- machine-protocol-status-parse
+- target-language-parse-when-executable-delivery-applies
+learning_controls:
+  iteration_inheritance: required
+  family_correlation: required
+  systemic_threshold_distinct_campaigns: 2
+  unresolved_systemic_effect: BLOCK
+  current_candidate_failure_effect: BLOCK
+repeated_run_focus:
+- stale-state
+- cleanup
+- idempotence
+- state-leakage
+- order-dependency
+- recurring-failure-family
+language_specific_regressions:
+  powershell:
+  - ambiguous-variable-colon-interpolation
+  - native-stderr-not-failure-authority
+  - target-parser-preflight-before-execution

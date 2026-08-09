@@ -1,0 +1,169 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-CHANGE-DELIVERY
+  name: Cerebro Source Change Delivery Standard
+  version: 0.3.0
+  status: approved
+  authority: authoritative
+  scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
+  consumers:
+  - change-engine
+  - builder
+  - validator
+  - quality-gate
+  - source-delivery
+profiles:
+  STANDARD_A:
+    name: DIRECT_FILE_REPLACEMENT
+    use_when:
+    - only-existing-files-are-replaced
+    - no-directory-creation-required
+    - no-file-move-required
+    - no-file-delete-required
+    user_surface:
+    - finished-files
+    - exact-relative-paths
+    - sha256-manifest
+    script_required: false
+  STANDARD_B:
+    name: STRUCTURED_FILE_DELIVERY
+    use_when:
+    - directories-must-be-created
+    - new-files-are-added
+    - files-must-be-moved
+    - explicitly-superseded-files-must-be-removed
+    - bounded-backup-automation-materially-reduces-risk
+    user_surface:
+    - finished-payload-files
+    - manifest-json
+    - apply-powershell
+    - restore-powershell
+    script_scope:
+    - preflight
+    - bounded-backup
+    - backup-hash-verification
+    - directory-creation
+    - exact-byte-copy
+    - installed-hash-verification
+    - bounded-rollback-on-apply-failure
+    - receipt
+    prohibited_script_scope:
+    - Source-content-generation
+    - YAML-transformation
+    - roadmap-interpretation
+    - architecture-decision
+    - publication
+    - claim-promotion
+    - git-reset-hard
+    - unbounded-recovery
+identity_domains:
+  tracked_source_baseline:
+    authoritative_identity: git-blob-sha
+    source: git-object-database-at-exact-base-commit
+    physical_worktree_sha256_is_authority: false
+    rationale:
+    - checkout-representation-may-differ-from-git-blob-bytes
+    - CRLF-LF-conversion-must-not-create-false-baseline-failure
+  physical_worktree_prestate:
+    identity: runtime-sha256-of-actual-bytes
+    purpose:
+    - verified-backup
+    - bounded-rollback
+    - bounded-restore
+    authority: NON_AUTHORITATIVE_EVIDENCE
+  delivered_payload:
+    identity: sha256-of-exact-payload-bytes
+    purpose:
+    - package-integrity
+    - atomic-copy-verification
+    - post-apply-verification
+  invariant: TRACKED_GIT_IDENTITY_PHYSICAL_BACKUP_IDENTITY_AND_PAYLOAD_IDENTITY_MUST_NOT_BE_CONFLATED
+backup_contract:
+  required_for: STANDARD_B
+  root_default: D:\Cerebro\Backups
+  backup_identity:
+  - change-id
+  - timestamp
+  - random-suffix
+  manifest_required: true
+  manifest_name: BACKUP_MANIFEST.json
+  backup_is_valid_only_when:
+  - every-preexisting-target-is-copied
+  - every-copy-sha256-equals-recorded-pre-state
+  - absent-pre-state-is-explicitly-recorded
+  - manifest-is-written-and-re-readable
+  mutation_journal:
+    record_path_before_first_possible_mutation: true
+    reason: rollback-must-cover-post-write-verification-failure
+  restore:
+    separate-script-required: true
+    bounded-to-declared-paths: true
+    overwrite_allowed_only_when-current-state-is-known: true
+    known-current-states:
+    - exact-payload-state
+    - exact-baseline-state
+    - absent-when-baseline-absent
+    unknown-or-concurrent-state_effect: FAILED_RECOVERY_REQUIRED
+  normal_recovery_prohibits:
+  - git-reset-hard
+  - repository-wide-restore
+  - overwrite-of-unknown-current-bytes
+  - delete-of-unknown-current-files
+working_source_preflight:
+  required:
+  - repository-root-match
+  - expected-origin
+  - branch-main
+  - expected-base-commit
+  - clean-worktree
+  - no-preexisting-staged-changes
+  - payload-hashes-valid
+  - tracked-target-baselines-match-git-blob-identities
+  - physical-working-tree-is-clean-against-index
+  failure_effect: NO_MUTATION
+post_apply:
+  success_state: READY_FOR_LOCAL_VALIDATION
+  publication_performed: false
+  verified_claim_allowed: false
+  next_control:
+  - validate-actual-working-source
+  - quality-gate
+  - cerebro_sync
+  - remote-verification
+separation:
+  delivery_means: place-final-exact-bytes-at-declared-local-paths
+  change_execution_means: test-validate-learn-and-resolve-readiness
+  publication_means: synchronize-verified-local-Working-Source-to-authoritative-remote
+  invariant: DELIVERY_DOES_NOT_IMPLY_VERIFIED
+rules:
+- id: STD-CHANGE-DELIVERY-R001
+  statement: A tracked existing Source baseline shall be verified by Git blob identity at the exact base commit, not by SHA256 of checkout bytes.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R002
+  statement: Backup integrity shall use SHA256 of the actual physical Working Source bytes copied at runtime.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R003
+  statement: Payload and post-apply integrity shall use SHA256 of the exact delivered payload bytes.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R004
+  statement: Failure receipts shall preserve the original failure detail and recovery outcome across orchestration boundaries.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R005
+  statement: Every delivered PowerShell file shall pass target-language parsing before its first execution; parser failure blocks sandbox and Working Source mutation.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R006
+  statement: PowerShell generation and review shall reject ambiguous variable interpolation where an unbraced variable name is immediately followed by a colon inside an expandable string.
+  priority: critical
+target_language_preflight:
+  powershell:
+    applies_to:
+    - apply-script
+    - restore-script
+    - self-running-entrypoint
+    target_parser: System.Management.Automation.Language.Parser
+    parse_required_before_first_package_script_execution: true
+    all_delivered_ps1_must_parse: true
+    ambiguous_variable_followed_by_colon_prohibited: true
+    failure_effect: NO_MUTATION
+    build_time_regression_required: true
+    runtime_preflight_is_not_substitute_for_build_assurance: true

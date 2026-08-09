@@ -1,0 +1,49 @@
+schema: cerebro-component/v1
+component:
+  id: change
+  name: Cerebro Change Engine
+  type: tooling
+  version: 0.3.0
+  status: active-source
+responsibility:
+  primary: Execute non-authoritative change assurance from immutable tooling snapshots before Working Source publication.
+boundaries:
+  must:
+  - verify-capsule
+  - use-exact-source-baseline
+  - separate-git-baseline-from-physical-backup-identity
+  - use-disposable-development-worktrees
+  - inherit-applicable-failure-knowledge
+  - classify-failure-families
+  - block-on-unresolved-systemic-failure
+  - resolve-stability-gate
+  must_not:
+  - create-source-authority
+  - silently-promote-wisdom
+  - mutate-runtime-0-1
+  - bypass-quality-gate
+  - bypass-cerebro-sync
+dependencies:
+  build: []
+  runtime:
+  - git
+  - python
+  - PyYAML
+interfaces:
+  consumes:
+  - change-capsule
+  - exact-source-repository
+  - derived-failure-knowledge
+  produces:
+  - campaign-report
+  - derived-failure-knowledge
+  - stability-gate-decision
+version:
+  component: 0.2.0
+  schema: 1
+assurance:
+  known_failure_family_regressions:
+  - representation-and-serialization
+  - native-stderr-misclassification
+  - identity-domain-conflation
+  - powershell-target-language-parse-gap

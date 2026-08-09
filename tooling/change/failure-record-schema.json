@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-failure-knowledge/v0.1",
+  "type": "object",
+  "required": ["schema", "generation", "events", "families"],
+  "properties": {
+    "schema": {"const": "cerebro-failure-knowledge/v0.1"},
+    "generation": {"type": "integer", "minimum": 0},
+    "events": {"type": "array", "items": {"type": "object"}},
+    "families": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["observations", "distinct_runs", "status"],
+        "properties": {
+          "observations": {"type": "integer", "minimum": 0},
+          "distinct_runs": {"type": "array", "items": {"type": "string"}},
+          "status": {"enum": ["OBSERVED", "SYSTEMIC_SUSPECTED", "RESOLVED"]}
+        }
+      }
+    }
+  }
+}

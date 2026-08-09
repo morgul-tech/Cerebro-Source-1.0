@@ -1,0 +1,379 @@
+schema: cerebro-change-learning-evidence/v0.1
+change_learning:
+  id: PATCH-005.POST-001-LEARNING
+  patch_ref: PATCH-005.POST-001
+  authority: EVIDENCE_ONLY
+  lifecycle: ACTIVE_UNTIL_FINAL_PASS_CONSOLIDATION
+  final_learning_state: PENDING_OPERATIONAL_PASS
+  purpose: 'Preserve cumulative evidence from PATCH-005.POST-001 development so each iteration inherits applicable learning
+    and the final PASS can distinguish local defects, failure families, systemic Cerebro defects, false hypotheses, and reusable
+    controls.
+
+    '
+iteration_rule:
+  invariant: KNOWLEDGE_N_PLUS_1_INCLUDES_APPLICABLE_KNOWLEDGE_N
+  new_iteration_must_inherit:
+  - observed-failures
+  - failure-families
+  - rejected-physical-implementations
+  - environment-facts
+  - regression-scenarios
+  - corrected-claims
+  - unresolved-systemic-hypotheses
+observations:
+- id: P005P001-LRN-001
+  origin: INITIAL_PATCH_HOST_CANDIDATE
+  classification: SYSTEMIC
+  family: HIDDEN_EXECUTION_ENVIRONMENT_STATE
+  evidence:
+  - cpatch-command-not-resolved-in-fresh-PowerShell
+  - standard-delivery-depended-on-module-or-profile-state
+  conclusion: stable-entrypoint-must-not-require-shell-profile-or-imported-function
+  operationalization:
+  - Host-is-profile-independent
+  - standard-delivery-does-not-depend-on-cpatch
+- id: P005P001-LRN-002
+  origin: INITIAL_PATCH_HOST_CANDIDATE_REVIEW
+  classification: SYSTEMIC
+  family: BOOTSTRAP_SELF_HOSTING
+  evidence:
+  - transition-wrapper-contained-generator-transform-validator-and-orchestration
+  - patch-host-assurance-started-after-complex-transition-code
+  conclusion: new-assurance-system-cannot-use-an-equally-complex-ungoverned-bootstrap-as-its-trust-root
+  operationalization:
+  - bespoke-per-patch-bootstrap-retired
+  - delivery-separated-from-change-execution
+- id: P005P001-LRN-003
+  origin: REBUILD_001
+  classification: FAILURE_FAMILY
+  family: REPRESENTATION_AND_SERIALIZATION
+  evidence:
+  - duplicate-YAML-anchor-in-current-Source
+  - synthetic-fixture-did-not-represent-exact-current-Source
+  conclusion: exact-current-Source-is-primary-development-fixture-when-available
+  operationalization:
+  - exact-base-commit-worktree-required
+  - synthetic-fixtures-are-supplement-only
+- id: P005P001-LRN-004
+  origin: REBUILD_002
+  classification: FAILURE_FAMILY
+  family: REPRESENTATION_AND_SERIALIZATION
+  evidence:
+  - invalid-double-quoted-Windows-path-in-current-Source
+  - parser-failure-occurred-after-final-string-serialization
+  conclusion: validate-final-serialized-bytes-and-sweep-touched-scope-for-same-failure-family
+  operationalization:
+  - final-structured-parse-required
+  - failure-family-scope-sweep-required-before-next-delivery
+- id: P005P001-LRN-005
+  origin: REBUILD_003_AND_REBUILD_004_DEVELOPMENT
+  classification: SYSTEMIC
+  family: ITERATION_KNOWLEDGE_LOSS
+  evidence:
+  - stale-cross-reference-propagated-between-schema-policy-and-consumer
+  - fixes-were-not-always-promoted-to-permanent-regressions-before-next-build
+  conclusion: each-failure-must-be-evaluated-for-executable-regression-before-next-iteration
+  operationalization:
+  - iteration-inheritance
+  - cross-reference-regression
+  - operationalized-learning-rule
+- id: P005P001-LRN-006
+  origin: REBUILD_004_FAILURE
+  classification: SYSTEMIC
+  family: PRE_HOST_ASSURANCE_GAP
+  evidence:
+  - four-physical-transition-candidates-stopped-before-Patch-Host-execution
+  conclusion: repeated-pre-assurance-failure-blocks-another-variant-of-the-same-bootstrap-strategy
+  operationalization:
+  - dependent-rebuild-blocked
+  - architecture-outcome-REPLACE
+  - no-R5-transition-bootstrap
+- id: P005P001-LRN-007
+  origin: BOOTSTRAP_REGROUNDING
+  classification: SYSTEMIC
+  family: LEGACY_BOOT_CHANGE_CONFLATION
+  evidence:
+  - runtime-bootstrap-change-bootstrap-and-command-entrypoint-were-treated-as-related-bootstrap-problems
+  - HandBoot-contains-regex-and-token-based-Source-inspection
+  - separate-external-BootEngine-is-older-than-PATCH-005-control-model
+  conclusion: session-activation-change-execution-and-command-entrypoint-require-separate-ownership
+  operationalization:
+  - Change-Architecture-does-not-extend-HandBoot
+  - HandBoot-BootEngine-frozen-for-later-internal-control-review
+- id: P005P001-LRN-008
+  origin: HUMAN_DELIVERY_REFINEMENT
+  classification: HUMAN_FIT
+  family: DELIVERY_OVERENGINEERING
+  evidence:
+  - user-can-reliably-download-finished-files-and-replace-local-Working-Source-files
+  - complex-bootstrap-added-more-risk-than-file-delivery
+  conclusion: use-simplest-reliable-delivery-surface-and-separate-byte-placement-from-change-assurance
+  operationalization:
+  - STANDARD_A-direct-file-replacement
+  - STANDARD_B-structured-file-delivery
+  - PowerShell-only-for-bounded-filesystem-structure-and-backup
+- id: P005P001-LRN-009
+  origin: HUMAN_INTERRUPTION_REFINEMENT
+  classification: HUMAN_FIT
+  family: MATERIAL_INPUT_DURING_WORK
+  evidence:
+  - user-hesitated-to-provide-important-architecture-insight-during-ongoing-development
+  conclusion: user-must-not-protect-Cerebro-process-from-material-information
+  operationalization:
+  - material-input-triggers-checkpoint-and-reassessment
+  - atomic-boundary-is-respected-before-reorientation
+- id: P005P001-LRN-010
+  origin: FAILURE_DISCOVERY_REFINEMENT
+  classification: SYSTEMIC
+  family: REACTIVE_SINGLE_FAILURE_REPAIR
+  evidence:
+  - repeated-errors-can-be-symptoms-of-one-Cerebro-producer-defect
+  conclusion: Cerebro-should-make-entire-failure-classes-harder-to-produce-not-merely-repair-occurrences
+  operationalization:
+  - failure-family-escalation
+  - root-producer-analysis
+  - unresolved-systemic-failure-blocking
+  - repeated-variant-campaigns
+- id: P005P001-LRN-011
+  origin: STANDARD_B_PRE_DELIVERY_CODE_REVIEW
+  classification: FAILURE_FAMILY
+  family: CROSS_LANGUAGE_LITERAL_SEMANTICS
+  evidence:
+  - PowerShell-single-quoted-backslash-is-literal-not-an-escape
+  - YAML-single-quoted-backslash-is-literal-not-an-escape
+  - JSON-uses-backslash-escaping
+  conclusion: identical-looking-path-text-must-be-validated-under-the-target-language-literal-semantics
+  operationalization:
+  - cross-language-literal-regression
+  - target-representation-value-check
+  - final-serialized-byte-validation
+- id: P005P001-LRN-012
+  origin: STANDARD_B_PRE_DELIVERY_RECOVERY_REVIEW
+  classification: FAILURE_FAMILY
+  family: MUTATION_JOURNAL_TIMING
+  evidence:
+  - target-replacement-can-complete-before-post-write-verification-fails
+  - journaling-after-operation-can-omit-a-mutated-path-from-rollback-scope
+  conclusion: mutation-intent-must-be-journaled-before-the-first-possible-path-mutation
+  operationalization:
+  - pre-mutation-path-journal
+  - baseline-noop-recognition-during-rollback
+  - post-state-only-bounded-restore
+- id: P005P001-LRN-013
+  origin: STANDARD_B_FIRST_OPERATIONAL_FAILURE
+  classification: FAILURE_FAMILY
+  family: LOSSLESS_FAILURE_PROPAGATION
+  evidence:
+  - apply-detected-failure-and-successfully-rolled-back
+  - outer-installer-preserved-only-FAILED_ROLLED_BACK-and-lost-original-detail
+  conclusion: rollback-success-does-not-equal-failure-explained
+  operationalization:
+  - persistent-APPLY_RECEIPT
+  - preserve-original-detail-and-recovery-result-across-orchestration-boundaries
+- id: P005P001-LRN-014
+  origin: SELF_RUNNING_R1
+  classification: FAILURE_FAMILY
+  family: NATIVE_STDERR_MISCLASSIFICATION
+  evidence:
+  - git-fetch-status-on-stderr-became-PowerShell-error-under-ErrorActionPreference-Stop
+  - governing-PowerShell-assurance-already-required-immediate-exit-code-as-native-failure-authority
+  conclusion: iteration-inheritance-must-include-existing-locked-native-process-contract
+  operationalization:
+  - one-PS5.1-native-adapter-per-execution-chain
+  - stderr-remains-diagnostic
+  - immediate-LASTEXITCODE-is-native-result-authority
+  - restore-ErrorActionPreference-after-native-call
+- id: P005P001-LRN-015
+  origin: SELF_RUNNING_R2_SANDBOX
+  classification: FAILURE_FAMILY
+  family: IDENTITY_DOMAIN_CONFLATION
+  evidence:
+  - sandbox-repository-was-clean-at-exact-base-commit
+  - physical-cerebro-yaml-SHA256-differed-from-SHA256-derived-from-authoritative-Git-blob-bytes
+  - checkout-representation-can-change-line-endings-without-changing-tracked-Git-identity
+  conclusion: tracked-baseline-identity-physical-backup-identity-and-payload-identity-must-remain-separate
+  operationalization:
+  - tracked-existing-baseline-uses-git-blob-sha
+  - physical-backup-uses-runtime-SHA256-of-actual-bytes
+  - payload-and-poststate-use-exact-payload-SHA256
+  - physical-worktree-SHA256-never-substitutes-for-authoritative-Git-baseline
+- id: P005P001-LRN-016
+  origin: SELF_RUNNING_R3_SANDBOX
+  classification: FAILURE_FAMILY
+  family: TARGET_LANGUAGE_PARSE_GAP
+  evidence:
+  - APPLY-script-failed-PowerShell-parse-before-runtime-execution
+  - ambiguous-unbraced-variable-followed-by-colon-inside-expandable-string
+  - governing-PowerShell-assurance-already-required-parser-zero-errors
+  - R3-delivery-consumer-did-not-exercise-target-parser-before-APPLY
+  conclusion: target-language-parser-gates-must-be-consumed-by-the-delivery-path-and-known-generator-patterns-must-have-build-time-regressions
+  operationalization:
+  - PowerShell-AST-parse-all-delivered-ps1-before-first-package-script-execution
+  - ambiguous-variable-colon-build-regression
+  - parser-failure-blocks-sandbox-and-Working-Source-mutation
+- id: P005P001-LRN-017
+  origin: SELF_RUNNING_R4_SANDBOX
+  classification: FAILURE_FAMILY
+  family: HOST_API_BINDING_AND_FILESYSTEM_PRIMITIVE
+  evidence:
+  - sandbox-APPLY-reached-mutation-and-rolled-back
+  - System.IO.File.Replace-four-argument-call-with-null-backup-path-failed-on-actual-Windows-PowerShell-host
+  - exact-null-binding-mechanism-not-proven
+  conclusion: do-not-preserve-an-unproven-host-specific-atomic-replace-primitive-when-a-simpler-sandbox-proven-copy-plus-verified-backup-transaction-satisfies-the-user-and-recovery-contract
+  operationalization:
+  - reject-R4-execution-implementation
+  - rebuild-apply-and-restore-from-clean-basis
+  - remove-System.IO.File.Replace-from-standard-B-execution-chain
+  - sandbox-exercises-exact-copy-primitive-before-production
+- id: P005P001-LRN-018
+  origin: USER_KNOWLEDGE_REFINEMENT
+  classification: ARCHITECTURE_CANDIDATE
+  family: KNOWLEDGE_WISDOM_SEMANTIC_GAP
+  evidence:
+  - Wisdom-is-effective-for-cross-cutting-experience-and-decision-guidance
+  - detailed-coding-syntax-environment-and-API-facts-are-too-granular-for-bounded-Wisdom-profiles
+  - current-Context-model-has-no-explicit-Knowledge-object-class
+  conclusion: separate-verified-claims-from-observations-Wisdom-and-normative-Source-rules
+  operationalization:
+  - Knowledge-system-remains-candidate-until-final-pass-consolidation
+  - Knowledge-admission-requires-verified-claim-with-explicit-scope-and-provenance
+  - Knowledge-has-no-direct-control-tier
+  - Wisdom-may-distill-Knowledge
+  - Source-rule-required-for-normative-control
+- id: P005P001-LRN-019
+  origin: SELF_RUNNING_REBUILD_005_PREEXECUTION
+  classification: FAILURE_FAMILY
+  family: TARGET_SERIALIZATION_ESCAPE_LEAK
+  evidence:
+  - generated-self-runner-contained-raw-backtick-n-token-between-PowerShell-hashtable-fields
+  - PowerShell-parser-stopped-before-execution
+  conclusion: generator-escape-representations-must-not-leak-as-raw-target-code
+  operationalization:
+  - exact-failure-signature-regression-for-raw-generator-escape-leakage
+  - target-PowerShell-parser-remains-mandatory-before-execution
+  - rejected-generated-output-is-not-a-base-for-incremental-repair
+- id: P005P001-LRN-020
+  origin: SELF_RUNNING_REBUILD_006_SANDBOX
+  classification: SYSTEMIC
+  family: CONTRACT_EVOLUTION_PROPAGATION_GAP
+  evidence:
+  - delivery-manifest-producer-used-cerebro-source-delivery-manifest-v0.2
+  - self-runner-consumer-used-v0.2
+  - APPLY-consumer-remained-hard-coded-to-v0.1
+  - capsule-engine-and-schema-id-used-v0.2-while-schema-const-remained-v0.1
+  conclusion: contract-version-change-is-incomplete-until-all-producers-consumers-schemas-fixtures-and-validation-constants-agree
+  operationalization:
+  - pre-sandbox-contract-coherence-gate
+  - Change-Engine-capsule-schema-cross-reference-selftest
+  - package-build-cross-reference-regression
+  - contract-version-propagation-is-represented-as-verified-technical-Knowledge-candidate
+- id: P005P001-LRN-021
+  origin: REBUILD_007_BUILD_GATE_REFINEMENT
+  classification: LOCAL
+  family: OVERBROAD_REGRESSION_GUARD
+  evidence:
+  - initial-generator-escape-regression-incorrectly-flagged-legitimate-PowerShell-backtick-newline-inside-strings
+  conclusion: regression-guards-must-target-the-proven-failure-mechanism-without-rejecting-valid-language-constructs
+  operationalization:
+  - exact-signature-or-parser-backed-check-preferred-over-broad-token-ban
+  - gate-false-positive-is-corrected-before-user-delivery
+
+final_pass_consolidation:
+  required: true
+  trigger: PATCH_005_POST_001_OPERATIONAL_PASS
+  must_classify:
+  - local-defects
+  - failure-families
+  - systemic-Cerebro-defects
+  - false-hypotheses
+  - confirmed-reusable-learning
+  outputs:
+  - final-learning-evidence
+  - promoted-regression-set
+  - Wisdom-candidates-with-explicit-control-tier
+  - CEREBRO_INTERNAL_CONTROL_REVIEW_input
+  automatic_Source_promotion: prohibited
+  patch_closure_before_completion: prohibited
+knowledge_system_candidate:
+  status: CANDIDATE_UNTIL_FINAL_PASS_CONSOLIDATION
+  human_intent: Knowledge is what Cerebro knows to be correct; Wisdom is what Cerebro can learn, infer, or use from accumulated
+    Knowledge and experience.
+  canonical_resolution_candidate:
+    canonical_term: KNOWLEDGE
+    metamodel_kind_until_review: EVIDENCE
+    semantic_subtype: KNOWLEDGE_CLAIM
+    operational_steward: context-engine
+    authority_scope: EVIDENCE_ONLY
+    direct_control_effect: NONE
+  admission_gate:
+    unverified_claim_is_not_knowledge: true
+    pre_knowledge_states:
+    - OBSERVATION
+    - HYPOTHESIS
+    - KNOWLEDGE_CANDIDATE
+    required_for_admission:
+    - explicit-claim
+    - domain
+    - applicability-scope
+    - provenance
+    - evidence-refs
+    - verification-method
+    - conditions-or-environment
+    - falsification-or-contradiction-path
+  knowledge_record_candidate:
+    required_fields:
+    - id
+    - claim
+    - domain
+    - knowledge_type
+    - scope
+    - provenance
+    - evidence_refs
+    - verification
+    - conditions
+    - lifecycle
+    - regression_refs
+    knowledge_types:
+    - FACT
+    - ENVIRONMENT_FACT
+    - API_CONTRACT
+    - COMPATIBILITY_FACT
+    - FAILURE_MECHANISM
+    - PROCEDURE
+    - INVARIANT
+    lifecycle:
+    - ACTIVE
+    - STALE
+    - SUPERSEDED
+    - REVOKED
+  domain_examples:
+    engineering:
+    - powershell
+    - python
+    - git
+    - yaml-json-serialization
+    - windows-filesystem
+    - dotnet-api
+    cerebro:
+    - authority
+    - runtime-behavior
+    - change-pipeline
+    - delivery-environment
+  separation:
+    observation: what-happened
+    knowledge: what-is-verified-within-scope
+    wisdom: what-can-be-learned-inferred-or-used-from-knowledge-and-experience
+    source_rule: what-Cerebro-normatively-requires
+  storage_candidate:
+    raw_high_volume: D:\Cerebro\Run\knowledge
+    curated_cross_patch_index: Context-owned Source-tracked evidence index
+    machine_enforcement: regressions-preflights-validators-and-gates-remain-with-owning-tooling
+    general_world_encyclopedia: OUT_OF_SCOPE
+  promotion_constraints:
+  - knowledge-does-not-become-Source-authority-by-being-verified
+  - knowledge-does-not-automatically-create-Wisdom
+  - knowledge-does-not-automatically-create-a-rule
+  - external-or-version-sensitive-knowledge-must-declare-validity-scope
+  - contradictory-evidence-reopens-verification
+  final_pass_decision_required: true
+  internal_control_review_input: true

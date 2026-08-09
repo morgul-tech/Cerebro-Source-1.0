@@ -1,0 +1,37 @@
+schema: cerebro-component/v1
+component:
+  id: host
+  name: Cerebro Host
+  type: tooling
+  version: 0.1.0
+  status: active-source
+responsibility:
+  primary: Provide one small stable local entrypoint that verifies Source identity, selects an exact immutable tooling snapshot, and delegates execution.
+boundaries:
+  must:
+    - verify-source-repository-binding
+    - bind-to-exact-source-commit
+    - dispatch-from-immutable-tooling-snapshot
+    - preserve-live-child-output
+  must_not:
+    - mutate-working-source
+    - parse-roadmap
+    - generate-source-content
+    - own-quality-policy
+    - own-publication-policy
+    - own-runtime-transition-policy
+dependencies:
+  build: []
+  runtime:
+    - git
+    - python
+interfaces:
+  consumes:
+    - working-source-location
+    - exact-source-commit
+    - command
+  produces:
+    - delegated-process-result
+version:
+  component: 0.1.0
+  schema: 1

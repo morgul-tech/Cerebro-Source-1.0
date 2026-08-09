@@ -56,6 +56,8 @@ standards:
   quality_gate: standards/quality-gate.yaml
   valider_command: standards/valider-command.yaml
   patch_package: standards/patch-package.yaml
+  change_architecture: standards/change-architecture.yaml
+  change_delivery: standards/change-delivery.yaml
   operational_progress: standards/operational-progress.yaml
   project_status: standards/project-status.yaml
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
@@ -67,6 +69,8 @@ tooling:
   validator: tooling/validator/
   runtime_host: tooling/runtime-host/
   publisher: tooling/publisher/
+  host: tooling/host/
+  change: tooling/change/
 governance:
   single_source_of_truth: true
   definitional_authority: Cerebro Source 1.0

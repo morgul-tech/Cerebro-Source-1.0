@@ -571,7 +571,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: &id001
+    sections: &id002
     - '4.1'
     - '4.2'
     - '4.3'
@@ -588,7 +588,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-003
   owner: interaction
   authority: normative
@@ -600,7 +600,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-004
   owner: interaction
   authority: normative
@@ -612,7 +612,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-005
   owner: interaction
   authority: normative
@@ -624,7 +624,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-006
   owner: interaction
   authority: normative
@@ -636,7 +636,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-007
   owner: interaction
   authority: normative
@@ -648,7 +648,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-008
   owner: interaction
   authority: normative
@@ -660,7 +660,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-009
   owner: interaction
   authority: normative
@@ -672,7 +672,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-010
   owner: interaction
   authority: normative
@@ -684,7 +684,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-011
   owner: interaction
   authority: normative
@@ -696,7 +696,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-012
   owner: interaction
   authority: normative
@@ -708,7 +708,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-013
   owner: interaction
   authority: normative
@@ -721,7 +721,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-014
   owner: interaction
   authority: normative
@@ -733,7 +733,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-015
   owner: interaction
   authority: normative
@@ -745,7 +745,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-016
   owner: interaction
   authority: normative
@@ -757,7 +757,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-017
   owner: interaction
   authority: normative
@@ -769,7 +769,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-018
   owner: interaction
   authority: normative
@@ -781,7 +781,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-019
   owner: interaction
   authority: normative
@@ -793,7 +793,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-020
   owner: interaction
   authority: normative
@@ -805,7 +805,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-021
   owner: interaction
   authority: normative
@@ -817,7 +817,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-022
   owner: interaction
   authority: normative
@@ -829,7 +829,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-023
   owner: interaction
   authority: normative
@@ -841,7 +841,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-024
   owner: interaction
   authority: normative
@@ -853,7 +853,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-025
   owner: interaction
   authority: operational
@@ -865,7 +865,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-026
   owner: interaction
   authority: normative
@@ -877,7 +877,7 @@ rules:
   provenance:
     type: master-migration
     source: MASTER_v1.1
-    sections: *id001
+    sections: *id002
 - id: COL-027
   owner: interaction
   authority: normative
