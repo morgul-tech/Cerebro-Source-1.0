@@ -2353,6 +2353,271 @@ RECEIPT-76656fa9d8e617e98414c9fe
           - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
           - "CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001"
       sequence: 69
+    -
+      id: "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      type: "DECISION"
+      scope: "ADAPTIVE-AUTONOMY-ARCHITECTURE-AND-IMPLEMENTATION-SEQUENCE"
+      statement: "The Adaptive Autonomy architecture and implementation sequence PATCH-AA-000 through PATCH-AA-004 are semantically locked for future implementation; the lock preserves the agreed plan but does not itself authorize implementation."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "ADAPTIVE_AUTONOMY"
+        implementation_authorization_from_lock: false
+        architecture:
+          control_owner: "MCP"
+          form: "MCP_NATIVE_CLOSED_LOOP_CONTROL_POLICY"
+          new_top_level_engine: false
+          runtime_role: "BOUNDED_EVENT_EXECUTOR_NOT_CONTROL_INTELLIGENCE"
+          context_role: "LEARNING_EVIDENCE_AND_RETRIEVAL"
+          quality_role: "QUALITY_AND_READINESS_ASSESSMENT"
+          presentation_role: "OBSERVABILITY_AND_HUMAN_STATUS"
+          user_profile_role: "USER_OWNED_BEHAVIORAL_CONFIGURATION_WITHOUT_AUTHORITY_ESCALATION"
+        control_requirements:
+          - "outcome_and_completion_contract"
+          - "decision_state_and_semantic_lock"
+          - "dependency_state"
+          - "resource_state"
+          - "human_interaction_assessment"
+          - "CAN_MAY_SHOULD_separation"
+          - "control_stability_on_material_events"
+          - "safe_boundary_interruptibility"
+          - "adaptive_verification"
+        optimization:
+          primary_objective: "TOTAL_COST_TO_VERIFIED_OUTCOME"
+          human_interaction_rule: "MAXIMIZE_DECISION_VALUE_PER_HUMAN_INTERRUPTION"
+          phase_rule: "FRONT_LOAD_COGNITION_BACK_LOAD_AUTOMATION"
+          post_lock_effect: "AUTONOMY_INCREASES_SHARPLY_WHILE_ASSURANCE_REMAINS_PROPORTIONAL"
+        implementation_sequence:
+          - "PATCH-AA-000"
+          - "PATCH-AA-001"
+          - "PATCH-AA-002"
+          - "PATCH-AA-003"
+          - "PATCH-AA-004"
+        deferred_not_locked_by_this_decision:
+          - "GENERALIZED_CODE_ASSURANCE"
+          - "AUTOMATION_ORCHESTRATION"
+          - "EMPIRICAL_RESOURCE_OPTIMIZATION"
+      provenance:
+        introduced_by_ref: "USER-LOCKED-ADAPTIVE-AUTONOMY-PLAN-2026-08-09"
+        basis_refs:
+          - "standards/control-architecture.yaml"
+          - "standards/development/adaptive-quality-workform.yaml"
+          - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+          - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+          - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
+      sequence: 70
+    -
+      id: "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+      type: "DECISION"
+      scope: "SEMANTIC-LOCK-AND-IMPLEMENTATION-IDENTITY"
+      statement: "A user-provided name attached to LOCK is a temporary user-facing label only; it must not become canonical Cerebro identity, persistent machine logic, or execution authorization."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "FUTURE_LOCK_COMMAND_SEMANTICS"
+        semantic_lock:
+          freezes: "AGREED_IMPLEMENTATION_SEMANTICS"
+          does_not_freeze: "NONMATERIAL_EXECUTION_DETAILS_WITHIN_THE_ADAPTIVE_EXECUTION_ENVELOPE"
+          implementation_authorization: "SEPARATE_REQUIRED_INTENT"
+          material_basis_change_effect: "INVALIDATE_LOCK_AND_REASSESS"
+        temporary_label:
+          scope: "USER_FACING_AND_CONVERSATION_LOCAL"
+          may_help_user_recognize_artifact_files: true
+          canonical_identity_source: "CEREBRO_GENERATED_INDEPENDENT_ID"
+          prohibited_persistence:
+            - "Source_rule_identity"
+            - "Roadmap_object_identity"
+            - "Working_Context_object_identity"
+            - "Wisdom_or_Knowledge_identity"
+            - "MCP_Control_State_identity"
+            - "manifest_logical_identity"
+            - "receipt_logical_identity"
+            - "machine_routing_logic"
+        known_cleanup_requirement:
+          issue: "PRIOR_TEMPORARY_USER_LABEL_LEAKED_INTO_ACTIVE_SOURCE_MACHINE_LOGIC"
+          resolution_target: "PATCH-AA-000"
+          history_policy: "KEEP_GIT_HISTORY_DO_NOT_REWRITE_HISTORY_FOR_COSMETIC_CLEANUP"
+      provenance:
+        introduced_by_ref: "USER-SEMANTIC-LOCK-CLARIFICATION-2026-08-09"
+        basis_refs:
+          - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      sequence: 71
+    -
+      id: "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+      type: "WISDOM_RECORD"
+      scope: "MATERIAL-SOLUTION-CONVERGENCE-AND-PREIMPLEMENTATION"
+      statement: "When a material solution appears resolved, Cerebro should perform one bounded final critical FULL review on the materially stable basis when high-leverage triggers are present; late challenge can expose small pre-implementation corrections with very large downstream value."
+      payload:
+        maturity: "USER_LOCKED_REQUIREMENT"
+        confidence: "HIGH"
+        implementation_status: "PERSISTED_FOR_PATCH-AA-000_AND_PATCH-AA-001"
+        trigger_signals:
+          - "architecture_or_cross_component_change"
+          - "persistent_semantics_or_authority_boundary_change"
+          - "downstream_work_depends_on_the_foundation"
+          - "user_correction_changed_a_material_premise"
+          - "human_machine_semantic_gap_detected"
+          - "high_rework_or_recovery_cost_if_wrong"
+          - "irreversible_or_hard_to_reverse_effect"
+          - "repeated_failure_or_friction_family"
+          - "new_control_delivery_or_automation_capability"
+          - "solution_has_reached_READY_TO_LOCK_after_material_refinement"
+        forced_review_workform:
+          - "REFINE_FULL"
+          - "CRITIQUE_FULL"
+          - "XREFINE_FULL"
+          - "CONSOLIDATE_FULL"
+        boundedness:
+          - "one_final_critical_pass_per_materially_stable_basis"
+          - "do_not_repeat_without_material_delta"
+          - "material_change_invalidates_readiness_and_requires_reconvergence"
+          - "after_reconvergence_one_new_final_pass_is_allowed_for_the_new_basis"
+          - "do_not_research_indefinitely"
+        observed_value:
+          - "late_review_exposed_temporary_label_identity_leakage"
+          - "late_review_separated_LOCK_from_execution_authorization"
+          - "late_review_identified_control_stability_need"
+          - "late_review_added_CAN_MAY_SHOULD_separation"
+          - "late_review_added_safe_boundary_interruptibility"
+        expected_effect:
+          - "move_expensive_post_implementation_rework_into_cheap_pre_implementation_adjustment"
+          - "increase_decision_quality_without_unbounded_analysis"
+      provenance:
+        introduced_by_ref: "USER-FINAL-CRITICAL-REVIEW-LEARNING-2026-08-09"
+        basis_refs:
+          - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+          - "standards/development/adaptive-quality-workform.yaml"
+          - "standards/development/architectural-regrounding.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+      sequence: 72
+    -
+      id: "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      type: "WISDOM_RECORD"
+      scope: "MATERIAL-CHANGE-WORKFORM-AND-HUMAN-MACHINE-COOPERATION"
+      statement: "For material changes, resolve uncertainty and high-value human decisions before mutation, then increase machine autonomy and assurance after semantic convergence; optimize total cost to verified outcome rather than speed to the first implementation attempt."
+      payload:
+        maturity: "USER_LOCKED_REQUIREMENT"
+        confidence: "HIGH"
+        implementation_status: "PERSISTED_FOR_ADAPTIVE_AUTONOMY_FOUNDATION"
+        observed_pattern:
+          prior_failure_mode: "EARLY_IMPLEMENTATION_FOLLOWED_BY_ASSUMPTION_REPAIR_AND_REPEATED_USER_RETRY"
+          improved_pattern:
+            - "understand_human_outcome"
+            - "refine_and_critique_while_change_is_cheap"
+            - "resolve_dependencies"
+            - "lock_semantics"
+            - "increase_post_lock_autonomy"
+            - "run_internal_assurance_and_canary"
+            - "present_only_qualified_user_execution"
+            - "verify_and_learn"
+        human_interaction:
+          principle: "HUMAN_INTERACTION_IS_AN_OPTIMIZATION_RESOURCE_NOT_MERELY_AN_INTERRUPTION"
+          target: "MAXIMIZE_DECISION_VALUE_PER_HUMAN_INTERRUPTION"
+        failure_absorption:
+          principle: "MOVE_DETECTABLE_FAILURES_UPSTREAM_BEFORE_USER_EXECUTION"
+          example: "A build-time patch canary failure was corrected before the user received the final STANDARD artifacts."
+        reorientation:
+          principle: "WHEN_NEW_EVIDENCE_FALSIFIES_A_PREMISE_REPAIR_THE_MODEL_NOT_ONLY_THE_SYMPTOM"
+        dependency:
+          principle: "DEPENDENCY_CORRECTNESS_IS_PART_OF_EFFICIENCY"
+      provenance:
+        introduced_by_ref: "USER-PROCESS-LEARNING-2026-08-09"
+        basis_refs:
+          - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
+          - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+          - "CTX-WISDOM-PIPELINE-STEERING-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
+      sequence: 73
+    -
+      id: "CTX-ASSESS-USAGE-OBSERVATION-20260809-001"
+      type: "ASSESSMENT"
+      scope: "AGENTIC-USAGE-OBSERVATION"
+      statement: "The user reported 42 percent usage limit remaining on 2026-08-09 after the successful STANDARD delivery implementation; because no paired pre-operation observation exists, the previous implementation cost cannot be calculated from this observation alone."
+      payload:
+        remaining_percent: 42
+        observed_date: "2026-08-09"
+        observed_time: null
+        evidence_origin: "EXPLICIT_USER_REPORT"
+        measurement_authority: "USER_VISIBLE_OPENAI_USAGE_DASHBOARD"
+        phase: "POST_PREVIOUS_IMPLEMENTATION_AND_BASELINE_CANDIDATE_FOR_NEXT_OPERATION"
+        previous_operation_cost_delta: "NOT_CALCULABLE_NO_PRE_MEASUREMENT"
+        future_measurement:
+          - "capture_PRE_remaining"
+          - "capture_POST_remaining"
+          - "reject_simple_delta_if_reset_occurs_between_measurements"
+          - "store_operation_characteristics_for_future_range_estimation"
+          - "avoid_false_precision"
+      provenance:
+        introduced_by_ref: "USER-USAGE-42-PERCENT-2026-08-09"
+        basis_refs:
+          - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+      sequence: 74
+    -
+      id: "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+      type: "CURRENT_BASIS"
+      scope: "NEXT-SESSION-ADAPTIVE-AUTONOMY-IMPLEMENTATION"
+      statement: "The Adaptive Autonomy plan is semantically locked and persistently reconstructable without conversation history; the exact next development boundary is explicit implementation authorization for PATCH-AA-000."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        source_base_commit_before_persistence: "d01463a1704921d4b48c4a640108532717e05f8f"
+        current_phase: "PHASE-2"
+        current_patch: "PATCH-AA-000"
+        implementation_authorized: false
+        locked_sequence:
+          - "PATCH-AA-000"
+          - "PATCH-AA-001"
+          - "PATCH-AA-002"
+          - "PATCH-AA-003"
+          - "PATCH-AA-004"
+        exact_next_action: "WAIT_FOR_EXPLICIT_IMPLEMENTATION_INTENT_THEN_IMPLEMENT_PATCH-AA-000"
+        required_loaded_refs:
+          - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+          - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+          - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+          - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+          - "CTX-ASSESS-USAGE-OBSERVATION-20260809-001"
+        deferred_after_AA_004:
+          - "GENERALIZED_CODE_ASSURANCE"
+          - "AUTOMATION_ORCHESTRATION"
+          - "EMPIRICAL_RESOURCE_OPTIMIZATION"
+        reconstructability:
+          conversation_history_required: false
+          roadmap_and_context_are_primary: true
+          session_handoff_is_derived_only: true
+      provenance:
+        introduced_by_ref: "CEREBRO-PERSIST-AA-PLAN-001"
+        basis_refs:
+          - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+          - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+          - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+          - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
+      sequence: 75
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -2379,6 +2644,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+      - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
@@ -2389,6 +2656,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
       - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
+      - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -2423,7 +2691,9 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001"
       - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
       - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
-  next_sequence: 70
+      - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+      - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+  next_sequence: 76
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

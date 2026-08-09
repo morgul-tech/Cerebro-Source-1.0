@@ -6,7 +6,7 @@ roadmap:
     contract_owner: "project-engine"
     state_scope: "working-source"
   status: "ACTIVE"
-  objective: "Execute PATCH-006 as a bounded Wisdom retrieval and evidence-only Knowledge implementation, preserving the authority boundary proven by PATCH-005.POST-001."
+  objective: "Preserve the semantically locked Adaptive Autonomy program and implement PATCH-AA-000 through PATCH-AA-004 only after explicit implementation authorization, using dependency-aware control and verified persistent state."
   scope:
     included:
       - "project-roadmap-contract"
@@ -15,6 +15,10 @@ roadmap:
       - "runtime-0.1-scope-and-minimum-contracts"
       - "runtime-0.1-implementation"
       - "idea-object-pipeline-after-runtime-baseline"
+      - "adaptive-autonomy-control-policy"
+      - "semantic-lock-and-canonical-identity-separation"
+      - "operational-resource-and-usage-observability"
+      - "shadow-control-evaluation-before-activation"
     excluded:
       - "conversation-history-as-authority"
       - "runtime-state-as-persistent-truth"
@@ -53,7 +57,7 @@ roadmap:
       id: "PHASE-1"
       title: "runtime_0_1"
       purpose: "define_and_implement_stable_minimal_runtime"
-      status: "ACTIVE"
+      status: "COMPLETED"
       dependency_refs:
         - "PHASE-0"
       entry_criteria:
@@ -75,6 +79,35 @@ roadmap:
             - "nonessential_runtime_scope_deferred"
             - "runtime_0_1_implemented"
             - "stable_minimal_runtime_verified"
+    -
+      id: "PHASE-2"
+      title: "adaptive_autonomy"
+      purpose: "implement_and_activate_mcp_native_adaptive_autonomy_from_a_semantically_locked_plan"
+      status: "ACTIVE"
+      dependency_refs:
+        - "PHASE-1"
+      entry_criteria:
+        - "PATCH-006_VERIFIED"
+        - "ADAPTIVE_AUTONOMY_PLAN_LOCKED"
+      exit_criteria:
+        - "PATCH-AA-000_VERIFIED"
+        - "PATCH-AA-001_VERIFIED"
+        - "PATCH-AA-002_VERIFIED"
+        - "PATCH-AA-003_VERIFIED"
+        - "PATCH-AA-004_VERIFIED"
+        - "ADAPTIVE_AUTONOMY_ACTIVATED_WITH_SHADOW_EVIDENCE"
+      deliverable_refs: []
+      milestones:
+        -
+          id: "MS-003"
+          title: "adaptive_autonomy_foundation_and_activation"
+          status: "ACTIVE"
+          acceptance:
+            - "semantic_lock_identity_boundary_implemented"
+            - "mcp_native_adaptive_autonomy_foundation_verified"
+            - "usage_and_operational_observability_verified"
+            - "shadow_scenario_suite_passed"
+            - "adaptive_autonomy_activation_verified"
   patches:
     -
       id: "PATCH-001A"
@@ -761,7 +794,7 @@ roadmap:
       title: "wisdom_operationalization_and_knowledge_evidence_decision"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-005.POST-001"
       decision_refs:
@@ -778,20 +811,153 @@ roadmap:
         - "automatic_authority_promotion_prohibited"
         - "Knowledge_is_evidence_only_and_has_no_direct_control_tier"
         - "Final_Learning_Consolidation_approved_only_the_bounded_evidence_scope"
+    -
+      id: "PATCH-AA-000"
+      title: "semantic_lock_identity_boundary_and_active_source_cleanup"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "ACTIVE"
+      dependency_refs:
+        - "PATCH-006"
+      decision_refs:
+        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+        - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+        - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+      source_refs:
+        - "standards/change-delivery.yaml"
+        - "standards/user-operating-profile.yaml"
+        - "standards/control-architecture.yaml"
+        - "engines/context/working-context.yaml"
+        - "engines/project/roadmap.yaml"
+      implementation_constraints:
+        - "implementation_requires_explicit_user_authorization_beyond_LOCK"
+        - "temporary_user_lock_label_must_not_become_canonical_identity"
+        - "temporary_user_lock_label_must_not_persist_in_machine_logic"
+        - "locked_semantics_and_adaptive_execution_envelope_must_remain_distinct"
+        - "material_basis_change_invalidates_semantic_lock"
+        - "remove_prior_temporary_label_leakage_from_active_Source_without_rewriting_git_history"
+      acceptance:
+        - "semantic_lock_contract_is_explicit"
+        - "canonical_machine_identity_is_independent_of_user_temporary_label"
+        - "LOCK_does_not_authorize_implementation"
+        - "active_Source_has_no_temporary_lock_label_as_machine_identity"
+        - "final_critical_review_trigger_contract_is_preserved_for_AA_foundation"
+    -
+      id: "PATCH-AA-001"
+      title: "adaptive_autonomy_mcp_native_foundation"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-AA-000"
+      decision_refs:
+        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+        - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+        - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+      source_refs:
+        - "standards/control-architecture.yaml"
+        - "standards/development/adaptive-quality-workform.yaml"
+        - "engines/interaction/rules.yaml"
+        - "engines/context/working-context.yaml"
+      implementation_constraints:
+        - "no_new_top_level_engine"
+        - "MCP_owns_adaptive_control_resolution"
+        - "Runtime_remains_bounded_executor"
+        - "CAN_MAY_SHOULD_are_resolved_separately"
+        - "re_resolution_occurs_on_material_control_events_not_micro_signals"
+        - "material_user_input_is_applied_at_nearest_safe_atomic_boundary"
+        - "Knowledge_and_Wisdom_remain_evidence_only"
+      acceptance:
+        - "completion_contract_in_control_basis"
+        - "decision_state_in_control_basis"
+        - "dependency_state_in_control_basis"
+        - "resource_state_in_control_basis"
+        - "human_interaction_assessment_in_control_basis"
+        - "control_stability_and_interruptibility_verified"
+    -
+      id: "PATCH-AA-002"
+      title: "adaptive_autonomy_operational_status_and_usage_telemetry"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-AA-001"
+      decision_refs:
+        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+        - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+        - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
+      source_refs:
+        - "standards/user-operating-profile.yaml"
+        - "engines/presentation/rules.yaml"
+        - "tooling/runtime-host/component.yaml"
+      implementation_constraints:
+        - "usage_dashboard_remains_measurement_authority"
+        - "usage_estimates_remain_non_authoritative_until_empirically_supported"
+        - "resource_pressure_must_not_weaken_authority_integrity_recovery_or_mandatory_verification"
+        - "operational_status_includes_usage_remaining_when_fresh_observation_exists"
+      acceptance:
+        - "before_after_operation_usage_observation_supported"
+        - "human_time_to_available_result_stages_supported"
+        - "resource_state_visible_to_MCP"
+        - "operational_status_exposes_usage_with_source_and_freshness"
+    -
+      id: "PATCH-AA-003"
+      title: "adaptive_autonomy_shadow_resolver_and_scenario_suite"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-AA-002"
+      decision_refs:
+        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+        - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+        - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      source_refs: []
+      implementation_constraints:
+        - "shadow_mode_does_not_govern_live_control"
+        - "scenario_suite_replays_real_Cerebro_failure_and_success_patterns"
+        - "over_questioning_and_over_autonomy_are_both_measured"
+        - "dependency_ordering_reorientation_and_assurance_behavior_are_compared"
+      acceptance:
+        - "successful_standard_delivery_sequence_replayed_correctly"
+        - "prior_patch_loop_failure_patterns_detected"
+        - "human_machine_semantic_gap_scenarios_pass"
+        - "authority_and_dependency_boundaries_pass"
+    -
+      id: "PATCH-AA-004"
+      title: "adaptive_autonomy_activation"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-AA-003"
+      decision_refs:
+        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      source_refs: []
+      implementation_constraints:
+        - "activation_requires_shadow_evidence"
+        - "ADAPTIVE_is_universal_default_not_static_level"
+        - "automation_remains_separate_from_autonomy"
+        - "code_assurance_remains_tooling_not_new_engine"
+      acceptance:
+        - "adaptive_control_activation_verified"
+        - "no_authority_boundary_regression"
+        - "no_runtime_resident_control_policy"
+        - "future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work"
   execution:
     current:
-      id: "EXEC-P6-WISDOM-KNOWLEDGE-IMPLEMENTATION"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      patch_ref: "PATCH-006"
-      canonical_command: "operate the published PATCH-006 bounded relevance capability and accept the user's next objective"
-      status: "COMPLETE"
+      id: "EXEC-AA-000-IMPLEMENTATION-AUTHORIZATION"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      patch_ref: "PATCH-AA-000"
+      canonical_command: "await explicit user instruction to implement PATCH-AA-000; semantic LOCK alone does not authorize implementation"
+      status: "ACTIVE"
     next:
-      id: "EXEC-P6-NEXT-USER-OBJECTIVE"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      patch_ref: "PATCH-006"
-      canonical_command: "accept the user's next objective under the current operational control state"
+      id: "EXEC-AA-001-AFTER-AA000"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      patch_ref: "PATCH-AA-001"
+      canonical_command: "after PATCH-AA-000 is VERIFIED, continue the locked dependency sequence under fresh MCP control"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -965,6 +1131,36 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "WISDOM"
+      object_ref: "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "WISDOM"
+      object_ref: "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "ASSESSMENT"
+      object_ref: "CTX-ASSESS-USAGE-OBSERVATION-20260809-001"
+      requirement: "OPTIONAL"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -976,6 +1172,7 @@ roadmap:
       - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
       - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
+      - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -1000,9 +1197,11 @@ roadmap:
       - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
+      - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
   revision:
-    sequence: 21
-    last_locked_patch_ref: "PATCH-005.POST-003"
+    sequence: 22
+    last_locked_patch_ref: "PATCH-AA-004"
 
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
@@ -1023,7 +1222,8 @@ patch_005_asc:
 patch_005_current_execution_state:
   patch_ref: PATCH-005.POST-003
   scope: DELIVERY_PROFILE_ACCESS_EFFICIENCY_AND_SESSION_LEARNING_CORRECTION
-  source_state: STANDARD_USER_DELIVERY_PENDING
+  source_state: HISTORICAL_SUPERSEDED_BY_ROADMAP_EXECUTION
+  superseded_by_execution_ref: EXEC-AA-000-IMPLEMENTATION-AUTHORIZATION
   completed_stages:
     - P5-S0
     - P5-S1
@@ -1045,11 +1245,9 @@ patch_005_current_execution_state:
     - P5P001-FINAL-LEARNING-CONSOLIDATION
     - P5P001-INTERNAL-CONTROL-REVIEW
     - P5P001-CLOSURE-PASS-CANDIDATE
-  active_stage: PATCH-006-OPERATIONAL
+  active_stage: SUPERSEDED_BY_ROADMAP_EXECUTION
   closure_receipt_authority: EXTERNAL_SHA256_BOUND_CLOSURE_ENGINE_RECEIPT
-  next_stages:
-    - P6-BOUND-KNOWLEDGE-EVIDENCE-MODEL
-    - P6-BOUND-WISDOM-RETRIEVAL-CONTRACT
+  next_stages: []
   patch_006:
     title: WISDOM_OPERATIONALIZATION_AND_KNOWLEDGE_EVIDENCE
     status: IMPLEMENTED_VALIDATED_PUBLISHED
