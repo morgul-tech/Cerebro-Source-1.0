@@ -11,6 +11,14 @@ required_sequence:
 - load_required_modules
 - initialize_runtime
 - activate
+command_resolution:
+  input: boot cerebro
+  match: CASE_INSENSITIVE_EXACT_TRIMMED
+  canonical_command: bootCerebro
+  authority_preflight: SOURCE_FIRST
+  source_ref: github:morgul-tech/Cerebro-Source-1.0/main/cerebro.yaml
+  derived_input_rule: CURRENT_COMMIT_BOUND_ONLY
+  stale_derived_input_effect: REJECT_INPUT_CONTINUE_CURRENT_SOURCE
 rules:
 - id: MCP-040
   authority: constitutional
@@ -48,6 +56,30 @@ rules:
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
+- id: MCP-046
+  authority: constitutional
+  statement: Kommandoen boot cerebro SKAL alltid resolve til bootCerebro gjennom Source-first authority preflight.
+  provenance:
+    type: approved-refinement
+    basis: PATCH-006 boot authority ambiguity refinement
+- id: MCP-047
+  authority: constitutional
+  statement: DOCX-filer, CURRENT-filnavn, bibliotekroot, samtaleminne, receipts og handoffs SKAL IKKE konkurrere med Cerebro Source om authority.
+  provenance:
+    type: approved-refinement
+    basis: PATCH-006 boot authority ambiguity refinement
+- id: MCP-048
+  authority: constitutional
+  statement: Stale derived state SKAL avvises som continuity-input og SKAL IKKE gjenåpne eller blokkere en verifisert gjeldende Source-state.
+  provenance:
+    type: approved-refinement
+    basis: PATCH-006 boot authority ambiguity refinement
+- id: MCP-049
+  authority: constitutional
+  statement: Grønn operativ status SKAL kreve en ACTIVE_CONTROL_TRANSFERRED receipt bundet til gjeldende Source-commit.
+  provenance:
+    type: approved-refinement
+    basis: PATCH-006 boot authority ambiguity refinement
 # BEGIN PATCH-002.PRE-003 HANDBOOT ACTIVATION INTEGRATION
 
 handboot_activation:
@@ -57,6 +89,7 @@ handboot_activation:
   canonical_command: bootCerebro
   aliases:
     - bootini
+    - boot cerebro
 
   working_model:
     working_source_role: mutable_local_development_surface

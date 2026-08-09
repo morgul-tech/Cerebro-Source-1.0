@@ -3,7 +3,7 @@ component:
   id: runtime-host
   name: Runtime Host
   type: tooling
-  version: 1.0.0
+  version: 1.1.0
   status: active-source
 responsibility:
   primary: >
@@ -20,12 +20,19 @@ boundaries:
   - resolve-declared-capability-binding
   - verify-runtime-result-before-success
   - write-runtime-receipt-for-success-and-failure
+  - canonicalize-natural-language-boot
+  - resolve-source-before-derived-state
+  - reject-stale-derived-input
+  - require-current-commit-bound-operational-receipt
   must_not:
   - mutate-source-from-runtime
   - create-source-authority
   - execute-undeclared-capability
   - retain-hidden-resident-runtime-state
   - reinterpret-bootstrap-state-as-runtime-state
+  - infer-authority-from-library-filename
+  - infer-authority-from-conversation-memory
+  - treat-stale-receipt-or-handoff-as-current-gate
 interfaces:
   consumes:
   - validated-release
@@ -43,5 +50,5 @@ migration:
   introduced_by: PATCH-005
   supersedes: loader
 version:
-  component: 1.0.0
+  component: 1.1.0
   schema: 1

@@ -61,3 +61,25 @@ rules:
   priority: critical
   verification:
   - standards/system-metamodel.yaml defines separate authority scopes and ownership dimensions.
+- id: STD-SOURCE-R009
+  statement: A filename, library label, project root label, CURRENT marker, attachment, conversation history, or model memory shall not establish or compete for Cerebro Source authority.
+  priority: critical
+  verification:
+  - standards/runtime/handboot.yaml resolves the sole authority before derived inputs.
+- id: STD-SOURCE-R010
+  statement: The natural-language command boot cerebro shall resolve case-insensitively to canonical bootCerebro and shall never trigger document-library authority selection.
+  priority: critical
+  verification:
+  - external BootEngine declares the command alias and immutable Source-first resolution.
+  - mcp/activation.yaml binds the alias to the controlled boot sequence.
+- id: STD-SOURCE-R011
+  statement: A receipt or handoff is applicable only when bound to the current authoritative Source commit; stale derived state shall be rejected as continuity input without reopening or blocking a verified current Source state.
+  priority: critical
+  verification:
+  - handoff resume verifies exact Source commit and hashes.
+  - boot authority preflight uses REJECT_INPUT_CONTINUE_CURRENT_SOURCE for stale derived state.
+- id: STD-SOURCE-R012
+  statement: Cerebro may be reported operational only from a fresh ACTIVE_CONTROL_TRANSFERRED receipt bound to the current authoritative Source commit.
+  priority: critical
+  verification:
+  - runtime bootstrap receipt contains the current Source commit and operational state.

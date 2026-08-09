@@ -18,6 +18,44 @@ handboot:
     canonical: bootCerebro
     aliases:
       - bootini
+      - boot cerebro
+
+  command_resolution:
+    natural_language_command: boot cerebro
+    matching: CASE_INSENSITIVE_EXACT_TRIMMED
+    resolved_command: bootCerebro
+    start_event: Start
+    required_effect: BEGIN_CONTROLLED_BOOT
+    prohibited_interpretations:
+      - search-library-for-a-document-named-CURRENT
+      - select-authority-from-conversation-memory
+      - resume-the-most-recent-failure-receipt
+      - treat-root-or-project-label-as-Source-authority
+
+  authority_resolution_preflight:
+    first_and_only_persistent_candidate:
+      repository: morgul-tech/Cerebro-Source-1.0
+      branch: main
+      entrypoint: cerebro.yaml
+    non_authoritative_inputs:
+      - library-documents-including-DOCX
+      - filename-markers-including-CURRENT
+      - conversation-history-and-model-memory
+      - runtime-and-bootstrap-receipts
+      - session-handoffs
+      - project-root-or-library-root-labels
+    rules:
+      - resolve-Source-before-reading-derived-continuity-inputs
+      - CURRENT-in-a-filename-confers-no-authority
+      - a-derived-input-is-applicable-only-when-bound-to-current-Source-commit
+      - stale-handoff-or-receipt-is-rejected-as-input-not-promoted-to-boot-blocker
+      - old-failure-evidence-remains-history-and-cannot-reopen-a-closed-current-state
+      - authority-ambiguity-is-a-contract-failure-not-a-document-selection-task
+    stale_input_effect: REJECT_INPUT_CONTINUE_CURRENT_SOURCE
+    operational_claim_requires:
+      - current-Source-commit-bound-receipt
+      - ACTIVE_CONTROL_TRANSFERRED
+      - operational-true
 
   surfaces:
     working_source:
@@ -50,6 +88,9 @@ handboot:
     - bootengine_orchestrates_but_does_not_replace_source_authority
     - source_mutation_requires_explicit_development_and_cerebro_sync
     - boot_sequence_must_not_commit_or_push
+    - natural-language-boot-resolves-to-the-same-canonical-command
+    - library-filename-and-memory-labels-never-create-authority
+    - stale-derived-state-cannot-override-or-reopen-current-Source-state
 
   required_sequence:
     - sequence: 1
@@ -126,6 +167,11 @@ handboot:
       - CurrentMaster.Repository := morgul-tech/Cerebro-Source-1.0
       - CurrentMaster.Branch := main
       - CurrentMaster.Path := cerebro.yaml
+      - Command.NaturalLanguageAlias := boot cerebro
+      - Authority.First := github:morgul-tech/Cerebro-Source-1.0/main/cerebro.yaml
+      - FilenameMarker.CURRENT.Authority := NONE
+      - StaleDerivedState.Action := REJECT_INPUT_CONTINUE_CURRENT_SOURCE
+      - OperationalClaim.Requires := ACTIVE_CONTROL_TRANSFERRED_RECEIPT_AT_CURRENT_SOURCE_COMMIT
       - IDLE
       - FETCHING
       - VERIFYING
@@ -151,6 +197,7 @@ handboot:
     - tooling/builder/templates/pshell/cerebro_handoff.ps1
     - tooling/runtime-host/cerebro_resume.ps1
     - tooling/runtime-host/cerebro_boot.ps1
+    - tooling/runtime-host/boot_authority_selftest.py
     - tooling/validator/checks.yaml
 
   manifest_validation:

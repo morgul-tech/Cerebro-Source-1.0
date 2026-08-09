@@ -827,3 +827,32 @@ patch_006_relevance_retrieval_validation:
     - automatic-Knowledge-admission
     - automatic-Wisdom-promotion
     - automatic-Source-mutation
+
+boot_authority_ambiguity_refinement_validation:
+  introduced_by: PATCH-006.POST-BOOT-REFINE
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/source-authority.yaml
+    - standards/runtime/handboot.yaml
+    - mcp/activation.yaml
+  required_files:
+    - tooling/runtime-host/boot_authority_selftest.py
+    - tooling/runtime-host/cerebro_boot.ps1
+  required_contracts:
+    - natural-language-boot-canonicalization
+    - Source-first-authority-resolution
+    - CURRENT-filename-has-no-authority
+    - library-and-conversation-memory-have-no-authority
+    - stale-derived-state-is-rejected-without-reopening-current-state
+    - operational-claim-requires-current-commit-bound-receipt
+  required_canaries:
+    - legacy-DOCX-CURRENT-cannot-compete-with-cerebro-yaml
+    - stale-REBUILD-receipt-cannot-block-current-Source-boot
+    - stale-handoff-cannot-override-current-Source-commit
+    - boot-cerebro-resolves-to-bootCerebro
+  prohibited:
+    - document-library-authority-arbitration
+    - filename-based-authority
+    - model-memory-as-boot-authority
+    - stale-failure-as-current-gate
