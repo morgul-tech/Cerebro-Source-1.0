@@ -2618,6 +2618,202 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
       sequence: 75
+    -
+      id: "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+      type: "DECISION"
+      scope: "MATERIAL-COMMITMENT-RELEVANCE-AND-PRIOR-LEARNING-CONTROL"
+      statement: "Material Cerebro commitments shall use a fresh basis-bound preflight that resolves applicable current state, relevant prior evidence, semantic intent, coverage and material conflict before DECIDE, LOCK, material EXECUTE, material AUTHORIZE or governing PUBLISH; exploratory and critical reasoning may proceed only within stage-aware permissions needed to resolve uncertainty."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "MATERIAL_CEREBRO_REASONING_AND_COMMITMENT"
+        implementation_authorization_from_lock: false
+        canonical_identity_is_independent_of_user_facing_labels: true
+        architecture:
+          form: "BOUNDED_CROSS_COMPONENT_CONTROL_CONTRACT"
+          new_top_level_engine: false
+          control_owner: "MCP"
+          interaction_role: "FRAME_HUMAN_INTENT_MATERIALITY_AND_EXPECTED_PRIOR_LEARNING"
+          terminology_role: "PASSIVE_CANONICAL_TERMS_AND_ALIASES"
+          context_role: "SEMANTIC_STATE_EVIDENCE_COVERAGE_AND_CONFLICT_ASSESSMENT"
+          quality_role: "WORKFORM_DEPTH_AND_STAGE_PERMISSION_REQUIREMENTS"
+          runtime_role: "NO_NEW_REASONING_POLICY"
+        primary_invariant: "RELEVANT_STATE_AND_EVIDENCE_BEFORE_MATERIAL_COMMITMENT"
+        semantic_resolution:
+          mode: "ITERATIVE"
+          sequence:
+            - "MATERIALITY_AND_INTENT_FRAME"
+            - "NON_AUTHORITATIVE_SEMANTIC_HYPOTHESIS"
+            - "EXACT_COMMAND_ACTION_TERMINOLOGY_ALIAS_RESOLUTION"
+            - "BOUNDED_CURRENT_STATE_RESOLUTION"
+            - "RELEVANT_KNOWLEDGE_AND_CURRENT_WISDOM_RETRIEVAL"
+            - "FINAL_SEMANTIC_RESOLUTION"
+          inferred_search_expansion_creates_authority: false
+          unresolved_material_ambiguity_blocks_commitment: true
+        current_state:
+          resolve_separately_from_evidence: true
+          sources:
+            - "CEREBRO_SOURCE"
+            - "CURRENT_CONTEXT_DECISIONS"
+            - "CURRENT_BASIS"
+            - "CURRENT_OVERRIDES"
+          current_index_is_normal_eligibility_boundary: true
+          current_index_coherence_required: true
+          historical_state_is_not_current_by_default: true
+        evidence:
+          normal_retrieval_sources:
+            - "ACTIVE_VERIFIED_KNOWLEDGE"
+            - "CURRENT_WISDOM"
+          authority: "EVIDENCE_ONLY"
+          knowledge_direct_control: false
+          wisdom_may_override_source: false
+          change_learning_normal_runtime_retrieval: false
+          change_learning_role: "DETAILED_PROVENANCE_AND_BOUNDED_COVERAGE_AUDIT_INPUT"
+          admission_paths:
+            verified_scoped_fact: "KNOWLEDGE"
+            reusable_cross_cutting_lesson: "WISDOM"
+            normative_requirement: "SOURCE"
+            executable_failure_pattern: "REGRESSION_OR_VALIDATOR"
+        retrieval_lifecycle:
+          states:
+            - "NOT_REQUIRED"
+            - "NOT_RUN"
+            - "RUNNING"
+            - "COMPLETE"
+            - "INCOMPLETE"
+            - "FAILED"
+            - "STALE"
+          no_relevant_prior_learning_requires: "COMPLETE_RETRIEVAL_AND_SUFFICIENT_COVERAGE"
+          empty_refs_do_not_mean_no_prior_learning: true
+        expected_prior_learning:
+          supported: true
+          missing_normal_result_effect: "BOUNDED_COVERAGE_AUDIT_REQUIRED"
+          coverage_audit_does_not_promote_authority: true
+        conflict_assessment:
+          required_before_material_commitment: true
+          states:
+            - "NOT_ASSESSED"
+            - "NONE_FOUND"
+            - "POTENTIAL"
+            - "CONFIRMED"
+            - "UNRESOLVED"
+            - "ASSESSMENT_FAILED"
+          absence_of_assessment_is_not_no_conflict: true
+          source_authority_preserved: true
+        stage_permissions:
+          unresolved_semantics_allow:
+            - "UNDERSTAND_FRAME"
+            - "EXPLORE_RESEARCH"
+            - "CLARIFY"
+          evidence_conflict_allow:
+            - "REFINE"
+            - "CRITIQUE"
+            - "COMPARE_CONVERGE"
+          unresolved_basis_blocks:
+            - "DECIDE"
+            - "LOCK"
+            - "MATERIAL_EXECUTE"
+            - "MATERIAL_AUTHORIZE"
+            - "GOVERNING_PUBLISH"
+        material_commitment_gate:
+          independently_rechecked_at_commitment: true
+          mandatory_fresh_reasoning_preflight_receipt: true
+          missing_or_stale_receipt_effect: "INVALID_MATERIAL_COMMITMENT"
+          receipt_identity_includes:
+            - "AUTHORITATIVE_SOURCE_COMMIT"
+            - "CURRENT_CONTEXT_IDENTITY"
+            - "RESOLVED_OBJECTIVE"
+            - "RESOLVED_SCOPE"
+            - "RESOLVED_INTENT"
+            - "COMMITMENT_TARGET"
+            - "EFFECTIVE_USER_CONFIGURATION"
+            - "APPLICABLE_DECISION_REFS"
+            - "APPLICABLE_KNOWLEDGE_REFS"
+            - "APPLICABLE_WISDOM_REFS"
+            - "COVERAGE_STATE"
+            - "CONFLICT_STATE"
+            - "EXPECTED_PRIOR_LEARNING"
+          material_basis_change_effect: "STALE_REASSESS_AND_RE_RESOLVE"
+        learning_usability_chain:
+          - "CAPTURED"
+          - "CURATED"
+          - "RETRIEVABLE"
+          - "RETRIEVED"
+          - "CONSUMED"
+          - "EFFECT_VERIFIED"
+        scope_boundaries:
+          does_not_implement:
+            - "FULL_HUMAN_CEREBRO_SEMANTIC_INTERFACE"
+            - "VISUAL_LANGUAGE_EXPANSION"
+            - "ADMIN_ACTION_OBJECT_PERSISTENCE"
+            - "KNOWLEDGE_ADMISSION_REPAIR"
+            - "GENERALIZED_ATOMIC_TEST_FIRST_CHANGE_ARCHITECTURE"
+            - "EMPIRICAL_RESOURCE_OPTIMIZATION"
+            - "ADAPTIVE_AUTONOMY_AA_000_TO_004"
+        implementation_authorization: "SEPARATE_REQUIRED_INTENT"
+        material_basis_change_effect: "INVALIDATE_LOCK_AND_REASSESS"
+      provenance:
+        introduced_by_ref: "USER-LOCK-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-2026-08-09"
+        basis_refs:
+          - "standards/control-architecture.yaml"
+          - "standards/development/adaptive-quality-workform.yaml"
+          - "standards/development/relevance-retrieval.yaml"
+          - "standards/development/wisdom-control-binding.yaml"
+          - "engines/context/working-context.yaml"
+          - "engines/context/knowledge-schema.yaml"
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+          - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+          - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
+          - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
+          - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      sequence: 76
+    -
+      id: "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+      type: "CURRENT_BASIS"
+      scope: "MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCKED-BASIS"
+      statement: "The Material Commitment Relevance Preflight semantics are locked and reconstructable without conversation history; implementation remains unauthorized and any material basis change invalidates this lock."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis:
+          maturity: "RESOLVED"
+          readiness: "READY_TO_LOCK"
+          final_critical_pass: "FC2_PASS"
+          adversarial_replay: "PASS"
+          architecture_change_required_after_fc2: false
+        source_base_commit_before_persistence: "3e98395c9a3194fc8d1d598a5d7fd74abc320bff"
+        locked_decision_ref: "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+        implementation_authorized: false
+        reconstructability:
+          conversation_history_required: false
+          decision_and_current_basis_are_primary: true
+          required_loaded_refs:
+            - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+            - "standards/control-architecture.yaml"
+            - "standards/development/adaptive-quality-workform.yaml"
+            - "standards/development/relevance-retrieval.yaml"
+            - "standards/development/wisdom-control-binding.yaml"
+          next_boundary: "SEPARATE_IMPLEMENTATION_PLANNING_AND_AUTHORIZATION"
+        known_follow_on_findings:
+          - "KNOWLEDGE_ADMISSION_CURATION_GAP"
+          - "CURRENT_RELEVANCE_ENGINE_SEMANTIC_NORMALIZATION_GAP"
+          - "CURRENT_WISDOM_ELIGIBILITY_LIFECYCLE_REVIEW"
+          - "ADMIN_SHORT_ACTION_HANDLE_PERSISTENCE"
+        material_basis_change_effect: "INVALIDATE_LOCK_AND_REASSESS"
+      provenance:
+        introduced_by_ref: "CEREBRO-PERSIST-MATERIAL-COMMITMENT-RELEVANCE-LOCK-001"
+        basis_refs:
+          - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+          - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+      sequence: 77
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -2646,6 +2842,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
       - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+      - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
@@ -2657,6 +2854,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
       - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+      - "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -2693,7 +2891,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
       - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
       - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
-  next_sequence: 76
+  next_sequence: 78
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
