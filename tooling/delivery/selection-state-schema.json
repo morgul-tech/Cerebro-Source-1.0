@@ -119,6 +119,7 @@
         "artifact_format": {
           "enum": [
             "FILES",
+            "PAYLOAD_PLUS_INSTALLER",
             "SELF_EXTRACTING_POWERSHELL",
             "CONTROLLED_TRANSACTION"
           ]
@@ -147,7 +148,7 @@
         "execution_owner": {"const": "USER_LOCAL_RUNNER"},
         "agent_local_access": {"const": "PROHIBITED"},
         "access_request_budget": {"const": 0},
-        "artifact_format": {"const": "SELF_EXTRACTING_POWERSHELL"}
+        "artifact_format": {"const": "PAYLOAD_PLUS_INSTALLER"}
       }}}}
     },
     {

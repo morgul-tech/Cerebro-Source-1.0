@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.6.0
+  version: 0.7.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -40,10 +40,11 @@ profiles:
     - explicitly-superseded-files-must-be-removed
     - bounded-backup-automation-materially-reduces-risk
     user_surface:
-    - payload-artifact
-    - installer-powershell-runner
+    - exactly-one-bundle-zip
+    - exactly-one-launcher-powershell
     - short-copyable-launch-command
-    - machine-readable-receipts
+    user_handoff_format: BUNDLE_ZIP_PLUS_LAUNCHER
+    alternate_user_handoff: PROHIBITED
     execution_owner: USER_LOCAL_RUNNER
     agent_local_access: PROHIBITED
     access_request_budget: 0
@@ -157,6 +158,13 @@ namespace_separation:
     canonical_standard_format: PAYLOAD_PLUS_INSTALLER
     legacy_artifact_formats_preserved: [SELF_EXTRACTING_POWERSHELL]
     legacy_builder_modes_preserved: [FULL, EXEC, PSHELL]
+  user_handoff_format:
+    values:
+    - BUNDLE_ZIP_PLUS_LAUNCHER
+    meaning: physical user-facing STANDARD handoff independent of internal payload composition
+    canonical_standard_handoff: BUNDLE_ZIP_PLUS_LAUNCHER
+    fixed_counts: {zip: 1, launcher: 1, copyable_command: 1}
+    alternate_standard_handoff: prohibited
   assurance_profile:
     values: [FAST, STANDARD, DEEP]
     meaning: depth of change assurance
@@ -250,7 +258,16 @@ post_apply:
   - remote-verification
 standard_runner_contract:
   required_for: STANDARD
-  delivery_shape: payload-artifact-plus-separate-installer-plus-short-launch-command
+  delivery_shape: one-bundle-zip-plus-one-launcher-plus-one-short-copyable-command
+  user_handoff:
+    zip_count: 1
+    launcher_count: 1
+    command_count: 1
+    internal_files_exposed_separately: false
+    current_working_directory_dependency: prohibited
+    cd_instruction_required: false
+    launcher_resolves_bundle_from_own_location: true
+    launcher_and_bundle_identity_verification_required: true
   payload_forms:
   - exact-single-file-payload
   - package-archive-with-manifest
@@ -386,7 +403,7 @@ rules:
   statement: FULL shall require explicit selection, aggregate any necessary platform access into at most one request, and enter FULL_BLOCKED after denial without retry or fallback.
   priority: critical
 - id: STD-CHANGE-DELIVERY-R015
-  statement: STANDARD delivery shall provide a separate payload artifact, a user-executed PowerShell installer, a short copyable launch command, bounded install and recovery, validation, explicit publication authorization, and machine-readable receipts.
+  statement: STANDARD delivery shall expose exactly one user-facing ZIP bundle, exactly one user-facing PowerShell launcher, and exactly one short copyable launch command; all implementation internals and receipt machinery shall remain inside the bundle or be produced at runtime.
   priority: critical
 - id: STD-CHANGE-DELIVERY-R016
   statement: Delivery profile, artifact format, artifact surface, execution mechanism, and assurance profile shall remain independent namespaces; legacy builder modes FULL, EXEC, and PSHELL retain their existing artifact semantics.
@@ -405,6 +422,30 @@ rules:
   priority: critical
 - id: STD-CHANGE-DELIVERY-R021
   statement: Artifact delivery shall use the least intrusive currently available surface that can safely deliver the required artifacts; capability must be checked before escalation.
+  priority: high
+- id: STD-CHANGE-DELIVERY-R022
+  statement: STANDARD launch shall be independent of the caller current working directory and shall not require the user to change directory before execution.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R023
+  statement: STANDARD launcher resolution shall verify launcher identity and the matching adjacent bundle identity before execution; browser duplicate filenames shall not be selected by recency alone.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R024
+  statement: No configuration or User Operating Profile value may select an alternate STANDARD handoff form.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R025
+  statement: Internal payload format and user handoff format are separate namespaces; STANDARD internal payload composition may vary only inside the fixed one-ZIP one-launcher one-command user surface.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R026
+  statement: Every copyable handoff command shall declare its execution surface unambiguously; CHAT control commands and LOCAL_SHELL execution commands shall not be presented as interchangeable.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R027
+  statement: For known machine languages and deterministic patch formats, a candidate shall not be handed to the user after a repeated failure family until the failure boundary has been reproduced in a disposable fixture and the repaired candidate has passed the applicable parser, linter, exact-context apply preflight, scope check, and reverse or rollback preflight available for that format.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R028
+  statement: A syntactically parseable patch is not sufficient evidence of applicability; STANDARD build assurance shall distinguish patch-format parsing from application against the intended prestate.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R029
+  statement: When a verified candidate already exists, correction shall prefer minimum-delta revision with dependent identity recomputation and revalidation over regeneration of unchanged candidate content.
   priority: high
 target_language_preflight:
   powershell:

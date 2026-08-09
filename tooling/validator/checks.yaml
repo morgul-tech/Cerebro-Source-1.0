@@ -1,4 +1,91 @@
 schema: cerebro-validator-checks/v1
+
+command_execution_surface_validation:
+  introduced_by: STANDARD-DELIVERY-INCREMENTAL-REVISION-001
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/change-delivery.yaml
+    - engines/presentation/rules.yaml
+  required_contracts:
+    - copyable-command-declares-execution-surface
+    - CHAT-and-LOCAL_SHELL-are-not-interchangeable
+    - chat-control-command-is-not-presented-as-local-shell-command
+  required_canaries:
+    - chat-control-command-is-explicitly-marked-CHAT
+    - local-run-command-is-explicitly-marked-LOCAL_SHELL
+  prohibited:
+    - ambiguous-copyable-command-surface
+
+
+standard_delivery_handoff_validation:
+  introduced_by: STANDARD-DELIVERY-CORRECTION-001
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/change-delivery.yaml
+  required_files:
+    - tooling/delivery/cerebro_delivery.ps1
+    - tooling/delivery/selection-state-schema.json
+    - tooling/delivery/component.yaml
+    - engines/presentation/rules.yaml
+  required_contracts:
+    - exactly-one-user-facing-ZIP
+    - exactly-one-user-facing-launcher
+    - exactly-one-copyable-command
+    - internal-installer-remains-inside-ZIP
+    - internal-manifest-remains-inside-ZIP
+    - recovery-remains-inside-ZIP
+    - launch-independent-of-current-working-directory
+    - no-cd-instruction-required
+    - launcher-resolves-bundle-from-own-location
+    - launcher-and-bundle-identity-verified
+    - ZIP-script-command-contiguous
+    - command-is-absolute-response-end
+    - alternate-STANDARD-handoff-prohibited
+    - User-Profile-cannot-override-STANDARD-handoff
+    - selector-matches-delivery-contract
+    - selection-schema-matches-selector
+  required_canaries:
+    - standard-handoff-has-one-zip
+    - standard-handoff-has-one-launcher
+    - standard-handoff-has-one-command
+    - standard-launch-is-cwd-independent
+    - standard-launcher-bundle-binding-is-verified
+    - standard-profile-override-is-rejected
+    - standard-selector-uses-PAYLOAD_PLUS_INSTALLER
+    - standard-schema-uses-PAYLOAD_PLUS_INSTALLER
+  prohibited:
+    - alternate-standard-user-surface
+    - current-directory-dependent-standard-command
+    - user-profile-selected-standard-layout
+
+known_language_failure_loop_prevention:
+  introduced_by: STANDARD-DELIVERY-FAILURE-LOOP-HARDENING-001
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/change-delivery.yaml
+  applies_when:
+    - machine-language-or-deterministic-patch-format
+    - repeated-failure-family-or-user-retry-required
+  required_evidence:
+    - failure-boundary-reproduced-in-disposable-fixture
+    - repaired-candidate-tested-before-human-retry
+    - parser-or-format-check-passed-when-available
+    - exact-context-application-preflight-passed-when-applicable
+    - unified-diff-non-eof-change-hunks-have-trailing-context
+    - declared-scope-check-passed
+    - reverse-or-rollback-preflight-passed-when-applicable
+  distinctions:
+    - patch-format-parse-is-not-patch-applicability
+    - known-language-syntax-errors-should-be-machine-eliminated-before-handoff
+  correction_strategy:
+    preferred: MINIMUM_DELTA_REUSE_REVERIFY_RESEAL
+    full_regeneration: ONLY_WHEN_REQUIRED_BY_INVALIDATED_BASIS_OR_MATERIAL_SCOPE_CHANGE
+  prohibited:
+    - repeated-human-retry-without-strengthened-machine-assurance
+    - READY-claim-based-only-on-patch-stat-or-numstat
+    - silent-regeneration-of-unchanged-known-good-artifacts
+
 phases:
   structure:
   - required-files

@@ -63,14 +63,19 @@ user_operating_profile:
     DELIVERY_ARTIFACT.STANDARD_DELIVERY_LAYOUT:
       allowed_values:
         - PAYLOAD_PLUS_INSTALLER
-      meaning: STANDARD presents a payload artifact and a separate PowerShell installer, plus a short launch command.
+      canonical_value: PAYLOAD_PLUS_INSTALLER
+      compatibility_only: true
+      governing_effect: NONE
+      meaning: Compatibility key for internal STANDARD payload composition; it cannot alter the fixed user handoff of one ZIP, one launcher and one command.
     DELIVERY_ARTIFACT.STANDARD_ARTIFACT_FORMAT:
       allowed_values:
         - PAYLOAD_PLUS_INSTALLER
         - SELF_EXTRACTING_POWERSHELL
       canonical_value: PAYLOAD_PLUS_INSTALLER
       legacy_value: SELF_EXTRACTING_POWERSHELL
-      meaning: Compatibility key; SELF_EXTRACTING_POWERSHELL is legacy input and PAYLOAD_PLUS_INSTALLER is canonical after deliveryLvl.
+      compatibility_only: true
+      governing_effect: NONE
+      meaning: Compatibility key for legacy/internal artifact semantics; it cannot select or override the STANDARD user handoff.
     DELIVERY_ARTIFACT.STANDARD_LAUNCH_SURFACE:
       allowed_values:
         - SHORT_COPYABLE_COMMAND
@@ -160,5 +165,6 @@ user_operating_profile:
     - PROFILE_DEGRADED-must-not-be-reported-as-PROFILE_LOADED
     - preference-storage-must-not-grant-or-escalate-authorization
     - standard-delivery-defaults-to-payload-plus-installer
+    - standard-user-handoff-is-system-defined-and-not-profile-overridable
     - artifact-delivery-does-not-imply-work-mode
     - direct-inline-implementation-is-exception-not-default

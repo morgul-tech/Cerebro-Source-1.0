@@ -2814,6 +2814,156 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       sequence: 77
+    -
+      id: "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      type: "DECISION"
+      scope: "STANDARD-DELIVERY-HANDOFF"
+      statement: "STANDARD delivery har én kanonisk brukerflate: én ZIP, én PowerShell-launcher og én kopierbar kommando; alternative STANDARD-handoffs og current-working-directory-avhengighet er forbudt."
+      payload:
+        decision_status: "LOCKED"
+        user_handoff_format: "BUNDLE_ZIP_PLUS_LAUNCHER"
+        zip_count: 1
+        launcher_count: 1
+        command_count: 1
+        alternate_standard_handoff: "PROHIBITED"
+        current_working_directory_dependency: "PROHIBITED"
+        user_profile_override: "PROHIBITED"
+        run_to_pass: "PRESERVED"
+      provenance:
+        introduced_by_ref: "STANDARD-DELIVERY-CORRECTION-001"
+        basis_refs:
+          - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
+          - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 78
+    -
+      id: "CTX-BASIS-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      type: "CURRENT_BASIS"
+      scope: "STANDARD-DELIVERY-HANDOFF"
+      statement: "Gjeldende STANDARD-handoff er låst til én ZIP + én launcher + én kommando, med intern kompleksitet skjult i ZIP-en og cwd-uavhengig execution."
+      payload:
+        applicability: "CURRENT_STANDARD_DELIVERY"
+        source_persisted: false
+        implementation_authorized: false
+        failure_evidence:
+          shell_prompt: 'C:\\WINDOWS\\system32'
+          failed_pattern: '.\\Run-CerebroContextVisual.ps1'
+          failure_class: "CURRENT_WORKING_DIRECTORY_DEPENDENCY"
+        stale_selector_artifact_format: "SELF_EXTRACTING_POWERSHELL"
+        canonical_internal_artifact_format: "PAYLOAD_PLUS_INSTALLER"
+        canonical_user_handoff_format: "BUNDLE_ZIP_PLUS_LAUNCHER"
+      provenance:
+        introduced_by_ref: "STANDARD-DELIVERY-CORRECTION-001"
+        basis_refs:
+          - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      sequence: 79
+    -
+      id: "CTX-WISDOM-STANDARD-HANDOFF-COMPLEXITY-ABSORPTION-001"
+      type: "WISDOM_RECORD"
+      scope: "STANDARD-DELIVERY-AND-HUMAN-ACTION-SURFACE"
+      statement: "Moden automatisering absorberer intern leveransekompleksitet i systemet; teknisk kjørbarhet er ikke det samme som menneskelig klar STANDARD-levering, og nødvendige handoff-elementer må både finnes og ligge samlet der brukeren handler."
+      payload:
+        maturity: "CONFIRMED_USER_CORRECTION_WITH_REAL_FAILURE_EVIDENCE"
+        authority: "EVIDENCE_ONLY"
+        observations:
+          - "Multiple user-facing implementation files created avoidable navigation cost."
+          - 'A relative launcher command failed when PowerShell was opened in C:\\WINDOWS\\system32.'
+          - "The user explicitly required ZIP, launcher and command to be contiguous in the response."
+        candidate_principles:
+          - "ABSORB_INTERNAL_COMPLEXITY"
+          - "RUNNABLE_IS_NOT_EQUAL_TO_HUMAN_READY"
+          - "ACTION_SURFACE_LAYOUT_IS_OPERATIONAL"
+      provenance:
+        introduced_by_ref: "STANDARD-DELIVERY-CORRECTION-001"
+        basis_refs:
+          - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 80
+    -
+      id: "CTX-WISDOM-INCREMENTAL-ARTIFACT-REVISION-001"
+      type: "WISDOM_RECORD"
+      scope: "CHANGE-BUILD-AND-DELIVERY"
+      statement: "Når en kjent kandidat allerede finnes, bør Cerebro bevare verifisert arbeid, anvende minste nødvendige delta, oppdatere avhengige identiteter og re-verifisere i stedet for å regenerere uendret innhold."
+      payload:
+        authority: "EVIDENCE_ONLY"
+        maturity: "USER_CONFIRMED_REFINEMENT"
+        principles:
+          - "REUSE_KNOWN_CANDIDATE"
+          - "MINIMUM_REQUIRED_DELTA"
+          - "RECOMPUTE_DEPENDENT_IDENTITIES"
+          - "REVERIFY_AND_RESEAL"
+      provenance:
+        introduced_by_ref: "STANDARD-DELIVERY-INCREMENTAL-REVISION-001"
+        basis_refs:
+          - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 81
+    -
+      id: "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
+      type: "WISDOM_RECORD"
+      scope: "HUMAN-ACTION-SURFACE"
+      statement: "En teknisk korrekt kopierbar kommando er ikke menneskelig klar før execution surface er entydig; CHAT-kontroll og lokal shell-kjøring må skilles eksplisitt."
+      payload:
+        authority: "EVIDENCE_ONLY"
+        maturity: "CONFIRMED_WITH_REAL_FAILURE_EVIDENCE"
+        failure_evidence:
+          attempted_in: "LOCAL_POWERSHELL"
+          intended_for: "CHAT"
+          command: "cerebro authorize STANDARD-DELIVERY-CORRECTION-IMPLEMENTATION"
+          result: "LOCAL_CLI_PARAMETER_VALIDATION_FAILURE"
+      provenance:
+        introduced_by_ref: "STANDARD-DELIVERY-INCREMENTAL-REVISION-001"
+        basis_refs:
+          - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 82
+    -
+      id: "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+      type: "WISDOM_RECORD"
+      scope: "CODE-PATCH-BUILD-AND-HUMAN-RETRY"
+      statement: "For kjent maskinspråk, syntaks og deterministiske patch-formater skal Cerebro eliminere maskinoppdagbare feil før menneskelig handoff; etter gjentatt failure-family skal neste kandidat først leveres når samme failure-grense er reprodusert, reparert og bestått maskinelt."
+      payload:
+        authority: "EVIDENCE_ONLY"
+        maturity: "USER_LOCKED_IMPORTANCE_WITH_REPEATED_REAL_FAILURE_EVIDENCE"
+        principles:
+          - "MACHINE_ELIMINATE_KNOWN_SYNTAX_ERRORS"
+          - "REPRODUCE_FAILURE_BEFORE_NEXT_HUMAN_RETRY"
+          - "FORMAT_PARSE_IS_NOT_APPLICABILITY"
+          - "STRENGTHEN_ASSURANCE_AT_FAILURE_BOUNDARY"
+          - "MINIMUM_DELTA_REUSE_REVERIFY_RESEAL"
+        failure_family:
+          - "VERIFIED_LAUNCHER_DUPLICATE_HANDLING"
+          - "PATCH_HUNK_APPLICATION"
+        intended_effect:
+          - "REDUCE_HUMAN_RETRY_LOOPS"
+          - "RAISE_FIRST_RUN_SUCCESS"
+      provenance:
+        introduced_by_ref: "STANDARD-DELIVERY-FAILURE-LOOP-HARDENING-001"
+        basis_refs:
+          - "CTX-WISDOM-INCREMENTAL-ARTIFACT-REVISION-001"
+          - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 83
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -2843,6 +2993,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+      - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
@@ -2855,6 +3006,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
       - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
       - "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+      - "CTX-BASIS-STANDARD-DELIVERY-HANDOFF-LOCK-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -2891,7 +3043,11 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
       - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
       - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
-  next_sequence: 78
+      - "CTX-WISDOM-STANDARD-HANDOFF-COMPLEXITY-ABSORPTION-001"
+      - "CTX-WISDOM-INCREMENTAL-ARTIFACT-REVISION-001"
+      - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
+      - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+  next_sequence: 84
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

@@ -22,6 +22,11 @@ boundaries:
     - canonicalize-legacy-delivery-profile-aliases
     - persist-profile-specific-access-request-budget
     - separate-delivery-profile-from-artifact-and-assurance-namespaces
+    - expose-exactly-one-standard-bundle-zip
+    - expose-exactly-one-standard-launcher
+    - expose-exactly-one-standard-copyable-command
+    - keep-standard-internal-files-inside-bundle
+    - make-standard-launch-independent-of-current-working-directory
   must_not:
     - design-or-generate-source-content
     - create-source-authority
@@ -31,6 +36,8 @@ boundaries:
     - silently-fallback-to-another-delivery-profile
     - request-agent-local-access-under-LIMITED-or-STANDARD
     - retry-a-denied-FULL-access-request-without-explicit-reselection
+    - expose-alternate-standard-handoff
+    - allow-user-profile-to-override-standard-handoff
 dependencies:
   runtime:
     - git

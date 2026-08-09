@@ -25,7 +25,7 @@ Set-StrictMode -Version 2.0
 
 $script:CerebroDeliverySelectionSchema = 'cerebro-delivery-selection/v0.2'
 $script:CerebroDeliveryLegacySelectionSchema = 'cerebro-delivery-selection/v0.1'
-$script:CerebroDeliverySelectorVersion = '0.2.0'
+$script:CerebroDeliverySelectorVersion = '0.3.0'
 $script:CerebroDeliveryProfiles = @(
     'LIMITED',
     'STANDARD',
@@ -72,7 +72,7 @@ function Get-CerebroDeliveryProfileControls {
                 execution_owner = 'USER_LOCAL_RUNNER'
                 agent_local_access = 'PROHIBITED'
                 access_request_budget = 0
-                artifact_format = 'SELF_EXTRACTING_POWERSHELL'
+                artifact_format = 'PAYLOAD_PLUS_INSTALLER'
             }
         }
         'FULL' {
@@ -445,7 +445,8 @@ function Get-CerebroDeliveryProfileExplanation {
             execution_owner = 'USER_LOCAL_RUNNER'
             agent_local_access = 'PROHIBITED'
             access_request_budget = 0
-            artifact_format = 'SELF_EXTRACTING_POWERSHELL'
+            artifact_format = 'PAYLOAD_PLUS_INSTALLER'
+            user_handoff_format = 'BUNDLE_ZIP_PLUS_LAUNCHER'
         }
         FULL = [ordered]@{
             name = 'CONTROLLED_WORKSPACE_TRANSACTION'
@@ -554,7 +555,7 @@ function Set-CerebroDeliverySelection {
         $script:CerebroDeliverySelectionSchema,
         $resolution.resolved_profile,
         $source.commit,
-        'STD-CHANGE-DELIVERY@0.5.0'
+        'STD-CHANGE-DELIVERY@0.7.0'
     )
     $fingerprint = Get-CerebroDeliveryTextSha256 `
         -Text $fingerprintMaterial

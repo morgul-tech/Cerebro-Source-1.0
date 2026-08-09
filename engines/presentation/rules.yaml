@@ -505,3 +505,37 @@ rules:
   validation: error
   provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
 # END PATCH-003.PRE-006 CONSOLIDATE
+
+# BEGIN STANDARD-DELIVERY-CORRECTION-001
+- id: PRE-030
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {delivery_profile: STANDARD, user_handoff_ready: true}
+  action:
+    render_contiguous_footer:
+      order: [bundle-zip-download, launcher-script-download, copyable-command]
+      prohibit_content_between: true
+      prohibit_content_after_command: true
+  statement: STANDARD-handoff SKAL avsluttes som én sammenhengende brukerflate med ZIP, launcher-script og kopierbar kommando direkte etter hverandre, og uten innhold etter kommandoen.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-locked-system-correction, source: STANDARD-DELIVERY-CORRECTION-001}
+# END STANDARD-DELIVERY-CORRECTION-001
+
+# BEGIN STANDARD-DELIVERY-COMMAND-SURFACE-001
+- id: PRE-031
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {copyable_command_present: true}
+  action:
+    require_explicit_execution_surface: [CHAT, LOCAL_SHELL]
+    prohibit_ambiguous_command_surface: true
+  statement: En kopierbar kommando SKAL gjøre det entydig hvor den skal brukes; CHAT-kontroll og lokal shell-kjøring SKAL IKKE kunne forveksles i handoff-presentasjonen.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-corrected-real-failure, source: STANDARD-DELIVERY-INCREMENTAL-REVISION-001}
+# END STANDARD-DELIVERY-COMMAND-SURFACE-001
