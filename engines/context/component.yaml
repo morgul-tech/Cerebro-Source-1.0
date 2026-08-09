@@ -20,6 +20,7 @@ interfaces:
   - history-entry
   - override
   - wisdom-signal
+  - change-failure-observation
   - consolidation-request
   - marker-create
   output:
@@ -33,6 +34,7 @@ interfaces:
   - wisdom-applicability-assessment
   - applicable-wisdom-refs
   - wisdom-friction-state
+  - cumulative-change-learning-evidence
   - consolidation-context
   - conversation-marker
 rules:
@@ -55,6 +57,7 @@ migration:
 boundaries:
   must:
   - keep-wisdom-evidence-separate-from-governing-authority
+  - keep-change-learning-evidence-non-authoritative-until-explicit-consolidation
   - assess-wisdom-applicability
   - preserve-wisdom-evidence-authority-boundary
   - use-event-driven-signal-capture

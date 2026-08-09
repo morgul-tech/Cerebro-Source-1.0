@@ -38,6 +38,7 @@ interfaces:
   - campaign-report
   - derived-failure-knowledge
   - stability-gate-decision
+  - assured-change-capsule-for-delivery
 version:
   component: 0.2.0
   schema: 1

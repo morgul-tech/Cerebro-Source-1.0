@@ -2048,6 +2048,46 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
       sequence: 62
+    -
+      id: "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-005.POST-001-CHANGE-AND-DELIVERY-PLATFORM-CLOSURE"
+      statement: "PATCH-005 operational normalization is published; PATCH-005.POST-001 remains active while the bounded Host, Change, Delivery, deterministic Release and read-only Closure platform candidate is validated, published and closed through explicit evidence gates."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "CURRENT_EXPLICIT_USER_WORK_MODE_AUTHORIZATION_AND_LOCAL_IMPLEMENTATION_EVIDENCE"
+        current_patch: "PATCH-005.POST-001"
+        active_work: "CHANGE_AND_DELIVERY_PLATFORM_OPERATIONAL_CLOSURE"
+        source_base_commit: "183718013e014d1227b72a2bd0aabff9db5d1399"
+        release_base_commit: "43e3cbd814da3e796fe0e5ce86d60ac176fb314a"
+        verified_candidate_evidence:
+          - "Host_Change_Delivery_Closure_selftests_PASS"
+          - "Active_Source_Closure_PASS"
+          - "Release_39_regressions_PASS"
+          - "two_complete_Release_pipelines_same_SHA256"
+          - "full_valider_PASS_with_live_Release_diff_identity_preserved"
+        closure_still_requires:
+          - "published_clean_remote_aligned_Source"
+          - "published_clean_remote_aligned_Release"
+          - "operational_verification_PASS"
+          - "Final_Learning_Consolidation"
+          - "Cerebro_Internal_Control_Review"
+          - "Closure_Engine_CLOSURE_PASS"
+        governance:
+          - "Knowledge_remains_candidate_until_Final_Learning_Consolidation"
+          - "no_implicit_commit_or_publication"
+          - "PATCH_006_must_not_start_before_closure"
+      provenance:
+        introduced_by_ref: "USER-WORK-MODE-AUTHORIZATION-2026-08-09"
+        basis_refs:
+          - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
+          - "PATCH-005.POST-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
+      sequence: 63
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -2081,6 +2121,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
       - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
       - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
+      - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -2111,16 +2152,20 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
       - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-  next_sequence: 63
+  next_sequence: 64
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
   current_interaction_engine: interaction
   current_runtime_host: tooling/runtime-host
+  current_change_host: tooling/host
+  current_change_engine: tooling/change
+  current_delivery_controller: tooling/delivery
+  current_closure_engine: tooling/closure
   bootstrap_state_schema: standards/runtime/handboot-bootstrap-state-schema.yaml
   runtime_0_1_contract: standards/runtime/runtime-0.1-contracts.yaml
   user_operating_profile: standards/user-operating-profile.yaml
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
   wisdom_control_binding: standards/development/wisdom-control-binding.yaml
   active_source_closure: standards/active-source-closure.yaml
-  publication_state: NOT_YET_SYNCED
+  publication_state: PATCH_005_PUBLISHED_PATCH_005_POST_001_CLOSURE_CANDIDATE_LOCAL

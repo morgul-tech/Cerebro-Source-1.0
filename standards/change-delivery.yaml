@@ -56,6 +56,31 @@ profiles:
     - claim-promotion
     - git-reset-hard
     - unbounded-recovery
+  STANDARD_C:
+    name: CONTROLLED_WORKSPACE_TRANSACTION
+    use_when:
+    - implementation-agent-has-direct-working-source-write-access
+    - exact-change-capsule-is-available
+    - bounded-machine-transaction-reduces-human-transport-risk
+    user_surface:
+    - approved-change-scope
+    - exact-base-commit
+    - delivery-receipt
+    controller: tooling/delivery/delivery_controller.py
+    required_controls:
+    - capsule-and-payload-integrity-before-mutation
+    - clean-exact-working-source-baseline
+    - physical-prestate-backup
+    - mutation-intent-journal-before-write
+    - exact-declared-path-scope
+    - installed-byte-verification
+    - bounded-known-state-rollback
+    - lossless-recovery-receipt
+    prohibited:
+    - implicit-publication
+    - implicit-commit
+    - overwrite-unknown-concurrent-state
+    - delivery-controller-source-generation
 identity_domains:
   tracked_source_baseline:
     authoritative_identity: git-blob-sha
@@ -153,6 +178,15 @@ rules:
   priority: critical
 - id: STD-CHANGE-DELIVERY-R006
   statement: PowerShell generation and review shall reject ambiguous variable interpolation where an unbraced variable name is immediately followed by a colon inside an expandable string.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R007
+  statement: Direct work-mode delivery shall execute as a capsule-bound STANDARD_C transaction with a verified physical prestate and a mutation journal persisted before the first possible write.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R008
+  statement: Successful STANDARD_C delivery shall stop at READY_FOR_LOCAL_VALIDATION and shall not commit, publish, or promote Source implicitly.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R009
+  statement: Rollback shall overwrite or remove a target only when its current state is the verified baseline state or the exact delivered payload state; unknown concurrent state requires manual recovery.
   priority: critical
 target_language_preflight:
   powershell:

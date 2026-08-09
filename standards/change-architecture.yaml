@@ -39,6 +39,7 @@ components:
       - select-exact-source-commit
       - materialize-or-reuse-immutable-tooling-snapshot
       - delegate-command-with-live-output
+      - dispatch-versioned-delivery-controller
     prohibited:
       - parse-roadmap
       - interpret-Source-policy
@@ -68,6 +69,25 @@ components:
       - mutate-Source-from-Runtime
       - bypass-Quality-Gate
       - bypass-cerebro_sync
+
+  delivery_controller:
+    kind: TOOLING
+    role: bounded-working-source-transaction
+    authority: DERIVED_IMPLEMENTATION
+    contract_ref: standards/change-delivery.yaml
+    responsibilities:
+      - verify-exact-working-source-baseline
+      - persist-pre-mutation-journal
+      - preserve-verified-bounded-backup
+      - deliver-exact-capsule-bytes
+      - enforce-declared-path-scope
+      - perform-known-state-bounded-rollback
+      - emit-lossless-delivery-receipt
+    prohibited:
+      - generate-source-content
+      - choose-architecture
+      - publish-or-commit-source
+      - overwrite-unknown-concurrent-state
 
 change_model:
   capsule:

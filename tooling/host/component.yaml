@@ -3,7 +3,7 @@ component:
   id: host
   name: Cerebro Host
   type: tooling
-  version: 0.1.0
+  version: 0.3.0
   status: active-source
 responsibility:
   primary: Provide one small stable local entrypoint that verifies Source identity, selects an exact immutable tooling snapshot, and delegates execution.
@@ -13,6 +13,7 @@ boundaries:
     - bind-to-exact-source-commit
     - dispatch-from-immutable-tooling-snapshot
     - preserve-live-child-output
+    - dispatch-change-delivery-and-closure-engines
   must_not:
     - mutate-working-source
     - parse-roadmap

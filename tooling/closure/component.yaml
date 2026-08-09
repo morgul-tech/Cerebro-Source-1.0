@@ -1,0 +1,21 @@
+schema: cerebro-component/v1
+component:
+  id: closure
+  name: Cerebro Closure Engine
+  type: tooling
+  version: 0.1.0
+  status: active-source
+responsibility:
+  primary: Resolve patch closure from clean aligned repositories and explicit required PASS evidence without mutating Source, Release, or project state.
+boundaries:
+  must:
+    - require-clean-source-and-release
+    - require-local-remote-commit-alignment
+    - require-explicit-gate-and-learning-evidence
+    - reject-missing-or-inconsistent-evidence
+    - emit-read-only-closure-receipt
+  must_not:
+    - repair-evidence
+    - mutate-roadmap
+    - commit-or-publish
+    - infer-pass-from-process-exit-alone

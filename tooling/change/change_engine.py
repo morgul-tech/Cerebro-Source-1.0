@@ -126,6 +126,12 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         baseline = item.get("baseline")
         if not isinstance(baseline, dict) or baseline.get("state") not in {"present", "absent"}:
             raise ChangeError("INVALID_CAPSULE", f"baseline required for {path}")
+        expected_baseline = "absent" if item["operation"] == "create" else "present"
+        if baseline["state"] != expected_baseline:
+            raise ChangeError(
+                "INVALID_CAPSULE",
+                f"{item['operation']} requires {expected_baseline} baseline for {path}",
+            )
         if baseline["state"] == "present":
             blob = str(baseline.get("git_blob_sha", ""))
             if len(blob) != 40 or any(ch not in "0123456789abcdefABCDEF" for ch in blob):
@@ -503,6 +509,18 @@ def selftest() -> dict[str, Any]:
             validate_manifest(manifest); verify_payloads(capsule, manifest); record("capsule_integrity", True)
         except Exception as exc:
             record("capsule_integrity", False, str(exc))
+
+        try:
+            invalid_semantics = json.loads(json.dumps(manifest))
+            invalid_semantics["files"][0]["operation"] = "create"
+            validate_manifest(invalid_semantics)
+            record("operation_baseline_semantics", False, "create unexpectedly accepted present baseline")
+        except ChangeError as exc:
+            record(
+                "operation_baseline_semantics",
+                exc.classification == "INVALID_CAPSULE" and "requires absent baseline" in exc.detail,
+                exc.detail,
+            )
 
         # Git baseline identity must remain valid even when checkout bytes differ
         # from the committed blob representation (for example CRLF vs LF).

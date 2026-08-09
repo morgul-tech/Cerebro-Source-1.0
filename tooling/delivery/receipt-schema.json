@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-delivery-receipt/v0.1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "transaction_id",
+    "change_id",
+    "result",
+    "classification",
+    "source",
+    "paths",
+    "recovery",
+    "publication_performed"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-delivery-receipt/v0.1"},
+    "transaction_id": {"type": "string", "minLength": 1},
+    "change_id": {"type": "string", "minLength": 1},
+    "result": {"enum": ["PASS", "FAIL"]},
+    "classification": {"type": "string", "minLength": 1},
+    "publication_performed": {"const": false}
+  }
+}

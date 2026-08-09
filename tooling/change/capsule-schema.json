@@ -138,7 +138,29 @@
               }
             ]
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {"operation": {"const": "create"}},
+              "required": ["operation"]
+            },
+            "then": {
+              "properties": {
+                "baseline": {
+                  "properties": {"state": {"const": "absent"}}
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "baseline": {
+                  "properties": {"state": {"const": "present"}}
+                }
+              }
+            }
+          }
+        ]
       }
     }
   }

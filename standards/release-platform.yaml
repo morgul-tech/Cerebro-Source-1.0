@@ -1,0 +1,39 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-RELEASE-PLATFORM
+  name: Cerebro Deterministic Release Platform Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: Observational Release validation, isolated derived builds, reproducible package identity, and explicit promotion.
+  consumers: [release-builder, release-validator, release-packager, closure-engine]
+release_surfaces:
+  tracked_release_repository: {role: derived-published-implementation-baseline, validation_mutation_allowed: false}
+  validation_staging: {role: disposable-observational-execution-surface, generated_reports_allowed: true, persistent_authority: false}
+  candidate_artifact: {role: derived-reproducible-output}
+  promotion: {explicit_action_required: true}
+determinism:
+  stable_file_order: required
+  normalized_archive_metadata: required
+  prior_build_outputs_excluded: true
+  caches_excluded: true
+  environment_or_time_variant_reports_excluded_from_package_identity: true
+  same_input_same_package_sha256: required
+validation:
+  full_validation_runs_in_disposable_staging: true
+  live_release_worktree_before_after_identity_equal: required
+  reports_are_evidence_only: true
+  validation_success_must_not_create_tracked_diff: true
+rules:
+  - id: STD-RELEASE-PLATFORM-R001
+    statement: Full Release validation shall execute local mutating checks only in a disposable staging surface and shall leave the live tracked Release worktree byte-identical.
+    priority: critical
+  - id: STD-RELEASE-PLATFORM-R002
+    statement: Release package identity shall exclude caches, prior outputs, and time- or environment-variant operational evidence and shall normalize archive metadata.
+    priority: critical
+  - id: STD-RELEASE-PLATFORM-R003
+    statement: Repeated packaging of the same included bytes shall produce the same SHA256 identity.
+    priority: critical
+  - id: STD-RELEASE-PLATFORM-R004
+    statement: Validation, build, and promotion are separate operations; validation shall never imply promotion or publication.
+    priority: critical

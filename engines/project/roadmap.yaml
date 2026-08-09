@@ -6,7 +6,7 @@ roadmap:
     contract_owner: "project-engine"
     state_scope: "working-source"
   status: "ACTIVE"
-  objective: "Complete the verified architecture prerequisites, define the smallest stable Runtime 0.1 contract, implement Runtime 0.1, and defer later object pipelines until the runtime baseline is verified."
+  objective: "Close PATCH-005.POST-001 by validating and publishing the Host-dispatched Change and Delivery Platform, proving deterministic observational Release behavior, consolidating final learning, completing internal control review, and requiring read-only Closure PASS before PATCH-006."
   scope:
     included:
       - "project-roadmap-contract"
@@ -709,33 +709,81 @@ roadmap:
         - "operational_pinned_release_canary_required_before_PATCH_004_closure"
     -
       id: "PATCH-005"
-      title: "post_idea_object_runtime_evidence_assessment"
+      title: "operational_architecture_normalization"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      status: "VERIFIED"
+      dependency_refs:
+        - "PATCH-004"
+      decision_refs: []
+      source_refs:
+        - "standards/control-architecture.yaml"
+        - "standards/active-source-closure.yaml"
+        - "standards/development/wisdom-control-binding.yaml"
+        - "tooling/runtime-host/component.yaml"
+      implementation_constraints:
+        - "MCP_remains_highest_internal_control"
+        - "Runtime_0_1_remains_separate_from_Source_mutation"
+        - "Wisdom_evidence_does_not_create_authority"
+    -
+      id: "PATCH-005.POST-001"
+      title: "change_and_delivery_platform_operational_closure"
       phase_ref: "PHASE-1"
       milestone_ref: null
       status: "ACTIVE"
       dependency_refs:
-        - "PATCH-004"
+        - "PATCH-005"
+      decision_refs: []
+      source_refs:
+        - "standards/change-architecture.yaml"
+        - "standards/change-delivery.yaml"
+        - "standards/release-platform.yaml"
+        - "tooling/host/cerebro_host.py"
+        - "tooling/change/change_engine.py"
+        - "tooling/delivery/delivery_controller.py"
+        - "tooling/closure/closure_engine.py"
+      implementation_constraints:
+        - "delivery_stops_at_READY_FOR_LOCAL_VALIDATION"
+        - "validation_does_not_mutate_live_Release"
+        - "closure_is_read_only"
+        - "Knowledge_remains_candidate_until_Final_Learning_Consolidation"
+      acceptance:
+        - "Host_Change_Delivery_and_Closure_selftests_PASS"
+        - "Release_full_validation_is_observational"
+        - "Release_package_identity_is_reproducible"
+        - "Active_Source_Closure_PASS"
+        - "published_Source_and_Release_are_clean_and_remote_aligned"
+        - "Final_Learning_Consolidation_completed"
+        - "Cerebro_Internal_Control_Review_completed"
+        - "Closure_Engine_returns_CLOSURE_PASS"
+    -
+      id: "PATCH-006"
+      title: "wisdom_operationalization_and_knowledge_evidence_decision"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-005.POST-001"
       decision_refs: []
       source_refs: []
       implementation_constraints:
-        - "assessment_only_until_PATCH_004_execution_evidence_is_reviewed"
-        - "no_speculative_runtime_capability"
-        - "no_runtime_architecture_reopen_without_governing_failure_or_conflicting_evidence"
-        - "select_smallest_evidence_justified_next_step"
+        - "do_not_start_before_PATCH_005_POST_001_Closure_PASS"
+        - "automatic_authority_promotion_prohibited"
+        - "Knowledge_architecture_requires_Final_Learning_Consolidation_decision"
   execution:
     current:
-      id: "EXEC-P5-POST-IDEA-EVIDENCE-ASSESSMENT"
+      id: "EXEC-P5P001-OPERATIONAL-CLOSURE"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      patch_ref: "PATCH-005"
-      canonical_command: "assess PATCH-004 execution evidence and identify only evidence-justified Runtime friction or the next useful capability"
+      patch_ref: "PATCH-005.POST-001"
+      canonical_command: "validate and publish the bounded Change and Delivery Platform candidate, consolidate final learning, complete internal control review, and require Closure PASS"
       status: "ACTIVE"
     next:
-      id: "EXEC-P5-EVIDENCE-GROUNDED-NEXT-SELECTION"
+      id: "EXEC-P6-WISDOM-KNOWLEDGE-DECISION"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      patch_ref: "PATCH-005"
-      canonical_command: "select the smallest justified next development step without speculative Runtime expansion"
+      patch_ref: "PATCH-006"
+      canonical_command: "after PATCH-005.POST-001 Closure PASS, decide the bounded Wisdom retrieval and Knowledge evidence implementation scope"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -894,6 +942,11 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -902,6 +955,7 @@ roadmap:
       - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
       - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
       - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
+      - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -927,8 +981,8 @@ roadmap:
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
   revision:
-    sequence: 18
-    last_locked_patch_ref: "PATCH-004"
+    sequence: 19
+    last_locked_patch_ref: "PATCH-005"
 
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
@@ -947,9 +1001,9 @@ patch_005_asc:
   full_source_closure_stage: P5-S12
   closure_requires_ASC_PASS: true
 patch_005_current_execution_state:
-  patch_ref: PATCH-005
-  scope: CEREBRO_OPERATIONAL_ARCHITECTURE_NORMALIZATION
-  source_state: LOCAL_WORKING_SOURCE_UNPUBLISHED
+  patch_ref: PATCH-005.POST-001
+  scope: CHANGE_AND_DELIVERY_PLATFORM_OPERATIONAL_CLOSURE
+  source_state: LOCAL_WORKING_SOURCE_CANDIDATE_UNPUBLISHED
   completed_stages:
     - P5-S0
     - P5-S1
@@ -960,13 +1014,19 @@ patch_005_current_execution_state:
     - P5-S6
     - P5-S7
     - P5-S8
-  active_stage: P5-S9
-  next_stages:
+    - P5-S9
     - P5-S10
     - P5-S11
     - P5-S12
     - P5-S13
     - P5-S14
+  active_stage: P5P001-CLOSURE-CANDIDATE
+  next_stages:
+    - P5P001-SOURCE-AND-RELEASE-PUBLICATION
+    - P5P001-OPERATIONAL-PASS
+    - P5P001-FINAL-LEARNING-CONSOLIDATION
+    - P5P001-INTERNAL-CONTROL-REVIEW
+    - P5P001-CLOSURE-PASS
   patch_006:
     title: WISDOM_OPERATIONALIZATION_AND_ADAPTIVE_AUTOMATION
     status: DEFERRED

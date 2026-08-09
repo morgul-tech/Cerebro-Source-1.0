@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-closure-input/v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "patch_ref", "source_commit", "release_commit", "evidence"],
+  "properties": {
+    "schema": {"const": "cerebro-closure-input/v0.1"},
+    "patch_ref": {"type": "string", "minLength": 1},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"},
+    "release_commit": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"},
+    "evidence": {
+      "type": "object",
+      "minProperties": 7,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["path", "sha256", "selector", "expected"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+          "selector": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

@@ -72,6 +72,22 @@ active_source_closure:
       - duplicate_canonical_definition_key
       - prohibited_active_legacy_path
 
+  closure_engine:
+    implementation_ref: tooling/closure/closure_engine.py
+    required_repository_state:
+      - source-clean-and-origin-main-aligned
+      - release-clean-and-origin-main-aligned
+    required_evidence:
+      - stability-gate
+      - quality-gate
+      - publication-gate
+      - operational-verification
+      - final-learning-consolidation
+      - internal-control-review
+      - roadmap-reconciliation
+    evidence_identity: sha256-required
+    mutation_allowed: false
+
   patch_005_prohibited_active_paths:
     - engines/dialog/
     - engines/collaboration/

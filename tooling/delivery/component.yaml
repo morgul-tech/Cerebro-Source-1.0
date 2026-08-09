@@ -1,0 +1,36 @@
+schema: cerebro-component/v1
+component:
+  id: delivery
+  name: Cerebro Delivery Controller
+  type: tooling
+  version: 0.1.0
+  status: active-source
+responsibility:
+  primary: Deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
+boundaries:
+  must:
+    - verify-exact-source-baseline
+    - journal-before-first-possible-mutation
+    - back-up-physical-prestate
+    - enforce-declared-path-scope
+    - verify-installed-payload-bytes
+    - preserve-lossless-failure-and-recovery-evidence
+  must_not:
+    - design-or-generate-source-content
+    - create-source-authority
+    - publish-source
+    - bypass-change-assurance
+    - overwrite-unknown-concurrent-state
+dependencies:
+  runtime:
+    - git
+    - python
+    - change-capsule-v0.2
+interfaces:
+  consumes:
+    - assured-change-capsule
+    - clean-working-source
+  produces:
+    - delivery-receipt
+    - bounded-backup
+    - mutation-journal

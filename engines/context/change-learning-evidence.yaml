@@ -277,6 +277,34 @@ observations:
   operationalization:
   - exact-signature-or-parser-backed-check-preferred-over-broad-token-ban
   - gate-false-positive-is-corrected-before-user-delivery
+- id: P005P001-LRN-022
+  origin: POST_PUBLICATION_OPERATIONAL_CLOSURE
+  classification: SYSTEMIC
+  family: OBSERVATIONAL_VALIDATION_MUTATION
+  evidence:
+  - full-Release-validation-passed-every-check
+  - local-checksum-validation-report-pipeline-and-package-stages-wrote-tracked-Release-paths
+  - operational-closure-failed-because-Release-worktree-was-dirty-after-successful-validation
+  - isolated-staging-full-valider-passed-with-identical-live-diff-hash-before-and-after
+  conclusion: validation-that-runs-mutating-tools-must-isolate-those-tools-from-the-live-tracked-baseline
+  operationalization:
+  - full-Release-local-checks-run-in-disposable-staging
+  - live-Release-pre-post-diff-identity-regression
+  - time-and-environment-variant-reports-excluded-from-package-identity
+  - normalized-deterministic-ZIP-metadata
+- id: P005P001-LRN-023
+  origin: KNOWLEDGE_ARCHITECTURE_GOVERNANCE_PREFLIGHT
+  classification: GOVERNANCE
+  family: PREMATURE_CANDIDATE_PROMOTION
+  evidence:
+  - Knowledge-system-is-explicitly-CANDIDATE_UNTIL_FINAL_PASS_CONSOLIDATION
+  - initial-platform-integration-attempt-would-have-registered-Knowledge-as-an-active-required-standard-before-that-gate
+  - candidate-activation-was-withdrawn-before-validation-or-publication
+  conclusion: a-well-supported-architecture-candidate-still-cannot-cross-its-declared-promotion-gate-early
+  operationalization:
+  - Knowledge-remains-candidate-in-change-learning-evidence
+  - Closure-requires-final-learning-consolidation
+  - automatic-candidate-promotion-remains-prohibited
 
 final_pass_consolidation:
   required: true

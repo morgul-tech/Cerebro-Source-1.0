@@ -49,6 +49,9 @@ documents:
 - id: STD-CHANGE-DELIVERY
   path: standards/change-delivery.yaml
   required: true
+- id: STD-RELEASE-PLATFORM
+  path: standards/release-platform.yaml
+  required: true
 - id: STD-OPERATIONAL-PROGRESS
   path: standards/operational-progress.yaml
   required: true

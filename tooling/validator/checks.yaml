@@ -739,3 +739,44 @@ active_source_closure_validation:
     - generated_inventory_as_authority
     - patch_close_with_ASC_fail
     - fuzzy_semantic_claim_from_deterministic_validator_only
+
+change_delivery_platform_validation:
+  introduced_by: PATCH-005.POST-001.CLOSE
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/change-architecture.yaml
+    - standards/change-delivery.yaml
+    - standards/release-platform.yaml
+    - standards/active-source-closure.yaml
+  required_files:
+    - tooling/host/cerebro_host.py
+    - tooling/change/change_engine.py
+    - tooling/delivery/delivery_controller.py
+    - tooling/delivery/component.yaml
+    - tooling/delivery/receipt-schema.json
+    - tooling/closure/closure_engine.py
+    - tooling/closure/component.yaml
+    - tooling/closure/closure-input-schema.json
+  required_contracts:
+    - immutable-commit-bound-host-dispatch
+    - disposable-change-assurance
+    - STANDARD_C-controlled-workspace-transaction
+    - journal-before-first-possible-mutation
+    - known-state-bounded-rollback
+    - observational-release-validation
+    - reproducible-release-package-identity
+    - clean-aligned-repositories-before-closure
+    - explicit-gate-learning-and-roadmap-evidence-before-closure
+  required_canaries:
+    - injected-delivery-fault-restores-clean-baseline
+    - successful-delivery-matches-declared-scope
+    - release-validation-preserves-live-diff-identity
+    - repeated-package-build-has-identical-sha256
+    - dirty-release-blocks-closure
+  prohibited:
+    - implicit-delivery-commit
+    - implicit-delivery-publication
+    - validation-generated-live-release-diff
+    - closure-engine-state-repair
+    - knowledge-candidate-automatic-promotion

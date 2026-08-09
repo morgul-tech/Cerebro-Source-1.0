@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-HOST_VERSION = "0.1.0"
+HOST_VERSION = "0.3.0"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -86,12 +86,16 @@ def snapshot_path(commit: str) -> Path:
 
 def snapshot_is_valid(snapshot: Path, commit: str) -> bool:
     marker = snapshot / ".cerebro-tooling-snapshot.json"
-    engine = snapshot / "tooling" / "change" / "change_engine.py"
-    if not marker.is_file() or not engine.is_file():
+    engines = [
+        snapshot / "tooling" / "change" / "change_engine.py",
+        snapshot / "tooling" / "delivery" / "delivery_controller.py",
+        snapshot / "tooling" / "closure" / "closure_engine.py",
+    ]
+    if not marker.is_file() or not all(engine.is_file() for engine in engines):
         return False
     try:
         data = json.loads(marker.read_text(encoding="utf-8"))
-        return data.get("commit") == commit and data.get("host_snapshot_schema") == "cerebro-tooling-snapshot/v0.1"
+        return data.get("commit") == commit and data.get("host_snapshot_schema") == "cerebro-tooling-snapshot/v0.2"
     except Exception:
         return False
 
@@ -106,14 +110,18 @@ def create_snapshot(source: Path, commit: str) -> Path:
         shutil.rmtree(target)
     capture(source, "worktree", "prune")
     capture(source, "worktree", "add", "--detach", "--force", str(target), commit)
-    engine = target / "tooling" / "change" / "change_engine.py"
-    if not engine.is_file():
+    required_engines = [
+        target / "tooling" / "change" / "change_engine.py",
+        target / "tooling" / "delivery" / "delivery_controller.py",
+        target / "tooling" / "closure" / "closure_engine.py",
+    ]
+    if not all(engine.is_file() for engine in required_engines):
         try:
             capture(source, "worktree", "remove", "--force", str(target))
         finally:
-            raise HostError("CHANGE_ENGINE_MISSING", f"{commit}:tooling/change/change_engine.py")
+            raise HostError("TOOLING_ENGINE_MISSING", commit)
     marker = {
-        "host_snapshot_schema": "cerebro-tooling-snapshot/v0.1",
+        "host_snapshot_schema": "cerebro-tooling-snapshot/v0.2",
         "commit": commit,
         "source_repository": SOURCE_REPOSITORY,
     }
@@ -121,8 +129,13 @@ def create_snapshot(source: Path, commit: str) -> Path:
     return target
 
 
-def delegate_change(snapshot: Path, arguments: list[str]) -> int:
-    engine = snapshot / "tooling" / "change" / "change_engine.py"
+def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
+    engines = {
+        "change": snapshot / "tooling" / "change" / "change_engine.py",
+        "delivery": snapshot / "tooling" / "delivery" / "delivery_controller.py",
+        "closure": snapshot / "tooling" / "closure" / "closure_engine.py",
+    }
+    engine = engines[component]
     cmd = [sys.executable, str(engine), *arguments]
     # Deliberately inherit stdout/stderr for live visibility.
     try:
@@ -155,6 +168,10 @@ def main() -> int:
     sub.add_parser("selftest")
     change = sub.add_parser("change")
     change.add_argument("change_args", nargs=argparse.REMAINDER)
+    delivery = sub.add_parser("delivery")
+    delivery.add_argument("delivery_args", nargs=argparse.REMAINDER)
+    closure = sub.add_parser("closure")
+    closure.add_argument("closure_args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     try:
@@ -164,9 +181,14 @@ def main() -> int:
         source = locate_source(args.source_root)
         commit = verify_source(source, args.source_commit)
         snapshot = create_snapshot(source, commit)
-        if not args.change_args:
-            raise HostError("MISSING_CHANGE_COMMAND", "pass Change Engine arguments after 'change'")
-        return delegate_change(snapshot, args.change_args)
+        component_args = {
+            "change": getattr(args, "change_args", None),
+            "delivery": getattr(args, "delivery_args", None),
+            "closure": getattr(args, "closure_args", None),
+        }[args.command]
+        if not component_args:
+            raise HostError("MISSING_DELEGATE_COMMAND", f"pass engine arguments after '{args.command}'")
+        return delegate(snapshot, args.command, component_args)
     except HostError as exc:
         print(json.dumps({"result": "FAIL", "classification": exc.classification, "detail": exc.detail}, indent=2))
         return 1

@@ -58,6 +58,7 @@ standards:
   patch_package: standards/patch-package.yaml
   change_architecture: standards/change-architecture.yaml
   change_delivery: standards/change-delivery.yaml
+  release_platform: standards/release-platform.yaml
   operational_progress: standards/operational-progress.yaml
   project_status: standards/project-status.yaml
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
@@ -71,6 +72,8 @@ tooling:
   publisher: tooling/publisher/
   host: tooling/host/
   change: tooling/change/
+  delivery: tooling/delivery/
+  closure: tooling/closure/
 governance:
   single_source_of_truth: true
   definitional_authority: Cerebro Source 1.0
