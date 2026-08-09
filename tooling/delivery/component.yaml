@@ -3,10 +3,10 @@ component:
   id: delivery
   name: Cerebro Delivery Controller
   type: tooling
-  version: 0.1.0
+  version: 0.2.0
   status: active-source
 responsibility:
-  primary: Deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
+  primary: Select and persist a Source-bound delivery profile, then deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
 boundaries:
   must:
     - verify-exact-source-baseline
@@ -15,22 +15,31 @@ boundaries:
     - enforce-declared-path-scope
     - verify-installed-payload-bytes
     - preserve-lossless-failure-and-recovery-evidence
+    - persist-explicit-terminal-delivery-selection-outside-source
+    - bind-selection-to-exact-source-commit
+    - fail-closed-when-auto-resolution-evidence-is-insufficient
+    - revalidate-selected-profile-before-payload-design-and-delivery
   must_not:
     - design-or-generate-source-content
     - create-source-authority
     - publish-source
     - bypass-change-assurance
     - overwrite-unknown-concurrent-state
+    - silently-fallback-to-another-delivery-profile
 dependencies:
   runtime:
     - git
     - python
     - change-capsule-v0.2
+    - powershell-5.1
 interfaces:
   consumes:
     - assured-change-capsule
     - clean-working-source
+    - explicit-user-delivery-selection
   produces:
     - delivery-receipt
     - bounded-backup
     - mutation-journal
+    - delivery-selection-state
+    - delivery-selection-history

@@ -753,8 +753,10 @@ change_delivery_platform_validation:
     - tooling/host/cerebro_host.py
     - tooling/change/change_engine.py
     - tooling/delivery/delivery_controller.py
+    - tooling/delivery/cerebro_delivery.ps1
     - tooling/delivery/component.yaml
     - tooling/delivery/receipt-schema.json
+    - tooling/delivery/selection-state-schema.json
     - tooling/closure/closure_engine.py
     - tooling/closure/component.yaml
     - tooling/closure/closure-input-schema.json
@@ -764,6 +766,9 @@ change_delivery_platform_validation:
     - STANDARD_C-controlled-workspace-transaction
     - journal-before-first-possible-mutation
     - known-state-bounded-rollback
+    - terminal-delivery-profile-lock
+    - source-commit-bound-delivery-selection
+    - AUTO-fails-closed-without-capability-evidence
     - observational-release-validation
     - reproducible-release-package-identity
     - clean-aligned-repositories-before-closure

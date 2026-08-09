@@ -646,7 +646,7 @@ function cerebro_tools_status {
     $config = Get-CerebroToolsConfig
 
     [pscustomobject]@{
-        module_version = '1.1.0'
+        module_version = '1.2.0'
         module_path = $PSScriptRoot
         config_path = 'D:\Cerebro\Config\Cerebro.Tools.json'
         working_source_path = $config.working_source_path
@@ -671,6 +671,9 @@ function cerebro_tools_status {
         )
         bootini = [bool](
             Get-Command bootini -ErrorAction SilentlyContinue
+        )
+        cerebro = [bool](
+            Get-Command cerebro -ErrorAction SilentlyContinue
         )
     }
 }
@@ -812,8 +815,62 @@ function bootini {
 
     bootCerebro @PSBoundParameters
 }
+
+function cerebro {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory, Position=0)]
+        [ValidateSet('delivery')]
+        [string]$Area,
+
+        [Parameter(Mandatory, Position=1)]
+        [ValidateSet('select', 'status', 'explain', 'selftest')]
+        [string]$Action,
+
+        [Parameter(Position=2)]
+        [string]$Profile,
+
+        [ValidateSet('replace', 'create', 'delete')]
+        [string[]]$Operations = @(),
+
+        [switch]$DirectWorkspaceAccess,
+
+        [string]$WorkingSourcePath,
+
+        [string]$StatePath =
+            'D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json',
+
+        [string]$HistoryRoot =
+            'D:\Cerebro\Run\delivery\selections'
+    )
+
+    if ([string]::IsNullOrWhiteSpace($WorkingSourcePath)) {
+        $config = Get-CerebroToolsConfig
+        $WorkingSourcePath = [string]$config.working_source_path
+    }
+
+    $source = [IO.Path]::GetFullPath($WorkingSourcePath)
+    $scriptPath = Join-Path `
+        $source `
+        'tooling\delivery\cerebro_delivery.ps1'
+
+    if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+        throw "CEREBRO_DELIVERY_SCRIPT_NOT_FOUND:$scriptPath"
+    }
+
+    . $scriptPath
+
+    Invoke-CerebroDeliveryCommand `
+        -Action $Action `
+        -Profile $Profile `
+        -Operations $Operations `
+        -DirectWorkspaceAccess:$DirectWorkspaceAccess `
+        -WorkingSourcePath $source `
+        -StatePath $StatePath `
+        -HistoryRoot $HistoryRoot
+}
 Export-ModuleMember `
-    -Function cerebro_receive, cpatch, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, bootini, cerebro_tools_status
+    -Function cerebro_receive, cpatch, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, bootini, cerebro_tools_status, cerebro
 
 function cerebro_profile {
     [CmdletBinding()]

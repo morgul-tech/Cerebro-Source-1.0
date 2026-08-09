@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.3.0
+  version: 0.4.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -81,6 +81,38 @@ profiles:
     - implicit-commit
     - overwrite-unknown-concurrent-state
     - delivery-controller-source-generation
+selection:
+  command: cerebro delivery select <STANDARD_A|STANDARD_B|STANDARD_C|AUTO>
+  status_command: cerebro delivery status
+  explanation_command: cerebro delivery explain [profile]
+  implementation: tooling/delivery/cerebro_delivery.ps1
+  state_schema: tooling/delivery/selection-state-schema.json
+  active_state_default: D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json
+  history_root_default: D:\Cerebro\Run\delivery\selections
+  authority: DERIVED_RUNTIME_STATE
+  semantics:
+  - selection-locks-delivery-profile-not-patch-identity
+  - selection-does-not-mutate-source
+  - selection-does-not-apply-commit-or-publish
+  - selected-profile-is-revalidated-against-patch-scope-before-payload-design
+  - selected-profile-is-revalidated-again-before-delivery
+  - missing-AUTO-evidence-blocks-without-silent-fallback
+  source_binding:
+  - expected-repository
+  - branch-main
+  - exact-source-commit
+  invalidation:
+  - source-commit-change
+  - explicit-user-reselection
+  - verified-capability-change
+  - selected-profile-validation-failure
+  deterministic_identity:
+    field: decision_fingerprint
+    inputs:
+    - state-schema
+    - resolved-profile
+    - exact-source-commit
+    - change-delivery-standard-version
 identity_domains:
   tracked_source_baseline:
     authoritative_identity: git-blob-sha
@@ -187,6 +219,15 @@ rules:
   priority: critical
 - id: STD-CHANGE-DELIVERY-R009
   statement: Rollback shall overwrite or remove a target only when its current state is the verified baseline state or the exact delivered payload state; unknown concurrent state requires manual recovery.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R010
+  statement: A terminal delivery selection shall bind the explicitly resolved profile to the exact Source commit and persist machine-readable derived state outside Source without applying, committing, or publishing a patch.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R011
+  statement: AUTO selection shall fail closed when patch-scope and capability evidence are insufficient and shall never silently fall back to another delivery profile.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R012
+  statement: A locked delivery selection shall be revalidated before physical payload design and before delivery, and a Source commit change shall make the active selection stale.
   priority: critical
 target_language_preflight:
   powershell:

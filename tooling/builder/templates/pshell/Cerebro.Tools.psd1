@@ -1,6 +1,6 @@
 @{
     RootModule = 'Cerebro.Tools.psm1'
-    ModuleVersion = '1.1.0'
+    ModuleVersion = '1.2.0'
     GUID = '6e1252dc-8979-4c13-a2e0-0de3ce184f65'
     Author = 'Cerebro'
     CompanyName = 'Cerebro'
@@ -16,6 +16,7 @@
         'bootCerebro',
         'bootini',
         'cerebro_tools_status',
+        'cerebro',
         'cerebro_profile'
     )
     CmdletsToExport = @()

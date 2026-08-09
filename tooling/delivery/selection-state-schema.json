@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-delivery-selection/v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "selector_version",
+    "selection_id",
+    "state",
+    "requested_profile",
+    "resolved_profile",
+    "resolution_reason",
+    "selected_at_utc",
+    "decision_fingerprint",
+    "source",
+    "evidence",
+    "applicability",
+    "controls",
+    "invalidated_by"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-delivery-selection/v0.1"},
+    "selector_version": {"type": "string"},
+    "selection_id": {"type": "string", "pattern": "^DELIVERY-"},
+    "state": {"const": "LOCKED"},
+    "requested_profile": {
+      "enum": ["STANDARD_A", "STANDARD_B", "STANDARD_C", "AUTO"]
+    },
+    "resolved_profile": {
+      "enum": ["STANDARD_A", "STANDARD_B", "STANDARD_C"]
+    },
+    "resolution_reason": {"type": "string", "minLength": 1},
+    "selected_at_utc": {"type": "string", "format": "date-time"},
+    "decision_fingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "branch", "commit", "working_source_path"],
+      "properties": {
+        "repository": {"const": "morgul-tech/Cerebro-Source-1.0"},
+        "branch": {"const": "main"},
+        "commit": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+        "working_source_path": {"type": "string", "minLength": 1}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "explicit_user_terminal_selection",
+        "operations",
+        "direct_workspace_access_declared"
+      ],
+      "properties": {
+        "explicit_user_terminal_selection": {"const": true},
+        "operations": {
+          "type": "array",
+          "items": {"enum": ["replace", "create", "delete"]}
+        },
+        "direct_workspace_access_declared": {"type": "boolean"}
+      }
+    },
+    "applicability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "revalidate_before_payload_design",
+        "revalidate_before_delivery"
+      ],
+      "properties": {
+        "state": {"const": "PENDING_PATCH_SCOPE_VALIDATION"},
+        "revalidate_before_payload_design": {"const": true},
+        "revalidate_before_delivery": {"const": true}
+      }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_mutation",
+        "publication_performed",
+        "commit_performed",
+        "silent_fallback"
+      ],
+      "properties": {
+        "source_mutation": {"const": false},
+        "publication_performed": {"const": false},
+        "commit_performed": {"const": false},
+        "silent_fallback": {"const": false}
+      }
+    },
+    "invalidated_by": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string"}
+    }
+  }
+}
