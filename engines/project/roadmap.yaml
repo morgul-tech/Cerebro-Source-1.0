@@ -784,14 +784,14 @@ roadmap:
       phase_ref: "PHASE-1"
       milestone_ref: null
       patch_ref: "PATCH-006"
-      canonical_command: "install and locally validate the assured PATCH-006 STANDARD runner"
-      status: "READY_FOR_INSTALL"
+      canonical_command: "operate the published PATCH-006 bounded relevance capability and accept the user's next objective"
+      status: "COMPLETE"
     next:
-      id: "EXEC-P6-LOCAL-VALIDATION-AND-PUBLICATION"
+      id: "EXEC-P6-NEXT-USER-OBJECTIVE"
       phase_ref: "PHASE-1"
       milestone_ref: null
       patch_ref: "PATCH-006"
-      canonical_command: "after user-local install, validate explicitly and publish only by explicit user action"
+      canonical_command: "accept the user's next objective under the current operational control state"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -1045,14 +1045,14 @@ patch_005_current_execution_state:
     - P5P001-FINAL-LEARNING-CONSOLIDATION
     - P5P001-INTERNAL-CONTROL-REVIEW
     - P5P001-CLOSURE-PASS-CANDIDATE
-  active_stage: PATCH-006-READY-FOR-INSTALL
+  active_stage: PATCH-006-OPERATIONAL
   closure_receipt_authority: EXTERNAL_SHA256_BOUND_CLOSURE_ENGINE_RECEIPT
   next_stages:
     - P6-BOUND-KNOWLEDGE-EVIDENCE-MODEL
     - P6-BOUND-WISDOM-RETRIEVAL-CONTRACT
   patch_006:
     title: WISDOM_OPERATIONALIZATION_AND_KNOWLEDGE_EVIDENCE
-    status: READY_FOR_INSTALL
+    status: IMPLEMENTED_VALIDATED_PUBLISHED
     delivery_profile: STANDARD
     execution_owner: USER_LOCAL_RUNNER
     publication: EXPLICIT_USER_ACTION
