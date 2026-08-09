@@ -1,15 +1,16 @@
-schema: cerebro-control-architecture/v0.1
+schema: cerebro-control-architecture/v0.2
 
 control_architecture:
   id: CEREBRO-CONTROL-ARCHITECTURE-001
-  version: "0.1"
+  version: "0.2"
   status: ACTIVE
-  introduced_by: PATCH-005
+  introduced_by: GUARDRAILS-001
 
   purpose: >
     Define one coherent control path from current evidence and configuration
-    through MCP resolution to a fresh execution policy without conflating
-    MCP Control Decisions with Runtime 0.1 Transition Decisions.
+    through command and contract resolution, canonical execution-surface
+    resolution, MCP control resolution and capability binding to execution,
+    recovery, verification and the next control event.
 
   authority:
     definitional_authority: Cerebro Source 1.0
@@ -20,13 +21,17 @@ control_architecture:
   flow:
     - CONTROL_EVENT
     - CONTROL_STATE
+    - COMMAND_AND_CONTRACT_RESOLUTION
     - CONTROL_RESOLUTION
     - MCP_CONTROL_DECISION
     - EXECUTION_PROFILE
+    - EXECUTION_SURFACE_RESOLUTION
     - CAPABILITY_BINDING
     - EXECUTE
+    - AUTONOMOUS_FAILURE_RECOVERY
     - VERIFY
     - EVIDENCE
+    - HUMAN_CONTINUATION_SURFACE
     - NEXT_CONTROL_EVENT
 
   control_state_contract:
@@ -47,6 +52,16 @@ control_architecture:
       - capability_state
       - human_boundary
       - basis_fingerprint
+
+  command_and_contract_resolution:
+    contract_ref: standards/human-continuation-surface.yaml
+    rules:
+      - resolve-established-project-command-before-generic-semantic-inference
+      - load-full-continuation-state-before-execution-reasoning
+      - retrieve-applicable-Cerebro-contracts-before-tool-selection
+      - known-contract-must-not-be-bypassed-by-general-capability-reasoning
+      - deterministic-human-alias-must-not-carry-authoritative-state
+    failure_state: KNOWN_CONTRACT_BYPASS
 
   mcp_control_decision_contract:
     kind: CONTRACT
@@ -93,6 +108,27 @@ control_architecture:
       - level-1-level-2-level-3-are-human-aliases-not-canonical-system-types
       - stale-profile-must-not-authorize-execution
 
+  execution_surface_resolution:
+    required_before:
+      - capability-binding
+      - mutation
+      - recovery-path-switch
+    required_fields:
+      - canonical_execution_path
+      - execution_surface
+      - mutation_authority
+      - publication_path
+      - human_boundary
+      - surface_basis_refs
+    invariants:
+      - capability-availability-must-not-select-architecture
+      - wrong-surface-mutation-is-blocked-before-action
+      - Cerebro-development-default-mutation-surface-is-Working-Source
+      - GitHub-is-remote-publication-and-verification-surface-not-default-workspace
+      - recovery-may-change-mechanism-without-changing-surface
+      - surface-change-requires-explicit-control-re-resolution
+    failure_state: WRONG_EXECUTION_SURFACE_SELECTION
+
   freshness:
     decision_basis_fingerprint_required: true
     executor_rule: current-basis-must-equal-decision-basis
@@ -109,6 +145,32 @@ control_architecture:
       - applied_remediation
       - changed_strategy
       - refined_scope
+
+  autonomous_failure_recovery:
+    principle: REPAIR_OR_FALSIFY_SUSPECTED_FAILURE_BEFORE_ESCALATION
+    sequence:
+      - detect-anomaly
+      - compare-with-expected-state
+      - classify-single-unexpected-result-as-suspect-not-authoritative
+      - retry-with-material-delta
+      - cross-validate-through-valid-independent-paths
+      - recover-silently-when-confirmed-safe
+      - escalate-only-after-consistent-independent-evidence
+    evidence_thresholds:
+      single_failure: LOW
+      repeated_consistent_failure: MEDIUM
+      independent_path_confirmation: STRONG
+    constraints:
+      - recovery-path-must-preserve-architectural-boundaries
+      - recovery-must-not-switch-to-wrong-execution-surface
+      - blind-identical-retry-loop-is-prohibited
+      - user-must-not-become-default-diagnostic-controller
+    escalation:
+      expose_to_user_when:
+        - material-user-decision-required
+        - required-human-boundary-reached
+        - strong-evidence-of-blocking-failure
+      otherwise: CONTINUE_AUTONOMOUSLY
 
   reorient:
     meaning: current_path_is_invalid_and_a_materially_different_path_is_required
@@ -139,10 +201,15 @@ control_architecture:
     - MCP-resolves-active-control
     - Runtime-Host-does-not-own-control-policy
     - decision-freshness-is-verified-before-execution
+    - applicable-contracts-are-resolved-before-tool-selection
+    - canonical-execution-surface-is-resolved-before-capability-binding
+    - mutation-on-unresolved-or-wrong-surface-is-prohibited
     - retry-requires-progress-delta
+    - recovery-preserves-architectural-boundaries
     - reorient-requires-material-path-delta
     - unchanged-reorientation-is-invalid
     - control-evidence-does-not-create-Source-authority
+
   user_profile_resolution:
     precedence:
       - HARD_SYSTEM_AUTHORITY
@@ -155,16 +222,19 @@ control_architecture:
       - continue_when_safe
       - do_not_claim-normal-personalization
       - do_not-change-Source-or-project-authority
+
   decision_assurance_readiness:
     contract_ref: standards/development/adaptive-quality-workform.yaml
     material_lock_requires: READY_TO_LOCK
     basis_field: decision_basis_fingerprint
     stale_readiness_effect: INVALIDATE_READINESS_AND_REASSESS
+
   wisdom_control_binding:
     contract_ref: standards/development/wisdom-control-binding.yaml
     context_assesses_applicability: true
     MCP_resolves_control_effect: true
     evidence_authority: EVIDENCE_ONLY
+
   relevance_retrieval:
     contract_ref: standards/development/relevance-retrieval.yaml
     implementation_ref: tooling/context/relevance_engine.py
@@ -176,21 +246,40 @@ control_architecture:
       - basis_fingerprint
     changed_retrieval_effect: INVALIDATE_DECISION_AND_RE_RESOLVE
     knowledge_authority: EVIDENCE_ONLY
+
   human_insight_checkpoint:
     material_insight_effect:
       - CRITIQUE_AND_REASSESS
       - RE_RESOLVE_CONTROL
     nonmaterial_insight_effect: CONTINUE
     insight_is_automatic_authority: false
+    user_correction_prevention_loop:
+      sequence:
+        - classify-failure
+        - identify-prevention-gap
+        - strengthen-guardrail
+        - validate-against-failure-case
+        - reduce-recurrence-probability
+      response_policy:
+        - avoid-redundant-retrospective-explanation
+        - prioritize-prevention-over-apology-or-after-the-fact-rationalization
+
   effect_feedback:
     result_to_evidence_candidate: true
     next_control_event: RETRIEVAL_REASSESSMENT
     automatic_source_mutation: false
     automatic_promotion: false
+
+  human_continuation_surface:
+    contract_ref: standards/human-continuation-surface.yaml
+    required_when_human_action_is_next: true
+    authoritative_state_must_remain_outside_visible_alias: true
+
   architectural_regrounding:
     contract_ref: standards/development/architectural-regrounding.yaml
     trigger_event: MAJOR_PHASE_BOUNDARY
     required_control_state: ARCHITECTURAL_REGROUNDING_REQUIRED
+
   active_source_closure:
     contract_ref: standards/active-source-closure.yaml
     required_before_patch_close: true

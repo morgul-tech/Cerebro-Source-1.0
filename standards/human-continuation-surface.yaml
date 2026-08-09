@@ -1,0 +1,105 @@
+schema: cerebro-human-continuation-surface/v0.1
+
+human_continuation_surface:
+  id: CEREBRO-HUMAN-CONTINUATION-SURFACE-001
+  version: "0.1"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  introduced_by: GUARDRAILS-001
+
+  purpose: >
+    Keep the human-facing continuation command short and usable while preserving
+    all authoritative continuation state in Cerebro-owned state and resolving the
+    short command deterministically before execution.
+
+  principle: USER_COMMAND_IS_A_TRIGGER_NOT_AN_INFORMATION_CONTAINER
+
+  human_action_surface:
+    normal_word_budget:
+      min: 2
+      max: 5
+    requirements:
+      - shortest-unambiguous-human-facing-canonical-alias
+      - copyable
+      - action-oriented
+      - no-authoritative-payload-transport
+      - no-chat-memory-dependency
+    long_form_allowed_only_when:
+      - exact-shell-syntax-is-the-human-action
+      - exact-API-or-debug-payload-is-required
+      - user-explicitly-requests-full-form
+
+  binding_contract:
+    required_fields:
+      - alias
+      - target_ref
+      - operation
+      - current_basis_ref
+      - full_payload_ref
+      - constraints_refs
+      - evidence_refs
+      - maturity
+      - readiness
+      - source_revision
+      - required_next_behavior
+      - resume_order
+      - alternative_paths
+      - binding_fingerprint
+
+  resolution:
+    sequence:
+      - normalize-user-command
+      - resolve-active-binding
+      - load-current-basis
+      - load-full-payload-and-constraints
+      - verify-freshness
+      - follow-supersession-chain-when-needed
+      - auto-rebase-when-unambiguous
+      - execute-bound-continuation
+    stale_command_behavior:
+      unambiguous_successor: AUTO_REBASE
+      material_user_choice: USER_DECISION_REQUIRED
+      unresolved: BLOCK_WITH_MINIMUM_NECESSARY_CONTEXT
+
+  semantic_losslessness:
+    invariant: USER_COMMAND_COMPRESSION_MAY_REDUCE_VISIBLE_TEXT_BUT_MUST_NOT_REDUCE_SEMANTIC_STATE
+    prohibited:
+      - reconstruct-authoritative-state-from-visible-alias
+      - require-user-to-carry-objective-constraints-or-evidence-manually
+      - depend-on-conversation-memory-for-cross-session-resume
+
+  multiple_paths:
+    rule: ONE_SHORT_COMMAND_PER_GENUINELY_DIFFERENT_USER_PATH
+    do_not_create_multiple_paths_when:
+      - continuation-is-uniquely-determined
+      - mismatch-is-recoverable
+      - Cerebro-can-normalize-or-rebase-autonomously
+
+  cross_session:
+    sequence:
+      - boot
+      - load-authoritative-state
+      - resolve-short-command
+      - resolve-bound-continuation
+      - continue
+    chat_memory_authority: NONE
+
+  standard_delivery_binding:
+    contract_ref: standards/change-delivery.yaml
+    STANDARD:
+      user_handoff:
+        - exactly-one-bundle-zip
+        - exactly-one-launcher-powershell
+        - exactly-one-short-copyable-local-shell-command
+      human_boundary_is_not_blocker: true
+      autonomous_behavior: BUILD_TO_REQUIRED_HUMAN_EXECUTION_BOUNDARY
+      prohibited:
+        - stop-early-because-agent-cannot-run-users-local-powershell
+        - substitute-direct-GitHub-mutation-for-local-Working-Source-delivery
+        - improvise-alternate-handoff-when-contract-is-applicable
+
+  invariants:
+    - short-command-is-not-authoritative-state
+    - full-state-remains-Cerebro-owned
+    - applicable-contract-is-resolved-before-general-tool-reasoning
+    - human-boundary-is-presented-not-misclassified-as-system-blocker
