@@ -3022,6 +3022,101 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-STANDARD-DELIVERY-HANDOFF-LOCK-001"
       sequence: 84
+    -
+      id: "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
+      type: "WISDOM_RECORD"
+      scope: "STANDARD-DELIVERY-HANDOFF-AND-RUNNER-ASSURANCE"
+      statement: "STANDARD delivery must remain one ZIP plus one launcher plus one short local-shell command, and the launcher must be validated at the actual PowerShell/process boundary before human handoff so deterministic invocation, array serialization, failure visibility and resume behavior do not become user retry loops."
+      payload:
+        authority: "EVIDENCE_ONLY"
+        maturity: "CONFIRMED_MULTI_INCIDENT_WITH_REAL_FAILURE_EVIDENCE"
+        failure_evidence:
+          - "KNOWN_CONTRACT_BYPASS"
+          - "FULL_SCRIPT_EXPOSED_IN_CHAT_INSTEAD_OF_CANONICAL_HANDOFF"
+          - "FAILURE_OUTPUT_WINDOW_CLOSED"
+          - "POWERSHELL_RESERVED_ARGS_PARAMETER_COLLISION"
+          - "POWERSHELL_FILE_PROCESS_BOUNDARY_ARRAY_SERIALIZATION_FAILURE"
+        recovered_behavior:
+          - "REBUILD_CLEAN_STANDARD"
+          - "RESUME_FROM_VERIFIED_PARTIAL_INSTALL"
+          - "CANONICAL_CEREBRO_SYNC"
+          - "INDEPENDENT_REMOTE_VERIFICATION"
+        principles:
+          - "STANDARD_HANDOFF_IS_EXACTLY_ONE_ZIP_ONE_LAUNCHER_ONE_SHORT_COMMAND"
+          - "DO_NOT_EXPOSE_FULL_LAUNCHER_SOURCE_WHEN_FILES_ARE_THE_DELIVERY"
+          - "VALIDATE_ACTUAL_DOWNSTREAM_COMMAND_SIGNATURE_BEFORE_HANDOFF"
+          - "VALIDATE_POWERSHELL_PROCESS_BOUNDARY_SERIALIZATION_BEFORE_HANDOFF"
+          - "DO_NOT_USE_RESERVED_AUTOMATIC_VARIABLE_NAMES_AS_CUSTOM_PARAMETERS"
+          - "FAILURE_OUTPUT_MUST_REMAIN_VISIBLE"
+          - "RESUME_VERIFIED_PARTIAL_PROGRESS_INSTEAD_OF_RESTARTING_SUCCESSFUL_PHASES"
+          - "MACHINE_ELIMINATE_REPRODUCIBLE_RUNNER_FAILURES_BEFORE_NEXT_HUMAN_RETRY"
+      provenance:
+        introduced_by_ref: "USER-STANDARD-DELIVERY-FAILURE-EVIDENCE-2026-08-10"
+        basis_refs:
+          - "standards/change-delivery.yaml"
+          - "standards/control-architecture.yaml"
+          - "standards/human-continuation-surface.yaml"
+          - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+          - "CTX-WISDOM-STANDARD-HANDOFF-COMPLEXITY-ABSORPTION-001"
+      sequence: 85
+    -
+      id: "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
+      type: "CURRENT_BASIS"
+      scope: "CEREBRO-GUARDRAILS-IMPLEMENTED"
+      statement: "The consolidated Cerebro guardrails are implemented in Source, published and independently remote-verified; future execution must resolve applicable contracts and canonical execution surface before capability binding, preserve architecture during recovery, use the short-command/full-state contract, and treat user-caught failures as prevention evidence."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "LOCAL_SYNC_SUCCESS_PLUS_INDEPENDENT_REMOTE_COMMIT_VERIFICATION"
+        implementation_result: "VERIFIED"
+        implementation_commit: "51e98ab97d82a5d26e1e73c0e9b94a73d582ad4d"
+        implementation_commit_message: "Implement canonical guardrails"
+        source_persisted: true
+        rollback_required: false
+        changed_source_files:
+          - "standards/control-architecture.yaml"
+          - "standards/human-continuation-surface.yaml"
+        active_guardrails:
+          - "SHORT_COMMAND_FULL_STATE"
+          - "KNOWN_CONTRACT_FIRST_RESOLUTION"
+          - "CANONICAL_EXECUTION_PATH_BEFORE_TOOL_CHOICE"
+          - "EXECUTION_SURFACE_GATE_BEFORE_MUTATION"
+          - "ARCHITECTURE_PRESERVING_AUTONOMOUS_FAILURE_RECOVERY"
+          - "RETRY_AND_CROSS_VALIDATION_BEFORE_ESCALATION"
+          - "USER_CORRECTION_TO_FAILURE_PREVENTION_LOOP"
+          - "WORKING_SOURCE_AS_DEFAULT_CEREBRO_MUTATION_SURFACE"
+          - "CANONICAL_PUBLISH_THEN_REMOTE_VERIFY"
+        standard_delivery_handoff:
+          zip_count: 1
+          launcher_count: 1
+          copyable_local_shell_command_count: 1
+          full_launcher_source_in_normal_chat_handoff: false
+          human_boundary_is_blocker: false
+        failure_classes_closed_by_guardrail_design:
+          - "WRONG_EXECUTION_SURFACE_SELECTION"
+          - "KNOWN_CONTRACT_BYPASS"
+        additional_runner_failure_evidence_ref: "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
+        do_not_rerun_guardrail_implementation: true
+        exact_next_behavior: "CONTINUE_CEREBRO_FROM_CURRENT_SOURCE_AND_RESOLVE_NEXT_USER_INTENT"
+        chat_memory_authority: "NONE"
+        lagre_semantics: "PERSIST_NECESSARY_CONTINUATION_STATE_IN_CEREBRO_OWNED_SOURCE_OR_STORAGE"
+      provenance:
+        introduced_by_ref: "USER-LAGRE-GUARDRAILS-2026-08-10"
+        basis_refs:
+          - "51e98ab97d82a5d26e1e73c0e9b94a73d582ad4d"
+          - "standards/control-architecture.yaml"
+          - "standards/human-continuation-surface.yaml"
+          - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-STANDARD-DELIVERY-POST-PUBLISH-VERIFY-NEXT-SESSION-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-STANDARD-DELIVERY-POST-PUBLISH-VERIFY-NEXT-SESSION-001"
+      sequence: 86
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -3064,7 +3159,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
       - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
       - "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
-      - "CTX-BASIS-STANDARD-DELIVERY-POST-PUBLISH-VERIFY-NEXT-SESSION-001"
+      - "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -3105,6 +3200,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-INCREMENTAL-ARTIFACT-REVISION-001"
       - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
       - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+      - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
   next_sequence: 85
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
