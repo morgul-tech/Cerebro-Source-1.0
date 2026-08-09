@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.5.0
+  version: 0.6.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -40,29 +40,32 @@ profiles:
     - explicitly-superseded-files-must-be-removed
     - bounded-backup-automation-materially-reduces-risk
     user_surface:
-    - self-contained-powershell-runner
-    - embedded-payload
-    - embedded-manifest
+    - payload-artifact
+    - installer-powershell-runner
+    - short-copyable-launch-command
     - machine-readable-receipts
     execution_owner: USER_LOCAL_RUNNER
     agent_local_access: PROHIBITED
     access_request_budget: 0
-    artifact_format: SELF_EXTRACTING_POWERSHELL
+    artifact_format: PAYLOAD_PLUS_INSTALLER
     script_scope:
     - preflight
+    - payload-discovery
+    - payload-container-extraction-when-required
+    - payload-manifest-verification
     - bounded-backup
     - backup-hash-verification
     - directory-creation
-    - exact-byte-copy
-    - installed-hash-verification
+    - exact-payload-installation
+    - installed-state-verification
     - bounded-rollback-on-apply-failure
+    - run-to-pass-orchestration
     - receipt
     prohibited_script_scope:
     - Source-content-generation
     - YAML-transformation
     - roadmap-interpretation
     - architecture-decision
-    - implicit-publication
     - claim-promotion
     - git-reset-hard
     - unbounded-recovery
@@ -147,9 +150,12 @@ namespace_separation:
   artifact_format:
     values:
     - FILES
+    - PAYLOAD_PLUS_INSTALLER
     - SELF_EXTRACTING_POWERSHELL
     - CONTROLLED_TRANSACTION
     meaning: physical form of the delivery artifact
+    canonical_standard_format: PAYLOAD_PLUS_INSTALLER
+    legacy_artifact_formats_preserved: [SELF_EXTRACTING_POWERSHELL]
     legacy_builder_modes_preserved: [FULL, EXEC, PSHELL]
   assurance_profile:
     values: [FAST, STANDARD, DEEP]
@@ -244,24 +250,34 @@ post_apply:
   - remote-verification
 standard_runner_contract:
   required_for: STANDARD
-  delivery_shape: one-self-contained-powershell-file
-  payload_encoding: embedded-compressed-bytes
+  delivery_shape: payload-artifact-plus-separate-installer-plus-short-launch-command
+  payload_forms:
+  - exact-single-file-payload
+  - package-archive-with-manifest
+  - deterministic-patch-payload-bound-to-exact-base
   required_actions:
   - Install
   - Validate
   - Publish
   - Restore
+  - RunToPass
   install_must:
-  - parse-before-first-mutation
-  - verify-embedded-payload-hashes
+  - parse-installer-before-first-mutation
+  - verify-external-payload-and-manifest-hashes
   - verify-exact-source-commit
+  - extract-package-to-bounded-temporary-location-when-required
   - create-bounded-backup
   - install-only-declared-paths
-  - verify-installed-hashes
+  - verify-installed-state
   - rollback-on-known-state-failure
   - emit-machine-readable-receipt
+  run_to_pass_must:
+  - require-explicit-user-RunToPass-invocation
+  - perform-Install-then-Validate-then-Publish-then-remote-verification
+  - stop-on-first-governing-failure
+  - not-require-repeated-user-authorization-for-the-predeclared-chain
   publish_must:
-  - require-an-explicit-Publish-action
+  - require-an-explicit-Publish-action-or-explicit-RunToPass-action
   - run-only-after-successful-local-validation
   - remain-user-executed
   - emit-machine-readable-sync-receipt
@@ -270,6 +286,57 @@ standard_runner_contract:
   - agent-local-access-request
   - implicit-publish-during-Install
   - silent-profile-fallback
+
+artifact_surface_resolution:
+  requirement: deliver-user-usable-artifacts
+  resolver_owner: MCP
+  principles:
+  - outcome-before-mechanism
+  - least-intrusive-capable-surface
+  - artifact-requirement-does-not-imply-work-mode
+  - artifact-generation-and-artifact-delivery-surface-are-separate-concerns
+  - current-capabilities-must-be-evaluated-before-escalation
+  - work-or-direct-local-access-is-not-requested-merely-because-files-are-required
+
+direct_inline_execution:
+  classification: EXECUTION_MECHANISM_EXCEPTION
+  delivery_profile: NONE
+  default_for_persistent_implementation: false
+  allowed_when:
+  - read-only-diagnostic
+  - invoke-already-delivered-runner
+  - process-scoped-bootstrap
+  - bounded-recovery
+  - artifact-surface-unavailable-and-inline-is-the-safest-bounded-fallback
+  - explicit-user-request
+  prohibited_as_reason:
+  - patch-is-small
+  - code-is-short
+  - assistant-convenience
+  - assumption-that-file-generation-requires-work
+
+deliverylvl_learning_basis:
+  authority: EVIDENCE_ONLY
+  status: USER_CORRECTED_AND_REFINED
+  observations:
+  - id: DELIVERYLVL-LRN-001
+    family: HUMAN_MACHINE_SEMANTIC_GAP
+    conclusion: human outcome intent must be resolved before a machine mechanism is selected
+  - id: DELIVERYLVL-LRN-002
+    family: ARTIFACT_SURFACE_ASSUMPTION
+    conclusion: producing a user-downloadable file does not by itself imply Work or agent-local access
+  - id: DELIVERYLVL-LRN-003
+    family: DEPENDENCY_ORDERING
+    conclusion: downstream work must not execute against an unverified prerequisite capability or state
+  - id: DELIVERYLVL-LRN-004
+    family: INLINE_DELIVERY_MISCLASSIFICATION
+    conclusion: large inline terminal implementation code is an exception mechanism and not STANDARD delivery
+  operationalization:
+  - PAYLOAD_PLUS_INSTALLER
+  - LEAST_INTRUSIVE_CAPABLE_SURFACE
+  - OUTCOME_BEFORE_MECHANISM
+  - DEPENDENCY_AWARE_EXECUTION
+
 separation:
   delivery_means: place-final-exact-bytes-at-declared-local-paths
   change_execution_means: test-validate-learn-and-resolve-readiness
@@ -319,17 +386,32 @@ rules:
   statement: FULL shall require explicit selection, aggregate any necessary platform access into at most one request, and enter FULL_BLOCKED after denial without retry or fallback.
   priority: critical
 - id: STD-CHANGE-DELIVERY-R015
-  statement: STANDARD delivery shall be a self-contained user-executed PowerShell runner with embedded payload, manifest, bounded install, validation, explicit publication, restore, and receipts.
+  statement: STANDARD delivery shall provide a separate payload artifact, a user-executed PowerShell installer, a short copyable launch command, bounded install and recovery, validation, explicit publication authorization, and machine-readable receipts.
   priority: critical
 - id: STD-CHANGE-DELIVERY-R016
-  statement: Delivery profile, artifact format, and assurance profile shall remain independent namespaces; legacy builder modes FULL, EXEC, and PSHELL retain their existing artifact semantics.
+  statement: Delivery profile, artifact format, artifact surface, execution mechanism, and assurance profile shall remain independent namespaces; legacy builder modes FULL, EXEC, and PSHELL retain their existing artifact semantics.
   priority: critical
+- id: STD-CHANGE-DELIVERY-R017
+  statement: Cerebro shall resolve the user's intended outcome before selecting the technical delivery mechanism or artifact surface.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R018
+  statement: A requirement to create or deliver user-downloadable files shall not by itself imply Work mode, agent-local access, or any more intrusive delivery surface.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R019
+  statement: Direct inline terminal implementation code shall be an exception mechanism and shall not be selected as STANDARD merely because a patch is small, short, or convenient to express inline.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R020
+  statement: Explicit user invocation of RunToPass shall authorize the predeclared STANDARD chain through publication and remote verification after local validation without repeated confirmation, while preserving all governing gates.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R021
+  statement: Artifact delivery shall use the least intrusive currently available surface that can safely deliver the required artifacts; capability must be checked before escalation.
+  priority: high
 target_language_preflight:
   powershell:
     applies_to:
     - apply-script
     - restore-script
-    - self-running-entrypoint
+    - installer-entrypoint
     target_parser: System.Management.Automation.Language.Parser
     parse_required_before_first_package_script_execution: true
     all_delivered_ps1_must_parse: true

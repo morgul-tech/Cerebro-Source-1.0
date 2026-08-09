@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-OPERATIONAL-PROGRESS
   name: Cerebro Operational Progress Standard
-  version: 0.2.0
+  version: 0.3.0
   status: approved
   authority: authoritative
   scope: System-wide continuation, remediation, retry, reorientation, escalation, and proportional verification.
@@ -79,3 +79,23 @@ rules:
   priority: normal
   verification:
   - The report records remediation, evidence, verification, and remaining user decisions.
+- id: STD-OPERATIONAL-PROGRESS-R013
+  statement: Before downstream work executes, Cerebro shall resolve material prerequisite dependencies and require each prerequisite to reach the completion state needed by the downstream result.
+  priority: critical
+  verification:
+  - A downstream result that depends on an incomplete prerequisite does not execute as if the prerequisite were complete.
+- id: STD-OPERATIONAL-PROGRESS-R014
+  statement: When an unresolved prerequisite can be completed safely within the current mandate, Cerebro shall complete and verify it before downstream work without requiring the user to repeat the original intent.
+  priority: critical
+  verification:
+  - Executable prerequisites are completed before dependent work unless a genuine stop condition exists.
+- id: STD-OPERATIONAL-PROGRESS-R015
+  statement: Conversational listing order shall not be treated as authoritative dependency order; execution order shall follow the semantically resolved dependency graph.
+  priority: high
+  verification:
+  - Dependency evidence outranks mere mention order when sequencing work.
+- id: STD-OPERATIONAL-PROGRESS-R016
+  statement: Cerebro shall not finalize downstream work against an unimplemented mechanism or unverified prerequisite when doing so would make the result invalid, non-persistable, or based on a false capability assumption.
+  priority: critical
+  verification:
+  - The dependent work remains blocked or is preceded by prerequisite execution until the required basis is verified.
