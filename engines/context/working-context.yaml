@@ -2964,6 +2964,64 @@ RECEIPT-76656fa9d8e617e98414c9fe
         revokes_ref: null
         derived_from_refs: []
       sequence: 83
+    -
+      id: "CTX-BASIS-STANDARD-DELIVERY-POST-PUBLISH-VERIFY-NEXT-SESSION-001"
+      type: "CURRENT_BASIS"
+      scope: "NEXT-SESSION-STANDARD-DELIVERY-POST-PUBLISH-VERIFY-FIX"
+      statement: "STANDARD delivery correction R6 is implemented, published and independently remote-verified; the only active continuation from this session is to repair the post-publish remote-verification/output handling without rerunning or rolling back the successful Source implementation."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "R6_IMPLEMENTATION_PUBLISHED_AND_INDEPENDENTLY_REMOTE_VERIFIED"
+        completed_change: "STANDARD-DELIVERY-CORRECTION-R6"
+        completed_source_commit: "a25f914f09649f8991c23c56a19a3796022f00f0"
+        source_persisted: true
+        implementation_complete: true
+        rollback_required: false
+        changed_source_file_count: 8
+        run_to_pass:
+          install: "PASS"
+          validate: "PASS"
+          publish: "PASS"
+          remote_commit_verified_independently: true
+          local_runner_terminal_state: "POST_PUSH_ERROR"
+        open_failure:
+          classification: "REMOTE_VERIFY_OUTPUT_HANDLING_BUG"
+          source_implementation_failed: false
+          failure_position: "AFTER_SUCCESS_PUSH"
+          observed_local_sync_state: "SUCCESS_PUSHED"
+          observed_local_worktree: "CLEAN"
+          observed_sync_receipt: "3b9ec60b0b92"
+        current_task: "STANDARD-DELIVERY-POST-PUBLISH-VERIFY-FIX"
+        required_next_behavior:
+          - "do_not_rerun_R6_source_implementation"
+          - "do_not_rollback_successful_commit"
+          - "reproduce_post_publish_failure_boundary_before_user_retry"
+          - "repair_with_minimum_delta"
+          - "preserve_phase_specific_RunToPass_state"
+          - "machine_eliminate_known_PowerShell_and_output_handling_errors_before_handoff"
+          - "independently_verify_remote_state_before_completion"
+        session_resume_order:
+          - "verify_current_Cerebro_Source"
+          - "load_this_current_basis"
+          - "inspect_current_STANDARD_runner_post_publish_remote_verification_path"
+          - "reproduce_failure"
+          - "implement_minimum_delta_fix"
+          - "validate_before_human_retry"
+        chat_memory_authority: "NONE"
+        lagre_semantics: "PERSIST_NECESSARY_CONTINUATION_STATE_IN_CEREBRO_OWNED_SOURCE_OR_STORAGE"
+      provenance:
+        introduced_by_ref: "USER-LAGRE-SELF-RUNNING-COMPLETION-2026-08-09"
+        basis_refs:
+          - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+          - "CTX-WISDOM-INCREMENTAL-ARTIFACT-REVISION-001"
+          - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
+          - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      sequence: 84
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -3006,7 +3064,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
       - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
       - "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
-      - "CTX-BASIS-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      - "CTX-BASIS-STANDARD-DELIVERY-POST-PUBLISH-VERIFY-NEXT-SESSION-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -3047,7 +3105,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-INCREMENTAL-ARTIFACT-REVISION-001"
       - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
       - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
-  next_sequence: 84
+  next_sequence: 85
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
