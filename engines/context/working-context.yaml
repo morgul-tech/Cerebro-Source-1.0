@@ -2088,6 +2088,45 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
       sequence: 63
+    -
+      id: "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-005.POST-001-VERIFIED-PLATFORM-AND-PATCH-006-BOUNDARY"
+      statement: "PATCH-005.POST-001 has a published clean implementation basis and operational PASS; Final Learning Consolidation approves only a bounded evidence-only Knowledge implementation for PATCH-006, while the external SHA256-bound Closure receipt remains the final activation authority for this verified roadmap state."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "PUBLISHED_IMPLEMENTATION_OPERATIONAL_PASS_FINAL_LEARNING_AND_INTERNAL_CONTROL_REVIEW"
+        verified_patch: "PATCH-005.POST-001"
+        current_patch: "PATCH-006"
+        source_implementation_commit: "bad9e69cdcd1902e794436c601e06562fc0e820c"
+        release_commit: "7667891d1c6e25823566a098d642a094db32efe5"
+        operational_receipt_ref: "CEREBRO_OPERATIONAL_RECEIPT_20260809-063618_4e31ee350611.json"
+        platform_result:
+          - "Host_Change_Delivery_Closure_operational_selftests_PASS"
+          - "Release_full_validation_observational_PASS"
+          - "independent_Release_build_roots_same_SHA256"
+          - "Source_and_Release_clean_remote_aligned"
+        knowledge_decision:
+          outcome: "APPROVE_BOUNDED_EVIDENCE_ONLY_IMPLEMENTATION"
+          implementation_patch_ref: "PATCH-006"
+          direct_control_effect: "NONE"
+          automatic_promotion: "PROHIBITED"
+        closure_binding:
+          engine: "tooling/closure/closure_engine.py"
+          evidence_identity: "SHA256_REQUIRED"
+          receipt_authority: "EXTERNAL_DERIVED_EVIDENCE"
+          source_mutation_by_closure: false
+      provenance:
+        introduced_by_ref: "PATCH-005.POST-001-FINAL-LEARNING-CONSOLIDATION"
+        basis_refs:
+          - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
+          - "PATCH-005.POST-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
+      sequence: 64
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -2122,6 +2161,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
       - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
       - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
+      - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -2152,7 +2192,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
       - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-  next_sequence: 64
+  next_sequence: 65
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
@@ -2168,4 +2208,4 @@ patch_005_operational_architecture:
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
   wisdom_control_binding: standards/development/wisdom-control-binding.yaml
   active_source_closure: standards/active-source-closure.yaml
-  publication_state: PATCH_005_PUBLISHED_PATCH_005_POST_001_CLOSURE_CANDIDATE_LOCAL
+  publication_state: PATCH_005_POST_001_PUBLISHED_FINAL_CLOSURE_CANDIDATE

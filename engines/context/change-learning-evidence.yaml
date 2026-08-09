@@ -3,8 +3,8 @@ change_learning:
   id: PATCH-005.POST-001-LEARNING
   patch_ref: PATCH-005.POST-001
   authority: EVIDENCE_ONLY
-  lifecycle: ACTIVE_UNTIL_FINAL_PASS_CONSOLIDATION
-  final_learning_state: PENDING_OPERATIONAL_PASS
+  lifecycle: CONSOLIDATED
+  final_learning_state: COMPLETED_OPERATIONAL_PASS
   purpose: 'Preserve cumulative evidence from PATCH-005.POST-001 development so each iteration inherits applicable learning
     and the final PASS can distinguish local defects, failure families, systemic Cerebro defects, false hypotheses, and reusable
     controls.
@@ -309,6 +309,12 @@ observations:
 final_pass_consolidation:
   required: true
   trigger: PATCH_005_POST_001_OPERATIONAL_PASS
+  result: PASS
+  operational_basis:
+    source_commit: bad9e69cdcd1902e794436c601e06562fc0e820c
+    release_commit: 7667891d1c6e25823566a098d642a094db32efe5
+    operational_receipt_ref: CEREBRO_OPERATIONAL_RECEIPT_20260809-063618_4e31ee350611.json
+    release_package_sha256: 31c0e8d2a33f5b179a85b725f8f2540c4a9d664c8b5550e80fab3edb1c35d586
   must_classify:
   - local-defects
   - failure-families
@@ -322,8 +328,62 @@ final_pass_consolidation:
   - CEREBRO_INTERNAL_CONTROL_REVIEW_input
   automatic_Source_promotion: prohibited
   patch_closure_before_completion: prohibited
+  classification_result:
+    local_defects:
+    - P005P001-LRN-021
+    failure_families:
+    - P005P001-LRN-003
+    - P005P001-LRN-004
+    - P005P001-LRN-011
+    - P005P001-LRN-012
+    - P005P001-LRN-013
+    - P005P001-LRN-014
+    - P005P001-LRN-015
+    - P005P001-LRN-016
+    - P005P001-LRN-017
+    - P005P001-LRN-019
+    systemic_cerebro_defects:
+    - P005P001-LRN-001
+    - P005P001-LRN-002
+    - P005P001-LRN-005
+    - P005P001-LRN-006
+    - P005P001-LRN-007
+    - P005P001-LRN-010
+    - P005P001-LRN-020
+    - P005P001-LRN-022
+    governance_findings:
+    - P005P001-LRN-023
+    architecture_candidates:
+    - P005P001-LRN-018
+  false_hypotheses_rejected:
+  - profile-dependent-command-resolution-is-a-stable-entrypoint
+  - an-ungoverned-transition-bootstrap-can-be-the-trust-root-for-change-assurance
+  - physical-checkout-SHA256-is-equivalent-to-authoritative-Git-blob-identity
+  - successful-validation-is-observational-without-checking-live-diff-identity
+  - evidence-volume-alone-can-promote-Knowledge-Wisdom-or-Source-rules
+  promoted_regression_set:
+  - capsule-operation-and-baseline-semantics
+  - mutation-journal-before-first-write
+  - rollback-only-from-known-baseline-or-declared-poststate
+  - contract-version-cross-reference-coherence
+  - target-language-parser-and-serialized-byte-validation
+  - disposable-staging-for-mutating-validation
+  - deterministic-archive-identity-across-independent-build-roots
+  - clean-remote-aligned-closure-with-sha256-bound-evidence
+  confirmed_reusable_learning:
+  - separate-authoritative-baseline-physical-backup-and-payload-identities
+  - separate-change-assurance-byte-delivery-validation-publication-and-closure
+  - turn-proven-failure-families-into-executable-regressions-before-next-iteration
+  - preserve-observation-Knowledge-Wisdom-and-normative-rule-as-distinct-semantics
+  internal_control_review_input:
+  - authority-boundaries
+  - fail-closed-mutation-and-recovery
+  - observational-release-validation
+  - explicit-publication
+  - read-only-evidence-bound-closure
+  - bounded-Knowledge-candidate-with-no-direct-control
 knowledge_system_candidate:
-  status: CANDIDATE_UNTIL_FINAL_PASS_CONSOLIDATION
+  status: APPROVED_FOR_PATCH_006_BOUNDED_EVIDENCE_IMPLEMENTATION
   human_intent: Knowledge is what Cerebro knows to be correct; Wisdom is what Cerebro can learn, infer, or use from accumulated
     Knowledge and experience.
   canonical_resolution_candidate:
@@ -403,5 +463,19 @@ knowledge_system_candidate:
   - knowledge-does-not-automatically-create-a-rule
   - external-or-version-sensitive-knowledge-must-declare-validity-scope
   - contradictory-evidence-reopens-verification
-  final_pass_decision_required: true
+  final_pass_decision_required: false
+  final_pass_decision:
+    outcome: APPROVE_BOUNDED_EVIDENCE_ONLY_IMPLEMENTATION
+    implementation_patch_ref: PATCH-006
+    approved_scope:
+    - Knowledge-claim-schema
+    - curated-cross-patch-evidence-index
+    - provenance-scope-verification-and-contradiction-contract
+    - Wisdom-retrieval-may-consume-applicable-active-Knowledge
+    prohibited_scope:
+    - direct-control-tier
+    - automatic-Wisdom-promotion
+    - automatic-Source-rule-promotion
+    - general-world-encyclopedia
+    - implementation-before-PATCH-005.POST-001-CLOSURE_PASS
   internal_control_review_input: true

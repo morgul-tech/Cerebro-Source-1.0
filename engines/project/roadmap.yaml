@@ -6,7 +6,7 @@ roadmap:
     contract_owner: "project-engine"
     state_scope: "working-source"
   status: "ACTIVE"
-  objective: "Close PATCH-005.POST-001 by validating and publishing the Host-dispatched Change and Delivery Platform, proving deterministic observational Release behavior, consolidating final learning, completing internal control review, and requiring read-only Closure PASS before PATCH-006."
+  objective: "Execute PATCH-006 as a bounded Wisdom retrieval and evidence-only Knowledge implementation, preserving the authority boundary proven by PATCH-005.POST-001."
   scope:
     included:
       - "project-roadmap-contract"
@@ -730,7 +730,7 @@ roadmap:
       title: "change_and_delivery_platform_operational_closure"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-005"
       decision_refs: []
@@ -746,7 +746,7 @@ roadmap:
         - "delivery_stops_at_READY_FOR_LOCAL_VALIDATION"
         - "validation_does_not_mutate_live_Release"
         - "closure_is_read_only"
-        - "Knowledge_remains_candidate_until_Final_Learning_Consolidation"
+        - "Knowledge_implementation_is_bounded_to_the_Final_Learning_Consolidation_decision"
       acceptance:
         - "Host_Change_Delivery_and_Closure_selftests_PASS"
         - "Release_full_validation_is_observational"
@@ -761,29 +761,32 @@ roadmap:
       title: "wisdom_operationalization_and_knowledge_evidence_decision"
       phase_ref: "PHASE-1"
       milestone_ref: null
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-005.POST-001"
       decision_refs: []
-      source_refs: []
+      source_refs:
+        - "engines/context/change-learning-evidence.yaml"
+        - "standards/development/wisdom-control-binding.yaml"
       implementation_constraints:
-        - "do_not_start_before_PATCH_005_POST_001_Closure_PASS"
+        - "activation_requires_PATCH_005_POST_001_Closure_PASS"
         - "automatic_authority_promotion_prohibited"
-        - "Knowledge_architecture_requires_Final_Learning_Consolidation_decision"
+        - "Knowledge_is_evidence_only_and_has_no_direct_control_tier"
+        - "Final_Learning_Consolidation_approved_only_the_bounded_evidence_scope"
   execution:
     current:
-      id: "EXEC-P5P001-OPERATIONAL-CLOSURE"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      patch_ref: "PATCH-005.POST-001"
-      canonical_command: "validate and publish the bounded Change and Delivery Platform candidate, consolidate final learning, complete internal control review, and require Closure PASS"
-      status: "ACTIVE"
-    next:
-      id: "EXEC-P6-WISDOM-KNOWLEDGE-DECISION"
+      id: "EXEC-P6-WISDOM-KNOWLEDGE-DESIGN"
       phase_ref: "PHASE-1"
       milestone_ref: null
       patch_ref: "PATCH-006"
-      canonical_command: "after PATCH-005.POST-001 Closure PASS, decide the bounded Wisdom retrieval and Knowledge evidence implementation scope"
+      canonical_command: "bound the evidence-only Knowledge model and Wisdom retrieval contract before implementation"
+      status: "ACTIVE"
+    next:
+      id: "EXEC-P6-WISDOM-KNOWLEDGE-IMPLEMENTATION"
+      phase_ref: "PHASE-1"
+      milestone_ref: null
+      patch_ref: "PATCH-006"
+      canonical_command: "implement only the approved bounded evidence model after explicit work authorization"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -947,6 +950,11 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -956,6 +964,7 @@ roadmap:
       - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
       - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
       - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
+      - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -981,8 +990,8 @@ roadmap:
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
   revision:
-    sequence: 19
-    last_locked_patch_ref: "PATCH-005"
+    sequence: 20
+    last_locked_patch_ref: "PATCH-005.POST-001"
 
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
@@ -1003,7 +1012,7 @@ patch_005_asc:
 patch_005_current_execution_state:
   patch_ref: PATCH-005.POST-001
   scope: CHANGE_AND_DELIVERY_PLATFORM_OPERATIONAL_CLOSURE
-  source_state: LOCAL_WORKING_SOURCE_CANDIDATE_UNPUBLISHED
+  source_state: PUBLISHED_CLEAN_REMOTE_ALIGNED_FINAL_CLOSURE_CANDIDATE
   completed_stages:
     - P5-S0
     - P5-S1
@@ -1020,13 +1029,16 @@ patch_005_current_execution_state:
     - P5-S12
     - P5-S13
     - P5-S14
-  active_stage: P5P001-CLOSURE-CANDIDATE
-  next_stages:
     - P5P001-SOURCE-AND-RELEASE-PUBLICATION
     - P5P001-OPERATIONAL-PASS
     - P5P001-FINAL-LEARNING-CONSOLIDATION
     - P5P001-INTERNAL-CONTROL-REVIEW
-    - P5P001-CLOSURE-PASS
+    - P5P001-CLOSURE-PASS-CANDIDATE
+  active_stage: PATCH-006-BOUNDED-DESIGN
+  closure_receipt_authority: EXTERNAL_SHA256_BOUND_CLOSURE_ENGINE_RECEIPT
+  next_stages:
+    - P6-BOUND-KNOWLEDGE-EVIDENCE-MODEL
+    - P6-BOUND-WISDOM-RETRIEVAL-CONTRACT
   patch_006:
-    title: WISDOM_OPERATIONALIZATION_AND_ADAPTIVE_AUTOMATION
-    status: DEFERRED
+    title: WISDOM_OPERATIONALIZATION_AND_KNOWLEDGE_EVIDENCE
+    status: ACTIVE_DESIGN_ONLY
