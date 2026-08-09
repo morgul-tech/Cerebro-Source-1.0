@@ -955,6 +955,11 @@ roadmap:
       object_type: "CURRENT_BASIS"
       object_ref: "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
       requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -965,6 +970,7 @@ roadmap:
       - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
       - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
       - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
+      - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -990,8 +996,8 @@ roadmap:
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
   revision:
-    sequence: 20
-    last_locked_patch_ref: "PATCH-005.POST-001"
+    sequence: 21
+    last_locked_patch_ref: "PATCH-005.POST-003"
 
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
@@ -1010,9 +1016,9 @@ patch_005_asc:
   full_source_closure_stage: P5-S12
   closure_requires_ASC_PASS: true
 patch_005_current_execution_state:
-  patch_ref: PATCH-005.POST-001
-  scope: CHANGE_AND_DELIVERY_PLATFORM_OPERATIONAL_CLOSURE
-  source_state: PUBLISHED_CLEAN_REMOTE_ALIGNED_FINAL_CLOSURE_CANDIDATE
+  patch_ref: PATCH-005.POST-003
+  scope: DELIVERY_PROFILE_ACCESS_EFFICIENCY_AND_SESSION_LEARNING_CORRECTION
+  source_state: STANDARD_USER_DELIVERY_PENDING
   completed_stages:
     - P5-S0
     - P5-S1
@@ -1042,3 +1048,16 @@ patch_005_current_execution_state:
   patch_006:
     title: WISDOM_OPERATIONALIZATION_AND_KNOWLEDGE_EVIDENCE
     status: ACTIVE_DESIGN_ONLY
+  corrective_patch:
+    id: PATCH-005.POST-003
+    delivery_profile: STANDARD
+    execution_owner: USER_LOCAL_RUNNER
+    publication: EXPLICIT_USER_ACTION
+    completion_requires:
+      - STANDARD_INSTALL_RECEIPT
+      - LOCAL_VALIDATION_PASS
+      - SOURCE_SYNC_RECEIPT
+      - REMOTE_COMMIT_MATCH
+    does_not_reopen:
+      - PATCH-005.POST-001-closure
+      - PATCH-006-bounded-design-scope

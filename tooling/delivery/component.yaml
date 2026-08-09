@@ -3,7 +3,7 @@ component:
   id: delivery
   name: Cerebro Delivery Controller
   type: tooling
-  version: 0.2.0
+  version: 0.3.0
   status: active-source
 responsibility:
   primary: Select and persist a Source-bound delivery profile, then deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
@@ -19,6 +19,9 @@ boundaries:
     - bind-selection-to-exact-source-commit
     - fail-closed-when-auto-resolution-evidence-is-insufficient
     - revalidate-selected-profile-before-payload-design-and-delivery
+    - canonicalize-legacy-delivery-profile-aliases
+    - persist-profile-specific-access-request-budget
+    - separate-delivery-profile-from-artifact-and-assurance-namespaces
   must_not:
     - design-or-generate-source-content
     - create-source-authority
@@ -26,6 +29,8 @@ boundaries:
     - bypass-change-assurance
     - overwrite-unknown-concurrent-state
     - silently-fallback-to-another-delivery-profile
+    - request-agent-local-access-under-LIMITED-or-STANDARD
+    - retry-a-denied-FULL-access-request-without-explicit-reselection
 dependencies:
   runtime:
     - git
@@ -43,3 +48,4 @@ interfaces:
     - mutation-journal
     - delivery-selection-state
     - delivery-selection-history
+    - canonical-delivery-profile-controls

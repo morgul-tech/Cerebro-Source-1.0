@@ -1,6 +1,6 @@
 @{
     RootModule = 'Cerebro.Tools.psm1'
-    ModuleVersion = '1.2.0'
+    ModuleVersion = '1.3.0'
     GUID = '6e1252dc-8979-4c13-a2e0-0de3ce184f65'
     Author = 'Cerebro'
     CompanyName = 'Cerebro'

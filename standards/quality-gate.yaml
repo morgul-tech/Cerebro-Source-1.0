@@ -99,7 +99,7 @@ rules:
   statement: Delivery of final Source bytes is separate from Change Engine assurance and does not by itself establish publication readiness.
   priority: critical
   verification:
-  - STANDARD_A or STANDARD_B delivery success yields READY_FOR_LOCAL_VALIDATION, not VERIFIED.
+  - LIMITED or STANDARD delivery success yields READY_FOR_LOCAL_VALIDATION, not VERIFIED.
 - id: STD-QUALITY-R015
   statement: Final learning consolidation is required after operational PASS and before PATCH-005.POST-001 closure.
   priority: critical

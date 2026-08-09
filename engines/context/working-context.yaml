@@ -2127,6 +2127,232 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
       sequence: 64
+    -
+      id: "CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001"
+      type: "WISDOM_RECORD"
+      scope: "DELIVERY-PROFILE-ACCESS-AND-INTERACTION-RESOURCE"
+      statement: "A delivery profile must bind execution ownership and platform-access behavior before work begins. When the selected profile assigns execution to the user, the agent must produce a complete user-executed artifact and must not trigger an access dialog; access prompts are a scarce interaction resource and are valid only under an explicitly selected FULL profile, aggregated into one request."
+      payload:
+        maturity: "USER_LOCKED_REQUIREMENT"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-005.POST-003"
+        canonical_profiles:
+          LIMITED:
+            execution_owner: "USER"
+            agent_access_request_budget: 0
+          STANDARD:
+            execution_owner: "USER_LOCAL_RUNNER"
+            agent_access_request_budget: 0
+          FULL:
+            execution_owner: "AGENT_CONTROLLED"
+            agent_access_request_budget: 1
+        required_behavior:
+          - "resolve_profile_before_patch_delivery_design"
+          - "block_agent_access_dialog_before_platform_surface_when_budget_is_zero"
+          - "deliver_self_contained_user_runner_under_STANDARD"
+          - "aggregate_FULL_access_into_at_most_one_request"
+          - "after_FULL_denial_enter_FULL_BLOCKED_without_retry_or_fallback"
+        incident:
+          ref: "USER-CORRECTION-STANDARD-B-ACCESS-PROMPTS-2026-08-09"
+          observed_effect: "repeated_access_dialogs_consumed_user_limit"
+          user_reported_cost: "approximately_7_percent_of_total_resource"
+      provenance:
+        introduced_by_ref: "PATCH-005.POST-003"
+        basis_refs:
+          - "USER-CORRECTION-STANDARD-B-ACCESS-PROMPTS-2026-08-09"
+          - "standards/change-delivery.yaml#STD-CHANGE-DELIVERY-R013"
+          - "standards/change-delivery.yaml#STD-CHANGE-DELIVERY-R014"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-CANONICAL-OPERATION-RESPONSIBILITY-001"
+          - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
+      sequence: 65
+    -
+      id: "CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001"
+      type: "WISDOM_RECORD"
+      scope: "LONG-CONVERSATION-CONSOLIDATION-AND-SESSION-RESUME"
+      statement: "Long-session consolidation must preserve every decision-changing fact while avoiding repeated restatement of unchanged context. Persist authoritative references, user corrections, decisions, verified state, unresolved work and the minimal next action; refer to stable canonical records instead of copying their full text into each response or handoff."
+      payload:
+        maturity: "USER_LOCKED_REQUIREMENT"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-005.POST-003"
+        strategy: "DELTA_FIRST_REFERENCE_RICH"
+        always_preserve:
+          - "explicit_user_decisions"
+          - "user_corrections_and_preferences"
+          - "verified_machine_state_and_receipts"
+          - "authoritative_source_commit"
+          - "implemented_learning_and_wisdom_refs"
+          - "open_blockers_and_next_action"
+        avoid:
+          - "verbatim_repetition_of_unchanged_background"
+          - "duplicated_status_across_adjacent_messages"
+          - "full_conversation_transcript_as_operational_context"
+          - "temporary_diagnostic_detail_without_future_decision_value"
+        next_session_result: "MINIMUM_SUFFICIENT_BOOT_BASIS"
+      provenance:
+        introduced_by_ref: "PATCH-005.POST-003"
+        basis_refs:
+          - "USER-REFINE-NO-REPEATED-CHAT-TEXT-2026-08-09"
+          - "USER-CONSOLIDATE-REFINE-NEW-SESSION-2026-08-09"
+          - "CTX-ASSESS-CONSOLIDATE-WISDOM-T0-M90-P15-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
+          - "CTX-WISDOM-SESSION-HANDOFF-MINIMUM-STATE-001"
+      sequence: 66
+    -
+      id: "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
+      type: "CURRENT_BASIS"
+      scope: "NEXT-SESSION-DELIVERY-PROFILE-AND-LEARNING-CONTINUATION"
+      statement: "After PATCH-005.POST-003 is locally installed, validated and explicitly published by the user, the next conversation shall verify the resulting Source commit, load canonical delivery profile state and the updated Knowledge/Wisdom references, then accept the user's next important task without reopening this refinement."
+      payload:
+        applicability: "NEXT_CEREBRO_CONVERSATION"
+        current_patch: "PATCH-005.POST-003"
+        selected_delivery_profile: "STANDARD"
+        execution_owner: "USER_LOCAL_RUNNER"
+        required_completion_evidence:
+          - "STANDARD_INSTALL_RECEIPT"
+          - "LOCAL_VALIDATION_PASS"
+          - "SOURCE_SYNC_RECEIPT"
+          - "REMOTE_COMMIT_MATCH"
+        boot_order:
+          - "verify_current_Cerebro_Source"
+          - "load_delivery_selection_and_profile_controls"
+          - "load_current_Knowledge_and_Wisdom_refs"
+          - "load_effective_user_preferences"
+          - "report_only_material_deltas"
+          - "accept_next_user_objective"
+        next_refinement_priority:
+          id: "HUMAN_TIME_TO_RESULT_AND_ACTIVE_PATH_REDUCTION"
+          objective: "Measure and reduce elapsed human time from command receipt until the result is actually available to the user."
+          required_analysis:
+            - "instrument_operation_timestamps_and_user_visible_completion"
+            - "separate_machine_work_approval_wait_user_execution_wait_and_human_attention"
+            - "map_the_current_critical_path"
+            - "identify_controls_that_can_be_PAUSED_or_ON_DEMAND_at_current_scale"
+            - "preserve_dormant_structure_and_reactivation_conditions"
+            - "never_pause_authority_integrity_backup_or_recovery_controls_without_explicit_evidence"
+        do_not_reopen:
+          - "STANDARD_A_B_C_naming"
+          - "STANDARD_access_prompt_policy"
+          - "conversation_repetition_policy"
+      provenance:
+        introduced_by_ref: "PATCH-005.POST-003"
+        basis_refs:
+          - "CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001"
+          - "CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001"
+          - "standards/change-delivery.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
+      sequence: 67
+    -
+      id: "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+      type: "WISDOM_RECORD"
+      scope: "AGENTIC-USAGE-BUDGET-AND-WORK-EFFICIENCY"
+      statement: "The user's included agentic usage is a scarce planning resource. Cerebro must use the user-visible usage dashboard as measurement authority, must not invent per-action percentage costs, and should reduce context, tool output, retries, access dialogs and tests that do not materially increase completion confidence."
+      payload:
+        maturity: "USER_LOCKED_REQUIREMENT"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_PATCH-005.POST-003"
+        latest_observation:
+          observed_at: "2026-08-09T08:26:35+02:00"
+          weekly_remaining_percent: 64
+          reset_label: "Aug 16"
+          evidence_origin: "USER_PROVIDED_USAGE_DASHBOARD_SCREENSHOT"
+          freshness: "POINT_IN_TIME"
+        measurement_boundary:
+          dashboard_is_authority: true
+          agent_has_direct_meter_telemetry: false
+          per_action_percentage_attribution: "UNAVAILABLE"
+        conservation_order:
+          - "remove_nonessential_roundtrips"
+          - "avoid_repeated_access_dialogs"
+          - "use_delta_first_context"
+          - "bound_tool_results"
+          - "run_only_decision_relevant_tests"
+          - "offer_smaller_model_for_routine_work_when_appropriate"
+      provenance:
+        introduced_by_ref: "PATCH-005.POST-003"
+        basis_refs:
+          - "USER-USAGE-DASHBOARD-2026-08-09T082635"
+          - "USER-REFINE-USER-LIMIT-VALUABLE-RESOURCE-2026-08-09"
+          - "OPENAI-OFFICIAL-CODEX-PRICING-USAGE-GUIDANCE-2026-08-09"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001"
+          - "CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001"
+      sequence: 68
+    -
+      id: "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
+      type: "WISDOM_RECORD"
+      scope: "END-TO-END-USER-LATENCY-AND-ACTIVE-PATH-DESIGN"
+      statement: "Cerebro must optimize time in the human frame: from the user's command until the result is actually accessible and understandable. Operation logs must timestamp material stages and distinguish machine execution, approval wait, user-execution wait and human-attention cost. Controls that are not justified on the current critical path may remain structurally defined but PAUSED or ON_DEMAND, with explicit reactivation conditions; authority, integrity and recoverability controls remain protected."
+      payload:
+        maturity: "USER_LOCKED_NEXT_SESSION_DIRECTION"
+        confidence: "HIGH"
+        implementation_status: "CONSOLIDATED_BY_PATCH-005.POST-003_NEXT_SESSION_MEASUREMENT_REQUIRED"
+        primary_metric:
+          name: "HUMAN_TIME_TO_AVAILABLE_RESULT"
+          start: "USER_COMMAND_RECEIVED_AT"
+          end: "RESULT_USER_VISIBLE_AND_ACTIONABLE_AT"
+        required_timestamps:
+          - "command_received_at"
+          - "work_started_at"
+          - "first_material_result_at"
+          - "local_execution_requested_at"
+          - "local_execution_completed_at"
+          - "validation_completed_at"
+          - "result_user_visible_at"
+        latency_classes:
+          - "AGENT_MACHINE_WORK"
+          - "PLATFORM_APPROVAL_WAIT"
+          - "USER_LOCAL_EXECUTION_WAIT"
+          - "EXTERNAL_SYSTEM_WAIT"
+          - "REWORK_AND_RETRY"
+          - "HUMAN_ATTENTION"
+        active_path_policy:
+          lifecycle_states:
+            - "ACTIVE"
+            - "PAUSED"
+            - "ON_DEMAND"
+          pause_candidate_when:
+            - "not_required_for_current_scale"
+            - "not_on_authority_integrity_or_recovery_path"
+            - "measured_latency_cost_exceeds_current_decision_value"
+            - "reactivation_trigger_is_declared"
+          never_silently_pause:
+            - "source_authority_verification"
+            - "bounded_backup_and_restore"
+            - "payload_integrity"
+            - "explicit_publication_control"
+            - "receipt_traceability"
+        user_context:
+          human_state: "TIRED"
+          interaction_requirement: "NO_MORE_CLARIFICATION_IN_CURRENT_SESSION"
+          handoff_requirement: "ALL_MATERIAL_STARTING_POINTS_AVAILABLE_NEXT_SESSION"
+      provenance:
+        introduced_by_ref: "PATCH-005.POST-003"
+        basis_refs:
+          - "USER-SPEECH-TO-TEXT-TIME-AND-LATENCY-REFINE-2026-08-09"
+          - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+          - "CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
+          - "CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001"
+      sequence: 69
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -2162,6 +2388,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
       - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
       - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
+      - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -2192,7 +2419,11 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
       - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
       - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-  next_sequence: 65
+      - "CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001"
+      - "CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001"
+      - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+      - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
+  next_sequence: 70
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

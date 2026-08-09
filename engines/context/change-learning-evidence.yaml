@@ -479,3 +479,166 @@ knowledge_system_candidate:
     - general-world-encyclopedia
     - implementation-before-PATCH-005.POST-001-CLOSURE_PASS
   internal_control_review_input: true
+patch_005_post_003_consolidated_learning:
+  status: VERIFIED_WITHIN_DECLARED_SCOPE
+  authority: EVIDENCE_ONLY
+  patch_ref: PATCH-005.POST-003
+  purpose: Preserve the verified delivery-profile, interaction-cost and session-continuity learning from the 2026-08-09 conversation without promoting conversation text into authority.
+  knowledge_claims:
+  - id: KNOW-P005POST003-DELIVERY-SELECTION-001
+    claim: The user selected legacy input STANDARD_B and Cerebro locked it to Source commit d8786e3c62209f6fa7aeef17fd91e8eeaf93dbff without Source mutation or silent fallback.
+    domain: cerebro.delivery-environment
+    knowledge_type: ENVIRONMENT_FACT
+    scope: CEREBRO_DELIVERY_SELECTION_RECEIPT_2026-08-09
+    provenance:
+    - user-provided-machine-receipt
+    evidence_refs:
+    - DELIVERY-20260809T060618678Z-9c7c3ea0
+    - decision-fingerprint:15e60f6d56e882a0fbfbf6e9da02653d5dd17ca4e3a0b10a6c53057139f29e3a
+    verification: receipt-fields-and-source-commit-consistency-reviewed
+    conditions:
+    - source-commit-d8786e3c62209f6fa7aeef17fd91e8eeaf93dbff
+    lifecycle: ACTIVE
+    regression_refs:
+    - legacy_standard_b_resolves_canonical_standard
+  - id: KNOW-P005POST003-POWERSHELL-PROCESS-BYPASS-001
+    claim: On the observed Windows host, the Cerebro module import was blocked by PowerShell execution policy and succeeded after a process-scoped Bypass, enabling deterministic delivery selection.
+    domain: engineering.powershell
+    knowledge_type: PROCEDURE
+    scope: OBSERVED_USER_HOST_AND_CURRENT_POWERSHELL_SESSION
+    provenance:
+    - user-provided-terminal-error
+    - subsequent-successful-delivery-selection-receipt
+    evidence_refs:
+    - PSSecurityException-running-scripts-is-disabled-2026-08-09
+    - DELIVERY-20260809T060618678Z-9c7c3ea0
+    verification: before-after-operational-result
+    conditions:
+    - use-Set-ExecutionPolicy-Scope-Process-Bypass-Force
+    - no-claim-about-machine-or-user-policy-persistence
+    lifecycle: ACTIVE
+    regression_refs:
+    - powershell-target-parser-preflight
+  - id: KNOW-P005POST003-ACCESS-COST-001
+    claim: Under the observed collaboration surface, repeated agent access dialogs during a user-executed delivery flow consumed a material portion of the user's available interaction resource; the user reported approximately seven percent.
+    domain: cerebro.delivery-environment
+    knowledge_type: ENVIRONMENT_FACT
+    scope: USER_REPORTED_CODEX_RESOURCE_BEHAVIOR_2026-08-09
+    provenance:
+    - explicit-user-correction
+    evidence_refs:
+    - USER-CORRECTION-STANDARD-B-ACCESS-PROMPTS-2026-08-09
+    verification: user-authoritative-report-about-own-resource-and-preference
+    conditions:
+    - percentage-is-user-reported-not-platform-meter-audited
+    lifecycle: ACTIVE
+    regression_refs:
+    - limited_and_standard_have_zero_access_request_budget
+    - full_has_one_aggregated_access_request_budget
+  - id: KNOW-P005POST003-PROFILE-NAMESPACE-001
+    claim: Delivery execution ownership, artifact format and assurance depth are separate concerns; using FULL in more than one namespace creates avoidable ambiguity.
+    domain: cerebro.change-pipeline
+    knowledge_type: INVARIANT
+    scope: CEREBRO_DELIVERY_AND_BUILDER_CONTRACTS
+    provenance:
+    - authoritative-source-inspection
+    - user-approved-refinement
+    evidence_refs:
+    - standards/change-delivery.yaml
+    - tooling/builder/builder.yaml
+    - tooling/builder/pipeline.yaml
+    verification: cross-contract-token-audit
+    conditions:
+    - legacy-builder-modes-FULL-EXEC-PSHELL-remain-artifact-semantics
+    lifecycle: ACTIVE
+    regression_refs:
+    - delivery-artifact-assurance-namespace-separation
+  - id: KNOW-P005POST003-CONSOLIDATION-001
+    claim: For this user, repeating unchanged important context is not an acceptable substitute for preserving it; new-session continuity should use canonical references plus material deltas and explicit next state.
+    domain: cerebro.interaction
+    knowledge_type: COMPATIBILITY_FACT
+    scope: USER_OPERATING_PREFERENCE_AND_SESSION_HANDOFF
+    provenance:
+    - explicit-user-refine
+    evidence_refs:
+    - USER-REFINE-NO-REPEATED-CHAT-TEXT-2026-08-09
+    - USER-CONSOLIDATE-REFINE-NEW-SESSION-2026-08-09
+    verification: explicit-stable-user-instruction
+    conditions:
+    - important-information-remains-preserved-by-reference-or-delta
+    lifecycle: ACTIVE
+    regression_refs:
+    - delta-first-session-handoff-content-check
+  - id: KNOW-P005POST003-USER-LIMIT-OBSERVATION-001
+    claim: The user-visible OpenAI usage dashboard showed 64 percent of the weekly usage limit remaining at the captured point in time, with reset label Aug 16.
+    domain: cerebro.delivery-environment
+    knowledge_type: ENVIRONMENT_FACT
+    scope: POINT_IN_TIME_USER_ACCOUNT_DASHBOARD_OBSERVATION
+    provenance:
+    - user-provided-screenshot:Skjermbilde-2026-08-09-082635.png
+    evidence_refs:
+    - USER-USAGE-DASHBOARD-2026-08-09T082635
+    verification: visible-dashboard-text-reviewed
+    conditions:
+    - observed-at-2026-08-09T08:26:35+02:00
+    - value-becomes-stale-when-dashboard-changes
+    - no-direct-agent-meter-telemetry
+    lifecycle: ACTIVE
+    regression_refs:
+    - usage-observation-must-declare-point-in-time-freshness
+  - id: KNOW-P005POST003-CODEX-USAGE-MECHANISM-001
+    claim: Official OpenAI guidance states that prompts, files, chat history, tool results and responses use tokens, while usage cost varies by model, context, reasoning and tools; therefore exact percentage attribution to one access dialog is not available from conversation evidence.
+    domain: cerebro.delivery-environment
+    knowledge_type: API_CONTRACT
+    scope: OPENAI_CODEX_USAGE_GUIDANCE_FETCHED_2026-08-09
+    provenance:
+    - official-openai-documentation
+    evidence_refs:
+    - https://learn.chatgpt.com/docs/pricing
+    verification: official-page-fetch-and-scope-review
+    conditions:
+    - reverify-when-OpenAI-usage-documentation-changes
+    lifecycle: ACTIVE
+    regression_refs:
+    - prohibit-invented-per-action-usage-percentage
+  - id: KNOW-P005POST003-HUMAN-TIME-OBJECTIVE-001
+    claim: The user explicitly defines elapsed time in the human frame, from command until the result is actually available, as a required next-session optimization objective; the user also requests evaluation of PAUSED or ON_DEMAND controls at the current system scale.
+    domain: cerebro.runtime-behavior
+    knowledge_type: COMPATIBILITY_FACT
+    scope: NEXT_SESSION_CEREBRO_REFINEMENT_DIRECTION
+    provenance:
+    - explicit-user-speech-to-text-refine
+    evidence_refs:
+    - USER-SPEECH-TO-TEXT-TIME-AND-LATENCY-REFINE-2026-08-09
+    verification: explicit-user-direction-reviewed-and-consolidated
+    conditions:
+    - user-is-tired-and-requested-no-further-current-session-burden
+    - pausing-must-preserve-authority-integrity-and-recoverability
+    lifecycle: ACTIVE
+    regression_refs:
+    - handoff-includes-human-time-to-result-objective
+    - paused-controls-require-reactivation-trigger
+  wisdom_outcomes:
+  - CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001
+  - CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001
+  - CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001
+  - CTX-WISDOM-HUMAN-TIME-TO-RESULT-001
+  normative_outcomes:
+  - standards/change-delivery.yaml#STD-CHANGE-DELIVERY-R013
+  - standards/change-delivery.yaml#STD-CHANGE-DELIVERY-R014
+  - standards/change-delivery.yaml#STD-CHANGE-DELIVERY-R015
+  - standards/change-delivery.yaml#STD-CHANGE-DELIVERY-R016
+  explicit_non_promotions:
+  - conversation-transcript-is-not-knowledge
+  - user-reported-platform-percentage-is-not-platform-global-fact
+  - evidence-count-does-not-create-authority
+  open_design_constraints:
+  - id: ACCESS-ROLE-MODEL-001
+    user_requirement: Future Cerebro use may include GUEST, USER and ADMIN roles; Andreas, the co-creator, requires a durable ADMIN binding.
+    current_state: NOT_IMPLEMENTED
+    safety_constraint: A user preference or conversation claim must not grant ADMIN.
+    required_before_implementation:
+    - verified-principal-identity-contract
+    - auditable-role-binding
+    - privilege-boundary-and-recovery-design
+    - explicit-admin-bootstrap-procedure

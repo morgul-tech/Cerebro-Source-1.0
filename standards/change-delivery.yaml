@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.4.0
+  version: 0.5.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -13,8 +13,9 @@ standard:
   - quality-gate
   - source-delivery
 profiles:
-  STANDARD_A:
-    name: DIRECT_FILE_REPLACEMENT
+  LIMITED:
+    legacy_alias: STANDARD_A
+    name: USER_MANAGED_FILE_DELIVERY
     use_when:
     - only-existing-files-are-replaced
     - no-directory-creation-required
@@ -25,8 +26,13 @@ profiles:
     - exact-relative-paths
     - sha256-manifest
     script_required: false
-  STANDARD_B:
-    name: STRUCTURED_FILE_DELIVERY
+    execution_owner: USER
+    agent_local_access: PROHIBITED
+    access_request_budget: 0
+    artifact_format: FILES
+  STANDARD:
+    legacy_alias: STANDARD_B
+    name: USER_LOCAL_RUNNER_DELIVERY
     use_when:
     - directories-must-be-created
     - new-files-are-added
@@ -34,10 +40,14 @@ profiles:
     - explicitly-superseded-files-must-be-removed
     - bounded-backup-automation-materially-reduces-risk
     user_surface:
-    - finished-payload-files
-    - manifest-json
-    - apply-powershell
-    - restore-powershell
+    - self-contained-powershell-runner
+    - embedded-payload
+    - embedded-manifest
+    - machine-readable-receipts
+    execution_owner: USER_LOCAL_RUNNER
+    agent_local_access: PROHIBITED
+    access_request_budget: 0
+    artifact_format: SELF_EXTRACTING_POWERSHELL
     script_scope:
     - preflight
     - bounded-backup
@@ -52,11 +62,12 @@ profiles:
     - YAML-transformation
     - roadmap-interpretation
     - architecture-decision
-    - publication
+    - implicit-publication
     - claim-promotion
     - git-reset-hard
     - unbounded-recovery
-  STANDARD_C:
+  FULL:
+    legacy_alias: STANDARD_C
     name: CONTROLLED_WORKSPACE_TRANSACTION
     use_when:
     - implementation-agent-has-direct-working-source-write-access
@@ -67,6 +78,10 @@ profiles:
     - exact-base-commit
     - delivery-receipt
     controller: tooling/delivery/delivery_controller.py
+    execution_owner: AGENT_CONTROLLED
+    agent_local_access: EXPLICIT_GRANT_REQUIRED
+    access_request_budget: 1
+    artifact_format: CONTROLLED_TRANSACTION
     required_controls:
     - capsule-and-payload-integrity-before-mutation
     - clean-exact-working-source-baseline
@@ -82,7 +97,7 @@ profiles:
     - overwrite-unknown-concurrent-state
     - delivery-controller-source-generation
 selection:
-  command: cerebro delivery select <STANDARD_A|STANDARD_B|STANDARD_C|AUTO>
+  command: cerebro delivery select <limited|standard|full|auto>
   status_command: cerebro delivery status
   explanation_command: cerebro delivery explain [profile]
   implementation: tooling/delivery/cerebro_delivery.ps1
@@ -97,6 +112,9 @@ selection:
   - selected-profile-is-revalidated-against-patch-scope-before-payload-design
   - selected-profile-is-revalidated-again-before-delivery
   - missing-AUTO-evidence-blocks-without-silent-fallback
+  - canonical-state-never-persists-legacy-profile-names
+  - LIMITED-and-STANDARD-prohibit-agent-access-requests
+  - FULL-permits-at-most-one-aggregated-platform-access-request
   source_binding:
   - expected-repository
   - branch-main
@@ -113,6 +131,43 @@ selection:
     - resolved-profile
     - exact-source-commit
     - change-delivery-standard-version
+compatibility_aliases:
+  STANDARD_A: LIMITED
+  STANDARD_B: STANDARD
+  STANDARD_C: FULL
+  policy:
+  - aliases-are-input-only
+  - aliases-resolve-to-canonical-profile-before-state-is-written
+  - status-and-receipts-display-canonical-profile
+  - aliases-may-be-removed-only-by-an-explicit-breaking-migration
+namespace_separation:
+  delivery_profile:
+    values: [LIMITED, STANDARD, FULL]
+    meaning: who performs local delivery and what access is allowed
+  artifact_format:
+    values:
+    - FILES
+    - SELF_EXTRACTING_POWERSHELL
+    - CONTROLLED_TRANSACTION
+    meaning: physical form of the delivery artifact
+    legacy_builder_modes_preserved: [FULL, EXEC, PSHELL]
+  assurance_profile:
+    values: [FAST, STANDARD, DEEP]
+    meaning: depth of change assurance
+  invariant: DELIVERY_PROFILE_ARTIFACT_FORMAT_AND_ASSURANCE_PROFILE_ARE_INDEPENDENT_NAMESPACES
+access_request_policy:
+  LIMITED:
+    budget: 0
+    on_attempt: BLOCK_BEFORE_PLATFORM_DIALOG
+  STANDARD:
+    budget: 0
+    on_attempt: BLOCK_BEFORE_PLATFORM_DIALOG
+  FULL:
+    budget: 1
+    aggregation_required: true
+    on_denial: FULL_BLOCKED
+    retry_without_new_explicit_selection: false
+  invariant: PROFILE_SELECTION_DOES_NOT_OVERRIDE_PLATFORM_SECURITY_CONTROLS
 identity_domains:
   tracked_source_baseline:
     authoritative_identity: git-blob-sha
@@ -136,7 +191,7 @@ identity_domains:
     - post-apply-verification
   invariant: TRACKED_GIT_IDENTITY_PHYSICAL_BACKUP_IDENTITY_AND_PAYLOAD_IDENTITY_MUST_NOT_BE_CONFLATED
 backup_contract:
-  required_for: STANDARD_B
+  required_for: STANDARD
   root_default: D:\Cerebro\Backups
   backup_identity:
   - change-id
@@ -187,6 +242,34 @@ post_apply:
   - quality-gate
   - cerebro_sync
   - remote-verification
+standard_runner_contract:
+  required_for: STANDARD
+  delivery_shape: one-self-contained-powershell-file
+  payload_encoding: embedded-compressed-bytes
+  required_actions:
+  - Install
+  - Validate
+  - Publish
+  - Restore
+  install_must:
+  - parse-before-first-mutation
+  - verify-embedded-payload-hashes
+  - verify-exact-source-commit
+  - create-bounded-backup
+  - install-only-declared-paths
+  - verify-installed-hashes
+  - rollback-on-known-state-failure
+  - emit-machine-readable-receipt
+  publish_must:
+  - require-an-explicit-Publish-action
+  - run-only-after-successful-local-validation
+  - remain-user-executed
+  - emit-machine-readable-sync-receipt
+  prohibited:
+  - download-code-at-execution-time
+  - agent-local-access-request
+  - implicit-publish-during-Install
+  - silent-profile-fallback
 separation:
   delivery_means: place-final-exact-bytes-at-declared-local-paths
   change_execution_means: test-validate-learn-and-resolve-readiness
@@ -212,10 +295,10 @@ rules:
   statement: PowerShell generation and review shall reject ambiguous variable interpolation where an unbraced variable name is immediately followed by a colon inside an expandable string.
   priority: critical
 - id: STD-CHANGE-DELIVERY-R007
-  statement: Direct work-mode delivery shall execute as a capsule-bound STANDARD_C transaction with a verified physical prestate and a mutation journal persisted before the first possible write.
+  statement: Direct work-mode delivery shall execute as a capsule-bound FULL transaction with a verified physical prestate and a mutation journal persisted before the first possible write.
   priority: critical
 - id: STD-CHANGE-DELIVERY-R008
-  statement: Successful STANDARD_C delivery shall stop at READY_FOR_LOCAL_VALIDATION and shall not commit, publish, or promote Source implicitly.
+  statement: Successful FULL delivery shall stop at READY_FOR_LOCAL_VALIDATION and shall not commit, publish, or promote Source implicitly.
   priority: critical
 - id: STD-CHANGE-DELIVERY-R009
   statement: Rollback shall overwrite or remove a target only when its current state is the verified baseline state or the exact delivered payload state; unknown concurrent state requires manual recovery.
@@ -228,6 +311,18 @@ rules:
   priority: critical
 - id: STD-CHANGE-DELIVERY-R012
   statement: A locked delivery selection shall be revalidated before physical payload design and before delivery, and a Source commit change shall make the active selection stale.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R013
+  statement: LIMITED and STANDARD shall have an access-request budget of zero; work under those profiles shall produce user-executed artifacts without triggering a platform access dialog.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R014
+  statement: FULL shall require explicit selection, aggregate any necessary platform access into at most one request, and enter FULL_BLOCKED after denial without retry or fallback.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R015
+  statement: STANDARD delivery shall be a self-contained user-executed PowerShell runner with embedded payload, manifest, bounded install, validation, explicit publication, restore, and receipts.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R016
+  statement: Delivery profile, artifact format, and assurance profile shall remain independent namespaces; legacy builder modes FULL, EXEC, and PSHELL retain their existing artifact semantics.
   priority: critical
 target_language_preflight:
   powershell:

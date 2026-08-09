@@ -2,7 +2,7 @@ schema: cerebro-user-operating-profile-standard/v0.1
 
 user_operating_profile:
   id: CEREBRO-USER-OPERATING-PROFILE-001
-  version: "0.1"
+  version: "0.2"
   status: ACTIVE
   introduced_by: PATCH-005
   kind: CONFIGURATION
@@ -48,6 +48,72 @@ user_operating_profile:
     - TERMINOLOGY_COMMUNICATION
     - PROGRESS_STATUS
     - CORRECTION_LEARNING
+    - RESOURCE_EFFICIENCY
+
+  canonical_preferences:
+    INFORMATION.REPETITION_POLICY:
+      allowed_values:
+        - DELTA_FIRST_REFERENCE_RICH
+        - FULL_RECAP_ON_REQUEST
+      meaning: Preserve important information while avoiding repeated restatement of unchanged context.
+    DELIVERY_ARTIFACT.STANDARD_EXECUTION_OWNER:
+      allowed_values:
+        - USER_LOCAL_RUNNER
+      meaning: Under STANDARD the user executes the supplied local runner and the agent does not request local access.
+    DELIVERY_ARTIFACT.STANDARD_ARTIFACT_FORMAT:
+      allowed_values:
+        - SELF_EXTRACTING_POWERSHELL
+      meaning: STANDARD delivery is supplied as one self-contained PowerShell runner with embedded payload and receipts.
+    DELIVERY_ARTIFACT.STANDARD_AGENT_ACCESS_REQUEST_BUDGET:
+      allowed_values:
+        - 0
+      meaning: A STANDARD task must be designed to complete without an agent platform-access dialog.
+    RESOURCE_EFFICIENCY.USER_LIMIT_POLICY:
+      allowed_values:
+        - CONSERVE
+        - BALANCED
+      meaning: Treat the user's included agentic usage as an explicit planning resource.
+    RESOURCE_EFFICIENCY.PRIMARY_TIME_METRIC:
+      allowed_values:
+        - HUMAN_TIME_TO_AVAILABLE_RESULT
+      meaning: Measure elapsed time from user command until the result is visible and actionable for the user.
+
+  usage_budget_observation:
+    runtime_state_default: D:\Cerebro\Run\usage\USER_LIMIT_OBSERVATION.json
+    telemetry_authority: USER_VISIBLE_OPENAI_USAGE_DASHBOARD
+    agent_direct_meter_access: false
+    required_fields:
+      - observed_at
+      - remaining_percent
+      - reset_label
+      - evidence_origin
+      - freshness
+    agent_estimate_authority: NON_AUTHORITATIVE
+    conservation_controls:
+      - eliminate-repeated-access-dialogs
+      - prefer-delta-context-over-full-recap
+      - bound-tool-output-to-decision-value
+      - do-not-create-subagents-without-explicit-need
+      - avoid-duplicate-tests-without-new-discriminating-value
+      - use-smaller-model-when-user-selects-it-for-routine-work
+    thresholds:
+      GREEN: remaining_percent_greater_than_or_equal_to_50
+      AMBER: remaining_percent_25_through_49
+      RED: remaining_percent_less_than_25
+    invariant: OBSERVED_PERCENTAGE_MUST_NOT_BE_INFERRED_FROM_AGENT_ACTIVITY
+
+  identity_and_authorization_separation:
+    user_preference_is_identity_proof: false
+    user_preference_may_grant_admin: false
+    future_roles:
+      - GUEST
+      - USER
+      - ADMIN
+    admin_assignment_requires:
+      - verified-principal-identity
+      - dedicated-authorization-contract
+      - auditable-role-binding
+    rationale: A stored preference can describe collaboration behavior but must not become an authentication or privilege-escalation mechanism.
 
   promotion:
     explicit_stable_user_preference: GLOBAL_ALLOWED
@@ -73,3 +139,4 @@ user_operating_profile:
     - scope-expansion-requires-user-evidence
     - profile-failure-does-not-change-Source-or-project-authority
     - PROFILE_DEGRADED-must-not-be-reported-as-PROFILE_LOADED
+    - preference-storage-must-not-grant-or-escalate-authorization

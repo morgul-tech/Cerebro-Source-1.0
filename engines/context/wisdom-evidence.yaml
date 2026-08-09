@@ -199,7 +199,133 @@ wisdom_evidence:
           resolution: "NOT_APPLICABLE"
       pending_action: "NONE"
 
+    -
+      id: "WEP-PROFILE-BOUND-ACCESS-001"
+      subject_ref: "CTX-WISDOM-PROFILE-BOUND-ACCESS-EFFICIENCY-001"
+      subject_kind: "WISDOM"
+      scope: "DELIVERY-PROFILE-ACCESS-AND-INTERACTION-RESOURCE"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 2
+        conflict_prevented: 0
+        conflict_corrected: 1
+        conflict_escaped: 1
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-005.POST-003"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "STANDARD-B-REPEATED-ACCESS-PROMPTS-2026-08-09"
+          kind: "CONFLICT"
+          origin: "USER_CORRECTION"
+          impact: "HIGH"
+          resolution: "ESCAPED"
+        -
+          ref: "PATCH-005.POST-003-ZERO-ACCESS-BUDGET-SELFTEST"
+          kind: "SUPPORT"
+          origin: "VERIFICATION"
+          impact: "HIGH"
+          resolution: "CORRECTED"
+      pending_action: "NONE"
+
+    -
+      id: "WEP-DELTA-FIRST-CONSOLIDATION-001"
+      subject_ref: "CTX-WISDOM-DELTA-FIRST-SESSION-CONSOLIDATION-001"
+      subject_kind: "WISDOM"
+      scope: "LONG-CONVERSATION-CONSOLIDATION-AND-SESSION-RESUME"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 2
+        conflict_prevented: 0
+        conflict_corrected: 1
+        conflict_escaped: 0
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-005.POST-003"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "USER-REFINE-NO-REPEATED-CHAT-TEXT-2026-08-09"
+          kind: "CONFLICT"
+          origin: "USER_CORRECTION"
+          impact: "HIGH"
+          resolution: "CORRECTED"
+        -
+          ref: "USER-CONSOLIDATE-REFINE-NEW-SESSION-2026-08-09"
+          kind: "SUPPORT"
+          origin: "REFINE"
+          impact: "HIGH"
+          resolution: "NOT_APPLICABLE"
+      pending_action: "NONE"
+
+    -
+      id: "WEP-USER-LIMIT-RESOURCE-001"
+      subject_ref: "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
+      subject_kind: "WISDOM"
+      scope: "AGENTIC-USAGE-BUDGET-AND-WORK-EFFICIENCY"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 2
+        conflict_prevented: 0
+        conflict_corrected: 1
+        conflict_escaped: 0
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-005.POST-003"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "USER-REFINE-USER-LIMIT-VALUABLE-RESOURCE-2026-08-09"
+          kind: "CONFLICT"
+          origin: "USER_CORRECTION"
+          impact: "HIGH"
+          resolution: "CORRECTED"
+        -
+          ref: "OPENAI-OFFICIAL-USAGE-GUIDANCE-2026-08-09"
+          kind: "SUPPORT"
+          origin: "VERIFICATION"
+          impact: "HIGH"
+          resolution: "NOT_APPLICABLE"
+      pending_action: "NONE"
+
+    -
+      id: "WEP-HUMAN-TIME-TO-RESULT-001"
+      subject_ref: "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
+      subject_kind: "WISDOM"
+      scope: "END-TO-END-USER-LATENCY-AND-ACTIVE-PATH-DESIGN"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 1
+        conflict_prevented: 1
+        conflict_corrected: 0
+        conflict_escaped: 0
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "PATCH-005.POST-003"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "USER-SPEECH-TO-TEXT-TIME-AND-LATENCY-REFINE-2026-08-09"
+          kind: "NOVEL_PATTERN"
+          origin: "REFINE"
+          impact: "HIGH"
+          resolution: "PREVENTED"
+      pending_action: "NONE"
+
   revision:
-    sequence: 2
-    last_patch_ref: "PATCH-003.PRE-005"
-    profile_count: 6
+    sequence: 5
+    last_patch_ref: "PATCH-005.POST-003"
+    profile_count: 10

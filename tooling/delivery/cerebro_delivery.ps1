@@ -23,13 +23,71 @@ param(
 
 Set-StrictMode -Version 2.0
 
-$script:CerebroDeliverySelectionSchema = 'cerebro-delivery-selection/v0.1'
-$script:CerebroDeliverySelectorVersion = '0.1.0'
+$script:CerebroDeliverySelectionSchema = 'cerebro-delivery-selection/v0.2'
+$script:CerebroDeliveryLegacySelectionSchema = 'cerebro-delivery-selection/v0.1'
+$script:CerebroDeliverySelectorVersion = '0.2.0'
 $script:CerebroDeliveryProfiles = @(
-    'STANDARD_A',
-    'STANDARD_B',
-    'STANDARD_C'
+    'LIMITED',
+    'STANDARD',
+    'FULL'
 )
+$script:CerebroDeliveryProfileAliases = @{
+    STANDARD_A = 'LIMITED'
+    STANDARD_B = 'STANDARD'
+    STANDARD_C = 'FULL'
+}
+
+function ConvertTo-CerebroCanonicalDeliveryProfile {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Profile
+    )
+
+    $normalized = $Profile.ToUpperInvariant()
+
+    if ($script:CerebroDeliveryProfileAliases.ContainsKey($normalized)) {
+        return [string]$script:CerebroDeliveryProfileAliases[$normalized]
+    }
+
+    return $normalized
+}
+
+function Get-CerebroDeliveryProfileControls {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Profile
+    )
+
+    switch (ConvertTo-CerebroCanonicalDeliveryProfile -Profile $Profile) {
+        'LIMITED' {
+            return [ordered]@{
+                execution_owner = 'USER'
+                agent_local_access = 'PROHIBITED'
+                access_request_budget = 0
+                artifact_format = 'FILES'
+            }
+        }
+        'STANDARD' {
+            return [ordered]@{
+                execution_owner = 'USER_LOCAL_RUNNER'
+                agent_local_access = 'PROHIBITED'
+                access_request_budget = 0
+                artifact_format = 'SELF_EXTRACTING_POWERSHELL'
+            }
+        }
+        'FULL' {
+            return [ordered]@{
+                execution_owner = 'AGENT_CONTROLLED'
+                agent_local_access = 'EXPLICIT_GRANT_REQUIRED'
+                access_request_budget = 1
+                artifact_format = 'CONTROLLED_TRANSACTION'
+            }
+        }
+        default {
+            throw 'CEREBRO_DELIVERY_PROFILE_UNKNOWN'
+        }
+    }
+}
 
 function Write-CerebroDeliveryJsonAtomic {
     param(
@@ -251,7 +309,9 @@ function Resolve-CerebroDeliveryProfile {
         [switch]$DirectWorkspaceAccess
     )
 
-    $requested = $RequestedProfile.ToUpperInvariant()
+    $requestedInput = $RequestedProfile.ToUpperInvariant()
+    $requested = ConvertTo-CerebroCanonicalDeliveryProfile `
+        -Profile $requestedInput
     $normalizedOperations = @(
         $Operations |
             ForEach-Object { ([string]$_).ToLowerInvariant() }
@@ -277,7 +337,7 @@ function Resolve-CerebroDeliveryProfile {
                 result = 'PASS'
                 classification = 'DELIVERY_PROFILE_RESOLVED'
                 requested_profile = 'AUTO'
-                resolved_profile = 'STANDARD_C'
+                resolved_profile = 'FULL'
                 reason = 'direct-workspace-access-declared'
             }
         }
@@ -302,7 +362,7 @@ function Resolve-CerebroDeliveryProfile {
                 result = 'PASS'
                 classification = 'DELIVERY_PROFILE_RESOLVED'
                 requested_profile = 'AUTO'
-                resolved_profile = 'STANDARD_A'
+                resolved_profile = 'LIMITED'
                 reason = 'existing-file-replacements-only'
             }
         }
@@ -311,7 +371,7 @@ function Resolve-CerebroDeliveryProfile {
             result = 'PASS'
             classification = 'DELIVERY_PROFILE_RESOLVED'
             requested_profile = 'AUTO'
-            resolved_profile = 'STANDARD_B'
+            resolved_profile = 'STANDARD'
             reason = 'structured-file-operations-required'
         }
     }
@@ -322,12 +382,12 @@ function Resolve-CerebroDeliveryProfile {
             classification = 'UNKNOWN_DELIVERY_PROFILE'
             requested_profile = $requested
             resolved_profile = $null
-            reason = 'allowed=STANDARD_A,STANDARD_B,STANDARD_C,AUTO'
+            reason = 'allowed=LIMITED,STANDARD,FULL,AUTO; aliases=STANDARD_A,STANDARD_B,STANDARD_C'
         }
     }
 
     if (
-        $requested -eq 'STANDARD_A' -and
+        $requested -eq 'LIMITED' -and
         @(
             $normalizedOperations |
                 Where-Object { $_ -ne 'replace' }
@@ -338,7 +398,7 @@ function Resolve-CerebroDeliveryProfile {
             classification = 'DELIVERY_PROFILE_NOT_APPLICABLE'
             requested_profile = $requested
             resolved_profile = $null
-            reason = 'STANDARD_A permits replacement of existing files only'
+            reason = 'LIMITED permits replacement of existing files only'
         }
     }
 
@@ -347,7 +407,14 @@ function Resolve-CerebroDeliveryProfile {
         classification = 'DELIVERY_PROFILE_RESOLVED'
         requested_profile = $requested
         resolved_profile = $requested
-        reason = 'explicit-user-terminal-selection'
+        reason = $(
+            if ($requestedInput -eq $requested) {
+                'explicit-user-terminal-selection'
+            }
+            else {
+                'legacy-alias-resolved-to-canonical-profile'
+            }
+        )
     }
 }
 
@@ -355,27 +422,42 @@ function Get-CerebroDeliveryProfileExplanation {
     param([string]$Profile)
 
     $descriptions = [ordered]@{
-        STANDARD_A = [ordered]@{
-            name = 'DIRECT_FILE_REPLACEMENT'
+        LIMITED = [ordered]@{
+            name = 'USER_MANAGED_FILE_DELIVERY'
+            legacy_alias = 'STANDARD_A'
             use_when = @(
                 'only existing files are replaced',
                 'no create, move, or delete operation is required'
             )
+            execution_owner = 'USER'
+            agent_local_access = 'PROHIBITED'
+            access_request_budget = 0
+            artifact_format = 'FILES'
         }
-        STANDARD_B = [ordered]@{
-            name = 'STRUCTURED_FILE_DELIVERY'
+        STANDARD = [ordered]@{
+            name = 'USER_LOCAL_RUNNER_DELIVERY'
+            legacy_alias = 'STANDARD_B'
             use_when = @(
                 'directories or files are created',
                 'files are moved or deleted',
                 'bounded backup automation reduces risk'
             )
+            execution_owner = 'USER_LOCAL_RUNNER'
+            agent_local_access = 'PROHIBITED'
+            access_request_budget = 0
+            artifact_format = 'SELF_EXTRACTING_POWERSHELL'
         }
-        STANDARD_C = [ordered]@{
+        FULL = [ordered]@{
             name = 'CONTROLLED_WORKSPACE_TRANSACTION'
+            legacy_alias = 'STANDARD_C'
             use_when = @(
                 'the implementation agent has direct workspace access',
                 'an exact Change Capsule and controlled transaction are available'
             )
+            execution_owner = 'AGENT_CONTROLLED'
+            agent_local_access = 'EXPLICIT_GRANT_REQUIRED'
+            access_request_budget = 1
+            artifact_format = 'CONTROLLED_TRANSACTION'
         }
         AUTO = [ordered]@{
             name = 'DETERMINISTIC_RESOLUTION'
@@ -395,7 +477,8 @@ function Get-CerebroDeliveryProfileExplanation {
         }
     }
 
-    $selected = $Profile.ToUpperInvariant()
+    $selected = ConvertTo-CerebroCanonicalDeliveryProfile `
+        -Profile $Profile
 
     if (-not $descriptions.Contains($selected)) {
         throw 'CEREBRO_DELIVERY_PROFILE_UNKNOWN'
@@ -471,7 +554,7 @@ function Set-CerebroDeliverySelection {
         $script:CerebroDeliverySelectionSchema,
         $resolution.resolved_profile,
         $source.commit,
-        'STD-CHANGE-DELIVERY@0.4.0'
+        'STD-CHANGE-DELIVERY@0.5.0'
     )
     $fingerprint = Get-CerebroDeliveryTextSha256 `
         -Text $fingerprintMaterial
@@ -480,6 +563,8 @@ function Set-CerebroDeliverySelection {
         ([DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')),
         ([guid]::NewGuid().ToString('N').Substring(0, 8))
     )
+    $profileControls = Get-CerebroDeliveryProfileControls `
+        -Profile $resolution.resolved_profile
 
     $state = [ordered]@{
         schema = $script:CerebroDeliverySelectionSchema
@@ -499,6 +584,12 @@ function Set-CerebroDeliverySelection {
         }
         evidence = [ordered]@{
             explicit_user_terminal_selection = $true
+            selection_input = $Profile.ToUpperInvariant()
+            legacy_alias_used = $(
+                $script:CerebroDeliveryProfileAliases.ContainsKey(
+                    $Profile.ToUpperInvariant()
+                )
+            )
             operations = @(
                 $Operations |
                     ForEach-Object {
@@ -517,6 +608,10 @@ function Set-CerebroDeliverySelection {
             publication_performed = $false
             commit_performed = $false
             silent_fallback = $false
+            execution_owner = $profileControls.execution_owner
+            agent_local_access = $profileControls.agent_local_access
+            access_request_budget = $profileControls.access_request_budget
+            artifact_format = $profileControls.artifact_format
         }
         invalidated_by = @(
             'source-commit-change',
@@ -546,6 +641,10 @@ function Set-CerebroDeliverySelection {
         state_changed = $true
         source_mutation = $false
         silent_fallback = $false
+        execution_owner = $state.controls.execution_owner
+        agent_local_access = $state.controls.agent_local_access
+        access_request_budget = $state.controls.access_request_budget
+        artifact_format = $state.controls.artifact_format
         next_action = 'RESEARCH_AND_VALIDATE_PATCH_SCOPE'
         receipt_line = (
             'CEREBRO_DELIVERY_SELECTION PROFILE={0} STATE=LOCKED COMMIT={1} FINGERPRINT={2}' -f
@@ -572,7 +671,7 @@ function Get-CerebroDeliverySelectionStatus {
             classification = 'DELIVERY_SELECTION_ABSENT'
             state_path = [IO.Path]::GetFullPath($StatePath)
             source_mutation = $false
-            next_action = 'cerebro delivery select STANDARD_A|STANDARD_B|STANDARD_C|AUTO'
+            next_action = 'cerebro delivery select LIMITED|STANDARD|FULL|AUTO'
         }
     }
 
@@ -591,8 +690,10 @@ function Get-CerebroDeliverySelectionStatus {
     }
 
     if (
-        [string]$selection.schema -ne
-        $script:CerebroDeliverySelectionSchema
+        [string]$selection.schema -notin @(
+            $script:CerebroDeliverySelectionSchema,
+            $script:CerebroDeliveryLegacySelectionSchema
+        )
     ) {
         return [pscustomobject]@{
             state = 'DEGRADED'
@@ -617,6 +718,13 @@ function Get-CerebroDeliverySelectionStatus {
         }
     }
 
+    $canonicalRequested = ConvertTo-CerebroCanonicalDeliveryProfile `
+        -Profile ([string]$selection.requested_profile)
+    $canonicalResolved = ConvertTo-CerebroCanonicalDeliveryProfile `
+        -Profile ([string]$selection.resolved_profile)
+    $profileControls = Get-CerebroDeliveryProfileControls `
+        -Profile $canonicalResolved
+
     $effectiveState = 'LOCKED'
     $classification = 'DELIVERY_SELECTION_CURRENT'
 
@@ -628,8 +736,13 @@ function Get-CerebroDeliverySelectionStatus {
     return [pscustomobject]@{
         state = $effectiveState
         classification = $classification
-        requested_profile = $selection.requested_profile
-        resolved_profile = $selection.resolved_profile
+        requested_profile = $canonicalRequested
+        resolved_profile = $canonicalResolved
+        stored_schema = $selection.schema
+        compatibility_projection = $(
+            [string]$selection.schema -eq
+            $script:CerebroDeliveryLegacySelectionSchema
+        )
         selected_source_commit = $selection.source.commit
         current_source_commit = $source.commit
         decision_fingerprint = $selection.decision_fingerprint
@@ -637,6 +750,10 @@ function Get-CerebroDeliverySelectionStatus {
         state_path = [IO.Path]::GetFullPath($StatePath)
         source_mutation = $false
         silent_fallback = $false
+        execution_owner = $profileControls.execution_owner
+        agent_local_access = $profileControls.agent_local_access
+        access_request_budget = $profileControls.access_request_budget
+        artifact_format = $profileControls.artifact_format
     }
 }
 
@@ -669,48 +786,81 @@ function Invoke-CerebroDeliverySelectionSelfTest {
         -RequestedProfile 'AUTO' `
         -Operations @('replace', 'replace')
     Add-TestResult `
-        -Name 'auto_replacement_scope_resolves_standard_a' `
-        -Passed ($autoA.resolved_profile -eq 'STANDARD_A')
+        -Name 'auto_replacement_scope_resolves_limited' `
+        -Passed ($autoA.resolved_profile -eq 'LIMITED')
 
     $autoB = Resolve-CerebroDeliveryProfile `
         -RequestedProfile 'AUTO' `
         -Operations @('replace', 'create')
     Add-TestResult `
-        -Name 'auto_structured_scope_resolves_standard_b' `
-        -Passed ($autoB.resolved_profile -eq 'STANDARD_B')
+        -Name 'auto_structured_scope_resolves_standard' `
+        -Passed ($autoB.resolved_profile -eq 'STANDARD')
 
     $autoC = Resolve-CerebroDeliveryProfile `
         -RequestedProfile 'AUTO' `
         -Operations @('create') `
         -DirectWorkspaceAccess
     Add-TestResult `
-        -Name 'auto_direct_workspace_resolves_standard_c' `
-        -Passed ($autoC.resolved_profile -eq 'STANDARD_C')
+        -Name 'auto_direct_workspace_resolves_full' `
+        -Passed ($autoC.resolved_profile -eq 'FULL')
 
     $invalidA = Resolve-CerebroDeliveryProfile `
-        -RequestedProfile 'STANDARD_A' `
+        -RequestedProfile 'LIMITED' `
         -Operations @('create')
     Add-TestResult `
-        -Name 'standard_a_rejects_create_scope' `
+        -Name 'limited_rejects_create_scope' `
         -Passed (
             $invalidA.result -eq 'BLOCKED' -and
             $null -eq $invalidA.resolved_profile
         )
 
     $fingerprint1 = Get-CerebroDeliveryTextSha256 `
-        -Text 'schema|STANDARD_C|commit|contract'
+        -Text 'schema|FULL|commit|contract'
     $fingerprint2 = Get-CerebroDeliveryTextSha256 `
-        -Text 'schema|STANDARD_C|commit|contract'
+        -Text 'schema|FULL|commit|contract'
     Add-TestResult `
         -Name 'decision_fingerprint_is_deterministic' `
         -Passed ($fingerprint1 -eq $fingerprint2)
+
+    $legacyB = Resolve-CerebroDeliveryProfile `
+        -RequestedProfile 'STANDARD_B' `
+        -Operations @('create')
+    Add-TestResult `
+        -Name 'legacy_standard_b_resolves_canonical_standard' `
+        -Passed (
+            $legacyB.result -eq 'PASS' -and
+            $legacyB.requested_profile -eq 'STANDARD' -and
+            $legacyB.resolved_profile -eq 'STANDARD'
+        )
+
+    $limitedControls = Get-CerebroDeliveryProfileControls `
+        -Profile 'LIMITED'
+    $standardControls = Get-CerebroDeliveryProfileControls `
+        -Profile 'STANDARD'
+    $fullControls = Get-CerebroDeliveryProfileControls `
+        -Profile 'FULL'
+    Add-TestResult `
+        -Name 'limited_and_standard_have_zero_access_request_budget' `
+        -Passed (
+            $limitedControls.access_request_budget -eq 0 -and
+            $standardControls.access_request_budget -eq 0 -and
+            $limitedControls.agent_local_access -eq 'PROHIBITED' -and
+            $standardControls.agent_local_access -eq 'PROHIBITED'
+        )
+    Add-TestResult `
+        -Name 'full_has_one_aggregated_access_request_budget' `
+        -Passed (
+            $fullControls.access_request_budget -eq 1 -and
+            $fullControls.agent_local_access -eq
+                'EXPLICIT_GRANT_REQUIRED'
+        )
 
     $passed = @(
         @($tests) | Where-Object { $_.result -ne 'PASS' }
     ).Count -eq 0
 
     return [pscustomobject]@{
-        schema = 'cerebro-delivery-selector-selftest/v0.1'
+        schema = 'cerebro-delivery-selector-selftest/v0.2'
         result = $(if ($passed) { 'PASS' } else { 'FAIL' })
         selector_version = $script:CerebroDeliverySelectorVersion
         tests = @($tests)

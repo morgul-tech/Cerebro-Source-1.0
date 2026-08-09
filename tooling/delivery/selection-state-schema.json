@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "cerebro-delivery-selection/v0.1",
+  "$id": "cerebro-delivery-selection/v0.2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -20,15 +20,15 @@
     "invalidated_by"
   ],
   "properties": {
-    "schema": {"const": "cerebro-delivery-selection/v0.1"},
+    "schema": {"const": "cerebro-delivery-selection/v0.2"},
     "selector_version": {"type": "string"},
     "selection_id": {"type": "string", "pattern": "^DELIVERY-"},
     "state": {"const": "LOCKED"},
     "requested_profile": {
-      "enum": ["STANDARD_A", "STANDARD_B", "STANDARD_C", "AUTO"]
+      "enum": ["LIMITED", "STANDARD", "FULL", "AUTO"]
     },
     "resolved_profile": {
-      "enum": ["STANDARD_A", "STANDARD_B", "STANDARD_C"]
+      "enum": ["LIMITED", "STANDARD", "FULL"]
     },
     "resolution_reason": {"type": "string", "minLength": 1},
     "selected_at_utc": {"type": "string", "format": "date-time"},
@@ -52,11 +52,20 @@
       "additionalProperties": false,
       "required": [
         "explicit_user_terminal_selection",
+        "selection_input",
+        "legacy_alias_used",
         "operations",
         "direct_workspace_access_declared"
       ],
       "properties": {
         "explicit_user_terminal_selection": {"const": true},
+        "selection_input": {
+          "enum": [
+            "LIMITED", "STANDARD", "FULL", "AUTO",
+            "STANDARD_A", "STANDARD_B", "STANDARD_C"
+          ]
+        },
+        "legacy_alias_used": {"type": "boolean"},
         "operations": {
           "type": "array",
           "items": {"enum": ["replace", "create", "delete"]}
@@ -85,13 +94,35 @@
         "source_mutation",
         "publication_performed",
         "commit_performed",
-        "silent_fallback"
+        "silent_fallback",
+        "execution_owner",
+        "agent_local_access",
+        "access_request_budget",
+        "artifact_format"
       ],
       "properties": {
         "source_mutation": {"const": false},
         "publication_performed": {"const": false},
         "commit_performed": {"const": false},
-        "silent_fallback": {"const": false}
+        "silent_fallback": {"const": false},
+        "execution_owner": {
+          "enum": ["USER", "USER_LOCAL_RUNNER", "AGENT_CONTROLLED"]
+        },
+        "agent_local_access": {
+          "enum": ["PROHIBITED", "EXPLICIT_GRANT_REQUIRED"]
+        },
+        "access_request_budget": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "artifact_format": {
+          "enum": [
+            "FILES",
+            "SELF_EXTRACTING_POWERSHELL",
+            "CONTROLLED_TRANSACTION"
+          ]
+        }
       }
     },
     "invalidated_by": {
@@ -99,5 +130,34 @@
       "minItems": 1,
       "items": {"type": "string"}
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"resolved_profile": {"const": "LIMITED"}}},
+      "then": {"properties": {"controls": {"properties": {
+        "execution_owner": {"const": "USER"},
+        "agent_local_access": {"const": "PROHIBITED"},
+        "access_request_budget": {"const": 0},
+        "artifact_format": {"const": "FILES"}
+      }}}}
+    },
+    {
+      "if": {"properties": {"resolved_profile": {"const": "STANDARD"}}},
+      "then": {"properties": {"controls": {"properties": {
+        "execution_owner": {"const": "USER_LOCAL_RUNNER"},
+        "agent_local_access": {"const": "PROHIBITED"},
+        "access_request_budget": {"const": 0},
+        "artifact_format": {"const": "SELF_EXTRACTING_POWERSHELL"}
+      }}}}
+    },
+    {
+      "if": {"properties": {"resolved_profile": {"const": "FULL"}}},
+      "then": {"properties": {"controls": {"properties": {
+        "execution_owner": {"const": "AGENT_CONTROLLED"},
+        "agent_local_access": {"const": "EXPLICIT_GRANT_REQUIRED"},
+        "access_request_budget": {"const": 1},
+        "artifact_format": {"const": "CONTROLLED_TRANSACTION"}
+      }}}}
+    }
+  ]
 }
