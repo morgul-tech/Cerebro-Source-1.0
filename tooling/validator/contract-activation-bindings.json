@@ -1,51 +1,54 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.0",
+  "classification_version": "2.1",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
       "path": "standards/mcp.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "MCP material-commitment and relevance control is activation-proven; broader adaptive control resolution remains a planned AA capability.",
+      "known_gaps": [
+        "adaptive autonomy resolver and broader event-driven control resolution remain outside the completed activation-architecture scope"
+      ]
     },
     {
       "standard_id": "STD-SOURCE",
       "path": "standards/source-authority.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Source Authority is the definitional authority contract; operational proof belongs to the boot, delivery and synchronization mechanisms that consume it."
     },
     {
       "standard_id": "STD-SYSTEM-LIFECYCLE",
       "path": "standards/system-lifecycle.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "System lifecycle is the canonical lifecycle state model and does not require a standalone runtime owner to be semantically active."
     },
     {
       "standard_id": "STD-CONTROL-ARCHITECTURE",
       "path": "standards/control-architecture.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "Relevance/Wisdom material-commitment call path is now strict-bound; remaining non-relevance control subcontracts are not yet exhaustively activation-proven.",
+      "rationale": "Material/relevance control and failure recovery paths are implemented; the future adaptive autonomy resolver remains deliberately deferred.",
       "known_gaps": [
-        "remaining non-relevance control subcontracts require later contract-level activation sweep"
+        "adaptive autonomy resolver remains planned under the rebaselined AA sequence"
       ]
     },
     {
       "standard_id": "STD-HUMAN-CONTINUATION-SURFACE",
       "path": "standards/human-continuation-surface.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Human continuation surface is a normative interaction contract consumed by presentation and delivery; it is not a standalone runtime subsystem."
     },
     {
       "standard_id": "STD-CONTINUATION-SURFACE-SYSTEM-POLICY",
       "path": "standards/continuation-surface-system-policy.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Continuation surface system policy defines cross-surface behavior and is intentionally policy rather than a separate executable owner."
     },
     {
       "standard_id": "STD-BOOT-CRITICAL-PATH",
       "path": "standards/boot-critical-path-architecture.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Boot critical-path architecture defines universal and capability-conditioned boot semantics; environment-specific execution evidence is separate."
     },
     {
       "standard_id": "STD-DELIVERY-KERNEL",
@@ -78,65 +81,80 @@
     {
       "standard_id": "STD-USER-OPERATING-PROFILE",
       "path": "standards/user-operating-profile.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The user-profile mechanism and precedence are defined; actual profile loading and persistence remain capability-conditioned.",
+      "known_gaps": [
+        "profile-loaded state requires actual accessible user configuration and must not be inferred from the standard alone"
+      ]
     },
     {
       "standard_id": "STD-SYSTEM-METAMODEL",
       "path": "standards/system-metamodel.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "The system metamodel is a definitional structural contract, not a standalone runtime component."
     },
     {
       "standard_id": "STD-RULE-MODEL",
       "path": "standards/rule-model.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "The rule model defines rule representation and authority semantics; executable behavior is owned by consuming engines and MCP."
     },
     {
       "standard_id": "STD-CANONICAL-DEFINITION-SYSTEM",
       "path": "standards/canonical-definition-system.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Canonical definition rules govern Source structure and do not require an independent runtime implementation."
     },
     {
       "standard_id": "STD-PUBLICATION",
       "path": "standards/publication-gate.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "STANDARD Source publication is exercised through canonical cerebro_sync; broader publication surfaces are not exhaustively activation-proven.",
+      "known_gaps": [
+        "non-STANDARD and Release publication surfaces remain outside the strict activation proof used by this sweep"
+      ]
     },
     {
       "standard_id": "STD-QUALITY",
       "path": "standards/quality-gate.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Quality and readiness checks are consumed by current development and delivery paths, but every generic Quality Gate/reporting surface is not strict-bound.",
+      "known_gaps": [
+        "generic cross-artifact Quality Gate coverage remains broader than the strict STANDARD activation proof"
+      ]
     },
     {
       "standard_id": "STD-VALIDER",
       "path": "standards/valider-command.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Valider exists as the common validation entrypoint, while not every target mode has independent contract-level activation evidence.",
+      "known_gaps": [
+        "all valider target modes are not independently strict-bound by the activation registry"
+      ]
     },
     {
       "standard_id": "STD-PATCH",
       "path": "standards/patch-package.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Patch/package semantics are exercised by the sealed STANDARD path while legacy/general package forms remain broader than the strict proof.",
+      "known_gaps": [
+        "legacy and non-STANDARD package paths remain outside the sealed STANDARD strict proof"
+      ]
     },
     {
       "standard_id": "STD-CHANGE-ARCHITECTURE",
       "path": "standards/change-architecture.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "Host/change/delivery/closure tooling exists, but canonical scope boundaries against the Standard Delivery Kernel require convergence.",
+      "rationale": "Host, Change Engine, FULL Delivery Controller and sealed STANDARD Kernel now have explicit non-overlapping canonical ownership; broader FULL operational proof remains separate.",
       "known_gaps": [
-        "Host vs Standard Delivery Kernel scope relation requires explicit canonical classification"
+        "FULL controlled workspace transaction path remains separately capability- and profile-conditioned"
       ]
     },
     {
       "standard_id": "STD-CHANGE-DELIVERY",
       "path": "standards/change-delivery.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "STANDARD profile semantics are converged on the sealed launcher/kernel path. The broader multi-profile standard remains partially operational until LIMITED and FULL are separately contract-level proven.",
+      "rationale": "STANDARD profile semantics are converged on the sealed launcher/kernel path; LIMITED and FULL remain separately scoped.",
       "known_gaps": [
         "LIMITED profile execution path is not yet strict contract-bound",
         "FULL profile execution path/controller is not yet strict contract-bound"
@@ -146,7 +164,7 @@
       "standard_id": "STD-CHANGE-DELIVERY-CONVERGENCE",
       "path": "standards/change-delivery-convergence.yaml",
       "classification": "OPERATIONAL",
-      "rationale": "Canonical STANDARD profile selection/sealing/runtime ownership and legacy subcontract supersession are explicitly bound.",
+      "rationale": "Canonical STANDARD profile selection, sealing and runtime ownership are explicitly bound.",
       "strict_contract_refs": [
         "CHANGE_DELIVERY_STANDARD_CONVERGENCE"
       ]
@@ -154,41 +172,47 @@
     {
       "standard_id": "STD-RELEASE-PLATFORM",
       "path": "standards/release-platform.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Release platform contracts and tooling exist, but Release publication/runtime proof is not on the ordinary Source patch critical path.",
+      "known_gaps": [
+        "full Release publication and operational verification remain event-scoped"
+      ]
     },
     {
       "standard_id": "STD-OPERATIONAL-PROGRESS",
       "path": "standards/operational-progress.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Progress, remediation and dependency semantics are consumed by current control/delivery flows, but no single standalone progress runtime owns every rule.",
+      "known_gaps": [
+        "system-wide progress semantics remain distributed across MCP, Host and delivery/runtime surfaces"
+      ]
     },
     {
       "standard_id": "STD-OPERATIONAL-EVIDENCE",
       "path": "standards/operational-evidence.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "Canonical diagnostic capsule capture, bounded transport, Host rehydration and Standard Delivery bridge are active; broader non-diagnostic operational evidence consumers are not yet strict-bound.",
+      "rationale": "Canonical diagnostic capture and bounded transport are active; broader non-diagnostic evidence consumers are not all strict-bound.",
       "known_gaps": [
-        "broader non-diagnostic operational-evidence consumers remain contract-level review pending"
+        "broader non-diagnostic operational-evidence consumers remain outside strict activation proof"
       ]
     },
     {
       "standard_id": "STD-PROJECT-STATUS",
       "path": "standards/project-status.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Project status is a presentation/state contract derived from project state and does not require a parallel runtime owner."
     },
     {
       "standard_id": "STD-CONSOLIDATE",
       "path": "standards/development/consolidate.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "CONSOLIDATE is a bounded cross-engine workform operation, intentionally not a standalone engine or runtime subsystem."
     },
     {
       "standard_id": "STD-ADAPTIVE-QUALITY-WORKFORM",
       "path": "standards/development/adaptive-quality-workform.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Adaptive Quality Workform defines analysis depth and decision assurance policy consumed by development/control, not a standalone execution owner."
     },
     {
       "standard_id": "STD-WISDOM-CONTROL-BINDING",
@@ -203,7 +227,7 @@
       "standard_id": "STD-RELEVANCE-RETRIEVAL",
       "path": "standards/development/relevance-retrieval.yaml",
       "classification": "OPERATIONAL",
-      "rationale": "Context retrieval has currentness, coverage and freshness semantics; it is consumed by MCP and exercised through the normal Standard Delivery material call path plus source-state-bound activation evidence.",
+      "rationale": "Context retrieval currentness, coverage and freshness are consumed by MCP through the normal material call path.",
       "strict_contract_refs": [
         "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT"
       ]
@@ -212,7 +236,7 @@
       "standard_id": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
       "path": "standards/development/material-commitment-preflight.yaml",
       "classification": "OPERATIONAL",
-      "rationale": "MCP material preflight is implemented and activation-proven; Standard Delivery is a normal machine consumer before mutation and governing publication, with full receipt freshness comparison.",
+      "rationale": "MCP material preflight is implemented and activation-proven on the normal STANDARD execution and publication path.",
       "strict_contract_refs": [
         "MATERIAL_COMMITMENT_PREFLIGHT",
         "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH"
@@ -221,20 +245,23 @@
     {
       "standard_id": "STD-ARCHITECTURAL-REGROUNDING",
       "path": "standards/development/architectural-regrounding.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "Architectural regrounding is a bounded development decision workform and intentionally has no standalone runtime owner."
     },
     {
       "standard_id": "STD-POWERSHELL-L3-DELIVERY-ASSURANCE",
       "path": "standards/development/powershell-level3-delivery-assurance.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "POLICY_ONLY",
+      "rationale": "PowerShell delivery assurance is an inherited assurance policy consumed by operational delivery/tooling rather than an independent runtime component."
     },
     {
       "standard_id": "STD-IMPLEMENTATION-LEARNING",
       "path": "standards/development/implementation-learning-loop.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Failure learning, regressions and Development History are implemented; generalized implementation-learning automation remains broader than the verified path.",
+      "known_gaps": [
+        "generalized cross-domain implementation-learning automation remains outside the verified PATCH-007 failure-learning path"
+      ]
     },
     {
       "standard_id": "STD-DELIVERY-FAILURE-REGRESSION",
@@ -246,7 +273,7 @@
       "standard_id": "STD-ACTIVE-SOURCE-CLOSURE",
       "path": "standards/active-source-closure.yaml",
       "classification": "OPERATIONAL",
-      "rationale": "Patch-close Source integrity is wired into Standard Delivery before Contract Activation Closure and canonical sync; full system/release closure remains event-scoped.",
+      "rationale": "Patch-close Source integrity is wired into Standard Delivery before Contract Activation Closure and sync.",
       "strict_contract_refs": [
         "ACTIVE_SOURCE_INTEGRITY_CLOSURE"
       ]
@@ -254,8 +281,11 @@
     {
       "standard_id": "STD-RUNTIME-IDEA-OBJECT-PIPELINE",
       "path": "standards/runtime/idea-object-pipeline.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The bounded Idea Object pipeline was implemented and verified for its declared Runtime-0.1 scope; it is not a universal object/control pipeline.",
+      "known_gaps": [
+        "capability remains intentionally bounded to declared IDEA_CAPTURE semantics rather than generalized pipeline authority"
+      ]
     }
   ],
   "bindings": [
@@ -267,6 +297,9 @@
       "registration": "standards/standards.yaml",
       "registration_token": "STD-DELIVERY-KERNEL",
       "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "implementation_tokens": [
+        "CEREBRO-STANDARD-DELIVERY-KERNEL-001"
+      ],
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
       "wiring_proof_kind": "STATIC_CALLSITE",
       "wiring_tokens": [
@@ -804,17 +837,115 @@
           "role": "EXECUTION_ONLY_NO_REASONING_POLICY"
         }
       ]
-    }
-  ],
-  "known_activation_debt": [
+    },
     {
-      "id": "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE",
-      "standard_id": "STD-CHANGE-ARCHITECTURE",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "blocking": false,
-      "rationale": "Host/Change Engine/Delivery Controller and Standard Delivery Kernel scope boundaries require explicit canonical classification."
+      "id": "CONTROLLED_TOOL_DISPATCH",
+      "expected_canonical_claims": 1,
+      "blocking": true,
+      "classification": "CONVERGED",
+      "rationale": "Host is the one controlled local entrypoint/dispatcher and supervisor; delegated tools do not acquire Host ownership.",
+      "claims": [
+        {
+          "claim_id": "HOST_CONTROLLED_DISPATCH",
+          "standard_id": "STD-CHANGE-ARCHITECTURE",
+          "canonical": true,
+          "implementation": "tooling/host/cerebro_host.py",
+          "role": "ENTRYPOINT_DISPATCH_SUPERVISION"
+        },
+        {
+          "claim_id": "CHANGE_ENGINE_DELEGATE",
+          "standard_id": "STD-CHANGE-ARCHITECTURE",
+          "canonical": false,
+          "implementation": "tooling/change/change_engine.py",
+          "role": "DELEGATED_CHANGE_CAMPAIGN"
+        },
+        {
+          "claim_id": "STANDARD_KERNEL_EXECUTOR",
+          "standard_id": "STD-DELIVERY-KERNEL",
+          "canonical": false,
+          "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "role": "EXECUTOR_NOT_GENERAL_DISPATCHER"
+        }
+      ]
+    },
+    {
+      "id": "CHANGE_CAMPAIGN_ASSURANCE",
+      "expected_canonical_claims": 1,
+      "blocking": true,
+      "classification": "CONVERGED",
+      "rationale": "Change Engine is the one owner of candidate development campaigns, failure-family analysis and stability assurance.",
+      "claims": [
+        {
+          "claim_id": "CHANGE_ENGINE_CAMPAIGN_ASSURANCE",
+          "standard_id": "STD-CHANGE-ARCHITECTURE",
+          "canonical": true,
+          "implementation": "tooling/change/change_engine.py",
+          "role": "CHANGE_DEVELOPMENT_AND_ASSURANCE"
+        },
+        {
+          "claim_id": "HOST_DISPATCH_ONLY",
+          "standard_id": "STD-CHANGE-ARCHITECTURE",
+          "canonical": false,
+          "implementation": "tooling/host/cerebro_host.py",
+          "role": "DISPATCH_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "FULL_WORKING_SOURCE_TRANSACTION",
+      "expected_canonical_claims": 1,
+      "blocking": true,
+      "classification": "CONVERGED",
+      "rationale": "Delivery Controller owns the FULL bounded Working Source transaction path; the sealed STANDARD kernel is a distinct user-local execution path.",
+      "claims": [
+        {
+          "claim_id": "FULL_DELIVERY_CONTROLLER",
+          "standard_id": "STD-CHANGE-ARCHITECTURE",
+          "canonical": true,
+          "implementation": "tooling/delivery/delivery_controller.py",
+          "role": "FULL_TRANSACTION_OWNER"
+        },
+        {
+          "claim_id": "STANDARD_KERNEL_NOT_FULL",
+          "standard_id": "STD-DELIVERY-KERNEL",
+          "canonical": false,
+          "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "role": "STANDARD_ONLY"
+        }
+      ]
+    },
+    {
+      "id": "SEALED_STANDARD_SOURCE_PATCH_EXECUTION",
+      "expected_canonical_claims": 1,
+      "blocking": true,
+      "classification": "CONVERGED",
+      "rationale": "The Standard Delivery Kernel is the one runtime owner for new sealed STANDARD Source patches; Host dispatch and FULL Delivery Controller remain separate.",
+      "claims": [
+        {
+          "claim_id": "STANDARD_DELIVERY_KERNEL_EXECUTION",
+          "standard_id": "STD-DELIVERY-KERNEL",
+          "canonical": true,
+          "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "role": "SEALED_STANDARD_EXECUTION_OWNER"
+        },
+        {
+          "claim_id": "HOST_STANDARD_NONOWNER",
+          "standard_id": "STD-CHANGE-ARCHITECTURE",
+          "canonical": false,
+          "implementation": "tooling/host/cerebro_host.py",
+          "role": "DISPATCH_ONLY"
+        },
+        {
+          "claim_id": "FULL_CONTROLLER_STANDARD_NONOWNER",
+          "standard_id": "STD-CHANGE-ARCHITECTURE",
+          "canonical": false,
+          "implementation": "tooling/delivery/delivery_controller.py",
+          "role": "FULL_ONLY"
+        }
+      ]
     }
   ],
+  "known_activation_debt": [],
   "resolved_activation_debt": [
     {
       "id": "STANDARD_DIAGNOSTIC_CANONICAL_CONVERGENCE",
@@ -835,6 +966,16 @@
       "id": "RELEVANCE_WISDOM_AUTOMATIC_CALL_PATH",
       "resolved_by_patch": "CEREBRO-RELEVANCE-MATERIAL-COMMITMENT-CONVERGENCE-001",
       "resolution": "Current-Wisdom retrieval, coverage/conflict/freshness semantics and MCP consumption are wired to the normal Standard Delivery MATERIAL_EXECUTE and GOVERNING_PUBLISH path; activation probe is separate evidence and Runtime remains execution-only."
+    },
+    {
+      "id": "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE",
+      "resolved_by_patch": "PATCH-ACTIVATION-ARCH-001",
+      "resolution": "Host, Change Engine, FULL Delivery Controller and sealed STANDARD Delivery Kernel now have explicit non-overlapping canonical ownership, with publication remaining owned by cerebro_sync."
+    },
+    {
+      "id": "REMAINING_SEMANTIC_ACTIVATION_SWEEP",
+      "resolved_by_patch": "PATCH-ACTIVATION-ARCH-002",
+      "resolution": "All required standards now have explicit traced activation dispositions; semantic-review placeholders are removed without falsely promoting policy or partially operational contracts."
     }
   ]
 }

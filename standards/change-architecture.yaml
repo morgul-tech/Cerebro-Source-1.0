@@ -2,10 +2,10 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-ARCHITECTURE
   name: Cerebro Change Architecture Standard
-  version: 0.1.0
+  version: 0.2.0
   status: approved
   authority: authoritative
-  scope: Definition of the stable Host, versioned Change Engine, Development Lab, failure knowledge, stability gating, and change execution boundaries.
+  scope: Definition of the stable Host, versioned Change Engine, Development Lab, failure knowledge, stability gating, and non-overlapping change execution boundaries.
   consumers:
     - host
     - change-engine
@@ -31,7 +31,7 @@ architecture:
 components:
   host:
     kind: TOOLING
-    role: stable-minimal-local-entrypoint
+    role: stable-minimal-local-entrypoint-and-dispatcher
     authority: NON_AUTHORITATIVE
     responsibilities:
       - resolve-working-source
@@ -40,6 +40,7 @@ components:
       - materialize-or-reuse-immutable-tooling-snapshot
       - delegate-command-with-live-output
       - dispatch-versioned-delivery-controller
+      - supervise-delegated-native-operations
     prohibited:
       - parse-roadmap
       - interpret-Source-policy
@@ -48,10 +49,11 @@ components:
       - own-quality-policy
       - own-publication-policy
       - own-runtime-transition-semantics
+      - own-SEALED-STANDARD-Source-patch-execution
 
   change_engine:
     kind: TOOLING
-    role: versioned-change-execution-and-assurance
+    role: versioned-change-development-campaign-and-assurance
     authority: DERIVED_IMPLEMENTATION
     execution_surface: immutable-tooling-snapshot
     responsibilities:
@@ -69,10 +71,11 @@ components:
       - mutate-Source-from-Runtime
       - bypass-Quality-Gate
       - bypass-cerebro_sync
+      - own-SEALED-STANDARD-publication-transport
 
   delivery_controller:
     kind: TOOLING
-    role: bounded-working-source-transaction
+    role: full-profile-bounded-working-source-transaction
     authority: DERIVED_IMPLEMENTATION
     contract_ref: standards/change-delivery.yaml
     responsibilities:
@@ -88,6 +91,63 @@ components:
       - choose-architecture
       - publish-or-commit-source
       - overwrite-unknown-concurrent-state
+      - own-new-SEALED-STANDARD-runtime-execution
+
+  standard_delivery_kernel:
+    kind: TOOLING
+    role: canonical-sealed-standard-user-local-source-patch-execution
+    authority: DERIVED_IMPLEMENTATION
+    contract_refs:
+      - standards/delivery-kernel.yaml
+      - standards/change-delivery.yaml
+      - standards/change-delivery-convergence.yaml
+    responsibilities:
+      - verify-sealed-STANDARD-profile-and-execution-contract
+      - verify-exact-working-source-and-remote-baseline
+      - run-material-commitment-preflight
+      - preserve-verified-bounded-backup
+      - install-exact-final-payload-bytes
+      - verify-installed-byte-identity
+      - run-active-source-integrity-closure
+      - run-contract-activation-closure-and-audit
+      - invoke-canonical-cerebro_sync
+      - independently-verify-local-remote-commit-equality
+      - emit-deterministic-delivery-receipt
+    prohibited:
+      - choose-architecture
+      - generate-Source-content
+      - own-MCP-control-policy
+      - own-Runtime-reasoning-policy
+      - own-FULL-controlled-workspace-transaction-path
+
+execution_ownership_convergence:
+  introduced_by:
+    - PATCH-ACTIVATION-ARCH-001
+    - PATCH-ACTIVATION-ARCH-002
+  invariant: ONE_CANONICAL_OWNER_PER_EXECUTION_RESPONSIBILITY
+  responsibilities:
+    controlled_tool_dispatch:
+      canonical_owner: HOST
+      implementation: tooling/host/cerebro_host.py
+    change_campaign_assurance:
+      canonical_owner: CHANGE_ENGINE
+      implementation: tooling/change/change_engine.py
+    full_working_source_transaction:
+      canonical_owner: DELIVERY_CONTROLLER
+      implementation: tooling/delivery/delivery_controller.py
+    sealed_standard_source_patch_execution:
+      canonical_owner: STANDARD_DELIVERY_KERNEL
+      implementation: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    source_publication:
+      canonical_owner: CEREBRO_SYNC
+      implementation: tooling/builder/templates/pshell/cerebro_sync.ps1
+  separation:
+    - Host-dispatch-does-not-imply-transaction-ownership
+    - Change-Engine-development-does-not-imply-publication-transport-ownership
+    - FULL-and-STANDARD-transaction-paths-remain-distinct
+    - Delivery-Controller-does-not-publish
+    - Standard-Delivery-Kernel-does-not-own-FULL-workspace-transactions
+    - MCP-control-authority-remains-separate-from-execution-ownership
 
 change_model:
   capsule:
@@ -299,4 +359,16 @@ rules:
     priority: critical
   - id: STD-CHANGE-R009
     statement: Change assurance, diagnostics, delivery observations, and failure learning shall exchange operational evidence through STD-OPERATIONAL-EVIDENCE rather than component-specific incompatible evidence shapes.
+    priority: critical
+  - id: STD-CHANGE-R010
+    statement: Host is the canonical controlled local entrypoint and dispatcher, not a parallel STANDARD Source patch execution owner.
+    priority: critical
+  - id: STD-CHANGE-R011
+    statement: Change Engine owns change development, campaign assurance and failure-learning semantics, not canonical STANDARD publication transport.
+    priority: critical
+  - id: STD-CHANGE-R012
+    statement: Delivery Controller owns the FULL bounded Working Source transaction path, while the Standard Delivery Kernel owns new sealed STANDARD user-local Source patch execution; the two paths shall remain distinct.
+    priority: critical
+  - id: STD-CHANGE-R013
+    statement: Source publication remains owned by canonical cerebro_sync and shall not be duplicated by Host, Change Engine or Delivery Controller.
     priority: critical

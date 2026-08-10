@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-SOURCE
   name: Cerebro Source Authority Standard
-  version: 0.2.0
+  version: 0.3.0
   status: approved
   authority: authoritative
   scope: Authority, derivation, reproducibility, and control-authority boundaries for Cerebro Source 1.0.
@@ -79,7 +79,14 @@ rules:
   - handoff resume verifies exact Source commit and hashes.
   - boot authority preflight uses REJECT_INPUT_CONTINUE_CURRENT_SOURCE for stale derived state.
 - id: STD-SOURCE-R012
-  statement: Cerebro may be reported operational only from a fresh ACTIVE_CONTROL_TRANSFERRED receipt bound to the current authoritative Source commit.
+  statement: CEREBRO_SOURCE_OPERATIONAL may be reported when authoritative Source identity, current branch HEAD, exact commit and boot-critical contracts are freshly verified; this universal Source state does not require local Working Source or local Runtime access.
   priority: critical
   verification:
-  - runtime bootstrap receipt contains the current Source commit and operational state.
+  - mcp/boot-architecture-control.yaml defines CEREBRO_SOURCE_OPERATIONAL as the universal green Source state.
+  - standards/boot-critical-path-architecture.yaml treats unavailable local capabilities as EXPECTED_CAPABILITY_ABSENCE.
+- id: STD-SOURCE-R013
+  statement: LOCAL_MACHINE_OPERATIONAL_VERIFIED is an additional capability-conditioned state and requires current-commit-bound Working Source equality, Runtime control transfer and independent machine evidence.
+  priority: critical
+  verification:
+  - mcp/boot-architecture-control.yaml separates local machine verification from universal Source boot.
+  - standards/boot-critical-path-architecture.yaml requires local equality, Runtime control transfer and machine proof when those capabilities are available.
