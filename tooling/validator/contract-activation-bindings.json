@@ -26,8 +26,7 @@
       "classification": "PARTIALLY_OPERATIONAL",
       "rationale": "Core control architecture is active, but several subordinate activation paths remain unresolved.",
       "known_gaps": [
-        "relevance/wisdom automatic call-path proof",
-        "Active Source Closure patch-close wiring"
+        "relevance/wisdom automatic call-path proof"
       ]
     },
     {
@@ -221,11 +220,10 @@
     {
       "standard_id": "STD-ACTIVE-SOURCE-CLOSURE",
       "path": "standards/active-source-closure.yaml",
-      "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "Validator and full closure engine exist, but required-before-patch-close semantics are not wired into the current Standard Delivery Kernel.",
-      "known_gaps": [
-        "lightweight Active Source integrity closure is not invoked before Standard patch sync/close",
-        "full closure engine also spans release/system evidence and requires scope separation"
+      "classification": "OPERATIONAL",
+      "rationale": "Patch-close Source integrity is wired into Standard Delivery before Contract Activation Closure and canonical sync; full system/release closure remains event-scoped.",
+      "strict_contract_refs": [
+        "ACTIVE_SOURCE_INTEGRITY_CLOSURE"
       ]
     },
     {
@@ -386,6 +384,39 @@
         "success-resolves-related-canonical-capsules"
       ],
       "runtime_evidence_state": "SEPARATE_REQUIRES_PATCH_FAILURE_OR_RESOLUTION_OBSERVATION"
+    },
+    {
+      "id": "ACTIVE_SOURCE_INTEGRITY_CLOSURE",
+      "standard_id": "STD-ACTIVE-SOURCE-CLOSURE",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/active-source-closure.yaml",
+      "declaration_tokens": [
+        "patch_close_integrity_closure:",
+        "required_before_standard_patch_sync: true",
+        "full-system-release-closure-is-not-on-ordinary-patch-critical-path"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-ACTIVE-SOURCE-CLOSURE",
+      "implementation": "tooling/validator/Cerebro.ActiveSourceIntegrityClosure.ps1",
+      "implementation_tokens": [
+        "Invoke-CerebroActiveSourceIntegrityClosure",
+        "Get-CerebroActiveTrackedFiles",
+        "ASC_ACTIVE_SET_EMPTY"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
+      "wiring_tokens": [
+        "ACTIVE_SOURCE_INTEGRITY_CLOSURE",
+        "Invoke-CerebroActiveSourceIntegrityClosure",
+        "CONTRACT_ACTIVATION_CLOSURE"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "active-source-integrity-closure-runs-before-contract-activation-and-sync",
+        "active-source-integrity-set-is-nonempty-and-excludes-history",
+        "full-system-release-closure-is-not-on-standard-patch-critical-path"
+      ],
+      "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
     }
   ],
   "canonical_responsibilities": [
@@ -416,13 +447,6 @@
   ],
   "known_activation_debt": [
     {
-      "id": "ACTIVE_SOURCE_CLOSURE_PATCH_CLOSE",
-      "standard_id": "STD-ACTIVE-SOURCE-CLOSURE",
-      "classification": "ACTIVATION_GAP",
-      "blocking": false,
-      "rationale": "Source declares Active Source Closure required before patch close, but current Standard Delivery Kernel does not invoke it."
-    },
-    {
       "id": "CHANGE_DELIVERY_KERNEL_CONVERGENCE",
       "standard_id": "STD-CHANGE-DELIVERY",
       "classification": "PARTIALLY_OPERATIONAL",
@@ -449,6 +473,11 @@
       "id": "STANDARD_DIAGNOSTIC_CANONICAL_CONVERGENCE",
       "resolved_by_patch": "CEREBRO-DIAGNOSTIC-CONVERGENCE-001",
       "resolution": "Removed parallel canonical launcher diagnostic store. Standard Delivery captures through diagnostic_capsule.py and exposes CEREBRO_PATCH_FAIL.json as a derived bounded transport view."
+    },
+    {
+      "id": "ACTIVE_SOURCE_CLOSURE_PATCH_CLOSE",
+      "resolved_by_patch": "CEREBRO-ACTIVE-SOURCE-CLOSURE-CONVERGENCE-001",
+      "resolution": "Split lightweight patch-close Source integrity from full system/release closure and wired the lightweight closure before Contract Activation Closure and canonical sync."
     }
   ]
 }

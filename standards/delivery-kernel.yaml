@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.4"
+  version: "1.5"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -140,6 +140,15 @@ delivery_kernel:
     every_execution_recorded: true
     pass_and_fail_retained: true
     attempt_id_propagated_to_kernel: true
+
+  active_source_integrity_closure:
+    contract: standards/active-source-closure.yaml#patch_close_integrity_closure
+    implementation: tooling/validator/Cerebro.ActiveSourceIntegrityClosure.ps1
+    deterministic_validator: tooling/validator/cerebro_active_source_closure.ps1
+    required_before_contract_activation_closure: true
+    required_before_canonical_sync: true
+    history_excluded_from_active_set: true
+    full_system_release_closure_on_standard_patch_path: false
 
   activation_closure:
     contract: standards/contract-activation-closure.yaml

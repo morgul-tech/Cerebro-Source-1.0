@@ -403,6 +403,20 @@ function Invoke-Apply {
             }
         }
 
+        $State.ReachedStage = 'ACTIVE_SOURCE_INTEGRITY_CLOSURE'
+        $ascScript = Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\validator\Cerebro.ActiveSourceIntegrityClosure.ps1'
+        if(-not(Test-Path -LiteralPath $ascScript -PathType Leaf)){
+            $State.FailureFamily = 'ACTIVE_SOURCE_CLOSURE_MISSING'
+            throw 'ACTIVE_SOURCE_INTEGRITY_CLOSURE_NOT_FOUND'
+        }
+
+        . $ascScript
+        $ascResult = Invoke-CerebroActiveSourceIntegrityClosure -Root $WorkingSourcePath
+        if([string]$ascResult.result -ne 'PASS'){
+            $State.FailureFamily = 'ACTIVE_SOURCE_CLOSURE_FAILURE'
+            throw ('ACTIVE_SOURCE_INTEGRITY_CLOSURE_FAILED:{0}' -f @($ascResult.findings).Count)
+        }
+
         $State.ReachedStage = 'CONTRACT_ACTIVATION_CLOSURE'
         $cacScript = Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\validator\cerebro_contract_activation_closure.ps1'
         if (Test-Path -LiteralPath $cacScript -PathType Leaf) {

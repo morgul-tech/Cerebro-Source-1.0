@@ -79,6 +79,7 @@ standards:
 tooling:
   builder: tooling/builder/
   validator: tooling/validator/
+  active_source_integrity_closure: tooling/validator/Cerebro.ActiveSourceIntegrityClosure.ps1
   runtime_host: tooling/runtime-host/
   publisher: tooling/publisher/
   host: tooling/host/
