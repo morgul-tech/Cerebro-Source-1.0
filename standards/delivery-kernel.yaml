@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.8"
+  version: "1.9"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -37,6 +37,25 @@ delivery_kernel:
       allowed_only_when_package_creates_canonical_preflight_implementation: true
       governing_publish_gate_after_install_required: true
     activation_probe_substitutes_for_normal_call_path: false
+
+  source_hygiene:
+    python_validation_execution:
+      bytecode_write_mode: PROHIBITED
+      interpreter_no_bytecode_flag: REQUIRED
+      dynamic_Source_import_must_restore_interpreter_state: true
+    transient_recovery:
+      allowed_before_clean_worktree_gate: true
+      removable_scope: UNTRACKED___PYCACHE___PYTHON_BYTECODE_ONLY
+      tracked_file_deletion: PROHIBITED
+      path_escape: PROHIBITED
+      cleanup_must_be_followed_by_normal_clean_worktree_gate: true
+    post_python_gate:
+      untracked_Source_bytecode_effect: FAIL
+      applies_after:
+        - MATERIAL_EXECUTE_PREFLIGHT
+        - GOVERNING_PUBLISH_PREFLIGHT
+        - ACTIVATION_PROBES
+    invariant: SOURCE_VALIDATION_MUST_NOT_DIRTY_THE_SOURCE_IT_VALIDATES
 
   architecture:
     patch_specific_semantics: FINISHED_PAYLOAD_BYTES

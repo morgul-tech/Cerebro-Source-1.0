@@ -22,6 +22,7 @@ $State = [ordered]@{
     BackupDirectory = $null
     Manifest = $null
     ActivationProofs = @()
+    TransientCleanup = @()
 }
 
 function Get-Sha256 {
@@ -227,7 +228,7 @@ function Resolve-PythonRunner {
         try {
             $command=Get-Command $name -ErrorAction Stop | Select-Object -First 1
             if(-not[string]::IsNullOrWhiteSpace($command.Source)){
-                return [pscustomobject]@{Executable=$command.Source;PrefixArgs=@()}
+                return [pscustomobject]@{Executable=$command.Source;PrefixArgs=@('-B')}
             }
         }
         catch {}
@@ -235,7 +236,7 @@ function Resolve-PythonRunner {
     try {
         $command=Get-Command 'py.exe' -ErrorAction Stop | Select-Object -First 1
         if(-not[string]::IsNullOrWhiteSpace($command.Source)){
-            return [pscustomobject]@{Executable=$command.Source;PrefixArgs=@('-3')}
+            return [pscustomobject]@{Executable=$command.Source;PrefixArgs=@('-3','-B')}
         }
     }
     catch {}
@@ -257,6 +258,59 @@ function Test-ManifestCreatesPath {
         if([string]$entry.operation -eq 'create' -and [string]$entry.path -eq $RelativePath){return $true}
     }
     return $false
+}
+
+
+function Get-UntrackedPythonBytecodeArtifacts {
+    param([Parameter(Mandatory=$true)][string]$GitPath)
+
+    $status=(Invoke-Git -GitPath $GitPath -ArgumentList @('status','--porcelain','--untracked-files=all')).Stdout
+    $result=@()
+    foreach($line in @($status -split "`r?`n")){
+        if([string]::IsNullOrWhiteSpace($line) -or -not $line.StartsWith('?? ')){continue}
+        $relative=$line.Substring(3).Trim()
+        $normalized=$relative.Replace('\','/')
+        if($normalized -match '(^|/)__pycache__/[^/]+\.py[co]$'){
+            $result += $normalized
+        }
+    }
+    return @($result | Sort-Object -Unique)
+}
+
+function Remove-UntrackedPythonBytecodeArtifacts {
+    param([Parameter(Mandatory=$true)][string]$GitPath)
+
+    $removed=@()
+    foreach($relative in @(Get-UntrackedPythonBytecodeArtifacts -GitPath $GitPath)){
+        $tracked=Invoke-Git -GitPath $GitPath -ArgumentList @('ls-files','--error-unmatch','--',$relative) -AllowedExitCodes @(0,1,128)
+        if($tracked.ExitCode -eq 0){
+            $State.FailureFamily='SOURCE_HYGIENE_SAFETY'
+            throw ('REFUSE_TO_DELETE_TRACKED_PYTHON_BYTECODE:{0}' -f $relative)
+        }
+
+        $candidate=[IO.Path]::GetFullPath((Join-Path $WorkingSourcePath ($relative -replace '/','\')))
+        $root=[IO.Path]::GetFullPath($WorkingSourcePath).TrimEnd('\') + '\'
+        if(-not $candidate.StartsWith($root,[StringComparison]::OrdinalIgnoreCase)){
+            $State.FailureFamily='SOURCE_HYGIENE_SAFETY'
+            throw ('PYTHON_BYTECODE_PATH_ESCAPES_SOURCE:{0}' -f $relative)
+        }
+
+        if(Test-Path -LiteralPath $candidate -PathType Leaf){
+            Remove-Item -LiteralPath $candidate -Force
+            $removed += $relative
+        }
+    }
+    return @($removed)
+}
+
+function Assert-NoUntrackedPythonBytecodeArtifacts {
+    param([Parameter(Mandatory=$true)][string]$GitPath,[Parameter(Mandatory=$true)][string]$Stage)
+
+    $hits=@(Get-UntrackedPythonBytecodeArtifacts -GitPath $GitPath)
+    if($hits.Count -gt 0){
+        $State.FailureFamily='PYTHON_SOURCE_HYGIENE'
+        throw ('PYTHON_BYTECODE_WRITTEN_TO_WORKING_SOURCE:{0}:{1}' -f $Stage,($hits -join ','))
+    }
 }
 
 function Invoke-MaterialCommitmentPreflightGate {
@@ -494,6 +548,12 @@ function Invoke-Apply {
             $State.FailureFamily = 'WRONG_REMOTE'
             throw ('REMOTE_MISMATCH:{0}' -f $remoteUrl)
         }
+        $State.ReachedStage = 'TRANSIENT_SOURCE_HYGIENE'
+        $cleanedBytecode=@(Remove-UntrackedPythonBytecodeArtifacts -GitPath $gitPath)
+        if($cleanedBytecode.Count -gt 0){
+            $State.TransientCleanup=$cleanedBytecode
+        }
+
         $dirty = (Invoke-Git -GitPath $gitPath -ArgumentList @('status','--porcelain','--untracked-files=all')).Stdout
         if (-not [string]::IsNullOrWhiteSpace($dirty)) {
             $State.FailureFamily = 'DIRTY_WORKTREE'
@@ -558,6 +618,7 @@ function Invoke-Apply {
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_EXECUTE'
         $executeEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_EXECUTE_PREFLIGHT.json'
         [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'MATERIAL_EXECUTE' -SourceIdentity $localHead -EvidencePath $executeEvidence -AllowBootstrapDefer)
+        Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'MATERIAL_EXECUTE'
 
         $State.ReachedStage = 'BACKUP'
         $backupRoot = 'D:\Cerebro\Backups'
@@ -624,8 +685,10 @@ function Invoke-Apply {
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_PUBLISH'
         $publishEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'
         [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'GOVERNING_PUBLISH' -SourceIdentity $localHead -EvidencePath $publishEvidence)
+        Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'GOVERNING_PUBLISH'
 
         Invoke-DeclaredActivationProbes -PatchManifest $State.Manifest
+        Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'ACTIVATION_PROBES'
 
         $State.ReachedStage = 'CONTRACT_ACTIVATION_CLOSURE'
         $cacScript = Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\validator\cerebro_contract_activation_closure.ps1'

@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "1.8"
+  version: "1.9"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -67,6 +67,9 @@ delivery_failure_regression:
   - STANDARD_MATERIAL_EXECUTE_PREFLIGHT_BYPASS
   - STANDARD_GOVERNING_PUBLISH_PREFLIGHT_BYPASS
   - PYTHON_PAYLOAD_NOT_COMPILED_BEFORE_MUTATION
+  - PYTHON_VALIDATION_WRITES_WORKING_SOURCE_BYTECODE
+  - PYTHON_BYTECODE_TRANSIENT_CLEANUP_DELETES_TRACKED_SOURCE
+  - PYTHON_BYTECODE_SOURCE_HYGIENE_REGRESSION
 
   mandatory_pre_delivery_gates:
   - native-PowerShell-parser-zero-errors
@@ -161,6 +164,16 @@ delivery_failure_regression:
   - engine-selftest-alone-does-not-prove-operational
   - activation-probes-optional-manifest-field-is-StrictMode-safe
   - legacy-standard-bundle-without-activation-probes-remains-valid
+
+  - Python-Source-validation-runs-with-bytecode-writing-disabled
+  - relevance-dynamic-import-does-not-create-Source-__pycache__
+  - only-untracked-__pycache__-bytecode-may-be-cleaned-before-worktree-gate
+  - tracked-Source-is-never-deleted-by-transient-bytecode-cleanup
+  - cleanup-is-bounded-to-Working-Source-and-cannot-path-escape
+  - normal-clean-worktree-gate-runs-after-transient-bytecode-cleanup
+  - material-execute-preflight-leaves-no-untracked-Python-bytecode
+  - governing-publish-preflight-leaves-no-untracked-Python-bytecode
+  - activation-probes-leave-no-untracked-Python-bytecode
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the

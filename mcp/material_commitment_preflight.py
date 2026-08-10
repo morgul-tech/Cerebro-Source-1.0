@@ -69,12 +69,17 @@ def source_state_fingerprint(root: Path, paths: list[str] | None = None) -> str:
 
 def load_relevance_engine(root: Path):
     path = root / "tooling/context/relevance_engine.py"
-    spec = importlib.util.spec_from_file_location("cerebro_relevance_engine", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError("relevance-engine-load-failed")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        spec = importlib.util.spec_from_file_location("cerebro_relevance_engine", path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError("relevance-engine-load-failed")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        sys.dont_write_bytecode = previous
 
 
 def authoritative_source_identity(root: Path, request: dict[str, Any]) -> str:
@@ -428,6 +433,8 @@ def selftest(root: Path = SOURCE_ROOT) -> dict[str, Any]:
         fixture_engine_target.write_bytes((root / "tooling/context/relevance_engine.py").read_bytes())
         consumed = consume(request, first["receipt"], fixture)
         check("fresh-receipt-consumed", consumed["result"] == "PASS" and consumed["receipt_consumed"])
+        bytecode_hits = list(fixture.rglob("__pycache__/*.pyc"))
+        check("relevance-import-does-not-write-bytecode", not bytecode_hits)
         changed_intent = dict(request)
         changed_intent["resolved_intent"] = "authorize a materially different implementation"
         intent_stale = consume(changed_intent, first["receipt"], fixture)
