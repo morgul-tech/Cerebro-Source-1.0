@@ -74,6 +74,28 @@ session_handoff:
     success_effect: session_ready_for_continuation
     failure_effect: no_project_mutation
 
+  diagnostic_continuity:
+    introduced_by: PATCH-007.PRE-004
+    authority: EVIDENCE_ONLY
+    active_unresolved_diagnostic:
+      may_be_referenced: true
+      full_capsule_embedded: false
+      reference_fields:
+        - capsule_id
+        - capsule_fingerprint
+        - local_capsule_ref_when_same_machine
+        - subject_ref
+        - state
+    resume_order:
+      - verify_authoritative_source_and_session_basis
+      - rehydrate_active_unresolved_diagnostic_when_available
+      - assess_relevance_to_resumed_operation
+      - keep_diagnostic_evidence_outside_authority_resolution
+    transport:
+      bounded_diagnostic_transport_may_accompany_handoff: true
+      full_local_diagnostic_store_remains_local: true
+    invariant: SESSION_HANDOFF_MAY_REFERENCE_DIAGNOSTIC_EVIDENCE_BUT_DIAGNOSTIC_EVIDENCE_DOES_NOT_BECOME_SESSION_OR_SOURCE_AUTHORITY
+
   minimum_storage_principle:
     preserve:
       - authority

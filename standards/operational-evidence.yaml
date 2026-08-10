@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-OPERATIONAL-EVIDENCE
   name: Cerebro Operational Evidence Standard
-  version: 0.1.0
+  version: 0.2.0
   status: approved
   authority: authoritative
   scope: Bounded machine-readable operational evidence for control, change, delivery, validation, diagnostics, recovery, and learning.
@@ -178,6 +178,122 @@ privacy_and_redaction:
     full_artifact_may_remain_local: true
     chat_or_handoff_envelope: BOUNDED_REDACTED_MACHINE_RELEVANT
     preserve_reference_to_full_artifact_when_available: true
+
+diagnostic_capsule_contract:
+  introduced_by: PATCH-007.PRE-004
+  status: ACTIVE
+  artifact_kind: ARTIFACT
+  content_kind: EVIDENCE
+  authority: EVIDENCE_ONLY
+  implementation_ref: tooling/host/diagnostic_capsule.py
+  purpose:
+    - persist_failure_evidence_before_operation_exit
+    - remove_user_from_failure_reconstruction_and_log_selection
+    - rehydrate_unresolved_failure_context_automatically
+    - provide_one_evidence_source_for_recovery_and_later_failure_learning
+  local_store:
+    authority: RUNTIME_DERIVED
+    default_root: LOCALAPPDATA/Cerebro/diagnostics
+    source_mutation: PROHIBITED
+    structure:
+      registry: registry.json
+      active_pointer: active.json
+      capsules: capsules/<capsule_id>/
+      full_capsule: full.json
+      bounded_transport: transport.json
+      fallback_inbox: inbox/
+    persistence:
+      atomic_metadata_writes: true
+      unresolved_capsules_are_retained: true
+      resolved_capsules_retain_repair_traceability: true
+  capsule:
+    schema_id: cerebro-diagnostic-capsule/v0.1
+    lifecycle:
+      - UNRESOLVED
+      - RESOLVED
+    core_fields:
+      - capsule_id
+      - subject
+      - failure
+      - execution
+      - repository_observation
+      - artifacts
+      - acquisition
+      - evidence_refs
+      - privacy
+      - resolution
+    failure_separation:
+      probe_status_is_distinct_from_subject_result: true
+      detection_is_not_root_cause: true
+      diagnostic_capture_failure_does_not_replace_primary_failure: true
+  automatic_capture:
+    applies_to:
+      - STANDARD_local_runner_failure
+      - Host_supervised_operation_failure
+      - Change_or_Delivery_failure_when_execution_context_is_available
+    required_before_failure_exit_when_possible: true
+    runner_seed_is_machine_readable: true
+    canonical_synthesis_reads_working_source_only: true
+    canonical_synthesis_mutates_working_source: false
+    fallback:
+      when_diagnostic_tool_is_unavailable_or_fails: persist_minimal_seed_outside_source
+      primary_failure_remains_terminal_failure: true
+  automatic_rehydration:
+    owner: tooling.host
+    before_delegated_cerebro_operation: true
+    active_unresolved_capsule_is_loaded: true
+    environment_binding:
+      - CEREBRO_DIAGNOSTIC_CONTEXT_STATUS
+      - CEREBRO_ACTIVE_DIAGNOSTIC_CAPSULE
+      - CEREBRO_ACTIVE_DIAGNOSTIC_ID
+      - CEREBRO_ACTIVE_DIAGNOSTIC_FINGERPRINT
+    consumer_behavior:
+      - treat_as_evidence_basis_not_policy
+      - preserve_when_related_to_current_operation
+      - PRE_005_may_bind_relevant_learning_and_regressions
+  progressive_acquisition:
+    CORE:
+      - failure_stage_and_detection
+      - bounded_exception_and_stack
+      - exit_status_when_available
+      - mutation_sync_backup_state
+      - exact_local_head_and_branch
+      - remote_main_head_when_available
+      - machine_parsed_changed_paths
+      - diff_check
+      - launcher_bundle_manifest_identity_when_supplied
+      - exact_operation_journal_ref_when_supplied
+      - runner_transcript_when_explicitly_available
+    TARGETED_EXPANSION:
+      - probes_needed_to_resolve_specific_mismatch_or_failure_family
+    DEEP:
+      - bounded_additional_artifacts_when_material_uncertainty_remains
+  transport:
+    full_local_capsule_is_primary_machine_evidence: true
+    bounded_transport_is_derived_view_of_same_capsule: true
+    direct_machine_bridge_is_preferred_when_available: true
+    human_copy_or_paste_is_fallback_transport_only: true
+    user_interpretation_or_log_selection_required: false
+    full_capsule_in_chat_by_default: false
+  privacy:
+    collect_environment_dump: false
+    redact_secret_key_names: true
+    redact_known_token_patterns: true
+    bounded_text: true
+    full_local_capsule_is_still_minimized: true
+  resolution:
+    successful_related_repair_may_mark_capsules_RESOLVED: true
+    resolution_requires_resulting_commit: true
+    resolution_does_not_delete_failure_evidence: true
+  invariants:
+    - PATCH_FAILURE_MUST_PERSIST_MACHINE_READABLE_EVIDENCE_BEFORE_EXIT_WHEN_POSSIBLE
+    - UNRESOLVED_FAILURE_EVIDENCE_MUST_BE_AUTO_REHYDRATED_BEFORE_NEXT_CEREBRO_OPERATION
+    - USER_IS_NOT_THE_DIAGNOSTIC_TRANSPORT_PROCESSOR
+    - USER_MUST_NOT_RECONSTRUCT_OR_INTERPRET_FAILURE_OUTPUT
+    - DIAGNOSTIC_EVIDENCE_IS_NOT_SOURCE_AUTHORITY
+    - DIAGNOSTICS_CLASSIFY_AND_PRESERVE_EVIDENCE_BUT_DO_NOT_OWN_RECOVERY_POLICY
+    - RESOLVED_FAILURE_RETAINS_TRACEABILITY_TO_REPAIR_AND_RESULTING_COMMIT
+    - DIAGNOSTIC_CAPTURE_FAILURE_MUST_NOT_MASK_PRIMARY_OPERATION_FAILURE
 
 mismatch_semantics:
   parent_pattern: EXPECTED_OBSERVED_STATE_MISMATCH

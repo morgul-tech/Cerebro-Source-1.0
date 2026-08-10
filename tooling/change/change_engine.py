@@ -24,7 +24,7 @@ except Exception as exc:  # pragma: no cover
 SCHEMA_ID = "cerebro-change-capsule/v0.2"
 REPORT_SCHEMA = "cerebro-change-campaign-report/v0.1"
 KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.1"
-ENGINE_VERSION = "0.3.1"
+ENGINE_VERSION = "0.3.2"
 
 PROFILE_RUNS = {"FAST": 1, "STANDARD": 2, "DEEP": 3}
 
@@ -89,6 +89,38 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ChangeError("INVALID_CAPSULE", f"expected JSON object: {path}")
     return data
+
+
+def rehydrated_diagnostic_basis() -> dict[str, Any] | None:
+    path_value = os.environ.get("CEREBRO_ACTIVE_DIAGNOSTIC_CAPSULE")
+    status = os.environ.get("CEREBRO_DIAGNOSTIC_CONTEXT_STATUS", "NONE")
+    if not path_value:
+        return None if status == "NONE" else {"status": status, "path": None}
+    path = Path(path_value)
+    try:
+        capsule = load_json(path)
+        return {
+            "status": status,
+            "capsule_id": capsule.get("capsule_id"),
+            "state": capsule.get("state"),
+            "path": str(path),
+            "subject": capsule.get("subject", {}),
+            "failure": {
+                "stage": capsule.get("failure", {}).get("stage"),
+                "detection": capsule.get("failure", {}).get("detection"),
+                "subject_result": capsule.get("failure", {}).get("subject_result"),
+            },
+            "authority": "EVIDENCE_ONLY",
+            "control_effect": "NONE_UNTIL_MCP_RELEVANCE_AND_RECOVERY_RESOLUTION",
+        }
+    except Exception as exc:
+        return {
+            "status": "ERROR",
+            "path": str(path),
+            "error": repr(exc),
+            "authority": "EVIDENCE_ONLY",
+            "control_effect": "NONE",
+        }
 
 
 def validate_manifest(manifest: dict[str, Any]) -> None:
@@ -461,6 +493,7 @@ def execute_campaigns(capsule_root: Path, source_repo: Path, manifest: dict[str,
         "stability_gate": gate,
         "blockers": blockers,
         "ready_to_lock": gate == "PASS",
+        "diagnostic_basis": rehydrated_diagnostic_basis(),
         "created_at": now(),
     }
     if knowledge_path is not None:

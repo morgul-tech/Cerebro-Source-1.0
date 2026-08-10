@@ -262,6 +262,32 @@ control_architecture:
       - user-is-not-default-process-diagnostic-controller
     regression_ref: CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001
 
+  diagnostic_state:
+    introduced_by: PATCH-007.PRE-004
+    contract_ref: standards/operational-evidence.yaml
+    authority: EVIDENCE_ONLY
+    persistent_store_authority: RUNTIME_DERIVED
+    capture_producers:
+      - standard-local-runner
+      - tooling.host
+      - tooling.change
+      - tooling.delivery
+    synthesis_implementation: tooling/host/diagnostic_capsule.py
+    rehydration_owner: tooling.host
+    recovery_resolution_owner: MCP
+    failure_learning_consumer: tooling.change
+    constraints:
+      - diagnostics-are-read-only-against-working-source
+      - diagnostics-classify-and-preserve-but-do-not-own-recovery-policy
+      - unresolved-capsule-is-rehydrated-before-delegated-operation
+      - diagnostic-capture-failure-does-not-mask-primary-failure
+      - user-is-not-default-log-selector-or-diagnostic-transport-processor
+      - bounded-transport-is-derived-from-the-same-local-capsule
+      - direct-machine-transport-may-replace-human-transport-without-changing-capsule-semantics
+    next_control_effect:
+      unresolved_relevant_failure: INCLUDE_IN_EVIDENCE_BASIS_AND_RESOLVE_RECOVERY
+      resolved_failure: PRESERVE_FOR_LEARNING_AND_TRACEABILITY
+
   operational_evidence:
     contract_ref: standards/operational-evidence.yaml
     authority: EVIDENCE_ONLY

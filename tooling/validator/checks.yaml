@@ -92,6 +92,47 @@ known_language_failure_loop_prevention:
     - READY-claim-based-only-on-patch-stat-or-numstat
     - silent-regeneration-of-unchanged-known-good-artifacts
 
+diagnostic_capsule_validation:
+  introduced_by: PATCH-007.PRE-004
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/operational-evidence.yaml
+    - standards/control-architecture.yaml
+    - standards/change-delivery.yaml
+  required_files:
+    - tooling/host/diagnostic_capsule.py
+    - tooling/host/cerebro_host.py
+    - tooling/host/component.yaml
+    - tooling/change/change_engine.py
+    - tooling/builder/builder.yaml
+  required_contracts:
+    - failure-evidence-is-persisted-outside-working-source
+    - diagnostic-capsule-is-EVIDENCE_ONLY
+    - full-local-and-bounded-transport-are-views-of-one-capsule
+    - unresolved-diagnostic-context-is-auto-rehydrated-before-delegation
+    - diagnostics-do-not-own-recovery-policy
+    - primary-failure-survives-diagnostic-capture-failure
+    - probe-failure-remains-distinct-from-subject-failure
+    - successful-related-repair-retains-resolution-commit-traceability
+    - user-is-not-required-to-select-or-interpret-failure-logs
+  required_canaries:
+    - diagnostic-tool-selftest-passes
+    - secret-patterns-are-redacted
+    - runner-transcript-is-bounded-and-local
+    - active-unresolved-capsule-is-rehydratable
+    - resolved-capsule-is-not-active
+    - fallback-seed-is-outside-source
+    - Host-dispatch-includes-diagnostics-capability
+    - Change-report-consumes-diagnostic-basis-without-policy-promotion
+  prohibited:
+    - diagnostic-store-inside-working-source
+    - diagnostic-evidence-as-source-authority
+    - automatic-recovery-policy-owned-by-diagnostics
+    - unbounded-environment-dump
+    - diagnostic-failure-masks-primary-failure
+    - user-as-default-diagnostic-transport-processor
+
 operation_supervision_validation:
   introduced_by: PATCH-007.PRE-003
   severity: error

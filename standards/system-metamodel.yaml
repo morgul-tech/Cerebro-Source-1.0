@@ -100,6 +100,27 @@ system_metamodel:
       statement: Gates are policy-defined decision contracts and are not components solely by being gates.
     - id: META-007
       statement: Historical entities may preserve superseded terminology without becoming active consumers.
+diagnostic_capsule_classification:
+  introduced_by: PATCH-007.PRE-004
+  canonical_kind: ARTIFACT
+  contains_kind: EVIDENCE
+  authority_scope: EVIDENCE_ONLY
+  storage_state: RUNTIME_DERIVED
+  lifecycle:
+    unresolved: TEMPORARY
+    resolved: HISTORICAL_EVIDENCE
+  ownership:
+    definitional_authority: Cerebro Source 1.0
+    operational_steward: tooling.host
+    control_resolution_owner: MCP
+    failure_learning_consumer: tooling.change
+  boundaries:
+    - diagnostic-capsule-does-not-create-policy
+    - diagnostic-capsule-does-not-create-source-authority
+    - local-runtime-persistence-does-not-promote-authority
+    - resolution-retains-evidence-traceability
+    - derived-transport-view-does-not-create-second-canonical-record
+
 temporary_definition_lifecycle:
   applies_to_lifecycle_state: TEMPORARY
   required_metadata:

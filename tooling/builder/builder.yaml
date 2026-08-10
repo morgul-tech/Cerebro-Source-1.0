@@ -125,6 +125,8 @@ standard_handoff_convergence:
     - validate_recovery_contract
     - validate_sealed_manifest_consumer_compatibility
     - validate_structural_placement_and_cardinality
+    - validate_diagnostic_failure_capture_contract
+    - validate_primary_failure_preservation_when_diagnostics_degrade
   failure_effect: BLOCK_HANDOFF
   execution_bridge:
     function: cpatch
@@ -135,6 +137,48 @@ standard_handoff_convergence:
   evidence:
     authority: EVIDENCE_ONLY
     output: HANDOFF_ASSURANCE_RECEIPT
+
+diagnostic_failure_capture:
+  introduced_by: PATCH-007.PRE-004
+  status: active
+  governing_contracts:
+    - standards/change-delivery.yaml
+    - standards/operational-evidence.yaml
+  applies_to: STANDARD_generated_launchers
+  required_runner_behavior:
+    - maintain-current-stage
+    - preserve-primary-exception
+    - create-machine-readable-failure-seed
+    - invoke-canonical-diagnostic-capture-when-available
+    - persist-minimal-fallback-seed-outside-source-when-unavailable
+    - keep-diagnostic-store-outside-working-source
+    - preserve-bounded-rollback
+    - resolve-related-capsules-on-success-when-available
+  required_seed_identity:
+    - patch_id
+    - revision
+    - baseline_commit
+    - bundle_filename
+    - bundle_sha256
+    - launcher_filename
+  required_failure_evidence:
+    - stage
+    - detection
+    - exception_message
+    - stack_when_available
+    - exit_code_when_available
+    - mutation_started
+    - sync_started
+    - backup_root
+    - transcript_path_when_available
+  handoff_assurance_canaries:
+    - diagnostic-capture-failure-does-not-replace-primary-failure
+    - no-diagnostic-write-occurs-inside-working-source
+    - failure-seed-is-valid-json
+    - canonical-tool-selftest-passes-when-tool-is-part-of-target-baseline
+    - unresolved-capsule-can-be-auto-rehydrated
+    - resolution-retains-resulting-commit
+  user_role: USER_IS_NOT_THE_DIAGNOSTIC_TRANSPORT_PROCESSOR
 
 local_patch_rule:
   rule: local_patch_artifacts_must_be_generated_from_builder_contract_and_patch_package_standard

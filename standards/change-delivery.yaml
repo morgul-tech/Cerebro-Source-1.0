@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.8.0
+  version: 0.9.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -62,6 +62,9 @@ profiles:
     - bounded-rollback-on-apply-failure
     - run-to-pass-orchestration
     - receipt
+    - failure-evidence-seed
+    - diagnostic-capsule-capture
+    - diagnostic-resolution-on-success
     prohibited_script_scope:
     - Source-content-generation
     - YAML-transformation
@@ -263,6 +266,66 @@ standard_handoff_convergence:
     - STANDARD_DELIVERY_UNIT_IS_LAUNCHER_PLUS_BUNDLE_NOT_LAUNCHER_ALONE
     - CPATCH_STAGES_STANDARD_DELIVERY_UNIT_ATOMICALLY_BY_IDENTITY
     - HANDOFF_ASSURANCE_IS_EVIDENCE_NOT_SOURCE_AUTHORITY
+
+diagnostic_failure_protocol:
+  introduced_by: PATCH-007.PRE-004
+  applies_to: STANDARD
+  evidence_contract_ref: standards/operational-evidence.yaml
+  canonical_tool: tooling/host/diagnostic_capsule.py
+  local_store: LOCALAPPDATA/Cerebro/diagnostics
+  before_execution:
+    - runner-maintains-current-stage
+    - runner-prepares-best-effort-transcript-outside-working-source
+    - runner-identifies-patch-revision-bundle-launcher-and-baseline
+  on_failure:
+    required_order:
+      - preserve-primary-exception-and-stage
+      - create-machine-readable-failure-seed
+      - attempt-canonical-diagnostic-capture-before-bounded-rollback-when-tool-is-available
+      - persist-minimal-fallback-seed-outside-source-if-canonical-capture-is-unavailable
+      - perform-existing-bounded-rollback-when-applicable
+      - emit-primary-failure
+    seed_minimum:
+      - patch_id
+      - revision
+      - expected_baseline
+      - current_stage
+      - detection
+      - exception_type
+      - exception_message
+      - fully_qualified_error_id_when_available
+      - script_stack_trace_when_available
+      - last_exit_code_when_available
+      - mutation_started
+      - sync_started
+      - backup_root
+      - bundle_filename
+      - bundle_sha256
+      - launcher_filename
+      - launcher_sha256_when_available
+      - transcript_path_when_available
+    diagnostics_failure_effect:
+      - preserve-primary-failure
+      - record-diagnostic-capture-degradation
+      - do-not-create-source-mutation
+  on_success:
+    - resolve-related-unresolved-capsules-when-canonical-tool-is-available
+    - bind-resolution-to-resulting-commit
+    - resolution-failure-does-not-invalidate-verified-primary-operation-success
+  next_operation:
+    - Host-auto-rehydrates-latest-unresolved-diagnostic-context
+    - Change-may-consume-rehydrated-context-as-evidence
+    - MCP-decides-recovery
+  user_role:
+    - no-manual-log-selection
+    - no-failure-reconstruction
+    - no-root-cause-classification-required
+    - bounded-human-transport-only-when-no-machine-bridge-exists
+  invariants:
+    - PRIMARY_FAILURE_IS_NEVER_REPLACED_BY_DIAGNOSTIC_CAPTURE_FAILURE
+    - FAILURE_EVIDENCE_STORE_IS_OUTSIDE_WORKING_SOURCE
+    - STANDARD_RUNNER_DIAGNOSTICS_ARE_MACHINE_READABLE
+    - SUCCESSFUL_REPAIR_CLOSES_RELATED_DIAGNOSTIC_STATE_WITH_COMMIT_TRACEABILITY
 
 backup_contract:
   required_for: STANDARD

@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-HOST_VERSION = "0.4.0"
+from diagnostic_capsule import latest_unresolved_context
+
+HOST_VERSION = "0.5.0"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -92,6 +94,7 @@ def snapshot_is_valid(snapshot: Path, commit: str) -> bool:
         snapshot / "tooling" / "change" / "change_engine.py",
         snapshot / "tooling" / "delivery" / "delivery_controller.py",
         snapshot / "tooling" / "closure" / "closure_engine.py",
+        snapshot / "tooling" / "host" / "diagnostic_capsule.py",
     ]
     if not marker.is_file() or not all(engine.is_file() for engine in engines):
         return False
@@ -116,6 +119,7 @@ def create_snapshot(source: Path, commit: str) -> Path:
         target / "tooling" / "change" / "change_engine.py",
         target / "tooling" / "delivery" / "delivery_controller.py",
         target / "tooling" / "closure" / "closure_engine.py",
+        target / "tooling" / "host" / "diagnostic_capsule.py",
     ]
     if not all(engine.is_file() for engine in required_engines):
         try:
@@ -152,6 +156,7 @@ def supervise_native_process(
     cwd: Path,
     component: str,
     heartbeat_seconds: float = 2.0,
+    env: dict[str, str] | None = None,
 ) -> dict:
     operation_id = hashlib.sha256(
         f"{component}|{cwd}|{utc_now()}|{os.getpid()}".encode("utf-8")
@@ -175,11 +180,17 @@ def supervise_native_process(
         },
         "interruptibility": "STAGE_SPECIFIC",
         "stall_policy": "OBSERVE_DO_NOT_FORCE_KILL",
+        "diagnostic_context": {
+            "status": (env or {}).get("CEREBRO_DIAGNOSTIC_CONTEXT_STATUS", "NONE"),
+            "capsule_id": (env or {}).get("CEREBRO_ACTIVE_DIAGNOSTIC_ID"),
+            "capsule_path": (env or {}).get("CEREBRO_ACTIVE_DIAGNOSTIC_CAPSULE"),
+            "capsule_fingerprint": (env or {}).get("CEREBRO_ACTIVE_DIAGNOSTIC_FINGERPRINT"),
+        },
     }
     write_operation_journal(journal_path, journal)
 
     try:
-        process = subprocess.Popen(cmd, cwd=cwd)
+        process = subprocess.Popen(cmd, cwd=cwd, env=env)
     except OSError as exc:
         journal["state"] = "PROCESS_START_FAILURE"
         journal["completed_at"] = utc_now()
@@ -230,10 +241,25 @@ def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
         "change": snapshot / "tooling" / "change" / "change_engine.py",
         "delivery": snapshot / "tooling" / "delivery" / "delivery_controller.py",
         "closure": snapshot / "tooling" / "closure" / "closure_engine.py",
+        "diagnostics": snapshot / "tooling" / "host" / "diagnostic_capsule.py",
     }
     engine = engines[component]
     cmd = [sys.executable, str(engine), *arguments]
-    observation = supervise_native_process(cmd, snapshot, component)
+
+    env = os.environ.copy()
+    diagnostic = latest_unresolved_context()
+    if diagnostic:
+        env["CEREBRO_DIAGNOSTIC_CONTEXT_STATUS"] = str(diagnostic.get("status", "UNKNOWN"))
+        if diagnostic.get("path"):
+            env["CEREBRO_ACTIVE_DIAGNOSTIC_CAPSULE"] = str(diagnostic["path"])
+        if diagnostic.get("capsule_id"):
+            env["CEREBRO_ACTIVE_DIAGNOSTIC_ID"] = str(diagnostic["capsule_id"])
+        if diagnostic.get("fingerprint"):
+            env["CEREBRO_ACTIVE_DIAGNOSTIC_FINGERPRINT"] = str(diagnostic["fingerprint"])
+    else:
+        env["CEREBRO_DIAGNOSTIC_CONTEXT_STATUS"] = "NONE"
+
+    observation = supervise_native_process(cmd, snapshot, component, env=env)
     if observation["exit_status"] == "UNKNOWN":
         print(json.dumps({
             "result": "UNKNOWN",
@@ -254,7 +280,7 @@ def selftest() -> dict:
         "schema": "cerebro-host-selftest/v0.1",
         "result": "PASS",
         "host_version": HOST_VERSION,
-        "dispatch_contract": "snapshot_then_delegate",
+        "dispatch_contract": "snapshot_rehydrate_diagnostics_then_delegate",
         "source_mutation": False,
         "fingerprint": digest,
     }
@@ -272,6 +298,8 @@ def main() -> int:
     delivery.add_argument("delivery_args", nargs=argparse.REMAINDER)
     closure = sub.add_parser("closure")
     closure.add_argument("closure_args", nargs=argparse.REMAINDER)
+    diagnostics = sub.add_parser("diagnostics")
+    diagnostics.add_argument("diagnostic_args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     try:
@@ -285,6 +313,7 @@ def main() -> int:
             "change": getattr(args, "change_args", None),
             "delivery": getattr(args, "delivery_args", None),
             "closure": getattr(args, "closure_args", None),
+            "diagnostics": getattr(args, "diagnostic_args", None),
         }[args.command]
         if not component_args:
             raise HostError("MISSING_DELEGATE_COMMAND", f"pass engine arguments after '{args.command}'")

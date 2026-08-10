@@ -4197,6 +4197,99 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
       sequence: 103
+    -
+      id: "CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001"
+      type: "DECISION"
+      scope: "PATCH-007.PRE-004-DIAGNOSTIC-ARCHITECTURE-AND-IMPLEMENTATION"
+      statement: "The user explicitly marks automatic machine-readable patch failure persistence as very important and authorizes Cerebro FULL to select and implement the best final architecture, including necessary structural changes, while preserving the locked no-new-top-level-component direction."
+      payload:
+        decision_status: "AUTHORIZED"
+        implementation_authorized: true
+        exact_scope: "PATCH-007.PRE-004"
+        authorization_source: "CURRENT_EXPLICIT_USER_INSTRUCTION"
+        control_mode: "SELF_RUNNING_FULL"
+        material_preflight:
+          result: "KEEP_RESTRUCTURE_WITHIN_EXISTING_COMPONENTS"
+          architecture_changed: true
+          new_top_level_component: false
+          hard_blockers: []
+        architecture_outcome: "PERSISTENT_LOCAL_DIAGNOSTIC_STATE_PLUS_AUTOMATIC_REHYDRATION"
+        structure:
+          diagnostic_contract_owner: "STD-OPERATIONAL-EVIDENCE"
+          implementation_location: "tooling/host/diagnostic_capsule.py"
+          host_role: "FOURTH_DELEGATED_READ_ONLY_CAPABILITY_AND_AUTO_REHYDRATION"
+          recovery_owner: "MCP"
+          learning_consumer: "tooling.change"
+          local_store: "LOCALAPPDATA/Cerebro/diagnostics"
+          source_mutation_by_diagnostics: false
+        user_role:
+          reconstruct_failure: false
+          select_logs: false
+          classify_root_cause: false
+          transport_when_machine_bridge_unavailable: "BOUNDED_FALLBACK_ONLY"
+        invariants:
+          - "USER_IS_NOT_THE_DIAGNOSTIC_TRANSPORT_PROCESSOR"
+          - "PRIMARY_FAILURE_IS_PRESERVED_IF_DIAGNOSTICS_DEGRADE"
+          - "UNRESOLVED_FAILURE_IS_AUTO_REHYDRATED"
+          - "DIAGNOSTIC_EVIDENCE_IS_EVIDENCE_ONLY"
+      provenance:
+        introduced_by_ref: "USER-DIAGNOSTIC-AUTOMATION-FULL-2026-08-10"
+        basis_refs:
+          - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
+      sequence: 104
+    -
+      id: "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-007.PRE-004-VERIFIED-AND-PRE-005-ENTRY"
+      statement: "PATCH-007.PRE-004 establishes one persistent local Diagnostic Store, automatic failure capture, Host auto-rehydration and bounded transport as EVIDENCE_ONLY infrastructure; PRE-005 can now bind observed failure evidence into durable regression and learning controls without making the user the diagnostic processor."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        patch: "PATCH-007.PRE-004"
+        verification_status: "VERIFIED_ON_SUCCESSFUL_PUBLICATION_OF_THIS_RECORD"
+        capabilities:
+          - "PERSISTENT_LOCAL_DIAGNOSTIC_STORE"
+          - "AUTOMATIC_FAILURE_CAPSULE_CAPTURE"
+          - "ATOMIC_ACTIVE_UNRESOLVED_POINTER"
+          - "HOST_AUTOMATIC_DIAGNOSTIC_REHYDRATION"
+          - "CHANGE_DIAGNOSTIC_BASIS_CONSUMPTION"
+          - "BOUNDED_REDACTED_TRANSPORT_VIEW"
+          - "MINIMAL_BREAK_GLASS_FAILURE_SEED"
+          - "REPAIR_TO_FAILURE_COMMIT_TRACEABILITY"
+        architecture:
+          new_top_level_component: false
+          diagnostics_owner: "EXISTING_HOST_TOOLING_CAPABILITY"
+          policy_owner: "MCP"
+          evidence_contract: "STD-OPERATIONAL-EVIDENCE"
+          storage_authority: "RUNTIME_DERIVED_EVIDENCE_ONLY"
+        failure_evidence_forwarded_to_PRE_005:
+          - "GENERATED_POWERSHELL_TOKEN_BOUNDARY_COLLAPSE"
+          - "VALIDATOR_SIDE_EFFECT_CONTAMINATES_WORKING_SOURCE"
+          - "GENERATED_POWERSHELL_REGEX_ESCAPE_INVALID"
+          - "VALIDATION_PROBE_RESULT_COLLAPSE"
+          - "KNOWN_FAILURE_FAMILY_PREVENTION_NOT_INHERITED"
+        next_patch: "PATCH-007.PRE-005"
+        next_patch_status: "ACTIVE"
+        next_patch_implementation_authorized: true
+        authorization_basis: "SELF_RUNNING_FULL_CURRENT_USER_INSTRUCTION"
+      provenance:
+        introduced_by_ref: "PATCH-007.PRE-004-RUN_TO_PASS"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001"
+          - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
+          - "STD-OPERATIONAL-EVIDENCE"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
+      sequence: 105
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4229,6 +4322,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
+      - "CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4248,6 +4342,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
+      - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4295,7 +4390,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 104
+  next_sequence: 106
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
