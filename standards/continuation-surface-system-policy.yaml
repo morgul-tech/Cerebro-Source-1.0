@@ -1,7 +1,7 @@
 schema: cerebro-continuation-surface-system-policy/v1
 continuation_surface_system_policy:
   id: CEREBRO-CONTINUATION-SURFACE-SYSTEM-001
-  version: "1.0"
+  version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: SYSTEM_WIDE
@@ -22,6 +22,35 @@ continuation_surface_system_policy:
     - no-visible-content-after-command-surface
     - explanatory-code-must-not-compete-with-command-surface
 
+  continuation_continuity:
+    principle: ACTIVE_CONTINUATION_SURVIVES_CONVERSATIONAL_DETOURS
+    applies_when:
+    - active-work-sequence-exists
+    - valid-continuation-state-exists
+    interposed_events:
+      nonmaterial_question_or_observation:
+        effect:
+        - answer-or-process-event
+        - preserve-active-control-state
+        - preserve-active-continuation
+        - re-render-current-next-action-surface-at-absolute-response-end-when-human-action-remains-next
+      material_critique_learning_or_correction:
+        effect:
+        - process-human-insight
+        - critique-and-reassess
+        - re-resolve-control
+        - preserve-or-replace-continuation-from-current-basis
+        - render-resulting-next-action-surface-at-absolute-response-end-when-human-action-is-next
+      explicit_objective_change:
+        effect:
+        - establish-new-control-state
+        - replace-prior-continuation-when-no-longer-applicable
+    prohibited:
+    - treating-an-interposed-conversational-event-as-implicit-sequence-termination
+    - silently-dropping-active-continuation
+    - response-type-suppressing-valid-human-continuation-surface
+    - presentation-profile-overriding-absolute-response-end
+
   multiple_paths:
     allowed_only_when: genuinely-different-user-decisions
     one_surface_per_path: true
@@ -37,3 +66,5 @@ continuation_surface_system_policy:
   - full-continuation-state-remains-Cerebro-owned
   - chat-memory-is-not-authority
   - missing-next-action-surface-is-a-presentation-regression
+  - active-continuation-must-be-preserved-reresolved-or-explicitly-replaced-never-silently-dropped
+  - human-next-action-surface-remains-absolute-response-end-across-interposed-conversational-events

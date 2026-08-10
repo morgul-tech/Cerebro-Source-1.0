@@ -1112,3 +1112,39 @@ boot_authority_ambiguity_refinement_validation:
     - filename-based-authority
     - model-memory-as-boot-authority
     - stale-failure-as-current-gate
+
+# BEGIN CLOSURE-PRESENTATION-CONTINUITY-001
+continuation_presentation_regression_validation:
+  introduced_by: CLOSURE-PRESENTATION-CONTINUITY-001
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/continuation-surface-system-policy.yaml
+    - standards/human-continuation-surface.yaml
+    - engines/presentation/rules.yaml
+  required_contracts:
+    - active-continuation-survives-conversational-detours
+    - nonmaterial-interposed-event-preserves-active-continuation
+    - material-user-insight-reresolves-continuation
+    - explicit-objective-change-may-replace-continuation
+    - response-type-cannot-suppress-valid-human-continuation
+    - active-next-step-remains-absolute-response-end
+    - layered-presentation-preserves-material-information
+    - visible-progress-updates-share-presentation-language
+    - STANDARD-canonical-command-is-CWD-independent
+  required_canaries:
+    - question-during-active-sequence-keeps-next-step-surface
+    - observation-during-active-sequence-keeps-next-step-surface
+    - material-critique-reresolves-and-renders-resulting-next-step
+    - explicit-new-objective-replaces-old-continuation-without-leakage
+    - next-step-surface-has-no-visible-content-after-it
+    - complex-status-answer-exposes-fast-status-and-full-detail
+    - progress-update-uses-semantic-status-hierarchy
+    - standard-handoff-does-not-present-relative-dot-launcher-as-canonical-command
+  prohibited:
+    - implicit-sequence-termination-from-question-observation-critique-or-learning
+    - silent-active-continuation-drop
+    - presentation-profile-overriding-continuation-surface
+    - information-loss-as-default-compression-strategy
+    - current-working-directory-dependent-canonical-STANDARD-command
+# END CLOSURE-PRESENTATION-CONTINUITY-001

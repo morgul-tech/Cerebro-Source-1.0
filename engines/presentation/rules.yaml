@@ -547,3 +547,105 @@ rules:
   validation: error
   provenance: {type: user-corrected-real-failure, source: STANDARD-DELIVERY-INCREMENTAL-REVISION-001}
 # END STANDARD-DELIVERY-COMMAND-SURFACE-001
+
+# BEGIN CLOSURE-PRESENTATION-CONTINUITY-001
+- id: PRE-032
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    information_volume_or_complexity_increases_human_scan_cost: true
+  action:
+    use_layered_information_architecture:
+      level_1: rapid-status-and-bottom-line
+      level_2: meaning-completion-and-open-points
+      level_3: full-evidence-reasoning-boundaries-and-detail
+      level_4: human-continuation-surface-when-applicable
+    preserve_material_information: true
+    adaptive_not_rigid_template: true
+  statement: Når lineær prosa øker menneskelig lesekostnad, SKAL Presentation Engine bruke lagdelt informasjonsarkitektur som gir rask status først og beholder full materiell informasjon under; forenkling SKAL primært skje gjennom struktur, hierarki og prioritering, ikke informasjonsfjerning.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-locked-system-correction, source: CLOSURE-PRESENTATION-CONTINUITY-2026-08-11}
+
+- id: PRE-033
+  owner: presentation
+  authority: normative
+  priority: normal
+  condition:
+    visual_hierarchy_improves_scanability: true
+  action:
+    allow_semantic_hierarchy_elements:
+      - major-section-separators
+      - top-status-lines
+      - numbered-parallel-tracks
+      - bounded-conclusion-or-meaning-boxes
+      - summary-status-tables
+      - semantic-symbols-with-textual-meaning
+    prohibit_decorative_overuse: true
+    require_visual_language_semantics: true
+  statement: Presentation Engine KAN bruke streker, bokser, nummererte spor, tabeller og semantiske symboler for å gjøre komplekse svar raskere å skanne, men fremheving SKAL være hierarkisk og ikke brukes slik at alt får samme visuelle vekt.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-locked-system-correction, source: CLOSURE-PRESENTATION-CONTINUITY-2026-08-11}
+
+- id: PRE-034
+  owner: presentation
+  authority: normative
+  priority: high
+  condition:
+    visible_progress_update: true
+  action:
+    use_same_presentation_language_as_final_response: true
+    compress_for_progress_surface: true
+    expose:
+      - materially-relevant-finding
+      - verification-state
+      - current-next-work
+    prohibit_private-reasoning-exposure: true
+  statement: Synlige arbeidsoppdateringer SKAL bruke samme semantiske presentasjonsspråk som sluttsvaret i komprimert form, slik at status, funn og neste arbeid kan forstås raskt uten at privat intern resonnering eksponeres.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-locked-system-correction, source: CLOSURE-PRESENTATION-CONTINUITY-2026-08-11}
+
+- id: PRE-035
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition:
+    active_continuation_exists: true
+  action:
+    continuation_contract: standards/continuation-surface-system-policy.yaml
+    response_type_cannot_suppress_continuation: true
+    conversational_detour_cannot_implicitly_terminate_sequence: true
+    when_human_action_remains_next:
+      render_next_action_surface: true
+      position: absolute-response-end
+      prohibit_content_after: true
+  statement: Et innskutt spørsmål, en observasjon, kritikk, læring eller korreksjon SKAL IKKE i seg selv fjerne en aktiv continuation; Presentation Engine SKAL etter behandling vise den bevarte eller re-resolved next action som absolutt siste brukerflate når menneskelig handling fortsatt er neste reelle boundary.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: repeated-user-correction-systemic-fix, source: CLOSURE-PRESENTATION-CONTINUITY-2026-08-11}
+# END CLOSURE-PRESENTATION-CONTINUITY-001
+
+# BEGIN STANDARD-HANDOFF-CWD-INDEPENDENT-PRESENTATION-001
+- id: PRE-036
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {delivery_profile: STANDARD, user_handoff_ready: true}
+  action:
+    require_cwd_independent_copyable_command: true
+    canonical_bridge_when_available: cpatch
+    prohibit_relative_dot_launcher_as_canonical_command: true
+    preserve_exact_launcher_and_bundle_identity_binding: true
+  statement: Ved STANDARD-handoff SKAL den kanoniske kopierbare LOCAL_SHELL-kommandoen være uavhengig av terminalens nåværende arbeidsmappe; når den etablerte cpatch-broen er tilgjengelig, SKAL den brukes som normal identity-bound brukerflate fremfor en relativ .\\launcher-kommando.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-observed-handoff-correction, source: ACTIVATION-ARCHITECTURE-HANDOFF-2026-08-11}
+# END STANDARD-HANDOFF-CWD-INDEPENDENT-PRESENTATION-001

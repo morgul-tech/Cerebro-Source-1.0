@@ -1,1493 +1,1422 @@
-schema: "cerebro-project-roadmap/v0.1"
+schema: cerebro-project-roadmap/v0.1
 roadmap:
-  id: "CEREBRO-ROADMAP"
-  project_ref: "CEREBRO-WORKPLAN"
+  id: CEREBRO-ROADMAP
+  project_ref: CEREBRO-WORKPLAN
   authority:
-    contract_owner: "project-engine"
-    state_scope: "working-source"
-  status: "ACTIVE"
-  objective: "Close the remaining activation-architecture debt from the verified Relevance/Wisdom/Material-Commitment foundation, then re-resolve the preserved Adaptive Autonomy sequence without implicit implementation authorization."
+    contract_owner: project-engine
+    state_scope: working-source
+  status: ACTIVE
+  objective: Close the verified Activation Architecture state, persist the presentation/continuation/history closure, and rebase PATCH-AA-000
+    against current strong Cerebro Source so PATCH-AA-001 becomes the next adaptive control implementation without rebuilding existing architecture.
   scope:
     included:
-      - "project-roadmap-contract"
-      - "minimal-runtime-bootstrap"
-      - "streamlined-patch-workform"
-      - "runtime-0.1-scope-and-minimum-contracts"
-      - "runtime-0.1-implementation"
-      - "idea-object-pipeline-after-runtime-baseline"
-      - "operational-reliability-and-evidence-foundation"
-      - "adaptive-autonomy-control-policy"
-      - "semantic-lock-and-canonical-identity-separation"
-      - "operational-resource-and-usage-observability"
-      - "shadow-control-evaluation-before-activation"
+    - project-roadmap-contract
+    - minimal-runtime-bootstrap
+    - streamlined-patch-workform
+    - runtime-0.1-scope-and-minimum-contracts
+    - runtime-0.1-implementation
+    - idea-object-pipeline-after-runtime-baseline
+    - operational-reliability-and-evidence-foundation
+    - adaptive-autonomy-control-policy
+    - semantic-lock-and-canonical-identity-separation
+    - operational-resource-and-usage-observability
+    - shadow-control-evaluation-before-activation
+    - continuation-presentation-closure
+    - adaptive-mcp-resolver
     excluded:
-      - "conversation-history-as-authority"
-      - "runtime-state-as-persistent-truth"
-      - "parallel-architecture"
-      - "unregistered-top-level-components"
-      - "broad-universal-object-model-before-runtime-need"
-      - "speculative-runtime-capabilities"
+    - conversation-history-as-authority
+    - runtime-state-as-persistent-truth
+    - parallel-architecture
+    - unregistered-top-level-components
+    - broad-universal-object-model-before-runtime-need
+    - speculative-runtime-capabilities
   phases:
-    -
-      id: "PHASE-0"
-      title: "architecture_consolidation"
-      purpose: "establish_prerequisites_for_runtime_0_1"
-      status: "COMPLETED"
-      dependency_refs: []
-      entry_criteria: []
-      exit_criteria:
-        - "PATCH-001B_VERIFIED"
-        - "PATCH-001C_VERIFIED"
-        - "PATCH-001C.POST-001_VERIFIED"
-        - "PATCH-001C.POST-002_VERIFIED"
-      deliverable_refs:
-        - "standards/runtime/minimal-runtime-bootstrap.yaml"
-        - "standards/development/streamlined-patch-workform.yaml"
-      milestones:
-        -
-          id: "MS-001"
-          title: "architecture_consolidation"
-          status: "COMPLETED"
-          acceptance:
-            - "roadmap_contract_persisted"
-            - "architecture_dependencies_resolved"
-            - "continuation_without_chat_verified"
-            - "minimal_runtime_bootstrap_locked"
-            - "streamlined_patch_workform_locked"
-    -
-      id: "PHASE-1"
-      title: "runtime_0_1"
-      purpose: "define_and_implement_stable_minimal_runtime"
-      status: "COMPLETED"
-      dependency_refs:
-        - "PHASE-0"
-      entry_criteria:
-        - "PHASE-0_COMPLETED"
-        - "PATCH-001C.POST-002_VERIFIED"
-      exit_criteria:
-        - "PATCH-002_VERIFIED"
-        - "PATCH-003_VERIFIED"
-        - "RUNTIME_0_1_STABLE_MINIMAL_BASELINE_VERIFIED"
-      deliverable_refs: []
-      milestones:
-        -
-          id: "MS-002"
-          title: "runtime_0_1_definition_and_implementation"
-          status: "COMPLETED"
-          acceptance:
-            - "runtime_0_1_scope_locked"
-            - "minimum_runtime_contracts_locked"
-            - "nonessential_runtime_scope_deferred"
-            - "runtime_0_1_implemented"
-            - "stable_minimal_runtime_verified"
-    -
-      id: "PHASE-2"
-      title: "adaptive_autonomy"
-      purpose: "implement_and_activate_mcp_native_adaptive_autonomy_from_a_semantically_locked_plan"
-      status: "ACTIVE"
-      dependency_refs:
-        - "PHASE-1"
-      entry_criteria:
-        - "PATCH-006_VERIFIED"
-        - "PATCH-007_REFINED_PLAN_LOCKED"
-        - "ADAPTIVE_AUTONOMY_PLAN_LOCKED"
-      exit_criteria:
-        - "PATCH-007_VERIFIED"
-        - "PATCH-AA-000_VERIFIED"
-        - "PATCH-AA-001_VERIFIED"
-        - "PATCH-AA-002_VERIFIED"
-        - "PATCH-AA-003_VERIFIED"
-        - "PATCH-AA-004_VERIFIED"
-        - "ADAPTIVE_AUTONOMY_ACTIVATED_WITH_SHADOW_EVIDENCE"
-      deliverable_refs: []
-      milestones:
-        -
-          id: "MS-003"
-          title: "adaptive_autonomy_foundation_and_activation"
-          status: "ACTIVE"
-          acceptance:
-            - "operational_reliability_and_evidence_foundation_verified"
-            - "semantic_lock_identity_boundary_implemented"
-            - "mcp_native_adaptive_autonomy_foundation_verified"
-            - "usage_and_operational_observability_verified"
-            - "shadow_scenario_suite_passed"
-            - "adaptive_autonomy_activation_verified"
+  - id: PHASE-0
+    title: architecture_consolidation
+    purpose: establish_prerequisites_for_runtime_0_1
+    status: COMPLETED
+    dependency_refs: []
+    entry_criteria: []
+    exit_criteria:
+    - PATCH-001B_VERIFIED
+    - PATCH-001C_VERIFIED
+    - PATCH-001C.POST-001_VERIFIED
+    - PATCH-001C.POST-002_VERIFIED
+    deliverable_refs:
+    - standards/runtime/minimal-runtime-bootstrap.yaml
+    - standards/development/streamlined-patch-workform.yaml
+    milestones:
+    - id: MS-001
+      title: architecture_consolidation
+      status: COMPLETED
+      acceptance:
+      - roadmap_contract_persisted
+      - architecture_dependencies_resolved
+      - continuation_without_chat_verified
+      - minimal_runtime_bootstrap_locked
+      - streamlined_patch_workform_locked
+  - id: PHASE-1
+    title: runtime_0_1
+    purpose: define_and_implement_stable_minimal_runtime
+    status: COMPLETED
+    dependency_refs:
+    - PHASE-0
+    entry_criteria:
+    - PHASE-0_COMPLETED
+    - PATCH-001C.POST-002_VERIFIED
+    exit_criteria:
+    - PATCH-002_VERIFIED
+    - PATCH-003_VERIFIED
+    - RUNTIME_0_1_STABLE_MINIMAL_BASELINE_VERIFIED
+    deliverable_refs: []
+    milestones:
+    - id: MS-002
+      title: runtime_0_1_definition_and_implementation
+      status: COMPLETED
+      acceptance:
+      - runtime_0_1_scope_locked
+      - minimum_runtime_contracts_locked
+      - nonessential_runtime_scope_deferred
+      - runtime_0_1_implemented
+      - stable_minimal_runtime_verified
+  - id: PHASE-2
+    title: adaptive_autonomy
+    purpose: implement_and_promote_a_thin_mcp_native_adaptive_resolver_over_existing_verified_cerebro_capabilities
+    status: ACTIVE
+    dependency_refs:
+    - PHASE-1
+    entry_criteria:
+    - PATCH-006_VERIFIED
+    - PATCH-007_REFINED_PLAN_LOCKED
+    - ADAPTIVE_AUTONOMY_PLAN_LOCKED
+    exit_criteria:
+    - PATCH-007_VERIFIED
+    - PATCH-ACTIVATION-ARCH-001_VERIFIED
+    - PATCH-ACTIVATION-ARCH-002_VERIFIED
+    - PATCH-AA-000_VERIFIED
+    - PATCH-AA-001_VERIFIED
+    - PATCH-AA-002_ABSORBED_INTO_PATCH-AA-001
+    - PATCH-AA-003_VERIFIED
+    - PATCH-AA-004_VERIFIED
+    - ADAPTIVE_AUTONOMY_ACTIVATED_WITH_SHADOW_EVIDENCE
+    deliverable_refs: []
+    milestones:
+    - id: MS-003
+      title: adaptive_autonomy_foundation_and_activation
+      status: ACTIVE
+      acceptance:
+      - operational_reliability_and_evidence_foundation_verified
+      - activation_architecture_convergence_verified
+      - semantic_lock_identity_boundary_verified_without_parallel_identity_architecture
+      - continuation_and_presentation_closure_persisted
+      - adaptive_mcp_resolver_verified
+      - human_time_resource_signals_integrated_without_parallel_resource_manager
+      - shadow_scenario_suite_passed
+      - adaptive_control_promotion_verified
   patches:
-    -
-      id: "PATCH-001A"
-      title: "cerebro_architecture_contracts"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs: []
-      decision_refs: []
-      source_refs: []
-    -
-      id: "PATCH-001B.PRE-001"
-      title: "roadmap_schema_and_ownership"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001A"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE001"
-      source_refs:
-        - "engines/project/roadmap-schema.yaml"
-        - "engines/project/component.yaml"
-        - "engines/project/rules.yaml"
-    -
-      id: "PATCH-001B.PRE-002"
-      title: "roadmap_persistence_contract"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-001"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE002"
-      source_refs:
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-001B.PRE-003"
-      title: "project_state_boundary_and_runtime_projection"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-002"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE003"
-      source_refs:
-        - "tooling/runtime-host/component.yaml"
-        - "tooling/runtime-host/runtime-state-schema.yaml"
-    -
-      id: "PATCH-001B.PRE-004"
-      title: "project_state_lifecycle_and_physical_working_source_target"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-003"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE004"
-      source_refs:
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-001B.PRE-005"
-      title: "copyable_next_action_footer"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-004"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE005"
-      source_refs:
-        - "engines/presentation/rules.yaml"
-    -
-      id: "PATCH-001B.PRE-006"
-      title: "persistent_reference_targets_and_resume_closure"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-004"
-        - "PATCH-001B.PRE-005"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE006"
-      source_refs:
-        - "engines/context/working-context-schema.yaml"
-        - "engines/context/working-context.yaml"
-    -
-      id: "PATCH-001B.PRE-007"
-      title: "exact_state_schemas_and_initial_persisted_state"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-006"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE007"
-      source_refs:
-        - "engines/project/roadmap-schema.yaml"
-        - "engines/context/working-context-schema.yaml"
-        - "engines/project/roadmap.yaml"
-        - "engines/context/working-context.yaml"
-    -
-      id: "PATCH-001B.PRE-008"
-      title: "efficient_single_transaction_promotion_contract"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-007"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE008"
-      source_refs:
-        - "tooling/validator/checks.yaml"
-        - "tooling/builder/builder.yaml"
-    -
-      id: "PATCH-001B"
-      title: "project_roadmap_contract"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B.PRE-001"
-        - "PATCH-001B.PRE-002"
-        - "PATCH-001B.PRE-003"
-        - "PATCH-001B.PRE-004"
-        - "PATCH-001B.PRE-005"
-        - "PATCH-001B.PRE-006"
-        - "PATCH-001B.PRE-007"
-        - "PATCH-001B.PRE-008"
-      decision_refs:
-        - "CTX-DEC-P1B-PRE001"
-        - "CTX-DEC-P1B-PRE002"
-        - "CTX-DEC-P1B-PRE003"
-        - "CTX-DEC-P1B-PRE004"
-        - "CTX-DEC-P1B-PRE005"
-        - "CTX-DEC-P1B-PRE006"
-        - "CTX-DEC-P1B-PRE007"
-        - "CTX-DEC-P1B-PRE008"
-      source_refs:
-        - "engines/project/roadmap-schema.yaml"
-        - "engines/project/roadmap.yaml"
-        - "engines/context/working-context-schema.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/component.yaml"
-        - "engines/project/rules.yaml"
-        - "engines/context/component.yaml"
-        - "engines/context/rules.yaml"
-        - "tooling/validator/component.yaml"
-        - "tooling/validator/checks.yaml"
-        - "tooling/runtime-host/component.yaml"
-        - "tooling/runtime-host/runtime-state-schema.yaml"
-        - "tooling/builder/component.yaml"
-        - "tooling/builder/builder.yaml"
-        - "FILE_INVENTORY.json"
-    -
-      id: "PATCH-001C.PRE-001"
-      title: "sealed_pshell_transport_and_source_sync_recovery"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001B"
-      decision_refs: []
-      source_refs:
-        - "tooling/builder/builder.yaml"
-        - "tooling/validator/checks.yaml"
-        - "standards/source-authority.yaml"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
-        - "tooling/builder/templates/pshell/cerebro_sync.ps1"
-    -
-      id: "PATCH-001C.PRE-002"
-      title: "corrective_delivery_preflight_and_wisdom_persistence"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001C.PRE-001"
-      decision_refs: []
-      source_refs:
-        - "tooling/builder/builder.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-001C"
-      title: "minimal_runtime_bootstrap_prerequisite"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001C.PRE-001"
-        - "PATCH-001C.PRE-002"
-      decision_refs:
-        - "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
-        - "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
-        - "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
-      source_refs:
-        - "standards/runtime/minimal-runtime-bootstrap.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-001C.POST-001"
-      title: "streamlined_patch_workform"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001C"
-      decision_refs:
-        - "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
-        - "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
-        - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
-      source_refs:
-        - "standards/development/streamlined-patch-workform.yaml"
-        - "tooling/builder/builder.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-001C.POST-002"
-      title: "runtime_0_1_roadmap_realignment"
-      phase_ref: "PHASE-0"
-      milestone_ref: "MS-001"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001C.POST-001"
-      decision_refs:
-        - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
-      source_refs:
-        - "engines/project/roadmap.yaml"
-        - "engines/context/working-context.yaml"
-    -
-      id: "PATCH-002.PRE-001"
-      title: "patch_lvl3_improvement"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-001C.POST-002"
-      decision_refs:
-        - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
-      source_refs:
-        - "standards/development/streamlined-patch-workform.yaml"
-        - "tooling/builder/builder.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-002.PRE-002"
-      title: "handoff_imp"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-001"
-      decision_refs:
-        - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
-      source_refs:
-        - "standards/session-handoff-schema.yaml"
-        - "standards/session-handoff.yaml"
-        - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
-        - "tooling/runtime-host/cerebro_resume.ps1"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-002.PRE-002.POST-001"
-      title: "handoff_parser_and_module_invocation_correction"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-002"
-      decision_refs:
-        - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
-      source_refs:
-        - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
-        - "tooling/runtime-host/cerebro_resume.ps1"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-002.PRE-002.POST-002"
-      title: "handoff_context_array_serialization_correction"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-002.POST-001"
-      decision_refs:
-        - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
-      source_refs:
-        - "tooling/builder/templates/pshell/cerebro_handoff.ps1"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-002.PRE-003"
-      title: "HandBoot"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-002.POST-002"
-      decision_refs:
-        - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
-      source_refs:
-        - "standards/runtime/handboot.yaml"
-        - "standards/runtime/handboot-bootstrap-state-schema.yaml"
-        - "tooling/runtime-host/cerebro_boot.ps1"
-        - "tooling/runtime-host/cerebro_resume.ps1"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
-        - "mcp/activation.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-002.PRE-003.POST-001"
-      title: "HandBoot_manifest_contract_correction"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-003"
-      decision_refs:
-        - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
-      source_refs:
-        - "cerebro.yaml"
-        - "standards/runtime/handboot.yaml"
-        - "tooling/runtime-host/cerebro_boot.ps1"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-    -
-      id: "PATCH-002.PRE-004.R3-PRE-001"
-      title: "powershell_level_3_delivery_assurance"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-003"
-      decision_refs:
-        - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
-      source_refs:
-        - "standards/development/powershell-level3-delivery-assurance.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "failure_chain_persisted_as_process_wisdom"
-        - "first_implementation_assessment_mandatory"
-        - "functional_testing_required_beyond_parser_validation"
-        - "native_command_contract_standardized"
-        - "automatic_variable_collision_prevented"
-        - "pipeline_cardinality_explicit"
-        - "cross_language_execution_removed_by_default"
-        - "repeated_failure_triggers_rebuild"
-        - "user_host_not_used_as_development_environment"
-    -
-      id: "PATCH-002.PRE-004-R3"
-      title: "runtime_0_1_analysis_checkpoint"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-004.R3-PRE-001"
-      decision_refs:
-        - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
-      source_refs:
-        - "engines/context/runtime-0.1-analysis-basis.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "runtime_0_1_analysis_basis_persisted"
-        - "minimum_execution_cycle_locked"
-        - "runtime_objects_and_states_bounded"
-        - "failure_and_reorientation_contract_locked"
-        - "user_boundary_locked"
-        - "PATCH_002_can_continue_without_conversation_reconstruction"
-    -
-      id: "PATCH-002"
-      title: "runtime_0_1_scope_and_minimum_contracts"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002.PRE-004-R3"
-      decision_refs:
-        - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
-        - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
-        - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
-      source_refs:
-        - "engines/context/runtime-0.1-analysis-basis.yaml"
-        - "standards/runtime/runtime-0.1-contracts.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "runtime_profile_contract_locked"
-        - "runtime_instance_contract_locked"
-        - "runtime_event_contract_locked"
-        - "transition_decision_contract_locked"
-        - "capability_binding_contract_locked"
-        - "runtime_projection_contract_locked"
-        - "failure_ledger_contract_locked"
-        - "runtime_receipt_contract_locked"
-        - "state_transition_table_locked"
-        - "deferred_scope_register_locked"
-        - "PATCH_003_can_implement_without_architecture_reopen"
-    -
-      id: "PATCH-003.PRE-001"
-      title: "reflective_adjustment_loop_and_verification_scope"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-002"
-      decision_refs:
-        - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
-        - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
-        - "CTX-WISDOM-VERIFICATION-SCOPE-001"
-        - "CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001"
-      source_refs:
-        - "standards/development/reflective-adjustment-loop.yaml"
-        - "standards/development/streamlined-patch-workform.yaml"
-        - "standards/development/powershell-level3-delivery-assurance.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-
-    -
-      id: "PATCH-003.PRE-002"
-      title: "pre_runtime_catchup_consolidation"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-003.PRE-001"
-      decision_refs:
-        - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
-        - "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
-      source_refs:
-        - "engines/context/working-context.yaml"
-        - "standards/development/streamlined-patch-workform.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "Level_2_Library_surface_result_consolidated"
-        - "troubleshooting_first_resolution_locked"
-        - "self_running_exact_rerun_semantics_locked"
-        - "catchup_closed_without_runtime_mutation"
-        - "PATCH_003_remains_the_single_active_main_patch"
-    -
-      id: "PATCH-003.PRE-003"
-      title: "user_facing_powershell_host_visibility_and_runner_compliance"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-003.PRE-002"
-      decision_refs:
-        - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
-      source_refs:
-        - "standards/development/powershell-level3-delivery-assurance.yaml"
-        - "standards/development/streamlined-patch-workform.yaml"
-        - "tooling/builder/templates/pshell/cerebro_level3_runner.ps1"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "user_facing_terminal_receipt_remains_visible_until_explicit_dismissal"
-        - "success_and_failure_paths_preserve_visibility"
-        - "nested_machine_invocation_can_explicitly_disable_pause"
-        - "canonical_runner_uses_literal_native_argument_tokens"
-        - "manual_single_native_argument_string_removed"
-        - "PATCH_003_remains_active_and_unmodified"
-    -
-      id: "PATCH-003.PRE-004"
-      title: "adaptive_wisdom_evidence_and_friction_feedback"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-003.PRE-003"
-      decision_refs:
-        - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-      source_refs:
-        - "standards/development/reflective-adjustment-loop.yaml"
-        - "engines/context/component.yaml"
-        - "engines/context/wisdom-evidence-schema.yaml"
-        - "engines/context/wisdom-evidence.yaml"
-        - "standards/development/streamlined-patch-workform.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "low_threshold_signal_capture_is_bounded_and_event_driven"
-        - "support_and_friction_are_independent"
-        - "evidence_maturity_and_control_tier_are_independent"
-        - "repeated_friction_triggers_review_not_automatic_rule_creation"
-        - "canonical_structure_wisdom_is_repositioned_to_preflight"
-        - "micro_signal_persistence_does_not_require_standalone_patch"
-        - "no_parallel_learning_engine_created"
-        - "no_runtime_subsystem_created"
-        - "PATCH_003_returns_as_single_active_main_patch"
-    -
-      id: "PATCH-003.PRE-005"
-      title: "level2_cpatch_execution_handoff"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-003.PRE-004"
-      decision_refs:
-        - "CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001"
-        - "CTX-WISDOM-USER-HOST-VISIBILITY-001"
-        - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-      source_refs:
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psd1"
-        - "tooling/builder/builder.yaml"
-        - "standards/development/streamlined-patch-workform.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/context/wisdom-evidence.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "cpatch_requires_exact_filename_and_full_sha256"
-        - "cpatch_resolves_Run_or_standard_Downloads"
-        - "verified_download_is_staged_to_D_Cerebro_Run"
-        - "PowerShell_parser_runs_before_execution"
-        - "child_patch_cannot_close_parent_user_terminal"
-        - "assistant_can_deliver_one_pasteable_execution_command"
-        - "no_automatic_latest_file_execution"
-        - "no_browser_configuration_mutation"
-        - "Runtime_0_1_not_mutated"
-        - "PATCH_003_returns_ACTIVE_READY"
-    -
-      id: "PATCH-003.PRE-006"
-      title: "bounded_consolidate_operation"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-003.PRE-005"
-      decision_refs:
-        - "CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001"
-        - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
-      source_refs:
-        - "standards/development/consolidate.yaml"
-        - "standards/standards.yaml"
-        - "engines/interaction/component.yaml"
-        - "engines/interaction/rules.yaml"
-        - "engines/context/component.yaml"
-        - "engines/context/rules.yaml"
-        - "engines/presentation/component.yaml"
-        - "engines/presentation/rules.yaml"
-        - "tooling/validator/checks.yaml"
-        - "engines/project/roadmap.yaml"
-      acceptance:
-        - "CONSOLIDATE_is_cross_engine_operation_not_new_component"
-        - "TOPICS_MARKERS_WINDOW_BUDGET_OUTPUT_are_independent"
-        - "RECENT_is_adaptive_not_fixed_one_hour"
-        - "bare_duration_means_WINDOW_unless_budget_explicit"
-        - "markers_are_conversation_local_non_authoritative"
-        - "bounded_context_escape_preserves_window"
-        - "analysis_prioritizes_decision_value"
-        - "human_machine_deliberation_available_when_material"
-        - "output_budget_independent_from_analysis_depth"
-        - "human_output_compressed_without_semantic_loss"
-        - "Runtime_0_1_not_mutated"
-        - "PATCH_003_returns_ACTIVE_READY"
-    -
-      id: "PATCH-003"
-      title: "runtime_0_1_implementation"
-      phase_ref: "PHASE-1"
-      milestone_ref: "MS-002"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-003.PRE-006"
-      decision_refs:
-        - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
-        - "CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001"
-        - "CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001"
-        - "CTX-WISDOM-VERIFICATION-SCOPE-001"
-      source_refs:
-        - "standards/runtime/runtime-0.1-contracts.yaml"
-        - "standards/development/reflective-adjustment-loop.yaml"
-        - "tooling/builder/cerebro_runtime_release.ps1"
-        - "tooling/runtime-host/cerebro_runtime.ps1"
-        - "tooling/runtime-host/cerebro_runtime_host.ps1"
-        - "tooling/validator/checks.yaml"
-      implementation_constraints:
-        - "implement_declared_contracts_only"
-        - "do_not_reopen_runtime_architecture"
-        - "do_not_implement_deferred_scope"
-        - "success_and_failure_canaries_required"
-        - "apply_reflective_adjustment_loop_as_process_gate"
-        - "keep_verification_claims_explicitly_scoped"
-        - "do_not_implement_reflective_adjustment_as_runtime_subsystem"
-        - "development_process_architecture_frozen_during_PATCH_003"
-        - "process_refinement_deferred_until_after_PATCH_003_unless_governing_validation_fails_or_new_conflicting_evidence_emerges"
-    -
-      id: "PATCH-004"
-      title: "idea_object_pipeline"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-003"
-      decision_refs:
-        - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
-      source_refs:
-        - "standards/runtime/idea-object-pipeline.yaml"
-        - "standards/standards.yaml"
-        - "tooling/builder/cerebro_runtime_release.ps1"
-        - "tooling/runtime-host/cerebro_runtime.ps1"
-        - "tooling/runtime-host/cerebro_runtime_host.ps1"
-        - "tooling/validator/checks.yaml"
-      implementation_constraints:
-        - "reuse_existing_runtime_0_1_kernel"
-        - "one_IDEA_CAPTURE_event_one_declared_binding"
-        - "idea_object_is_non_authoritative"
-        - "runtime_may_not_mutate_Source"
-        - "verification_claim_scope_is_idea_object_persistence_and_content"
-        - "no_universal_object_model"
-        - "no_automatic_wisdom_or_project_promotion"
-      acceptance:
-        - "minimum_idea_object_contract_locked"
-        - "IDEA_CAPTURE_binding_declared"
-        - "idea_object_persists_outside_Source"
-        - "success_and_failure_canaries_pass"
-        - "existing_Runtime_0_1_canaries_remain_passing"
-        - "operational_pinned_release_canary_required_before_PATCH_004_closure"
-    -
-      id: "PATCH-005"
-      title: "operational_architecture_normalization"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-004"
-      decision_refs: []
-      source_refs:
-        - "standards/control-architecture.yaml"
-        - "standards/active-source-closure.yaml"
-        - "standards/development/wisdom-control-binding.yaml"
-        - "tooling/runtime-host/component.yaml"
-      implementation_constraints:
-        - "MCP_remains_highest_internal_control"
-        - "Runtime_0_1_remains_separate_from_Source_mutation"
-        - "Wisdom_evidence_does_not_create_authority"
-    -
-      id: "PATCH-005.POST-001"
-      title: "change_and_delivery_platform_operational_closure"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-005"
-      decision_refs: []
-      source_refs:
-        - "standards/change-architecture.yaml"
-        - "standards/change-delivery.yaml"
-        - "standards/release-platform.yaml"
-        - "tooling/host/cerebro_host.py"
-        - "tooling/change/change_engine.py"
-        - "tooling/delivery/delivery_controller.py"
-        - "tooling/closure/closure_engine.py"
-      implementation_constraints:
-        - "delivery_stops_at_READY_FOR_LOCAL_VALIDATION"
-        - "validation_does_not_mutate_live_Release"
-        - "closure_is_read_only"
-        - "Knowledge_implementation_is_bounded_to_the_Final_Learning_Consolidation_decision"
-      acceptance:
-        - "Host_Change_Delivery_and_Closure_selftests_PASS"
-        - "Release_full_validation_is_observational"
-        - "Release_package_identity_is_reproducible"
-        - "Active_Source_Closure_PASS"
-        - "published_Source_and_Release_are_clean_and_remote_aligned"
-        - "Final_Learning_Consolidation_completed"
-        - "Cerebro_Internal_Control_Review_completed"
-        - "Closure_Engine_returns_CLOSURE_PASS"
-    -
-      id: "PATCH-006"
-      title: "wisdom_operationalization_and_knowledge_evidence_decision"
-      phase_ref: "PHASE-1"
-      milestone_ref: null
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-005.POST-001"
-      decision_refs:
-        - "PATCH-006-BOUNDED-RELEVANCE-IMPLEMENTATION"
-      source_refs:
-        - "engines/context/change-learning-evidence.yaml"
-        - "engines/context/knowledge-schema.yaml"
-        - "engines/context/knowledge.yaml"
-        - "standards/development/wisdom-control-binding.yaml"
-        - "standards/development/relevance-retrieval.yaml"
-        - "tooling/context/relevance_engine.py"
-      implementation_constraints:
-        - "activation_requires_PATCH_005_POST_001_Closure_PASS"
-        - "automatic_authority_promotion_prohibited"
-        - "Knowledge_is_evidence_only_and_has_no_direct_control_tier"
-        - "Final_Learning_Consolidation_approved_only_the_bounded_evidence_scope"
-    -
-      id: "PATCH-007.PRE-001"
-      title: "operational_evidence_contract"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-006"
-      decision_refs:
-        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
-        - "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
-      source_refs:
-        - "standards/control-architecture.yaml"
-        - "standards/change-architecture.yaml"
-        - "standards/change-delivery.yaml"
-        - "standards/operational-evidence.yaml"
-        - "standards/standards.yaml"
-        - "cerebro.yaml"
-        - "tooling/validator/checks.yaml"
-      implementation_constraints:
-        - "no_new_top_level_engine"
-        - "evidence_is_derived_and_non_authoritative"
-        - "progressive_diagnostics_not_collect_everything_by_default"
-        - "privacy_and_redaction_are_part_of_the_contract"
-        - "implementation_requires_explicit_user_authorization"
-        - "probe_execution_state_is_distinct_from_subject_result"
-        - "evidence_sufficiency_is_question_relative"
-        - "freshness_is_state_aware"
-        - "partial_evidence_preserves_successful_observations"
-        - "mismatch_detection_is_not_root_cause"
-    -
-      id: "PATCH-007.PRE-002"
-      title: "standard_handoff_convergence"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-007.PRE-001"
-      decision_refs:
-        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
-        - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
-      source_refs:
-        - "standards/change-delivery.yaml"
-        - "tooling/builder/builder.yaml"
-        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
-        - "tooling/delivery/component.yaml"
-        - "tooling/validator/checks.yaml"
-      implementation_constraints:
-        - "extend_existing_cpatch_capability_do_not_create_parallel_bootstrap"
-        - "stage_verified_launcher_and_bundle_as_one_delivery_unit"
-        - "process_scoped_execution_policy_only"
-        - "no_permanent_user_execution_policy_change"
-        - "no_current_working_directory_dependency"
-        - "no_user_handoff_without_machine_verified_handoff_assurance"
-        - "legacy_launcher_only_cpatch_invocation_preserved"
-        - "bundle_aware_cpatch_requires_filename_and_sha256_pair"
-        - "launcher_must_bind_expected_bundle_filename_and_sha256"
-        - "handoff_assurance_receipt_required_before_user_handoff"
-    -
-      id: "PATCH-007.PRE-003"
-      title: "operation_supervision_and_observability"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-007.PRE-002"
-      decision_refs:
-        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
-        - "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
-      source_refs:
-        - "standards/control-architecture.yaml"
-        - "standards/change-architecture.yaml"
-        - "tooling/host/component.yaml"
-        - "tooling/host/cerebro_host.py"
-        - "tooling/validator/checks.yaml"
-      implementation_constraints:
-        - "one_reusable_native_process_supervision_path"
-        - "heartbeat_independent_of_child_stdout"
-        - "operation_journal_from_start"
-        - "interruptibility_is_stage_specific"
-        - "stall_detection_does_not_imply_force_kill"
-        - "unavailable_or_null_exit_status_is_not_nonzero_exit"
-        - "process_observation_child_receipt_and_material_poststate_are_reconciled_before_final_classification"
-        - "successful_verified_poststate_may_resolve_SUCCESS_WITH_PROCESS_OBSERVATION_DEGRADED"
-        - "receipt_exit_and_poststate_disagreement_is_explicitly_classified"
-        - "regression_ref_CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
-        - "native_executable_is_resolved_as_Application_before_invocation"
-        - "helper_alias_or_function_must_not_shadow_native_executable"
-        - "generated_PowerShell_passes_runtime_semantic_assurance_profile"
-        - "shared_verified_native_process_adapter_preferred_over_generated_wrapper_duplication"
-        - "assurance_profile_ref_CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
-        - "regression_ref_CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
-        - "regression_ref_CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
-    -
-      id: "PATCH-007.PRE-004"
-      title: "diagnostic_capsule"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-007.PRE-003"
-      decision_refs:
-        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
-        - "CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001"
-      source_refs:
-        - "standards/control-architecture.yaml"
-        - "standards/operational-evidence.yaml"
-        - "standards/change-delivery.yaml"
-        - "standards/session-handoff.yaml"
-        - "standards/system-metamodel.yaml"
-        - "tooling/host/component.yaml"
-        - "tooling/host/cerebro_host.py"
-        - "tooling/host/diagnostic_capsule.py"
-        - "tooling/change/change_engine.py"
-        - "tooling/builder/builder.yaml"
-        - "tooling/validator/checks.yaml"
-      implementation_constraints:
-        - "read_only_against_working_source"
-        - "progressive_core_targeted_deep_acquisition"
-        - "probe_failures_preserve_partial_evidence"
-        - "diagnostics_classify_but_do_not_own_recovery_policy"
-        - "bounded_redacted_transport_envelope"
-        - "minimal_break_glass_read_only_fallback"
-        - "persistent_local_diagnostic_state_outside_working_source"
-        - "automatic_failure_capture_before_exit_when_possible"
-        - "automatic_unresolved_failure_rehydration_before_next_cerebro_operation"
-        - "full_local_and_bounded_transport_are_views_of_same_capsule"
-        - "user_is_not_diagnostic_transport_processor"
-        - "diagnostic_capture_failure_does_not_mask_primary_failure"
-        - "successful_repair_retains_failure_to_commit_traceability"
-        - "no_new_top_level_component"
-        - "Host_exposes_diagnostics_as_fourth_delegated_capability"
-        - "PRE_005_consumes_rehydrated_diagnostic_basis_for_failure_learning"
-    -
-      id: "PATCH-007.PRE-005"
-      title: "failure_learning_and_regression_binding"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-007.PRE-004"
-      decision_refs:
-        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
-        - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
-        - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
-      source_refs:
-        - "standards/change-architecture.yaml"
-        - "standards/change-delivery.yaml"
-        - "tooling/change/failure-record-schema.json"
-        - "tooling/change/campaign-policy.yaml"
-        - "tooling/change/change_engine.py"
-        - "tooling/host/diagnostic_capsule.py"
-        - "standards/development/relevance-retrieval.yaml"
-        - "tooling/context/relevance_engine.py"
-        - "engines/context/development-history.yaml"
-        - "engines/context/development-history-schema.yaml"
-        - "tooling/validator/checks.yaml"
-      implementation_constraints:
-        - "reuse_existing_failure_learning_architecture"
-        - "machine_enforceable_learning_becomes_executable_assurance"
-        - "later_patches_inherit_applicable_failure_families_and_regressions"
-        - "relevant_learning_basis_change_invalidates_candidate_assurance"
-        - "first_regression_family_POWERSHELL_AUTOMATIC_VARIABLE_COLLISION"
-        - "regression_family_PATCH_ANCHOR_LINE_ENDING_REPRESENTATION"
-        - "regression_family_NATIVE_PROCESS_RESULT_FALSE_FAILURE"
-        - "regression_ref_CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
-        - "regression_family_POWERSHELL_COMMAND_SHADOWING_NATIVE_EXECUTABLE"
-        - "regression_family_POWERSHELL_RUNTIME_SEMANTIC_COLLISION"
-        - "systemic_family_GENERATED_LOCAL_EXECUTION_ASSURANCE_INCOMPLETE"
-        - "relevance_scoped_assurance_profile_is_required_for_later_material_patch_candidates"
-        - "first_pass_run_success_and_user_retry_count_are_derived_learning_metrics"
-        - "regression_ref_CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
-        - "regression_ref_CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
-        - "assurance_profile_ref_CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
-        - "development_history_ref_CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
-        - "development_history_is_Context_owned_HISTORY_not_new_engine"
-        - "history_candidates_are_automatic_but_Source_append_requires_authorized_safe_persistence_scope"
-        - "history_capture_must_not_add_normal_user_steps"
-        - "history_append_failure_must_not_invalidate_verified_primary_operation_success"
-        - "published_history_is_append_only_with_correction_and_retraction_records"
-        - "seed_first_pass_success_as_FOUNDATIONAL_STRENGTHENING_EVENT"
-        - "cross_cutting_pattern_EXPECTED_OBSERVED_STATE_MISMATCH"
-        - "mismatch_invariant_MISMATCH_IS_DETECTION_NOT_ROOT_CAUSE"
-        - "mismatch_resolution_detect_classify_preserve_compare_rootcause_regression"
-        - "mismatch_root_cause_learning_ref_CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
-        - "history_seed_ref_CTX-ASSESS-REPEAT-FIRST-PASS-MILESTONE-20260810-001"
-        - "seed_repeat_first_pass_success_as_MAJOR_STRENGTHENING_EVENT"
-    -
-      id: "PATCH-007"
-      title: "operational_reliability_and_evidence_foundation"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "VERIFIED"
-      dependency_refs:
-        - "PATCH-007.PRE-001"
-        - "PATCH-007.PRE-002"
-        - "PATCH-007.PRE-003"
-        - "PATCH-007.PRE-004"
-        - "PATCH-007.PRE-005"
-      decision_refs:
-        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
-      source_refs:
-        - "standards/control-architecture.yaml"
-        - "standards/change-architecture.yaml"
-        - "standards/change-delivery.yaml"
-      implementation_constraints:
-        - "integration_and_closure_patch_not_new_monolithic_subsystem"
-        - "PATCH-007_VERIFIED_before_PATCH-AA-000"
-        - "failure_reintroduction_must_be_blocked_before_handoff"
-        - "standard_RunToPass_must_complete_through_remote_equality"
-    -
-      id: "PATCH-ACTIVATION-ARCH-001"
-      title: "change_architecture_scope_convergence"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "ACTIVE"
-      dependency_refs:
-        - "PATCH-007"
-      decision_refs:
-        - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
-      source_refs:
-        - "standards/change-architecture.yaml"
-        - "tooling/host/cerebro_host.py"
-        - "tooling/change/change_engine.py"
-        - "tooling/delivery/delivery_controller.py"
-        - "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1"
-        - "tooling/validator/contract-activation-bindings.json"
-      implementation_constraints:
-        - "session_save_does_not_authorize_implementation"
-        - "explicitly_classify_Host_Change_Engine_Delivery_Controller_and_STANDARD_Kernel_scope"
-        - "STANDARD_has_one_runtime_execution_owner"
-        - "FULL_and_STANDARD_transaction_paths_remain_distinct"
-        - "no_duplicate_canonical_publication_or_control_owner"
-        - "preserve_current_diagnostics_and_material_commitment_ownership"
-      acceptance:
-        - "canonical_scope_boundaries_are_explicit"
-        - "no_canonical_responsibility_conflict"
-        - "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE_removed_from_fresh_activation_audit"
-    -
-      id: "PATCH-ACTIVATION-ARCH-002"
-      title: "remaining_semantic_activation_sweep"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "PLANNED"
-      dependency_refs:
-        - "PATCH-ACTIVATION-ARCH-001"
-      decision_refs:
-        - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
-      source_refs:
-        - "standards/standards.yaml"
-        - "tooling/validator/contract-activation-bindings.json"
-        - "tooling/validator/cerebro_contract_activation_closure.ps1"
-      implementation_constraints:
-        - "trace_each_remaining_SEMANTIC_REVIEW_REQUIRED_contract_before_any_promotion"
-        - "reference_existence_never_proves_OPERATIONAL"
-        - "do_not_implement_broad_new_runtime_without_proven_activation_gap"
-        - "preserve_POLICY_ONLY_DORMANT_SUPERSEDED_and_partial_semantics"
-        - "promoted_OPERATIONAL_contracts_require_strict_activation_proof"
-      acceptance:
-        - "every_semantic_review_item_has_explicit_traced_disposition"
-        - "unclassified_standard_count_remains_zero"
-        - "remaining_activation_debt_is_explicit"
-        - "fresh_audit_is_generated_before_return_to_PATCH-AA-000"
-    -
-      id: "PATCH-AA-000"
-      title: "semantic_lock_identity_boundary_and_active_source_cleanup"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "PLANNED"
-      dependency_refs:
-        - "PATCH-007"
-        - "PATCH-ACTIVATION-ARCH-002"
-      decision_refs:
-        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
-        - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
-        - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
-      source_refs:
-        - "standards/change-delivery.yaml"
-        - "standards/user-operating-profile.yaml"
-        - "standards/control-architecture.yaml"
-        - "engines/context/working-context.yaml"
-        - "engines/project/roadmap.yaml"
-      implementation_constraints:
-        - "implementation_requires_explicit_user_authorization_beyond_LOCK"
-        - "temporary_user_lock_label_must_not_become_canonical_identity"
-        - "temporary_user_lock_label_must_not_persist_in_machine_logic"
-        - "locked_semantics_and_adaptive_execution_envelope_must_remain_distinct"
-        - "material_basis_change_invalidates_semantic_lock"
-        - "remove_prior_temporary_label_leakage_from_active_Source_without_rewriting_git_history"
-      acceptance:
-        - "semantic_lock_contract_is_explicit"
-        - "canonical_machine_identity_is_independent_of_user_temporary_label"
-        - "LOCK_does_not_authorize_implementation"
-        - "active_Source_has_no_temporary_lock_label_as_machine_identity"
-        - "final_critical_review_trigger_contract_is_preserved_for_AA_foundation"
-    -
-      id: "PATCH-AA-001"
-      title: "adaptive_autonomy_mcp_native_foundation"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "PLANNED"
-      dependency_refs:
-        - "PATCH-AA-000"
-      decision_refs:
-        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
-        - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
-        - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
-      source_refs:
-        - "standards/control-architecture.yaml"
-        - "standards/development/adaptive-quality-workform.yaml"
-        - "engines/interaction/rules.yaml"
-        - "engines/context/working-context.yaml"
-      implementation_constraints:
-        - "no_new_top_level_engine"
-        - "MCP_owns_adaptive_control_resolution"
-        - "Runtime_remains_bounded_executor"
-        - "CAN_MAY_SHOULD_are_resolved_separately"
-        - "re_resolution_occurs_on_material_control_events_not_micro_signals"
-        - "material_user_input_is_applied_at_nearest_safe_atomic_boundary"
-        - "Knowledge_and_Wisdom_remain_evidence_only"
-      acceptance:
-        - "completion_contract_in_control_basis"
-        - "decision_state_in_control_basis"
-        - "dependency_state_in_control_basis"
-        - "resource_state_in_control_basis"
-        - "human_interaction_assessment_in_control_basis"
-        - "control_stability_and_interruptibility_verified"
-    -
-      id: "PATCH-AA-002"
-      title: "adaptive_autonomy_operational_status_and_usage_telemetry"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "PLANNED"
-      dependency_refs:
-        - "PATCH-AA-001"
-      decision_refs:
-        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
-        - "CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001"
-        - "CTX-WISDOM-HUMAN-TIME-TO-RESULT-001"
-      source_refs:
-        - "standards/user-operating-profile.yaml"
-        - "engines/presentation/rules.yaml"
-        - "tooling/runtime-host/component.yaml"
-      implementation_constraints:
-        - "usage_dashboard_remains_measurement_authority"
-        - "usage_estimates_remain_non_authoritative_until_empirically_supported"
-        - "resource_pressure_must_not_weaken_authority_integrity_recovery_or_mandatory_verification"
-        - "operational_status_includes_usage_remaining_when_fresh_observation_exists"
-      acceptance:
-        - "before_after_operation_usage_observation_supported"
-        - "human_time_to_available_result_stages_supported"
-        - "resource_state_visible_to_MCP"
-        - "operational_status_exposes_usage_with_source_and_freshness"
-    -
-      id: "PATCH-AA-003"
-      title: "adaptive_autonomy_shadow_resolver_and_scenario_suite"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "PLANNED"
-      dependency_refs:
-        - "PATCH-AA-002"
-      decision_refs:
-        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
-        - "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
-        - "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
-      source_refs: []
-      implementation_constraints:
-        - "shadow_mode_does_not_govern_live_control"
-        - "scenario_suite_replays_real_Cerebro_failure_and_success_patterns"
-        - "over_questioning_and_over_autonomy_are_both_measured"
-        - "dependency_ordering_reorientation_and_assurance_behavior_are_compared"
-      acceptance:
-        - "successful_standard_delivery_sequence_replayed_correctly"
-        - "prior_patch_loop_failure_patterns_detected"
-        - "human_machine_semantic_gap_scenarios_pass"
-        - "authority_and_dependency_boundaries_pass"
-    -
-      id: "PATCH-AA-004"
-      title: "adaptive_autonomy_activation"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      status: "PLANNED"
-      dependency_refs:
-        - "PATCH-AA-003"
-      decision_refs:
-        - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
-      source_refs: []
-      implementation_constraints:
-        - "activation_requires_shadow_evidence"
-        - "ADAPTIVE_is_universal_default_not_static_level"
-        - "automation_remains_separate_from_autonomy"
-        - "code_assurance_remains_tooling_not_new_engine"
-      acceptance:
-        - "adaptive_control_activation_verified"
-        - "no_authority_boundary_regression"
-        - "no_runtime_resident_control_policy"
-        - "future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work"
+  - id: PATCH-001A
+    title: cerebro_architecture_contracts
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs: []
+    decision_refs: []
+    source_refs: []
+  - id: PATCH-001B.PRE-001
+    title: roadmap_schema_and_ownership
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001A
+    decision_refs:
+    - CTX-DEC-P1B-PRE001
+    source_refs:
+    - engines/project/roadmap-schema.yaml
+    - engines/project/component.yaml
+    - engines/project/rules.yaml
+  - id: PATCH-001B.PRE-002
+    title: roadmap_persistence_contract
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-001
+    decision_refs:
+    - CTX-DEC-P1B-PRE002
+    source_refs:
+    - engines/project/roadmap.yaml
+  - id: PATCH-001B.PRE-003
+    title: project_state_boundary_and_runtime_projection
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-002
+    decision_refs:
+    - CTX-DEC-P1B-PRE003
+    source_refs:
+    - tooling/runtime-host/component.yaml
+    - tooling/runtime-host/runtime-state-schema.yaml
+  - id: PATCH-001B.PRE-004
+    title: project_state_lifecycle_and_physical_working_source_target
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-003
+    decision_refs:
+    - CTX-DEC-P1B-PRE004
+    source_refs:
+    - engines/project/roadmap.yaml
+  - id: PATCH-001B.PRE-005
+    title: copyable_next_action_footer
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-004
+    decision_refs:
+    - CTX-DEC-P1B-PRE005
+    source_refs:
+    - engines/presentation/rules.yaml
+  - id: PATCH-001B.PRE-006
+    title: persistent_reference_targets_and_resume_closure
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-004
+    - PATCH-001B.PRE-005
+    decision_refs:
+    - CTX-DEC-P1B-PRE006
+    source_refs:
+    - engines/context/working-context-schema.yaml
+    - engines/context/working-context.yaml
+  - id: PATCH-001B.PRE-007
+    title: exact_state_schemas_and_initial_persisted_state
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-006
+    decision_refs:
+    - CTX-DEC-P1B-PRE007
+    source_refs:
+    - engines/project/roadmap-schema.yaml
+    - engines/context/working-context-schema.yaml
+    - engines/project/roadmap.yaml
+    - engines/context/working-context.yaml
+  - id: PATCH-001B.PRE-008
+    title: efficient_single_transaction_promotion_contract
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-007
+    decision_refs:
+    - CTX-DEC-P1B-PRE008
+    source_refs:
+    - tooling/validator/checks.yaml
+    - tooling/builder/builder.yaml
+  - id: PATCH-001B
+    title: project_roadmap_contract
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B.PRE-001
+    - PATCH-001B.PRE-002
+    - PATCH-001B.PRE-003
+    - PATCH-001B.PRE-004
+    - PATCH-001B.PRE-005
+    - PATCH-001B.PRE-006
+    - PATCH-001B.PRE-007
+    - PATCH-001B.PRE-008
+    decision_refs:
+    - CTX-DEC-P1B-PRE001
+    - CTX-DEC-P1B-PRE002
+    - CTX-DEC-P1B-PRE003
+    - CTX-DEC-P1B-PRE004
+    - CTX-DEC-P1B-PRE005
+    - CTX-DEC-P1B-PRE006
+    - CTX-DEC-P1B-PRE007
+    - CTX-DEC-P1B-PRE008
+    source_refs:
+    - engines/project/roadmap-schema.yaml
+    - engines/project/roadmap.yaml
+    - engines/context/working-context-schema.yaml
+    - engines/context/working-context.yaml
+    - engines/project/component.yaml
+    - engines/project/rules.yaml
+    - engines/context/component.yaml
+    - engines/context/rules.yaml
+    - tooling/validator/component.yaml
+    - tooling/validator/checks.yaml
+    - tooling/runtime-host/component.yaml
+    - tooling/runtime-host/runtime-state-schema.yaml
+    - tooling/builder/component.yaml
+    - tooling/builder/builder.yaml
+    - FILE_INVENTORY.json
+  - id: PATCH-001C.PRE-001
+    title: sealed_pshell_transport_and_source_sync_recovery
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001B
+    decision_refs: []
+    source_refs:
+    - tooling/builder/builder.yaml
+    - tooling/validator/checks.yaml
+    - standards/source-authority.yaml
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psd1
+    - tooling/builder/templates/pshell/cerebro_sync.ps1
+  - id: PATCH-001C.PRE-002
+    title: corrective_delivery_preflight_and_wisdom_persistence
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001C.PRE-001
+    decision_refs: []
+    source_refs:
+    - tooling/builder/builder.yaml
+    - tooling/validator/checks.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-001C
+    title: minimal_runtime_bootstrap_prerequisite
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001C.PRE-001
+    - PATCH-001C.PRE-002
+    decision_refs:
+    - CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT
+    - CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP
+    - CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION
+    source_refs:
+    - standards/runtime/minimal-runtime-bootstrap.yaml
+    - tooling/validator/checks.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-001C.POST-001
+    title: streamlined_patch_workform
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001C
+    decision_refs:
+    - CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT
+    - CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE
+    - CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION
+    source_refs:
+    - standards/development/streamlined-patch-workform.yaml
+    - tooling/builder/builder.yaml
+    - tooling/validator/checks.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-001C.POST-002
+    title: runtime_0_1_roadmap_realignment
+    phase_ref: PHASE-0
+    milestone_ref: MS-001
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001C.POST-001
+    decision_refs:
+    - CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT
+    source_refs:
+    - engines/project/roadmap.yaml
+    - engines/context/working-context.yaml
+  - id: PATCH-002.PRE-001
+    title: patch_lvl3_improvement
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-001C.POST-002
+    decision_refs:
+    - CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING
+    source_refs:
+    - standards/development/streamlined-patch-workform.yaml
+    - tooling/builder/builder.yaml
+    - tooling/validator/checks.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-002.PRE-002
+    title: handoff_imp
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-001
+    decision_refs:
+    - CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF
+    source_refs:
+    - standards/session-handoff-schema.yaml
+    - standards/session-handoff.yaml
+    - tooling/builder/templates/pshell/cerebro_handoff.ps1
+    - tooling/runtime-host/cerebro_resume.ps1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psd1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    - tooling/validator/checks.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-002.PRE-002.POST-001
+    title: handoff_parser_and_module_invocation_correction
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-002
+    decision_refs:
+    - CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER
+    source_refs:
+    - tooling/builder/templates/pshell/cerebro_handoff.ps1
+    - tooling/runtime-host/cerebro_resume.ps1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-002.PRE-002.POST-002
+    title: handoff_context_array_serialization_correction
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-002.POST-001
+    decision_refs:
+    - CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION
+    source_refs:
+    - tooling/builder/templates/pshell/cerebro_handoff.ps1
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-002.PRE-003
+    title: HandBoot
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-002.POST-002
+    decision_refs:
+    - CTX-DEC-P2-PRE003-LOCK-HANDBOOT
+    source_refs:
+    - standards/runtime/handboot.yaml
+    - standards/runtime/handboot-bootstrap-state-schema.yaml
+    - tooling/runtime-host/cerebro_boot.ps1
+    - tooling/runtime-host/cerebro_resume.ps1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psd1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    - mcp/activation.yaml
+    - tooling/validator/checks.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-002.PRE-003.POST-001
+    title: HandBoot_manifest_contract_correction
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-003
+    decision_refs:
+    - CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT
+    source_refs:
+    - cerebro.yaml
+    - standards/runtime/handboot.yaml
+    - tooling/runtime-host/cerebro_boot.ps1
+    - tooling/validator/checks.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-002.PRE-004.R3-PRE-001
+    title: powershell_level_3_delivery_assurance
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-003
+    decision_refs:
+    - CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001
+    source_refs:
+    - standards/development/powershell-level3-delivery-assurance.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - failure_chain_persisted_as_process_wisdom
+    - first_implementation_assessment_mandatory
+    - functional_testing_required_beyond_parser_validation
+    - native_command_contract_standardized
+    - automatic_variable_collision_prevented
+    - pipeline_cardinality_explicit
+    - cross_language_execution_removed_by_default
+    - repeated_failure_triggers_rebuild
+    - user_host_not_used_as_development_environment
+  - id: PATCH-002.PRE-004-R3
+    title: runtime_0_1_analysis_checkpoint
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-004.R3-PRE-001
+    decision_refs:
+    - CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001
+    source_refs:
+    - engines/context/runtime-0.1-analysis-basis.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - runtime_0_1_analysis_basis_persisted
+    - minimum_execution_cycle_locked
+    - runtime_objects_and_states_bounded
+    - failure_and_reorientation_contract_locked
+    - user_boundary_locked
+    - PATCH_002_can_continue_without_conversation_reconstruction
+  - id: PATCH-002
+    title: runtime_0_1_scope_and_minimum_contracts
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002.PRE-004-R3
+    decision_refs:
+    - CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT
+    - CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001
+    - CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED
+    source_refs:
+    - engines/context/runtime-0.1-analysis-basis.yaml
+    - standards/runtime/runtime-0.1-contracts.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - runtime_profile_contract_locked
+    - runtime_instance_contract_locked
+    - runtime_event_contract_locked
+    - transition_decision_contract_locked
+    - capability_binding_contract_locked
+    - runtime_projection_contract_locked
+    - failure_ledger_contract_locked
+    - runtime_receipt_contract_locked
+    - state_transition_table_locked
+    - deferred_scope_register_locked
+    - PATCH_003_can_implement_without_architecture_reopen
+  - id: PATCH-003.PRE-001
+    title: reflective_adjustment_loop_and_verification_scope
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-002
+    decision_refs:
+    - CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001
+    - CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001
+    - CTX-WISDOM-VERIFICATION-SCOPE-001
+    - CTX-WISDOM-POWERSHELL-LEVEL3-ASSURANCE-001
+    source_refs:
+    - standards/development/reflective-adjustment-loop.yaml
+    - standards/development/streamlined-patch-workform.yaml
+    - standards/development/powershell-level3-delivery-assurance.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+  - id: PATCH-003.PRE-002
+    title: pre_runtime_catchup_consolidation
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-003.PRE-001
+    decision_refs:
+    - CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001
+    - CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001
+    source_refs:
+    - engines/context/working-context.yaml
+    - standards/development/streamlined-patch-workform.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - Level_2_Library_surface_result_consolidated
+    - troubleshooting_first_resolution_locked
+    - self_running_exact_rerun_semantics_locked
+    - catchup_closed_without_runtime_mutation
+    - PATCH_003_remains_the_single_active_main_patch
+  - id: PATCH-003.PRE-003
+    title: user_facing_powershell_host_visibility_and_runner_compliance
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-003.PRE-002
+    decision_refs:
+    - CTX-WISDOM-USER-HOST-VISIBILITY-001
+    source_refs:
+    - standards/development/powershell-level3-delivery-assurance.yaml
+    - standards/development/streamlined-patch-workform.yaml
+    - tooling/builder/templates/pshell/cerebro_level3_runner.ps1
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - user_facing_terminal_receipt_remains_visible_until_explicit_dismissal
+    - success_and_failure_paths_preserve_visibility
+    - nested_machine_invocation_can_explicitly_disable_pause
+    - canonical_runner_uses_literal_native_argument_tokens
+    - manual_single_native_argument_string_removed
+    - PATCH_003_remains_active_and_unmodified
+  - id: PATCH-003.PRE-004
+    title: adaptive_wisdom_evidence_and_friction_feedback
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-003.PRE-003
+    decision_refs:
+    - CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001
+    source_refs:
+    - standards/development/reflective-adjustment-loop.yaml
+    - engines/context/component.yaml
+    - engines/context/wisdom-evidence-schema.yaml
+    - engines/context/wisdom-evidence.yaml
+    - standards/development/streamlined-patch-workform.yaml
+    - tooling/validator/checks.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - low_threshold_signal_capture_is_bounded_and_event_driven
+    - support_and_friction_are_independent
+    - evidence_maturity_and_control_tier_are_independent
+    - repeated_friction_triggers_review_not_automatic_rule_creation
+    - canonical_structure_wisdom_is_repositioned_to_preflight
+    - micro_signal_persistence_does_not_require_standalone_patch
+    - no_parallel_learning_engine_created
+    - no_runtime_subsystem_created
+    - PATCH_003_returns_as_single_active_main_patch
+  - id: PATCH-003.PRE-005
+    title: level2_cpatch_execution_handoff
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-003.PRE-004
+    decision_refs:
+    - CTX-WISDOM-USER-VISIBLE-DELIVERY-COMPLETION-001
+    - CTX-WISDOM-USER-HOST-VISIBILITY-001
+    - CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001
+    source_refs:
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    - tooling/builder/templates/pshell/Cerebro.Tools.psd1
+    - tooling/builder/builder.yaml
+    - standards/development/streamlined-patch-workform.yaml
+    - tooling/validator/checks.yaml
+    - engines/context/wisdom-evidence.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - cpatch_requires_exact_filename_and_full_sha256
+    - cpatch_resolves_Run_or_standard_Downloads
+    - verified_download_is_staged_to_D_Cerebro_Run
+    - PowerShell_parser_runs_before_execution
+    - child_patch_cannot_close_parent_user_terminal
+    - assistant_can_deliver_one_pasteable_execution_command
+    - no_automatic_latest_file_execution
+    - no_browser_configuration_mutation
+    - Runtime_0_1_not_mutated
+    - PATCH_003_returns_ACTIVE_READY
+  - id: PATCH-003.PRE-006
+    title: bounded_consolidate_operation
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-003.PRE-005
+    decision_refs:
+    - CTX-WISDOM-ADAPTIVE-WISDOM-EVIDENCE-001
+    - CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001
+    source_refs:
+    - standards/development/consolidate.yaml
+    - standards/standards.yaml
+    - engines/interaction/component.yaml
+    - engines/interaction/rules.yaml
+    - engines/context/component.yaml
+    - engines/context/rules.yaml
+    - engines/presentation/component.yaml
+    - engines/presentation/rules.yaml
+    - tooling/validator/checks.yaml
+    - engines/project/roadmap.yaml
+    acceptance:
+    - CONSOLIDATE_is_cross_engine_operation_not_new_component
+    - TOPICS_MARKERS_WINDOW_BUDGET_OUTPUT_are_independent
+    - RECENT_is_adaptive_not_fixed_one_hour
+    - bare_duration_means_WINDOW_unless_budget_explicit
+    - markers_are_conversation_local_non_authoritative
+    - bounded_context_escape_preserves_window
+    - analysis_prioritizes_decision_value
+    - human_machine_deliberation_available_when_material
+    - output_budget_independent_from_analysis_depth
+    - human_output_compressed_without_semantic_loss
+    - Runtime_0_1_not_mutated
+    - PATCH_003_returns_ACTIVE_READY
+  - id: PATCH-003
+    title: runtime_0_1_implementation
+    phase_ref: PHASE-1
+    milestone_ref: MS-002
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-003.PRE-006
+    decision_refs:
+    - CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED
+    - CTX-WISDOM-REFLECTIVE-ADJUSTMENT-LOOP-001
+    - CTX-WISDOM-CANONICAL-STRUCTURE-VALIDATION-001
+    - CTX-WISDOM-VERIFICATION-SCOPE-001
+    source_refs:
+    - standards/runtime/runtime-0.1-contracts.yaml
+    - standards/development/reflective-adjustment-loop.yaml
+    - tooling/builder/cerebro_runtime_release.ps1
+    - tooling/runtime-host/cerebro_runtime.ps1
+    - tooling/runtime-host/cerebro_runtime_host.ps1
+    - tooling/validator/checks.yaml
+    implementation_constraints:
+    - implement_declared_contracts_only
+    - do_not_reopen_runtime_architecture
+    - do_not_implement_deferred_scope
+    - success_and_failure_canaries_required
+    - apply_reflective_adjustment_loop_as_process_gate
+    - keep_verification_claims_explicitly_scoped
+    - do_not_implement_reflective_adjustment_as_runtime_subsystem
+    - development_process_architecture_frozen_during_PATCH_003
+    - process_refinement_deferred_until_after_PATCH_003_unless_governing_validation_fails_or_new_conflicting_evidence_emerges
+  - id: PATCH-004
+    title: idea_object_pipeline
+    phase_ref: PHASE-1
+    milestone_ref: null
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-003
+    decision_refs:
+    - CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001
+    source_refs:
+    - standards/runtime/idea-object-pipeline.yaml
+    - standards/standards.yaml
+    - tooling/builder/cerebro_runtime_release.ps1
+    - tooling/runtime-host/cerebro_runtime.ps1
+    - tooling/runtime-host/cerebro_runtime_host.ps1
+    - tooling/validator/checks.yaml
+    implementation_constraints:
+    - reuse_existing_runtime_0_1_kernel
+    - one_IDEA_CAPTURE_event_one_declared_binding
+    - idea_object_is_non_authoritative
+    - runtime_may_not_mutate_Source
+    - verification_claim_scope_is_idea_object_persistence_and_content
+    - no_universal_object_model
+    - no_automatic_wisdom_or_project_promotion
+    acceptance:
+    - minimum_idea_object_contract_locked
+    - IDEA_CAPTURE_binding_declared
+    - idea_object_persists_outside_Source
+    - success_and_failure_canaries_pass
+    - existing_Runtime_0_1_canaries_remain_passing
+    - operational_pinned_release_canary_required_before_PATCH_004_closure
+  - id: PATCH-005
+    title: operational_architecture_normalization
+    phase_ref: PHASE-1
+    milestone_ref: null
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-004
+    decision_refs: []
+    source_refs:
+    - standards/control-architecture.yaml
+    - standards/active-source-closure.yaml
+    - standards/development/wisdom-control-binding.yaml
+    - tooling/runtime-host/component.yaml
+    implementation_constraints:
+    - MCP_remains_highest_internal_control
+    - Runtime_0_1_remains_separate_from_Source_mutation
+    - Wisdom_evidence_does_not_create_authority
+  - id: PATCH-005.POST-001
+    title: change_and_delivery_platform_operational_closure
+    phase_ref: PHASE-1
+    milestone_ref: null
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-005
+    decision_refs: []
+    source_refs:
+    - standards/change-architecture.yaml
+    - standards/change-delivery.yaml
+    - standards/release-platform.yaml
+    - tooling/host/cerebro_host.py
+    - tooling/change/change_engine.py
+    - tooling/delivery/delivery_controller.py
+    - tooling/closure/closure_engine.py
+    implementation_constraints:
+    - delivery_stops_at_READY_FOR_LOCAL_VALIDATION
+    - validation_does_not_mutate_live_Release
+    - closure_is_read_only
+    - Knowledge_implementation_is_bounded_to_the_Final_Learning_Consolidation_decision
+    acceptance:
+    - Host_Change_Delivery_and_Closure_selftests_PASS
+    - Release_full_validation_is_observational
+    - Release_package_identity_is_reproducible
+    - Active_Source_Closure_PASS
+    - published_Source_and_Release_are_clean_and_remote_aligned
+    - Final_Learning_Consolidation_completed
+    - Cerebro_Internal_Control_Review_completed
+    - Closure_Engine_returns_CLOSURE_PASS
+  - id: PATCH-006
+    title: wisdom_operationalization_and_knowledge_evidence_decision
+    phase_ref: PHASE-1
+    milestone_ref: null
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-005.POST-001
+    decision_refs:
+    - PATCH-006-BOUNDED-RELEVANCE-IMPLEMENTATION
+    source_refs:
+    - engines/context/change-learning-evidence.yaml
+    - engines/context/knowledge-schema.yaml
+    - engines/context/knowledge.yaml
+    - standards/development/wisdom-control-binding.yaml
+    - standards/development/relevance-retrieval.yaml
+    - tooling/context/relevance_engine.py
+    implementation_constraints:
+    - activation_requires_PATCH_005_POST_001_Closure_PASS
+    - automatic_authority_promotion_prohibited
+    - Knowledge_is_evidence_only_and_has_no_direct_control_tier
+    - Final_Learning_Consolidation_approved_only_the_bounded_evidence_scope
+  - id: PATCH-007.PRE-001
+    title: operational_evidence_contract
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-006
+    decision_refs:
+    - CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001
+    - CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001
+    source_refs:
+    - standards/control-architecture.yaml
+    - standards/change-architecture.yaml
+    - standards/change-delivery.yaml
+    - standards/operational-evidence.yaml
+    - standards/standards.yaml
+    - cerebro.yaml
+    - tooling/validator/checks.yaml
+    implementation_constraints:
+    - no_new_top_level_engine
+    - evidence_is_derived_and_non_authoritative
+    - progressive_diagnostics_not_collect_everything_by_default
+    - privacy_and_redaction_are_part_of_the_contract
+    - implementation_requires_explicit_user_authorization
+    - probe_execution_state_is_distinct_from_subject_result
+    - evidence_sufficiency_is_question_relative
+    - freshness_is_state_aware
+    - partial_evidence_preserves_successful_observations
+    - mismatch_detection_is_not_root_cause
+  - id: PATCH-007.PRE-002
+    title: standard_handoff_convergence
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-007.PRE-001
+    decision_refs:
+    - CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001
+    - CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001
+    source_refs:
+    - standards/change-delivery.yaml
+    - tooling/builder/builder.yaml
+    - tooling/builder/templates/pshell/Cerebro.Tools.psm1
+    - tooling/delivery/component.yaml
+    - tooling/validator/checks.yaml
+    implementation_constraints:
+    - extend_existing_cpatch_capability_do_not_create_parallel_bootstrap
+    - stage_verified_launcher_and_bundle_as_one_delivery_unit
+    - process_scoped_execution_policy_only
+    - no_permanent_user_execution_policy_change
+    - no_current_working_directory_dependency
+    - no_user_handoff_without_machine_verified_handoff_assurance
+    - legacy_launcher_only_cpatch_invocation_preserved
+    - bundle_aware_cpatch_requires_filename_and_sha256_pair
+    - launcher_must_bind_expected_bundle_filename_and_sha256
+    - handoff_assurance_receipt_required_before_user_handoff
+  - id: PATCH-007.PRE-003
+    title: operation_supervision_and_observability
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-007.PRE-002
+    decision_refs:
+    - CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001
+    - CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001
+    source_refs:
+    - standards/control-architecture.yaml
+    - standards/change-architecture.yaml
+    - tooling/host/component.yaml
+    - tooling/host/cerebro_host.py
+    - tooling/validator/checks.yaml
+    implementation_constraints:
+    - one_reusable_native_process_supervision_path
+    - heartbeat_independent_of_child_stdout
+    - operation_journal_from_start
+    - interruptibility_is_stage_specific
+    - stall_detection_does_not_imply_force_kill
+    - unavailable_or_null_exit_status_is_not_nonzero_exit
+    - process_observation_child_receipt_and_material_poststate_are_reconciled_before_final_classification
+    - successful_verified_poststate_may_resolve_SUCCESS_WITH_PROCESS_OBSERVATION_DEGRADED
+    - receipt_exit_and_poststate_disagreement_is_explicitly_classified
+    - regression_ref_CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001
+    - native_executable_is_resolved_as_Application_before_invocation
+    - helper_alias_or_function_must_not_shadow_native_executable
+    - generated_PowerShell_passes_runtime_semantic_assurance_profile
+    - shared_verified_native_process_adapter_preferred_over_generated_wrapper_duplication
+    - assurance_profile_ref_CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001
+    - regression_ref_CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001
+    - regression_ref_CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001
+  - id: PATCH-007.PRE-004
+    title: diagnostic_capsule
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-007.PRE-003
+    decision_refs:
+    - CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001
+    - CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001
+    source_refs:
+    - standards/control-architecture.yaml
+    - standards/operational-evidence.yaml
+    - standards/change-delivery.yaml
+    - standards/session-handoff.yaml
+    - standards/system-metamodel.yaml
+    - tooling/host/component.yaml
+    - tooling/host/cerebro_host.py
+    - tooling/host/diagnostic_capsule.py
+    - tooling/change/change_engine.py
+    - tooling/builder/builder.yaml
+    - tooling/validator/checks.yaml
+    implementation_constraints:
+    - read_only_against_working_source
+    - progressive_core_targeted_deep_acquisition
+    - probe_failures_preserve_partial_evidence
+    - diagnostics_classify_but_do_not_own_recovery_policy
+    - bounded_redacted_transport_envelope
+    - minimal_break_glass_read_only_fallback
+    - persistent_local_diagnostic_state_outside_working_source
+    - automatic_failure_capture_before_exit_when_possible
+    - automatic_unresolved_failure_rehydration_before_next_cerebro_operation
+    - full_local_and_bounded_transport_are_views_of_same_capsule
+    - user_is_not_diagnostic_transport_processor
+    - diagnostic_capture_failure_does_not_mask_primary_failure
+    - successful_repair_retains_failure_to_commit_traceability
+    - no_new_top_level_component
+    - Host_exposes_diagnostics_as_fourth_delegated_capability
+    - PRE_005_consumes_rehydrated_diagnostic_basis_for_failure_learning
+  - id: PATCH-007.PRE-005
+    title: failure_learning_and_regression_binding
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-007.PRE-004
+    decision_refs:
+    - CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001
+    - CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001
+    - CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001
+    source_refs:
+    - standards/change-architecture.yaml
+    - standards/change-delivery.yaml
+    - tooling/change/failure-record-schema.json
+    - tooling/change/campaign-policy.yaml
+    - tooling/change/change_engine.py
+    - tooling/host/diagnostic_capsule.py
+    - standards/development/relevance-retrieval.yaml
+    - tooling/context/relevance_engine.py
+    - engines/context/development-history.yaml
+    - engines/context/development-history-schema.yaml
+    - tooling/validator/checks.yaml
+    implementation_constraints:
+    - reuse_existing_failure_learning_architecture
+    - machine_enforceable_learning_becomes_executable_assurance
+    - later_patches_inherit_applicable_failure_families_and_regressions
+    - relevant_learning_basis_change_invalidates_candidate_assurance
+    - first_regression_family_POWERSHELL_AUTOMATIC_VARIABLE_COLLISION
+    - regression_family_PATCH_ANCHOR_LINE_ENDING_REPRESENTATION
+    - regression_family_NATIVE_PROCESS_RESULT_FALSE_FAILURE
+    - regression_ref_CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001
+    - regression_family_POWERSHELL_COMMAND_SHADOWING_NATIVE_EXECUTABLE
+    - regression_family_POWERSHELL_RUNTIME_SEMANTIC_COLLISION
+    - systemic_family_GENERATED_LOCAL_EXECUTION_ASSURANCE_INCOMPLETE
+    - relevance_scoped_assurance_profile_is_required_for_later_material_patch_candidates
+    - first_pass_run_success_and_user_retry_count_are_derived_learning_metrics
+    - regression_ref_CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001
+    - regression_ref_CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001
+    - assurance_profile_ref_CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001
+    - development_history_ref_CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001
+    - development_history_is_Context_owned_HISTORY_not_new_engine
+    - history_candidates_are_automatic_but_Source_append_requires_authorized_safe_persistence_scope
+    - history_capture_must_not_add_normal_user_steps
+    - history_append_failure_must_not_invalidate_verified_primary_operation_success
+    - published_history_is_append_only_with_correction_and_retraction_records
+    - seed_first_pass_success_as_FOUNDATIONAL_STRENGTHENING_EVENT
+    - cross_cutting_pattern_EXPECTED_OBSERVED_STATE_MISMATCH
+    - mismatch_invariant_MISMATCH_IS_DETECTION_NOT_ROOT_CAUSE
+    - mismatch_resolution_detect_classify_preserve_compare_rootcause_regression
+    - mismatch_root_cause_learning_ref_CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001
+    - history_seed_ref_CTX-ASSESS-REPEAT-FIRST-PASS-MILESTONE-20260810-001
+    - seed_repeat_first_pass_success_as_MAJOR_STRENGTHENING_EVENT
+  - id: PATCH-007
+    title: operational_reliability_and_evidence_foundation
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-007.PRE-001
+    - PATCH-007.PRE-002
+    - PATCH-007.PRE-003
+    - PATCH-007.PRE-004
+    - PATCH-007.PRE-005
+    decision_refs:
+    - CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001
+    source_refs:
+    - standards/control-architecture.yaml
+    - standards/change-architecture.yaml
+    - standards/change-delivery.yaml
+    implementation_constraints:
+    - integration_and_closure_patch_not_new_monolithic_subsystem
+    - PATCH-007_VERIFIED_before_PATCH-AA-000
+    - failure_reintroduction_must_be_blocked_before_handoff
+    - standard_RunToPass_must_complete_through_remote_equality
+  - id: PATCH-ACTIVATION-ARCH-001
+    title: change_architecture_scope_convergence
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-007
+    decision_refs:
+    - CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
+    source_refs:
+    - standards/change-architecture.yaml
+    - tooling/host/cerebro_host.py
+    - tooling/change/change_engine.py
+    - tooling/delivery/delivery_controller.py
+    - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    - tooling/validator/contract-activation-bindings.json
+    implementation_constraints:
+    - session_save_does_not_authorize_implementation
+    - explicitly_classify_Host_Change_Engine_Delivery_Controller_and_STANDARD_Kernel_scope
+    - STANDARD_has_one_runtime_execution_owner
+    - FULL_and_STANDARD_transaction_paths_remain_distinct
+    - no_duplicate_canonical_publication_or_control_owner
+    - preserve_current_diagnostics_and_material_commitment_ownership
+    acceptance:
+    - canonical_scope_boundaries_are_explicit
+    - no_canonical_responsibility_conflict
+    - CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE_removed_from_fresh_activation_audit
+  - id: PATCH-ACTIVATION-ARCH-002
+    title: remaining_semantic_activation_sweep
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-ACTIVATION-ARCH-001
+    decision_refs:
+    - CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
+    source_refs:
+    - standards/standards.yaml
+    - tooling/validator/contract-activation-bindings.json
+    - tooling/validator/cerebro_contract_activation_closure.ps1
+    implementation_constraints:
+    - trace_each_remaining_SEMANTIC_REVIEW_REQUIRED_contract_before_any_promotion
+    - reference_existence_never_proves_OPERATIONAL
+    - do_not_implement_broad_new_runtime_without_proven_activation_gap
+    - preserve_POLICY_ONLY_DORMANT_SUPERSEDED_and_partial_semantics
+    - promoted_OPERATIONAL_contracts_require_strict_activation_proof
+    acceptance:
+    - every_semantic_review_item_has_explicit_traced_disposition
+    - unclassified_standard_count_remains_zero
+    - remaining_activation_debt_is_explicit
+    - fresh_audit_is_generated_before_return_to_PATCH-AA-000
+  - id: PATCH-AA-000
+    title: adaptive_autonomy_rebase_and_active_source_cleanup
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-007
+    - PATCH-ACTIVATION-ARCH-002
+    decision_refs:
+    - CTX-DEC-AA-ARCHITECTURE-LOCK-001
+    - CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001
+    - CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001
+    source_refs:
+    - standards/change-delivery.yaml
+    - standards/user-operating-profile.yaml
+    - standards/control-architecture.yaml
+    - standards/continuation-surface-system-policy.yaml
+    - engines/presentation/rules.yaml
+    - engines/presentation/specification.md
+    - engines/context/development-history.yaml
+    - tooling/validator/checks.yaml
+    - engines/project/roadmap.yaml
+    implementation_constraints:
+    - reuse_current_strong_Cerebro_architecture_do_not_rebuild_old_AA_assumptions
+    - no_new_top_level_engine
+    - no_new_identity_or_authorization_subsystem
+    - temporary_user_lock_label_must_not_become_canonical_identity
+    - temporary_user_lock_label_must_not_persist_in_active_machine_logic
+    - locked_semantics_and_adaptive_execution_envelope_remain_distinct
+    - material_basis_change_invalidates_semantic_lock_and_requires_reresolution
+    - continuation_presentation_and_history_closure_persist_in_existing_owners
+    - AA_002_resource_and_human_cost_scope_is_absorbed_into_AA_001
+    - closure_and_AA_000_share_one_STANDARD_transaction_without_pulling_AA_001_implementation_forward
+    acceptance:
+    - Activation_Architecture_001_and_002_are_VERIFIED_in_roadmap_state
+    - semantic_lock_and_canonical_machine_identity_boundaries_are_already_explicit_in_current_Source
+    - LOCK_does_not_authorize_future_material_implementation_without_current_control_resolution
+    - active_Source_has_no_temporary_lock_label_as_current_execution_identity
+    - presentation_and_next_step_continuity_lock_is_persisted
+    - historical_autonomous_first_pass_activation_event_is_persisted
+    - PATCH_AA_002_is_preserved_historically_and_absorbed_into_PATCH_AA_001
+    - PATCH_AA_001_is_the_single_active_next_implementation_patch
+  - id: PATCH-AA-001
+    title: adaptive_mcp_resolver
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: ACTIVE
+    dependency_refs:
+    - PATCH-AA-000
+    decision_refs:
+    - CTX-DEC-AA-ARCHITECTURE-LOCK-001
+    - CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001
+    - CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001
+    source_refs:
+    - standards/control-architecture.yaml
+    - standards/development/adaptive-quality-workform.yaml
+    - standards/user-operating-profile.yaml
+    - standards/continuation-surface-system-policy.yaml
+    - engines/interaction/rules.yaml
+    - engines/context/working-context.yaml
+    - engines/presentation/rules.yaml
+    implementation_constraints:
+    - no_new_top_level_engine
+    - MCP_owns_adaptive_control_resolution
+    - reuse_existing_CONTROL_EVENT_to_HUMAN_CONTINUATION_SURFACE_control_path
+    - reuse_existing_CONTINUE_REMEDIATE_RETRY_REORIENT_USER_DECISION_REQUIRED_BLOCK_outcomes
+    - dynamically_resolve_analysis_depth_autonomy_human_decision_value_verification_depth_and_relevant_capabilities
+    - human_time_interruption_resource_and_fresh_usage_signals_absorb_historical_PATCH_AA_002_scope
+    - usage_dashboard_remains_measurement_authority_and_usage_percentages_must_not_be_invented
+    - resource_pressure_must_not_weaken_authority_integrity_recovery_or_mandatory_verification
+    - continuation_continuity_reuses_existing_system_policy_not_parallel_state
+    - Runtime_remains_bounded_executor_not_control_intelligence
+    - Knowledge_Wisdom_and_History_remain_evidence_only
+    - no_parallel_resource_manager_telemetry_system_failure_recovery_relevance_or_presentation_architecture
+    acceptance:
+    - adaptive_resolver_composes_existing_Cerebro_capabilities_without_duplicate_architecture
+    - analysis_depth_and_verification_depth_are_proportional_to_current_control_state
+    - safe_autonomous_continuation_is_preferred_over_low_value_user_interruption
+    - high_value_human_decision_boundaries_are_preserved
+    - human_time_interruption_and_resource_signals_are_in_control_basis
+    - fresh_usage_observation_is_consumed_only_when_available
+    - continuation_is_preserved_reresolved_or_replaced_across_interposed_user_events
+    - control_stability_and_safe_boundary_interruptibility_are_verified
+  - id: PATCH-AA-002
+    title: absorbed_into_AA_001_human_time_resource_and_usage_signals
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: DISCARDED
+    dependency_refs:
+    - PATCH-AA-001
+    decision_refs:
+    - CTX-DEC-AA-ARCHITECTURE-LOCK-001
+    - CTX-WISDOM-USER-LIMIT-AS-PLANNING-RESOURCE-001
+    - CTX-WISDOM-HUMAN-TIME-TO-RESULT-001
+    source_refs:
+    - standards/user-operating-profile.yaml
+    - engines/presentation/rules.yaml
+    - tooling/runtime-host/component.yaml
+    implementation_constraints:
+    - historical_patch_identity_is_preserved
+    - no_standalone_implementation
+    - valuable_scope_is_absorbed_into_PATCH_AA_001
+    - usage_dashboard_remains_measurement_authority
+    - no_parallel_resource_or_telemetry_subsystem
+    acceptance:
+    - PATCH_AA_002_has_no_standalone_execution
+    - human_time_resource_and_usage_signal_value_is_preserved_in_PATCH_AA_001
+  - id: PATCH-AA-003
+    title: adaptive_mcp_resolver_shadow_validation
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: PLANNED
+    dependency_refs:
+    - PATCH-AA-001
+    decision_refs:
+    - CTX-DEC-AA-ARCHITECTURE-LOCK-001
+    - CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001
+    - CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001
+    source_refs: []
+    implementation_constraints:
+    - shadow_mode_does_not_govern_live_control
+    - reuse_existing_Change_Engine_campaign_assurance_and_regression_infrastructure
+    - scenario_suite_replays_real_Cerebro_failure_and_success_patterns
+    - over_questioning_and_over_autonomy_are_both_measured
+    - dependency_ordering_reorientation_and_assurance_behavior_are_compared
+    - no_parallel_AA_test_platform
+    acceptance:
+    - successful_standard_delivery_sequence_replayed_correctly
+    - prior_patch_loop_failure_patterns_detected
+    - human_machine_semantic_gap_scenarios_pass
+    - authority_and_dependency_boundaries_pass
+  - id: PATCH-AA-004
+    title: adaptive_mcp_resolver_control_promotion
+    phase_ref: PHASE-2
+    milestone_ref: MS-003
+    status: PLANNED
+    dependency_refs:
+    - PATCH-AA-003
+    decision_refs:
+    - CTX-DEC-AA-ARCHITECTURE-LOCK-001
+    source_refs: []
+    implementation_constraints:
+    - promotion_requires_shadow_evidence
+    - promote_validated_resolver_into_normal_MCP_CONTROL_DECISION_path
+    - no_Adaptive_Engine_or_static_ADAPTIVE_work_mode
+    - automation_remains_separate_from_autonomy
+    - Runtime_does_not_gain_control_intelligence
+    - code_assurance_remains_tooling_not_new_engine
+    acceptance:
+    - adaptive_control_activation_verified
+    - no_authority_boundary_regression
+    - no_runtime_resident_control_policy
+    - future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work
   execution:
     current:
-      id: "EXEC-ACTIVATION-ARCH-001-SCOPE-CONVERGENCE"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      patch_ref: "PATCH-ACTIVATION-ARCH-001"
-      canonical_command: "analyze and converge CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE from current authoritative Source; implementation requires fresh material preflight and explicit authorization"
-      status: "ACTIVE"
+      id: EXEC-AA-001-ADAPTIVE-MCP-RESOLVER
+      phase_ref: PHASE-2
+      milestone_ref: MS-003
+      patch_ref: PATCH-AA-001
+      canonical_command: implement the rebaselined thin MCP-native adaptive resolver by composing existing Cerebro control, relevance, quality,
+        continuation, history and assurance capabilities; do not rebuild existing architecture
+      status: ACTIVE
     next:
-      id: "EXEC-ACTIVATION-ARCH-002-SEMANTIC-SWEEP"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      patch_ref: "PATCH-ACTIVATION-ARCH-002"
-      canonical_command: "after CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE is VERIFIED, perform the remaining contract-level semantic activation sweep before re-resolving PATCH-AA-000"
-      status: "PLANNED"
+      id: EXEC-AA-003-SHADOW-VALIDATION
+      phase_ref: PHASE-2
+      milestone_ref: MS-003
+      patch_ref: PATCH-AA-003
+      canonical_command: after PATCH-AA-001 is VERIFIED, run shadow validation using existing Change Engine campaign and regression infrastructure
+        before live promotion
+      status: PLANNED
   blockers: []
   context_refs:
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE002"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE003"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE004"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE005"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE006"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE007"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1B-PRE008"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-WORKPLAN"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-VERIFICATION-FRESHNESS"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-P1B-IMPLEMENTED"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-RUNTIME-0-1-ENTRY"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
-      requirement: "REQUIRED"
-    -
-      owner: "loader"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
-      requirement: "REQUIRED"
-    -
-      owner: "loader"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "WISDOM"
-      object_ref: "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "WISDOM"
-      object_ref: "CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "WISDOM"
-      object_ref: "CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "WISDOM"
-      object_ref: "CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-PATCH-007-LOCKED-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "ASSESSMENT"
-      object_ref: "CTX-ASSESS-USAGE-OBSERVATION-20260809-001"
-      requirement: "OPTIONAL"
-    -
-      owner: "context-engine"
-      object_type: "ASSESSMENT"
-      object_ref: "CTX-ASSESS-ACTIVATION-AUDIT-POST-RELEVANCE-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "DECISION"
-      object_ref: "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
-      requirement: "REQUIRED"
-    -
-      owner: "context-engine"
-      object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
-      requirement: "REQUIRED"
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE002
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE003
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE004
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE005
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE006
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE007
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1B-PRE008
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-WORKPLAN
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-VERIFICATION-FRESHNESS
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-P1B-IMPLEMENTED
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-RUNTIME-0-1-ENTRY
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION
+    requirement: REQUIRED
+  - owner: loader
+    object_type: DECISION
+    object_ref: CTX-DEC-P2-PRE003-LOCK-HANDBOOT
+    requirement: REQUIRED
+  - owner: loader
+    object_type: DECISION
+    object_ref: CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: WISDOM
+    object_ref: CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: WISDOM
+    object_ref: CTX-WISDOM-IDEMPOTENT-RERUN-CLASSIFICATION-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-PATCH-004-IMPLEMENTATION-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-PATCH-005-POST-001-CLOSURE-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-PATCH-005-POST-001-VERIFIED-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-AA-ARCHITECTURE-LOCK-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: WISDOM
+    object_ref: CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: WISDOM
+    object_ref: CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-PATCH-007-LOCKED-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: ASSESSMENT
+    object_ref: CTX-ASSESS-USAGE-OBSERVATION-20260809-001
+    requirement: OPTIONAL
+  - owner: context-engine
+    object_type: ASSESSMENT
+    object_ref: CTX-ASSESS-ACTIVATION-AUDIT-POST-RELEVANCE-001
+    requirement: REQUIRED
+  - owner: context-engine
+    object_type: DECISION
+    object_ref: CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
+    requirement: REQUIRED
   traceability:
     basis_refs:
-      - "CTX-BASIS-WORKPLAN"
-      - "CTX-BASIS-P1B-IMPLEMENTED"
-      - "CTX-BASIS-RUNTIME-0-1-ENTRY"
-      - "CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001"
-      - "CTX-BASIS-PATCH-004-IMPLEMENTATION-001"
-      - "CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001"
-      - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
-      - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
-      - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
-      - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
-      - "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
+    - CTX-BASIS-WORKPLAN
+    - CTX-BASIS-P1B-IMPLEMENTED
+    - CTX-BASIS-RUNTIME-0-1-ENTRY
+    - CTX-BASIS-PATCH-004-IDEA-OBJECT-PIPELINE-ENTRY-001
+    - CTX-BASIS-PATCH-004-IMPLEMENTATION-001
+    - CTX-BASIS-PATCH-005-POST-IDEA-EVIDENCE-ENTRY-001
+    - CTX-BASIS-PATCH-005-POST-001-CLOSURE-001
+    - CTX-BASIS-PATCH-005-POST-001-VERIFIED-001
+    - CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001
+    - CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001
     revision_refs:
-      - "CTX-DEC-P1B-PRE001"
-      - "CTX-DEC-P1B-PRE002"
-      - "CTX-DEC-P1B-PRE003"
-      - "CTX-DEC-P1B-PRE004"
-      - "CTX-DEC-P1B-PRE005"
-      - "CTX-DEC-P1B-PRE006"
-      - "CTX-DEC-P1B-PRE007"
-      - "CTX-DEC-P1B-PRE008"
-      - "CTX-DEC-VERIFICATION-FRESHNESS"
-      - "CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT"
-      - "CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP"
-      - "CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION"
-      - "CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT"
-      - "CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE"
-      - "CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION"
-      - "CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT"
-      - "CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING"
-      - "CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF"
-      - "CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER"
-      - "CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION"
-      - "CTX-DEC-P2-PRE003-LOCK-HANDBOOT"
-      - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
-      - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
-      - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
-      - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
-      - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
+    - CTX-DEC-P1B-PRE001
+    - CTX-DEC-P1B-PRE002
+    - CTX-DEC-P1B-PRE003
+    - CTX-DEC-P1B-PRE004
+    - CTX-DEC-P1B-PRE005
+    - CTX-DEC-P1B-PRE006
+    - CTX-DEC-P1B-PRE007
+    - CTX-DEC-P1B-PRE008
+    - CTX-DEC-VERIFICATION-FRESHNESS
+    - CTX-DEC-P1C-REJECT-BROAD-BOOTENGINE-ALIGNMENT
+    - CTX-DEC-P1C-LOCK-MINIMAL-RUNTIME-BOOTSTRAP
+    - CTX-DEC-P1C-DEFER-RUNTIME-IMPLEMENTATION
+    - CTX-DEC-P1C-POST001-LOCK-WORKFORM-IMPROVEMENT
+    - CTX-DEC-P1C-POST001-REUSE-VERIFIED-PIPELINE
+    - CTX-DEC-P1C-POST001-PREPARE-ENVIRONMENT-BEFORE-MUTATION
+    - CTX-DEC-P1C-POST002-ROADMAP-REALIGNMENT
+    - CTX-DEC-P2-PRE001-LOCK-LEVEL3-PAYLOAD-PARTITIONING
+    - CTX-DEC-P2-PRE002-LOCK-MINIMUM-STRONG-HANDOFF
+    - CTX-DEC-P2-PRE002-POST001-CORRECT-HANDOFF-PARSER
+    - CTX-DEC-P2-PRE002-POST002-CORRECT-CONTEXT-ARRAY-SERIALIZATION
+    - CTX-DEC-P2-PRE003-LOCK-HANDBOOT
+    - CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT
+    - CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001
+    - CTX-DEC-AA-ARCHITECTURE-LOCK-001
+    - CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001
+    - CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
   revision:
-    sequence: 23
-    last_locked_patch_ref: "PATCH-AA-004"
-
+    sequence: 24
+    last_locked_patch_ref: PATCH-AA-004
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
   decision_assurance_required: true
@@ -1508,28 +1437,28 @@ patch_005_current_execution_state:
   patch_ref: PATCH-005.POST-003
   scope: DELIVERY_PROFILE_ACCESS_EFFICIENCY_AND_SESSION_LEARNING_CORRECTION
   source_state: HISTORICAL_SUPERSEDED_BY_ROADMAP_EXECUTION
-  superseded_by_execution_ref: EXEC-AA-000-IMPLEMENTATION-AUTHORIZATION
+  superseded_by_execution_ref: EXEC-AA-001-ADAPTIVE-MCP-RESOLVER
   completed_stages:
-    - P5-S0
-    - P5-S1
-    - P5-S2
-    - P5-S3
-    - P5-S4
-    - P5-S5
-    - P5-S6
-    - P5-S7
-    - P5-S8
-    - P5-S9
-    - P5-S10
-    - P5-S11
-    - P5-S12
-    - P5-S13
-    - P5-S14
-    - P5P001-SOURCE-AND-RELEASE-PUBLICATION
-    - P5P001-OPERATIONAL-PASS
-    - P5P001-FINAL-LEARNING-CONSOLIDATION
-    - P5P001-INTERNAL-CONTROL-REVIEW
-    - P5P001-CLOSURE-PASS-CANDIDATE
+  - P5-S0
+  - P5-S1
+  - P5-S2
+  - P5-S3
+  - P5-S4
+  - P5-S5
+  - P5-S6
+  - P5-S7
+  - P5-S8
+  - P5-S9
+  - P5-S10
+  - P5-S11
+  - P5-S12
+  - P5-S13
+  - P5-S14
+  - P5P001-SOURCE-AND-RELEASE-PUBLICATION
+  - P5P001-OPERATIONAL-PASS
+  - P5P001-FINAL-LEARNING-CONSOLIDATION
+  - P5P001-INTERNAL-CONTROL-REVIEW
+  - P5P001-CLOSURE-PASS-CANDIDATE
   active_stage: SUPERSEDED_BY_ROADMAP_EXECUTION
   closure_receipt_authority: EXTERNAL_SHA256_BOUND_CLOSURE_ENGINE_RECEIPT
   next_stages: []
@@ -1545,10 +1474,10 @@ patch_005_current_execution_state:
     execution_owner: USER_LOCAL_RUNNER
     publication: EXPLICIT_USER_ACTION
     completion_requires:
-      - STANDARD_INSTALL_RECEIPT
-      - LOCAL_VALIDATION_PASS
-      - SOURCE_SYNC_RECEIPT
-      - REMOTE_COMMIT_MATCH
+    - STANDARD_INSTALL_RECEIPT
+    - LOCAL_VALIDATION_PASS
+    - SOURCE_SYNC_RECEIPT
+    - REMOTE_COMMIT_MATCH
     does_not_reopen:
-      - PATCH-005.POST-001-closure
-      - PATCH-006-bounded-design-scope
+    - PATCH-005.POST-001-closure
+    - PATCH-006-bounded-design-scope
