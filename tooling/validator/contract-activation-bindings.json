@@ -26,7 +26,6 @@
       "classification": "PARTIALLY_OPERATIONAL",
       "rationale": "Core control architecture is active, but several subordinate activation paths remain unresolved.",
       "known_gaps": [
-        "diagnostic canonical convergence",
         "relevance/wisdom automatic call-path proof",
         "Active Source Closure patch-close wiring"
       ]
@@ -138,11 +137,10 @@
       "standard_id": "STD-CHANGE-DELIVERY",
       "path": "standards/change-delivery.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "STANDARD handoff shape is active, while selection, diagnostic, failure-learning and RunToPass subcontracts are not all proven through the current kernel path.",
+      "rationale": "STANDARD handoff and canonical diagnostic lifecycle are active; selection, legacy RunToPass and remaining failure-learning subcontracts still require convergence.",
       "known_gaps": [
         "delivery-selection state not proven as governing input to current Standard Delivery Kernel",
-        "canonical diagnostic contract diverges from Delivery Kernel failure store",
-        "legacy RunToPass and failure-learning receipt semantics require convergence review"
+        "legacy RunToPass and remaining failure-learning receipt semantics require convergence review"
       ]
     },
     {
@@ -161,9 +159,9 @@
       "standard_id": "STD-OPERATIONAL-EVIDENCE",
       "path": "standards/operational-evidence.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "Canonical diagnostic capsule tooling and Host rehydration exist, but Standard Delivery Kernel currently maintains a parallel diagnostic store.",
+      "rationale": "Canonical diagnostic capsule capture, bounded transport, Host rehydration and Standard Delivery bridge are active; broader non-diagnostic operational evidence consumers are not yet strict-bound.",
       "known_gaps": [
-        "canonical diagnostic capsule vs Delivery Kernel diagnostic store conflict"
+        "broader non-diagnostic operational-evidence consumers remain contract-level review pending"
       ]
     },
     {
@@ -270,19 +268,24 @@
       ],
       "registration": "standards/standards.yaml",
       "registration_token": "STD-DELIVERY-KERNEL",
-      "implementation": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "implementation": "tooling/delivery/Cerebro.StandardDiagnosticBridge.ps1",
       "implementation_tokens": [
-        "Write-FailureCapsule",
-        "PATCH FAIL"
+        "Invoke-CerebroStandardDiagnosticBridge",
+        "Write-CerebroDiagnosticFallback",
+        "StableHandoffPath"
       ],
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
-      "wiring_proof_kind": "STATIC_CALLSITE",
+      "wiring_proof_kind": "EXPLICIT_ADAPTER",
       "wiring_tokens": [
+        "Cerebro.StandardDiagnosticBridge.ps1",
+        "Invoke-CerebroStandardDiagnosticBridge",
         "Write-FailureCapsule"
       ],
       "validation": "standards/development/delivery-failure-regression.yaml",
       "validation_tokens": [
-        "FAILURE_DIAGNOSTIC_CAPSULE_MISSING"
+        "canonical-diagnostic-tool-has-single-owner",
+        "stable-failure-handoff-is-derived-from-canonical-transport",
+        "diagnostic-bridge-failure-does-not-mask-primary-failure"
       ],
       "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
     },
@@ -348,6 +351,41 @@
         "static-activation-proof-is-not-runtime-execution-proof"
       ],
       "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
+    },
+    {
+      "id": "STANDARD_DIAGNOSTIC_CONVERGENCE",
+      "standard_id": "STD-OPERATIONAL-EVIDENCE",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/operational-evidence.yaml",
+      "declaration_tokens": [
+        "implementation_ref: tooling/host/diagnostic_capsule.py",
+        "STANDARD_local_runner_failure",
+        "bounded_transport_is_derived_view_of_same_capsule",
+        "successful_related_repair_may_mark_capsules_RESOLVED"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-OPERATIONAL-EVIDENCE",
+      "implementation": "tooling/host/diagnostic_capsule.py",
+      "implementation_tokens": [
+        "def capture_capsule(",
+        "def resolve_capsules(",
+        "def make_transport("
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDiagnosticBridge.ps1",
+      "wiring_proof_kind": "EXPLICIT_ADAPTER",
+      "wiring_tokens": [
+        "Invoke-CerebroStandardDiagnosticBridge",
+        "StableHandoffPath",
+        "transport.json",
+        "'resolve'"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "canonical-diagnostic-tool-has-single-owner",
+        "stable-failure-handoff-is-derived-from-canonical-transport",
+        "success-resolves-related-canonical-capsules"
+      ],
+      "runtime_evidence_state": "SEPARATE_REQUIRES_PATCH_FAILURE_OR_RESOLUTION_OBSERVATION"
     }
   ],
   "canonical_responsibilities": [
@@ -355,8 +393,8 @@
       "id": "STANDARD_DIAGNOSTIC_CAPTURE",
       "expected_canonical_claims": 1,
       "blocking": false,
-      "classification": "CANONICAL_CONFLICT",
-      "rationale": "Two active Source contracts currently claim canonical STANDARD diagnostic responsibility.",
+      "classification": "CONVERGED",
+      "rationale": "diagnostic_capsule.py is the sole canonical diagnostic owner; StandardDiagnosticBridge exposes only a derived bounded transport view.",
       "claims": [
         {
           "claim_id": "OPERATIONAL_EVIDENCE_DIAGNOSTIC_CAPSULE",
@@ -366,11 +404,12 @@
           "store": "LOCALAPPDATA/Cerebro/diagnostics"
         },
         {
-          "claim_id": "DELIVERY_KERNEL_FAILURE_HANDOFF",
+          "claim_id": "STANDARD_DELIVERY_DIAGNOSTIC_BRIDGE",
           "standard_id": "STD-DELIVERY-KERNEL",
-          "canonical": true,
-          "implementation": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
-          "store": "D:\\Cerebro\\Run\\diagnostics"
+          "canonical": false,
+          "role": "DERIVED_TRANSPORT_ADAPTER",
+          "implementation": "tooling/delivery/Cerebro.StandardDiagnosticBridge.ps1",
+          "handoff": "CEREBRO_PATCH_FAIL.json"
         }
       ]
     }
@@ -403,6 +442,13 @@
       "classification": "SEMANTIC_REVIEW_REQUIRED",
       "blocking": false,
       "rationale": "Host/Change Engine/Delivery Controller and Standard Delivery Kernel scope boundaries require explicit canonical classification."
+    }
+  ],
+  "resolved_activation_debt": [
+    {
+      "id": "STANDARD_DIAGNOSTIC_CANONICAL_CONVERGENCE",
+      "resolved_by_patch": "CEREBRO-DIAGNOSTIC-CONVERGENCE-001",
+      "resolution": "Removed parallel canonical launcher diagnostic store. Standard Delivery captures through diagnostic_capsule.py and exposes CEREBRO_PATCH_FAIL.json as a derived bounded transport view."
     }
   ]
 }

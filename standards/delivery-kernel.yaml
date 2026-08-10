@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.3"
+  version: "1.4"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -85,52 +85,54 @@ delivery_kernel:
   failure_handoff:
     status: REQUIRED
     source_contract_binding: standards/change-delivery.yaml
+    evidence_contract_binding: standards/operational-evidence.yaml#diagnostic_capsule_contract
     principle: USER_MUST_NOT_MANUALLY_TRANSPORT_TERMINAL_ERROR_DUMPS
-    diagnostic_store:
-      canonical_root: D:\Cerebro\Run\diagnostics
-      format: JSON
-      timestamped_capsule_required: true
+
+    diagnostic_authority:
+      canonical_tool: tooling/host/diagnostic_capsule.py
+      canonical_store: LOCALAPPDATA/Cerebro/diagnostics
+      lifecycle: UNRESOLVED_TO_RESOLVED
+      canonical_full_capsule: capsules/<capsule_id>/full.json
+      bounded_transport: capsules/<capsule_id>/transport.json
+      parallel_launcher_owned_canonical_store: PROHIBITED
+
+    bridge:
+      implementation: tooling/delivery/Cerebro.StandardDiagnosticBridge.ps1
+      role: STANDARD_RUNNER_TO_CANONICAL_DIAGNOSTIC_ADAPTER
+      diagnostic_capture_failure_masks_primary_failure: false
+      fallback_seed_outside_source_required: true
+
     user_handoff:
       stable_filename: CEREBRO_PATCH_FAIL.json
       placement: launcher-directory
+      content: COPY_OF_CANONICAL_BOUNDED_TRANSPORT
+      authority: DERIVED_VIEW
       generated_automatically_on_failure: true
       manual_terminal_copy_required: false
-    capsule_minimum_fields:
-    - patch_id
-    - result
-    - failed_phase
-    - reached_stage
-    - failure_family
-    - error
-    - child_exit_code
-    - child_stdout
-    - child_stderr
-    - expected_base_commit
-    - working_source_path
-    - working_head_after_failure
-    - working_tree_after_failure
-    - source_mutation_assessment
-    - bundle_sha256
-    - kernel_sha256
-    - created_at_utc
+      fallback_when_canonical_capture_unavailable: MINIMAL_FAILURE_SEED
+
+    attempt_history_binding:
+      diagnostic_ref: CANONICAL_FULL_CAPSULE
+      diagnostic_copy: IMMUTABLE_ATTEMPT_COPY
+      stable_handoff_file_is_canonical_history: false
+
+    success_resolution:
+      resolve_related_unresolved_capsules: true
+      resulting_commit_required: true
+      stale_user_handoff_removed_only_after_resolution_success: true
+      resolution_failure_invalidates_primary_patch_success: false
+      resolved_failure_evidence_deleted: false
+
     terminal_surface:
-      failure:
-      - PATCH FAIL
-      - FAILURE_FAMILY
-      - DIAGNOSTIC_FILE
-      - SOURCE_STATE
-      success:
-      - PATCH SUCCESS
-      - RECEIPT
+      failure: [PATCH FAIL, FAILURE_FAMILY, DIAGNOSTIC_FILE, SOURCE_STATE]
+      success: [PATCH SUCCESS, RECEIPT]
       detailed_stacktrace_on_normal_terminal: PROHIBITED
+
     chat_return:
       success_trigger: PATCH SUCCESS
       failure_trigger: PATCH FAIL
       failure_attachment: CEREBRO_PATCH_FAIL.json
       manual_error_paste: PROHIBITED
-    resolution:
-      stale_failure_handoff_removed_on_success: true
-      success_receipt_remains_canonical_evidence: true
 
   attempt_history:
     contract: standards/patch-attempt-history.yaml

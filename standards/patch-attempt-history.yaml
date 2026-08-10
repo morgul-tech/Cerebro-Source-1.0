@@ -1,7 +1,7 @@
 schema: cerebro-patch-attempt-history/v1
 patch_attempt_history:
   id: CEREBRO-PATCH-ATTEMPT-HISTORY-001
-  version: "1.0"
+  version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: SYSTEM_WIDE_STANDARD_DELIVERY
@@ -67,6 +67,13 @@ patch_attempt_history:
     - diagnostic_ref
     - bundle_sha256
     - kernel_sha256
+
+  diagnostic_evidence:
+    canonical_authority: tooling/host/diagnostic_capsule.py
+    diagnostic_ref_on_failure: CANONICAL_FULL_CAPSULE_PATH
+    diagnostic_copy_in_attempt_directory: IMMUTABLE_COPY
+    launcher_directory_CEREBRO_PATCH_FAIL_json: BOUNDED_TRANSPORT_VIEW_ONLY
+    canonical_capsule_resolution_does_not_delete_attempt_history: true
 
   retention:
     successful_attempts: PERMANENT

@@ -227,92 +227,124 @@ function Get-WorkingSourceSnapshot {
     return $snapshot
 }
 
-function Write-FailureCapsule {
-    param(
-        $Manifest,
-        [string]$KernelSha256,
-        [string]$BundleSha256,
-        $ChildResult
+function Write-LocalFallbackHandoff {
+    param($Seed,[string]$DiagnosticError='')
+    $fallback=[ordered]@{
+        schema='cerebro-diagnostic-fallback-seed/v1'
+        state='PATCH_FAIL'
+        authority='EVIDENCE_ONLY'
+        diagnostic_degraded=$true
+        diagnostic_error=$DiagnosticError
+        attempt_id=[string]$Seed.attempt_id
+        patch_id=[string]$Seed.patch_id
+        expected_base_commit=[string]$Seed.expected_base_commit
+        phase=[string]$Seed.phase
+        reached_stage=[string]$Seed.reached_stage
+        failure_family=[string]$Seed.failure_family
+        error=[string]$Seed.error
+        child_exit_code=$Seed.child_exit_code
+        source_mutation_assessment=[string]$Seed.source_mutation_assessment
+        created_at_utc=[DateTime]::UtcNow.ToString('o')
+    }
+    [IO.File]::WriteAllText(
+        $StableFailureHandoff,
+        (($fallback | ConvertTo-Json -Depth 8)+"`r`n"),
+        [Text.UTF8Encoding]::new($false)
     )
+    [pscustomobject]@{
+        State='FALLBACK'
+        CapsuleId=''
+        CanonicalPath=$StableFailureHandoff
+        TransportPath=$StableFailureHandoff
+        HandoffPath=$StableFailureHandoff
+        Degraded=$true
+    }
+}
 
-    $combined = ([string]$ChildResult.Stdout) + "`r`n" + ([string]$ChildResult.Stderr)
-    $reachedStage = Get-CapturedField -Text $combined -Name 'REACHED_STAGE'
-    $failureFamily = Get-CapturedField -Text $combined -Name 'FAILURE_FAMILY'
-    $errorText = Get-CapturedField -Text $combined -Name 'ERROR'
+function Write-FailureCapsule {
+    param($Manifest,[string]$KernelSha256,[string]$BundleSha256,$ChildResult)
 
-    if ([string]::IsNullOrWhiteSpace($failureFamily)) {
-        $failureFamily = 'CHILD_PROCESS_FAILURE'
-    }
-    if ([string]::IsNullOrWhiteSpace($reachedStage)) {
-        $reachedStage = [string]$ChildResult.Phase
-    }
-    if ([string]::IsNullOrWhiteSpace($errorText)) {
-        $errorText = 'See child_stdout and child_stderr in diagnostic capsule.'
+    $combined=([string]$ChildResult.Stdout)+"`r`n"+([string]$ChildResult.Stderr)
+    $reachedStage=Get-CapturedField -Text $combined -Name 'REACHED_STAGE'
+    $failureFamily=Get-CapturedField -Text $combined -Name 'FAILURE_FAMILY'
+    $errorText=Get-CapturedField -Text $combined -Name 'ERROR'
+
+    if([string]::IsNullOrWhiteSpace($failureFamily)){ $failureFamily='CHILD_PROCESS_FAILURE' }
+    if([string]::IsNullOrWhiteSpace($reachedStage)){ $reachedStage=[string]$ChildResult.Phase }
+    if([string]::IsNullOrWhiteSpace($errorText)){ $errorText='See canonical diagnostic capsule for bounded child output.' }
+
+    $snapshot=Get-WorkingSourceSnapshot -Path $WorkingSourcePath
+    $mutationAssessment='UNKNOWN'
+    if($snapshot.working_tree -eq 'CLEAN'){ $mutationAssessment='NO_UNCOMMITTED_SOURCE_MUTATION_PRESENT' }
+    elseif($snapshot.working_tree -eq 'DIRTY'){ $mutationAssessment='UNCOMMITTED_SOURCE_STATE_PRESENT' }
+
+    $patchId=''
+    $expectedBase=''
+    if($null -ne $Manifest){
+        $patchId=[string]$Manifest.patch_id
+        $expectedBase=[string]$Manifest.expected_base_commit
     }
 
-    $snapshot = Get-WorkingSourceSnapshot -Path $WorkingSourcePath
-    $mutationAssessment = 'UNKNOWN'
-    if ($snapshot.working_tree -eq 'CLEAN') {
-        $mutationAssessment = 'NO_UNCOMMITTED_SOURCE_MUTATION_PRESENT'
-    }
-    elseif ($snapshot.working_tree -eq 'DIRTY') {
-        $mutationAssessment = 'UNCOMMITTED_SOURCE_STATE_PRESENT'
+    $seed=[ordered]@{
+        attempt_id=$Attempt.attempt_id
+        patch_id=$patchId
+        expected_base_commit=$expectedBase
+        phase=[string]$ChildResult.Phase
+        reached_stage=$reachedStage
+        failure_family=$failureFamily
+        error=$errorText
+        child_exit_code=$ChildResult.ExitCode
+        child_stdout=[string]$ChildResult.Stdout
+        child_stderr=[string]$ChildResult.Stderr
+        source_mutation_assessment=$mutationAssessment
+        bundle_path=$BundlePath
+        bundle_sha256=$BundleSha256
+        kernel_sha256=$KernelSha256
     }
 
-    $diagnosticRoot = 'D:\Cerebro\Run\diagnostics'
+    $bridgePath=Join-Path $WorkingSourcePath 'tooling\delivery\Cerebro.StandardDiagnosticBridge.ps1'
     try {
-        [IO.Directory]::CreateDirectory($diagnosticRoot) | Out-Null
+        if(-not(Test-Path -LiteralPath $bridgePath -PathType Leaf)){ throw 'STANDARD_DIAGNOSTIC_BRIDGE_NOT_FOUND' }
+        . $bridgePath
+        $diagnostic=Invoke-CerebroStandardDiagnosticBridge `
+            -Mode Capture -WorkingSourcePath $WorkingSourcePath `
+            -StableHandoffPath $StableFailureHandoff -Seed $seed
     }
     catch {
-        $diagnosticRoot = Join-Path -Path ([IO.Path]::GetTempPath()) -ChildPath 'Cerebro\diagnostics'
-        [IO.Directory]::CreateDirectory($diagnosticRoot) | Out-Null
+        $diagnostic=Write-LocalFallbackHandoff -Seed $seed -DiagnosticError $_.Exception.Message
     }
-
-    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $capsulePath = Join-Path -Path $diagnosticRoot -ChildPath ('CEREBRO_PATCH_FAIL_' + $timestamp + '.json')
-
-    $patchId = ''
-    $expectedBase = ''
-    if ($null -ne $Manifest) {
-        $patchId = [string]$Manifest.patch_id
-        $expectedBase = [string]$Manifest.expected_base_commit
-    }
-
-    $capsule = [ordered]@{
-        schema = 'cerebro-patch-failure-diagnostic/v1'
-        result = 'FAIL'
-        attempt_id = $Attempt.attempt_id
-        patch_id = $patchId
-        failed_phase = [string]$ChildResult.Phase
-        reached_stage = $reachedStage
-        failure_family = $failureFamily
-        error = $errorText
-        child_exit_code = [int]$ChildResult.ExitCode
-        child_stdout = [string]$ChildResult.Stdout
-        child_stderr = [string]$ChildResult.Stderr
-        expected_base_commit = $expectedBase
-        working_source_path = $WorkingSourcePath
-        working_head_after_failure = $snapshot.head
-        working_branch_after_failure = $snapshot.branch
-        working_tree_after_failure = $snapshot.working_tree
-        source_mutation_assessment = $mutationAssessment
-        bundle_path = $BundlePath
-        bundle_sha256 = $BundleSha256
-        kernel_sha256 = $KernelSha256
-        canonical_diagnostic_path = $capsulePath
-        stable_handoff_path = $StableFailureHandoff
-        created_at_utc = [DateTime]::UtcNow.ToString('o')
-    }
-
-    $json = ($capsule | ConvertTo-Json -Depth 12) + "`r`n"
-    [IO.File]::WriteAllText($capsulePath,$json,[Text.UTF8Encoding]::new($false))
-    [IO.File]::WriteAllText($StableFailureHandoff,$json,[Text.UTF8Encoding]::new($false))
 
     Write-Host ''
     Write-Host 'PATCH FAIL'
     Write-Host ('FAILURE_FAMILY={0}' -f $failureFamily)
     Write-Host ('DIAGNOSTIC_FILE={0}' -f $StableFailureHandoff)
     Write-Host ('SOURCE_STATE={0}' -f $mutationAssessment)
+
+    [pscustomobject]@{
+        CanonicalPath=[string]$diagnostic.CanonicalPath
+        HandoffPath=$StableFailureHandoff
+        FailureFamily=$failureFamily
+        ReachedStage=$reachedStage
+        MutationAssessment=$mutationAssessment
+        DiagnosticDegraded=[bool]$diagnostic.Degraded
+    }
+}
+
+function Resolve-CanonicalDiagnostics {
+    param([string]$PatchId,[string]$ResultingCommit)
+
+    if([string]::IsNullOrWhiteSpace($PatchId) -or [string]::IsNullOrWhiteSpace($ResultingCommit)){ return }
+    $bridgePath=Join-Path $WorkingSourcePath 'tooling\delivery\Cerebro.StandardDiagnosticBridge.ps1'
+    if(-not(Test-Path -LiteralPath $bridgePath -PathType Leaf)){ return }
+
+    try {
+        . $bridgePath
+        [void](Invoke-CerebroStandardDiagnosticBridge `
+            -Mode Resolve -WorkingSourcePath $WorkingSourcePath `
+            -StableHandoffPath $StableFailureHandoff `
+            -PatchId $PatchId -ResultingCommit $ResultingCommit)
+    }
+    catch {}
 }
 
 if ([string]::IsNullOrWhiteSpace($BundlePath)) {
@@ -361,12 +393,11 @@ try {
     $selfTest = Invoke-ChildCaptured -PowerShellPath $powershellPath `
         -ArgumentList ($common + @('-Mode','SelfTest')) -Phase 'SELFTEST'
     if ($selfTest.ExitCode -ne 0) {
-        Write-FailureCapsule -Manifest $manifest -KernelSha256 $kernelSha -BundleSha256 $bundleSha -ChildResult $selfTest
-        $combined=([string]$selfTest.Stdout)+"`r`n"+([string]$selfTest.Stderr)
+        $diagnostic=Write-FailureCapsule -Manifest $manifest -KernelSha256 $kernelSha -BundleSha256 $bundleSha -ChildResult $selfTest
         Complete-Attempt -Context $Attempt -Result 'FAIL' -FailedPhase 'SELFTEST' `
-            -ReachedStage (Get-CapturedField -Text $combined -Name 'REACHED_STAGE') `
-            -FailureFamily (Get-CapturedField -Text $combined -Name 'FAILURE_FAMILY') `
-            -DiagnosticRef $StableFailureHandoff
+            -ReachedStage $diagnostic.ReachedStage -FailureFamily $diagnostic.FailureFamily `
+            -MutationAssessment $diagnostic.MutationAssessment `
+            -DiagnosticRef $diagnostic.CanonicalPath
         exit 1
     }
 
@@ -376,20 +407,18 @@ try {
     $apply = Invoke-ChildCaptured -PowerShellPath $powershellPath `
         -ArgumentList ($common + @('-Mode','Apply')) -Phase 'APPLY'
     if ($apply.ExitCode -ne 0) {
-        Write-FailureCapsule -Manifest $manifest -KernelSha256 $kernelSha -BundleSha256 $bundleSha -ChildResult $apply
-        $combined=([string]$apply.Stdout)+"`r`n"+([string]$apply.Stderr)
+        $diagnostic=Write-FailureCapsule -Manifest $manifest -KernelSha256 $kernelSha -BundleSha256 $bundleSha -ChildResult $apply
         Complete-Attempt -Context $Attempt -Result 'FAIL' -FailedPhase 'APPLY' `
-            -ReachedStage (Get-CapturedField -Text $combined -Name 'REACHED_STAGE') `
-            -FailureFamily (Get-CapturedField -Text $combined -Name 'FAILURE_FAMILY') `
-            -DiagnosticRef $StableFailureHandoff
+            -ReachedStage $diagnostic.ReachedStage -FailureFamily $diagnostic.FailureFamily `
+            -MutationAssessment $diagnostic.MutationAssessment `
+            -DiagnosticRef $diagnostic.CanonicalPath
         exit 1
     }
 
     Write-AttemptEvent -Context $Attempt -Event 'APPLY_PASS'
 
-    if (Test-Path -LiteralPath $StableFailureHandoff -PathType Leaf) {
-        Remove-Item -LiteralPath $StableFailureHandoff -Force -ErrorAction SilentlyContinue
-    }
+    $resultingCommit=Get-CapturedField -Text ([string]$apply.Stdout) -Name 'AUTHORITATIVE_COMMIT'
+    Resolve-CanonicalDiagnostics -PatchId ([string]$manifest.patch_id) -ResultingCommit $resultingCommit
 
     $receipt = Get-CapturedField -Text ([string]$apply.Stdout) -Name 'RECEIPT'
     Write-Host ''
@@ -415,11 +444,12 @@ catch {
     if (Test-Path -LiteralPath $BundlePath -PathType Leaf) {
         try { $bundleShaForFailure = Get-Sha256 $BundlePath } catch {}
     }
-    Write-FailureCapsule -Manifest $manifest -KernelSha256 $kernelShaForFailure `
+    $diagnostic=Write-FailureCapsule -Manifest $manifest -KernelSha256 $kernelShaForFailure `
         -BundleSha256 $bundleShaForFailure -ChildResult $transportResult
     Complete-Attempt -Context $Attempt -Result 'FAIL' -FailedPhase 'LAUNCHER' `
-        -ReachedStage 'LAUNCHER' -FailureFamily 'LAUNCHER_FAILURE' `
-        -DiagnosticRef $StableFailureHandoff
+        -ReachedStage $diagnostic.ReachedStage -FailureFamily $diagnostic.FailureFamily `
+        -MutationAssessment $diagnostic.MutationAssessment `
+        -DiagnosticRef $diagnostic.CanonicalPath
     exit 1
 }
 finally {

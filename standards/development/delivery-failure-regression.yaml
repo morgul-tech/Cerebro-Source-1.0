@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "1.3"
+  version: "1.4"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -39,6 +39,11 @@ delivery_failure_regression:
   - CANONICAL_IMPLEMENTATION_CONFLICT
   - OPERATIONAL_RUNTIME_EVIDENCE_CONFLATION
   - FALSE_GREEN_REFERENCE_INTEGRITY
+  - DIAGNOSTIC_PARALLEL_CANONICAL_STORE_REGRESSION
+  - DIAGNOSTIC_BRIDGE_FAILURE_MASKS_PRIMARY
+  - DIAGNOSTIC_RESOLUTION_MISSING
+  - DIAGNOSTIC_HANDOFF_NOT_DERIVED_FROM_CANONICAL_TRANSPORT
+  - POWERSHELL_PAYLOAD_NOT_PARSED_BEFORE_MUTATION
 
   mandatory_pre_delivery_gates:
   - native-PowerShell-parser-zero-errors
@@ -79,6 +84,17 @@ delivery_failure_regression:
   - static-activation-proof-is-not-runtime-execution-proof
   - duplicate-standard-classification-blocks
   - classification-path-mismatch-blocks
+  - all-powershell-payloads-native-parser-clean-before-mutation
+  - canonical-diagnostic-tool-has-single-owner
+  - no-parallel-launcher-owned-canonical-diagnostic-store
+  - stable-failure-handoff-is-derived-from-canonical-transport
+  - attempt-diagnostic-ref-points-to-canonical-full-capsule
+  - diagnostic-bridge-failure-does-not-mask-primary-failure
+  - fallback-diagnostic-seed-remains-outside-working-source
+  - success-resolves-related-canonical-capsules
+  - diagnostic-resolution-failure-does-not-invalidate-primary-success
+  - resolved-diagnostic-evidence-is-retained
+  - host-rehydration-and-standard-delivery-share-same-canonical-diagnostic-store
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the

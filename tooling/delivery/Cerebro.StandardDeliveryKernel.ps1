@@ -129,6 +129,9 @@ function Assert-PayloadIntegrity {
         if ((Get-GitBlobShaFromFile $payloadPath) -ne [string]$fileEntry.final_git_blob_sha) {
             throw ('PAYLOAD_GIT_BLOB_MISMATCH:{0}' -f $fileEntry.path)
         }
+        if ([string]$fileEntry.path -match '(?i)\.ps1$') {
+            Assert-ParserClean -LiteralPath $payloadPath
+        }
     }
 }
 

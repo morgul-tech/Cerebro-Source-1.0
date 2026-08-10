@@ -85,6 +85,7 @@ tooling:
   change: tooling/change/
   delivery: tooling/delivery/
   delivery_kernel: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+  standard_diagnostic_bridge: tooling/delivery/Cerebro.StandardDiagnosticBridge.ps1
   closure: tooling/closure/
   context: tooling/context/
 governance:
