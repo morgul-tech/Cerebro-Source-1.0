@@ -1,7 +1,7 @@
 schema: cerebro-standards-manifest/v0.1
 standards_engine:
   id: standards
-  version: 0.5.0
+  version: 0.6.0
   role: authoritative-policy-registry
   runtime_engine: false
   policy_owner: Cerebro Source 1.0
@@ -93,6 +93,9 @@ documents:
   required: true
 - id: STD-RELEVANCE-RETRIEVAL
   path: standards/development/relevance-retrieval.yaml
+  required: true
+- id: STD-MATERIAL-COMMITMENT-PREFLIGHT
+  path: standards/development/material-commitment-preflight.yaml
   required: true
 - id: STD-ARCHITECTURAL-REGROUNDING
   path: standards/development/architectural-regrounding.yaml

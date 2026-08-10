@@ -21,6 +21,7 @@ $State = [ordered]@{
     SyncStarted = $false
     BackupDirectory = $null
     Manifest = $null
+    ActivationProofs = @()
 }
 
 function Get-Sha256 {
@@ -132,6 +133,11 @@ function Assert-PayloadIntegrity {
         if ([string]$fileEntry.path -match '(?i)\.ps1$') {
             Assert-ParserClean -LiteralPath $payloadPath
         }
+        if ([string]$fileEntry.path -match '(?i)\.py$') {
+            $pythonForCompile=Resolve-PythonRunner
+            $compileArgs=@($pythonForCompile.PrefixArgs)+@('-m','py_compile',$payloadPath)
+            [void](Invoke-NativeCommand -Executable $pythonForCompile.Executable -ArgumentList $compileArgs)
+        }
     }
 }
 
@@ -216,6 +222,188 @@ function Invoke-LocalGitFixture {
     }
 }
 
+function Resolve-PythonRunner {
+    foreach($name in @('python.exe','python')){
+        try {
+            $command=Get-Command $name -ErrorAction Stop | Select-Object -First 1
+            if(-not[string]::IsNullOrWhiteSpace($command.Source)){
+                return [pscustomobject]@{Executable=$command.Source;PrefixArgs=@()}
+            }
+        }
+        catch {}
+    }
+    try {
+        $command=Get-Command 'py.exe' -ErrorAction Stop | Select-Object -First 1
+        if(-not[string]::IsNullOrWhiteSpace($command.Source)){
+            return [pscustomobject]@{Executable=$command.Source;PrefixArgs=@('-3')}
+        }
+    }
+    catch {}
+    throw 'PYTHON_EXECUTABLE_NOT_RESOLVED_FOR_ACTIVATION_PROOF'
+}
+
+function Get-KernelOptionalProperty {
+    param($Object,[string]$Name,$Default=$null)
+    if($null -eq $Object){return $Default}
+    if($Object.PSObject.Properties.Name -notcontains $Name){return $Default}
+    $value=$Object.$Name
+    if($null -eq $value){return $Default}
+    return $value
+}
+
+function Test-ManifestCreatesPath {
+    param($PatchManifest,[string]$RelativePath)
+    foreach($entry in @($PatchManifest.files)){
+        if([string]$entry.operation -eq 'create' -and [string]$entry.path -eq $RelativePath){return $true}
+    }
+    return $false
+}
+
+function Invoke-MaterialCommitmentPreflightGate {
+    param(
+        $PatchManifest,
+        [Parameter(Mandatory=$true)][string]$Stage,
+        [Parameter(Mandatory=$true)][string]$SourceIdentity,
+        [Parameter(Mandatory=$true)][string]$EvidencePath,
+        [switch]$AllowBootstrapDefer
+    )
+
+    $spec=Get-KernelOptionalProperty -Object $PatchManifest -Name 'material_commitment_preflight' -Default $null
+    if($null -eq $spec){
+        $State.FailureFamily='MATERIAL_COMMITMENT_PREFLIGHT_MISSING'
+        throw 'SEALED_STANDARD_PACKAGE_MISSING_MATERIAL_COMMITMENT_PREFLIGHT'
+    }
+
+    $implementation=Join-Path $WorkingSourcePath 'mcp\material_commitment_preflight.py'
+    $bootstrap=[bool](Get-KernelOptionalProperty -Object $spec -Name 'bootstrap_activation' -Default $false)
+    if(-not(Test-Path -LiteralPath $implementation -PathType Leaf)){
+        if($AllowBootstrapDefer -and $bootstrap -and (Test-ManifestCreatesPath -PatchManifest $PatchManifest -RelativePath 'mcp/material_commitment_preflight.py')){
+            return [pscustomobject]@{state='DEFERRED_BOOTSTRAP';stage=$Stage}
+        }
+        $State.FailureFamily='MATERIAL_COMMITMENT_PREFLIGHT_MISSING'
+        throw 'MATERIAL_COMMITMENT_PREFLIGHT_IMPLEMENTATION_NOT_FOUND'
+    }
+
+    $request=($spec | ConvertTo-Json -Depth 32 | ConvertFrom-Json)
+    foreach($pair in @(
+        [pscustomobject]@{name='stage';value=$Stage},
+        [pscustomobject]@{name='material';value=$true},
+        [pscustomobject]@{name='commitment_target';value=[string]$PatchManifest.patch_id},
+        [pscustomobject]@{name='authoritative_source_commit';value=$SourceIdentity},
+        [pscustomobject]@{name='current_decision_state';value=('SEALED_STANDARD_' + $Stage)}
+    )){
+        $request | Add-Member -NotePropertyName ([string]$pair.name) -NotePropertyValue $pair.value -Force
+    }
+
+    $python=Resolve-PythonRunner
+    $requestPath=[IO.Path]::GetTempFileName()
+    $resolvePath=[IO.Path]::GetTempFileName()
+    $receiptPath=[IO.Path]::GetTempFileName()
+    $consumePath=[IO.Path]::GetTempFileName()
+    try {
+        [IO.File]::WriteAllText($requestPath,(($request | ConvertTo-Json -Depth 32)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        $resolveArgs=@($python.PrefixArgs)+@($implementation,'resolve','--request',$requestPath,'--source-root',$WorkingSourcePath,'--output',$resolvePath)
+        $resolvedNative=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $resolveArgs -AllowedExitCodes @(0,1)
+        if(-not(Test-Path -LiteralPath $resolvePath -PathType Leaf)){
+            $State.FailureFamily='MATERIAL_COMMITMENT_PREFLIGHT'
+            throw ('MATERIAL_PREFLIGHT_RESULT_MISSING:{0}' -f $Stage)
+        }
+        $resolved=Get-Content -LiteralPath $resolvePath -Raw | ConvertFrom-Json
+        if($resolvedNative.ExitCode -ne 0 -or [string]$resolved.result -ne 'PASS' -or [string]$resolved.mcp_control_decision.outcome -ne 'CONTINUE'){
+            $State.FailureFamily='MATERIAL_COMMITMENT_PREFLIGHT'
+            throw ('MATERIAL_PREFLIGHT_BLOCKED:{0}:{1}' -f $Stage,[string]$resolved.mcp_control_decision.outcome)
+        }
+        [IO.File]::WriteAllText($receiptPath,(($resolved.receipt | ConvertTo-Json -Depth 32)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        $consumeArgs=@($python.PrefixArgs)+@($implementation,'consume','--request',$requestPath,'--receipt',$receiptPath,'--source-root',$WorkingSourcePath,'--output',$consumePath)
+        $consumedNative=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $consumeArgs -AllowedExitCodes @(0,1)
+        if(-not(Test-Path -LiteralPath $consumePath -PathType Leaf)){
+            $State.FailureFamily='MATERIAL_COMMITMENT_CONSUMPTION'
+            throw ('MATERIAL_CONSUMPTION_RESULT_MISSING:{0}' -f $Stage)
+        }
+        $consumed=Get-Content -LiteralPath $consumePath -Raw | ConvertFrom-Json
+        if($consumedNative.ExitCode -ne 0 -or [string]$consumed.result -ne 'PASS' -or -not[bool]$consumed.receipt_consumed -or -not[bool]$consumed.freshness_verified){
+            $State.FailureFamily='MATERIAL_COMMITMENT_CONSUMPTION'
+            throw ('MATERIAL_CONSUMPTION_BLOCKED:{0}' -f $Stage)
+        }
+        if(-not[string]::IsNullOrWhiteSpace($EvidencePath)){
+            $parent=Split-Path -Parent $EvidencePath
+            if(-not[string]::IsNullOrWhiteSpace($parent)){[IO.Directory]::CreateDirectory($parent) | Out-Null}
+            [IO.File]::Copy($consumePath,$EvidencePath,$true)
+        }
+        return [pscustomobject]@{state='PASS';stage=$Stage;receipt_id=[string]$resolved.receipt.control_decision_ref;evidence_path=$EvidencePath}
+    }
+    finally {
+        Remove-Item -LiteralPath $requestPath,$resolvePath,$receiptPath,$consumePath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Get-DeclaredActivationProbes {
+    param($PatchManifest)
+    if($null -eq $PatchManifest){return @()}
+    if($PatchManifest.PSObject.Properties.Name -notcontains 'activation_probes'){return @()}
+    if($null -eq $PatchManifest.activation_probes){return @()}
+    return @($PatchManifest.activation_probes)
+}
+
+function Assert-ActivationProbeManifest {
+    param($PatchManifest)
+    foreach($probe in @(Get-DeclaredActivationProbes -PatchManifest $PatchManifest)){
+        $probeId='UNKNOWN'
+        if($probe.PSObject.Properties.Name -contains 'id'){$probeId=[string]$probe.id}
+        foreach($field in @('id','implementation_path','evidence_path','required_schema')){
+            $value=''
+            if($probe.PSObject.Properties.Name -contains $field){$value=[string]$probe.$field}
+            if([string]::IsNullOrWhiteSpace($value)){
+                throw ('ACTIVATION_PROBE_MANIFEST_FIELD_MISSING:{0}:{1}' -f $probeId,$field)
+            }
+        }
+        if([IO.Path]::IsPathRooted([string]$probe.implementation_path)){
+            throw ('ACTIVATION_PROBE_IMPLEMENTATION_MUST_BE_SOURCE_RELATIVE:{0}' -f $probeId)
+        }
+    }
+}
+
+function Invoke-DeclaredActivationProbes {
+    param($PatchManifest)
+    $probes=@(Get-DeclaredActivationProbes -PatchManifest $PatchManifest)
+    if($probes.Count -eq 0){return}
+    Assert-ActivationProbeManifest -PatchManifest $PatchManifest
+    $python=Resolve-PythonRunner
+    foreach($probe in $probes){
+        $State.ReachedStage='ACTIVATION_RUNTIME_PROOF'
+        $implementation=Join-Path -Path $WorkingSourcePath -ChildPath (([string]$probe.implementation_path) -replace '/','\\')
+        if(-not(Test-Path -LiteralPath $implementation -PathType Leaf)){
+            $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
+            throw ('ACTIVATION_PROBE_IMPLEMENTATION_MISSING:{0}' -f [string]$probe.implementation_path)
+        }
+        $evidencePath=[string]$probe.evidence_path
+        if(-not[IO.Path]::IsPathRooted($evidencePath)){$evidencePath=Join-Path $WorkingSourcePath ($evidencePath -replace '/','\\')}
+        $evidenceParent=Split-Path -Parent $evidencePath
+        if(-not[string]::IsNullOrWhiteSpace($evidenceParent)){[IO.Directory]::CreateDirectory($evidenceParent) | Out-Null}
+        Remove-Item -LiteralPath $evidencePath -Force -ErrorAction SilentlyContinue
+        $args=@($python.PrefixArgs)+@($implementation,'activation-probe','--source-root',$WorkingSourcePath,'--output',$evidencePath)
+        try {$probeResult=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $args}
+        catch {
+            $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
+            throw
+        }
+        if($probeResult.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $evidencePath -PathType Leaf)){
+            $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
+            throw ('ACTIVATION_PROBE_EXECUTION_FAILED:{0}' -f [string]$probe.id)
+        }
+        try {$evidence=Get-Content -LiteralPath $evidencePath -Raw | ConvertFrom-Json}
+        catch {
+            $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
+            throw ('ACTIVATION_PROBE_EVIDENCE_INVALID:{0}' -f [string]$probe.id)
+        }
+        if([string]$evidence.schema -ne [string]$probe.required_schema -or [string]$evidence.result -ne 'PASS'){
+            $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
+            throw ('ACTIVATION_PROBE_NOT_PASS:{0}' -f [string]$probe.id)
+        }
+        $State.ActivationProofs += [pscustomobject]@{id=[string]$probe.id;evidence_path=$evidencePath;source_state_fingerprint=[string]$evidence.source_state_fingerprint}
+    }
+}
+
 function Invoke-SelfTest {
     $State.ReachedStage = 'SELFTEST_PARSE'
     if (-not [string]::IsNullOrWhiteSpace($LauncherPath)) { Assert-ParserClean $LauncherPath }
@@ -238,6 +426,7 @@ function Invoke-SelfTest {
     $State.ReachedStage = 'SELFTEST_PAYLOAD'
     $manifestObject = Read-Manifest
     Assert-PayloadIntegrity $manifestObject
+    Assert-ActivationProbeManifest -PatchManifest $manifestObject
 
     $State.ReachedStage = 'SELFTEST_NATIVE'
     $cmdPath = Resolve-Executable 'cmd.exe'
@@ -366,6 +555,10 @@ function Invoke-Apply {
             }
         }
 
+        $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_EXECUTE'
+        $executeEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_EXECUTE_PREFLIGHT.json'
+        [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'MATERIAL_EXECUTE' -SourceIdentity $localHead -EvidencePath $executeEvidence -AllowBootstrapDefer)
+
         $State.ReachedStage = 'BACKUP'
         $backupRoot = 'D:\Cerebro\Backups'
         [IO.Directory]::CreateDirectory($backupRoot) | Out-Null
@@ -428,6 +621,12 @@ function Invoke-Apply {
             throw ('ACTIVE_SOURCE_INTEGRITY_CLOSURE_FAILED:{0}' -f @($ascResult.findings).Count)
         }
 
+        $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_PUBLISH'
+        $publishEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'
+        [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'GOVERNING_PUBLISH' -SourceIdentity $localHead -EvidencePath $publishEvidence)
+
+        Invoke-DeclaredActivationProbes -PatchManifest $State.Manifest
+
         $State.ReachedStage = 'CONTRACT_ACTIVATION_CLOSURE'
         $cacScript = Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\validator\cerebro_contract_activation_closure.ps1'
         if (Test-Path -LiteralPath $cacScript -PathType Leaf) {
@@ -482,6 +681,7 @@ function Invoke-Apply {
             source_equality='VERIFIED'
             working_tree='CLEAN'
             cerebro_sync_verified=$true
+            activation_proofs=@($State.ActivationProofs)
             completed_at_utc=[DateTime]::UtcNow.ToString('o')
         }
         [IO.File]::WriteAllText($receiptPath,(($receipt | ConvertTo-Json -Depth 8) + "`r`n"),[Text.UTF8Encoding]::new($false))

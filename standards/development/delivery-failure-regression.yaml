@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "1.6"
+  version: "1.8"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -53,6 +53,20 @@ delivery_failure_regression:
   - LEGACY_CPATCH_GOVERNS_NEW_STANDARD_PACKAGE
   - DUPLICATE_STANDARD_RUNTIME_OWNER
   - LEGACY_RUNTOPASS_ACTION_TAXONOMY_REGRESSION
+  - RELEVANCE_ENGINE_ORPHANED
+  - CURRENT_WISDOM_SCOPE_BYPASS
+  - EMPTY_RETRIEVAL_FALSE_NO_PRIOR_LEARNING
+  - MATERIAL_COMMITMENT_WITHOUT_FRESH_PREFLIGHT
+  - MCP_RELEVANCE_OUTPUT_NOT_CONSUMED
+  - RELEVANCE_RUNTIME_EVIDENCE_MISSING_OR_STALE
+  - RUNTIME_REASONING_POLICY_LEAK
+  - SEMANTIC_HYPOTHESIS_PROMOTED_TO_AUTHORITY
+  - ACTIVATION_PROBE_OPTIONAL_PROPERTY_STRICTMODE
+  - MATERIAL_PREFLIGHT_INTENT_FRESHNESS_BYPASS
+  - ACTIVATION_PROBE_SUBSTITUTES_FOR_NORMAL_CALL_PATH
+  - STANDARD_MATERIAL_EXECUTE_PREFLIGHT_BYPASS
+  - STANDARD_GOVERNING_PUBLISH_PREFLIGHT_BYPASS
+  - PYTHON_PAYLOAD_NOT_COMPILED_BEFORE_MUTATION
 
   mandatory_pre_delivery_gates:
   - native-PowerShell-parser-zero-errors
@@ -124,6 +138,29 @@ delivery_failure_regression:
   - LIMITED-and-FULL-profile-semantics-remain-outside-standard-kernel
   - failure-learning-evidence-is-normalized-across-attempt-ledger-diagnostics-receipt-and-regression
   - old-single-receipt-field-bundle-does-not-create-parallel-evidence-authority
+  - material-commitment-preflight-activation-probe-runs-before-cac-when-declared
+  - activation-runtime-proof-is-manifest-scoped-not-global-patch-overhead
+  - runtime-evidence-source-state-fingerprint-must-match-installed-source
+  - runtime-evidence-proves-context-invocation-and-mcp-consumption
+  - runtime-evidence-explicitly-names-each-proven-binding
+  - stale-runtime-evidence-does-not-prove-operational
+  - normal-wisdom-retrieval-is-bounded-to-current-index
+  - revoked-superseded-or-noncurrent-wisdom-is-rejected
+  - empty-retrieval-with-expected-prior-learning-requires-coverage-audit
+  - material-commitment-requires-resolved-semantics-complete-coverage-and-cleared-conflict
+  - deterministic-current-context-integrity-can-override-none-found-conflict-claim
+  - changed-source-context-objective-scope-or-intent-stales-material-receipt
+  - runtime-0.1-does-not-contain-relevance-or-material-commitment-reasoning-policy
+  - changed-intent-stales-material-receipt
+  - full-receipt-identity-is-compared-during-consumption
+  - future-standard-material-execute-runs-preflight-before-source-mutation
+  - future-standard-governing-publish-runs-preflight-before-cac-and-sync
+  - activation-probe-does-not-substitute-for-normal-material-call-path
+  - bootstrap-defer-only-when-canonical-preflight-is-created-and-post-install-gate-passes
+  - all-python-payloads-compile-before-source-mutation
+  - engine-selftest-alone-does-not-prove-operational
+  - activation-probes-optional-manifest-field-is-StrictMode-safe
+  - legacy-standard-bundle-without-activation-probes-remains-valid
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the

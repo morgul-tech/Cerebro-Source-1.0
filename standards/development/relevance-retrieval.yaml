@@ -1,23 +1,38 @@
 schema: cerebro-relevance-retrieval/v0.1
 relevance_retrieval:
   id: CEREBRO-RELEVANCE-RETRIEVAL-001
-  version: "0.2"
+  version: "0.4"
   status: ACTIVE
   introduced_by: PATCH-006
   owner: context-engine
   purpose: >
-    Retrieve and rank only materially relevant evidence-only Knowledge and
-    Context-owned Wisdom and bounded Development History for the current objective,
-    scope and failure or decision state, then bind accepted references into Control
-    State and MCP basis.
+    Retrieve and deterministically rank only materially relevant evidence-only
+    Knowledge, current Context-owned Wisdom and bounded Development History,
+    with explicit coverage and freshness semantics for MCP consumption.
+
   inputs:
     required: [current_objective, current_scope]
-    optional: [current_failure_state, current_decision_state, tags, material_user_insight]
+    optional:
+      - current_failure_state
+      - current_decision_state
+      - tags
+      - material_user_insight
+      - expected_prior_learning
+      - coverage_audit_complete
+      - coverage_audit_refs
+
+  semantic_normalization:
+    implementation_scope: deterministic-surface-normalization-only
+    creates_semantic_authority: false
+    material_semantic_resolution_owner: MCP
+    material_semantic_contract_ref: standards/development/material-commitment-preflight.yaml
+
   sources:
     knowledge: engines/context/knowledge.yaml
     wisdom: engines/context/working-context.yaml
     wisdom_evidence: engines/context/wisdom-evidence.yaml
     development_history: engines/context/development-history.yaml
+
   eligibility:
     knowledge:
       - status-is-ACTIVE
@@ -26,12 +41,14 @@ relevance_retrieval:
       - unresolved-material-contradiction-is-absent
     wisdom:
       - type-is-WISDOM_RECORD
+      - id-is-present-in-working_context.current_index.current_wisdom_refs
       - record-is-not-superseded-or-revoked
-      - candidate-subject-never-exceeds-OBSERVE
+      - historical-wisdom-is-not-current-by-default
     history:
       - ledger-lifecycle-is-ACTIVE
       - record-role-is-EVENT-CORRECTION-or-RETRACTION
       - record-lifecycle-is-HISTORICAL-by-definition
+
   ranking:
     deterministic: true
     dimensions:
@@ -45,39 +62,64 @@ relevance_retrieval:
     maximum_history_results: 3
     tie_break: lexical-record-id
     rule: score-orders-eligible-candidates-but-never-creates-authority
+
+  coverage:
+    lifecycle: [NOT_REQUIRED, NOT_RUN, RUNNING, COMPLETE, INCOMPLETE, FAILED, STALE]
+    empty_refs_alone_proves_no_prior_learning: false
+    no_relevant_prior_learning_requires:
+      - retrieval-state-COMPLETE
+      - coverage-state-COMPLETE
+    expected_prior_learning_and_no_normal_result:
+      effect: INCOMPLETE
+      next_event: BOUNDED_COVERAGE_AUDIT_REQUIRED
+    bounded_coverage_audit_may_complete_coverage: true
+
+  freshness:
+    basis_fingerprint_includes:
+      - normalized-objective
+      - normalized-scope
+      - failure-or-decision-state
+      - current-wisdom-index
+      - applicable-evidence-refs
+      - Knowledge-state-SHA256
+      - Working-Context-state-SHA256
+      - Wisdom-Evidence-state-SHA256
+      - Development-History-state-SHA256
+      - coverage-state
+    changed_input_effect: INVALIDATE_PRIOR_BASIS
+
   output:
     required:
       - assessment_id
       - objective_ref
+      - retrieval_state
+      - coverage_state
       - applicable_knowledge_refs
       - applicable_wisdom_refs
       - applicable_history_refs
       - rejected_refs
       - basis_refs
       - basis_fingerprint
+      - source_fingerprints
       - evidence_authority
       - human_insight_checkpoint
       - next_control_event
+
   control_binding:
+    consumer: MCP
+    normal_material_consumer_surface: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    activation_probe_alone_is_not_operational_call_path: true
+    material_preflight_ref: standards/development/material-commitment-preflight.yaml
+    implementation_ref: mcp/material_commitment_preflight.py
     control_state_fields:
       - applicable_knowledge_refs
       - applicable_wisdom_refs
       - applicable_history_refs
+      - coverage_state
       - basis_fingerprint
-    MCP_must_resolve_effect: true
     evidence_may_override_Source: false
     changed_retrieval_invalidates_prior_basis: true
-  human_insight:
-    materiality_signals:
-      - challenges-current-premise
-      - identifies-repeated-failure
-      - changes-objective-or-scope
-      - alleges-existing-learning-was-not-applied
-      - presents-new-decision-relevant-evidence
-    material_effect:
-      checkpoint: CRITIQUE_AND_REASSESS
-      next_control_event: RE_RESOLVE_CONTROL
-    nonmaterial_effect: CONTINUE
+
   effect_feedback:
     input: execution-and-verification-result
     output: bounded-evidence-candidate
@@ -85,9 +127,12 @@ relevance_retrieval:
     automatic_Source_mutation: false
     automatic_Knowledge_admission: false
     automatic_Wisdom_promotion: false
+
   prohibited:
     - bulk-history-retrieval-by-default
     - semantic-authority-inference
+    - non-current-wisdom-on-normal-retrieval-path
+    - empty-result-promoted-to-no-prior-learning-without-coverage
     - automatic-control-promotion
     - automatic-rule-creation
     - automatic-Source-mutation

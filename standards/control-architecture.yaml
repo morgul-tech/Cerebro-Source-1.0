@@ -2,19 +2,20 @@ schema: cerebro-control-architecture/v0.2
 
 control_architecture:
   id: CEREBRO-CONTROL-ARCHITECTURE-001
-  version: "0.2"
+  version: "0.4"
   status: ACTIVE
   introduced_by: GUARDRAILS-001
 
   purpose: >
     Define one coherent control path from current evidence and configuration
-    through command and contract resolution, canonical execution-surface
-    resolution, MCP control resolution and capability binding to execution,
-    recovery, verification and the next control event.
+    through command and contract resolution, relevance/materiality preflight,
+    MCP control resolution and capability binding to execution, recovery,
+    verification and the next control event.
 
   authority:
     definitional_authority: Cerebro Source 1.0
     control_resolver: MCP
+    relevance_assessor: context
     runtime_executor: Runtime Host
     runtime_transition_owner: Runtime 0.1
 
@@ -22,6 +23,7 @@ control_architecture:
     - CONTROL_EVENT
     - CONTROL_STATE
     - COMMAND_AND_CONTRACT_RESOLUTION
+    - RELEVANCE_AND_MATERIALITY_PREFLIGHT
     - CONTROL_RESOLUTION
     - MCP_CONTROL_DECISION
     - EXECUTION_PROFILE
@@ -46,6 +48,10 @@ control_architecture:
       - execution_profile_ref
       - applicable_wisdom_refs
       - applicable_knowledge_refs
+      - applicable_history_refs
+      - coverage_state
+      - conflict_state
+      - semantic_resolution_state
       - progress_state
       - failure_state
       - verification_state
@@ -62,6 +68,27 @@ control_architecture:
       - known-contract-must-not-be-bypassed-by-general-capability-reasoning
       - deterministic-human-alias-must-not-carry-authoritative-state
     failure_state: KNOWN_CONTRACT_BYPASS
+
+  material_commitment_preflight:
+    contract_ref: standards/development/material-commitment-preflight.yaml
+    control_owner: MCP
+    context_retrieval_owner: context
+    MCP_implementation_ref: mcp/material_commitment_preflight.py
+    Context_implementation_ref: tooling/context/relevance_engine.py
+    invocation: AUTOMATIC_WHEN_MATERIAL_COMMITMENT
+    normal_machine_consumer_surfaces:
+      - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    activation_probe_is_normal_call_path: false
+    material_continue_requires:
+      - semantic-resolution-RESOLVED
+      - retrieval-state-COMPLETE
+      - coverage-state-COMPLETE
+      - conflict-state-NONE_FOUND
+      - current-basis-fingerprint
+    non_material_work_may_use_stage_aware_short_path: true
+    empty_retrieval_is_not_no_prior_learning_without_coverage: true
+    receipt_required_before_material_commitment: true
+    stale_receipt_effect: INVALIDATE_AND_RE_RESOLVE
 
   mcp_control_decision_contract:
     kind: CONTRACT
@@ -131,6 +158,7 @@ control_architecture:
 
   freshness:
     decision_basis_fingerprint_required: true
+    material_receipt_fingerprint_required: true
     executor_rule: current-basis-must-equal-decision-basis
     mismatch_state: STALE_CONTROL_DECISION
     mismatch_effect:
@@ -194,12 +222,16 @@ control_architecture:
     runtime_transition_decision:
       scope: Runtime-0.1-invocation-transition
       owner: Runtime-0.1
+    relevance_reasoning_policy_in_Runtime_0_1: PROHIBITED
     invariant: MCP_CONTROL_DECISION_IS_NOT_RUNTIME_TRANSITION_DECISION
 
   invariants:
     - Source-defines-control-contracts
     - MCP-resolves-active-control
+    - MCP-invokes-material-preflight-before-material-commitment
+    - Context-retrieval-does-not-own-control-policy
     - Runtime-Host-does-not-own-control-policy
+    - Runtime-0.1-does-not-own-relevance-reasoning-policy
     - decision-freshness-is-verified-before-execution
     - applicable-contracts-are-resolved-before-tool-selection
     - canonical-execution-surface-is-resolved-before-capability-binding
@@ -232,20 +264,27 @@ control_architecture:
   wisdom_control_binding:
     contract_ref: standards/development/wisdom-control-binding.yaml
     context_assesses_applicability: true
+    current_wisdom_only_on_normal_path: true
     MCP_resolves_control_effect: true
+    MCP_consumption_implementation: mcp/material_commitment_preflight.py
     evidence_authority: EVIDENCE_ONLY
 
   relevance_retrieval:
     contract_ref: standards/development/relevance-retrieval.yaml
     implementation_ref: tooling/context/relevance_engine.py
+    invocation_owner: MCP
+    machine_consumer: mcp/material_commitment_preflight.py
     context_retrieves_and_ranks: true
     MCP_resolves_control_effect: true
     control_basis_fields:
       - applicable_knowledge_refs
       - applicable_wisdom_refs
+      - applicable_history_refs
+      - coverage_state
       - basis_fingerprint
     changed_retrieval_effect: INVALIDATE_DECISION_AND_RE_RESOLVE
     knowledge_authority: EVIDENCE_ONLY
+    runtime_execution_evidence_required_for_activation: true
 
   operation_supervision:
     introduced_by: PATCH-007.PRE-003

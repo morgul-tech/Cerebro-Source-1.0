@@ -1,0 +1,149 @@
+schema: cerebro-material-commitment-preflight/v1
+
+material_commitment_preflight:
+  id: CEREBRO-MATERIAL-COMMITMENT-PREFLIGHT-001
+  version: "1.1"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  kind: CONTROL_CONTRACT
+
+  purpose: >
+    Require a fresh, basis-bound relevance and prior-learning preflight before
+    material Cerebro commitments without imposing the same cost on exploratory
+    or low-consequence work.
+
+  ownership:
+    control_owner: MCP
+    relevance_owner: context
+    source_authority_owner: Cerebro Source 1.0
+    runtime_transition_owner: Runtime 0.1
+    runtime_reasoning_policy: PROHIBITED
+
+  canonical_implementation:
+    MCP_preflight: mcp/material_commitment_preflight.py
+    Context_retrieval: tooling/context/relevance_engine.py
+
+  stages:
+    exploratory_allowed_without_material_receipt:
+      - UNDERSTAND_FRAME
+      - EXPLORE_RESEARCH
+      - CLARIFY
+      - REFINE
+      - CRITIQUE
+      - COMPARE_CONVERGE
+    material_commitment_requires_fresh_receipt:
+      - DECIDE
+      - LOCK
+      - MATERIAL_EXECUTE
+      - MATERIAL_AUTHORIZE
+      - GOVERNING_PUBLISH
+
+  semantic_resolution:
+    owner: MCP
+    deterministic_surface_normalization_creates_authority: false
+    material_commitment_requires_state: RESOLVED
+    unresolved_material_ambiguity_effect: BLOCK_COMMITMENT
+    inferred_search_expansion_creates_authority: false
+
+  current_state:
+    resolve_separately_from_retrieved_evidence: true
+    current_wisdom_boundary: working_context.current_index.current_wisdom_refs
+    historical_wisdom_is_current_by_default: false
+    revoked_or_superseded_wisdom_eligible: false
+
+  retrieval:
+    contract_ref: standards/development/relevance-retrieval.yaml
+    lifecycle:
+      - NOT_REQUIRED
+      - NOT_RUN
+      - RUNNING
+      - COMPLETE
+      - INCOMPLETE
+      - FAILED
+      - STALE
+    empty_refs_mean_no_prior_learning: false
+    no_prior_learning_requires:
+      - COMPLETE_RETRIEVAL
+      - SUFFICIENT_COVERAGE
+    expected_prior_learning_missing_normal_result: BOUNDED_COVERAGE_AUDIT_REQUIRED
+
+  conflict_assessment:
+    required_before_material_commitment: true
+    allowed_states:
+      - NOT_ASSESSED
+      - NONE_FOUND
+      - POTENTIAL
+      - CONFIRMED
+      - UNRESOLVED
+      - ASSESSMENT_FAILED
+    material_continue_requires: NONE_FOUND
+    absence_of_assessment_is_not_no_conflict: true
+
+  control_state_binding:
+    required_fields:
+      - applicable_knowledge_refs
+      - applicable_wisdom_refs
+      - applicable_history_refs
+      - coverage_state
+      - conflict_state
+      - semantic_resolution_state
+      - basis_fingerprint
+    MCP_consumes_retrieval_before_material_decision: true
+
+  freshness:
+    receipt_identity_includes:
+      - AUTHORITATIVE_SOURCE_IDENTITY
+      - CURRENT_CONTEXT_IDENTITY
+      - RESOLVED_OBJECTIVE
+      - RESOLVED_SCOPE
+      - RESOLVED_INTENT
+      - COMMITMENT_TARGET
+      - APPLICABLE_KNOWLEDGE_REFS
+      - APPLICABLE_WISDOM_REFS
+      - APPLICABLE_HISTORY_REFS
+      - COVERAGE_STATE
+      - CONFLICT_STATE
+      - RELEVANCE_SOURCE_FINGERPRINTS
+    material_basis_change_effect: STALE_REASSESS_AND_RE_RESOLVE
+
+  receipt:
+    schema: cerebro-material-commitment-preflight-receipt/v1
+    authority: DERIVED_CONTROL_EVIDENCE
+    PASS_authorizes_only_declared_commitment_target: true
+    receipt_is_Source_authority: false
+
+  normal_machine_call_path:
+    first_enforced_surface: STANDARD_DELIVERY_KERNEL
+    material_execute_preflight_before_Source_mutation: REQUIRED
+    governing_publish_preflight_before_CAC_and_sync: REQUIRED
+    canonical_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    activation_probe_may_substitute_for_normal_call_path: false
+    bootstrap_exception:
+      allowed_only_when_canonical_implementation_is_created_by_same_sealed_package: true
+      post_install_governing_publish_preflight_required_before_activation_proof_and_sync: true
+
+  activation_proof:
+    required_before_OPERATIONAL: true
+    required_chain:
+      - DECLARED
+      - REGISTERED
+      - IMPLEMENTED
+      - WIRED
+      - INVOKED
+      - CONSUMED
+      - VALIDATED
+      - EVIDENCED
+    machine_probe_command: material_commitment_preflight.py activation-probe
+    evidence_path: D:\Cerebro\Run\audits\CEREBRO_RELEVANCE_MCP_ACTIVATION_PROOF.json
+    stale_proof_must_not_satisfy_activation: true
+
+  invariants:
+    - MCP_OWNS_MATERIAL_COMMITMENT_CONTROL
+    - CONTEXT_RETRIEVES_EVIDENCE_BUT_DOES_NOT_PROMOTE_AUTHORITY
+    - CURRENT_WISDOM_ONLY_ON_NORMAL_RETRIEVAL_PATH
+    - EMPTY_RETRIEVAL_IS_NOT_NO_PRIOR_LEARNING_WITHOUT_COVERAGE
+    - MATERIAL_COMMITMENT_REQUIRES_FRESH_BASIS_BOUND_RECEIPT
+    - RUNTIME_0_1_HAS_NO_RELEVANCE_REASONING_POLICY
+    - OPERATIONAL_REQUIRES_INVOCATION_CONSUMPTION_AND_EVIDENCE
+    - ACTIVATION_PROBE_DOES_NOT_SUBSTITUTE_FOR_NORMAL_MATERIAL_CALL_PATH
+    - RESOLVED_INTENT_IS_PART_OF_FRESHNESS_IDENTITY

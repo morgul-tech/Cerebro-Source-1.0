@@ -66,6 +66,86 @@ function Test-CacFileTokens {
     return @($findings)
 }
 
+function Get-CacSha256Text {
+    param([string]$Text)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes=[Text.Encoding]::UTF8.GetBytes($Text)
+        return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
+    }
+    finally {$sha.Dispose()}
+}
+
+function Get-CacEvidenceBasisFingerprint {
+    param([string]$Root,[object[]]$RelativePaths)
+    $rows=@()
+    foreach($relative in @($RelativePaths | Sort-Object)){
+        $path=Join-Path $Root (([string]$relative) -replace '/','\\')
+        if(-not(Test-Path -LiteralPath $path -PathType Leaf)){
+            throw ('CAC_RUNTIME_EVIDENCE_BASIS_FILE_MISSING:{0}' -f [string]$relative)
+        }
+        $hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+        $rows += ('{0}|{1}' -f [string]$relative,$hash)
+    }
+    return Get-CacSha256Text -Text ($rows -join "`n")
+}
+
+function Test-CacRuntimeEvidence {
+    param([string]$Root,$Binding)
+    $id=[string](Get-CacProperty $Binding 'id' '')
+    $spec=Get-CacProperty $Binding 'runtime_evidence' $null
+    if($null -eq $spec){
+        return [pscustomobject]@{state='MISSING';findings=@(New-CacFinding -Code 'RUNTIME_EVIDENCE_SPEC_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'RUNTIME_EVIDENCE binding requires runtime_evidence specification.' -Blocking $true)}
+    }
+    $path=[string](Get-CacProperty $spec 'path' '')
+    if([string]::IsNullOrWhiteSpace($path)){
+        return [pscustomobject]@{state='MISSING';findings=@(New-CacFinding -Code 'RUNTIME_EVIDENCE_PATH_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'runtime_evidence.path is required.' -Blocking $true)}
+    }
+    $full=$path
+    if(-not[IO.Path]::IsPathRooted($full)){$full=Join-Path $Root ($full -replace '/','\\')}
+    if(-not(Test-Path -LiteralPath $full -PathType Leaf)){
+        return [pscustomobject]@{state='MISSING';findings=@(New-CacFinding -Code 'RUNTIME_EVIDENCE_FILE_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message ('Runtime evidence missing: ' + $path) -Blocking $true)}
+    }
+    try {$evidence=Get-Content -LiteralPath $full -Raw | ConvertFrom-Json}
+    catch {
+        return [pscustomobject]@{state='INVALID';findings=@(New-CacFinding -Code 'RUNTIME_EVIDENCE_JSON_INVALID' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message $_.Exception.Message -Blocking $true)}
+    }
+    $findings=@()
+    $requiredSchema=[string](Get-CacProperty $spec 'schema' '')
+    if(-not[string]::IsNullOrWhiteSpace($requiredSchema) -and [string](Get-CacProperty $evidence 'schema' '') -ne $requiredSchema){
+        $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_SCHEMA_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime evidence schema mismatch.' -Blocking $true
+    }
+    if([string](Get-CacProperty $evidence 'result' '') -ne 'PASS'){
+        $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_RESULT_NOT_PASS' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime evidence result must be PASS.' -Blocking $true
+    }
+    $acceptedBindings=@(Get-CacOptionalValues $spec 'accepted_binding_ids')
+    if($acceptedBindings.Count -gt 0 -and $acceptedBindings -notcontains [string](Get-CacProperty $evidence 'binding_id' '')){
+        $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_BINDING_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime evidence binding_id is not accepted.' -Blocking $true
+    }
+    $requiredProvesBinding=[string](Get-CacProperty $spec 'required_proves_binding' '')
+    if(-not[string]::IsNullOrWhiteSpace($requiredProvesBinding)){
+        $provesBindings=@(Get-CacOptionalValues $evidence 'proves_bindings')
+        if($provesBindings -notcontains $requiredProvesBinding){
+            $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_PROVEN_BINDING_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message ('Runtime evidence does not prove binding: ' + $requiredProvesBinding) -Blocking $true
+        }
+    }
+    $basisFiles=@(Get-CacOptionalValues $spec 'basis_files')
+    try {$expectedFingerprint=Get-CacEvidenceBasisFingerprint -Root $Root -RelativePaths $basisFiles}
+    catch {
+        $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_BASIS_INVALID' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message $_.Exception.Message -Blocking $true
+        $expectedFingerprint=''
+    }
+    if(-not[string]::IsNullOrWhiteSpace($expectedFingerprint) -and [string](Get-CacProperty $evidence 'source_state_fingerprint' '') -ne $expectedFingerprint){
+        $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_STALE' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime evidence source-state fingerprint does not match installed Source.' -Blocking $true
+    }
+    foreach($field in @(Get-CacOptionalValues $spec 'required_true_fields')){
+        if(-not[bool](Get-CacProperty $evidence ([string]$field) $false)){
+            $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_REQUIRED_PROOF_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message ('Required runtime proof is not true: ' + [string]$field) -Blocking $true
+        }
+    }
+    return [pscustomobject]@{state=($(if($findings.Count -eq 0){'PROVEN'}else{'INVALID'}));findings=@($findings)}
+}
+
 function Get-CacRequiredStandards {
     param([string]$Root,[string]$StandardsManifest='standards/standards.yaml')
 
@@ -136,6 +216,11 @@ function Get-CacStrictContractStates {
         }
 
         $runtimeState=[string](Get-CacProperty $binding 'runtime_evidence_state' 'UNKNOWN')
+        if($proofKind -eq 'RUNTIME_EVIDENCE'){
+            $runtimeProof=Test-CacRuntimeEvidence -Root $Root -Binding $binding
+            $local += @($runtimeProof.findings)
+            $runtimeState=[string]$runtimeProof.state
+        }
         if(@($local).Count -eq 0){
             $states += [pscustomobject]@{
                 binding=$id

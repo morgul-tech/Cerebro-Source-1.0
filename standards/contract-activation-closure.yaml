@@ -1,7 +1,7 @@
 schema: cerebro-contract-activation-closure/v2
 contract_activation_closure:
   id: CEREBRO-CONTRACT-ACTIVATION-CLOSURE-001
-  version: "2.0"
+  version: "2.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   kind: STANDARD
@@ -18,6 +18,9 @@ contract_activation_closure:
   - IMPLEMENTED
   - WIRED
   - VALIDATED
+  - INVOKED
+  - CONSUMED
+  - EVIDENCED
   - OPERATIONAL
 
   proof_axes:
@@ -25,8 +28,14 @@ contract_activation_closure:
       meaning: deterministic Source binding proof
       blocking_authority: true
     runtime_execution:
-      meaning: evidence that a bound path has actually executed in a machine context
+      meaning: evidence that a bound path has actually executed and its output was consumed in a machine context
       blocking_authority: only-when-governing-contract-explicitly-requires-runtime-proof
+      required_for_RUNTIME_EVIDENCE_binding:
+        - bound-evidence-file
+        - source-state-fingerprint-match
+        - invocation-proof
+        - consumption-proof
+        - explicit-proven-binding-claim
     invariant: SOURCE_ACTIVATION_PROOF_MUST_NOT_BE_REPORTED_AS_RUNTIME_EXECUTION_PROOF
 
   required_standard_classifications:
@@ -60,6 +69,8 @@ contract_activation_closure:
     - EXPLICIT_ADAPTER
     - RUNTIME_EVIDENCE
     static_callsite_is_runtime_execution_proof: false
+    runtime_evidence_must_be_source_state_bound: true
+    stale_runtime_evidence: ACTIVATION_GAP
 
   canonical_convergence:
     responsibility_registry: tooling/validator/contract-activation-bindings.json
@@ -120,3 +131,6 @@ contract_activation_closure:
   - CANONICAL_CONFLICTS_ARE_EXPLICIT
   - KNOWN_ACTIVATION_DEBT_IS_VISIBLE_AND_NOT_FALSE_GREEN
   - STATIC_SOURCE_ACTIVATION_AND_RUNTIME_EXECUTION_EVIDENCE_REMAIN_SEPARATE
+  - RUNTIME_EVIDENCE_BINDING_REQUIRES_INVOCATION_CONSUMPTION_AND_SOURCE_BOUND_PROOF
+  - STALE_RUNTIME_EVIDENCE_NEVER_PROVES_OPERATIONAL
+  - RUNTIME_EVIDENCE_EXPLICITLY_NAMES_EACH_PROVEN_BINDING

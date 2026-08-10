@@ -24,9 +24,9 @@
       "standard_id": "STD-CONTROL-ARCHITECTURE",
       "path": "standards/control-architecture.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "Core control architecture is active, but several subordinate activation paths remain unresolved.",
+      "rationale": "Relevance/Wisdom material-commitment call path is now strict-bound; remaining non-relevance control subcontracts are not yet exhaustively activation-proven.",
       "known_gaps": [
-        "relevance/wisdom automatic call-path proof"
+        "remaining non-relevance control subcontracts require later contract-level activation sweep"
       ]
     },
     {
@@ -193,14 +193,30 @@
     {
       "standard_id": "STD-WISDOM-CONTROL-BINDING",
       "path": "standards/development/wisdom-control-binding.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Prove automatic Wisdom retrieval and binding into current MCP control resolution."
+      "classification": "OPERATIONAL",
+      "rationale": "Current-Wisdom retrieval is MCP-consumed through the normal Standard Delivery material call path and source-state-bound activation evidence.",
+      "strict_contract_refs": [
+        "WISDOM_MCP_CONTROL_CONSUMPTION"
+      ]
     },
     {
       "standard_id": "STD-RELEVANCE-RETRIEVAL",
       "path": "standards/development/relevance-retrieval.yaml",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "review_scope": "Trace relevance_engine.py from automatic invocation through Control State and MCP basis."
+      "classification": "OPERATIONAL",
+      "rationale": "Context retrieval has currentness, coverage and freshness semantics; it is consumed by MCP and exercised through the normal Standard Delivery material call path plus source-state-bound activation evidence.",
+      "strict_contract_refs": [
+        "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT"
+      ]
+    },
+    {
+      "standard_id": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+      "path": "standards/development/material-commitment-preflight.yaml",
+      "classification": "OPERATIONAL",
+      "rationale": "MCP material preflight is implemented and activation-proven; Standard Delivery is a normal machine consumer before mutation and governing publication, with full receipt freshness comparison.",
+      "strict_contract_refs": [
+        "MATERIAL_COMMITMENT_PREFLIGHT",
+        "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH"
+      ]
     },
     {
       "standard_id": "STD-ARCHITECTURAL-REGROUNDING",
@@ -459,6 +475,279 @@
         "legacy-cpatch-does-not-govern-new-standard-packages"
       ],
       "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
+    },
+    {
+      "id": "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT",
+      "standard_id": "STD-RELEVANCE-RETRIEVAL",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/development/relevance-retrieval.yaml",
+      "declaration_tokens": [
+        "id-is-present-in-working_context.current_index.current_wisdom_refs",
+        "empty_refs_alone_proves_no_prior_learning: false",
+        "consumer: MCP"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-RELEVANCE-RETRIEVAL",
+      "implementation": "tooling/context/relevance_engine.py",
+      "implementation_tokens": [
+        "def current_wisdom_refs(",
+        "coverage_state = \"INCOMPLETE\"",
+        "source_fingerprints(root)"
+      ],
+      "wiring": "mcp/material_commitment_preflight.py",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "load_relevance_engine",
+        "engine.retrieve",
+        "build_control_state",
+        "mcp_decide",
+        "consume"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "normal-wisdom-retrieval-is-bounded-to-current-index",
+        "empty-retrieval-with-expected-prior-learning-requires-coverage-audit",
+        "engine-selftest-alone-does-not-prove-operational"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RELEVANCE_MCP_ACTIVATION_PROOF.json",
+        "schema": "cerebro-relevance-mcp-activation-proof/v1",
+        "accepted_binding_ids": [
+          "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT"
+        ],
+        "basis_files": [
+          "standards/development/material-commitment-preflight.yaml",
+          "standards/development/relevance-retrieval.yaml",
+          "standards/development/wisdom-control-binding.yaml",
+          "standards/control-architecture.yaml",
+          "standards/mcp.yaml",
+          "mcp/manifest.yaml",
+          "mcp/material_commitment_preflight.py",
+          "tooling/context/relevance_engine.py",
+          "standards/delivery-kernel.yaml",
+          "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "tooling/runtime-host/cerebro_runtime.ps1",
+          "tooling/builder/cerebro_runtime_release.ps1"
+        ],
+        "required_true_fields": [
+          "context_invoked",
+          "mcp_consumed",
+          "commitment_gate_exercised",
+          "stale_basis_rejected",
+          "current_wisdom_enforced",
+          "coverage_gate_exercised",
+          "runtime_reasoning_policy_absent",
+          "semantic_resolution_gate_exercised",
+          "deterministic_conflict_guard_exercised",
+          "freshness_consumption_verified",
+          "intent_freshness_enforced"
+        ],
+        "required_proves_binding": "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT"
+      }
+    },
+    {
+      "id": "WISDOM_MCP_CONTROL_CONSUMPTION",
+      "standard_id": "STD-WISDOM-CONTROL-BINDING",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/development/wisdom-control-binding.yaml",
+      "declaration_tokens": [
+        "current_wisdom_only: REQUIRED",
+        "MCP_consumption_is_required_before_material_commitment: true",
+        "activation_evidence: REQUIRED_BEFORE_OPERATIONAL"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-WISDOM-CONTROL-BINDING",
+      "implementation": "tooling/context/relevance_engine.py",
+      "implementation_tokens": [
+        "not-current-wisdom",
+        "revoked-or-superseded",
+        "applicable_wisdom_refs"
+      ],
+      "wiring": "mcp/material_commitment_preflight.py",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "applicable_wisdom_refs",
+        "mcp_consumed",
+        "receipt_consumed"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "revoked-superseded-or-noncurrent-wisdom-is-rejected",
+        "runtime-evidence-proves-context-invocation-and-mcp-consumption"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RELEVANCE_MCP_ACTIVATION_PROOF.json",
+        "schema": "cerebro-relevance-mcp-activation-proof/v1",
+        "accepted_binding_ids": [
+          "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT"
+        ],
+        "basis_files": [
+          "standards/development/material-commitment-preflight.yaml",
+          "standards/development/relevance-retrieval.yaml",
+          "standards/development/wisdom-control-binding.yaml",
+          "standards/control-architecture.yaml",
+          "standards/mcp.yaml",
+          "mcp/manifest.yaml",
+          "mcp/material_commitment_preflight.py",
+          "tooling/context/relevance_engine.py",
+          "standards/delivery-kernel.yaml",
+          "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "tooling/runtime-host/cerebro_runtime.ps1",
+          "tooling/builder/cerebro_runtime_release.ps1"
+        ],
+        "required_true_fields": [
+          "context_invoked",
+          "mcp_consumed",
+          "commitment_gate_exercised",
+          "stale_basis_rejected",
+          "current_wisdom_enforced",
+          "coverage_gate_exercised",
+          "runtime_reasoning_policy_absent",
+          "semantic_resolution_gate_exercised",
+          "deterministic_conflict_guard_exercised",
+          "freshness_consumption_verified",
+          "intent_freshness_enforced"
+        ],
+        "required_proves_binding": "WISDOM_MCP_CONTROL_CONSUMPTION"
+      }
+    },
+    {
+      "id": "MATERIAL_COMMITMENT_PREFLIGHT",
+      "standard_id": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/development/material-commitment-preflight.yaml",
+      "declaration_tokens": [
+        "MCP_OWNS_MATERIAL_COMMITMENT_CONTROL",
+        "MATERIAL_COMMITMENT_REQUIRES_FRESH_BASIS_BOUND_RECEIPT",
+        "OPERATIONAL_REQUIRES_INVOCATION_CONSUMPTION_AND_EVIDENCE"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+      "implementation": "mcp/material_commitment_preflight.py",
+      "implementation_tokens": [
+        "def resolve(",
+        "def consume(",
+        "def activation_probe(",
+        "MATERIAL_STAGES"
+      ],
+      "wiring": "mcp/manifest.yaml",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "material_commitment_preflight:",
+        "invocation: AUTOMATIC_WHEN_MATERIAL_COMMITMENT",
+        "runtime_reasoning_policy: PROHIBITED"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "material-commitment-requires-resolved-semantics-complete-coverage-and-cleared-conflict",
+        "changed-source-context-objective-scope-or-intent-stales-material-receipt",
+        "runtime-0.1-does-not-contain-relevance-or-material-commitment-reasoning-policy"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RELEVANCE_MCP_ACTIVATION_PROOF.json",
+        "schema": "cerebro-relevance-mcp-activation-proof/v1",
+        "accepted_binding_ids": [
+          "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT"
+        ],
+        "basis_files": [
+          "standards/development/material-commitment-preflight.yaml",
+          "standards/development/relevance-retrieval.yaml",
+          "standards/development/wisdom-control-binding.yaml",
+          "standards/control-architecture.yaml",
+          "standards/mcp.yaml",
+          "mcp/manifest.yaml",
+          "mcp/material_commitment_preflight.py",
+          "tooling/context/relevance_engine.py",
+          "standards/delivery-kernel.yaml",
+          "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "tooling/runtime-host/cerebro_runtime.ps1",
+          "tooling/builder/cerebro_runtime_release.ps1"
+        ],
+        "required_true_fields": [
+          "context_invoked",
+          "mcp_consumed",
+          "commitment_gate_exercised",
+          "stale_basis_rejected",
+          "current_wisdom_enforced",
+          "coverage_gate_exercised",
+          "runtime_reasoning_policy_absent",
+          "semantic_resolution_gate_exercised",
+          "deterministic_conflict_guard_exercised",
+          "freshness_consumption_verified",
+          "intent_freshness_enforced"
+        ],
+        "required_proves_binding": "MATERIAL_COMMITMENT_PREFLIGHT"
+      }
+    },
+    {
+      "id": "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH",
+      "standard_id": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/development/material-commitment-preflight.yaml",
+      "declaration_tokens": [
+        "first_enforced_surface: STANDARD_DELIVERY_KERNEL",
+        "material_execute_preflight_before_Source_mutation: REQUIRED",
+        "governing_publish_preflight_before_CAC_and_sync: REQUIRED",
+        "activation_probe_may_substitute_for_normal_call_path: false"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+      "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "implementation_tokens": [
+        "Invoke-MaterialCommitmentPreflightGate",
+        "-Stage 'MATERIAL_EXECUTE'",
+        "-Stage 'GOVERNING_PUBLISH'",
+        "CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json"
+      ],
+      "wiring": "mcp/material_commitment_preflight.py",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "def resolve(",
+        "def consume(",
+        "normal_call_path_exercised",
+        "source_state_fingerprint(root)"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "changed-intent-stales-material-receipt",
+        "future-standard-material-execute-runs-preflight-before-source-mutation",
+        "future-standard-governing-publish-runs-preflight-before-cac-and-sync",
+        "activation-probe-does-not-substitute-for-normal-material-call-path"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json",
+        "schema": "cerebro-material-commitment-consumption/v1",
+        "accepted_binding_ids": [
+          "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH"
+        ],
+        "basis_files": [
+          "standards/development/material-commitment-preflight.yaml",
+          "standards/development/relevance-retrieval.yaml",
+          "standards/development/wisdom-control-binding.yaml",
+          "standards/control-architecture.yaml",
+          "standards/mcp.yaml",
+          "mcp/manifest.yaml",
+          "mcp/material_commitment_preflight.py",
+          "tooling/context/relevance_engine.py",
+          "standards/delivery-kernel.yaml",
+          "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "tooling/runtime-host/cerebro_runtime.ps1",
+          "tooling/builder/cerebro_runtime_release.ps1"
+        ],
+        "required_true_fields": [
+          "normal_call_path_exercised",
+          "context_invoked",
+          "mcp_consumed",
+          "receipt_consumed",
+          "freshness_verified",
+          "resolved_intent_verified"
+        ],
+        "required_proves_binding": "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH"
+      }
     }
   ],
   "canonical_responsibilities": [
@@ -485,16 +774,39 @@
           "handoff": "CEREBRO_PATCH_FAIL.json"
         }
       ]
+    },
+    {
+      "id": "MATERIAL_COMMITMENT_CONTROL",
+      "expected_canonical_claims": 1,
+      "blocking": true,
+      "classification": "CONVERGED",
+      "rationale": "MCP is the sole material-commitment control owner; Context supplies evidence and Runtime executes transitions without relevance reasoning policy.",
+      "claims": [
+        {
+          "claim_id": "MCP_MATERIAL_COMMITMENT_PREFLIGHT",
+          "standard_id": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+          "canonical": true,
+          "implementation": "mcp/material_commitment_preflight.py",
+          "role": "CONTROL_OWNER"
+        },
+        {
+          "claim_id": "CONTEXT_RELEVANCE_RETRIEVAL",
+          "standard_id": "STD-RELEVANCE-RETRIEVAL",
+          "canonical": false,
+          "implementation": "tooling/context/relevance_engine.py",
+          "role": "EVIDENCE_PROVIDER"
+        },
+        {
+          "claim_id": "RUNTIME_TRANSITION_EXECUTION",
+          "standard_id": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+          "canonical": false,
+          "implementation": "tooling/runtime-host/cerebro_runtime.ps1",
+          "role": "EXECUTION_ONLY_NO_REASONING_POLICY"
+        }
+      ]
     }
   ],
   "known_activation_debt": [
-    {
-      "id": "RELEVANCE_WISDOM_AUTOMATIC_CALL_PATH",
-      "standard_id": "STD-RELEVANCE-RETRIEVAL",
-      "classification": "SEMANTIC_REVIEW_REQUIRED",
-      "blocking": false,
-      "rationale": "Implementation exists; automatic invocation through Control State and MCP basis still requires call-path proof."
-    },
     {
       "id": "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE",
       "standard_id": "STD-CHANGE-ARCHITECTURE",
@@ -518,6 +830,11 @@
       "id": "CHANGE_DELIVERY_KERNEL_CONVERGENCE",
       "resolved_by_patch": "CEREBRO-CHANGE-DELIVERY-CONVERGENCE-001",
       "resolution": "STANDARD profile selection is pre-artifact only; sealed package identity governs runtime. Canonical launcher/kernel owns new STANDARD execution, legacy cpatch is compatibility-only, and one launcher invocation authorizes the declared RunToPass chain."
+    },
+    {
+      "id": "RELEVANCE_WISDOM_AUTOMATIC_CALL_PATH",
+      "resolved_by_patch": "CEREBRO-RELEVANCE-MATERIAL-COMMITMENT-CONVERGENCE-001",
+      "resolution": "Current-Wisdom retrieval, coverage/conflict/freshness semantics and MCP consumption are wired to the normal Standard Delivery MATERIAL_EXECUTE and GOVERNING_PUBLISH path; activation probe is separate evidence and Runtime remains execution-only."
     }
   ]
 }

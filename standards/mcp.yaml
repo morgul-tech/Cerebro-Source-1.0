@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-MCP
   name: Master Control Program Standard
-  version: 0.2.0
+  version: 0.3.1
   status: approved
   authority: authoritative
   scope: The domain-independent internal control layer governing active Cerebro operation.
@@ -58,3 +58,13 @@ rules:
   priority: critical
   verification:
   - MCP-P007 is present.
+- id: STD-MCP-R009
+  statement: MCP shall automatically resolve a fresh Material Commitment Preflight before DECIDE, LOCK, MATERIAL_EXECUTE, MATERIAL_AUTHORIZE or GOVERNING_PUBLISH, consume Context relevance output before deciding, and reject stale or incomplete preflight evidence.
+  priority: critical
+  verification:
+  - standards/development/material-commitment-preflight.yaml is ACTIVE.
+  - mcp/manifest.yaml registers the material_commitment_preflight control adapter.
+  - mcp/material_commitment_preflight.py implements resolve, consume and activation-probe paths.
+  - Runtime 0.1 remains free of relevance reasoning policy.
+  - Standard Delivery invokes the MCP preflight as a normal material consumer before mutation and before governing publication.
+  - Activation probes verify activation but do not substitute for the normal material call path.

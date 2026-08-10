@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.6"
+  version: "1.8"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -16,6 +16,27 @@ delivery_kernel:
     explicit_launcher_invocation_is_run_to_pass_authorization: true
     legacy_cpatch_for_new_standard_packages: SUPERSEDED
     LIMITED_and_FULL_profiles: OUTSIDE_KERNEL_SCOPE
+
+  activation_runtime_proof:
+    manifest_scoped: true
+    runs_only_when_activation_probes_are_declared: true
+    stage: AFTER_ACTIVE_SOURCE_INTEGRITY_BEFORE_CONTRACT_ACTIVATION_CLOSURE
+    stale_or_failed_evidence: BLOCK
+    unrelated_standard_patch_latency: ZERO_WHEN_NO_PROBE_DECLARED
+    evidence_is_derived_not_Source_authority: true
+
+  material_commitment_preflight:
+    contract: standards/development/material-commitment-preflight.yaml
+    implementation: mcp/material_commitment_preflight.py
+    semantic_basis_source: SEALED_PACKAGE_MANIFEST
+    normal_call_path:
+      MATERIAL_EXECUTE: BEFORE_BACKUP_AND_SOURCE_MUTATION
+      GOVERNING_PUBLISH: AFTER_SOURCE_DIFF_AND_ASC_BEFORE_ACTIVATION_PROOF_CAC_AND_SYNC
+    resolve_then_consume_required: true
+    bootstrap_defer:
+      allowed_only_when_package_creates_canonical_preflight_implementation: true
+      governing_publish_gate_after_install_required: true
+    activation_probe_substitutes_for_normal_call_path: false
 
   architecture:
     patch_specific_semantics: FINISHED_PAYLOAD_BYTES

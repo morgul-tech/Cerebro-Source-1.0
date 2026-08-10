@@ -2,15 +2,15 @@ schema: cerebro-wisdom-control-binding/v0.1
 
 wisdom_control_binding:
   id: CEREBRO-WISDOM-CONTROL-BINDING-001
-  version: "0.2"
+  version: "0.4"
   status: ACTIVE
   introduced_by: PATCH-005
   kind: CONTRACT
 
   purpose: >
-    Bind applicable Context-owned Wisdom evidence into MCP control resolution
-    without converting evidence counts, model inference, or prior experience
-    into Source authority.
+    Bind applicable current Context-owned Wisdom evidence into MCP control
+    resolution without converting evidence counts, model inference or prior
+    experience into Source authority.
 
   ownership:
     evidence_owner: context
@@ -21,6 +21,8 @@ wisdom_control_binding:
   input:
     evidence_schema_ref: engines/context/wisdom-evidence-schema.yaml
     evidence_state_ref: engines/context/wisdom-evidence.yaml
+    working_context_ref: engines/context/working-context.yaml
+    current_wisdom_index: working_context.current_index.current_wisdom_refs
     authority: EVIDENCE_ONLY
     retrieval_contract_ref: standards/development/relevance-retrieval.yaml
 
@@ -29,21 +31,11 @@ wisdom_control_binding:
       - current_objective
       - current_scope
       - current_failure_or_decision_state
-      - candidate_wisdom_profiles
-    output:
-      kind: wisdom-applicability-assessment
-      required_fields:
-        - assessment_id
-        - objective_ref
-        - applicable_profile_refs
-        - rejected_profile_refs
-        - basis_refs
-        - evidence_authority
-        - assessed_at
-
+      - current_wisdom_refs
     rules:
-      - scope-match-is-required
-      - subject-kind-CANDIDATE-never-exceeds-OBSERVE
+      - normal-retrieval-candidate-must-be-current-index-member
+      - superseded-or-revoked-record-is-ineligible
+      - historical-record-is-not-current-by-default
       - current-evidence-may-narrow-applicability
       - applicability-does-not-promote-control-tier
       - absence-of-retrieval-is-not-proof-of-no-applicable-wisdom
@@ -63,20 +55,17 @@ wisdom_control_binding:
       missing_authoritative_basis_effect: treat-as-non-gate-and-flag-governance-defect
 
   mcp_binding:
+    material_preflight_ref: standards/development/material-commitment-preflight.yaml
+    consumer_implementation_ref: mcp/material_commitment_preflight.py
     control_state_knowledge_field: applicable_knowledge_refs
     control_state_field: applicable_wisdom_refs
+    control_state_history_field: applicable_history_refs
     control_decision_basis_includes_applicable_wisdom: true
+    MCP_consumption_is_required_before_material_commitment: true
+    first_normal_machine_consumer_surface: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    activation_probe_alone_is_not_consumption_proof: true
     wisdom_may_override_source: false
-    wisdom_may_create-authority: false
-
-  patch_005_minimum:
-    applicability_assessment_contract: REQUIRED
-    PREFLIGHT_binding: REQUIRED
-    GATE_binding: REQUIRED
-    automatic_retrieval: DEFERRED_PATCH_006
-    automatic_ranking: DEFERRED_PATCH_006
-    automatic_control_promotion: PROHIBITED
-    automatic_source_mutation: PROHIBITED
+    wisdom_may_create_authority: false
 
   patch_006_binding:
     automatic_retrieval: REQUIRED
@@ -90,10 +79,21 @@ wisdom_control_binding:
     automatic_control_promotion: PROHIBITED
     automatic_source_mutation: PROHIBITED
 
+  convergence_2026_08_10:
+    automatic_invocation_owner: MCP
+    invocation_implementation: mcp/material_commitment_preflight.py
+    current_wisdom_only: REQUIRED
+    coverage_before_no-prior-learning-claim: REQUIRED
+    fresh_basis_bound_material_receipt: REQUIRED
+    runtime_reasoning_policy: PROHIBITED
+    activation_evidence: REQUIRED_BEFORE_OPERATIONAL
+
   invariants:
     - Context-owns-Wisdom-evidence
     - MCP-resolves-control-effect
     - Wisdom-evidence-remains-non-authoritative
+    - normal-retrieval-uses-current-Wisdom-only
     - candidate-never-silently-becomes-governing
     - GATE-requires-explicit-authoritative-basis
     - signal-count-does-not-create-governance
+    - material-commitment-consumes-fresh-retrieval-basis

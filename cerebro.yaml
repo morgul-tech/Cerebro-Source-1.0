@@ -13,7 +13,7 @@ mcp:
   path: mcp/
   manifest: mcp/manifest.yaml
   standard: standards/mcp.yaml
-  version: 1.1.0
+  version: 1.2.0
   component_kind: CONTROL
   authority_scope: highest-internal-control
   default_state: active
@@ -72,6 +72,7 @@ standards:
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
   wisdom_control_binding: standards/development/wisdom-control-binding.yaml
   relevance_retrieval: standards/development/relevance-retrieval.yaml
+  material_commitment_preflight: standards/development/material-commitment-preflight.yaml
   architectural_regrounding: standards/development/architectural-regrounding.yaml
   powershell_level3_delivery_assurance: standards/development/powershell-level3-delivery-assurance.yaml
   implementation_learning_loop: standards/development/implementation-learning-loop.yaml
