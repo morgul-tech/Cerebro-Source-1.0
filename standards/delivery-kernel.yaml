@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.2"
+  version: "1.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -141,10 +141,17 @@ delivery_kernel:
 
   activation_closure:
     contract: standards/contract-activation-closure.yaml
+    contract_version: "2.0"
     validator: tooling/validator/cerebro_contract_activation_closure.ps1
     strict_gate_before_sync: true
-    strict_scope: EXPLICIT_BINDING_REGISTRY
-    discovery_audit_non_blocking: true
+    classification_coverage: ALL_REQUIRED_STANDARDS
+    contract_granularity: CONTRACT_LEVEL
+    strict_operational_chain: true
+    canonical_conflict_detection: true
+    known_activation_debt_may_be_nonblocking_when_explicitly_classified: true
+    reference_existence_alone_proves_operational: false
+    runtime_execution_evidence_axis: SEPARATE
+    inventory_output: D:\Cerebro\Run\audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json
 
   assurance:
     existing_contract: standards/development/powershell-level3-delivery-assurance.yaml

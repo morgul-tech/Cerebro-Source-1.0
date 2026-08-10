@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "1.2"
+  version: "1.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -34,6 +34,11 @@ delivery_failure_regression:
   - PATCH_ATTEMPT_HISTORY_INCOMPLETE
   - CONTRACT_ACTIVATION_GAP
   - DECLARED_BUT_NOT_OPERATIONAL_REGRESSION
+  - ACTIVATION_CLASSIFICATION_COVERAGE_GAP
+  - ACTIVATION_WIRING_PROOF_MISSING
+  - CANONICAL_IMPLEMENTATION_CONFLICT
+  - OPERATIONAL_RUNTIME_EVIDENCE_CONFLATION
+  - FALSE_GREEN_REFERENCE_INTEGRITY
 
   mandatory_pre_delivery_gates:
   - native-PowerShell-parser-zero-errors
@@ -63,6 +68,17 @@ delivery_failure_regression:
   - strict-activation-bindings-have-declaration-registration-implementation-wiring-validation
   - discovery-activation-audit-is-non-blocking
   - declared-but-not-operational-findings-are-classified-before-promotion-to-blocking
+  - every-required-standard-has-explicit-activation-classification
+  - future-required-standard-without-classification-blocks
+  - operational-standards-reference-strict-contracts
+  - strict-contract-wiring-proof-kind-is-required
+  - canonical-responsibility-conflicts-are-reported
+  - explicitly-classified-nonblocking-debt-does-not-falsely-return-clean
+  - activation-audit-covers-all-required-standards-not-only-implementation-references
+  - reference-existence-alone-never-proves-operational
+  - static-activation-proof-is-not-runtime-execution-proof
+  - duplicate-standard-classification-blocks
+  - classification-path-mismatch-blocks
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the

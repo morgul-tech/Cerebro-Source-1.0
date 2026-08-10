@@ -1,15 +1,16 @@
-schema: cerebro-contract-activation-closure/v1
+schema: cerebro-contract-activation-closure/v2
 contract_activation_closure:
   id: CEREBRO-CONTRACT-ACTIVATION-CLOSURE-001
-  version: "1.0"
+  version: "2.0"
   status: ACTIVE
   authority: Cerebro Source 1.0
   kind: STANDARD
 
   purpose: >
-    Prevent Cerebro from treating an operational contract as implemented merely
-    because its declaration exists in Source. Operational completion requires
-    verifiable declaration, registration, implementation, wiring and validation.
+    Provide complete activation classification coverage for every required
+    Cerebro standard while strictly proving operational contract bindings and
+    surfacing known activation debt, partial operation and canonical conflicts
+    without silently converting uncertain semantic inference into a blocker.
 
   activation_chain:
   - DECLARED
@@ -19,39 +20,103 @@ contract_activation_closure:
   - VALIDATED
   - OPERATIONAL
 
-  allowed_non_operational_classifications:
+  proof_axes:
+    source_activation:
+      meaning: deterministic Source binding proof
+      blocking_authority: true
+    runtime_execution:
+      meaning: evidence that a bound path has actually executed in a machine context
+      blocking_authority: only-when-governing-contract-explicitly-requires-runtime-proof
+    invariant: SOURCE_ACTIVATION_PROOF_MUST_NOT_BE_REPORTED_AS_RUNTIME_EXECUTION_PROOF
+
+  required_standard_classifications:
+  - OPERATIONAL
   - POLICY_ONLY
   - DORMANT
-
-  failure_classifications:
-  - ORPHANED
+  - SUPERSEDED
+  - PARTIALLY_OPERATIONAL
   - ACTIVATION_GAP
+  - SEMANTIC_REVIEW_REQUIRED
+
+  classification_coverage:
+    scope: ALL_REQUIRED_STANDARDS
+    unclassified_required_standard: BLOCK
+    duplicate_classification: BLOCK
+    unknown_classification: BLOCK
+    path_mismatch: BLOCK
+    future_required_standard_requires_explicit_classification_before_patch_close: true
+
+  contract_granularity:
+    operational_standard_requires_explicit_contract_refs: true
+    operational_contract_requires:
+    - declaration
+    - registration
+    - implementation
+    - wiring
+    - validation
+    wiring_requires_declared_proof_kind: true
+    allowed_wiring_proof_kinds:
+    - STATIC_CALLSITE
+    - EXPLICIT_ADAPTER
+    - RUNTIME_EVIDENCE
+    static_callsite_is_runtime_execution_proof: false
+
+  canonical_convergence:
+    responsibility_registry: tooling/validator/contract-activation-bindings.json
+    multiple_canonical_claims_for_single_owner_responsibility: CANONICAL_IMPLEMENTATION_CONFLICT
+    known_conflict_may_be_non_blocking_when:
+    - conflict-is-explicitly-classified
+    - remediation-is-not-part-of-current-patch
+    - conflict-does-not-invalidate-current-strict-contract-chain
+    detected_but_unclassified_conflict: BLOCK
+
+  activation_debt:
+    permitted_non_blocking_states:
+    - PARTIALLY_OPERATIONAL
+    - ACTIVATION_GAP
+    - SEMANTIC_REVIEW_REQUIRED
+    debt_must_be_explicit: true
+    debt_must_include_rationale_or_review_scope: true
+    debt_is_green_operational_status: false
 
   binding_registry: tooling/validator/contract-activation-bindings.json
   validator: tooling/validator/cerebro_contract_activation_closure.ps1
 
   strict_closure:
-    scope: EXPLICIT_BINDING_REGISTRY
     required_before_standard_patch_sync: true
+    blocking_scope:
+    - classification-coverage
+    - strict-operational-contract-chain
+    - unclassified-canonical-conflict
+    known_explicit_nonblocking_debt_does_not_block_unrelated_patch: true
     failure_effect: BLOCK_PATCH_BEFORE_SYNC
-    operational_binding_requires_all_declared_chain_stages: true
-    uncertain_semantic_inference_may_block: false
 
-  discovery_audit:
-    scope: REGISTERED_REQUIRED_STANDARDS
-    blocking: false
+  activation_inventory:
     output_default: D:\Cerebro\Run\audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json
-    purpose: >
-      Find other Source contracts that reference implementations or tooling but
-      are not yet covered by strict bindings. Findings require classification
-      before they can become blocking controls.
-    dispositions:
-    - REFERENCE_INTEGRITY_PASS
-    - ACTIVATION_GAP
-    - POLICY_ONLY
-    - DORMANT
-    - SEMANTIC_REVIEW_REQUIRED
+    required_content:
+    - all-required-standards
+    - explicit-classification
+    - strict-contract-states
+    - proof-level
+    - runtime-evidence-state
+    - canonical-responsibility-findings
+    - known-activation-debt
+    - classification-counts
+    - blocking-findings
+    - nonblocking-findings
+    health_values:
+    - CLEAN
+    - REVIEW_REQUIRED
+    - BLOCKED
 
-  closure_invariant: >
-    A contract classified OPERATIONAL cannot close on declaration alone; its
-    explicit activation chain must pass deterministic closure.
+  discovery:
+    implementation_reference_scan: SUPPLEMENTAL
+    reference-existence-alone-may-prove-operational: false
+    uncertain_semantic_candidate_disposition: SEMANTIC_REVIEW_REQUIRED
+
+  closure_invariants:
+  - EVERY_REQUIRED_STANDARD_HAS_EXPLICIT_ACTIVATION_CLASSIFICATION
+  - OPERATIONAL_IS_PROVEN_AT_CONTRACT_LEVEL_NOT_FILE_EXISTENCE_LEVEL
+  - CANONICAL_CONFLICTS_ARE_EXPLICIT
+  - KNOWN_ACTIVATION_DEBT_IS_VISIBLE_AND_NOT_FALSE_GREEN
+  - STATIC_SOURCE_ACTIVATION_AND_RUNTIME_EXECUTION_EVIDENCE_REMAIN_SEPARATE

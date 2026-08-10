@@ -1,14 +1,253 @@
 {
-  "schema": "cerebro-contract-activation-bindings/v1",
+  "schema": "cerebro-contract-activation-bindings/v2",
+  "classification_version": "2.0",
+  "standard_classifications": [
+    {
+      "standard_id": "STD-MCP",
+      "path": "standards/mcp.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-SOURCE",
+      "path": "standards/source-authority.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-SYSTEM-LIFECYCLE",
+      "path": "standards/system-lifecycle.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-CONTROL-ARCHITECTURE",
+      "path": "standards/control-architecture.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Core control architecture is active, but several subordinate activation paths remain unresolved.",
+      "known_gaps": [
+        "diagnostic canonical convergence",
+        "relevance/wisdom automatic call-path proof",
+        "Active Source Closure patch-close wiring"
+      ]
+    },
+    {
+      "standard_id": "STD-HUMAN-CONTINUATION-SURFACE",
+      "path": "standards/human-continuation-surface.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-CONTINUATION-SURFACE-SYSTEM-POLICY",
+      "path": "standards/continuation-surface-system-policy.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-BOOT-CRITICAL-PATH",
+      "path": "standards/boot-critical-path-architecture.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-DELIVERY-KERNEL",
+      "path": "standards/delivery-kernel.yaml",
+      "classification": "OPERATIONAL",
+      "rationale": "Canonical STANDARD delivery path is explicitly bound and regression-controlled.",
+      "strict_contract_refs": [
+        "DELIVERY_KERNEL",
+        "FAILURE_HANDOFF"
+      ]
+    },
+    {
+      "standard_id": "STD-PATCH-ATTEMPT-HISTORY",
+      "path": "standards/patch-attempt-history.yaml",
+      "classification": "OPERATIONAL",
+      "rationale": "Attempt ledger is wired into the canonical launcher for PASS and FAIL.",
+      "strict_contract_refs": [
+        "PATCH_ATTEMPT_HISTORY"
+      ]
+    },
+    {
+      "standard_id": "STD-CONTRACT-ACTIVATION-CLOSURE",
+      "path": "standards/contract-activation-closure.yaml",
+      "classification": "OPERATIONAL",
+      "rationale": "Closure validator is wired into Delivery Kernel before canonical sync.",
+      "strict_contract_refs": [
+        "CONTRACT_ACTIVATION_CLOSURE"
+      ]
+    },
+    {
+      "standard_id": "STD-USER-OPERATING-PROFILE",
+      "path": "standards/user-operating-profile.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-SYSTEM-METAMODEL",
+      "path": "standards/system-metamodel.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-RULE-MODEL",
+      "path": "standards/rule-model.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-CANONICAL-DEFINITION-SYSTEM",
+      "path": "standards/canonical-definition-system.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-PUBLICATION",
+      "path": "standards/publication-gate.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-QUALITY",
+      "path": "standards/quality-gate.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-VALIDER",
+      "path": "standards/valider-command.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-PATCH",
+      "path": "standards/patch-package.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-CHANGE-ARCHITECTURE",
+      "path": "standards/change-architecture.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Host/change/delivery/closure tooling exists, but canonical scope boundaries against the Standard Delivery Kernel require convergence.",
+      "known_gaps": [
+        "Host vs Standard Delivery Kernel scope relation requires explicit canonical classification"
+      ]
+    },
+    {
+      "standard_id": "STD-CHANGE-DELIVERY",
+      "path": "standards/change-delivery.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "STANDARD handoff shape is active, while selection, diagnostic, failure-learning and RunToPass subcontracts are not all proven through the current kernel path.",
+      "known_gaps": [
+        "delivery-selection state not proven as governing input to current Standard Delivery Kernel",
+        "canonical diagnostic contract diverges from Delivery Kernel failure store",
+        "legacy RunToPass and failure-learning receipt semantics require convergence review"
+      ]
+    },
+    {
+      "standard_id": "STD-RELEASE-PLATFORM",
+      "path": "standards/release-platform.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-OPERATIONAL-PROGRESS",
+      "path": "standards/operational-progress.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-OPERATIONAL-EVIDENCE",
+      "path": "standards/operational-evidence.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Canonical diagnostic capsule tooling and Host rehydration exist, but Standard Delivery Kernel currently maintains a parallel diagnostic store.",
+      "known_gaps": [
+        "canonical diagnostic capsule vs Delivery Kernel diagnostic store conflict"
+      ]
+    },
+    {
+      "standard_id": "STD-PROJECT-STATUS",
+      "path": "standards/project-status.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-CONSOLIDATE",
+      "path": "standards/development/consolidate.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-ADAPTIVE-QUALITY-WORKFORM",
+      "path": "standards/development/adaptive-quality-workform.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-WISDOM-CONTROL-BINDING",
+      "path": "standards/development/wisdom-control-binding.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Prove automatic Wisdom retrieval and binding into current MCP control resolution."
+    },
+    {
+      "standard_id": "STD-RELEVANCE-RETRIEVAL",
+      "path": "standards/development/relevance-retrieval.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace relevance_engine.py from automatic invocation through Control State and MCP basis."
+    },
+    {
+      "standard_id": "STD-ARCHITECTURAL-REGROUNDING",
+      "path": "standards/development/architectural-regrounding.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-POWERSHELL-L3-DELIVERY-ASSURANCE",
+      "path": "standards/development/powershell-level3-delivery-assurance.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-IMPLEMENTATION-LEARNING",
+      "path": "standards/development/implementation-learning-loop.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    },
+    {
+      "standard_id": "STD-DELIVERY-FAILURE-REGRESSION",
+      "path": "standards/development/delivery-failure-regression.yaml",
+      "classification": "POLICY_ONLY",
+      "rationale": "Assurance policy is consumed by operational delivery contracts; no standalone runtime owner is required."
+    },
+    {
+      "standard_id": "STD-ACTIVE-SOURCE-CLOSURE",
+      "path": "standards/active-source-closure.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Validator and full closure engine exist, but required-before-patch-close semantics are not wired into the current Standard Delivery Kernel.",
+      "known_gaps": [
+        "lightweight Active Source integrity closure is not invoked before Standard patch sync/close",
+        "full closure engine also spans release/system evidence and requires scope separation"
+      ]
+    },
+    {
+      "standard_id": "STD-RUNTIME-IDEA-OBJECT-PIPELINE",
+      "path": "standards/runtime/idea-object-pipeline.yaml",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "review_scope": "Trace contract-level operational responsibilities, canonical implementation ownership, invocation and validation before promotion."
+    }
+  ],
   "bindings": [
     {
       "id": "DELIVERY_KERNEL",
+      "standard_id": "STD-DELIVERY-KERNEL",
       "classification": "OPERATIONAL",
       "declaration": "standards/delivery-kernel.yaml",
       "registration": "standards/standards.yaml",
       "registration_token": "STD-DELIVERY-KERNEL",
       "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
       "wiring_tokens": [
         "kernel\\Cerebro.StandardDeliveryKernel.ps1",
         "SelfTest",
@@ -17,10 +256,12 @@
       "validation": "standards/development/delivery-failure-regression.yaml",
       "validation_tokens": [
         "mandatory_pre_delivery_gates"
-      ]
+      ],
+      "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
     },
     {
       "id": "FAILURE_HANDOFF",
+      "standard_id": "STD-DELIVERY-KERNEL",
       "classification": "OPERATIONAL",
       "declaration": "standards/delivery-kernel.yaml",
       "declaration_tokens": [
@@ -35,16 +276,19 @@
         "PATCH FAIL"
       ],
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
       "wiring_tokens": [
         "Write-FailureCapsule"
       ],
       "validation": "standards/development/delivery-failure-regression.yaml",
       "validation_tokens": [
         "FAILURE_DIAGNOSTIC_CAPSULE_MISSING"
-      ]
+      ],
+      "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
     },
     {
       "id": "PATCH_ATTEMPT_HISTORY",
+      "standard_id": "STD-PATCH-ATTEMPT-HISTORY",
       "classification": "OPERATIONAL",
       "declaration": "standards/patch-attempt-history.yaml",
       "declaration_tokens": [
@@ -59,6 +303,7 @@
         "Complete-Attempt"
       ],
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
       "wiring_tokens": [
         "ATTEMPT_STARTED",
         "ATTEMPT_PASS",
@@ -69,37 +314,95 @@
       "validation_tokens": [
         "attempt-history-record-created-for-pass-and-fail",
         "attempt-id-propagates-into-kernel-receipt"
-      ]
+      ],
+      "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
     },
     {
       "id": "CONTRACT_ACTIVATION_CLOSURE",
+      "standard_id": "STD-CONTRACT-ACTIVATION-CLOSURE",
       "classification": "OPERATIONAL",
       "declaration": "standards/contract-activation-closure.yaml",
       "declaration_tokens": [
-        "DECLARED",
-        "REGISTERED",
-        "IMPLEMENTED",
-        "WIRED",
-        "VALIDATED",
-        "OPERATIONAL"
+        "EVERY_REQUIRED_STANDARD_HAS_EXPLICIT_ACTIVATION_CLASSIFICATION",
+        "OPERATIONAL_IS_PROVEN_AT_CONTRACT_LEVEL_NOT_FILE_EXISTENCE_LEVEL"
       ],
       "registration": "standards/standards.yaml",
       "registration_token": "STD-CONTRACT-ACTIVATION-CLOSURE",
       "implementation": "tooling/validator/cerebro_contract_activation_closure.ps1",
       "implementation_tokens": [
         "Invoke-CerebroContractActivationClosure",
-        "Invoke-CerebroContractActivationAudit"
+        "Invoke-CerebroContractActivationAudit",
+        "Get-CacClassificationCoverage",
+        "Get-CacCanonicalResponsibilityFindings"
       ],
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
       "wiring_tokens": [
         "CONTRACT_ACTIVATION_CLOSURE",
         "Invoke-CerebroContractActivationClosure"
       ],
       "validation": "standards/development/delivery-failure-regression.yaml",
       "validation_tokens": [
-        "contract-activation-closure-passes-before-canonical-sync",
-        "discovery-activation-audit-is-non-blocking"
+        "every-required-standard-has-explicit-activation-classification",
+        "canonical-responsibility-conflicts-are-reported",
+        "static-activation-proof-is-not-runtime-execution-proof"
+      ],
+      "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
+    }
+  ],
+  "canonical_responsibilities": [
+    {
+      "id": "STANDARD_DIAGNOSTIC_CAPTURE",
+      "expected_canonical_claims": 1,
+      "blocking": false,
+      "classification": "CANONICAL_CONFLICT",
+      "rationale": "Two active Source contracts currently claim canonical STANDARD diagnostic responsibility.",
+      "claims": [
+        {
+          "claim_id": "OPERATIONAL_EVIDENCE_DIAGNOSTIC_CAPSULE",
+          "standard_id": "STD-OPERATIONAL-EVIDENCE",
+          "canonical": true,
+          "implementation": "tooling/host/diagnostic_capsule.py",
+          "store": "LOCALAPPDATA/Cerebro/diagnostics"
+        },
+        {
+          "claim_id": "DELIVERY_KERNEL_FAILURE_HANDOFF",
+          "standard_id": "STD-DELIVERY-KERNEL",
+          "canonical": true,
+          "implementation": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+          "store": "D:\\Cerebro\\Run\\diagnostics"
+        }
       ]
+    }
+  ],
+  "known_activation_debt": [
+    {
+      "id": "ACTIVE_SOURCE_CLOSURE_PATCH_CLOSE",
+      "standard_id": "STD-ACTIVE-SOURCE-CLOSURE",
+      "classification": "ACTIVATION_GAP",
+      "blocking": false,
+      "rationale": "Source declares Active Source Closure required before patch close, but current Standard Delivery Kernel does not invoke it."
+    },
+    {
+      "id": "CHANGE_DELIVERY_KERNEL_CONVERGENCE",
+      "standard_id": "STD-CHANGE-DELIVERY",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "blocking": false,
+      "rationale": "Current Delivery Kernel does not yet prove or explicitly supersede every active change-delivery subcontract."
+    },
+    {
+      "id": "RELEVANCE_WISDOM_AUTOMATIC_CALL_PATH",
+      "standard_id": "STD-RELEVANCE-RETRIEVAL",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "blocking": false,
+      "rationale": "Implementation exists; automatic invocation through Control State and MCP basis still requires call-path proof."
+    },
+    {
+      "id": "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE",
+      "standard_id": "STD-CHANGE-ARCHITECTURE",
+      "classification": "SEMANTIC_REVIEW_REQUIRED",
+      "blocking": false,
+      "rationale": "Host/Change Engine/Delivery Controller and Standard Delivery Kernel scope boundaries require explicit canonical classification."
     }
   ]
 }
