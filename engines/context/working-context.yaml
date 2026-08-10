@@ -4496,6 +4496,137 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-007-VERIFIED-001"
       sequence: 111
+    -
+      id: "CTX-DEC-SESSION-EVOLUTION-LAGRE-001"
+      type: "DECISION"
+      scope: "SESSION-EVOLUTION-ANALYSIS-AND-CROSS-SESSION-LEARNING"
+      statement: "The final Cerebro FULL + REFINE DEEP session analysis is persisted as the design basis for a development-trajectory learning capability: Cerebro should preserve both STATE_CONTINUITY and material LEARNING_CONTINUITY, with adaptive session evolution synthesis before LAGRE and no new engine or top-level component assumed."
+      payload:
+        decision_status: "SAVED_FINAL_RECOMMENDATION"
+        authority_source: "CURRENT_EXPLICIT_USER_LAGRE"
+        implementation_authorized: false
+        analysis_mode: "CEREBRO_FULL"
+        final_refinement: "REFINE_DEEP"
+        machine_artifact:
+          name: "Task Cerebro - session evolution - FINAL MACHINE DEEP.txt"
+          sha256: "19f7a8265d9519e0ffd103cfa9e75853fda151a9feb1015c029b2ddc5ed6773f"
+          role: "LOCAL_USER_COPY_FULL_DETAIL"
+          full_detail_required_for_next_session: false
+        largest_pattern:
+          id: "CEREBRO_IS_LEARNING_TO_DEVELOP_CEREBRO"
+          statement: "Failures and USER corrections became generalized assurance and control; later successful runs provided strengthening evidence; this compounding development process should itself become reusable learning."
+        causal_model:
+          - "FAILURE_OR_FRICTION"
+          - "UNDERSTANDING"
+          - "GENERALIZATION"
+          - "PREVENTION_OR_ASSURANCE"
+          - "NEW_EXECUTION"
+          - "SCOPED_VERIFIED_SUCCESS"
+          - "STRENGTHENING_EVIDENCE"
+          - "REUSE_IN_NEXT_WORK"
+        evidence_interpretation:
+          repeated_first_pass_success_supported: true
+          long_term_first_pass_rate_proven: false
+          known_counterevidence:
+            - "PATCH-007.PRE-001 required repair"
+            - "PATCH-007.PRE-003 required multiple revisions"
+            - "PATCH-007.PRE-005 R1 failed before R2 success"
+        recommended_architecture:
+          primary_name: "CEREBRO_DEVELOPMENT_TRAJECTORY_LOOP"
+          new_engine: false
+          new_top_level_component: false
+          existing_mechanisms_to_compose:
+            - "CONSOLIDATE"
+            - "REFLECTIVE_ADJUSTMENT_LOOP"
+            - "ADAPTIVE_QUALITY_WORKFORM"
+            - "DECISION_ASSURANCE"
+            - "RELEVANCE_RETRIEVAL"
+            - "DEVELOPMENT_HISTORY"
+            - "SESSION_HANDOFF"
+            - "MCP_CONTROL_RESOLUTION"
+          online_mode:
+            name: "TRAJECTORY_CHECKPOINT"
+            purpose: "Detect material drift and systemic learning early enough to alter current work."
+          lagre_mode:
+            name: "SESSION_EVOLUTION_SYNTHESIS"
+            every_lagre_runs_materiality_scan: true
+            full_deep_analysis_every_lagre: false
+            analysis_occurs_before_lagre_while_current_session_available: true
+            boot_replays_old_session_analysis: false
+        continuity:
+          STATE_CONTINUITY:
+            question: "Where are we and what happens next?"
+            existing_owner: "Project/Context plus Session Handoff"
+          LEARNING_CONTINUITY:
+            question: "What did this session teach about how to reach a better state next time?"
+            recommended_owner: "Context evidence/assessment plus Reflective Adjustment classification"
+        user_surface:
+          lagre_command_changes_required: false
+          optional_future_mid_session_command: "REASSESS"
+          reassess_is_primary_architecture: false
+        persistence_guardrails:
+          - "NO_FULL_CONVERSATION_PERSISTENCE"
+          - "NO_HIDDEN_REASONING_PERSISTENCE"
+          - "NO_AUTOMATIC_WISDOM_PROMOTION"
+          - "NO_AUTOMATIC_RULE_CREATION"
+          - "DEVELOPMENT_HISTORY_ONLY_FOR_SIGNIFICANT_EVENTS"
+          - "DETAILED_EVIDENCE_BY_REFERENCE"
+          - "CHEAP_MATERIALITY_SCAN_BEFORE_DEEP_SESSION_ANALYSIS"
+      provenance:
+        introduced_by_ref: "USER-LAGRE-AFTER-SESSION-EVOLUTION-REFINE-DEEP-2026-08-10"
+        basis_refs:
+          - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
+          - "CTX-BASIS-PATCH-007-VERIFIED-001"
+          - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
+      sequence: 112
+    -
+      id: "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
+      type: "CURRENT_BASIS"
+      scope: "NEXT-SESSION-AFTER-SESSION-EVOLUTION-ANALYSIS"
+      statement: "PATCH-007 remains VERIFIED. The latest saved analysis adds a non-implemented design candidate: preserve material development-trajectory learning across LAGRE/BOOT so future sessions inherit not only END_STATE but causal learning about HOW stronger states were reached. No implementation of this model or PATCH-AA-000 is authorized by this save."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        saved_via: "CEREBRO_LAGRE"
+        source_baseline: "c932c730d40e8eadfd9e208373bb15cca55f4bcb"
+        patch_007:
+          status: "VERIFIED"
+        session_evolution_analysis:
+          status: "FINAL_RECOMMENDATION_SAVED"
+          refinement: "REFINE_DEEP"
+          recommendation_ref: "CTX-DEC-SESSION-EVOLUTION-LAGRE-001"
+          development_history_ref: "HIST-LEARN-CEREBRO-DEVELOPMENT-TRAJECTORY-20260810"
+          primary_design_candidate: "CEREBRO_DEVELOPMENT_TRAJECTORY_LOOP"
+          implementation_authorized: false
+        next_session:
+          canonical_trigger: "boot cerebro"
+          required_first_action: "FRESH_SOURCE_REGROUND_AND_RETRIEVE_LATEST_SESSION_EVOLUTION_BASIS"
+          material_user_boundary:
+            decision_required: true
+            question: "Whether to design/implement the saved session-evolution/LAGRE learning capability before continuing the existing PATCH-AA-000 roadmap boundary."
+        existing_roadmap_boundary:
+          patch: "PATCH-AA-000"
+          status: "PLANNED"
+          implementation_authorized: false
+        deferred_nonblocking:
+          - "PRE005_RECOVERY_STRENGTHENING_HISTORY_BACKFILL"
+          - "FULL_STANDARD_CONVERGENCE_OF_MINIMAL_FAILURE_HANDOFF"
+          - "FULL_STANDARD_CONVERGENCE_OF_REFINE_AND_EXECUTE_CONTINUATION_DISCIPLINE"
+      provenance:
+        introduced_by_ref: "CEREBRO-LAGRE-SESSION-EVOLUTION-DEEP-2026-08-10"
+        basis_refs:
+          - "CTX-DEC-SESSION-EVOLUTION-LAGRE-001"
+          - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
+      sequence: 113
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4532,6 +4663,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-PATCH-007-PRE-005-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-CLOSURE-AUTHORIZED-001"
       - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
+      - "CTX-DEC-SESSION-EVOLUTION-LAGRE-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4555,6 +4687,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-VERIFIED-001"
       - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
+      - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4602,7 +4735,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 112
+  next_sequence: 114
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

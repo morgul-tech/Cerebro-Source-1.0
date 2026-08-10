@@ -122,3 +122,35 @@ development_history:
         admission: EXPLICIT_USER_HISTORICAL_REQUEST
         user_selected_historical: true
         source_ref: USER-HISTORICAL-PATCH007-CLOSURE-2026-08-10
+    - id: HIST-LEARN-CEREBRO-DEVELOPMENT-TRAJECTORY-20260810
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Development trajectory learning identified as a distinct continuity need
+      fact: A full-session Cerebro analysis found that the development process improved cumulatively as failures and USER corrections were generalized into reusable assurance, later successes strengthened confidence, and repeated first-pass results emerged; preserving only END_STATE therefore loses material causal learning about HOW better states were reached.
+      occurred_at: '2026-08-10T18:39:00+02:00'
+      evidence_refs:
+        - CTX-DEC-SESSION-EVOLUTION-LAGRE-001
+        - CTX-BASIS-SESSION-EVOLUTION-LAGRE-001
+        - HIST-STRENGTH-FIRST-PASS-PATCH-SUCCESS-20260810
+        - HIST-STRENGTH-REPEAT-FIRST-PASS-MILESTONE-20260810
+        - HIST-STRENGTH-PRE004-DIAGNOSTIC-AUTONOMY-FIRST-PASS-20260810
+        - HIST-STRENGTH-PATCH007-RELIABILITY-FOUNDATION-CLOSURE-20260810
+      impact:
+        introduced:
+          - DEVELOPMENT_TRAJECTORY_LEARNING_CANDIDATE
+          - STATE_CONTINUITY_AND_LEARNING_CONTINUITY_DISTINCTION
+        retired: []
+        enabled:
+          - SESSION_EVOLUTION_SYNTHESIS_DESIGN
+          - LAGRE_SESSION_LEARNING_DESIGN
+        learned:
+          - MATERIAL_SESSIONS_SHOULD_PRESERVE_HOW_BETTER_STATE_WAS_REACHED_NOT_ONLY_WHERE_WORK_ENDED
+      relations:
+        patch_refs: [PATCH-007]
+        learning_refs:
+          - CTX-DEC-SESSION-EVOLUTION-LAGRE-001
+          - CTX-BASIS-SESSION-EVOLUTION-LAGRE-001
+      provenance:
+        admission: EXPLICIT_USER_LAGRE_OF_SESSION_EVOLUTION_ANALYSIS
+        source_ref: USER-LAGRE-SESSION-EVOLUTION-2026-08-10
