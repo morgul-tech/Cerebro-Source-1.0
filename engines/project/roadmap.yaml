@@ -950,6 +950,10 @@ roadmap:
         - "history_append_failure_must_not_invalidate_verified_primary_operation_success"
         - "published_history_is_append_only_with_correction_and_retraction_records"
         - "seed_first_pass_success_as_FOUNDATIONAL_STRENGTHENING_EVENT"
+        - "cross_cutting_pattern_EXPECTED_OBSERVED_STATE_MISMATCH"
+        - "mismatch_invariant_MISMATCH_IS_DETECTION_NOT_ROOT_CAUSE"
+        - "mismatch_resolution_detect_classify_preserve_compare_rootcause_regression"
+        - "mismatch_root_cause_learning_ref_CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
     -
       id: "PATCH-007"
       title: "operational_reliability_and_evidence_foundation"

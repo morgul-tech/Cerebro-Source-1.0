@@ -3864,6 +3864,73 @@ RECEIPT-76656fa9d8e617e98414c9fe
           - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
           - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
       sequence: 95
+    -
+      id: "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
+      type: "WISDOM_RECORD"
+      scope: "CROSS-CUTTING-MISMATCH-DETECTION-AND-ROOT-CAUSE-RESOLUTION"
+      statement: "Mismatch is a cross-cutting detection class for cases where expected identity, structure, representation or result differs from observed state; mismatch must trigger domain classification and root-producer analysis and must not itself be treated as the root cause."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT_CROSS_CUTTING_PATTERN"
+        assessment: "KEEP_AS_PARENT_DETECTION_PATTERN_NOT_FLAT_ROOT_CAUSE_FAMILY"
+        confidence: "HIGH"
+        implementation_status: "LOCKED_INPUT_TO_PATCH-007.PRE-005"
+        relevance: "PATCH_DELIVERY_VALIDATION_DIAGNOSTICS_AND_FAILURE_LEARNING"
+        traceability:
+          basis_commit: "62433e0eecb8c78e989c59947cb1230355ca9ff5"
+          incidents:
+            - "BASELINE_MISMATCH_FALSE_SIGNAL_FROM_NATIVE_OUTPUT_TOKENIZATION_ASSUMPTION"
+            - "ANCHOR_COUNT_MISMATCH_SIGNAL_FROM_DETERMINISTIC_PATCH_SCOPE_AMBIGUITY"
+        parent_pattern: "EXPECTED_OBSERVED_STATE_MISMATCH"
+        invariant: "MISMATCH_IS_DETECTION_NOT_ROOT_CAUSE"
+        mismatch_domains:
+          IDENTITY_MISMATCH:
+            examples: ["BASELINE_MISMATCH","LOCAL_REMOTE_STATE_MISMATCH","PAYLOAD_IDENTITY_MISMATCH","LAUNCHER_BUNDLE_IDENTITY_MISMATCH"]
+          STRUCTURAL_MISMATCH:
+            examples: ["ANCHOR_COUNT_MISMATCH","SCHEMA_SHAPE_MISMATCH","CONTRACT_REFERENCE_MISMATCH"]
+          REPRESENTATION_MISMATCH:
+            examples: ["LINE_ENDING_REPRESENTATION_MISMATCH","SERIALIZATION_VALUE_MISMATCH","NATIVE_OUTPUT_TOKENIZATION_MISMATCH"]
+          RESULT_MISMATCH:
+            examples: ["RECEIPT_EXIT_STATUS_MISMATCH","RECEIPT_POSTSTATE_MISMATCH","EXPECTED_EFFECT_OBSERVED_EFFECT_MISMATCH"]
+        required_resolution:
+          - "DETECT_MISMATCH"
+          - "CLASSIFY_MISMATCH_DOMAIN"
+          - "PRESERVE_EXPECTED_AND_OBSERVED_VALUES"
+          - "IDENTIFY_COMPARISON_OR_PRODUCER_MECHANISM"
+          - "FIND_ROOT_CAUSE_OR_ROOT_PRODUCER"
+          - "BIND_REGRESSION_TO_ROOT_CAUSE"
+          - "RETAIN_MISMATCH_SIGNATURE_AS_DETECTION_FIXTURE_WHEN_USEFUL"
+        prevention:
+          - "mismatch_names_must_not_end_diagnosis"
+          - "comparison_mechanism_is_in_scope_for_diagnosis"
+          - "expected_state_definition_is_in_scope_for_diagnosis"
+          - "observed_state_acquisition_is_in_scope_for_diagnosis"
+          - "machine_enforceable_root_cause_learning_feeds_assurance_profile"
+        known_examples:
+          baseline_mismatch_20260810:
+            visible_signal: "BASELINE_MISMATCH"
+            actual_root_cause: "NATIVE_OUTPUT_TOKENIZATION_ASSUMPTION"
+          anchor_count_mismatch_20260810:
+            visible_signal: "ANCHOR_COUNT_MISMATCH"
+            actual_root_cause: "DETERMINISTIC_PATCH_SCOPE_AMBIGUITY"
+        architecture:
+          new_engine_required: false
+          duplicate_failure_database: false
+          owner_workstream: "PATCH-007.PRE-005"
+          consumers: ["DIAGNOSTIC_CLASSIFICATION","FAILURE_LEARNING","ASSURANCE_PROFILE","VALIDATOR_REGRESSIONS"]
+        principle: "A mismatch is valuable because it proves an invariant detected disagreement; learning is complete only when Cerebro explains why the disagreement occurred and makes that producer failure harder to repeat."
+      provenance:
+        introduced_by_ref: "USER-REGISTER-MISMATCH-FAMILY-2026-08-10"
+        basis_refs:
+          - "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
+          - "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
+          - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+          - "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
+      sequence: 96
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -3954,8 +4021,9 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
       - "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
+      - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 96
+  next_sequence: 97
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
