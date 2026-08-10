@@ -4627,6 +4627,157 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
       sequence: 113
+    -
+      id: "CTX-ASSESS-ACTIVATION-AUDIT-POST-RELEVANCE-001"
+      type: "ASSESSMENT"
+      scope: "CONTRACT-ACTIVATION-CLOSURE-POST-RELEVANCE"
+      statement: "The post-convergence Contract Activation Audit verifies complete classification coverage with no blocking finding, proves the Relevance/Wisdom/Material Commitment runtime bindings, and leaves one explicit nonblocking Change Architecture scope-convergence debt."
+      payload:
+        assessment_status: "VERIFIED_EVIDENCE_SNAPSHOT"
+        evidence_authority: "EVIDENCE_ONLY"
+        audit_schema: "cerebro-contract-activation-audit/v2"
+        source_commit: "1083155f13f1228be22f598617328c7c08aed59d"
+        generated_at_utc: "2026-08-10T21:50:10.4305372Z"
+        audit_artifact: "CEREBRO_CONTRACT_ACTIVATION_AUDIT_POST_RELEVANCE.json"
+        audit_sha256: "ec2dbc85e7cb1d652a48a15dcb6abc30801b14bc465da2b20ca05c42bcc45afe"
+        result: "PASS"
+        health: "REVIEW_REQUIRED"
+        classification:
+          required: 36
+          classified: 36
+          unclassified: 0
+          operational: 8
+          partially_operational: 4
+          policy_only: 1
+          semantic_review_required: 23
+          activation_gap: 0
+        findings:
+          blocking: 0
+          nonblocking: 1
+        runtime_proofs:
+          - "RELEVANCE_MATERIAL_COMMITMENT_PREFLIGHT:PROVEN"
+          - "WISDOM_MCP_CONTROL_CONSUMPTION:PROVEN"
+          - "MATERIAL_COMMITMENT_PREFLIGHT:PROVEN"
+          - "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH:PROVEN"
+        canonical_responsibilities:
+          - "STANDARD_DIAGNOSTIC_CAPTURE:PASS"
+          - "MATERIAL_COMMITMENT_CONTROL:PASS"
+        remaining_activation_debt:
+          id: "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE"
+          standard_id: "STD-CHANGE-ARCHITECTURE"
+          classification: "SEMANTIC_REVIEW_REQUIRED"
+          blocking: false
+          rationale: "Host/Change Engine/Delivery Controller and Standard Delivery Kernel scope boundaries require explicit canonical classification."
+        terminal_display_note: "The one-off audit runner displayed zero classification-breakdown values because of its display helper; the canonical JSON audit is the evidence source for the verified counts."
+      provenance:
+        introduced_by_ref: "POST-RELEVANCE-ACTIVATION-AUDIT-2026-08-10"
+        basis_refs:
+          - "1083155f13f1228be22f598617328c7c08aed59d"
+          - "standards/contract-activation-closure.yaml"
+          - "tooling/validator/contract-activation-bindings.json"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
+      sequence: 114
+    -
+      id: "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
+      type: "DECISION"
+      scope: "POST-P1-ACTIVATION-ARCHITECTURE-CONTINUATION"
+      statement: "After the verified P1 and Relevance/Wisdom/Material-Commitment convergence work, Cerebro development is realigned to close Change Architecture scope convergence and then perform the remaining semantic activation sweep before re-resolving the preserved Adaptive Autonomy boundary."
+      payload:
+        decision_status: "LOCKED_SESSION_CONTINUATION"
+        authority_source: "CURRENT_EXPLICIT_USER_LAGRE_AND_NEW_SESSION_INTENT"
+        implementation_authorized: false
+        current_lane: "ACTIVATION_ARCHITECTURE_CLOSURE"
+        verified_completed:
+          - "DIAGNOSTIC_CONVERGENCE"
+          - "ACTIVE_SOURCE_CLOSURE_CONVERGENCE"
+          - "CHANGE_DELIVERY_STANDARD_CONVERGENCE"
+          - "RELEVANCE_WISDOM_MATERIAL_COMMITMENT_CONVERGENCE"
+          - "PYTHON_SOURCE_HYGIENE"
+        continuation_order:
+          - "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE"
+          - "REMAINING_SEMANTIC_ACTIVATION_SWEEP"
+          - "RE_RESOLVE_PATCH_AA_000_BOUNDARY"
+        change_architecture_scope_target:
+          - "Host is the general controlled entrypoint and dispatcher, not a parallel STANDARD execution owner."
+          - "Change Engine owns change/failure campaign semantics, not STANDARD publication transport."
+          - "Standard Delivery Kernel owns new sealed STANDARD user-local Source patch execution."
+          - "Delivery Controller remains the FULL controlled workspace transaction path."
+          - "Canonical ownership must be explicit and non-overlapping."
+        adaptive_autonomy:
+          plan_preserved: true
+          patch_sequence:
+            - "PATCH-AA-000"
+            - "PATCH-AA-001"
+            - "PATCH-AA-002"
+            - "PATCH-AA-003"
+            - "PATCH-AA-004"
+          implementation_authorized_by_this_save: false
+          return_requires_fresh_control_resolution: true
+        session:
+          new_session_recommended: true
+          canonical_handoff_after_verified_publication: true
+          conversation_history_required: false
+      provenance:
+        introduced_by_ref: "USER-LAGRE-POST-ACTIVATION-AUDIT-2026-08-10"
+        basis_refs:
+          - "CTX-ASSESS-ACTIVATION-AUDIT-POST-RELEVANCE-001"
+          - "CTX-DEC-SESSION-EVOLUTION-LAGRE-001"
+          - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-SESSION-EVOLUTION-LAGRE-001"
+      sequence: 115
+    -
+      id: "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
+      type: "CURRENT_BASIS"
+      scope: "NEXT-SESSION-ACTIVATION-ARCHITECTURE-CLOSURE"
+      statement: "The next Cerebro session shall resume from the verified post-Relevance activation basis, close Change Architecture scope convergence first, then perform the remaining semantic activation sweep, and only then re-resolve return to PATCH-AA-000; conversation history is not required."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        saved_via: "CEREBRO_LAGRE"
+        source_baseline_before_checkpoint: "1083155f13f1228be22f598617328c7c08aed59d"
+        audit_ref: "CTX-ASSESS-ACTIVATION-AUDIT-POST-RELEVANCE-001"
+        audit_result: "PASS"
+        audit_health: "REVIEW_REQUIRED"
+        current_phase: "PHASE-2"
+        current_patch: "PATCH-ACTIVATION-ARCH-001"
+        next_patch: "PATCH-ACTIVATION-ARCH-002"
+        first_target: "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE"
+        second_target: "REMAINING_SEMANTIC_ACTIVATION_SWEEP"
+        explicit_remaining_activation_debt:
+          - "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE"
+        preserved_adaptive_autonomy:
+          entry_patch: "PATCH-AA-000"
+          implementation_authorized: false
+          prerequisite_added: "PATCH-ACTIVATION-ARCH-002_VERIFIED"
+        reconstructability:
+          conversation_history_required: false
+          roadmap_and_context_are_primary: true
+          canonical_session_handoff_required_after_publish: true
+        next_session_resume_order:
+          - "VERIFY_CURRENT_AUTHORITATIVE_SOURCE"
+          - "PROCESS_CANONICAL_SESSION_HANDOFF_WHEN_AVAILABLE"
+          - "LOAD_CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
+          - "ANALYZE_CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE"
+          - "DO_NOT_IMPLEMENT_BEYOND_FRESH_MATERIAL_AUTHORIZATION"
+      provenance:
+        introduced_by_ref: "CEREBRO-LAGRE-ACTIVATION-ARCHITECTURE-CHECKPOINT-2026-08-10"
+        basis_refs:
+          - "CTX-ASSESS-ACTIVATION-AUDIT-POST-RELEVANCE-001"
+          - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
+          - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
+      sequence: 116
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4664,6 +4815,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-PATCH-007-CLOSURE-AUTHORIZED-001"
       - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
       - "CTX-DEC-SESSION-EVOLUTION-LAGRE-001"
+      - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4688,6 +4840,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-007-VERIFIED-001"
       - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
       - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
+      - "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4735,7 +4888,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 114
+  next_sequence: 117
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

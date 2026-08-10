@@ -6,7 +6,7 @@ roadmap:
     contract_owner: "project-engine"
     state_scope: "working-source"
   status: "ACTIVE"
-  objective: "Implement the locked PATCH-007 operational reliability and evidence prerequisite before the refined Adaptive Autonomy sequence, using explicit implementation authorization, dependency-aware control, machine-verified handoff assurance and verified persistent state."
+  objective: "Close the remaining activation-architecture debt from the verified Relevance/Wisdom/Material-Commitment foundation, then re-resolve the preserved Adaptive Autonomy sequence without implicit implementation authorization."
   scope:
     included:
       - "project-roadmap-contract"
@@ -1026,6 +1026,59 @@ roadmap:
         - "failure_reintroduction_must_be_blocked_before_handoff"
         - "standard_RunToPass_must_complete_through_remote_equality"
     -
+      id: "PATCH-ACTIVATION-ARCH-001"
+      title: "change_architecture_scope_convergence"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "ACTIVE"
+      dependency_refs:
+        - "PATCH-007"
+      decision_refs:
+        - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
+      source_refs:
+        - "standards/change-architecture.yaml"
+        - "tooling/host/cerebro_host.py"
+        - "tooling/change/change_engine.py"
+        - "tooling/delivery/delivery_controller.py"
+        - "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1"
+        - "tooling/validator/contract-activation-bindings.json"
+      implementation_constraints:
+        - "session_save_does_not_authorize_implementation"
+        - "explicitly_classify_Host_Change_Engine_Delivery_Controller_and_STANDARD_Kernel_scope"
+        - "STANDARD_has_one_runtime_execution_owner"
+        - "FULL_and_STANDARD_transaction_paths_remain_distinct"
+        - "no_duplicate_canonical_publication_or_control_owner"
+        - "preserve_current_diagnostics_and_material_commitment_ownership"
+      acceptance:
+        - "canonical_scope_boundaries_are_explicit"
+        - "no_canonical_responsibility_conflict"
+        - "CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE_removed_from_fresh_activation_audit"
+    -
+      id: "PATCH-ACTIVATION-ARCH-002"
+      title: "remaining_semantic_activation_sweep"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-ACTIVATION-ARCH-001"
+      decision_refs:
+        - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
+      source_refs:
+        - "standards/standards.yaml"
+        - "tooling/validator/contract-activation-bindings.json"
+        - "tooling/validator/cerebro_contract_activation_closure.ps1"
+      implementation_constraints:
+        - "trace_each_remaining_SEMANTIC_REVIEW_REQUIRED_contract_before_any_promotion"
+        - "reference_existence_never_proves_OPERATIONAL"
+        - "do_not_implement_broad_new_runtime_without_proven_activation_gap"
+        - "preserve_POLICY_ONLY_DORMANT_SUPERSEDED_and_partial_semantics"
+        - "promoted_OPERATIONAL_contracts_require_strict_activation_proof"
+      acceptance:
+        - "every_semantic_review_item_has_explicit_traced_disposition"
+        - "unclassified_standard_count_remains_zero"
+        - "remaining_activation_debt_is_explicit"
+        - "fresh_audit_is_generated_before_return_to_PATCH-AA-000"
+    -
       id: "PATCH-AA-000"
       title: "semantic_lock_identity_boundary_and_active_source_cleanup"
       phase_ref: "PHASE-2"
@@ -1033,6 +1086,7 @@ roadmap:
       status: "PLANNED"
       dependency_refs:
         - "PATCH-007"
+        - "PATCH-ACTIVATION-ARCH-002"
       decision_refs:
         - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
         - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
@@ -1160,18 +1214,18 @@ roadmap:
         - "future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work"
   execution:
     current:
-      id: "EXEC-PATCH-AA-000-AUTHORIZATION-BOUNDARY"
+      id: "EXEC-ACTIVATION-ARCH-001-SCOPE-CONVERGENCE"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      patch_ref: "PATCH-AA-000"
-      canonical_command: "require explicit implementation authorization for PATCH-AA-000 from the verified PATCH-007 foundation; prior LOCK does not authorize implementation"
+      patch_ref: "PATCH-ACTIVATION-ARCH-001"
+      canonical_command: "analyze and converge CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE from current authoritative Source; implementation requires fresh material preflight and explicit authorization"
       status: "ACTIVE"
     next:
-      id: "EXEC-PATCH-AA-001-AFTER-AA000"
+      id: "EXEC-ACTIVATION-ARCH-002-SEMANTIC-SWEEP"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      patch_ref: "PATCH-AA-001"
-      canonical_command: "after PATCH-AA-000 is VERIFIED and the next valid control basis exists, continue the Adaptive Autonomy prerequisite sequence"
+      patch_ref: "PATCH-ACTIVATION-ARCH-002"
+      canonical_command: "after CHANGE_ARCHITECTURE_SCOPE_CONVERGENCE is VERIFIED, perform the remaining contract-level semantic activation sweep before re-resolving PATCH-AA-000"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -1375,6 +1429,21 @@ roadmap:
       object_type: "ASSESSMENT"
       object_ref: "CTX-ASSESS-USAGE-OBSERVATION-20260809-001"
       requirement: "OPTIONAL"
+    -
+      owner: "context-engine"
+      object_type: "ASSESSMENT"
+      object_ref: "CTX-ASSESS-ACTIVATION-AUDIT-POST-RELEVANCE-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "DECISION"
+      object_ref: "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
+      requirement: "REQUIRED"
+    -
+      owner: "context-engine"
+      object_type: "CURRENT_BASIS"
+      object_ref: "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
+      requirement: "REQUIRED"
   traceability:
     basis_refs:
       - "CTX-BASIS-WORKPLAN"
@@ -1387,6 +1456,7 @@ roadmap:
       - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
       - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+      - "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
     revision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
@@ -1413,8 +1483,9 @@ roadmap:
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
       - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
+      - "CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001"
   revision:
-    sequence: 22
+    sequence: 23
     last_locked_patch_ref: "PATCH-AA-004"
 
 patch_005_workform:
