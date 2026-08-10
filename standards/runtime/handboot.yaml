@@ -259,7 +259,14 @@ handboot:
     valid_handoff:
       disposition: RESUMED
       resume_command: cerebro_resume
+    stale_handoff:
+      condition: source_commit_binding_differs_from_current_verified_source
+      disposition: STALE_REJECTED
+      boot_may_continue: true
+      continue_basis: CURRENT_VERIFIED_SOURCE
+      runtime_may_be_reported_operational_after_control_transfer: true
     invalid_handoff:
+      condition: claims_current_source_but_validation_fails
       disposition: FAILED
       boot_must_fail: true
       runtime_must_not_be_reported_operational: true

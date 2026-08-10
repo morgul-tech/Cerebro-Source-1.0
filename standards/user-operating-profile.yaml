@@ -56,6 +56,10 @@ user_operating_profile:
         - DELTA_FIRST_REFERENCE_RICH
         - FULL_RECAP_ON_REQUEST
       meaning: Preserve important information while avoiding repeated restatement of unchanged context.
+    PRESENTATION.NEXT_ACTION_COMMAND_SURFACE:
+      allowed_values:
+        - SHORT_HUMAN_TRIGGER_2_5_WORDS
+      meaning: Present the normal next Cerebro action as a 2-5 word human-readable trigger while preserving the complete canonical command and continuation semantics in Cerebro-owned state; exact shell, API, or debug syntax remains an explicit Human Continuation Surface exception.
     DELIVERY_ARTIFACT.STANDARD_EXECUTION_OWNER:
       allowed_values:
         - USER_LOCAL_RUNNER

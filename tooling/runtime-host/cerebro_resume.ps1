@@ -78,11 +78,32 @@ function Invoke-CerebroResumeCore {
         }
 
         if ($head -ne [string]$artifact.handoff.authority.source_commit) {
-            throw (
-                "RESUME_SOURCE_DIVERGENCE:EXPECTED={0}:ACTUAL={1}" -f
-                $artifact.handoff.authority.source_commit,
+            $handoffSourceCommit =
+                [string]$artifact.handoff.authority.source_commit
+
+            Write-Host (
+                (
+                    'CEREBRO_RESUME STATE=STALE_REJECTED HANDOFF_ID={0} ' +
+                    'HANDOFF_SOURCE_COMMIT={1} CURRENT_SOURCE_COMMIT={2} ' +
+                    'ACTION=CONTINUE_CURRENT_SOURCE'
+                ) -f
+                $artifact.handoff.id,
+                $handoffSourceCommit,
                 $head
             )
+
+            return [pscustomobject]@{
+                handoff_id = $artifact.handoff.id
+                source_commit = $head
+                handoff_source_commit = $handoffSourceCommit
+                current_patch = $null
+                next_patch = $null
+                canonical_command = $null
+                receipt = $null
+                reason = 'SOURCE_COMMIT_STALE'
+                action = 'CONTINUE_CURRENT_SOURCE'
+                state = 'STALE_REJECTED'
+            }
         }
 
         git rev-parse --abbrev-ref '@{upstream}' 2>$null | Out-Null

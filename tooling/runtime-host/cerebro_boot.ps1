@@ -718,28 +718,40 @@ function Invoke-CerebroBootCore {
                     -HandoffPath $HandoffPath `
                     -RepoPath $WorkingSourcePath
 
-                if (
-                    $resumeResult.state -ne
-                    'SUCCESS_READY'
-                ) {
+                if ($resumeResult.state -eq 'SUCCESS_READY') {
+                    $handoffState = 'RESUMED'
+                    $handoffId = $resumeResult.handoff_id
+                    $resumeReceipt = $resumeResult.receipt
+
+                    $currentPatch =
+                        $resumeResult.current_patch
+
+                    $nextPatch =
+                        $resumeResult.next_patch
+
+                    $canonicalCommand =
+                        $resumeResult.canonical_command
+                }
+                elseif ($resumeResult.state -eq 'STALE_REJECTED') {
+                    $handoffState = 'STALE_REJECTED'
+                    $handoffId = $resumeResult.handoff_id
+                    $resumeReceipt = $null
+
+                    Write-Host (
+                        (
+                            'CEREBRO_BOOT HANDOFF=STALE_REJECTED ' +
+                            'ACTION=CONTINUE_CURRENT_SOURCE ' +
+                            'CURRENT_SOURCE_COMMIT={0}'
+                        ) -f
+                        $localCommit
+                    )
+                }
+                else {
                     throw (
                         'HANDOFF_RESUME_STATE_INVALID:' +
                         $resumeResult.state
                     )
                 }
-
-                $handoffState = 'RESUMED'
-                $handoffId = $resumeResult.handoff_id
-                $resumeReceipt = $resumeResult.receipt
-
-                $currentPatch =
-                    $resumeResult.current_patch
-
-                $nextPatch =
-                    $resumeResult.next_patch
-
-                $canonicalCommand =
-                    $resumeResult.canonical_command
             }
             else {
                 $handoffState = 'NONE'

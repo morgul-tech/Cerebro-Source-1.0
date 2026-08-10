@@ -414,7 +414,7 @@ rules:
 - id: PRE-023
   owner: presentation
   authority: normative
-  priority: high
+  priority: critical
   condition:
     next_action:
       user_executable: true
@@ -422,15 +422,23 @@ rules:
   action:
     append_copyable_command_footer:
       position: response-end
-      content: canonical-next-command
+      visible_content_resolution:
+        contract: standards/human-continuation-surface.yaml
+        default: shortest-unambiguous-human-facing-canonical-alias
+        normal_word_budget: {min: 2, max: 5}
+        long_form_only_when_contract_allows: true
+      semantic_binding:
+        preserve_full_canonical_command: true
+        preserve_full_continuation_payload: true
+        visible_alias_is_trigger_not_information_container: true
       prohibit_content_after: true
-  statement: Når neste handling er en konkret kanonisk kommando brukeren kan utføre, SKAL Presentation Engine vise kommandoen som siste element i en kopierbar tekstblokk, og SKAL IKKE plassere innhold etter blokken.
+  statement: Når neste handling er brukerutførbar, SKAL Presentation Engine normalt vise en kort menneskelig trigger på 2–5 ord som siste kopierbare element; full kanonisk kommando, mål, constraints, evidence og continuation state SKAL forbli bundet internt i Cerebro uten semantisk tap. Lang form er bare tillatt når Human Continuation Surface eksplisitt krever eksakt shell-, API- eller debug-syntaks.
   scope: runtime
   lifecycle: candidate
   validation: error
   provenance:
-    type: conversation-approved-development
-    basis: WI-RESPONSE-FOOTER-001
+    type: repeated-user-correction-systemic-fix
+    basis: HUMAN-CONTINUATION-SURFACE-ENFORCEMENT-2026-08-10
 
 # END PATCH-001B.PRE-005 COPYABLE NEXT-ACTION FOOTER
 # BEGIN PATCH-003.PRE-006 CONSOLIDATE

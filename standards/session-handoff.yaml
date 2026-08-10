@@ -40,7 +40,7 @@ session_handoff:
     - detached_head
     - incomplete_level_3_transaction
     - missing_upstream
-    - source_divergence
+    - source_divergence_claiming_current_authority
     - roadmap_hash_mismatch
     - working_context_hash_mismatch
 
@@ -71,6 +71,17 @@ session_handoff:
       - verify_working_context_hash
       - verify_execution_tokens
       - emit_resume_receipt
+    stale_source_binding:
+      condition: handoff_source_commit_differs_from_current_verified_source
+      classification: STALE_DERIVED_INPUT
+      disposition: STALE_REJECTED
+      boot_effect: CONTINUE_CURRENT_SOURCE
+      project_mutation: false
+      authority_effect: none
+    current_source_integrity_conflict:
+      condition: handoff_claims_current_source_but_integrity_or_execution_validation_fails
+      disposition: FAIL_CLOSED
+      boot_effect: BLOCK_CONTROL_TRANSFER
     success_effect: session_ready_for_continuation
     failure_effect: no_project_mutation
 
