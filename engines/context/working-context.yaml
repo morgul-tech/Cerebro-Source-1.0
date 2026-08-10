@@ -4429,6 +4429,73 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
       sequence: 109
+    -
+      id: "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
+      type: "DECISION"
+      scope: "CEREBRO-USER-FRICTION-CONTINUATION-AND-DIAGNOSTIC-HANDOFF"
+      statement: "Cerebro shall minimize user and chat-resource friction: full failure evidence remains local by default, chat receives only bounded control-relevant handoff, and agreement to an already-resolved recommendation under SELF_RUNNING_FULL means refine-and-execute rather than refine-and-wait."
+      payload:
+        decision_status: "LOCKED"
+        authority_source: "CURRENT_EXPLICIT_USER_DIRECTION"
+        implementation_status: "PARTIALLY_IMPLEMENTED_WITH_FURTHER_STANDARD_CONVERGENCE_ALLOWED"
+        failure_handoff:
+          full_evidence_stays_local: true
+          raw_capsule_dump_to_chat_by_default: false
+          minimal_control_relevant_handoff: true
+          fail_command_may_be_preprovided_with_patch_delivery: true
+          separate_manual_troubleshooting_command_should_not_be_normal_path: true
+        continuation:
+          refine_plus_agreement_or_continue: "REFINE_AND_EXECUTE"
+          announced_continuation_requires_execution: true
+          artificial_chat_handoff_without_real_boundary: false
+        future_bridge:
+          direct_local_to_chat_transport_may_remove_remaining_manual_transfer: true
+          diagnostic_store_redesign_required: false
+      provenance:
+        introduced_by_ref: "USER-RESOURCE-FRICTION-AND-CONTINUATION-REFINEMENT-2026-08-10"
+        basis_refs:
+          - "CTX-BASIS-PATCH-007-VERIFIED-001"
+          - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-VERIFIED-001"
+      sequence: 110
+    -
+      id: "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
+      type: "CURRENT_BASIS"
+      scope: "NEXT-SESSION-AFTER-PATCH-007-CLOSURE"
+      statement: "PATCH-007 is VERIFIED and the operational reliability and evidence foundation is complete. The next session shall re-ground from authoritative Source and stop at PATCH-AA-000's explicit authorization boundary; no Adaptive Autonomy implementation is authorized by this save."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        saved_via: "CEREBRO_LAGRE"
+        patch_007:
+          status: "VERIFIED"
+          closure_commit: "6cb1c499f984e8a8bd7917b688349950ff2eb185"
+        next_boundary:
+          patch: "PATCH-AA-000"
+          status: "PLANNED"
+          implementation_authorized: false
+          explicit_authorization_required: true
+        deferred_nonblocking:
+          - "PRE005_RECOVERY_STRENGTHENING_HISTORY_BACKFILL"
+          - "FULL_STANDARD_CONVERGENCE_OF_MINIMAL_FAILURE_HANDOFF"
+          - "FULL_STANDARD_CONVERGENCE_OF_REFINE_AND_EXECUTE_CONTINUATION_DISCIPLINE"
+        next_session_start:
+          canonical_trigger: "boot cerebro"
+          required_action: "FRESH_SOURCE_REGROUND_BEFORE_NEW_MATERIAL_DECISION"
+      provenance:
+        introduced_by_ref: "CEREBRO-LAGRE-AFTER-PATCH007-CLOSURE-2026-08-10"
+        basis_refs:
+          - "CTX-BASIS-PATCH-007-VERIFIED-001"
+          - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-007-VERIFIED-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-VERIFIED-001"
+      sequence: 111
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4464,6 +4531,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-005-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-CLOSURE-AUTHORIZED-001"
+      - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4486,6 +4554,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-VERIFIED-001"
+      - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4533,7 +4602,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 110
+  next_sequence: 112
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
