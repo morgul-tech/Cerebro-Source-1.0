@@ -1,0 +1,50 @@
+schema: cerebro-implementation-learning-loop/v1
+implementation_learning_loop:
+  id: CEREBRO-IMPLEMENTATION-LEARNING-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+
+  trigger:
+  - implementation-failure
+  - corrective-delivery
+  - repeated-user-correction
+  - validator-gap
+  - known-failure-family-recurrence
+  - execution-context-gap
+
+  mandatory_sequence:
+  - identify-reached-stage
+  - classify-actual-failure-family
+  - establish-Source-mutation-state
+  - distinguish-observed-error-from-unreached-error-labels
+  - retrieve-applicable-existing-failure-families-and-assurance-rules
+  - assess-generalizability
+  - update-current-implementation-before-redelivery-when-generalizable
+  - add-or-strengthen-machine-regression-control
+  - rebuild-from-clean-basis-when-repeated-failure-policy-requires
+  - persist-generalizable-learning-in-Source
+
+  pre_implementation_inheritance:
+    mandatory_question: >
+      Which prior failure families, corrections, delivery contracts and validation
+      rules apply to this implementation before it is designed?
+    applicable_learning_must_be_applied_before_delivery: true
+
+  same_patch_feedback:
+    generalizable_learning_discovered_during_patch: MUST_BE_INCORPORATED_BEFORE_CLOSURE
+    chat_memory_only_persistence: PROHIBITED
+
+  recurrence:
+    known_failure_family_may_recur_without_explicit_exception: false
+    repeat_threshold_for_clean_rebuild: 2
+
+  user_host:
+    role: EXECUTION_ENVIRONMENT
+    development_environment: false
+
+  closure_gate:
+  - failure-classification-complete
+  - mutation-state-known
+  - generalizable-learning-persisted-or-explicitly-rejected-with-reason
+  - relevant-regression-controls-pass

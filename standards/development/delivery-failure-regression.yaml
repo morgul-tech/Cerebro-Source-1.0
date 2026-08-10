@@ -1,0 +1,48 @@
+schema: cerebro-delivery-failure-regression/v1
+delivery_failure_regression:
+  id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  inherits: standards/development/powershell-level3-delivery-assurance.yaml
+
+  known_failure_families:
+  - POWERSHELL_PARSER_LANGUAGE_SYNTAX
+  - VARIABLE_COLON_INTERPOLATION
+  - AUTOMATIC_VARIABLE_COLLISION
+  - PARAMETER_DEFAULT_SCRIPT_ROOT_RESOLUTION
+  - PATH_EXECUTION_CONTEXT
+  - EXECUTION_POLICY_BLOCK
+  - NATIVE_STDERR_MISCLASSIFICATION
+  - NATIVE_STDOUT_STDERR_CONTAMINATION
+  - NATIVE_EXIT_CODE_CAPTURE_ORDER
+  - NULL_OR_PIPELINE_CARDINALITY
+  - TRANSPORT_HASH_MISMATCH
+  - WRONG_BRANCH
+  - WRONG_REMOTE
+  - WRONG_BASE_COMMIT
+  - DIRTY_WORKTREE
+  - LOCAL_AHEAD_OR_DIVERGED
+  - MID_MUTATION_ROLLBACK
+  - DUPLICATE_EXECUTION
+  - POST_SYNC_EQUALITY_FAILURE
+  - AMBIGUOUS_COPYABLE_EXECUTION_SURFACE
+
+  mandatory_pre_delivery_gates:
+  - native-PowerShell-parser-zero-errors
+  - no-unbraced-variable-colon-interpolation
+  - no-PSScriptRoot-in-parameter-default-resolution
+  - execution-policy-safe-canonical-launch-command
+  - benign-native-stderr-with-exit-zero-does-not-fail
+  - native-nonzero-exit-does-fail
+  - stdout-stderr-remain-separate
+  - exact-payload-hashes-match-manifest
+  - exact-baseline-git-blobs-match-Source
+  - local-disposable-git-fixture-passes
+  - rollback-fixture-passes
+  - duplicate-run-detection-passes
+  - exactly-one-user-copyable-execution-surface
+
+  recurrence_rule: >
+    A corrective delivery must run the full relevant regression family, not only the
+    check corresponding to the most recent observed error.

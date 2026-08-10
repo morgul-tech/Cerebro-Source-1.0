@@ -1,0 +1,24 @@
+schema: cerebro-implementation-failure-evidence/v1
+evidence:
+  id: DELIVERY-FAILURE-CHAIN-2026-08-10
+  authority: NON_AUTHORITATIVE_EVIDENCE
+  source_binding: 440301807f062750550586c047d0518563a4c70a
+  observed:
+  - family: POWERSHELL_PARSER_LANGUAGE_SYNTAX
+    detail: unbraced variable immediately followed by colon in interpolated string
+    mutation_state: NONE
+  - family: AMBIGUOUS_COPYABLE_EXECUTION_SURFACE
+    detail: explanatory repair line was presented as a competing copyable execution surface
+    mutation_state: NONE
+  - family: EXECUTION_POLICY_BLOCK
+    detail: direct script invocation was blocked by host execution policy
+    mutation_state: NONE
+  - family: PARAMETER_DEFAULT_SCRIPT_ROOT_RESOLUTION
+    detail: launcher path resolution depended on script root inside parameter default evaluation
+    mutation_state: NONE
+  - family: NATIVE_STDERR_MISCLASSIFICATION
+    detail: benign git fetch stderr was promoted to a terminating NativeCommandError before exit-code evaluation
+    mutation_state: NONE
+  conclusion: >
+    Repeated failures require a clean implementation identity with one hardened
+    delivery kernel and full relevant failure-family inheritance before redelivery.

@@ -47,6 +47,10 @@ standards:
   source_authority: standards/source-authority.yaml
   system_lifecycle: standards/system-lifecycle.yaml
   control_architecture: standards/control-architecture.yaml
+  human_continuation_surface: standards/human-continuation-surface.yaml
+  continuation_surface_system_policy: standards/continuation-surface-system-policy.yaml
+  boot_critical_path: standards/boot-critical-path-architecture.yaml
+  delivery_kernel: standards/delivery-kernel.yaml
   user_operating_profile: standards/user-operating-profile.yaml
   user_operating_profile_schema: standards/user-operating-profile-schema.yaml
   system_metamodel: standards/system-metamodel.yaml
@@ -66,6 +70,9 @@ standards:
   wisdom_control_binding: standards/development/wisdom-control-binding.yaml
   relevance_retrieval: standards/development/relevance-retrieval.yaml
   architectural_regrounding: standards/development/architectural-regrounding.yaml
+  powershell_level3_delivery_assurance: standards/development/powershell-level3-delivery-assurance.yaml
+  implementation_learning_loop: standards/development/implementation-learning-loop.yaml
+  delivery_failure_regression: standards/development/delivery-failure-regression.yaml
   active_source_closure: standards/active-source-closure.yaml
 tooling:
   builder: tooling/builder/
@@ -75,6 +82,7 @@ tooling:
   host: tooling/host/
   change: tooling/change/
   delivery: tooling/delivery/
+  delivery_kernel: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
   closure: tooling/closure/
   context: tooling/context/
 governance:

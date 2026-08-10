@@ -1,7 +1,7 @@
 schema: cerebro-standards-manifest/v0.1
 standards_engine:
   id: standards
-  version: 0.2.0
+  version: 0.3.0
   role: authoritative-policy-registry
   runtime_engine: false
   policy_owner: Cerebro Source 1.0
@@ -18,6 +18,18 @@ documents:
   required: true
 - id: STD-CONTROL-ARCHITECTURE
   path: standards/control-architecture.yaml
+  required: true
+- id: STD-HUMAN-CONTINUATION-SURFACE
+  path: standards/human-continuation-surface.yaml
+  required: true
+- id: STD-CONTINUATION-SURFACE-SYSTEM-POLICY
+  path: standards/continuation-surface-system-policy.yaml
+  required: true
+- id: STD-BOOT-CRITICAL-PATH
+  path: standards/boot-critical-path-architecture.yaml
+  required: true
+- id: STD-DELIVERY-KERNEL
+  path: standards/delivery-kernel.yaml
   required: true
 - id: STD-USER-OPERATING-PROFILE
   path: standards/user-operating-profile.yaml
@@ -75,6 +87,15 @@ documents:
   required: true
 - id: STD-ARCHITECTURAL-REGROUNDING
   path: standards/development/architectural-regrounding.yaml
+  required: true
+- id: STD-POWERSHELL-L3-DELIVERY-ASSURANCE
+  path: standards/development/powershell-level3-delivery-assurance.yaml
+  required: true
+- id: STD-IMPLEMENTATION-LEARNING
+  path: standards/development/implementation-learning-loop.yaml
+  required: true
+- id: STD-DELIVERY-FAILURE-REGRESSION
+  path: standards/development/delivery-failure-regression.yaml
   required: true
 - id: STD-ACTIVE-SOURCE-CLOSURE
   path: standards/active-source-closure.yaml

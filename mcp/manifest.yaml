@@ -11,6 +11,8 @@ mcp:
   decision_contract: MCP_CONTROL_DECISION
   execution_profile_owner: MCP
   defined_by: Cerebro Source 1.0
+  required_extensions:
+  - mcp/boot-architecture-control.yaml
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0

@@ -1,0 +1,39 @@
+schema: cerebro-continuation-surface-system-policy/v1
+continuation_surface_system_policy:
+  id: CEREBRO-CONTINUATION-SURFACE-SYSTEM-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  scope: SYSTEM_WIDE
+
+  binding:
+    base_contract: standards/human-continuation-surface.yaml
+
+  normal_next_action:
+    when:
+    - user-executable-next-action-exists
+    - continuation-is-unambiguous
+    requirements:
+    - exactly-one-canonical-copyable-command-surface
+    - own-textbox-or-equivalent-copyable-container
+    - shortest-unambiguous-trigger
+    - normal-word-budget-2-to-5
+    - absolute-response-end
+    - no-visible-content-after-command-surface
+    - explanatory-code-must-not-compete-with-command-surface
+
+  multiple_paths:
+    allowed_only_when: genuinely-different-user-decisions
+    one_surface_per_path: true
+
+  self_running_conversation_control:
+    rule: >
+      When the next authorized step is internally executable by Cerebro, continue
+      without asking the user to issue another continuation trigger. Stop only at a
+      real user execution, authority, safety or material decision boundary.
+
+  invariants:
+  - user-command-is-trigger-not-state-container
+  - full-continuation-state-remains-Cerebro-owned
+  - chat-memory-is-not-authority
+  - missing-next-action-surface-is-a-presentation-regression

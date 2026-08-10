@@ -1,0 +1,86 @@
+schema: cerebro-delivery-kernel-standard/v1
+delivery_kernel:
+  id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  scope: STANDARD
+
+  canonical_implementation: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+
+  architecture:
+    patch_specific_semantics: FINISHED_PAYLOAD_BYTES
+    general_delivery_logic: SINGLE_VERSIONED_KERNEL
+    runtime_source_generation: PROHIBITED
+    runtime_yaml_transformation: PROHIBITED
+    runtime_architecture_decision: PROHIBITED
+
+  standard_user_handoff:
+    bundle_zip: exactly-one
+    launcher_powershell: exactly-one
+    copyable_command: exactly-one
+    launcher_role:
+    - locate-bundle
+    - verify-bundle-integrity
+    - extract-bundle
+    - verify-kernel-integrity
+    - invoke-kernel-selftest
+    - invoke-kernel-apply
+    prohibited_launcher_roles:
+    - Source-content-generation
+    - Git-policy-reimplementation
+    - semantic-patch-transformation
+    - rollback-design
+    - architecture-decision
+
+  work_mode_policy:
+    scope: SYSTEM_WIDE
+    only_user_may_initiate_work_mode: true
+    assistant_may_request_work_mode: false
+    assistant_may_suggest_work_mode: false
+    assistant_may_propose_work_mode_as_required_path: false
+    assistant_may_initiate_work_mode: false
+    STANDARD_depends_on_work_mode: false
+    missing_work_mode_is_blocker: false
+    missing_work_mode_is_degraded_capability: false
+    invariant: WORK_MODE_IS_NEVER_PART_OF_STANDARD_DELIVERY
+
+  kernel_transaction:
+    phases:
+    - native-parser-and-kernel-selftest
+    - bundle-and-payload-hash-verification
+    - exact-Source-baseline-verification
+    - bounded-physical-backup
+    - exact-byte-installation
+    - installed-byte-verification
+    - Source-diff-validation
+    - canonical-cerebro-sync
+    - fresh-remote-fetch
+    - local-remote-commit-equality-proof
+    - clean-worktree-proof
+    - deterministic-receipt
+
+  exact_bytes_contract:
+    existing_file_identity_before: git-blob-sha
+    delivered_file_identity: sha256-and-git-blob-sha
+    physical_backup_identity: sha256
+    runtime_text_replacement: PROHIBITED
+
+  native_command_contract:
+    stderr_alone_is_failure: false
+    failure_authority: IMMEDIATE_EXIT_CODE
+    stdout_and_stderr_separate: true
+    ErrorActionPreference_during_native_execution: Continue
+    ErrorActionPreference_restored_after_native_execution: true
+
+  duplicate_execution:
+    if_current_Source_already_matches_all_final_git_blobs: ALREADY_APPLIED_PASS
+    otherwise_if_base_changed: FAIL_CLOSED
+
+  failure_behavior:
+    before_canonical_sync: bounded-rollback
+    during_or_after_canonical_sync: preserve-state-and-evidence-no-destructive-recovery
+
+  assurance:
+    existing_contract: standards/development/powershell-level3-delivery-assurance.yaml
+    regression_contract: standards/development/delivery-failure-regression.yaml

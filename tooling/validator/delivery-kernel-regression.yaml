@@ -1,0 +1,13 @@
+schema: cerebro-delivery-kernel-regression-tool/v1
+delivery_kernel_regression_tool:
+  id: CEREBRO-DELIVERY-KERNEL-REGRESSION-001
+  kernel: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+  mode: SelfTest
+  destructive_to_Working_Source: false
+  required_results:
+  - POWERSHELL_PARSE_PASS
+  - NATIVE_STDERR_ZERO_EXIT_PASS
+  - NATIVE_NONZERO_EXIT_PASS
+  - LOCAL_GIT_FIXTURE_PASS
+  - PAYLOAD_HASH_PASS
+  - BASELINE_MANIFEST_PASS

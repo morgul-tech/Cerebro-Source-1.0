@@ -1,0 +1,98 @@
+schema: cerebro-boot-critical-path-architecture/v1
+boot_critical_path:
+  id: CEREBRO-BOOT-CRITICAL-PATH-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+
+  properties:
+  - evidence-minimal
+  - commit-pinned
+  - cache-aware
+  - relevance-driven
+  - latency-aware
+  - capability-aware
+
+  universal_source_boot:
+    result: CEREBRO_SOURCE_OPERATIONAL
+    sequence:
+    - resolve-authoritative-repository-and-branch
+    - fetch-current-HEAD-fresh
+    - pin-exact-Source-commit
+    - verify-manifest-and-MCP-extension
+    - verify-boot-critical-contract-identities
+    - reuse-exact-commit-integrity-evidence-when-valid
+    - deep-validate-automatically-when-invalidated
+    - establish-Source-operational-state
+    - detect-environment-capabilities
+    - load-task-relevant-semantics-on-demand
+
+  freshness:
+    always_fresh:
+    - repository-identity
+    - branch
+    - current-HEAD
+    - exact-commit-pin
+    reusable_immutable_evidence:
+      allowed: true
+      authority: NONE
+      requires:
+      - exact-current-commit-binding
+      - integrity-valid
+      - validation-contract-compatible
+
+  deep_validation_triggers:
+  - Source-commit-changed
+  - commit-bound-evidence-missing
+  - commit-binding-mismatch
+  - manifest-or-MCP-contract-changed
+  - required-component-identity-changed
+  - integrity-failure
+  - explicit-deep-validation-request
+
+  capability_model:
+    dimensions:
+    - SOURCE_REMOTE_ACCESS
+    - WORKING_SOURCE_LOCAL_ACCESS
+    - LOCAL_RUNTIME_EXECUTION
+    - LOCAL_MACHINE_PROOF
+    local_machine_extension:
+      applies_only_when:
+      - WORKING_SOURCE_LOCAL_ACCESS
+      - LOCAL_RUNTIME_EXECUTION
+      result: LOCAL_MACHINE_OPERATIONAL_VERIFIED
+      machine_proof_required: true
+    unavailable_by_design:
+      state: EXPECTED_CAPABILITY_ABSENCE
+      degrades_source_boot: false
+      blocks_source_boot: false
+
+  semantic_loading:
+    boot: BOOT_CRITICAL_IDENTITIES_AND_CONTRACTS_ONLY
+    task_phase: DEMAND_DRIVEN
+
+  critical_path_invariant: >
+    A check may block the user's synchronous boot only when its result can materially
+    change the current authority, Source-integrity, activation, operational-status or
+    safety decision.
+
+  latency_evidence:
+    primary_metric: HUMAN_TIME_TO_AVAILABLE_RESULT
+    fields:
+    - authority_resolution_ms
+    - source_verification_ms
+    - integrity_validation_ms
+    - activation_ms
+    - local_verification_ms
+    - total_boot_ms
+    - external_call_count
+    - semantic_files_loaded
+    - validation_cache_hit
+    - deep_validation_triggered
+    - deep_validation_reason
+
+  safety:
+  - fast-and-deep-paths-have-identical-status-evidence-requirements
+  - cached-evidence-never-becomes-authority
+  - stale-derived-state-never-establishes-current-status
+  - local-machine-status-never-inferred-without-local-proof
