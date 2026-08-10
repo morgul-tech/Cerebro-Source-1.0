@@ -1,0 +1,30 @@
+schema: cerebro-development-history-schema/v0.1
+development_history_schema:
+  id: CEREBRO-DEVELOPMENT-HISTORY-SCHEMA-001
+  owner: context-engine
+  authority: SOURCE_DEFINED_STRUCTURE
+  ledger:
+    lifecycle: ACTIVE
+    record_lifecycle: HISTORICAL
+    mutation: APPEND_ONLY
+  record_required:
+    - id
+    - event_class
+    - significance
+    - role
+    - title
+    - fact
+    - occurred_at
+    - evidence_refs
+    - impact
+    - relations
+    - provenance
+  event_class: [STRENGTHENING_EVENT, LEARNING_EVENT]
+  significance: [FOUNDATIONAL, MAJOR, NOTABLE]
+  role: [EVENT, CORRECTION, RETRACTION]
+  invariants:
+    - HISTORY_IS_EVIDENCE_NOT_POLICY_AUTHORITY
+    - FACT_AND_SIGNIFICANCE_REMAIN_DISTINCT
+    - DETAILED_FAILURE_EVIDENCE_IS_REFERENCED_NOT_DUPLICATED
+    - PUBLISHED_HISTORY_IS_APPEND_ONLY
+    - CORRECTION_AND_RETRACTION_USE_NEW_RECORDS

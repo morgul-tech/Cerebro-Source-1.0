@@ -136,6 +136,35 @@ failure_learning:
     disposition: EVIDENCE_ADAPTER
     parallel_authority: false
 
+failure_learning_convergence:
+  introduced_by: PATCH-007.PRE-005
+  architecture_outcome: CONVERGE_EXISTING_CHANGE_CONTEXT_DIAGNOSTICS_AND_ASSURANCE
+  new_top_level_component: false
+  detailed_failure_evidence_owner: tooling.change
+  regression_policy_ref: tooling/change/campaign-policy.yaml
+  diagnostic_input_ref: tooling/host/diagnostic_capsule.py
+  history_owner: context-engine
+  history_ref: engines/context/development-history.yaml
+  learning_flow:
+    - OPERATIONAL_FAILURE_OR_SUCCESS_EVIDENCE
+    - DIAGNOSTIC_OR_CAMPAIGN_NORMALIZATION
+    - FAILURE_FAMILY_AND_ROOT_PRODUCER_CLASSIFICATION
+    - RELEVANCE_SCOPED_REGRESSION_SELECTION
+    - LEARNING_BASIS_FINGERPRINT
+    - MACHINE_ENFORCEABLE_ASSURANCE_BINDING
+    - DEVELOPMENT_HISTORY_CANDIDATE_WHEN_SIGNIFICANT
+  positive_negative_separation:
+    failure_evidence: DETAILED_DERIVED_CHANGE_KNOWLEDGE
+    strengthening_evidence: CONTEXT_DEVELOPMENT_HISTORY_WHEN_SIGNIFICANT
+  invalidation:
+    relevant_learning_basis_change: INVALIDATE_CANDIDATE_ASSURANCE
+  invariants:
+    - FAILURE_EVIDENCE_REMAINS_EVIDENCE_ONLY
+    - DEVELOPMENT_HISTORY_IS_NOT_A_DUPLICATE_FAILURE_DATABASE
+    - KNOWN_APPLICABLE_FAILURE_FAMILY_WITH_MACHINE_ENFORCEABLE_PREVENTION_BLOCKS_HANDOFF_UNTIL_BOUND
+    - USER_IS_NOT_THE_FAILURE_LEARNING_TRANSPORT_PROCESSOR
+    - POSITIVE_FIRST_PASS_EVIDENCE_AND_NEGATIVE_FAILURE_EVIDENCE_REMAIN_DISTINCT
+
 operation_supervision:
   introduced_by: PATCH-007.PRE-003
   owner: tooling.host

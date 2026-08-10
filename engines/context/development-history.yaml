@@ -1,0 +1,98 @@
+schema: cerebro-development-history/v0.1
+development_history:
+  id: CEREBRO-DEVELOPMENT-HISTORY-001
+  owner: context-engine
+  control_owner: MCP
+  authority: EVIDENCE_ONLY
+  lifecycle: ACTIVE
+  append_only: true
+  records:
+    - id: HIST-LEARN-GENERATED-EXECUTION-ASSURANCE-GAP-20260810
+      event_class: LEARNING_EVENT
+      significance: MAJOR
+      role: EVENT
+      title: Generated execution assurance gap identified
+      fact: A concentrated sequence of local delivery failures exposed a systemic gap between known Cerebro rules and the assurance actually consumed by generated local runners.
+      occurred_at: '2026-08-10'
+      evidence_refs:
+        - CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001
+        - CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001
+        - CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001
+      impact:
+        introduced: [SYSTEMIC_GENERATED_EXECUTION_ASSURANCE_GAP]
+        retired: []
+        enabled: [PATCH_007_ASSURANCE_PROFILE_REFINEMENT]
+        learned: [KNOWN_FAILURE_PREVENTION_MUST_REACH_FINAL_HANDOFF_CANDIDATE]
+      relations:
+        patch_refs: [PATCH-007]
+        learning_refs: [CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001]
+      provenance:
+        admission: LOCKED_SEED_EVENT
+        source_ref: CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001
+    - id: HIST-STRENGTH-FIRST-PASS-PATCH-SUCCESS-20260810
+      event_class: STRENGTHENING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: First confirmed first-pass patch success
+      fact: CEREBRO_POWERSHELL_FAMILY became the first confirmed Cerebro patch to complete from the user's first execution directly to verified success with zero troubleshooting iterations.
+      occurred_at: '2026-08-10T13:55:08+02:00'
+      evidence_refs:
+        - CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001
+      impact:
+        introduced: [FIRST_CONFIRMED_FIRST_PASS_RUN_SUCCESS]
+        retired: []
+        enabled: [EMPIRICAL_CONFIDENCE_IN_ASSURANCE_PROFILE_DIRECTION]
+        learned: [PREHANDOFF_ASSURANCE_CAN_REDUCE_USER_RETRY_COUNT]
+      relations:
+        patch_refs: [CEREBRO_POWERSHELL_FAMILY]
+        baseline_commit: c47c8c0e787e7b66bb361852c86af38ea984c16e
+        resulting_commit: 91094a7aba9984c251e0b0fdeb92421548c7ac97
+      provenance:
+        admission: LOCKED_SEED_EVENT
+        source_ref: CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001
+    - id: HIST-STRENGTH-REPEAT-FIRST-PASS-MILESTONE-20260810
+      event_class: STRENGTHENING_EVENT
+      significance: MAJOR
+      role: EVENT
+      title: First-pass success repeated across a second failure family
+      fact: A second materially different Cerebro patch family completed on the user's first execution, strengthening evidence that inherited assurance improves reliability beyond one isolated case.
+      occurred_at: '2026-08-10'
+      evidence_refs:
+        - CTX-ASSESS-REPEAT-FIRST-PASS-MILESTONE-20260810-001
+      impact:
+        introduced: [REPEAT_FIRST_PASS_SUCCESS_EVIDENCE]
+        retired: []
+        enabled: [CROSS_FAMILY_ASSURANCE_CONFIDENCE]
+        learned: [FIRST_PASS_RELIABILITY_IS_MEASURABLE_STRENGTHENING_EVIDENCE]
+      relations:
+        patch_refs: [CEREBRO_MISMATCH_FAMILY]
+      provenance:
+        admission: LOCKED_SEED_EVENT
+        source_ref: CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001
+    - id: HIST-STRENGTH-PRE004-DIAGNOSTIC-AUTONOMY-FIRST-PASS-20260810
+      event_class: STRENGTHENING_EVENT
+      significance: MAJOR
+      role: EVENT
+      title: Diagnostic autonomy architecture landed first-pass
+      fact: PATCH-007.PRE-004 introduced persistent Diagnostic Store, automatic failure capture, unresolved-failure rehydration and failure-learning handoff, and the large architecture change published successfully on the user's first execution without troubleshooting iteration.
+      occurred_at: '2026-08-10T16:41:22+02:00'
+      evidence_refs:
+        - CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001
+        - CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001
+      impact:
+        introduced:
+          - PERSISTENT_LOCAL_DIAGNOSTIC_STATE
+          - AUTOMATIC_FAILURE_REHYDRATION
+          - FIRST_PASS_LARGE_ARCHITECTURE_CHANGE_EVIDENCE
+        retired: [USER_AS_DEFAULT_DIAGNOSTIC_PROCESSOR]
+        enabled: [PATCH_007_PRE_005_FAILURE_LEARNING_BINDING]
+        learned: [LARGE_STRUCTURAL_CHANGE_CAN_REMAIN_FIRST_PASS_WHEN_ASSURANCE_PREVENTS_KNOWN_FAILURES]
+      relations:
+        patch_refs: [PATCH-007.PRE-004]
+        baseline_commit: 097515aa3612ef0d906824eb4ce4d8c6c23cd860
+        resulting_commit: 3372e91b8e48b843c0e9de78464b5fc76f258b3b
+        change_stats: {additions: 1232, deletions: 12}
+      provenance:
+        admission: EXPLICIT_USER_HISTORICAL_REQUEST
+        user_selected_historical: true
+        source_ref: USER-HISTORICAL-PRE004-2026-08-10

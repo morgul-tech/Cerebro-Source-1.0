@@ -23,10 +23,12 @@ except Exception as exc:  # pragma: no cover
 
 SCHEMA_ID = "cerebro-change-capsule/v0.2"
 REPORT_SCHEMA = "cerebro-change-campaign-report/v0.1"
-KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.1"
-ENGINE_VERSION = "0.3.2"
+KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.2"
+LEGACY_KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.1"
+ENGINE_VERSION = "0.4.0"
 
 PROFILE_RUNS = {"FAST": 1, "STANDARD": 2, "DEEP": 3}
+CAMPAIGN_POLICY_PATH = Path(__file__).with_name("campaign-policy.yaml")
 
 
 class ChangeError(RuntimeError):
@@ -108,8 +110,18 @@ def rehydrated_diagnostic_basis() -> dict[str, Any] | None:
             "failure": {
                 "stage": capsule.get("failure", {}).get("stage"),
                 "detection": capsule.get("failure", {}).get("detection"),
+                "message": capsule.get("failure", {}).get("message"),
                 "subject_result": capsule.get("failure", {}).get("subject_result"),
+                "mismatch_domain": capsule.get("failure", {}).get("mismatch_domain"),
+                "failure_family": capsule.get("failure", {}).get("failure_family"),
+                "root_cause": capsule.get("failure", {}).get("root_cause"),
+                "prevention_gap": capsule.get("failure", {}).get("prevention_gap"),
+                "candidate_regressions": capsule.get("failure", {}).get("candidate_regressions", []),
             },
+            "repository": {
+                "changed_paths": capsule.get("repository_observation", {}).get("changed_paths", []),
+            },
+            "capsule_fingerprint": sha256_file(path),
             "authority": "EVIDENCE_ONLY",
             "control_effect": "NONE_UNTIL_MCP_RELEVANCE_AND_RECOVERY_RESOLUTION",
         }
@@ -121,6 +133,128 @@ def rehydrated_diagnostic_basis() -> dict[str, Any] | None:
             "authority": "EVIDENCE_ONLY",
             "control_effect": "NONE",
         }
+
+
+def load_campaign_policy() -> dict[str, Any]:
+    doc = yaml.safe_load(CAMPAIGN_POLICY_PATH.read_text(encoding="utf-8"))
+    if not isinstance(doc, dict) or not isinstance(doc.get("failure_family_catalog"), dict):
+        raise ChangeError("FAILURE_REGRESSION_CATALOG_INVALID", str(CAMPAIGN_POLICY_PATH))
+    return doc
+
+
+def candidate_traits(manifest: dict[str, Any]) -> set[str]:
+    paths = [str(item.get("path", "")).replace("\\", "/").lower() for item in manifest.get("files", [])]
+    traits: set[str] = set()
+    if any(path.endswith((".ps1", ".psm1")) for path in paths):
+        traits.add("powershell")
+    if any(path.endswith(".py") for path in paths):
+        traits.add("python")
+    if any(path.endswith((".yaml", ".yml", ".json")) for path in paths):
+        traits.add("structured_text")
+    if any(path.startswith(("tooling/host/", "tooling/change/", "tooling/delivery/")) for path in paths):
+        traits.add("native_process")
+    if any(path.startswith("tooling/validator/") for path in paths):
+        traits.add("validator")
+    if any("diagnostic" in path for path in paths):
+        traits.add("diagnostics")
+    if any(path in {"standards/change-delivery.yaml", "tooling/builder/builder.yaml"} or path.startswith("tooling/builder/templates/pshell/") for path in paths):
+        traits.add("standard_delivery")
+    return traits
+
+
+def select_regression_bindings(manifest: dict[str, Any], diagnostic: dict[str, Any] | None) -> list[dict[str, Any]]:
+    policy = load_campaign_policy()
+    catalog = policy.get("failure_family_catalog", {})
+    traits = candidate_traits(manifest)
+    detection = ""
+    explicit_family = None
+    if isinstance(diagnostic, dict):
+        failure = diagnostic.get("failure", {}) if isinstance(diagnostic.get("failure"), dict) else {}
+        detection = str(failure.get("detection") or "") + " " + str(failure.get("message") or "")
+        explicit_family = failure.get("failure_family")
+    selected: list[dict[str, Any]] = []
+    for family, spec in sorted(catalog.items()):
+        if not isinstance(spec, dict):
+            continue
+        family_traits = set(str(value) for value in spec.get("traits", []))
+        patterns = [str(value).lower() for value in spec.get("detection_contains", [])]
+        detection_match = bool(detection and any(pattern in detection.lower() for pattern in patterns))
+        explicit_match = bool(explicit_family and str(explicit_family) == family)
+        trait_match = bool(family_traits & traits)
+        if not (detection_match or explicit_match or trait_match):
+            continue
+        machine_checks = [str(value) for value in spec.get("machine_checks", [])]
+        if not machine_checks:
+            raise ChangeError("APPLICABLE_FAILURE_FAMILY_WITHOUT_MACHINE_CHECK", family)
+        selected.append({
+            "family": family,
+            "matched_by": "explicit_family" if explicit_match else "diagnostic_detection" if detection_match else "candidate_traits",
+            "prevention_refs": [str(value) for value in spec.get("prevention_refs", [])],
+            "regression_refs": [str(value) for value in spec.get("regression_refs", [])],
+            "machine_checks": machine_checks,
+        })
+    return selected
+
+
+def learning_basis_fingerprint(bindings: list[dict[str, Any]], diagnostic: dict[str, Any] | None, generation: int) -> str:
+    material = {
+        "bindings": bindings,
+        "diagnostic_capsule_id": diagnostic.get("capsule_id") if isinstance(diagnostic, dict) else None,
+        "diagnostic_fingerprint": diagnostic.get("capsule_fingerprint") if isinstance(diagnostic, dict) else None,
+        "knowledge_generation": generation,
+        "policy_version": load_campaign_policy().get("policy", {}).get("version"),
+    }
+    return hashlib.sha256(json.dumps(material, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def ingest_diagnostic_learning(previous: dict[str, Any], diagnostic: dict[str, Any] | None, bindings: list[dict[str, Any]]) -> dict[str, Any]:
+    knowledge = json.loads(json.dumps(previous))
+    if not isinstance(diagnostic, dict) or not diagnostic.get("capsule_id"):
+        return knowledge
+    capsule_id = str(diagnostic["capsule_id"])
+    event_id = "DIAG-" + capsule_id
+    if any(str(item.get("event_id")) == event_id for item in knowledge.get("events", []) if isinstance(item, dict)):
+        return knowledge
+    failure = diagnostic.get("failure", {}) if isinstance(diagnostic.get("failure"), dict) else {}
+    preferred = next((item for item in bindings if item.get("matched_by") in {"explicit_family", "diagnostic_detection"}), None)
+    family = str(failure.get("failure_family") or (preferred or {}).get("family") or "UNCLASSIFIED")
+    classification = str(failure.get("detection") or "UNKNOWN")
+    event = {
+        "event_id": event_id,
+        "change_id": str(diagnostic.get("subject", {}).get("patch_id", "UNKNOWN")),
+        "run_id": capsule_id,
+        "classification": classification,
+        "family": family,
+        "detail": str(failure.get("message") or ""),
+        "mismatch_domain": failure.get("mismatch_domain"),
+        "root_cause": failure.get("root_cause"),
+        "observed_at": now(),
+        "source": "DIAGNOSTIC_CAPSULE",
+        "source_capsule_id": capsule_id,
+        "evidence_refs": [capsule_id],
+    }
+    knowledge.setdefault("events", []).append(event)
+    fam = knowledge.setdefault("families", {}).setdefault(family, {
+        "observations": 0,
+        "distinct_runs": [],
+        "status": "OBSERVED",
+        "prevention_refs": [],
+        "regression_refs": [],
+    })
+    fam["observations"] = int(fam.get("observations", 0)) + 1
+    if capsule_id not in fam.setdefault("distinct_runs", []):
+        fam["distinct_runs"].append(capsule_id)
+    selected = next((item for item in bindings if item.get("family") == family), None)
+    for key in ("prevention_refs", "regression_refs"):
+        current = set(str(value) for value in fam.setdefault(key, []))
+        if selected:
+            current.update(str(value) for value in selected.get(key, []))
+        fam[key] = sorted(current)
+    if len(fam["distinct_runs"]) >= 2:
+        fam["status"] = "SYSTEMIC_SUSPECTED"
+    metrics = knowledge.setdefault("metrics", {})
+    metrics["diagnostic_capsules_ingested"] = int(metrics.get("diagnostic_capsules_ingested", 0)) + 1
+    return knowledge
 
 
 def validate_manifest(manifest: dict[str, Any]) -> None:
@@ -388,10 +522,24 @@ def load_knowledge(path: Path | None) -> dict[str, Any]:
             "generation": 0,
             "events": [],
             "families": {},
+            "successes": [],
+            "metrics": {},
         }
     data = load_json(path)
+    if data.get("schema") == LEGACY_KNOWLEDGE_SCHEMA:
+        data["schema"] = KNOWLEDGE_SCHEMA
+        data.setdefault("successes", [])
+        data.setdefault("metrics", {})
+        for family in data.get("families", {}).values():
+            if isinstance(family, dict):
+                family.setdefault("prevention_refs", [])
+                family.setdefault("regression_refs", [])
     if data.get("schema") != KNOWLEDGE_SCHEMA:
         raise ChangeError("FAILURE_KNOWLEDGE_INVALID", "unknown failure knowledge schema")
+    data.setdefault("events", [])
+    data.setdefault("families", {})
+    data.setdefault("successes", [])
+    data.setdefault("metrics", {})
     return data
 
 
@@ -405,18 +553,23 @@ def update_knowledge(previous: dict[str, Any], runs: list[CampaignRun], change_i
         if run_item.result == "PASS":
             continue
         event = {
+            "event_id": f"CAMPAIGN-{run_item.run_id}",
             "change_id": change_id,
             "run_id": run_item.run_id,
             "classification": run_item.classification,
             "family": run_item.family,
             "detail": run_item.detail,
             "observed_at": now(),
+            "source": "DEVELOPMENT_CAMPAIGN",
+            "evidence_refs": [],
         }
         knowledge["events"].append(event)
         fam = knowledge["families"].setdefault(run_item.family or "UNCLASSIFIED", {
             "observations": 0,
             "distinct_runs": [],
             "status": "OBSERVED",
+            "prevention_refs": [],
+            "regression_refs": [],
         })
         fam["observations"] = int(fam.get("observations", 0)) + 1
         if run_item.run_id not in fam["distinct_runs"]:
@@ -474,6 +627,10 @@ def execute_campaigns(capsule_root: Path, source_repo: Path, manifest: dict[str,
         raise ChangeError("ASSURANCE_PROFILE_MISMATCH", f"manifest={declared_profile}; requested={profile}")
     required_runs = PROFILE_RUNS[profile]
     previous = load_knowledge(knowledge_path)
+    diagnostic = rehydrated_diagnostic_basis()
+    regression_bindings = select_regression_bindings(manifest, diagnostic)
+    previous = ingest_diagnostic_learning(previous, diagnostic, regression_bindings)
+    basis_fingerprint = learning_basis_fingerprint(regression_bindings, diagnostic, int(previous.get("generation", 0)))
 
     with tempfile.TemporaryDirectory(prefix="cerebro-change-lab-") as temp:
         temp_root = Path(temp)
@@ -493,7 +650,10 @@ def execute_campaigns(capsule_root: Path, source_repo: Path, manifest: dict[str,
         "stability_gate": gate,
         "blockers": blockers,
         "ready_to_lock": gate == "PASS",
-        "diagnostic_basis": rehydrated_diagnostic_basis(),
+        "diagnostic_basis": diagnostic,
+        "applicable_regressions": regression_bindings,
+        "learning_basis_fingerprint": basis_fingerprint,
+        "learning_basis_authority": "EVIDENCE_ONLY",
         "created_at": now(),
     }
     if knowledge_path is not None:
@@ -591,6 +751,22 @@ def selftest() -> dict[str, Any]:
         record("failure_family_escalation", fam.get("status") == "SYSTEMIC_SUSPECTED")
         gate, blockers = stability_gate(fake_runs, updated, 2)
         record("systemic_root_blocking", gate == "BLOCK" and any("unresolved_systemic" in x for x in blockers), repr(blockers))
+
+        # PRE-005 regression catalog and learning inheritance tests.
+        try:
+            policy = load_campaign_policy()
+            record("failure_regression_catalog", bool(policy.get("failure_family_catalog")))
+            ps_manifest = json.loads(json.dumps(manifest))
+            ps_manifest["files"][0]["path"] = "runner.ps1"
+            selected = select_regression_bindings(ps_manifest, {"capsule_id": "DCAP-X", "failure": {"detection": "InvalidRegularExpression"}})
+            record("relevance_scoped_regression_selection", any(item["family"] == "GENERATED_POWERSHELL_REGEX_ESCAPE_INVALID" for item in selected))
+            legacy = {"schema": LEGACY_KNOWLEDGE_SCHEMA, "generation": 1, "events": [], "families": {}}
+            legacy_path = root / "legacy-knowledge.json"
+            legacy_path.write_text(json.dumps(legacy), encoding="utf-8")
+            migrated = load_knowledge(legacy_path)
+            record("failure_knowledge_v01_migration", migrated["schema"] == KNOWLEDGE_SCHEMA and "metrics" in migrated)
+        except Exception as exc:
+            record("pre005_learning_bindings", False, str(exc))
 
         # Final serialization tests.
         good_yaml = root / "good.yaml"; good_yaml.write_text("path: 'D:\\Cerebro\\Run'\n", encoding="utf-8")

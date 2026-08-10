@@ -953,7 +953,7 @@ roadmap:
       title: "failure_learning_and_regression_binding"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-007.PRE-004"
       decision_refs:
@@ -962,8 +962,16 @@ roadmap:
         - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
       source_refs:
         - "standards/change-architecture.yaml"
+        - "standards/change-delivery.yaml"
         - "tooling/change/failure-record-schema.json"
+        - "tooling/change/campaign-policy.yaml"
+        - "tooling/change/change_engine.py"
+        - "tooling/host/diagnostic_capsule.py"
         - "standards/development/relevance-retrieval.yaml"
+        - "tooling/context/relevance_engine.py"
+        - "engines/context/development-history.yaml"
+        - "engines/context/development-history-schema.yaml"
+        - "tooling/validator/checks.yaml"
       implementation_constraints:
         - "reuse_existing_failure_learning_architecture"
         - "machine_enforceable_learning_becomes_executable_assurance"
@@ -999,7 +1007,7 @@ roadmap:
       title: "operational_reliability_and_evidence_foundation"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-007.PRE-001"
         - "PATCH-007.PRE-002"
@@ -1152,18 +1160,18 @@ roadmap:
         - "future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work"
   execution:
     current:
-      id: "EXEC-PATCH-007-PRE-001-IMPLEMENTATION-AUTHORIZATION"
+      id: "EXEC-PATCH-007-CLOSURE"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      patch_ref: "PATCH-007.PRE-001"
-      canonical_command: "await explicit implementation authorization for PATCH-007.PRE-001 from the locked refined basis; LOCK alone does not authorize implementation"
+      patch_ref: "PATCH-007"
+      canonical_command: "run fresh full integration and active-source closure for PATCH-007 after PRE-005 is VERIFIED"
       status: "ACTIVE"
     next:
-      id: "EXEC-PATCH-007-PRE-002-AFTER-PRE001"
+      id: "EXEC-PATCH-AA-000-AFTER-PATCH007"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      patch_ref: "PATCH-007.PRE-002"
-      canonical_command: "after PATCH-007.PRE-001 is VERIFIED, continue the locked prerequisite sequence under fresh MCP control"
+      patch_ref: "PATCH-AA-000"
+      canonical_command: "after PATCH-007 is VERIFIED, require the next valid Adaptive Autonomy authorization boundary"
       status: "PLANNED"
   blockers: []
   context_refs:

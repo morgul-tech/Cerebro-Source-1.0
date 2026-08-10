@@ -3,7 +3,7 @@ component:
   id: context
   name: Context Engine
   type: engine
-  version: 1.3.0
+  version: 1.4.0
   status: active-source
 responsibility:
   primary: Forvalte aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger, historikk, samtalelokale markører, avgrenset konsolideringskontekst og lettvekts evidens rundt Wisdom.
@@ -36,6 +36,8 @@ interfaces:
   - wisdom-applicability-assessment
   - applicable-wisdom-refs
   - applicable-knowledge-refs
+  - applicable-history-refs
+  - development-history-candidate
   - relevance-assessment
   - basis-fingerprint-input
   - effect-feedback-candidate
@@ -54,6 +56,11 @@ state:
     path: wisdom-evidence.yaml
     schema: wisdom-evidence-schema.yaml
     authority: evidence-only
+  development_history:
+    path: development-history.yaml
+    schema: development-history-schema.yaml
+    authority: evidence-only
+    lifecycle: ACTIVE
 documentation:
   path: specification.md
 migration:
@@ -69,7 +76,9 @@ boundaries:
   - keep-wisdom-evidence-separate-from-governing-authority
   - keep-change-learning-evidence-non-authoritative-until-explicit-consolidation
   - assess-wisdom-applicability
-  - retrieve-and-rank-relevant-knowledge-and-wisdom
+  - retrieve-and-rank-relevant-knowledge-wisdom-and-history
+  - steward-append-only-development-history
+  - keep-detailed-failure-evidence-referenced-not-duplicated-in-history
   - bind-retrieval-output-to-control-basis
   - checkpoint-material-user-insight
   - emit-bounded-effect-feedback
@@ -84,8 +93,10 @@ boundaries:
   - persist-conversation-markers-to-source-automatically
   - give-knowledge-direct-control-authority
   - bulk-retrieve-history-by-default
+  - let-history-create-control-or-policy-authority
+  - let-producers-write-history-directly
   - auto-admit-effect-feedback-as-knowledge
   - create-parallel-learning-research-or-decision-engine
 version:
-  component: 1.3.0
+  component: 1.4.0
   schema: 1

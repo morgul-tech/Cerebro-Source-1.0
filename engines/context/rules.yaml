@@ -294,3 +294,109 @@ rules:
   validation: error
   provenance: {type: conversation-approved-development, source: PATCH-003.PRE-006}
 # END PATCH-003.PRE-006 CONSOLIDATE
+# BEGIN PATCH-007.PRE-005 DEVELOPMENT HISTORY + FAILURE LEARNING
+- id: CTX-019
+  owner: context
+  authority: normative
+  priority: high
+  condition: {history_candidate_observed: true}
+  action:
+    construct_history_candidate: true
+    require_MCP_admission_before_Source_persistence: true
+  statement: Context Engine SKAL konstruere Development History-kandidater som evidens, mens MCP avgjør opptak før kanonisk Source-persistens.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
+- id: CTX-020
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {development_history_record_published: true}
+  action:
+    prohibit_in_place_rewrite: true
+    require_new_record_for: [CORRECTION, RETRACTION]
+  statement: Publisert Development History SKAL være append-only; korreksjon og tilbaketrekking SKAL opprette nye sporbare poster.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
+- id: CTX-021
+  owner: context
+  authority: normative
+  priority: high
+  condition: {history_candidate_contains_failure_learning: true}
+  action:
+    reference_detailed_failure_evidence: true
+    prohibit_duplicate_failure_database: true
+  statement: Development History SKAL beskrive betydningen av failure learning og referere detaljert evidence, ikke duplisere Change failure knowledge.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
+- id: CTX-022
+  owner: context
+  authority: normative
+  priority: high
+  condition: {explicit_user_history_request: true}
+  action:
+    admit_as_user_selected_history_candidate: true
+    preserve_user_selection_provenance: true
+  statement: Når bruker eksplisitt markerer en hendelse som historisk, SKAL den behandles som user-selected History-kandidat med bevart provenance.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: user-directed-development, source: PATCH-007.PRE-005}
+- id: CTX-023
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {history_append_failed_after_primary_operation_success: true}
+  action:
+    preserve_primary_success: true
+    defer_history_append_to_next_safe_authorized_boundary: true
+  statement: Feil ved History-persistens etter verifisert primærsuksess SKAL IKKE ugyldiggjøre primærsuksessen.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
+- id: CTX-024
+  owner: context
+  authority: normative
+  priority: normal
+  condition: {development_history_retrieval: true}
+  action:
+    require_relevance_driven_bounded_retrieval: true
+    prohibit_bulk_history_by_default: true
+  statement: Development History SKAL hentes relevansdrevet og avgrenset, ikke bulk-lastet som standard.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
+- id: CTX-025
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {failure_learning_is_machine_enforceable: true}
+  action:
+    require_change_regression_binding: true
+    keep_learning_evidence_only_until_governing_contract_binding: true
+  statement: Maskinhåndhevbar failure learning SKAL bindes til eksisterende Change/Builder/Validator-assurance og ikke bli stående som dokumentasjon alene.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
+- id: CTX-026
+  owner: context
+  authority: normative
+  priority: normal
+  condition: {first_pass_run_success_observed: true}
+  action:
+    classify_as_strengthening_evidence: true
+    prohibit_success_metric_as_authority: true
+  statement: First-pass success og bruker-retry-count KAN brukes som strengthening evidence, men SKAL IKKE skape Source- eller policy-authority.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
+# END PATCH-007.PRE-005 DEVELOPMENT HISTORY + FAILURE LEARNING

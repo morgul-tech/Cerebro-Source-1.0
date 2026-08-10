@@ -133,6 +133,42 @@ diagnostic_capsule_validation:
     - diagnostic-failure-masks-primary-failure
     - user-as-default-diagnostic-transport-processor
 
+failure_learning_regression_binding_validation:
+  introduced_by: PATCH-007.PRE-005
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/change-architecture.yaml
+    - standards/change-delivery.yaml
+    - tooling/change/campaign-policy.yaml
+    - engines/context/development-history-schema.yaml
+  required_files:
+    - engines/context/development-history.yaml
+    - engines/context/development-history-schema.yaml
+    - tooling/change/failure-record-schema.json
+    - tooling/change/campaign-policy.yaml
+  required_contracts:
+    - diagnostic-evidence-auto-ingests-into-derived-failure-knowledge
+    - failure-family-regressions-are-relevance-scoped
+    - learning-basis-fingerprint-invalidates-stale-assurance
+    - known-applicable-family-with-machine-prevention-blocks-unassured-handoff
+    - development-history-is-Context-owned-append-only-evidence
+    - detailed-failure-evidence-is-referenced-not-duplicated-in-history
+    - first-pass-success-and-retry-count-remain-strengthening-evidence-only
+  required_canaries:
+    - failure-knowledge-v0.1-migrates-to-v0.2
+    - diagnostic-capsule-id-deduplicates-learning-ingestion
+    - PowerShell-candidate-selects-PowerShell-regressions
+    - changed-learning-basis-changes-fingerprint
+    - every-active-regression-family-declares-machine-check
+    - history-explicit-user-selection-preserves-provenance
+    - PRE004-first-pass-historical-event-is-present
+  prohibited:
+    - parallel-learning-engine
+    - duplicate-failure-database-in-development-history
+    - evidence-directly-mutating-source
+    - known-machine-preventable-family-reaching-user-handoff-unchecked
+
 operation_supervision_validation:
   introduced_by: PATCH-007.PRE-003
   severity: error

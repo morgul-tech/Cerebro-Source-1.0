@@ -1,23 +1,89 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "cerebro-failure-knowledge/v0.1",
+  "$id": "cerebro-failure-knowledge/v0.2",
   "type": "object",
-  "required": ["schema", "generation", "events", "families"],
+  "required": [
+    "schema",
+    "generation",
+    "events",
+    "families",
+    "successes",
+    "metrics"
+  ],
   "properties": {
-    "schema": {"const": "cerebro-failure-knowledge/v0.1"},
-    "generation": {"type": "integer", "minimum": 0},
-    "events": {"type": "array", "items": {"type": "object"}},
+    "schema": {
+      "const": "cerebro-failure-knowledge/v0.2"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "event_id",
+          "classification",
+          "family",
+          "observed_at",
+          "source"
+        ]
+      }
+    },
     "families": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["observations", "distinct_runs", "status"],
+        "required": [
+          "observations",
+          "distinct_runs",
+          "status",
+          "prevention_refs",
+          "regression_refs"
+        ],
         "properties": {
-          "observations": {"type": "integer", "minimum": 0},
-          "distinct_runs": {"type": "array", "items": {"type": "string"}},
-          "status": {"enum": ["OBSERVED", "SYSTEMIC_SUSPECTED", "RESOLVED"]}
+          "observations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "distinct_runs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "enum": [
+              "OBSERVED",
+              "SYSTEMIC_SUSPECTED",
+              "MITIGATED",
+              "RESOLVED"
+            ]
+          },
+          "prevention_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "regression_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
         }
       }
+    },
+    "successes": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "metrics": {
+      "type": "object"
     }
   }
 }

@@ -180,6 +180,26 @@ diagnostic_failure_capture:
     - resolution-retains-resulting-commit
   user_role: USER_IS_NOT_THE_DIAGNOSTIC_TRANSPORT_PROCESSOR
 
+failure_learning_and_regression_binding:
+  introduced_by: PATCH-007.PRE-005
+  status: active
+  regression_policy_ref: tooling/change/campaign-policy.yaml
+  required_before_material_handoff:
+    - load_relevant_failure_and_diagnostic_evidence
+    - select_applicable_failure_families
+    - bind_every_machine_enforceable_prevention_to_assurance_check
+    - compute_learning_basis_fingerprint
+    - invalidate_candidate_if_learning_basis_changes
+  failure_effect: BLOCK_HANDOFF
+  success_metrics:
+    authority: EVIDENCE_ONLY
+    fields:
+      - user_execution_attempt
+      - first_pass_success
+      - resolved_failure_capsule_count
+      - resulting_commit
+  invariant: KNOWN_APPLICABLE_FAILURE_FAMILY_WITH_MACHINE_ENFORCEABLE_PREVENTION_MUST_BE_BLOCKED_BEFORE_USER_HANDOFF
+
 local_patch_rule:
   rule: local_patch_artifacts_must_be_generated_from_builder_contract_and_patch_package_standard
   consequence:

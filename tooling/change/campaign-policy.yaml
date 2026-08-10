@@ -1,8 +1,9 @@
 schema: cerebro-change-campaign-policy/v0.1
 policy:
   id: CEREBRO-CHANGE-CAMPAIGN-POLICY-001
-  version: 0.2.0
+  version: 0.3.0
   authority: SOURCE_DEFINED_POLICY
+  regression_catalog_owner: tooling.change
 profiles:
   FAST:
     required_clean_campaigns: 1
@@ -25,10 +26,17 @@ common_required_scenarios:
 - target-language-parse-when-executable-delivery-applies
 learning_controls:
   iteration_inheritance: required
+  diagnostic_rehydration: required_when_available
   family_correlation: required
+  relevance_scoped_regression_selection: required
+  learning_basis_fingerprint: required
+  changed_learning_basis_effect: INVALIDATE_CANDIDATE_ASSURANCE
   systemic_threshold_distinct_campaigns: 2
   unresolved_systemic_effect: BLOCK
   current_candidate_failure_effect: BLOCK
+  known_applicable_family_without_machine_check_effect: BLOCK
+  positive_success_evidence_separate_from_failure_evidence: true
+  user_is_not_learning_transport_processor: true
 repeated_run_focus:
 - stale-state
 - cleanup
@@ -41,3 +49,80 @@ language_specific_regressions:
   - ambiguous-variable-colon-interpolation
   - native-stderr-not-failure-authority
   - target-parser-preflight-before-execution
+failure_family_catalog:
+  POWERSHELL_AUTOMATIC_VARIABLE_COLLISION:
+    traits: [powershell]
+    detection_contains: [POWERSHELL_AUTOMATIC_VARIABLE_COLLISION]
+    prevention_refs: [STATIC_AUTOMATIC_VARIABLE_COLLISION_SCAN]
+    regression_refs: [REG-PS-AUTOMATIC-VARIABLE-COLLISION]
+    machine_checks: [POWERSHELL_AUTOMATIC_VARIABLE_COLLISION]
+  PATCH_ANCHOR_LINE_ENDING_REPRESENTATION:
+    traits: [structured_text, standard_delivery]
+    detection_contains: [LINE_ENDING_MISMATCH, PATCH_ANCHOR_LINE_ENDING_REPRESENTATION]
+    prevention_refs: [LINE_ENDING_REPRESENTATION_INDEPENDENT_MATCHING]
+    regression_refs: [REG-LINE-ENDINGS-REPRESENTATION-INDEPENDENT]
+    machine_checks: [LINE_ENDING_REPRESENTATION_INDEPENDENCE]
+  NATIVE_PROCESS_RESULT_FALSE_FAILURE:
+    traits: [native_process]
+    detection_contains: [NATIVE_PROCESS_RESULT_FALSE_FAILURE, PROCESS_EXIT_STATUS_UNAVAILABLE]
+    prevention_refs: [NULL_EXIT_IS_UNKNOWN_NOT_NONZERO, MATERIAL_POSTSTATE_RECONCILIATION]
+    regression_refs: [REG-NATIVE-PROCESS-RESULT-RECONCILIATION]
+    machine_checks: [NATIVE_PROCESS_RESULT_RECONCILIATION]
+  POWERSHELL_COMMAND_SHADOWING_NATIVE_EXECUTABLE:
+    traits: [powershell, native_process]
+    detection_contains: [POWERSHELL_COMMAND_SHADOWING_NATIVE_EXECUTABLE]
+    prevention_refs: [RESOLVE_NATIVE_EXECUTABLE_AS_APPLICATION]
+    regression_refs: [REG-PS-NATIVE-COMMAND-SHADOWING]
+    machine_checks: [NATIVE_EXECUTABLE_APPLICATION_RESOLUTION]
+  POWERSHELL_RUNTIME_SEMANTIC_COLLISION:
+    traits: [powershell]
+    detection_contains: [POWERSHELL_RUNTIME_SEMANTIC_COLLISION]
+    prevention_refs: [RUNTIME_SEMANTIC_ASSURANCE_PROFILE]
+    regression_refs: [REG-PS-RUNTIME-SEMANTIC]
+    machine_checks: [POWERSHELL_RUNTIME_SEMANTICS]
+  GENERATED_POWERSHELL_TOKEN_BOUNDARY_COLLAPSE:
+    traits: [powershell, standard_delivery]
+    detection_contains: [MissingInInForeach, MissingInInForeachLoop, GENERATED_POWERSHELL_TOKEN_BOUNDARY_COLLAPSE]
+    prevention_refs: [NO_AGGRESSIVE_POWERSHELL_MINIFICATION, FINAL_LAUNCHER_PARSE]
+    regression_refs: [REG-PS-TOKEN-BOUNDARY]
+    machine_checks: [POWERSHELL_PARSE, TOKEN_BOUNDARY_PRESERVATION]
+  VALIDATOR_SIDE_EFFECT_CONTAMINATES_WORKING_SOURCE:
+    traits: [python, validator]
+    detection_contains: [VALIDATOR_SIDE_EFFECT_CONTAMINATES_WORKING_SOURCE, __pycache__]
+    prevention_refs: [SIDE_EFFECT_FREE_VALIDATION, VALIDATOR_RESIDUE_GUARD]
+    regression_refs: [REG-VALIDATOR-SIDE-EFFECT-FREE]
+    machine_checks: [VALIDATOR_SIDE_EFFECT_FREE]
+  GENERATED_POWERSHELL_REGEX_ESCAPE_INVALID:
+    traits: [powershell, standard_delivery]
+    detection_contains: [InvalidRegularExpression, GENERATED_POWERSHELL_REGEX_ESCAPE_INVALID]
+    prevention_refs: [LITERAL_STRING_REPLACE_FOR_PATH_SEPARATOR]
+    regression_refs: [REG-PS-REGEX-RUNTIME-VALIDITY]
+    machine_checks: [POWERSHELL_REGEX_RUNTIME_VALIDITY]
+  VALIDATION_PROBE_RESULT_COLLAPSE:
+    traits: [validator, diagnostics]
+    detection_contains: [HOST_PYTHON_AST_PARSE_FAILED, VALIDATION_PROBE_RESULT_COLLAPSE]
+    prevention_refs: [PRESERVE_PROBE_STDOUT_STDERR_EXIT, PROBE_FAILURE_NOT_SUBJECT_FAILURE]
+    regression_refs: [REG-PROBE-RESULT-SEPARATION]
+    machine_checks: [PROBE_RESULT_SEPARATION]
+  DETERMINISTIC_PATCH_SCOPE_AMBIGUITY:
+    traits: [structured_text]
+    detection_contains: [SEMANTIC_PLACEMENT_MISMATCH, DECISION_REF_GLOBAL_COUNT_INVALID, DETERMINISTIC_PATCH_SCOPE_AMBIGUITY]
+    prevention_refs: [STRUCTURAL_SCOPE_IDENTITY, EXACT_LINE_OR_SCOPE_CARDINALITY]
+    regression_refs: [REG-STRUCTURAL-PLACEMENT-CARDINALITY]
+    machine_checks: [STRUCTURAL_PLACEMENT_AND_CARDINALITY]
+  MANIFEST_CONTRACT_CONSUMER_MISMATCH:
+    traits: [standard_delivery]
+    detection_contains: [MANIFEST_CONTRACT_CONSUMER_MISMATCH]
+    prevention_refs: [SEALED_MANIFEST_CONSUMER_COMPATIBILITY]
+    regression_refs: [REG-MANIFEST-CONSUMER-COMPATIBILITY]
+    machine_checks: [SEALED_BUNDLE_MANIFEST_CONSUMER_COMPATIBILITY]
+  KNOWN_FAILURE_FAMILY_PREVENTION_NOT_INHERITED:
+    traits: [standard_delivery]
+    detection_contains: [KNOWN_FAILURE_FAMILY_PREVENTION_NOT_INHERITED]
+    prevention_refs: [APPLICABLE_FAILURE_FAMILY_INHERITANCE]
+    regression_refs: [REG-KNOWN-FAMILY-INHERITANCE]
+    machine_checks: [APPLICABLE_FAILURE_REGRESSION_BINDING]
+positive_strengthening_metrics:
+  fields: [user_execution_attempt, first_pass_success, resolved_failure_capsule_count, resulting_commit]
+  authority: EVIDENCE_ONLY
+  history_candidate_when: [FIRST_PASS_SUCCESS, REPEAT_FIRST_PASS_SUCCESS, MATERIAL_RELIABILITY_STRENGTHENING]

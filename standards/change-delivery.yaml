@@ -327,6 +327,29 @@ diagnostic_failure_protocol:
     - STANDARD_RUNNER_DIAGNOSTICS_ARE_MACHINE_READABLE
     - SUCCESSFUL_REPAIR_CLOSES_RELATED_DIAGNOSTIC_STATE_WITH_COMMIT_TRACEABILITY
 
+failure_learning_evidence:
+  introduced_by: PATCH-007.PRE-005
+  authority: EVIDENCE_ONLY
+  standard_success_receipt_fields:
+    - learning_basis_fingerprint
+    - user_execution_attempt
+    - first_pass_success
+    - resolved_failure_capsule_count
+    - resulting_commit
+  failure_capture:
+    diagnostic_capsule_required_when_available: true
+    diagnostic_failure_must_not_mask_primary_failure: true
+  successful_repair:
+    resolve_matching_failure_capsules: true
+    preserve_failure_to_resulting_commit_traceability: true
+  handoff_gate:
+    known_applicable_family_without_machine_enforceable_prevention: BLOCK
+    changed_learning_basis_after_assurance: INVALIDATE_AND_REASSURE
+  invariants:
+    - USER_RETRY_COUNT_IS_DERIVED_EVIDENCE_NOT_AUTHORITY
+    - FIRST_PASS_SUCCESS_IS_STRENGTHENING_EVIDENCE_NOT_AUTHORITY
+    - FAILURE_LEARNING_MUST_FEED_PREHANDOFF_PREVENTION
+
 backup_contract:
   required_for: STANDARD
   root_default: D:\Cerebro\Backups

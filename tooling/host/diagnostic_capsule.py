@@ -314,6 +314,11 @@ def make_transport(full: dict[str, Any], full_path: Path) -> dict[str, Any]:
             "exit_code": failure.get("exit_code"),
             "probe_status": failure.get("probe_status"),
             "subject_result": failure.get("subject_result"),
+            "mismatch_domain": failure.get("mismatch_domain"),
+            "failure_family": failure.get("failure_family"),
+            "root_cause": failure.get("root_cause"),
+            "prevention_gap": failure.get("prevention_gap"),
+            "candidate_regressions": failure.get("candidate_regressions", []),
         },
         "execution": full.get("execution", {}),
         "repository": {
@@ -404,6 +409,11 @@ def capture_capsule(
             "raw_error_bounded": redact_text(
                 failure.get("raw_error_bounded", failure.get("message", ""))
             ),
+            "mismatch_domain": failure.get("mismatch_domain"),
+            "failure_family": failure.get("failure_family"),
+            "root_cause": failure.get("root_cause"),
+            "prevention_gap": failure.get("prevention_gap"),
+            "candidate_regressions": failure.get("candidate_regressions", []),
         },
         "execution": execution,
         "repository_observation": repo_evidence,
@@ -481,6 +491,10 @@ def latest_unresolved_context(store_root: Path | None = None) -> dict[str, Any] 
                     full.get("failure", {}).get("message", ""),
                     2048,
                 ),
+                "mismatch_domain": full.get("failure", {}).get("mismatch_domain"),
+                "failure_family": full.get("failure", {}).get("failure_family"),
+                "root_cause": full.get("failure", {}).get("root_cause"),
+                "candidate_regressions": full.get("failure", {}).get("candidate_regressions", []),
             },
         }
     except Exception as exc:
@@ -497,6 +511,10 @@ def resolve_capsules(
     store_root: Path,
     patch_id: str,
     resulting_commit: str,
+    repair_revision: str | None = None,
+    root_cause: str | None = None,
+    resolution_summary: str | None = None,
+    prevention_refs: list[str] | None = None,
 ) -> dict[str, Any]:
     registry = load_registry(store_root)
     resolved: list[str] = []
@@ -514,6 +532,10 @@ def resolve_capsules(
                 "resolved_at": utc_now(),
                 "patch_id": patch_id,
                 "resulting_commit": resulting_commit,
+                "repair_revision": repair_revision,
+                "root_cause": root_cause,
+                "resolution_summary": resolution_summary,
+                "prevention_refs": list(prevention_refs or []),
             }
             atomic_write_json(full_path, full)
             transport_path = Path(entry["transport_path"])
@@ -522,6 +544,10 @@ def resolve_capsules(
         entry["state"] = "RESOLVED"
         entry["resolved_at"] = utc_now()
         entry["resulting_commit"] = resulting_commit
+        entry["repair_revision"] = repair_revision
+        entry["root_cause"] = root_cause
+        entry["resolution_summary"] = resolution_summary
+        entry["prevention_refs"] = list(prevention_refs or [])
         resolved.append(capsule_id)
 
     registry["generation"] = int(registry.get("generation", 0)) + 1
@@ -535,6 +561,48 @@ def resolve_capsules(
         "resolved_capsules": resolved,
         "active": active,
     }
+
+
+def failure_handoff(store_root: Path, capsule_id: str | None = None) -> dict[str, Any]:
+    registry = load_registry(store_root)
+    if capsule_id is None:
+        selected = select_latest_unresolved(registry)
+        if selected is None:
+            return {"schema": "cerebro-failure-handoff/v0.1", "state": "NONE"}
+        capsule_id = selected["capsule_id"]
+    entry = registry.get("entries", {}).get(capsule_id)
+    if not entry:
+        return {"schema": "cerebro-failure-handoff/v0.1", "state": "NOT_FOUND", "capsule_id": capsule_id}
+    full_path = Path(entry["full_path"])
+    full = load_json(full_path)
+    failure = full.get("failure", {})
+    subject = full.get("subject", {})
+    return redact({
+        "schema": "cerebro-failure-handoff/v0.1",
+        "state": "PATCH_FAIL" if entry.get("state") == "UNRESOLVED" else entry.get("state"),
+        "authority": "EVIDENCE_ONLY",
+        "capsule_id": capsule_id,
+        "capsule_fingerprint": entry.get("capsule_fingerprint"),
+        "patch_id": subject.get("patch_id"),
+        "revision": subject.get("revision"),
+        "baseline_commit": subject.get("baseline_commit"),
+        "stage": failure.get("stage"),
+        "detection": bounded_text(failure.get("detection", failure.get("message", "")), 1600),
+        "failure_family": failure.get("failure_family"),
+        "root_cause": bounded_text(failure.get("root_cause", ""), 800) if failure.get("root_cause") else None,
+        "candidate_regressions": failure.get("candidate_regressions", [])[:12],
+        "acquisition_status": full.get("acquisition", {}).get("status"),
+        "local_evidence_ref": str(full_path),
+        "transport_required_only_if_targeted_detail_needed": True,
+    })
+
+
+def print_failure_handoff(store_root: Path, capsule_id: str | None = None) -> int:
+    payload = failure_handoff(store_root, capsule_id)
+    print("CEREBRO_FAILURE_HANDOFF")
+    print(json.dumps(payload, separators=(",", ":"), sort_keys=True))
+    print("CEREBRO_FAILURE_HANDOFF_END")
+    return 0 if payload.get("state") not in {"NOT_FOUND"} else 2
 
 
 def print_transport(store_root: Path, capsule_id: str | None) -> int:
@@ -604,6 +672,14 @@ def selftest() -> dict[str, Any]:
             json.dumps(full.get("failure", {})),
         )
         active = latest_unresolved_context(store)
+        compact = failure_handoff(store, captured["capsule_id"])
+        record(
+            "minimal_failure_handoff",
+            compact.get("state") == "PATCH_FAIL"
+            and compact.get("patch_id") == "SELFTEST.PATCH"
+            and "transcript" not in json.dumps(compact).lower(),
+            json.dumps(compact),
+        )
         record(
             "artifact_capture",
             full.get("artifacts", {}).get("transcript", {}).get("status") == "COMPLETE",
@@ -616,10 +692,22 @@ def selftest() -> dict[str, Any]:
             store_root=store,
             patch_id="SELFTEST.PATCH",
             resulting_commit="1" * 40,
+            repair_revision="R2",
+            root_cause="SELFTEST_ROOT_CAUSE",
+            resolution_summary="selftest repair",
+            prevention_refs=["REG-SELFTEST"],
         )
         record(
             "resolution_traceability",
             captured["capsule_id"] in resolved.get("resolved_capsules", []),
+        )
+        resolved_full = load_json(Path(captured["full_path"]))
+        record(
+            "resolution_lineage",
+            resolved_full.get("resolution", {}).get("repair_revision") == "R2"
+            and resolved_full.get("resolution", {}).get("root_cause") == "SELFTEST_ROOT_CAUSE"
+            and "REG-SELFTEST" in resolved_full.get("resolution", {}).get("prevention_refs", []),
+            json.dumps(resolved_full.get("resolution", {})),
         )
         record(
             "active_cleared_after_resolution",
@@ -648,9 +736,16 @@ def main() -> int:
     transport_parser = sub.add_parser("transport")
     transport_parser.add_argument("--capsule-id")
 
+    handoff_parser = sub.add_parser("handoff")
+    handoff_parser.add_argument("--capsule-id")
+
     resolve_parser = sub.add_parser("resolve")
     resolve_parser.add_argument("--patch-id", required=True)
     resolve_parser.add_argument("--resulting-commit", required=True)
+    resolve_parser.add_argument("--repair-revision")
+    resolve_parser.add_argument("--root-cause")
+    resolve_parser.add_argument("--resolution-summary")
+    resolve_parser.add_argument("--prevention-ref", action="append", default=[])
 
     sub.add_parser("selftest")
     args = parser.parse_args()
@@ -677,11 +772,17 @@ def main() -> int:
             return 0
         if args.command == "transport":
             return print_transport(store, args.capsule_id)
+        if args.command == "handoff":
+            return print_failure_handoff(store, args.capsule_id)
         if args.command == "resolve":
             result = resolve_capsules(
                 store_root=store,
                 patch_id=args.patch_id,
                 resulting_commit=args.resulting_commit,
+                repair_revision=args.repair_revision,
+                root_cause=args.root_cause,
+                resolution_summary=args.resolution_summary,
+                prevention_refs=args.prevention_ref,
             )
             print(json.dumps(result, indent=2))
             return 0

@@ -46,6 +46,11 @@ def knowledge_records(doc: dict[str, Any]) -> list[dict[str, Any]]:
     return [item for item in records if isinstance(item, dict)]
 
 
+def history_records(doc: dict[str, Any]) -> list[dict[str, Any]]:
+    records = doc.get("development_history", {}).get("records", [])
+    return [item for item in records if isinstance(item, dict)]
+
+
 def knowledge_eligible(item: dict[str, Any]) -> tuple[bool, str]:
     if item.get("status") != "ACTIVE":
         return False, "status-not-ACTIVE"
@@ -67,13 +72,24 @@ def wisdom_eligible(item: dict[str, Any]) -> tuple[bool, str]:
     return True, "eligible"
 
 
+def history_eligible(item: dict[str, Any]) -> tuple[bool, str]:
+    if item.get("role") not in {"EVENT", "CORRECTION", "RETRACTION"}:
+        return False, "invalid-history-role"
+    return True, "eligible"
+
+
 def rank(item: dict[str, Any], request: dict[str, Any], friction: set[str]) -> tuple[int, dict[str, int]]:
     objective = terms(request.get("current_objective", ""))
     scope = terms(request.get("current_scope", ""))
     tags = terms(request.get("tags", []))
     state = terms([request.get("current_failure_state", ""), request.get("current_decision_state", "")])
     candidate_scope = terms(item.get("scope", ""))
-    candidate_body = terms([item.get("claim", ""), item.get("statement", ""), item.get("tags", []), item.get("payload", {})])
+    candidate_body = terms([
+        item.get("claim", ""), item.get("statement", ""),
+        item.get("title", ""), item.get("fact", ""),
+        item.get("event_class", ""), item.get("significance", ""),
+        item.get("tags", []), item.get("payload", {}), item.get("impact", {}),
+    ])
     dimensions = {
         "objective": min(overlap(candidate_body | candidate_scope, objective), 3) * 4,
         "scope": min(overlap(candidate_scope | candidate_body, scope), 3) * 3,
@@ -101,15 +117,17 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
     knowledge = load_yaml(root / "engines/context/knowledge.yaml")
     context = load_yaml(root / "engines/context/working-context.yaml")
     evidence = load_yaml(root / "engines/context/wisdom-evidence.yaml")
+    history = load_yaml(root / "engines/context/development-history.yaml")
     friction = {
         item.get("subject_ref") for item in evidence.get("wisdom_evidence", {}).get("profiles", [])
         if item.get("friction_state") in {"REVIEW", "ESCALATE"}
     }
-    accepted: dict[str, list[dict[str, Any]]] = {"knowledge": [], "wisdom": []}
+    accepted: dict[str, list[dict[str, Any]]] = {"knowledge": [], "wisdom": [], "history": []}
     rejected: list[dict[str, str]] = []
     for kind, records, check in (
         ("knowledge", knowledge_records(knowledge), knowledge_eligible),
         ("wisdom", wisdom_records(context), wisdom_eligible),
+        ("history", history_records(history), history_eligible),
     ):
         for item in records:
             eligible, reason = check(item)
@@ -121,10 +139,12 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
                 rejected.append({"ref": str(item.get("id")), "reason": "below-relevance-threshold"})
                 continue
             accepted[kind].append({"ref": item["id"], "score": score, "dimensions": dimensions})
-        accepted[kind] = sorted(accepted[kind], key=lambda row: (-row["score"], row["ref"]))[:5]
+        limit = 3 if kind == "history" else 5
+        accepted[kind] = sorted(accepted[kind], key=lambda row: (-row["score"], row["ref"]))[:limit]
     knowledge_refs = [item["ref"] for item in accepted["knowledge"]]
     wisdom_refs = [item["ref"] for item in accepted["wisdom"]]
-    basis_refs = sorted(knowledge_refs + wisdom_refs)
+    history_refs = [item["ref"] for item in accepted["history"]]
+    basis_refs = sorted(knowledge_refs + wisdom_refs + history_refs)
     basis_value = {
         "objective_ref": request.get("objective_ref", request["current_objective"]),
         "scope": request["current_scope"], "basis_refs": basis_refs,
@@ -138,6 +158,7 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
         "objective_ref": basis_value["objective_ref"],
         "applicable_knowledge_refs": knowledge_refs,
         "applicable_wisdom_refs": wisdom_refs,
+        "applicable_history_refs": history_refs,
         "ranking": accepted,
         "rejected_refs": sorted(rejected, key=lambda row: row["ref"]),
         "basis_refs": basis_refs,
@@ -179,11 +200,15 @@ def selftest() -> dict[str, Any]:
             {"id": "W1", "type": "WISDOM_RECORD", "scope": "delivery runner", "statement": "Use bounded backup and hash verification", "payload": {}, "relations": {}}
         ]}}), encoding="utf-8")
         (root / "engines/context/wisdom-evidence.yaml").write_text(yaml.safe_dump({"wisdom_evidence": {"profiles": []}}), encoding="utf-8")
+        (root / "engines/context/development-history.yaml").write_text(yaml.safe_dump({"development_history": {"records": [
+            {"id": "H1", "event_class": "LEARNING_EVENT", "significance": "MAJOR", "role": "EVENT", "title": "PowerShell delivery learning", "fact": "PowerShell runner hash verification prevented repeat delivery failure", "evidence_refs": ["E1"], "impact": {}, "relations": {}, "provenance": {}}
+        ]}}), encoding="utf-8")
         req = {"current_objective": "build PowerShell runner with hash verification", "current_scope": "delivery runner"}
         first = retrieve(req, root); second = retrieve(req, root)
         check("relevant-knowledge-retrieved", first["applicable_knowledge_refs"] == ["K1"])
         check("ineligible-knowledge-rejected", any(x["ref"] == "K2" for x in first["rejected_refs"]))
         check("relevant-wisdom-retrieved", first["applicable_wisdom_refs"] == ["W1"])
+        check("relevant-history-retrieved", first["applicable_history_refs"] == ["H1"])
         check("basis-fingerprint-deterministic", first["basis_fingerprint"] == second["basis_fingerprint"])
         req["material_user_insight"] = {"signals": ["alleges-existing-learning-was-not-applied"]}
         check("material-insight-reresolves", retrieve(req, root)["next_control_event"] == "RE_RESOLVE_CONTROL")

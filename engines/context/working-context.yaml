@@ -4290,6 +4290,79 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
       sequence: 105
+    -
+      id: "CTX-DEC-PATCH-007-PRE-005-AUTHORIZED-001"
+      type: "DECISION"
+      scope: "PATCH-007.PRE-005-FAILURE-LEARNING-AND-REGRESSION-BINDING"
+      statement: "The user command Fortsett PATCH-007 FULL authorizes uninterrupted completion of PRE-005 and subsequent PATCH-007 closure, with a real stop only where local execution is required."
+      payload:
+        decision_status: "AUTHORIZED"
+        implementation_authorized: true
+        exact_scope: "PATCH-007.PRE-005"
+        authorization_source: "CURRENT_EXPLICIT_USER_INSTRUCTION"
+        control_mode: "SELF_RUNNING_FULL"
+        architecture_outcome: "CONVERGE_EXISTING_CHANGE_CONTEXT_DIAGNOSTICS_RELEVANCE_BUILDER_AND_VALIDATOR"
+        new_top_level_component: false
+        development_history:
+          implementation: "CONTEXT_OWNED_APPEND_ONLY_HISTORY"
+          explicit_user_historical_event: "HIST-STRENGTH-PRE004-DIAGNOSTIC-AUTONOMY-FIRST-PASS-20260810"
+        material_preflight:
+          result: "KEEP_RESTRUCTURE_WITHIN_EXISTING_COMPONENTS"
+          architecture_changed: true
+          hard_blockers: []
+      provenance:
+        introduced_by_ref: "USER-CONTINUE-PATCH-007-FULL-2026-08-10"
+        basis_refs:
+          - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
+          - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
+          - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
+      sequence: 106
+    -
+      id: "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-007-PRE005-VERIFIED-AND-CLOSURE-ENTRY"
+      statement: "PATCH-007.PRE-005 converges Diagnostic evidence, Change failure knowledge, relevance-scoped regression selection, Builder/Validator handoff prevention and Context Development History; PATCH-007 integration/closure is the remaining foundation step."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        patch: "PATCH-007.PRE-005"
+        verification_status: "VERIFIED_ON_SUCCESSFUL_PUBLICATION_OF_THIS_RECORD"
+        architecture:
+          new_top_level_component: false
+          regression_catalog: "tooling/change/campaign-policy.yaml"
+          detailed_failure_learning_owner: "tooling.change"
+          history_owner: "context-engine"
+          diagnostics_input: "tooling.host"
+          recovery_control_owner: "MCP"
+        capabilities:
+          - "AUTOMATIC_DIAGNOSTIC_LEARNING_INGESTION"
+          - "RELEVANCE_SCOPED_REGRESSION_BINDING"
+          - "LEARNING_BASIS_FINGERPRINT"
+          - "KNOWN_FAILURE_PREHANDOFF_BLOCKING"
+          - "CONTEXT_OWNED_DEVELOPMENT_HISTORY"
+          - "POSITIVE_STRENGTHENING_AND_NEGATIVE_FAILURE_EVIDENCE_SEPARATION"
+          - "BOUNDED_HISTORY_RELEVANCE_RETRIEVAL"
+        historical_event_persisted:
+          - "HIST-STRENGTH-PRE004-DIAGNOSTIC-AUTONOMY-FIRST-PASS-20260810"
+        next_patch: "PATCH-007"
+        next_patch_status: "ACTIVE"
+        next_patch_implementation_authorized: true
+        authorization_basis: "SELF_RUNNING_FULL_CURRENT_USER_INSTRUCTION"
+      provenance:
+        introduced_by_ref: "PATCH-007.PRE-005-RUN_TO_PASS"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-PRE-005-AUTHORIZED-001"
+          - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
+      sequence: 107
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4323,6 +4396,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001"
+      - "CTX-DEC-PATCH-007-PRE-005-AUTHORIZED-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4343,6 +4417,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
+      - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4390,7 +4465,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 106
+  next_sequence: 108
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

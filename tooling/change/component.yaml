@@ -3,7 +3,7 @@ component:
   id: change
   name: Cerebro Change Engine
   type: tooling
-  version: 0.3.0
+  version: 0.4.0
   status: active-source
 responsibility:
   primary: Execute non-authoritative change assurance from immutable tooling snapshots before Working Source publication.
@@ -17,6 +17,10 @@ boundaries:
   - classify-failure-families
   - block-on-unresolved-systemic-failure
   - resolve-stability-gate
+  - auto-ingest-rehydrated-diagnostic-evidence
+  - select-relevance-scoped-regression-bindings
+  - bind-learning-basis-fingerprint-to-campaign-report
+  - keep-positive-strengthening-evidence-separate-from-failure-events
   must_not:
   - create-source-authority
   - silently-promote-wisdom
@@ -34,13 +38,17 @@ interfaces:
   - change-capsule
   - exact-source-repository
   - derived-failure-knowledge
+  - operational-diagnostic-evidence
+  - source-defined-campaign-policy
   produces:
   - campaign-report
   - derived-failure-knowledge
   - stability-gate-decision
   - assured-change-capsule-for-delivery
+  - applicable-regression-bindings
+  - learning-basis-fingerprint
 version:
-  component: 0.2.0
+  component: 0.4.0
   schema: 1
 assurance:
   known_failure_family_regressions:
@@ -48,3 +56,5 @@ assurance:
   - native-stderr-misclassification
   - identity-domain-conflation
   - powershell-target-language-parse-gap
+  catalog_ref: tooling/change/campaign-policy.yaml
+  invariant: KNOWN_APPLICABLE_FAILURE_FAMILY_WITH_MACHINE_ENFORCEABLE_PREVENTION_MUST_BE_BLOCKED_BEFORE_HANDOFF
