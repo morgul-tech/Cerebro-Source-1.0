@@ -921,6 +921,7 @@ roadmap:
       decision_refs:
         - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
         - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+        - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
       source_refs:
         - "standards/change-architecture.yaml"
         - "tooling/change/failure-record-schema.json"
@@ -942,6 +943,13 @@ roadmap:
         - "regression_ref_CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
         - "regression_ref_CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
         - "assurance_profile_ref_CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
+        - "development_history_ref_CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
+        - "development_history_is_Context_owned_HISTORY_not_new_engine"
+        - "history_candidates_are_automatic_but_Source_append_requires_authorized_safe_persistence_scope"
+        - "history_capture_must_not_add_normal_user_steps"
+        - "history_append_failure_must_not_invalidate_verified_primary_operation_success"
+        - "published_history_is_append_only_with_correction_and_retraction_records"
+        - "seed_first_pass_success_as_FOUNDATIONAL_STRENGTHENING_EVENT"
     -
       id: "PATCH-007"
       title: "operational_reliability_and_evidence_foundation"

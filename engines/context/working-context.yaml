@@ -3644,6 +3644,226 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
       sequence: 94
+    -
+      id: "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
+      type: "DECISION"
+      scope: "CEREBRO-DEVELOPMENT-HISTORY"
+      statement: "Cerebro Development History is locked as an ACTIVE Context-owned HISTORY state that preserves high-significance strengthening and learning events as append-only evidence, with MCP-controlled admission, relevance-driven retrieval, bounded automatic capture inside already-authorized operations, and natural explicit user control."
+      payload:
+        decision_status: "LOCKED"
+        effective_scope: "CEREBRO_DEVELOPMENT_AND_PATCH_LIFECYCLE"
+        implementation_authorized: false
+        maturity: "RESOLVED"
+        architecture_outcome: "REALIZE_EXISTING_HISTORY_KIND_WITHIN_CONTEXT_NO_NEW_ENGINE"
+        canonical_entity:
+          name: "CEREBRO DEVELOPMENT HISTORY"
+          kind: "HISTORY"
+          ledger_lifecycle: "ACTIVE"
+          event_lifecycle: "HISTORICAL"
+          event_content_authority: "EVIDENCE_ONLY"
+          definitional_authority: "CEREBRO_SOURCE_1_0"
+          semantic_steward: "context"
+          control_owner: "MCP"
+          physical_source_mutation_path: "CANONICAL_CHANGE_AND_DELIVERY"
+          planned_state_path: "engines/context/development-history.yaml"
+          planned_schema_path: "engines/context/development-history-schema.yaml"
+        ownership:
+          context:
+            role:
+              - "semantic_history_steward"
+              - "construct_and_retrieve_history_records"
+              - "maintain_append_only_history_state"
+            direct_unbounded_source_write: false
+          mcp:
+            role:
+              - "resolve_history_candidate_admission"
+              - "resolve_significance_when_not_explicitly_user_selected"
+              - "bind_history_relevance_to_current_control_basis"
+            implementation_note: "MCP_OWNERSHIP_DOES_NOT_REQUIRE_HEAVY_MANUAL_REASONING_FOR_UNAMBIGUOUS_CONTRACT_CASES"
+          candidate_producers:
+            - "USER"
+            - "CLOSURE_EVIDENCE"
+            - "CHANGE_LEARNING"
+            - "QUALITY_EVIDENCE"
+            - "PROJECT_STATE"
+            - "CONTEXT_EFFECT_FEEDBACK"
+          producer_direct_write_to_history: false
+          closure_boundary: "CLOSURE_REMAINS_READ_ONLY_AND_MAY_ONLY_EMIT_EVIDENCE_OR_HISTORY_CANDIDATE"
+        event_model:
+          event_classes:
+            - "STRENGTHENING_EVENT"
+            - "LEARNING_EVENT"
+          significance:
+            - "FOUNDATIONAL"
+            - "MAJOR"
+            - "NOTABLE"
+          record_roles:
+            - "EVENT"
+            - "CORRECTION"
+            - "RETRACTION"
+          fact_and_significance_separation: true
+          impact_fields:
+            - "introduced"
+            - "retired"
+            - "enabled"
+            - "learned"
+          relation_fields:
+            - "project_refs"
+            - "patch_refs"
+            - "evidence_refs"
+            - "learning_refs"
+            - "enabled_by_refs"
+            - "validates_refs"
+            - "corrects_ref"
+            - "retracts_ref"
+        admission:
+          automatic_threshold_applies_only_to_system_generated_candidates: true
+          automatic_event_requires_material_effect_on_one_or_more:
+            - "CAPABILITY"
+            - "RELIABILITY"
+            - "ARCHITECTURE"
+            - "CONTROL"
+            - "AUTONOMY"
+            - "DURABLE_LEARNING"
+          ordinary_patch_success_is_not_history_by_default: true
+          ordinary_failure_is_not_history_by_default: true
+          explicit_user_history_request_bypasses_automatic_significance_threshold: true
+          explicit_user_request_still_requires_provenance_and_fact_classification: true
+          user_selected_significance_is_preserved_with_provenance: true
+        automation:
+          candidate_creation: "AUTOMATIC_EVENT_DRIVEN"
+          candidate_state_before_admission: "DERIVED_EVIDENCE"
+          prohibited: "EVIDENCE_THRESHOLD_DIRECTLY_MUTATES_SOURCE"
+          no_extra_user_prompt_when:
+            - "history_capture_is_predeclared_inside_the_already_authorized_operation_contract"
+            - "candidate_is_unambiguous_under_locked_admission_rules"
+            - "source_is_safe_clean_and_aligned_for_history_persistence"
+          persistence_flow:
+            - "SIGNAL"
+            - "HISTORY_CANDIDATE"
+            - "MCP_RESOLUTION"
+            - "CONTEXT_EVENT_CONSTRUCTION"
+            - "SAFE_PERSISTENCE_GATE"
+            - "CANONICAL_CHANGE_DELIVERY_APPEND"
+          failed_or_unsafe_operation:
+            history_candidate_may_be_preserved_as_evidence: true
+            source_history_append: "DEFER"
+            user_action_required_by_default: false
+          history_append_failure_after_primary_operation_success:
+            invalidate_primary_operation_success: false
+            classification: "PRIMARY_SUCCESS_HISTORY_APPEND_DEFERRED"
+            retry_policy: "NEXT_SAFE_AUTHORIZED_PERSISTENCE_BOUNDARY"
+          primary_goal: "ZERO_ADDITIONAL_HUMAN_STEPS_FOR_NORMAL_HISTORY_CAPTURE"
+        user_control:
+          natural_commands_supported_semantically:
+            - "LEGG_DETTE_I_HISTORIKKEN"
+            - "MARKER_DETTE_SOM_MILEPAEL"
+            - "KORRIGER_HISTORIKKEN"
+            - "TREKK_TILBAKE_HISTORIKKINNLEGG"
+            - "VIS_CEREBROS_MILEPAELER"
+            - "VIS_HVA_CEREBRO_HAR_LAERT"
+          user_does_not_need_event_id_or_file_path_when_referent_is_resolvable: true
+          prepublication_candidate_can_be_revised_in_place: true
+          published_event_is_append_only: true
+          published_correction_creates_new_record: true
+          published_retraction_creates_new_record: true
+          silent_rewrite_of_published_history: false
+        retrieval_and_views:
+          default_retrieval: "RELEVANCE_DRIVEN_BOUNDED"
+          bulk_history_by_default: false
+          stored_reverse_indexes_required: false
+          derived_views:
+            - "TIMELINE"
+            - "MILESTONES"
+            - "LEARNING_EVENTS"
+            - "DEVELOPMENT_ARCS"
+            - "CAPABILITY_LINEAGE"
+            - "WHY_DID_CEREBRO_CHANGE"
+          causal_claim_rule: "RELATION_LABELS_MUST_NOT_OVERSTATE_CAUSALITY_BEYOND_EVIDENCE"
+        system_boundaries:
+          roadmap_role: "FORWARD_PLAN_NOT_HISTORY_STORE"
+          roadmap_reverse_history_refs_required_initially: false
+          history_points_to_patch_and_project_refs: true
+          working_context_role: "ACTIVE_STATE_AND_CURRENT_REFERENCES_NOT_FULL_HISTORY_STORE"
+          change_learning_role: "DETAILED_NEGATIVE_FAILURE_EVIDENCE_REMAINS_CANONICAL_LEARNING_EVIDENCE"
+          history_role: "HIGH_SIGNIFICANCE_SYSTEM_EVOLUTION"
+          duplicate_failure_database: false
+          new_engine: false
+          full_historical_backfill_required: false
+          backfill_policy: "LAZY_RELEVANCE_DRIVEN_WHEN_EVIDENCE_IS_ALREADY_SUFFICIENT"
+        delivery_learning:
+          failure_family: "DETERMINISTIC_PATCH_SCOPE_AMBIGUITY"
+          observed_variant: "GLOBAL_TEXT_ANCHOR_MATCHED_MULTIPLE_STRUCTURAL_LOCATIONS"
+          prevention:
+            - "MATERIAL_PATCH_ANCHORS_USE_STRUCTURAL_SCOPE_IDENTITY"
+            - "AMBIGUOUS_MATCH_COUNT_BLOCKS_BEFORE_WRITE"
+            - "EXACT_CURRENT_SOURCE_IS_PRIMARY_FIXTURE"
+          evidence_date: "2026-08-10"
+        implementation_binding:
+          target_patch: "PATCH-007.PRE-005"
+          does_not_reorder_current_PATCH_007_sequence: true
+          implementation_requires_explicit_authorization_at_target_patch: true
+          implementation_expected_changes:
+            - "engines/context/component.yaml"
+            - "engines/context/rules.yaml"
+            - "engines/context/development-history-schema.yaml"
+            - "engines/context/development-history.yaml"
+            - "relevant_validator_and_relevance_retrieval_bindings"
+        initial_seed_events:
+          - id: "HIST-LEARN-GENERATED-EXECUTION-ASSURANCE-GAP-20260810"
+            event_class: "LEARNING_EVENT"
+            significance: "MAJOR"
+            title: "Generated execution assurance gap identified"
+            fact: "A concentrated sequence of local delivery failures exposed a systemic gap between known Cerebro rules and the assurance actually consumed by generated local runners."
+            evidence_refs:
+              - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+              - "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
+              - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
+          - id: "HIST-STRENGTH-FIRST-PASS-PATCH-SUCCESS-20260810"
+            event_class: "STRENGTHENING_EVENT"
+            significance: "FOUNDATIONAL"
+            title: "First first-pass patch success in Cerebro history"
+            fact: "On 2026-08-10 CEREBRO_POWERSHELL_FAMILY became the first patch in Cerebro history to complete from the user's first execution directly to verified SUCCESS with zero errors, zero retries and zero troubleshooting iterations."
+            verification_state: "USER_CONFIRMED_AND_OPERATIONALLY_VERIFIED"
+            occurred_at_local: "2026-08-10T13:55:08+02:00"
+            baseline_commit: "c47c8c0e787e7b66bb361852c86af38ea984c16e"
+            resulting_commit: "91094a7aba9984c251e0b0fdeb92421548c7ac97"
+            impact:
+              introduced:
+                - "FIRST_CONFIRMED_FIRST_PASS_RUN_SUCCESS"
+              retired: []
+              enabled:
+                - "EMPIRICAL_CONFIDENCE_IN_ASSURANCE_PROFILE_DIRECTION"
+              learned:
+                - "FAILURE_FAMILY_INHERITANCE_AND_PREHANDOFF_ASSURANCE_CAN_IMPROVE_USER_OBSERVED_RELIABILITY"
+        invariants:
+          - "HISTORY_IS_EVIDENCE_NOT_POLICY_AUTHORITY"
+          - "CONTEXT_STEWARDS_HISTORY_MCP_CONTROLS_ADMISSION"
+          - "NO_PRODUCER_WRITES_HISTORY_DIRECTLY"
+          - "NO_EVIDENCE_THRESHOLD_DIRECT_SOURCE_MUTATION"
+          - "AUTHORIZED_HISTORY_CAPTURE_ADDS_NO_NORMAL_USER_STEP"
+          - "HISTORY_FAILURE_DOES_NOT_INVALIDATE_VERIFIED_PRIMARY_OPERATION_SUCCESS"
+          - "PUBLISHED_HISTORY_IS_APPEND_ONLY"
+          - "USER_CAN_ADD_CORRECT_RECLASSIFY_OR_RETRACT_THROUGH_NATURAL_COMMANDS"
+          - "FACT_AND_SIGNIFICANCE_REMAIN_DISTINCT"
+          - "ROADMAP_IS_FUTURE_CONTEXT_IS_NOW_HISTORY_IS_PAST"
+          - "DETAILED_FAILURE_EVIDENCE_IS_REFERENCED_NOT_DUPLICATED"
+      provenance:
+        introduced_by_ref: "USER-REFINE-AND-LOCK-DEVELOPMENT-HISTORY-2026-08-10"
+        basis_refs:
+          - "CEREBRO-SYSTEM-METAMODEL-001"
+          - "engines/context/component.yaml"
+          - "engines/context/rules.yaml"
+          - "tooling/closure/component.yaml"
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
+      sequence: 95
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -3672,6 +3892,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
       - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
       - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
+      - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -3734,7 +3955,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 95
+  next_sequence: 96
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
