@@ -74,9 +74,15 @@ known_language_failure_loop_prevention:
     - exact-context-application-preflight-passed-when-applicable
     - unified-diff-non-eof-change-hunks-have-trailing-context
     - declared-scope-check-passed
+    - semantic-structural-placement-check-passed-for-structured-reference-insertions
+    - structured-reference-cardinality-checks-use-line-or-scope-anchored-matching
+    - final-structured-document-validity-check-passed-after-installed-state
     - reverse-or-rollback-preflight-passed-when-applicable
   distinctions:
     - patch-format-parse-is-not-patch-applicability
+    - token-presence-is-not-structural-placement-proof
+    - substring-count-is-not-structural-cardinality-proof
+    - nested-indentation-does-not-satisfy-parent-scope-cardinality
     - known-language-syntax-errors-should-be-machine-eliminated-before-handoff
   correction_strategy:
     preferred: MINIMUM_DELTA_REUSE_REVERIFY_RESEAL
