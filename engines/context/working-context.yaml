@@ -3117,6 +3117,270 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-STANDARD-DELIVERY-POST-PUBLISH-VERIFY-NEXT-SESSION-001"
       sequence: 86
+    -
+      id: "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      type: "DECISION"
+      scope: "PATCH-007-OPERATIONAL-RELIABILITY-EVIDENCE-AND-ADAPTIVE-AUTONOMY-DEPENDENCY"
+      statement: "PATCH-007 is semantically locked as the operational reliability and evidence prerequisite for Adaptive Autonomy, preserving one coherent architecture while restructuring implementation into bounded verified subpatches that converge existing Cerebro capabilities."
+      payload:
+        decision_status: "LOCKED"
+        implementation_authorized: false
+        architecture_outcome: "KEEP_OBJECTIVE_RESTRUCTURE_IMPLEMENTATION_CONVERGE_EXISTING_CAPABILITIES"
+        maturity: "RESOLVED"
+        evidence_state: "SOURCE_XREF_PLUS_REAL_FAILURE_EVIDENCE"
+        readiness: "READY_TO_LOCK"
+        hard_blockers: []
+        umbrella_patch: "PATCH-007"
+        subpatch_sequence:
+          - "PATCH-007.PRE-001"
+          - "PATCH-007.PRE-002"
+          - "PATCH-007.PRE-003"
+          - "PATCH-007.PRE-004"
+          - "PATCH-007.PRE-005"
+          - "PATCH-007"
+        adaptive_autonomy_sequence_after:
+          - "PATCH-AA-000"
+          - "PATCH-AA-001"
+          - "PATCH-AA-002"
+          - "PATCH-AA-003"
+          - "PATCH-AA-004"
+        dependency_rule: "PATCH-007_VERIFIED_BEFORE_PATCH-AA-000"
+        architecture:
+          new_top_level_engine: false
+          control_owner: "MCP"
+          diagnostic_role: "DERIVED_TOOLING_AND_EVIDENCE_NOT_CONTROL_AUTHORITY"
+          host_role: "STABLE_ENTRYPOINT_AND_IMMUTABLE_TOOLING_DISPATCH"
+          builder_role: "CANONICAL_HANDOFF_GENERATION_AND_ASSURANCE"
+          delivery_role: "BOUNDED_WORKING_SOURCE_TRANSACTION"
+          context_role: "FAILURE_EVIDENCE_RETRIEVAL_AND_PERSISTED_CONTINUATION_STATE"
+          quality_role: "READINESS_AND_HANDOFF_ASSURANCE"
+        subpatch_contracts:
+          PATCH-007.PRE-001:
+            title: "operational_evidence_contract"
+            objective: "define bounded operational evidence schema, probe semantics, freshness, privacy, partial evidence and evidence-sufficiency rules"
+          PATCH-007.PRE-002:
+            title: "standard_handoff_convergence"
+            objective: "converge canonical STANDARD ZIP-plus-launcher handoff with cpatch bootstrap, exact pair identity, process-scoped PowerShell execution and RunToPass without parallel bootstrap logic"
+          PATCH-007.PRE-003:
+            title: "operation_supervision_and_observability"
+            objective: "provide one reusable supervised process path with live stage visibility, independent heartbeat, operation journal and interruptibility-aware stall handling"
+          PATCH-007.PRE-004:
+            title: "diagnostic_capsule"
+            objective: "provide progressive read-only evidence acquisition and deterministic state classification when existing evidence is insufficient"
+          PATCH-007.PRE-005:
+            title: "failure_learning_and_regression_binding"
+            objective: "bind applicable failure knowledge and executable regressions into later patch assurance so resolved failures improve future prevention"
+          PATCH-007:
+            title: "operational_reliability_and_evidence_foundation"
+            objective: "integrate and verify the prerequisite capability before Adaptive Autonomy implementation begins"
+        core_invariants:
+          - "NO_USER_HANDOFF_WITHOUT_MACHINE_VERIFIED_HANDOFF_ASSURANCE"
+          - "OBSERVE_BEFORE_RECOVERY_MUTATION_WHEN_MATERIAL_STATE_IS_UNKNOWN"
+          - "USER_IS_NOT_DEFAULT_DIAGNOSTIC_CONTROLLER"
+          - "RESOLVE_EXISTING_CANONICAL_CAPABILITY_BEFORE_REPLACEMENT_DESIGN"
+          - "STANDARD_DELIVERY_MUST_NOT_REQUIRE_PER_PATCH_PERMANENT_USER_ENVIRONMENT_CHANGES"
+          - "PROCESS_SCOPED_BOOTSTRAP_MAY_HANDLE_NORMAL_EXECUTION_POLICY_VARIATION_WITHOUT_PERSISTENT_POLICY_MUTATION"
+          - "ADMINISTRATIVELY_ENFORCED_SECURITY_POLICY_IS_NOT_BYPASSED"
+          - "RUNNER_HEARTBEAT_MUST_NOT_DEPEND_ON_CHILD_STDOUT"
+          - "STALL_DETECTION_IS_DISTINCT_FROM_FORCE_TERMINATION"
+          - "INTERRUPTIBILITY_IS_STAGE_SPECIFIC"
+          - "DIAGNOSTIC_EVIDENCE_IS_DERIVED_AND_NON_AUTHORITATIVE"
+          - "FAILURE_LEARNING_MUST_BECOME_EXECUTABLE_ASSURANCE_WHEN_MACHINE_ENFORCEABLE"
+          - "LOCK_DOES_NOT_AUTHORIZE_IMPLEMENTATION"
+        handoff_assurance:
+          required_before_user_handoff: true
+          required_checks:
+            - "STANDARD_SHAPE"
+            - "LAUNCHER_AND_BUNDLE_IDENTITY"
+            - "CPATCH_COMPATIBILITY"
+            - "POWERSHELL_PARSE"
+            - "POWERSHELL_AUTOMATIC_VARIABLE_COLLISION"
+            - "CWD_INDEPENDENCE"
+            - "LINE_ENDING_REPRESENTATION_INDEPENDENCE"
+            - "RUN_TO_PASS_BINDING"
+            - "HEARTBEAT_CONTRACT"
+            - "RECOVERY_CONTRACT"
+          ready_state: "HANDOFF_READY"
+        diagnostic_model:
+          default_mode: "PROGRESSIVE"
+          stages:
+            - "CORE"
+            - "TARGETED_EXPANSION"
+            - "DEEP"
+          canonical_full_artifact: "D:\\Cerebro\\Run\\diagnostics\\<capsule-id>\\DIAGNOSTIC_CAPSULE.json"
+          transport_envelope: "BOUNDED_REDACTED_MACHINE_RELEVANT"
+          probe_failure_policy: "PARTIAL_EVIDENCE_MAY_REMAIN_USEFUL"
+          classifications_include:
+            - "ALIGNED_CLEAN"
+            - "MUTATION_NOT_STARTED"
+            - "EXACT_PAYLOAD_APPLIED_UNVALIDATED"
+            - "VALIDATED_NOT_PUBLISHED"
+            - "LOCAL_COMMIT_NOT_PUSHED"
+            - "PUBLISHED_REMOTE_UNVERIFIED"
+            - "MIXED_PARTIAL_TRANSACTION"
+            - "RUNNER_ACTIVE_HEALTHY"
+            - "RUNNER_STALLED_SUSPECTED"
+            - "ORPHANED_RUN"
+            - "UNKNOWN_CONCURRENT_STATE"
+            - "VERIFIED_COMPLETE"
+        failure_learning:
+          recurring_user_correction_signal: "POSSIBLE_RECURRING_SYSTEMIC_FAILURE"
+          root_producer_hypothesis_from_current_incidents: "CANONICAL_DELIVERY_PIPELINE_BYPASSED_OR_NOT_CLOSED_ACROSS_COMPONENTS"
+          first_regression_families:
+            - "POWERSHELL_AUTOMATIC_VARIABLE_COLLISION"
+            - "PATCH_ANCHOR_LINE_ENDING_REPRESENTATION"
+          inheritance_rule: "EVERY_LATER_MATERIAL_PATCH_INHERITS_APPLICABLE_FAILURE_KNOWLEDGE_AND_REGRESSIONS"
+          stale_assurance_when_relevant_failure_basis_changes: true
+      provenance:
+        introduced_by_ref: "USER-LOCK-REFINED-PATCH-007-2026-08-10"
+        basis_refs:
+          - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+          - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+          - "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
+          - "standards/control-architecture.yaml"
+          - "standards/change-architecture.yaml"
+          - "standards/change-delivery.yaml"
+          - "standards/development/adaptive-quality-workform.yaml"
+          - "standards/development/architectural-regrounding.yaml"
+          - "tooling/builder/builder.yaml"
+          - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
+      relations:
+        supersedes_ref: "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+          - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+      sequence: 87
+    -
+      id: "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+      type: "WISDOM_RECORD"
+      scope: "STANDARD-DELIVERY-OBSERVABILITY-DIAGNOSTICS-AND-CROSS-PATCH-LEARNING"
+      statement: "The 2026-08-10 AA-lock troubleshooting sequence showed that existing Source rules and capabilities can be correct yet fail to govern the actual handoff path; future prevention should close canonical capability consumption and make failures observable and inheritable rather than add duplicate rules or transfer diagnostics to the user."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT"
+        implementation_status: "LOCKED_INPUT_TO_PATCH-007"
+        assessment:
+          incidents:
+            - id: "AA_LOCK_SILENT_RUNNER"
+              failure: "runner produced no stage or heartbeat output and appeared hung"
+              prevention: "shared operation supervision with independent heartbeat"
+            - id: "AA_LOCK_EXECUTION_POLICY"
+              failure: "direct downloaded ps1 invocation was blocked by local ExecutionPolicy"
+              prevention: "converge STANDARD bundle handoff with existing cpatch process-scoped Bypass capability rather than permanent user policy changes"
+            - id: "AA_LOCK_RECOVERY_ARGS_COLLISION"
+              failure: "PowerShell parameter Args collided with automatic variable semantics and produced an empty argument array"
+              prevention: "shared native-process supervisor plus automatic-variable collision regression before handoff"
+            - id: "CPATCH_STANDARD_BUNDLE_GAP"
+              failure: "existing cpatch stages the launcher to Run while current STANDARD requires an adjacent verified ZIP bundle"
+              prevention: "extend the existing canonical capability to stage and verify the launcher-bundle pair as one delivery unit"
+            - id: "PATCH007_LOCK_NEWLINE_SENSITIVE_ANCHOR"
+              failure: "deterministic payload used LF-sensitive multi-line anchors against a Windows checkout that can use CRLF representation"
+              prevention: "normalize text to a canonical in-memory newline representation for matching and restore the original physical newline representation before write; regression-test both LF and CRLF fixtures"
+          systemic_pattern: "RULE_OR_CAPABILITY_PRESENT_BUT_NOT_CONSUMED_OR_NOT_CLOSED_ACROSS_THE_ACTUAL_EXECUTION_PATH"
+          user_cost:
+            - "repeated_corrections"
+            - "manual_troubleshooting"
+            - "avoidable_terminal_steps"
+            - "uncertainty_about_local_state"
+          preferred_prevention_order:
+            - "resolve_existing_capabilities"
+            - "close_cross_component_contracts"
+            - "make_compliance_machine_verifiable"
+            - "instrument_operations"
+            - "collect_missing_evidence_read_only"
+            - "promote_reusable_failure_learning_to_regression"
+          principle: "A_RESOLVED_RECURRING_FAILURE_THAT_DOES_NOT_IMPROVE_FUTURE_PREVENTION_IS_NOT_FULLY_RESOLVED"
+        confidence: "HIGH"
+        relevance:
+          domains:
+            - "STANDARD_DELIVERY"
+            - "MCP_CONTROL"
+            - "BUILDER"
+            - "DELIVERY"
+            - "OPERATIONAL_EVIDENCE"
+            - "FAILURE_LEARNING"
+      provenance:
+        introduced_by_ref: "USER-TROUBLESHOOTING-LEARNING-2026-08-10"
+        basis_refs:
+          - "standards/change-architecture.yaml"
+          - "standards/change-delivery.yaml"
+          - "standards/control-architecture.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+          - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
+      sequence: 88
+    -
+      id: "CTX-BASIS-PATCH-007-LOCKED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-007-THEN-ADAPTIVE-AUTONOMY"
+      statement: "The current Cerebro development basis is the locked PATCH-007 operational reliability and evidence prerequisite followed by the refined Adaptive Autonomy sequence; conversation history is not required and implementation remains separately unauthorized."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        confirmation_basis: "USER_APPROVED_AFTER_DEEP_CRITIQUE_AND_SOURCE_XREF"
+        architecture_status: "LOCKED"
+        implementation_authorized: false
+        current_phase: "PHASE-2"
+        current_patch: "PATCH-007.PRE-001"
+        patch_sequence:
+          - "PATCH-007.PRE-001"
+          - "PATCH-007.PRE-002"
+          - "PATCH-007.PRE-003"
+          - "PATCH-007.PRE-004"
+          - "PATCH-007.PRE-005"
+          - "PATCH-007"
+          - "PATCH-AA-000"
+          - "PATCH-AA-001"
+          - "PATCH-AA-002"
+          - "PATCH-AA-003"
+          - "PATCH-AA-004"
+        governing_decision_ref: "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+        failure_learning_ref: "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+        adaptive_autonomy_refined_semantics:
+          persisted_work_reentry_lifecycle:
+            - "PERSISTED"
+            - "RECONSTRUCTED"
+            - "REVALIDATED"
+            - "CONVERGED"
+            - "IMPLEMENTATION_READY"
+            - "AUTHORIZED"
+          invariant: "PERSISTED_NE_REVALIDATED_NE_IMPLEMENTATION_READY_NE_AUTHORIZED"
+          mcp_native_reentry_required: true
+          short_human_command_semantic_losslessness_required: true
+          reduce_avoidable_human_steps: true
+        exact_next_action: "WAIT_FOR_EXPLICIT_IMPLEMENTATION_AUTHORIZATION_THEN_IMPLEMENT_PATCH-007.PRE-001"
+        required_loaded_refs:
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+          - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+          - "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
+          - "standards/control-architecture.yaml"
+          - "standards/change-architecture.yaml"
+          - "standards/change-delivery.yaml"
+          - "standards/development/adaptive-quality-workform.yaml"
+        known_usage_observation:
+          remaining_percent: 35
+          evidence_origin: "EXPLICIT_USER_REPORT_EARLIER_2026-08-10"
+          current_freshness: "STALE_FOR_NEW_PRE_MEASUREMENT"
+          permanent_constant: false
+          rule: "DO_NOT_INFER_CURRENT_PERCENT_FROM_THIS_HISTORICAL_OBSERVATION"
+        reconstructability:
+          conversation_history_required: false
+          roadmap_and_context_are_primary: true
+          short_user_command_is_trigger_only: true
+      provenance:
+        introduced_by_ref: "CEREBRO-PERSIST-PATCH-007-LOCK-20260810-001"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+      sequence: 89
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -3143,7 +3407,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-P2-PRE003-POST001-CORRECT-MANIFEST-CONTRACT"
       - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
-      - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
+      - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -3157,7 +3421,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-005-POST-001-CLOSURE-001"
       - "CTX-BASIS-PATCH-005-POST-001-VERIFIED-001"
       - "CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001"
-      - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+      - "CTX-BASIS-PATCH-007-LOCKED-001"
       - "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
     override_refs: []
@@ -3200,8 +3464,9 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-INCREMENTAL-ARTIFACT-REVISION-001"
       - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
       - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+      - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 87
+  next_sequence: 90
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

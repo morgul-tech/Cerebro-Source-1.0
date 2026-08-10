@@ -6,7 +6,7 @@ roadmap:
     contract_owner: "project-engine"
     state_scope: "working-source"
   status: "ACTIVE"
-  objective: "Preserve the semantically locked Adaptive Autonomy program and implement PATCH-AA-000 through PATCH-AA-004 only after explicit implementation authorization, using dependency-aware control and verified persistent state."
+  objective: "Implement the locked PATCH-007 operational reliability and evidence prerequisite before the refined Adaptive Autonomy sequence, using explicit implementation authorization, dependency-aware control, machine-verified handoff assurance and verified persistent state."
   scope:
     included:
       - "project-roadmap-contract"
@@ -15,6 +15,7 @@ roadmap:
       - "runtime-0.1-scope-and-minimum-contracts"
       - "runtime-0.1-implementation"
       - "idea-object-pipeline-after-runtime-baseline"
+      - "operational-reliability-and-evidence-foundation"
       - "adaptive-autonomy-control-policy"
       - "semantic-lock-and-canonical-identity-separation"
       - "operational-resource-and-usage-observability"
@@ -88,8 +89,10 @@ roadmap:
         - "PHASE-1"
       entry_criteria:
         - "PATCH-006_VERIFIED"
+        - "PATCH-007_REFINED_PLAN_LOCKED"
         - "ADAPTIVE_AUTONOMY_PLAN_LOCKED"
       exit_criteria:
+        - "PATCH-007_VERIFIED"
         - "PATCH-AA-000_VERIFIED"
         - "PATCH-AA-001_VERIFIED"
         - "PATCH-AA-002_VERIFIED"
@@ -103,6 +106,7 @@ roadmap:
           title: "adaptive_autonomy_foundation_and_activation"
           status: "ACTIVE"
           acceptance:
+            - "operational_reliability_and_evidence_foundation_verified"
             - "semantic_lock_identity_boundary_implemented"
             - "mcp_native_adaptive_autonomy_foundation_verified"
             - "usage_and_operational_observability_verified"
@@ -812,13 +816,140 @@ roadmap:
         - "Knowledge_is_evidence_only_and_has_no_direct_control_tier"
         - "Final_Learning_Consolidation_approved_only_the_bounded_evidence_scope"
     -
-      id: "PATCH-AA-000"
-      title: "semantic_lock_identity_boundary_and_active_source_cleanup"
+      id: "PATCH-007.PRE-001"
+      title: "operational_evidence_contract"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
       status: "ACTIVE"
       dependency_refs:
         - "PATCH-006"
+      decision_refs:
+        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      source_refs:
+        - "standards/control-architecture.yaml"
+        - "standards/change-architecture.yaml"
+        - "standards/change-delivery.yaml"
+      implementation_constraints:
+        - "no_new_top_level_engine"
+        - "evidence_is_derived_and_non_authoritative"
+        - "progressive_diagnostics_not_collect_everything_by_default"
+        - "privacy_and_redaction_are_part_of_the_contract"
+        - "implementation_requires_explicit_user_authorization"
+    -
+      id: "PATCH-007.PRE-002"
+      title: "standard_handoff_convergence"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-007.PRE-001"
+      decision_refs:
+        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      source_refs:
+        - "standards/change-delivery.yaml"
+        - "tooling/builder/builder.yaml"
+        - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
+        - "tooling/delivery/component.yaml"
+      implementation_constraints:
+        - "extend_existing_cpatch_capability_do_not_create_parallel_bootstrap"
+        - "stage_verified_launcher_and_bundle_as_one_delivery_unit"
+        - "process_scoped_execution_policy_only"
+        - "no_permanent_user_execution_policy_change"
+        - "no_current_working_directory_dependency"
+        - "no_user_handoff_without_machine_verified_handoff_assurance"
+    -
+      id: "PATCH-007.PRE-003"
+      title: "operation_supervision_and_observability"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-007.PRE-002"
+      decision_refs:
+        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      source_refs:
+        - "standards/control-architecture.yaml"
+        - "standards/change-architecture.yaml"
+        - "tooling/host/component.yaml"
+      implementation_constraints:
+        - "one_reusable_native_process_supervision_path"
+        - "heartbeat_independent_of_child_stdout"
+        - "operation_journal_from_start"
+        - "interruptibility_is_stage_specific"
+        - "stall_detection_does_not_imply_force_kill"
+    -
+      id: "PATCH-007.PRE-004"
+      title: "diagnostic_capsule"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-007.PRE-003"
+      decision_refs:
+        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      source_refs:
+        - "standards/control-architecture.yaml"
+        - "standards/session-handoff.yaml"
+        - "standards/system-metamodel.yaml"
+      implementation_constraints:
+        - "read_only_against_working_source"
+        - "progressive_core_targeted_deep_acquisition"
+        - "probe_failures_preserve_partial_evidence"
+        - "diagnostics_classify_but_do_not_own_recovery_policy"
+        - "bounded_redacted_transport_envelope"
+        - "minimal_break_glass_read_only_fallback"
+    -
+      id: "PATCH-007.PRE-005"
+      title: "failure_learning_and_regression_binding"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-007.PRE-004"
+      decision_refs:
+        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+        - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+      source_refs:
+        - "standards/change-architecture.yaml"
+        - "tooling/change/failure-record-schema.json"
+        - "standards/development/relevance-retrieval.yaml"
+      implementation_constraints:
+        - "reuse_existing_failure_learning_architecture"
+        - "machine_enforceable_learning_becomes_executable_assurance"
+        - "later_patches_inherit_applicable_failure_families_and_regressions"
+        - "relevant_learning_basis_change_invalidates_candidate_assurance"
+        - "first_regression_family_POWERSHELL_AUTOMATIC_VARIABLE_COLLISION"
+    -
+      id: "PATCH-007"
+      title: "operational_reliability_and_evidence_foundation"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-007.PRE-001"
+        - "PATCH-007.PRE-002"
+        - "PATCH-007.PRE-003"
+        - "PATCH-007.PRE-004"
+        - "PATCH-007.PRE-005"
+      decision_refs:
+        - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      source_refs:
+        - "standards/control-architecture.yaml"
+        - "standards/change-architecture.yaml"
+        - "standards/change-delivery.yaml"
+      implementation_constraints:
+        - "integration_and_closure_patch_not_new_monolithic_subsystem"
+        - "PATCH-007_VERIFIED_before_PATCH-AA-000"
+        - "failure_reintroduction_must_be_blocked_before_handoff"
+        - "standard_RunToPass_must_complete_through_remote_equality"
+    -
+      id: "PATCH-AA-000"
+      title: "semantic_lock_identity_boundary_and_active_source_cleanup"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      status: "PLANNED"
+      dependency_refs:
+        - "PATCH-007"
       decision_refs:
         - "CTX-DEC-AA-ARCHITECTURE-LOCK-001"
         - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
@@ -946,18 +1077,18 @@ roadmap:
         - "future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work"
   execution:
     current:
-      id: "EXEC-AA-000-IMPLEMENTATION-AUTHORIZATION"
+      id: "EXEC-PATCH-007-PRE-001-IMPLEMENTATION-AUTHORIZATION"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      patch_ref: "PATCH-AA-000"
-      canonical_command: "await explicit user instruction to implement PATCH-AA-000; semantic LOCK alone does not authorize implementation"
+      patch_ref: "PATCH-007.PRE-001"
+      canonical_command: "await explicit implementation authorization for PATCH-007.PRE-001 from the locked refined basis; LOCK alone does not authorize implementation"
       status: "ACTIVE"
     next:
-      id: "EXEC-AA-001-AFTER-AA000"
+      id: "EXEC-PATCH-007-PRE-002-AFTER-PRE001"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      patch_ref: "PATCH-AA-001"
-      canonical_command: "after PATCH-AA-000 is VERIFIED, continue the locked dependency sequence under fresh MCP control"
+      patch_ref: "PATCH-007.PRE-002"
+      canonical_command: "after PATCH-007.PRE-001 is VERIFIED, continue the locked prerequisite sequence under fresh MCP control"
       status: "PLANNED"
   blockers: []
   context_refs:
@@ -1154,7 +1285,7 @@ roadmap:
     -
       owner: "context-engine"
       object_type: "CURRENT_BASIS"
-      object_ref: "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
+      object_ref: "CTX-BASIS-PATCH-007-LOCKED-001"
       requirement: "REQUIRED"
     -
       owner: "context-engine"
