@@ -3487,6 +3487,163 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
       sequence: 91
+    -
+      id: "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
+      type: "WISDOM_RECORD"
+      scope: "GENERATED-LOCAL-EXECUTION-FIRST-PASS-RELIABILITY"
+      statement: "Repeated local runner failures are best treated as manifestations of incomplete generated-execution assurance rather than isolated script defects; future delivery shall convert applicable failure families into a compact machine-executable assurance profile before user handoff."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT_SYSTEMIC_FAMILY"
+        implementation_status: "LOCKED_INPUT_TO_PATCH-007"
+        systemic_failure_family: "GENERATED_LOCAL_EXECUTION_ASSURANCE_INCOMPLETE"
+        objective: "MAXIMIZE_FIRST_PASS_SUCCESS_WITHOUT_INCREASING_USER_STEPS"
+        assurance_domains:
+          POWERSHELL_RUNTIME_SEMANTICS:
+            examples:
+              - "automatic_variable_collision"
+              - "case_insensitive_name_collision"
+              - "command_shadowing"
+              - "argument_and_array_binding_shape"
+          NATIVE_PROCESS_SEMANTICS:
+            examples:
+              - "exit_status_unavailable"
+              - "stderr_not_equal_failure"
+              - "receipt_exit_poststate_disagreement"
+              - "native_executable_resolution"
+          TRANSPORT_AND_REPRESENTATION:
+            examples:
+              - "LF_CRLF_representation"
+              - "launcher_bundle_identity"
+              - "path_quoting_and_spaces"
+              - "serialization_shape"
+          EXECUTION_SURFACE_AND_ENVIRONMENT:
+            examples:
+              - "ExecutionPolicy"
+              - "PowerShell_profile_interference"
+              - "current_working_directory_dependency"
+              - "downloaded_file_MOTW"
+          TRANSACTION_AND_POSTSTATE:
+            examples:
+              - "partial_mutation"
+              - "idempotent_rerun"
+              - "local_commit_not_pushed"
+              - "remote_equality_verification"
+        simplification:
+          new_engine_required: false
+          preferred_mechanism: "ONE_APPLICABLE_ASSURANCE_PROFILE_PER_DELIVERY_CANDIDATE"
+          rule_count_growth_strategy: "FAMILIES_FEED_EXISTING_BUILDER_VALIDATOR_AND_SCENARIO_GATES_INSTEAD_OF_PARALLEL_RULES"
+          user_steps_added: 0
+        first_pass_learning_loop:
+          - "retrieve_applicable_failure_families"
+          - "materialize_minimal_assurance_profile"
+          - "run_static_and_runtime_fixtures"
+          - "block_handoff_on_regression"
+          - "execute_user_run"
+          - "capture_receipt_and_failure_evidence"
+          - "promote_reusable_new_failure_to_family_or_fixture"
+        derived_metrics:
+          - "FIRST_PASS_RUN_SUCCESS"
+          - "USER_RETRY_COUNT"
+          - "FAILURE_FAMILY_RECURRENCE"
+          - "HANDOFF_BLOCKED_BEFORE_USER"
+        metric_authority: "DERIVED_EVIDENCE_NOT_SOURCE_AUTHORITY"
+        principle: "FAILURE_KNOWLEDGE_IS_MOST_VALUABLE_WHEN_IT_PREVENTS_THE_USER_FROM_SEEING_THE_FAILURE"
+      provenance:
+        introduced_by_ref: "USER-SCOPE-REFINEMENT-2026-08-10"
+        basis_refs:
+          - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+          - "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
+          - "CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+      sequence: 92
+    -
+      id: "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
+      type: "WISDOM_RECORD"
+      scope: "POWERSHELL-RUNTIME-SEMANTIC-ASSURANCE"
+      statement: "Generated PowerShell must be assured against PowerShell's actual case-insensitive command resolution, automatic variables, parameter binding, collection shape and runtime semantics before handoff; knowing these language rules is insufficient unless they are executable gates."
+      payload:
+        maturity: "CONFIRMED_MULTI_INCIDENT_FAILURE_FAMILY"
+        implementation_status: "LOCKED_INPUT_TO_PATCH-007.PRE-003_AND_PRE-005"
+        parent_failure_family: "GENERATED_LOCAL_EXECUTION_ASSURANCE_INCOMPLETE"
+        failure_family: "POWERSHELL_RUNTIME_SEMANTIC_COLLISION"
+        known_variants:
+          - "POWERSHELL_AUTOMATIC_VARIABLE_COLLISION"
+          - "POWERSHELL_COMMAND_SHADOWING_NATIVE_EXECUTABLE"
+          - "POWERSHELL_CASE_INSENSITIVE_NAME_COLLISION"
+          - "POWERSHELL_ARGUMENT_BINDING_SEMANTIC_MISMATCH"
+          - "POWERSHELL_COLLECTION_SHAPE_SEMANTIC_MISMATCH"
+        required_assurance:
+          static:
+            - "automatic_and_reserved_variable_collision_scan"
+            - "case_insensitive_function_alias_command_collision_scan"
+            - "native_commands_resolve_as_Application"
+            - "parser_zero_errors"
+          runtime_fixtures:
+            - "arguments_empty_single_multiple_and_with_spaces"
+            - "empty_and_single_item_arrays_preserve_shape"
+            - "native_command_shadowing_fixture"
+            - "exit_0_nonzero_and_unavailable"
+            - "stdout_and_stderr_independence"
+        prevention_strategy: "SHARED_VERIFIED_ADAPTERS_OVER_REPEATED_GENERATED_WRAPPER_LOGIC"
+        confidence: "HIGH"
+      provenance:
+        introduced_by_ref: "USER-REGISTER-POWERSHELL-FAMILY-2026-08-10"
+        basis_refs:
+          - "CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
+          - "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
+      sequence: 93
+    -
+      id: "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
+      type: "DECISION"
+      scope: "PATCH-DELIVERY-ASSURANCE-PROFILE"
+      statement: "PATCH-007 shall refine existing Builder, Validator, Quality and failure-learning contracts so each generated local delivery candidate receives one relevance-scoped assurance profile assembled from applicable failure families; no new top-level component is introduced."
+      payload:
+        decision_status: "LOCKED"
+        implementation_authorized: false
+        applies_to: "PATCH-007"
+        profile_authority: "DERIVED_FROM_ACTIVE_SOURCE_AND_FAILURE_EVIDENCE"
+        one_profile_per_candidate: true
+        relevance_scoped: true
+        mandatory_before_handoff: true
+        profile_dimensions:
+          - "LANGUAGE_RUNTIME"
+          - "NATIVE_PROCESS"
+          - "TRANSPORT_REPRESENTATION"
+          - "EXECUTION_SURFACE_ENVIRONMENT"
+          - "TRANSACTION_POSTSTATE"
+        optimization:
+          test_everything_always: false
+          select_only_applicable_fixtures: true
+          reuse_shared_verified_adapters: true
+          prevent_duplicate_wrapper_logic: true
+          user_visible_complexity: "MINIMIZED"
+        success_target:
+          primary: "FIRST_PASS_RUN_SUCCESS"
+          secondary:
+            - "ZERO_AVOIDABLE_USER_TROUBLESHOOTING"
+            - "ZERO_REPEATED_KNOWN_FAILURE_FAMILY_AT_HANDOFF"
+        invariant: "KNOWN_APPLICABLE_FAILURE_FAMILY_WITH_MACHINE_ENFORCEABLE_PREVENTION_MUST_BE_BLOCKED_BEFORE_USER_HANDOFF"
+      provenance:
+        introduced_by_ref: "USER-SCOPE-REFINEMENT-2026-08-10"
+        basis_refs:
+          - "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
+          - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      sequence: 94
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -3514,6 +3671,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-P2-RUNTIME-0-1-CONTRACTS-LOCKED"
       - "CTX-DEC-P4-IDEA-OBJECT-PIPELINE-MINIMUM-SCOPE-LOCKED-001"
       - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -3573,8 +3731,10 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
       - "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
       - "CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
+      - "CTX-WISDOM-GENERATED-LOCAL-EXECUTION-ASSURANCE-INCOMPLETE-001"
+      - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 92
+  next_sequence: 95
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
