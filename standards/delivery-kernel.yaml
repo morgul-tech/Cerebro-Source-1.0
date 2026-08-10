@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.0"
+  version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -19,6 +19,7 @@ delivery_kernel:
     bundle_zip: exactly-one
     launcher_powershell: exactly-one
     copyable_command: exactly-one
+    canonical_launcher_template: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
     launcher_role:
     - locate-bundle
     - verify-bundle-integrity
@@ -80,6 +81,56 @@ delivery_kernel:
   failure_behavior:
     before_canonical_sync: bounded-rollback
     during_or_after_canonical_sync: preserve-state-and-evidence-no-destructive-recovery
+
+  failure_handoff:
+    status: REQUIRED
+    source_contract_binding: standards/change-delivery.yaml
+    principle: USER_MUST_NOT_MANUALLY_TRANSPORT_TERMINAL_ERROR_DUMPS
+    diagnostic_store:
+      canonical_root: D:\Cerebro\Run\diagnostics
+      format: JSON
+      timestamped_capsule_required: true
+    user_handoff:
+      stable_filename: CEREBRO_PATCH_FAIL.json
+      placement: launcher-directory
+      generated_automatically_on_failure: true
+      manual_terminal_copy_required: false
+    capsule_minimum_fields:
+    - patch_id
+    - result
+    - failed_phase
+    - reached_stage
+    - failure_family
+    - error
+    - child_exit_code
+    - child_stdout
+    - child_stderr
+    - expected_base_commit
+    - working_source_path
+    - working_head_after_failure
+    - working_tree_after_failure
+    - source_mutation_assessment
+    - bundle_sha256
+    - kernel_sha256
+    - created_at_utc
+    terminal_surface:
+      failure:
+      - PATCH FAIL
+      - FAILURE_FAMILY
+      - DIAGNOSTIC_FILE
+      - SOURCE_STATE
+      success:
+      - PATCH SUCCESS
+      - RECEIPT
+      detailed_stacktrace_on_normal_terminal: PROHIBITED
+    chat_return:
+      success_trigger: PATCH SUCCESS
+      failure_trigger: PATCH FAIL
+      failure_attachment: CEREBRO_PATCH_FAIL.json
+      manual_error_paste: PROHIBITED
+    resolution:
+      stale_failure_handoff_removed_on_success: true
+      success_receipt_remains_canonical_evidence: true
 
   assurance:
     existing_contract: standards/development/powershell-level3-delivery-assurance.yaml

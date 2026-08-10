@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "1.0"
+  version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -27,6 +27,9 @@ delivery_failure_regression:
   - DUPLICATE_EXECUTION
   - POST_SYNC_EQUALITY_FAILURE
   - AMBIGUOUS_COPYABLE_EXECUTION_SURFACE
+  - MANUAL_TERMINAL_ERROR_TRANSPORT_REGRESSION
+  - FAILURE_DIAGNOSTIC_CAPSULE_MISSING
+  - FAILURE_HANDOFF_STACKTRACE_LEAK
 
   mandatory_pre_delivery_gates:
   - native-PowerShell-parser-zero-errors
@@ -42,6 +45,12 @@ delivery_failure_regression:
   - rollback-fixture-passes
   - duplicate-run-detection-passes
   - exactly-one-user-copyable-execution-surface
+  - failure-produces-timestamped-diagnostic-capsule
+  - failure-produces-stable-launcher-directory-handoff-file
+  - failure-terminal-is-short-and-does-not-require-stacktrace-copy
+  - success-removes-stale-failure-handoff-file
+  - PATCH-FAIL-return-path-requires-file-not-manual-error-paste
+  - PATCH-SUCCESS-return-path-requires-no-terminal-dump
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the
