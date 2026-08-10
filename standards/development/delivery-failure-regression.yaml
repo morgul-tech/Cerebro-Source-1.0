@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "1.5"
+  version: "1.6"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -48,6 +48,11 @@ delivery_failure_regression:
   - ACTIVE_SOURCE_CLOSURE_FAILURE
   - ACTIVE_SOURCE_CLOSURE_VACUOUS_PASS
   - FULL_RELEASE_CLOSURE_ON_STANDARD_PATCH_CRITICAL_PATH
+  - SEALED_DELIVERY_PROFILE_IDENTITY_MISSING
+  - MUTABLE_DELIVERY_SELECTION_STATE_RUNTIME_DEPENDENCY
+  - LEGACY_CPATCH_GOVERNS_NEW_STANDARD_PACKAGE
+  - DUPLICATE_STANDARD_RUNTIME_OWNER
+  - LEGACY_RUNTOPASS_ACTION_TAXONOMY_REGRESSION
 
   mandatory_pre_delivery_gates:
   - native-PowerShell-parser-zero-errors
@@ -108,6 +113,17 @@ delivery_failure_regression:
   - full-system-release-closure-is-not-on-standard-patch-critical-path
   - ordinary-standard-patch-does-not-require-release-repository
   - ordinary-standard-patch-does-not-require-release-evidence-suite
+  - sealed-standard-package-requires-standard-profile-identity
+  - sealed-standard-package-requires-delivery-kernel-contract-identity
+  - sealed-standard-runtime-does-not-read-mutable-delivery-selection-state
+  - delivery-selection-remains-pre-artifact-derived-runtime-state
+  - canonical-standard-runtime-owner-is-launcher-plus-delivery-kernel
+  - legacy-cpatch-does-not-govern-new-standard-packages
+  - one-explicit-launcher-invocation-authorizes-predeclared-runtopass-chain
+  - no-repeated-user-authorization-inside-predeclared-standard-chain
+  - LIMITED-and-FULL-profile-semantics-remain-outside-standard-kernel
+  - failure-learning-evidence-is-normalized-across-attempt-ledger-diagnostics-receipt-and-regression
+  - old-single-receipt-field-bundle-does-not-create-parallel-evidence-authority
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the

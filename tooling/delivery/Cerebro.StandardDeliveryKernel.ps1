@@ -269,6 +269,17 @@ function Invoke-SelfTest {
 function Invoke-Apply {
     $State.Manifest = Read-Manifest
     Assert-PayloadIntegrity $State.Manifest
+
+    $State.ReachedStage = 'SEALED_DELIVERY_PROFILE'
+    if([string]$State.Manifest.delivery_profile -ne 'STANDARD'){
+        $State.FailureFamily = 'DELIVERY_PROFILE_IDENTITY'
+        throw ('DELIVERY_PROFILE_MISMATCH expected=STANDARD actual={0}' -f [string]$State.Manifest.delivery_profile)
+    }
+    if([string]$State.Manifest.delivery_execution_contract -ne 'CEREBRO-STANDARD-DELIVERY-KERNEL-001'){
+        $State.FailureFamily = 'DELIVERY_EXECUTION_CONTRACT_IDENTITY'
+        throw ('DELIVERY_EXECUTION_CONTRACT_MISMATCH:{0}' -f [string]$State.Manifest.delivery_execution_contract)
+    }
+
     $gitPath = Resolve-Executable 'git.exe'
 
     $State.ReachedStage = 'SOURCE_PREFLIGHT'

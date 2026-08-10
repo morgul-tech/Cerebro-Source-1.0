@@ -1,12 +1,21 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.5"
+  version: "1.6"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
 
   canonical_implementation: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+
+  change_delivery_convergence:
+    contract: standards/change-delivery-convergence.yaml
+    delivery_profile: STANDARD
+    sealed_manifest_profile_identity_required: true
+    mutable_selection_state_at_execution: NON_GOVERNING
+    explicit_launcher_invocation_is_run_to_pass_authorization: true
+    legacy_cpatch_for_new_standard_packages: SUPERSEDED
+    LIMITED_and_FULL_profiles: OUTSIDE_KERNEL_SCOPE
 
   architecture:
     patch_specific_semantics: FINISHED_PAYLOAD_BYTES

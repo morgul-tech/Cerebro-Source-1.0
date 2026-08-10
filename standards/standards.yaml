@@ -1,7 +1,7 @@
 schema: cerebro-standards-manifest/v0.1
 standards_engine:
   id: standards
-  version: 0.4.0
+  version: 0.5.0
   role: authoritative-policy-registry
   runtime_engine: false
   policy_owner: Cerebro Source 1.0
@@ -66,6 +66,9 @@ documents:
   required: true
 - id: STD-CHANGE-DELIVERY
   path: standards/change-delivery.yaml
+  required: true
+- id: STD-CHANGE-DELIVERY-CONVERGENCE
+  path: standards/change-delivery-convergence.yaml
   required: true
 - id: STD-RELEASE-PLATFORM
   path: standards/release-platform.yaml

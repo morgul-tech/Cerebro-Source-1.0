@@ -1,0 +1,131 @@
+schema: cerebro-change-delivery-convergence/v1
+
+change_delivery_convergence:
+  id: CEREBRO-CHANGE-DELIVERY-CONVERGENCE-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  extends: STD-CHANGE-DELIVERY
+  scope: STANDARD
+
+  purpose: >
+    Converge legacy STANDARD delivery subcontracts on the current sealed
+    bundle plus canonical launcher plus Standard Delivery Kernel architecture,
+    while preserving LIMITED and FULL as separate delivery profiles.
+
+  precedence:
+    applies_when_delivery_profile: STANDARD
+    governing_contracts:
+      - standards/change-delivery-convergence.yaml
+      - standards/delivery-kernel.yaml
+    legacy_STD_CHANGE_DELIVERY_clauses:
+      compatible_clauses: INHERITED
+      conflicting_STANDARD_clauses: SUPERSEDED_IN_STANDARD_SCOPE
+    LIMITED_profile_semantics: UNCHANGED
+    FULL_profile_semantics: UNCHANGED
+
+  profile_selection:
+    implementation: tooling/delivery/cerebro_delivery.ps1
+    role: PRE_ARTIFACT_PROFILE_DECISION
+    derived_runtime_state_is_source_authority: false
+    selection_must_be_resolved_before_artifact_design: true
+    selection_state_must_govern_sealed_standard_runtime: false
+    rationale: >
+      Runtime re-reading mutable profile-selection state after a STANDARD
+      package is sealed would duplicate the profile decision and can diverge
+      from the package identity.
+    source_commit_change_invalidates_unsealed_selection: true
+
+  sealed_standard_package:
+    required_manifest_fields:
+      delivery_profile: STANDARD
+      delivery_execution_contract: CEREBRO-STANDARD-DELIVERY-KERNEL-001
+    profile_identity_after_sealing: IMMUTABLE_PACKAGE_IDENTITY
+    active_selection_state_after_sealing: NON_GOVERNING_EVIDENCE
+    wrong_or_missing_profile_identity: FAIL_BEFORE_SOURCE_MUTATION
+
+  execution_ownership:
+    profile: STANDARD
+    user_authorization: EXPLICIT_LAUNCHER_INVOCATION
+    execution_owner: USER_LOCAL_RUNNER
+    canonical_launcher: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+    canonical_kernel: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    agent_local_access: PROHIBITED
+    work_mode_dependency: PROHIBITED
+
+  run_to_pass_convergence:
+    canonical_user_action: one-launcher-invocation
+    meaning: >
+      The explicit launcher invocation authorizes the already-declared
+      STANDARD SelfTest plus Apply chain, including validation, publication,
+      fresh remote verification and receipt.
+    separate_install_validate_publish_runtopass_user_actions: SUPERSEDED_FOR_SEALED_STANDARD
+    repeated_user_authorization_inside_predeclared_chain: NOT_REQUIRED
+    stop_on_first_governing_failure: true
+    implicit_scope_expansion: PROHIBITED
+
+  publication_convergence:
+    explicit_authorization_source: launcher-invocation-for-sealed-standard-package
+    canonical_sync_occurs_only_after:
+      - exact-baseline-verification
+      - bounded-backup
+      - exact-byte-installation
+      - installed-byte-verification
+      - Source-diff-validation
+      - Active-Source-Integrity-Closure
+      - Contract-Activation-Closure
+    publication_outside_declared_package_scope: PROHIBITED
+    local_remote_equality_required: true
+
+  handoff_convergence:
+    new_STANDARD_execution_bridge: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+    legacy_cpatch_bridge:
+      status: LEGACY_COMPATIBILITY_ONLY
+      may_govern_new_sealed_STANDARD_delivery: false
+    shape:
+      zip_count: 1
+      launcher_count: 1
+      command_count: 1
+
+  failure_learning_convergence:
+    legacy_success_receipt_field_bundle: SUPERSEDED_AS_SINGLE_REQUIRED_RECEIPT_SCHEMA
+    canonical_evidence_sources:
+      user_execution_attempt: standards/patch-attempt-history.yaml
+      failure_and_resolution_trace: tooling/host/diagnostic_capsule.py
+      resulting_commit: STANDARD_DELIVERY_RECEIPT
+      prevention_basis: standards/development/delivery-failure-regression.yaml
+    first_pass_success: DERIVED_FROM_PATCH_ATTEMPT_HISTORY
+    resolved_failure_capsule_count: DERIVED_FROM_CANONICAL_DIAGNOSTIC_REGISTRY
+    learning_basis_identity:
+      inputs:
+        - patch-attempt-history
+        - canonical-diagnostic-capsules
+        - delivery-failure-regression-version
+        - bundle-sha256
+        - kernel-sha256
+      evidence_only: true
+    failure_learning_must_feed_prehand-off_prevention: true
+
+  profile_boundaries:
+    LIMITED:
+      execution_owner: USER
+      Standard_Delivery_Kernel_required: false
+      convergence_status: OUT_OF_SCOPE
+    STANDARD:
+      execution_owner: USER_LOCAL_RUNNER
+      Standard_Delivery_Kernel_required: true
+      convergence_status: CANONICAL
+    FULL:
+      execution_owner: AGENT_CONTROLLED
+      controller: tooling/delivery/delivery_controller.py
+      Standard_Delivery_Kernel_required: false
+      convergence_status: OUT_OF_SCOPE
+
+  invariants:
+    - DELIVERY_PROFILE_IS_DECIDED_BEFORE_ARTIFACT_SEALING
+    - SEALED_STANDARD_PACKAGE_DOES_NOT_REEVALUATE_MUTABLE_SELECTION_STATE
+    - STANDARD_HAS_ONE_RUNTIME_OWNER
+    - EXPLICIT_LAUNCHER_INVOCATION_AUTHORIZES_THE_PREDECLARED_STANDARD_CHAIN
+    - LEGACY_CPATCH_DOES_NOT_GOVERN_NEW_STANDARD_PACKAGES
+    - LIMITED_AND_FULL_REMAIN_DISTINCT_PROFILES
+    - FAILURE_LEARNING_EVIDENCE_IS_NORMALIZED_NOT_DUPLICATED

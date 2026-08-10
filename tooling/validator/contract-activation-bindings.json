@@ -136,10 +136,19 @@
       "standard_id": "STD-CHANGE-DELIVERY",
       "path": "standards/change-delivery.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "STANDARD handoff and canonical diagnostic lifecycle are active; selection, legacy RunToPass and remaining failure-learning subcontracts still require convergence.",
+      "rationale": "STANDARD profile semantics are converged on the sealed launcher/kernel path. The broader multi-profile standard remains partially operational until LIMITED and FULL are separately contract-level proven.",
       "known_gaps": [
-        "delivery-selection state not proven as governing input to current Standard Delivery Kernel",
-        "legacy RunToPass and remaining failure-learning receipt semantics require convergence review"
+        "LIMITED profile execution path is not yet strict contract-bound",
+        "FULL profile execution path/controller is not yet strict contract-bound"
+      ]
+    },
+    {
+      "standard_id": "STD-CHANGE-DELIVERY-CONVERGENCE",
+      "path": "standards/change-delivery-convergence.yaml",
+      "classification": "OPERATIONAL",
+      "rationale": "Canonical STANDARD profile selection/sealing/runtime ownership and legacy subcontract supersession are explicitly bound.",
+      "strict_contract_refs": [
+        "CHANGE_DELIVERY_STANDARD_CONVERGENCE"
       ]
     },
     {
@@ -417,6 +426,39 @@
         "full-system-release-closure-is-not-on-standard-patch-critical-path"
       ],
       "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
+    },
+    {
+      "id": "CHANGE_DELIVERY_STANDARD_CONVERGENCE",
+      "standard_id": "STD-CHANGE-DELIVERY-CONVERGENCE",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/change-delivery-convergence.yaml",
+      "declaration_tokens": [
+        "SEALED_STANDARD_PACKAGE_DOES_NOT_REEVALUATE_MUTABLE_SELECTION_STATE",
+        "STANDARD_HAS_ONE_RUNTIME_OWNER",
+        "LEGACY_CPATCH_DOES_NOT_GOVERN_NEW_STANDARD_PACKAGES"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-CHANGE-DELIVERY-CONVERGENCE",
+      "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "implementation_tokens": [
+        "SEALED_DELIVERY_PROFILE",
+        "DELIVERY_PROFILE_MISMATCH",
+        "DELIVERY_EXECUTION_CONTRACT_MISMATCH"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
+      "wiring_tokens": [
+        "kernel\\Cerebro.StandardDeliveryKernel.ps1",
+        "SelfTest",
+        "Apply"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "sealed-standard-package-requires-standard-profile-identity",
+        "sealed-standard-runtime-does-not-read-mutable-delivery-selection-state",
+        "legacy-cpatch-does-not-govern-new-standard-packages"
+      ],
+      "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
     }
   ],
   "canonical_responsibilities": [
@@ -447,13 +489,6 @@
   ],
   "known_activation_debt": [
     {
-      "id": "CHANGE_DELIVERY_KERNEL_CONVERGENCE",
-      "standard_id": "STD-CHANGE-DELIVERY",
-      "classification": "PARTIALLY_OPERATIONAL",
-      "blocking": false,
-      "rationale": "Current Delivery Kernel does not yet prove or explicitly supersede every active change-delivery subcontract."
-    },
-    {
       "id": "RELEVANCE_WISDOM_AUTOMATIC_CALL_PATH",
       "standard_id": "STD-RELEVANCE-RETRIEVAL",
       "classification": "SEMANTIC_REVIEW_REQUIRED",
@@ -478,6 +513,11 @@
       "id": "ACTIVE_SOURCE_CLOSURE_PATCH_CLOSE",
       "resolved_by_patch": "CEREBRO-ACTIVE-SOURCE-CLOSURE-CONVERGENCE-001",
       "resolution": "Split lightweight patch-close Source integrity from full system/release closure and wired the lightweight closure before Contract Activation Closure and canonical sync."
+    },
+    {
+      "id": "CHANGE_DELIVERY_KERNEL_CONVERGENCE",
+      "resolved_by_patch": "CEREBRO-CHANGE-DELIVERY-CONVERGENCE-001",
+      "resolution": "STANDARD profile selection is pre-artifact only; sealed package identity governs runtime. Canonical launcher/kernel owns new STANDARD execution, legacy cpatch is compatibility-only, and one launcher invocation authorizes the declared RunToPass chain."
     }
   ]
 }
