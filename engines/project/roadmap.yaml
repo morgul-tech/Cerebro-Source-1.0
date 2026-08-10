@@ -954,6 +954,8 @@ roadmap:
         - "mismatch_invariant_MISMATCH_IS_DETECTION_NOT_ROOT_CAUSE"
         - "mismatch_resolution_detect_classify_preserve_compare_rootcause_regression"
         - "mismatch_root_cause_learning_ref_CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
+        - "history_seed_ref_CTX-ASSESS-REPEAT-FIRST-PASS-MILESTONE-20260810-001"
+        - "seed_repeat_first_pass_success_as_MAJOR_STRENGTHENING_EVENT"
     -
       id: "PATCH-007"
       title: "operational_reliability_and_evidence_foundation"
