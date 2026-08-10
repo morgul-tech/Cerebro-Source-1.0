@@ -829,7 +829,7 @@ function cerebro_tools_status {
     $config = Get-CerebroToolsConfig
 
     [pscustomobject]@{
-        module_version = '1.3.0'
+        module_version = '1.4.0'
         module_path = $PSScriptRoot
         config_path = 'D:\Cerebro\Config\Cerebro.Tools.json'
         working_source_path = $config.working_source_path
@@ -851,6 +851,9 @@ function cerebro_tools_status {
         )
         bootCerebro = [bool](
             Get-Command bootCerebro -ErrorAction SilentlyContinue
+        )
+        cerebro_verify = [bool](
+            Get-Command cerebro_verify -ErrorAction SilentlyContinue
         )
         bootini = [bool](
             Get-Command bootini -ErrorAction SilentlyContinue
@@ -948,7 +951,14 @@ function bootCerebro {
         [string]$RuntimeStatePath =
             'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
 
-        [switch]$SkipHandoff
+        [string]$ProofPath =
+            'D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json',
+
+        [switch]$SkipHandoff,
+
+        [switch]$SkipProof,
+
+        [switch]$NoClipboard
     )
 
     $scriptPath = [IO.Path]::GetFullPath(
@@ -971,7 +981,95 @@ function bootCerebro {
 
     . $scriptPath
 
-    Invoke-CerebroBootCore @PSBoundParameters
+    $bootParameters = @{
+        WorkingSourcePath = $WorkingSourcePath
+        Remote = $Remote
+        Branch = $Branch
+        BootEngineUrl = $BootEngineUrl
+        HandoffPath = $HandoffPath
+        RuntimeStatePath = $RuntimeStatePath
+        SkipHandoff = $SkipHandoff
+    }
+
+    $bootResult = Invoke-CerebroBootCore @bootParameters
+
+    if (-not $SkipProof) {
+        $proofScriptPath = [IO.Path]::GetFullPath(
+            (
+                Join-Path `
+                    $PSScriptRoot `
+                    '..\..\..\runtime-host\cerebro_machine_proof.ps1'
+            )
+        )
+
+        if (
+            -not (
+                Test-Path `
+                    -LiteralPath $proofScriptPath `
+                    -PathType Leaf
+            )
+        ) {
+            throw "CEREBRO_MACHINE_PROOF_SCRIPT_NOT_FOUND:$proofScriptPath"
+        }
+
+        . $proofScriptPath
+
+        $proofResult = Invoke-CerebroMachineProofCore `
+            -BootResult $bootResult `
+            -WorkingSourcePath $WorkingSourcePath `
+            -Remote $Remote `
+            -Branch $Branch `
+            -RuntimeStatePath $RuntimeStatePath `
+            -ProofPath $ProofPath `
+            -NoClipboard:$NoClipboard
+
+        $bootResult |
+            Add-Member `
+                -NotePropertyName machine_proof `
+                -NotePropertyValue $proofResult `
+                -Force
+    }
+
+    return $bootResult
+}
+
+function cerebro_verify {
+    [CmdletBinding()]
+    param(
+        [string]$WorkingSourcePath =
+            'D:\Cerebro\Source\Cerebro_Source_v1.0',
+
+        [string]$Remote = 'origin',
+
+        [string]$Branch = 'main',
+
+        [string]$BootEngineUrl =
+            'https://raw.githubusercontent.com/morgul-tech/B/main/BootEngine',
+
+        [string]$HandoffPath =
+            'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
+
+        [string]$RuntimeStatePath =
+            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+
+        [string]$ProofPath =
+            'D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json',
+
+        [switch]$SkipHandoff,
+
+        [switch]$NoClipboard
+    )
+
+    bootCerebro `
+        -WorkingSourcePath $WorkingSourcePath `
+        -Remote $Remote `
+        -Branch $Branch `
+        -BootEngineUrl $BootEngineUrl `
+        -HandoffPath $HandoffPath `
+        -RuntimeStatePath $RuntimeStatePath `
+        -ProofPath $ProofPath `
+        -SkipHandoff:$SkipHandoff `
+        -NoClipboard:$NoClipboard
 }
 
 function bootini {
@@ -993,7 +1091,14 @@ function bootini {
         [string]$RuntimeStatePath =
             'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
 
-        [switch]$SkipHandoff
+        [string]$ProofPath =
+            'D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json',
+
+        [switch]$SkipHandoff,
+
+        [switch]$SkipProof,
+
+        [switch]$NoClipboard
     )
 
     bootCerebro @PSBoundParameters
@@ -1053,7 +1158,7 @@ function cerebro {
         -HistoryRoot $HistoryRoot
 }
 Export-ModuleMember `
-    -Function cerebro_receive, cpatch, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, bootini, cerebro_tools_status, cerebro
+    -Function cerebro_receive, cpatch, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, cerebro_verify, bootini, cerebro_tools_status, cerebro
 
 function cerebro_profile {
     [CmdletBinding()]

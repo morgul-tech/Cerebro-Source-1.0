@@ -197,6 +197,7 @@ handboot:
     - tooling/builder/templates/pshell/cerebro_handoff.ps1
     - tooling/runtime-host/cerebro_resume.ps1
     - tooling/runtime-host/cerebro_boot.ps1
+    - tooling/runtime-host/cerebro_machine_proof.ps1
     - tooling/runtime-host/boot_authority_selftest.py
     - tooling/validator/checks.yaml
 
@@ -292,6 +293,48 @@ handboot:
       - canonical_command
     success_state: ACTIVE_CONTROL_TRANSFERRED
     failure_state: INACTIVE_CONTROL_RETAINED
+
+  machine_proof:
+    status: ACTIVE
+    purpose: >
+      Convert a successful local boot into compact transportable evidence that
+      ChatGPT can cross-verify against the current authoritative Source without
+      requiring direct local-machine access.
+    default_on_successful_boot: true
+    explicit_command: cerebro_verify
+    implementation: tooling/runtime-host/cerebro_machine_proof.ps1
+    proof_path: D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json
+    clipboard_transport:
+      default: true
+      payload: compact_machine_proof_text
+      user_action: paste_once_into_chat
+    independent_post_boot_verification:
+      required: true
+      checks:
+        - fresh_fetch_origin_main
+        - working_source_clean
+        - working_source_commit_equals_remote_main
+        - boot_result_source_commit_equals_remote_main
+        - runtime_working_source_commit_equals_remote_main
+        - runtime_authoritative_source_commit_equals_remote_main
+        - runtime_state_ACTIVE_CONTROL_TRANSFERRED
+        - runtime_operational_true
+        - runtime_control_transferred_true
+        - runtime_receipt_equals_boot_receipt
+    success_result: PASS
+    claim_enabled_for_chat_after_cross_verification:
+      - CEREBRO_SOURCE_ACTIVATED
+      - WORKING_SOURCE_VERIFIED
+      - ACTIVE_CONTROL_TRANSFERRED
+      - FULL_MACHINE_OPERATIONAL_STATUS=VERIFIED
+    publication_during_normal_boot: PROHIBITED
+    sync_status_separate: true
+    invariants:
+      - MACHINE_PROOF_IS_DERIVED_EVIDENCE_NOT_SOURCE_AUTHORITY
+      - BOOT_DOES_NOT_PUBLISH
+      - ONE_LOCAL_COMMAND_MAY_COMPLETE_BOOT_AND_PROOF
+      - PROOF_MUST_BE_BOUND_TO_CURRENT_AUTHORITATIVE_COMMIT
+      - STALE_PROOF_CANNOT_ESTABLISH_CURRENT_OPERATIONAL_STATUS
 
   fail_closed_conditions:
     - bootengine_fetch_failed

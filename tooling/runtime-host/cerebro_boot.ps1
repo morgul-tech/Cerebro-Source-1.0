@@ -460,6 +460,7 @@ function Invoke-CerebroBootCore {
                 'tooling/builder/templates/pshell/cerebro_handoff.ps1',
                 'tooling/runtime-host/cerebro_resume.ps1',
                 'tooling/runtime-host/cerebro_boot.ps1',
+                'tooling/runtime-host/cerebro_machine_proof.ps1',
                 'tooling/validator/checks.yaml'
             )
 
