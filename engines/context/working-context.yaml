@@ -4363,6 +4363,72 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
       sequence: 107
+    -
+      id: "CTX-DEC-PATCH-007-CLOSURE-AUTHORIZED-001"
+      type: "DECISION"
+      scope: "PATCH-007-INTEGRATION-AND-CLOSURE"
+      statement: "The user explicitly continues PATCH-007 under SELF_RUNNING_FULL; closure shall verify the integrated reliability and evidence foundation without expanding into Adaptive Autonomy implementation."
+      payload:
+        decision_status: "AUTHORIZED"
+        implementation_authorized: true
+        exact_scope: "PATCH-007"
+        authorization_source: "CURRENT_EXPLICIT_USER_INSTRUCTION"
+        control_mode: "SELF_RUNNING_FULL"
+        closure_mode: "INTEGRATION_AND_VERIFICATION_ONLY"
+        new_top_level_component: false
+        deferred_nonblocking_history:
+          pre005_recovery_strengthening_event: true
+          admission_boundary: "LATER_SAFE_HISTORY_PERSISTENCE"
+        next_boundary:
+          patch: "PATCH-AA-000"
+          implementation_authorized: false
+          explicit_authorization_required: true
+      provenance:
+        introduced_by_ref: "USER-CONTINUE-SELF-RUNNING-PATCH007-CLOSURE-2026-08-10"
+        basis_refs:
+          - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
+      sequence: 108
+    -
+      id: "CTX-BASIS-PATCH-007-VERIFIED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-007-VERIFIED-FOUNDATION-AND-AA000-BOUNDARY"
+      statement: "PATCH-007 closes the operational reliability and evidence foundation: operational evidence, STANDARD handoff convergence, process supervision, persistent diagnostics, automatic rehydration, failure learning, regression binding and Development History are integrated; PATCH-AA-000 is the next planned authorization boundary."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        patch: "PATCH-007"
+        verification_status: "VERIFIED_ON_SUCCESSFUL_RUN_TO_PASS_AND_REMOTE_EQUALITY"
+        integration:
+          operational_evidence: "VERIFIED"
+          standard_handoff_convergence: "VERIFIED"
+          operation_supervision: "VERIFIED"
+          persistent_diagnostic_state: "VERIFIED"
+          failure_learning_and_regression_binding: "VERIFIED"
+          development_history_foundation: "VERIFIED"
+        closure:
+          active_source_integration: "VERIFIED"
+          standard_run_to_pass_remote_equality_required: true
+          known_failure_reintroduction_prehand_off_blocking: true
+        next_patch: "PATCH-AA-000"
+        next_patch_status: "PLANNED"
+        next_patch_implementation_authorized: false
+        explicit_authorization_required: true
+      provenance:
+        introduced_by_ref: "PATCH-007-RUN_TO_PASS-CLOSURE"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-CLOSURE-AUTHORIZED-001"
+          - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
+      sequence: 109
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4397,6 +4463,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-004-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-005-AUTHORIZED-001"
+      - "CTX-DEC-PATCH-007-CLOSURE-AUTHORIZED-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4418,6 +4485,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-004-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-005-VERIFIED-001"
+      - "CTX-BASIS-PATCH-007-VERIFIED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4465,7 +4533,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 108
+  next_sequence: 110
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

@@ -1007,7 +1007,7 @@ roadmap:
       title: "operational_reliability_and_evidence_foundation"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-007.PRE-001"
         - "PATCH-007.PRE-002"
@@ -1160,18 +1160,18 @@ roadmap:
         - "future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work"
   execution:
     current:
-      id: "EXEC-PATCH-007-CLOSURE"
-      phase_ref: "PHASE-2"
-      milestone_ref: "MS-003"
-      patch_ref: "PATCH-007"
-      canonical_command: "run fresh full integration and active-source closure for PATCH-007 after PRE-005 is VERIFIED"
-      status: "ACTIVE"
-    next:
-      id: "EXEC-PATCH-AA-000-AFTER-PATCH007"
+      id: "EXEC-PATCH-AA-000-AUTHORIZATION-BOUNDARY"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
       patch_ref: "PATCH-AA-000"
-      canonical_command: "after PATCH-007 is VERIFIED, require the next valid Adaptive Autonomy authorization boundary"
+      canonical_command: "require explicit implementation authorization for PATCH-AA-000 from the verified PATCH-007 foundation; prior LOCK does not authorize implementation"
+      status: "ACTIVE"
+    next:
+      id: "EXEC-PATCH-AA-001-AFTER-AA000"
+      phase_ref: "PHASE-2"
+      milestone_ref: "MS-003"
+      patch_ref: "PATCH-AA-001"
+      canonical_command: "after PATCH-AA-000 is VERIFIED and the next valid control basis exists, continue the Adaptive Autonomy prerequisite sequence"
       status: "PLANNED"
   blockers: []
   context_refs:
