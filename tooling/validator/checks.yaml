@@ -92,6 +92,33 @@ known_language_failure_loop_prevention:
     - READY-claim-based-only-on-patch-stat-or-numstat
     - silent-regeneration-of-unchanged-known-good-artifacts
 
+operation_supervision_validation:
+  introduced_by: PATCH-007.PRE-003
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/change-architecture.yaml
+  required_contracts:
+    - one-reusable-native-process-supervision-path
+    - operation-journal-created-before-child-start
+    - heartbeat-independent-of-child-stdout
+    - inherited-stdout-and-stderr-preserve-live-visibility
+    - null-or-unavailable-exit-status-is-unknown-not-nonzero
+    - stall-detection-does-not-imply-force-kill
+    - process-observation-is-distinct-from-material-poststate
+    - final-classification-requires-reconciliation
+  required_canaries:
+    - zero-exit-classifies-pass
+    - nonzero-exit-classifies-fail
+    - unavailable-exit-classifies-unknown
+    - journal-exists-before-running-state
+    - heartbeat-updates-with-silent-child
+    - process-observation-degraded-does-not-erase-verified-poststate
+  prohibited:
+    - null-exit-coerced-to-nonzero
+    - stdout-activity-used-as-heartbeat-source
+    - automatic-force-kill-from-stall-detection
+    - duplicate-generated-native-process-wrapper-when-shared-adapter-applies
+
 standard_handoff_convergence_validation:
   introduced_by: PATCH-007.PRE-002
   severity: error

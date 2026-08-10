@@ -878,15 +878,18 @@ roadmap:
       title: "operation_supervision_and_observability"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-007.PRE-002"
       decision_refs:
         - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+        - "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
       source_refs:
         - "standards/control-architecture.yaml"
         - "standards/change-architecture.yaml"
         - "tooling/host/component.yaml"
+        - "tooling/host/cerebro_host.py"
+        - "tooling/validator/checks.yaml"
       implementation_constraints:
         - "one_reusable_native_process_supervision_path"
         - "heartbeat_independent_of_child_stdout"
@@ -910,7 +913,7 @@ roadmap:
       title: "diagnostic_capsule"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-007.PRE-003"
       decision_refs:

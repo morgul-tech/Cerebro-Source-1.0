@@ -4137,6 +4137,66 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
       sequence: 101
+    -
+      id: "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
+      type: "DECISION"
+      scope: "PATCH-007.PRE-003-IMPLEMENTATION-AUTHORIZATION"
+      statement: "SELF_RUNNING_FULL authorization carries forward from PRE-002 into PATCH-007.PRE-003 because the user explicitly instructed uninterrupted continuation until a real user-action boundary."
+      payload:
+        decision_status: "AUTHORIZED"
+        implementation_authorized: true
+        exact_scope: "PATCH-007.PRE-003"
+        authorization_source: "CARRIED_CURRENT_EXPLICIT_USER_INSTRUCTION"
+        material_preflight:
+          result: "KEEP"
+          architecture_changed: false
+          hard_blockers: []
+        basis_commit: "6ef93e0050db58a5644b4a0c0bc389ce954c13a6"
+      provenance:
+        introduced_by_ref: "SELF-RUNNING-FULL-CARRY-FORWARD"
+        basis_refs:
+          - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
+          - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
+      sequence: 102
+    -
+      id: "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-007.PRE-003-VERIFIED-AND-PRE-004-ENTRY"
+      statement: "PATCH-007.PRE-003 establishes one shared Host supervision adapter with operation journal, stdout-independent heartbeat, non-destructive stall semantics, and explicit unknown-exit handling."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        patch: "PATCH-007.PRE-003"
+        verification_status: "VERIFIED_ON_SUCCESSFUL_PUBLICATION_OF_THIS_RECORD"
+        capabilities:
+          - "SHARED_NATIVE_PROCESS_SUPERVISION"
+          - "OPERATION_JOURNAL_FROM_START"
+          - "STDOUT_INDEPENDENT_HEARTBEAT"
+          - "UNKNOWN_EXIT_IS_NOT_NONZERO"
+          - "NON_DESTRUCTIVE_STALL_OBSERVATION"
+          - "PROCESS_OBSERVATION_MATERIAL_POSTSTATE_SEPARATION"
+        regression_closed:
+          - "NATIVE_PROCESS_RESULT_FALSE_FAILURE"
+          - "NULL_OR_UNAVAILABLE_EXIT_CODE_INTERPRETED_AS_NONZERO_FAILURE"
+        next_patch: "PATCH-007.PRE-004"
+        next_patch_status: "ACTIVE"
+        next_patch_implementation_authorized: true
+        authorization_basis: "SELF_RUNNING_FULL_CURRENT_USER_INSTRUCTION"
+      provenance:
+        introduced_by_ref: "PATCH-007.PRE-003-RUN_TO_PASS"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
+          - "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
+      sequence: 103
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4168,6 +4228,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
       - "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
       - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
+      - "CTX-DEC-PATCH-007-PRE-003-AUTHORIZED-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4186,6 +4247,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
       - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
       - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
+      - "CTX-BASIS-PATCH-007-PRE-003-VERIFIED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4233,7 +4295,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 102
+  next_sequence: 104
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

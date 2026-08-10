@@ -136,6 +136,35 @@ failure_learning:
     disposition: EVIDENCE_ADAPTER
     parallel_authority: false
 
+operation_supervision:
+  introduced_by: PATCH-007.PRE-003
+  owner: tooling.host
+  authority: DERIVED_IMPLEMENTATION
+  reusable_path_required: true
+  contract:
+    operation_journal_from_start: true
+    heartbeat_independent_of_child_stdout: true
+    interruptibility_is_stage_specific: true
+    stall_detection_implies_force_kill: false
+    unavailable_exit_status_semantics: UNKNOWN_NOT_NONZERO
+    process_observation_distinct_from_subject_result: true
+    reconciliation_required_before_final_classification:
+      - process_observation
+      - child_receipt_when_available
+      - material_poststate_when_available
+    allowed_resolution:
+      - SUCCESS
+      - SUCCESS_WITH_PROCESS_OBSERVATION_DEGRADED
+      - FAIL
+      - UNKNOWN
+      - DISAGREEMENT_REQUIRES_RESOLUTION
+  invariants:
+    - NATIVE_PROCESS_RESULT_FALSE_FAILURE_IS_PROHIBITED
+    - NULL_OR_UNAVAILABLE_EXIT_CODE_IS_NOT_NONZERO_FAILURE
+    - PROCESS_OBSERVATION_DOES_NOT_OVERRIDE_VERIFIED_MATERIAL_POSTSTATE
+    - STALL_DETECTION_DOES_NOT_IMPLY_FORCE_KILL
+    - ONE_SHARED_SUPERVISION_ADAPTER_PRECEDES_GENERATED_WRAPPER_DUPLICATION
+
 operational_evidence:
   contract_ref: standards/operational-evidence.yaml
   authority: EVIDENCE_ONLY

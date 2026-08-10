@@ -247,6 +247,21 @@ control_architecture:
     changed_retrieval_effect: INVALIDATE_DECISION_AND_RE_RESOLVE
     knowledge_authority: EVIDENCE_ONLY
 
+  operation_supervision:
+    introduced_by: PATCH-007.PRE-003
+    owner: MCP
+    execution_adapter_owner: tooling.host
+    observations_are_evidence_only: true
+    final_classification_requires_reconciliation: true
+    constraints:
+      - null-exit-status-is-unknown-not-failure
+      - heartbeat-is-independent-of-child-stdout
+      - stall-detection-does-not-force-kill
+      - verified-material-poststate-may-resolve-success-with-degraded-process-observation
+      - receipt-exit-poststate-disagreement-is-explicit
+      - user-is-not-default-process-diagnostic-controller
+    regression_ref: CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001
+
   operational_evidence:
     contract_ref: standards/operational-evidence.yaml
     authority: EVIDENCE_ONLY

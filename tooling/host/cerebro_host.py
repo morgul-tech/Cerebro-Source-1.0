@@ -8,10 +8,12 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-HOST_VERSION = "0.3.0"
+HOST_VERSION = "0.4.0"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -129,6 +131,100 @@ def create_snapshot(source: Path, commit: str) -> Path:
     return target
 
 
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def operation_root() -> Path:
+    root = LOCALAPPDATA / "Cerebro" / "operations"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def write_operation_journal(path: Path, payload: dict) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+
+
+def supervise_native_process(
+    cmd: list[str],
+    cwd: Path,
+    component: str,
+    heartbeat_seconds: float = 2.0,
+) -> dict:
+    operation_id = hashlib.sha256(
+        f"{component}|{cwd}|{utc_now()}|{os.getpid()}".encode("utf-8")
+    ).hexdigest()[:16]
+    journal_path = operation_root() / f"{operation_id}.json"
+    journal = {
+        "schema": "cerebro-operation-journal/v0.1",
+        "operation_id": operation_id,
+        "component": component,
+        "command": cmd,
+        "cwd": str(cwd),
+        "state": "STARTING",
+        "started_at": utc_now(),
+        "heartbeat_at": None,
+        "process_observation": {
+            "pid": None,
+            "exit_status": "UNKNOWN",
+            "exit_code": None,
+            "stdout_mode": "INHERITED",
+            "stderr_mode": "INHERITED",
+        },
+        "interruptibility": "STAGE_SPECIFIC",
+        "stall_policy": "OBSERVE_DO_NOT_FORCE_KILL",
+    }
+    write_operation_journal(journal_path, journal)
+
+    try:
+        process = subprocess.Popen(cmd, cwd=cwd)
+    except OSError as exc:
+        journal["state"] = "PROCESS_START_FAILURE"
+        journal["completed_at"] = utc_now()
+        journal["error"] = repr(exc)
+        write_operation_journal(journal_path, journal)
+        raise HostError("PROCESS_START_FAILURE", str(exc)) from exc
+
+    journal["state"] = "RUNNING"
+    journal["process_observation"]["pid"] = process.pid
+    journal["heartbeat_at"] = utc_now()
+    write_operation_journal(journal_path, journal)
+
+    while True:
+        observed = process.poll()
+        if observed is not None:
+            break
+        time.sleep(heartbeat_seconds)
+        journal["heartbeat_at"] = utc_now()
+        journal["state"] = "RUNNING"
+        write_operation_journal(journal_path, journal)
+
+    exit_code = process.wait()
+    journal["completed_at"] = utc_now()
+    journal["heartbeat_at"] = journal.get("heartbeat_at") or utc_now()
+    if exit_code is None:
+        journal["state"] = "PROCESS_COMPLETED_EXIT_UNKNOWN"
+        journal["process_observation"]["exit_status"] = "UNKNOWN"
+        journal["process_observation"]["exit_code"] = None
+        classification = "UNKNOWN"
+    else:
+        journal["state"] = "PROCESS_COMPLETED"
+        journal["process_observation"]["exit_status"] = "AVAILABLE"
+        journal["process_observation"]["exit_code"] = int(exit_code)
+        classification = "PASS" if int(exit_code) == 0 else "FAIL"
+    journal["process_observation"]["classification"] = classification
+    write_operation_journal(journal_path, journal)
+    return {
+        "operation_id": operation_id,
+        "journal_path": str(journal_path),
+        "exit_status": journal["process_observation"]["exit_status"],
+        "exit_code": journal["process_observation"]["exit_code"],
+        "classification": classification,
+    }
+
+
 def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
     engines = {
         "change": snapshot / "tooling" / "change" / "change_engine.py",
@@ -137,12 +233,16 @@ def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
     }
     engine = engines[component]
     cmd = [sys.executable, str(engine), *arguments]
-    # Deliberately inherit stdout/stderr for live visibility.
-    try:
-        process = subprocess.run(cmd, cwd=snapshot, check=False)
-    except OSError as exc:
-        raise HostError("PROCESS_START_FAILURE", str(exc)) from exc
-    return int(process.returncode)
+    observation = supervise_native_process(cmd, snapshot, component)
+    if observation["exit_status"] == "UNKNOWN":
+        print(json.dumps({
+            "result": "UNKNOWN",
+            "classification": "PROCESS_EXIT_STATUS_UNAVAILABLE",
+            "process_observation": observation,
+            "material_poststate_required": True,
+        }, indent=2))
+        return 2
+    return int(observation["exit_code"])
 
 
 def selftest() -> dict:
