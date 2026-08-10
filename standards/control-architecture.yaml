@@ -247,6 +247,25 @@ control_architecture:
     changed_retrieval_effect: INVALIDATE_DECISION_AND_RE_RESOLVE
     knowledge_authority: EVIDENCE_ONLY
 
+  operational_evidence:
+    contract_ref: standards/operational-evidence.yaml
+    authority: EVIDENCE_ONLY
+    evidence_scope_resolution_owner: MCP
+    acquisition:
+      default_stage: CORE
+      progression: SUFFICIENCY_DRIVEN
+    constraints:
+      - missing-evidence-is-not-negative-evidence
+      - partial-probes-preserve-successful-results
+      - evidence-freshness-is-state-aware
+      - privacy-and-redaction-precede-transport
+      - probe-failure-is-not-subject-failure
+      - evidence-never-creates-Source-authority
+    mismatch_detection:
+      parent_pattern: EXPECTED_OBSERVED_STATE_MISMATCH
+      wisdom_ref: CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001
+      invariant: MISMATCH_IS_DETECTION_NOT_ROOT_CAUSE
+
   human_insight_checkpoint:
     material_insight_effect:
       - CRITIQUE_AND_REASSESS

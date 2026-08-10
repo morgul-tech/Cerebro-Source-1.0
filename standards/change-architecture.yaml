@@ -136,6 +136,25 @@ failure_learning:
     disposition: EVIDENCE_ADAPTER
     parallel_authority: false
 
+operational_evidence:
+  contract_ref: standards/operational-evidence.yaml
+  authority: EVIDENCE_ONLY
+  producers:
+    - development-lab
+    - change-engine
+    - delivery-controller
+    - validator
+  consumers:
+    - stability-gate
+    - final-learning-consolidation
+    - diagnostics
+    - MCP
+  requirements:
+    - preserve-partial-evidence
+    - classify-probe-failure-separately-from-subject-failure
+    - bind-freshness-to-relevant-state
+    - redact-before-human-transport
+
 campaigns:
   policy_ref: tooling/change/campaign-policy.yaml
   profiles:
@@ -219,4 +238,7 @@ rules:
     priority: critical
   - id: STD-CHANGE-R008
     statement: Runtime 0.1 remains outside the mutation scope of PATCH-005.POST-001.
+    priority: critical
+  - id: STD-CHANGE-R009
+    statement: Change assurance, diagnostics, delivery observations, and failure learning shall exchange operational evidence through STD-OPERATIONAL-EVIDENCE rather than component-specific incompatible evidence shapes.
     priority: critical

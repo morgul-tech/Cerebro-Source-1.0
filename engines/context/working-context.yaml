@@ -3986,6 +3986,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
         introduced_by_ref: "USER-REGISTER-REPEAT-FIRST-PASS-MILESTONE-2026-08-10"
         basis_refs:
           - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
+      - "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
           - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
           - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
           - "aa968b5b747050359711aea3a68e425ef9c97a63"
@@ -3996,6 +3997,79 @@ RECEIPT-76656fa9d8e617e98414c9fe
           - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
           - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
       sequence: 97
+    -
+      id: "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
+      type: "DECISION"
+      scope: "PATCH-007.PRE-001-IMPLEMENTATION-AUTHORIZATION"
+      statement: "The user continuation trigger 'Fortsett PATCH-007' authorizes implementation of PATCH-007.PRE-001 after fresh material preflight resolved KEEP with no hard blocker."
+      payload:
+        decision_status: "AUTHORIZED"
+        implementation_authorized: true
+        exact_scope: "PATCH-007.PRE-001"
+        authorization_source: "CURRENT_EXPLICIT_USER_CONTINUATION_TRIGGER"
+        human_alias: "Fortsett PATCH-007"
+        basis_commit: "cee3f15c7af4aa8af964712dbac8bfecda285c23"
+        material_preflight:
+          result: "KEEP"
+          architecture_changed: false
+          hard_blockers: []
+        execution:
+          delivery_profile: "STANDARD"
+          action: "RunToPass"
+          mutation_surface: "WORKING_SOURCE"
+          publication_path: "cerebro_sync"
+      provenance:
+        introduced_by_ref: "USER-CONTINUE-PATCH-007-2026-08-10"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-BASIS-PATCH-007-LOCKED-001"
+          - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-LOCKED-001"
+      sequence: 98
+    -
+      id: "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-007.PRE-001-VERIFIED-AND-PRE-002-ENTRY"
+      statement: "PATCH-007.PRE-001 is implemented through STD-OPERATIONAL-EVIDENCE and cross-component bindings; this basis is valid only after successful publication, independent remote verification and a clean Working Source."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        patch: "PATCH-007.PRE-001"
+        verification_status: "VERIFIED_ON_SUCCESSFUL_PUBLICATION_OF_THIS_RECORD"
+        implemented_contract: "STD-OPERATIONAL-EVIDENCE"
+        contract_ref: "standards/operational-evidence.yaml"
+        core_capabilities:
+          - "BOUNDED_OPERATIONAL_EVIDENCE_ENVELOPE"
+          - "PROBE_STATUS_RESULT_VALUE_SOURCE_SEPARATION"
+          - "STATE_AWARE_FRESHNESS"
+          - "QUESTION_RELATIVE_EVIDENCE_SUFFICIENCY"
+          - "PARTIAL_EVIDENCE_PRESERVATION"
+          - "PROGRESSIVE_CORE_TARGETED_DEEP_ACQUISITION"
+          - "PRIVACY_AND_REDACTION_BEFORE_TRANSPORT"
+          - "MISMATCH_DETECTION_WITH_ROOT_CAUSE_CONTINUATION"
+        architecture:
+          new_top_level_engine: false
+          control_owner: "MCP"
+          evidence_authority: "EVIDENCE_ONLY"
+        next_patch: "PATCH-007.PRE-002"
+        next_patch_status: "ACTIVE"
+        next_patch_implementation_authorized: false
+        exact_next_action: "WAIT_FOR_EXPLICIT_CONTINUATION_THEN_IMPLEMENT_PATCH-007.PRE-002"
+      provenance:
+        introduced_by_ref: "PATCH-007.PRE-001-RUN_TO_PASS"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
+          - "STD-OPERATIONAL-EVIDENCE"
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-007-LOCKED-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-LOCKED-001"
+      sequence: 99
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4041,6 +4115,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH-007-LOCKED-001"
       - "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
+      - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4088,7 +4163,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 98
+  next_sequence: 100
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

@@ -1,0 +1,233 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-OPERATIONAL-EVIDENCE
+  name: Cerebro Operational Evidence Standard
+  version: 0.1.0
+  status: approved
+  authority: authoritative
+  scope: Bounded machine-readable operational evidence for control, change, delivery, validation, diagnostics, recovery, and learning.
+  consumers:
+    - mcp
+    - context-engine
+    - quality-gate
+    - change-engine
+    - delivery-controller
+    - validator
+    - diagnostics
+
+authority:
+  definitional_authority: Cerebro Source 1.0
+  evidence_authority: EVIDENCE_ONLY
+  evidence_is_runtime_or_derived_state: true
+  evidence_creates_source_authority: false
+  evidence_creates_policy_authority: false
+
+evidence_envelope:
+  schema_id: cerebro-operational-evidence/v0.1
+  required_fields:
+    - evidence_id
+    - evidence_kind
+    - subject_ref
+    - probe_ref
+    - status
+    - result
+    - value
+    - source
+    - observed_at
+    - freshness
+    - confidence
+    - sensitivity
+    - redaction
+    - error
+    - basis_refs
+    - producer_ref
+  evidence_kinds:
+    - STATE_OBSERVATION
+    - PROBE_RESULT
+    - VERIFICATION_RESULT
+    - PROCESS_OBSERVATION
+    - DELIVERY_OBSERVATION
+    - DIAGNOSTIC_OBSERVATION
+    - DERIVED_ASSESSMENT
+  status_values:
+    COMPLETE: probe_or_acquisition_completed_for_declared_scope
+    PARTIAL: usable_subset_obtained_but_declared_scope_not_complete
+    UNAVAILABLE: required_source_or_probe_not_available
+    ERROR: probe_or_acquisition_failed
+  result_values:
+    PASS: observed_condition_matches_declared_expectation
+    FAIL: observed_condition_conflicts_with_declared_expectation
+    UNKNOWN: evidence_does_not_resolve_the_declared_question
+    NOT_APPLICABLE: probe_is_not_relevant_to_the_declared_subject_or_scope
+  null_semantics:
+    value_may_be_null_when:
+      - status_is_UNAVAILABLE
+      - status_is_ERROR
+      - result_is_UNKNOWN
+      - result_is_NOT_APPLICABLE
+    missing_or_null_value_is_not_implicit_FAIL: true
+
+probe_contract:
+  probe_definition_requires:
+    - probe_ref
+    - question
+    - subject_scope
+    - acquisition_method
+    - expected_value_or_condition_when_applicable
+    - freshness_policy
+    - sensitivity_policy
+    - failure_behavior
+  observations:
+    preserve_expected_and_observed_separately: true
+    preserve_raw_error_bounded: true
+    probe_execution_failure_is_not_subject_failure: true
+    one_probe_failure_does_not_discard_successful_sibling_probes: true
+
+freshness:
+  principle: FRESHNESS_IS_STATE_AWARE_NOT_TIME_ONLY
+  required_fields:
+    - freshness_kind
+    - basis_fingerprint
+    - invalidation_triggers
+  kinds:
+    IMMUTABLE:
+      example: exact_commit_or_content_hash
+      expires_by_elapsed_time: false
+    STATE_BOUND:
+      invalidated_by: relevant_subject_state_change
+    REMOTE_HEAD:
+      refresh_before:
+        - material_write
+        - publication
+        - authority_claim
+    TIME_BOUND:
+      allowed_when: evidence_is_inherently_time_sensitive
+      expires_at_required: true
+  stale_evidence_effect:
+    - DO_NOT_TREAT_AS_CURRENT
+    - REACQUIRE_IF_MATERIAL
+    - PRESERVE_AS_HISTORICAL_EVIDENCE_WHEN_USEFUL
+
+confidence:
+  values:
+    - VERIFIED
+    - STRONG
+    - MODERATE
+    - LOW
+    - UNKNOWN
+  principle: CONFIDENCE_DESCRIBES_EVIDENCE_SUPPORT_NOT_SOURCE_AUTHORITY
+  constraints:
+    - confidence_must_not_override_governing_authority
+    - repeated_identical_observation_is_not_independent_confirmation
+    - independent_poststate_verification_may_strengthen_confidence
+
+sufficiency:
+  assessment_values:
+    COMPLETE: all_required_evidence_for_the_declared_question_is_current_and_usable
+    PARTIAL: some_required_evidence_is_current_and_usable_but_not_all
+    INSUFFICIENT: available_evidence_cannot_support_the_required_decision_or_claim
+    FAILED: acquisition_process_failed_without_a_usable_minimum_evidence_set
+  relative_to:
+    - decision_ref
+    - verification_requirement
+    - recovery_question
+    - diagnostic_question
+  invariants:
+    - MISSING_EVIDENCE_IS_NOT_NEGATIVE_EVIDENCE
+    - PARTIAL_EVIDENCE_MAY_REMAIN_USEFUL
+    - MATERIAL_DECISION_REQUIRES_ITS_DECLARED_MINIMUM_EVIDENCE_SET
+    - MORE_DATA_IS_NOT_BETTER_WHEN_SUFFICIENCY_IS_ALREADY_REACHED
+
+progressive_acquisition:
+  default_mode: PROGRESSIVE
+  stages:
+    - CORE
+    - TARGETED_EXPANSION
+    - DEEP
+  default_stage: CORE
+  expand_when:
+    - current_evidence_is_insufficient_for_material_control_resolution
+    - unresolved_uncertainty_can_change_the_next_action
+    - independent_cross_validation_is_required
+  stop_when:
+    - declared_sufficiency_is_reached
+    - additional_collection_has_low_expected_decision_value
+    - privacy_or_authority_boundary_blocks_further_collection
+  user_role: USER_IS_NOT_DEFAULT_DIAGNOSTIC_CONTROLLER
+
+privacy_and_redaction:
+  minimization: COLLECT_ONLY_EVIDENCE_RELEVANT_TO_THE_DECLARED_QUESTION
+  sensitivity_values:
+    - PUBLIC
+    - INTERNAL
+    - SENSITIVE
+    - SECRET
+  redaction_modes:
+    - NONE
+    - MASK
+    - HASH
+    - SUMMARY
+    - OMIT
+  prohibited_in_chat_transport:
+    - credentials
+    - authentication_tokens
+    - private_keys
+    - unbounded_environment_dumps
+    - SECRET_values
+  bounded_transport:
+    full_artifact_may_remain_local: true
+    chat_or_handoff_envelope: BOUNDED_REDACTED_MACHINE_RELEVANT
+    preserve_reference_to_full_artifact_when_available: true
+
+mismatch_semantics:
+  parent_pattern: EXPECTED_OBSERVED_STATE_MISMATCH
+  wisdom_ref: CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001
+  invariant: MISMATCH_IS_DETECTION_NOT_ROOT_CAUSE
+  mismatch_evidence_must_preserve:
+    - expected_value_or_structure
+    - observed_value_or_structure
+    - comparison_mechanism
+    - acquisition_source
+  required_followup:
+    - CLASSIFY_MISMATCH_DOMAIN
+    - IDENTIFY_COMPARISON_OR_PRODUCER_MECHANISM
+    - FIND_ROOT_CAUSE_OR_ROOT_PRODUCER
+    - BIND_MACHINE_ENFORCEABLE_LEARNING_WHEN_AVAILABLE
+
+rules:
+  - id: STD-OP-EVID-R001
+    statement: Operational evidence shall remain derived EVIDENCE_ONLY state and shall never create Source or policy authority.
+    priority: critical
+  - id: STD-OP-EVID-R002
+    statement: Every material probe result shall preserve status, result, value, source, freshness, confidence, error, and governing basis references.
+    priority: critical
+  - id: STD-OP-EVID-R003
+    statement: Probe execution failure, unavailable evidence, unknown evidence, and observed subject failure shall remain distinct states.
+    priority: critical
+  - id: STD-OP-EVID-R004
+    statement: Evidence freshness shall be invalidated by relevant state change according to evidence type and shall not be reduced to elapsed time alone.
+    priority: critical
+  - id: STD-OP-EVID-R005
+    statement: Evidence sufficiency shall be assessed relative to the exact decision, verification, recovery, or diagnostic question being resolved.
+    priority: critical
+  - id: STD-OP-EVID-R006
+    statement: Missing evidence shall not be interpreted as negative evidence, and partial evidence shall preserve every independently usable successful observation.
+    priority: critical
+  - id: STD-OP-EVID-R007
+    statement: Evidence acquisition shall begin with the smallest sufficient CORE set and expand only when additional evidence can materially change resolution.
+    priority: high
+  - id: STD-OP-EVID-R008
+    statement: Privacy minimization and redaction shall occur before evidence crosses a human or transport boundary.
+    priority: critical
+  - id: STD-OP-EVID-R009
+    statement: Credentials, authentication tokens, private keys, SECRET values, and unbounded environment dumps shall not enter the bounded chat transport envelope.
+    priority: critical
+  - id: STD-OP-EVID-R010
+    statement: A detected expected-observed mismatch shall preserve both sides of the comparison and trigger root-producer analysis rather than terminate diagnosis at the mismatch label.
+    priority: critical
+  - id: STD-OP-EVID-R011
+    statement: Repeated identical observations shall not be counted as independent confirmation.
+    priority: high
+  - id: STD-OP-EVID-R012
+    statement: Evidence collection shall stop when declared sufficiency is reached unless a governing contract explicitly requires stronger independent verification.
+    priority: high

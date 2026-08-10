@@ -86,6 +86,34 @@ known_language_failure_loop_prevention:
     - READY-claim-based-only-on-patch-stat-or-numstat
     - silent-regeneration-of-unchanged-known-good-artifacts
 
+operational_evidence_contract_validation:
+  introduced_by: PATCH-007.PRE-001
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/operational-evidence.yaml
+  required_files:
+    - standards/operational-evidence.yaml
+  required_contracts:
+    - evidence-is-derived-and-non-authoritative
+    - probe-status-result-value-source-freshness-confidence-error-are-distinct
+    - missing-evidence-is-not-negative-evidence
+    - partial-evidence-preserves-successful-observations
+    - evidence-sufficiency-is-question-relative
+    - freshness-is-state-aware
+    - progressive-acquisition-is-sufficiency-driven
+    - privacy-redaction-precedes-human-transport
+    - mismatch-detection-does-not-end-root-cause-analysis
+  required_canaries:
+    - unavailable-probe-is-not-subject-fail
+    - partial-probe-set-retains-successful-results
+    - remote-head-evidence-refreshes-before-material-write
+    - secret-value-is-omitted-from-bounded-transport
+    - mismatch-preserves-expected-and-observed
+  prohibited:
+    - evidence-as-source-authority
+    - collect-everything-by-default
+    - probe-error-coerced-to-subject-failure
+
 phases:
   structure:
   - required-files

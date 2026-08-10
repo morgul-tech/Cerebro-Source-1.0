@@ -304,6 +304,25 @@ standard_runner_contract:
   - implicit-publish-during-Install
   - silent-profile-fallback
 
+operational_evidence:
+  contract_ref: standards/operational-evidence.yaml
+  authority: EVIDENCE_ONLY
+  delivery_observations:
+    - preflight
+    - backup
+    - installation
+    - installed-state-verification
+    - local-validation
+    - publication
+    - remote-verification
+  receipt_role: EVIDENCE_NOT_AUTHORITY
+  constraints:
+    - unavailable-probe-is-not-implicit-failure
+    - partial-evidence-preserves-successful-observations
+    - freshness-is-bound-to-relevant-repository-state
+    - expected-and-observed-values-remain-distinct-on-mismatch
+    - redact-sensitive-values-before-human-transport
+
 artifact_surface_resolution:
   requirement: deliver-user-usable-artifacts
   resolver_owner: MCP

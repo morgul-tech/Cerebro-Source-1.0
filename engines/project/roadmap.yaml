@@ -820,27 +820,37 @@ roadmap:
       title: "operational_evidence_contract"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-006"
       decision_refs:
         - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+        - "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
       source_refs:
         - "standards/control-architecture.yaml"
         - "standards/change-architecture.yaml"
         - "standards/change-delivery.yaml"
+        - "standards/operational-evidence.yaml"
+        - "standards/standards.yaml"
+        - "cerebro.yaml"
+        - "tooling/validator/checks.yaml"
       implementation_constraints:
         - "no_new_top_level_engine"
         - "evidence_is_derived_and_non_authoritative"
         - "progressive_diagnostics_not_collect_everything_by_default"
         - "privacy_and_redaction_are_part_of_the_contract"
         - "implementation_requires_explicit_user_authorization"
+        - "probe_execution_state_is_distinct_from_subject_result"
+        - "evidence_sufficiency_is_question_relative"
+        - "freshness_is_state_aware"
+        - "partial_evidence_preserves_successful_observations"
+        - "mismatch_detection_is_not_root_cause"
     -
       id: "PATCH-007.PRE-002"
       title: "standard_handoff_convergence"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-007.PRE-001"
       decision_refs:
