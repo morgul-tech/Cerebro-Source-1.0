@@ -3229,6 +3229,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
           first_regression_families:
             - "POWERSHELL_AUTOMATIC_VARIABLE_COLLISION"
             - "PATCH_ANCHOR_LINE_ENDING_REPRESENTATION"
+            - "NATIVE_PROCESS_RESULT_FALSE_FAILURE"
+            - "POWERSHELL_COMMAND_SHADOWING_NATIVE_EXECUTABLE"
           inheritance_rule: "EVERY_LATER_MATERIAL_PATCH_INHERITS_APPLICABLE_FAILURE_KNOWLEDGE_AND_REGRESSIONS"
           stale_assurance_when_relevant_failure_basis_changes: true
       provenance:
@@ -3381,6 +3383,110 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001"
       sequence: 89
+    -
+      id: "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
+      type: "WISDOM_RECORD"
+      scope: "NATIVE-PROCESS-RESULT-OBSERVATION-AND-POSTSTATE-RECONCILIATION"
+      statement: "A successful child operation must not be reclassified as failure solely because the wrapper cannot obtain a usable process exit code; process observation, child receipt, and independently verified post-state are distinct evidence channels that must be reconciled before final classification."
+      payload:
+        maturity: "CONFIRMED_RECURRING_FAILURE_FAMILY"
+        implementation_status: "LOCKED_INPUT_TO_PATCH-007.PRE-003_AND_PRE-005"
+        failure_family: "NATIVE_PROCESS_RESULT_FALSE_FAILURE"
+        variant: "NULL_OR_UNAVAILABLE_EXIT_CODE_INTERPRETED_AS_NONZERO_FAILURE"
+        incident:
+          date: "2026-08-10"
+          operation: "CEREBRO_PATCH007_LOCK_R2"
+          child_operation: "cerebro_sync"
+          child_reported_state: "SUCCESS_PUSHED"
+          child_local_commit: "0f59e06edaacdb59abf600f76226bf8c7811ecfe"
+          actual_published_commit: "0f59e06edaacdb59abf600f76226bf8c7811ecfe"
+          wrapper_observation: "PROCESS_EXIT_CODE_UNAVAILABLE"
+          wrapper_classification: "FALSE_FAILURE"
+          user_correction_required: true
+        analysis:
+          primary_failure_mode: "PROCESS_OBSERVATION_DEGRADED_BUT_WRAPPER_TREATED_DEGRADED_OBSERVATION_AS_OPERATION_FAILURE"
+          important_distinctions:
+            - "PROCESS_EXIT_STATUS_NE_OPERATION_POSTSTATE"
+            - "UNAVAILABLE_EXIT_CODE_NE_NONZERO_EXIT_CODE"
+            - "CHILD_RECEIPT_NE_WRAPPER_OBSERVATION"
+            - "RECEIPT_NE_AUTHORITY_AND_MUST_BE_CROSS_VERIFIED_WHEN_MATERIAL"
+          required_resolution_order:
+            - "capture_process_start_and_liveness"
+            - "capture_exit_code_when_available"
+            - "capture_stdout_stderr_and_child_receipt"
+            - "if_result_channels_disagree_or_exit_is_unavailable_then_verify_material_poststate"
+            - "classify_from_strongest_consistent_evidence"
+          required_classifications:
+            - "PROCESS_NOT_STARTED"
+            - "PROCESS_RUNNING"
+            - "PROCESS_EXITED_WITH_CODE"
+            - "PROCESS_EXIT_STATUS_UNAVAILABLE"
+            - "PROCESS_TIMEOUT"
+            - "PROCESS_OBSERVATION_FAILED"
+            - "SUCCESS_WITH_PROCESS_OBSERVATION_DEGRADED"
+          prevention:
+            - "use_one_canonical_native_process_supervisor_instead_of_per-runner_wrappers"
+            - "null_or_unavailable_exit_status_must_not_be_compared_as_ordinary_nonzero_exit"
+            - "successful_machine_receipt_plus_verified_poststate_can_resolve_success_when_process-observation-is-degraded"
+            - "receipt_exit_and_poststate_disagreement_must_be_explicitly_classified"
+            - "regression_suite_must_cover_unavailable_exit_status_before_user_handoff"
+        confidence: "HIGH"
+        evidence:
+          authoritative_commit_verified_after_incident: "0f59e06edaacdb59abf600f76226bf8c7811ecfe"
+          source_state: "LOCK_COMMIT_PUBLISHED"
+      provenance:
+        introduced_by_ref: "USER-REGISTER-EXIT-REGRESSION-2026-08-10"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+          - "tooling/builder/builder.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+          - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+      sequence: 90
+    -
+      id: "CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
+      type: "WISDOM_RECORD"
+      scope: "POWERSHELL-NATIVE-COMMAND-RESOLUTION"
+      statement: "PowerShell helper functions, aliases, or commands must not shadow the native executable they intend to invoke; native process execution shall resolve the exact Application command before invocation so wrapper names cannot recursively capture native command calls."
+      payload:
+        maturity: "CONFIRMED_FAILURE"
+        implementation_status: "LOCKED_INPUT_TO_PATCH-007.PRE-003_AND_PRE-005"
+        failure_family: "POWERSHELL_COMMAND_SHADOWING_NATIVE_EXECUTABLE"
+        incident:
+          date: "2026-08-10"
+          operation: "CEREBRO_EXIT_REGRESSION"
+          helper_name: "Git"
+          intended_native_command: "git.exe"
+          observed_failure: "parameter_C_not_found_on_helper_function"
+          mutation_performed: false
+        analysis:
+          primary_failure_mode: "CASE_INSENSITIVE_COMMAND_RESOLUTION_SELECTED_HELPER_FUNCTION_INSTEAD_OF_NATIVE_EXECUTABLE"
+          required_prevention:
+            - "resolve_native_executable_with_Get_Command_CommandType_Application"
+            - "invoke_exact_resolved_executable_path"
+            - "helper_function_names_must_not_equal_native_command_names_case_insensitively"
+            - "native_adapter_selftest_must_cover_command_shadowing"
+          regression_cases:
+            - "helper_named_Git_and_git_executable_available"
+            - "alias_named_git_present"
+            - "native_executable_path_contains_spaces"
+            - "resolved_application_missing"
+        confidence: "HIGH"
+      provenance:
+        introduced_by_ref: "USER-TERMINAL-FAILURE-2026-08-10-134631"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+          - "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
+      sequence: 91
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -3465,8 +3571,10 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
       - "CTX-WISDOM-KNOWN-LANGUAGE-FAILURE-LOOP-PREVENTION-001"
       - "CTX-WISDOM-PATCH-007-FAILURE-CHAIN-001"
+      - "CTX-WISDOM-NATIVE-PROCESS-RESULT-FALSE-FAILURE-001"
+      - "CTX-WISDOM-POWERSHELL-NATIVE-COMMAND-SHADOWING-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 90
+  next_sequence: 92
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
