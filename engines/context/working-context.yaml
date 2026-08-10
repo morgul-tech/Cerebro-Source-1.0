@@ -4069,6 +4069,74 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-PATCH-007-LOCKED-001"
       sequence: 99
+    -
+      id: "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
+      type: "DECISION"
+      scope: "PATCH-007.PRE-002-IMPLEMENTATION-AUTHORIZATION"
+      statement: "The user instruction to continue PATCH-007 self-running FULL without internal stops authorizes autonomous implementation of PATCH-007.PRE-002 until the next real user-execution boundary."
+      payload:
+        decision_status: "AUTHORIZED"
+        implementation_authorized: true
+        exact_scope: "PATCH-007.PRE-002"
+        authorization_source: "CURRENT_EXPLICIT_USER_INSTRUCTION"
+        control_mode: "SELF_RUNNING_FULL"
+        stop_policy:
+          - "USER_EXECUTION_REQUIRED"
+          - "USER_INPUT_MATERIALLY_REQUIRED"
+          - "FAILURE_REGISTRATION_REQUIRES_USER_DECISION"
+        material_preflight:
+          result: "KEEP"
+          architecture_changed: false
+          hard_blockers: []
+        basis_commit: "c4d4b07101d135a78b5326adaa2c3da4f53c2a58"
+      provenance:
+        introduced_by_ref: "USER-CONTINUE-PATCH-007-SELF-RUNNING-FULL-2026-08-10"
+        basis_refs:
+          - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
+          - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
+      sequence: 100
+    -
+      id: "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
+      type: "CURRENT_BASIS"
+      scope: "PATCH-007.PRE-002-VERIFIED-AND-PRE-003-ENTRY"
+      statement: "PATCH-007.PRE-002 converges STANDARD handoff on the existing cpatch path: launcher and bundle are identity-bound, staged adjacently, machine-verified before child execution, and governed by handoff assurance."
+      payload:
+        applicability: "CURRENT_CEREBRO_DEVELOPMENT"
+        patch: "PATCH-007.PRE-002"
+        verification_status: "VERIFIED_ON_SUCCESSFUL_PUBLICATION_OF_THIS_RECORD"
+        architecture:
+          parallel_bootstrap_created: false
+          execution_bridge: "cpatch"
+          standard_delivery_unit: "LAUNCHER_PLUS_BUNDLE"
+          handoff_assurance_required: true
+          evidence_authority: "EVIDENCE_ONLY"
+        capabilities:
+          - "CPATCH_BUNDLE_AWARE_STAGING"
+          - "LAUNCHER_BUNDLE_IDENTITY_BINDING"
+          - "ADJACENT_RUN_ROOT_STAGING"
+          - "PROCESS_SCOPED_EXECUTION_POLICY"
+          - "HANDOFF_ASSURANCE_RECEIPT"
+          - "LEGACY_LAUNCHER_ONLY_COMPATIBILITY"
+        next_patch: "PATCH-007.PRE-003"
+        next_patch_status: "ACTIVE"
+        next_patch_implementation_authorized: true
+        authorization_basis: "SELF_RUNNING_FULL_CURRENT_USER_INSTRUCTION"
+      provenance:
+        introduced_by_ref: "PATCH-007.PRE-002-RUN_TO_PASS"
+        basis_refs:
+          - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
+          - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
+      sequence: 101
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4099,6 +4167,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-PATCH-DELIVERY-ASSURANCE-PROFILE-001"
       - "CTX-DEC-DEVELOPMENT-HISTORY-LOCK-001"
       - "CTX-DEC-PATCH-007-PRE-001-AUTHORIZED-001"
+      - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
@@ -4116,6 +4185,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-BASIS-GUARDRAILS-IMPLEMENTED-001"
       - "CTX-BASIS-PATCH-007-PRE-001-VERIFIED-001"
+      - "CTX-BASIS-PATCH-007-PRE-002-VERIFIED-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4163,7 +4233,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 100
+  next_sequence: 102
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

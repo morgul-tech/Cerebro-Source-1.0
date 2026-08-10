@@ -27,6 +27,9 @@ boundaries:
     - expose-exactly-one-standard-copyable-command
     - keep-standard-internal-files-inside-bundle
     - make-standard-launch-independent-of-current-working-directory
+    - require-machine-verified-handoff-assurance-before-standard-user-handoff
+    - treat-standard-launcher-and-bundle-as-one-identity-bound-delivery-unit
+    - preserve-process-scoped-execution-policy-only
   must_not:
     - design-or-generate-source-content
     - create-source-authority
@@ -56,3 +59,5 @@ interfaces:
     - delivery-selection-state
     - delivery-selection-history
     - canonical-delivery-profile-controls
+    - handoff-assurance-receipt
+    - identity-bound-standard-delivery-unit

@@ -102,6 +102,40 @@ patch_generation_contract:
     publication_owner: publication-gate
     validator_owner: validator
 
+standard_handoff_convergence:
+  introduced_by: PATCH-007.PRE-002
+  status: active
+  governing_standard: standards/change-delivery.yaml
+  principle: NO_USER_HANDOFF_WITHOUT_MACHINE_VERIFIED_HANDOFF_ASSURANCE
+  output_contract:
+    standard_delivery_unit:
+      - exactly_one_bundle_zip
+      - exactly_one_launcher_powershell
+      - exactly_one_copyable_command
+    handoff_assurance_receipt: required
+  assurance_before_handoff:
+    - validate_standard_shape
+    - validate_launcher_and_bundle_identity
+    - validate_cpatch_bundle_aware_compatibility
+    - validate_powershell_parse
+    - validate_runtime_semantic_failure_families
+    - validate_cwd_independence
+    - validate_line_ending_representation_independence
+    - validate_run_to_pass_binding
+    - validate_recovery_contract
+    - validate_sealed_manifest_consumer_compatibility
+    - validate_structural_placement_and_cardinality
+  failure_effect: BLOCK_HANDOFF
+  execution_bridge:
+    function: cpatch
+    extension_mode: BUNDLE_AWARE
+    parallel_bootstrap: false
+    process_scoped_execution_policy_only: true
+    permanent_execution_policy_change: false
+  evidence:
+    authority: EVIDENCE_ONLY
+    output: HANDOFF_ASSURANCE_RECEIPT
+
 local_patch_rule:
   rule: local_patch_artifacts_must_be_generated_from_builder_contract_and_patch_package_standard
   consequence:

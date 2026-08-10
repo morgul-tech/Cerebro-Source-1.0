@@ -850,16 +850,18 @@ roadmap:
       title: "standard_handoff_convergence"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "ACTIVE"
+      status: "VERIFIED"
       dependency_refs:
         - "PATCH-007.PRE-001"
       decision_refs:
         - "CTX-DEC-PATCH-007-REFINED-ARCHITECTURE-LOCK-001"
+        - "CTX-DEC-PATCH-007-PRE-002-AUTHORIZED-001"
       source_refs:
         - "standards/change-delivery.yaml"
         - "tooling/builder/builder.yaml"
         - "tooling/builder/templates/pshell/Cerebro.Tools.psm1"
         - "tooling/delivery/component.yaml"
+        - "tooling/validator/checks.yaml"
       implementation_constraints:
         - "extend_existing_cpatch_capability_do_not_create_parallel_bootstrap"
         - "stage_verified_launcher_and_bundle_as_one_delivery_unit"
@@ -867,12 +869,16 @@ roadmap:
         - "no_permanent_user_execution_policy_change"
         - "no_current_working_directory_dependency"
         - "no_user_handoff_without_machine_verified_handoff_assurance"
+        - "legacy_launcher_only_cpatch_invocation_preserved"
+        - "bundle_aware_cpatch_requires_filename_and_sha256_pair"
+        - "launcher_must_bind_expected_bundle_filename_and_sha256"
+        - "handoff_assurance_receipt_required_before_user_handoff"
     -
       id: "PATCH-007.PRE-003"
       title: "operation_supervision_and_observability"
       phase_ref: "PHASE-2"
       milestone_ref: "MS-003"
-      status: "PLANNED"
+      status: "ACTIVE"
       dependency_refs:
         - "PATCH-007.PRE-002"
       decision_refs:

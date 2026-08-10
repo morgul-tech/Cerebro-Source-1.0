@@ -92,6 +92,37 @@ known_language_failure_loop_prevention:
     - READY-claim-based-only-on-patch-stat-or-numstat
     - silent-regeneration-of-unchanged-known-good-artifacts
 
+standard_handoff_convergence_validation:
+  introduced_by: PATCH-007.PRE-002
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/change-delivery.yaml
+  required_contracts:
+    - standard-user-surface-is-exactly-one-zip-one-launcher-one-command
+    - launcher-and-bundle-form-one-identity-bound-delivery-unit
+    - cpatch-stages-launcher-and-bundle-adjacently-by-exact-hash
+    - launcher-bundle-binding-is-machine-verified-before-child-execution
+    - powershell-parser-runs-before-child-execution
+    - execution-policy-bypass-is-process-scoped
+    - permanent-execution-policy-change-is-prohibited
+    - cwd-independence-is-required
+    - handoff-assurance-receipt-is-required
+  required_canaries:
+    - launcher-only-legacy-cpatch-remains-compatible
+    - incomplete-bundle-identity-is-rejected
+    - wrong-bundle-hash-is-rejected
+    - launcher-without-bundle-name-or-hash-binding-is-rejected
+    - staged-launcher-and-bundle-share-run-root
+    - known-powershell-runtime-semantic-families-are-inherited
+    - line-ending-representation-regression-is-inherited
+    - sealed-manifest-consumer-compatibility-is-verified
+    - structural-placement-and-cardinality-regressions-are-inherited
+  prohibited:
+    - parallel-standard-bootstrap
+    - user-handoff-before-handoff-assurance-pass
+    - cwd-dependent-standard-launch
+    - permanent-user-execution-policy-change
+
 operational_evidence_contract_validation:
   introduced_by: PATCH-007.PRE-001
   severity: error

@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.7.0
+  version: 0.8.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -204,6 +204,66 @@ identity_domains:
     - atomic-copy-verification
     - post-apply-verification
   invariant: TRACKED_GIT_IDENTITY_PHYSICAL_BACKUP_IDENTITY_AND_PAYLOAD_IDENTITY_MUST_NOT_BE_CONFLATED
+standard_handoff_convergence:
+  introduced_by: PATCH-007.PRE-002
+  status: ACTIVE
+  owner: tooling.builder
+  execution_bridge: tooling.builder.templates.pshell.cpatch
+  user_surface:
+    bundle_count: 1
+    launcher_count: 1
+    command_count: 1
+  delivery_unit:
+    identity_fields:
+      - launcher_filename
+      - launcher_sha256
+      - bundle_filename
+      - bundle_sha256
+      - exact_source_commit
+    staging_requirement: LAUNCHER_AND_BUNDLE_ADJACENT_IN_CEREBRO_RUN
+    current_working_directory_dependency: PROHIBITED
+    permanent_execution_policy_change: PROHIBITED
+    process_scoped_execution_policy: Bypass
+  handoff_assurance:
+    required_before_user_handoff: true
+    receipt: HANDOFF_ASSURANCE_RECEIPT
+    required_checks:
+      - STANDARD_SHAPE
+      - LAUNCHER_AND_BUNDLE_IDENTITY
+      - CPATCH_COMPATIBILITY
+      - POWERSHELL_PARSE
+      - POWERSHELL_AUTOMATIC_VARIABLE_COLLISION
+      - CWD_INDEPENDENCE
+      - LINE_ENDING_REPRESENTATION_INDEPENDENCE
+      - RUN_TO_PASS_BINDING
+      - HEARTBEAT_CONTRACT
+      - RECOVERY_CONTRACT
+      - SEALED_BUNDLE_MANIFEST_CONSUMER_COMPATIBILITY
+      - STRUCTURAL_PLACEMENT_AND_CARDINALITY
+    failure_effect: NO_USER_HANDOFF
+  cpatch_contract:
+    legacy_launcher_only_invocation: PRESERVED
+    bundle_aware_invocation:
+      required_pair:
+        - BundleFileName
+        - BundleSha256
+      behavior:
+        - resolve_launcher_by_exact_hash
+        - resolve_bundle_by_exact_hash
+        - stage_launcher_and_bundle_to_same_run_root
+        - verify_final_staged_hashes
+        - verify_launcher_contains_expected_bundle_filename_and_sha256
+        - parse_launcher_before_child_execution
+        - invoke_child_with_process_scoped_execution_policy_bypass
+        - emit_handoff_assurance_evidence
+    incomplete_bundle_identity_result: CPATCH_BUNDLE_IDENTITY_INCOMPLETE
+    launcher_bundle_binding_mismatch_result: CPATCH_LAUNCHER_BUNDLE_BINDING_MISMATCH
+  invariants:
+    - NO_USER_HANDOFF_WITHOUT_MACHINE_VERIFIED_HANDOFF_ASSURANCE
+    - STANDARD_DELIVERY_UNIT_IS_LAUNCHER_PLUS_BUNDLE_NOT_LAUNCHER_ALONE
+    - CPATCH_STAGES_STANDARD_DELIVERY_UNIT_ATOMICALLY_BY_IDENTITY
+    - HANDOFF_ASSURANCE_IS_EVIDENCE_NOT_SOURCE_AUTHORITY
+
 backup_contract:
   required_for: STANDARD
   root_default: D:\Cerebro\Backups

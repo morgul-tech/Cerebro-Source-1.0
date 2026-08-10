@@ -396,12 +396,34 @@ function cpatch {
         [ValidatePattern('^[A-Fa-f0-9]{64}$')]
         [string]$Sha256,
 
+        [string]$BundleFileName,
+
+        [ValidatePattern('^[A-Fa-f0-9]{64}$')]
+        [string]$BundleSha256,
+
         [string]$RunRoot = 'D:\Cerebro\Run'
     )
 
     $ErrorActionPreference = 'Stop'
 
     $expectedHash = $Sha256.ToLowerInvariant()
+    $bundleRequested = (
+        -not [string]::IsNullOrWhiteSpace($BundleFileName) -or
+        -not [string]::IsNullOrWhiteSpace($BundleSha256)
+    )
+
+    if ($bundleRequested -and (
+        [string]::IsNullOrWhiteSpace($BundleFileName) -or
+        [string]::IsNullOrWhiteSpace($BundleSha256)
+    )) {
+        throw 'CPATCH_BUNDLE_IDENTITY_INCOMPLETE'
+    }
+
+    $expectedBundleHash = $null
+    if ($bundleRequested) {
+        $expectedBundleHash = $BundleSha256.ToLowerInvariant()
+    }
+
     $runRootFull = [IO.Path]::GetFullPath($RunRoot)
     [IO.Directory]::CreateDirectory($runRootFull) | Out-Null
 
@@ -563,6 +585,161 @@ function cpatch {
         throw 'CPATCH_FINAL_HASH_MISMATCH'
     }
 
+    $bundleLeaf = $null
+    $stagedBundlePath = $null
+    $finalBundleHash = $null
+
+    if ($bundleRequested) {
+        $bundleLeaf = [IO.Path]::GetFileName($BundleFileName)
+
+        if (
+            [string]::IsNullOrWhiteSpace($bundleLeaf) -or
+            [IO.Path]::GetExtension($bundleLeaf) -ne '.zip'
+        ) {
+            throw 'CPATCH_BUNDLE_FILE_MUST_BE_ZIP'
+        }
+
+        if ($bundleLeaf -notmatch '^CEREBRO_[A-Za-z0-9_.-]+\.zip$') {
+            throw 'CPATCH_BUNDLE_FILENAME_NOT_CEREBRO_ARTIFACT'
+        }
+
+        $bundleCandidates = @()
+
+        if ([IO.Path]::IsPathRooted($BundleFileName)) {
+            $bundleRequestedFull = [IO.Path]::GetFullPath($BundleFileName)
+            $bundleAllowed = (
+                (Test-CerebroPathUnderRoot -Path $bundleRequestedFull -Root $runRootFull) -or
+                (Test-CerebroPathUnderRoot -Path $bundleRequestedFull -Root $downloadsRoot)
+            )
+
+            if (-not $bundleAllowed) {
+                throw 'CPATCH_BUNDLE_ROOTED_PATH_OUTSIDE_ALLOWED_ROOTS'
+            }
+
+            if (Test-Path -LiteralPath $bundleRequestedFull -PathType Leaf) {
+                $bundleCandidates += $bundleRequestedFull
+            }
+        }
+        else {
+            if ($BundleFileName -ne $bundleLeaf) {
+                throw 'CPATCH_BUNDLE_RELATIVE_SUBPATH_NOT_ALLOWED'
+            }
+
+            $runBundleCandidate = Join-Path $runRootFull $bundleLeaf
+            $downloadBundleCandidate = Join-Path $downloadsRoot $bundleLeaf
+
+            if (Test-Path -LiteralPath $runBundleCandidate -PathType Leaf) {
+                $bundleCandidates += $runBundleCandidate
+            }
+
+            if (
+                -not $downloadBundleCandidate.Equals(
+                    $runBundleCandidate,
+                    [StringComparison]::OrdinalIgnoreCase
+                ) -and
+                (Test-Path -LiteralPath $downloadBundleCandidate -PathType Leaf)
+            ) {
+                $bundleCandidates += $downloadBundleCandidate
+            }
+        }
+
+        $bundleCandidates = @($bundleCandidates | Select-Object -Unique)
+
+        if ($bundleCandidates.Count -eq 0) {
+            throw ('CPATCH_BUNDLE_NOT_FOUND:' + $bundleLeaf)
+        }
+
+        $matchingBundles = @()
+        foreach ($candidate in $bundleCandidates) {
+            if ((Get-CerebroFileSha256 -Path $candidate) -eq $expectedBundleHash) {
+                $matchingBundles += $candidate
+            }
+        }
+
+        if ($matchingBundles.Count -eq 0) {
+            throw 'CPATCH_BUNDLE_SHA256_MISMATCH'
+        }
+
+        $bundleSourcePath = $null
+        $runBundleExact = Join-Path $runRootFull $bundleLeaf
+
+        foreach ($candidate in $matchingBundles) {
+            if (
+                [IO.Path]::GetFullPath($candidate).Equals(
+                    [IO.Path]::GetFullPath($runBundleExact),
+                    [StringComparison]::OrdinalIgnoreCase
+                )
+            ) {
+                $bundleSourcePath = $candidate
+                break
+            }
+        }
+
+        if (-not $bundleSourcePath) {
+            $bundleSourcePath = $matchingBundles[0]
+        }
+
+        $stagedBundlePath = $runBundleExact
+
+        if (
+            -not (
+                [IO.Path]::GetFullPath($bundleSourcePath).Equals(
+                    [IO.Path]::GetFullPath($stagedBundlePath),
+                    [StringComparison]::OrdinalIgnoreCase
+                )
+            )
+        ) {
+            if (Test-Path -LiteralPath $stagedBundlePath -PathType Leaf) {
+                if ((Get-CerebroFileSha256 -Path $stagedBundlePath) -ne $expectedBundleHash) {
+                    throw 'CPATCH_BUNDLE_RUN_DESTINATION_CONFLICT'
+                }
+            }
+            else {
+                $bundleTemporary = Join-Path $runRootFull (
+                    '.' + $bundleLeaf + '.stage-' +
+                    [guid]::NewGuid().ToString('N')
+                )
+
+                try {
+                    Copy-Item -LiteralPath $bundleSourcePath -Destination $bundleTemporary -Force
+
+                    if ((Get-CerebroFileSha256 -Path $bundleTemporary) -ne $expectedBundleHash) {
+                        throw 'CPATCH_BUNDLE_STAGE_HASH_MISMATCH'
+                    }
+
+                    [IO.File]::Move($bundleTemporary, $stagedBundlePath)
+                }
+                finally {
+                    if (Test-Path -LiteralPath $bundleTemporary) {
+                        Remove-Item -LiteralPath $bundleTemporary -Force -ErrorAction SilentlyContinue
+                    }
+                }
+            }
+        }
+
+        $finalBundleHash = Get-CerebroFileSha256 -Path $stagedBundlePath
+        if ($finalBundleHash -ne $expectedBundleHash) {
+            throw 'CPATCH_BUNDLE_FINAL_HASH_MISMATCH'
+        }
+
+        $launcherText = [IO.File]::ReadAllText($stagedPath)
+        if (
+            -not $launcherText.Contains($bundleLeaf) -or
+            -not $launcherText.ToLowerInvariant().Contains($expectedBundleHash)
+        ) {
+            throw 'CPATCH_LAUNCHER_BUNDLE_BINDING_MISMATCH'
+        }
+
+        if (
+            -not [IO.Path]::GetDirectoryName($stagedPath).Equals(
+                [IO.Path]::GetDirectoryName($stagedBundlePath),
+                [StringComparison]::OrdinalIgnoreCase
+            )
+        ) {
+            throw 'CPATCH_STANDARD_DELIVERY_UNIT_NOT_ADJACENT'
+        }
+    }
+
     try {
         Unblock-File `
             -LiteralPath $stagedPath `
@@ -634,7 +811,13 @@ function cpatch {
         file = $leaf
         staged_path = $stagedPath
         sha256 = $finalHash
+        bundle_file = $bundleLeaf
+        bundle_staged_path = $stagedBundlePath
+        bundle_sha256 = $finalBundleHash
+        standard_delivery_unit_verified = [bool]$bundleRequested
+        handoff_assurance_receipt = if ($bundleRequested) { 'PASS' } else { 'NOT_APPLICABLE_LEGACY_LAUNCHER_ONLY' }
         parse_valid = $true
+        process_scoped_execution_policy = 'Bypass'
         child_exit_code = $childExit
         parent_terminal_preserved = $true
         patch_success_claimed = $false
@@ -646,7 +829,7 @@ function cerebro_tools_status {
     $config = Get-CerebroToolsConfig
 
     [pscustomobject]@{
-        module_version = '1.2.0'
+        module_version = '1.3.0'
         module_path = $PSScriptRoot
         config_path = 'D:\Cerebro\Config\Cerebro.Tools.json'
         working_source_path = $config.working_source_path
