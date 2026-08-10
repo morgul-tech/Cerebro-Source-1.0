@@ -1,7 +1,7 @@
 schema: cerebro-standards-manifest/v0.1
 standards_engine:
   id: standards
-  version: 0.3.0
+  version: 0.4.0
   role: authoritative-policy-registry
   runtime_engine: false
   policy_owner: Cerebro Source 1.0
@@ -30,6 +30,12 @@ documents:
   required: true
 - id: STD-DELIVERY-KERNEL
   path: standards/delivery-kernel.yaml
+  required: true
+- id: STD-PATCH-ATTEMPT-HISTORY
+  path: standards/patch-attempt-history.yaml
+  required: true
+- id: STD-CONTRACT-ACTIVATION-CLOSURE
+  path: standards/contract-activation-closure.yaml
   required: true
 - id: STD-USER-OPERATING-PROFILE
   path: standards/user-operating-profile.yaml

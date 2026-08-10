@@ -1,0 +1,57 @@
+schema: cerebro-contract-activation-closure/v1
+contract_activation_closure:
+  id: CEREBRO-CONTRACT-ACTIVATION-CLOSURE-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  kind: STANDARD
+
+  purpose: >
+    Prevent Cerebro from treating an operational contract as implemented merely
+    because its declaration exists in Source. Operational completion requires
+    verifiable declaration, registration, implementation, wiring and validation.
+
+  activation_chain:
+  - DECLARED
+  - REGISTERED
+  - IMPLEMENTED
+  - WIRED
+  - VALIDATED
+  - OPERATIONAL
+
+  allowed_non_operational_classifications:
+  - POLICY_ONLY
+  - DORMANT
+
+  failure_classifications:
+  - ORPHANED
+  - ACTIVATION_GAP
+
+  binding_registry: tooling/validator/contract-activation-bindings.json
+  validator: tooling/validator/cerebro_contract_activation_closure.ps1
+
+  strict_closure:
+    scope: EXPLICIT_BINDING_REGISTRY
+    required_before_standard_patch_sync: true
+    failure_effect: BLOCK_PATCH_BEFORE_SYNC
+    operational_binding_requires_all_declared_chain_stages: true
+    uncertain_semantic_inference_may_block: false
+
+  discovery_audit:
+    scope: REGISTERED_REQUIRED_STANDARDS
+    blocking: false
+    output_default: D:\Cerebro\Run\audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json
+    purpose: >
+      Find other Source contracts that reference implementations or tooling but
+      are not yet covered by strict bindings. Findings require classification
+      before they can become blocking controls.
+    dispositions:
+    - REFERENCE_INTEGRITY_PASS
+    - ACTIVATION_GAP
+    - POLICY_ONLY
+    - DORMANT
+    - SEMANTIC_REVIEW_REQUIRED
+
+  closure_invariant: >
+    A contract classified OPERATIONAL cannot close on declaration alone; its
+    explicit activation chain must pass deterministic closure.

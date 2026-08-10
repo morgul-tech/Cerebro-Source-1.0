@@ -1,0 +1,90 @@
+schema: cerebro-patch-attempt-history/v1
+patch_attempt_history:
+  id: CEREBRO-PATCH-ATTEMPT-HISTORY-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  scope: SYSTEM_WIDE_STANDARD_DELIVERY
+
+  purpose: >
+    Preserve every STANDARD patch execution attempt, successful or failed, as
+    immutable evidence so delivery quality, recurring failure families and
+    corrective effectiveness can be analyzed over time.
+
+  canonical_root: D:\Cerebro\Run\attempts
+
+  identity:
+    generated_before:
+    - bundle-verification
+    - selftest
+    - Source-preflight
+    format: UTC_TIMESTAMP_GUID
+    one_user_execution_equals_one_attempt: true
+    propagated_to_kernel: true
+
+  attempt_directory:
+    required:
+    - attempt.json
+    - events.jsonl
+    conditional:
+    - receipt.json
+    - diagnostic.json
+
+  event_model:
+    append_only: true
+    required_event_fields:
+    - attempt_id
+    - timestamp_utc
+    - event
+    canonical_events:
+    - ATTEMPT_STARTED
+    - BUNDLE_VERIFIED
+    - SELFTEST_STARTED
+    - SELFTEST_PASS
+    - APPLY_STARTED
+    - APPLY_PASS
+    - ATTEMPT_PASS
+    - ATTEMPT_FAIL
+
+  terminal_record:
+    written_for_every_attempt: true
+    required_fields:
+    - attempt_id
+    - patch_id
+    - started_at_utc
+    - completed_at_utc
+    - duration_ms
+    - result
+    - expected_base_commit
+    - start_commit
+    - result_commit
+    - working_tree_result
+    - failed_phase
+    - reached_stage
+    - failure_family
+    - source_mutation_assessment
+    - receipt_ref
+    - diagnostic_ref
+    - bundle_sha256
+    - kernel_sha256
+
+  retention:
+    successful_attempts: PERMANENT
+    failed_attempts: PERMANENT
+    overwrite_existing_attempt: PROHIBITED
+    delete_prior_failure_on_later_success: PROHIBITED
+    launcher_directory_failure_handoff_is_transport_only: true
+
+  analysis:
+    group_by_patch_id: true
+    supports:
+    - attempt-count
+    - time-to-pass
+    - failure-family-frequency
+    - reached-stage-frequency
+    - known-failure-recurrence
+    - corrective-revision-effectiveness
+    - success-rate
+    - activation-gap-correlation
+
+  invariant: EVERY_PATCH_EXECUTION_BECOMES_PERMANENT_ATTEMPT_EVIDENCE

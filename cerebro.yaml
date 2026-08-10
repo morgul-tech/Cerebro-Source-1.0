@@ -51,6 +51,8 @@ standards:
   continuation_surface_system_policy: standards/continuation-surface-system-policy.yaml
   boot_critical_path: standards/boot-critical-path-architecture.yaml
   delivery_kernel: standards/delivery-kernel.yaml
+  patch_attempt_history: standards/patch-attempt-history.yaml
+  contract_activation_closure: standards/contract-activation-closure.yaml
   user_operating_profile: standards/user-operating-profile.yaml
   user_operating_profile_schema: standards/user-operating-profile-schema.yaml
   system_metamodel: standards/system-metamodel.yaml

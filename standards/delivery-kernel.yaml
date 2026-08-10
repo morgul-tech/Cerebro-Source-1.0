@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.1"
+  version: "1.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -131,6 +131,20 @@ delivery_kernel:
     resolution:
       stale_failure_handoff_removed_on_success: true
       success_receipt_remains_canonical_evidence: true
+
+  attempt_history:
+    contract: standards/patch-attempt-history.yaml
+    implementation_owner: canonical-launcher
+    every_execution_recorded: true
+    pass_and_fail_retained: true
+    attempt_id_propagated_to_kernel: true
+
+  activation_closure:
+    contract: standards/contract-activation-closure.yaml
+    validator: tooling/validator/cerebro_contract_activation_closure.ps1
+    strict_gate_before_sync: true
+    strict_scope: EXPLICIT_BINDING_REGISTRY
+    discovery_audit_non_blocking: true
 
   assurance:
     existing_contract: standards/development/powershell-level3-delivery-assurance.yaml

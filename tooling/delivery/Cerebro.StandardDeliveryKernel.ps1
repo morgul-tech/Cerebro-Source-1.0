@@ -6,7 +6,8 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$BundleRoot,
     [string]$WorkingSourcePath = 'D:\Cerebro\Source\Cerebro_Source_v1.0',
-    [string]$LauncherPath = ''
+    [string]$LauncherPath = '',
+    [string]$AttemptId = ''
 )
 
 Set-StrictMode -Version 2.0
@@ -399,6 +400,23 @@ function Invoke-Apply {
             }
         }
 
+        $State.ReachedStage = 'CONTRACT_ACTIVATION_CLOSURE'
+        $cacScript = Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\validator\cerebro_contract_activation_closure.ps1'
+        if (Test-Path -LiteralPath $cacScript -PathType Leaf) {
+            . $cacScript
+            $cacResult = Invoke-CerebroContractActivationClosure -Root $WorkingSourcePath -PassThru
+            if ([string]$cacResult.result -ne 'PASS') {
+                $State.FailureFamily = 'CONTRACT_ACTIVATION_GAP'
+                throw ('CONTRACT_ACTIVATION_CLOSURE_FAILED:{0}' -f [string]$cacResult.activation_gap_count)
+            }
+
+            try {
+                [void](Invoke-CerebroContractActivationAudit -Root $WorkingSourcePath)
+            }
+            catch {
+            }
+        }
+
         $State.ReachedStage = 'CANONICAL_SYNC'
         $syncScript = Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\builder\templates\pshell\cerebro_sync.ps1'
         if (-not (Test-Path -LiteralPath $syncScript -PathType Leaf)) {
@@ -430,6 +448,7 @@ function Invoke-Apply {
             result='PASS'
             kernel=$KernelId
             patch_id=[string]$State.Manifest.patch_id
+            attempt_id=$AttemptId
             authoritative_commit=$finalRemote
             working_source_commit=$finalLocal
             source_equality='VERIFIED'

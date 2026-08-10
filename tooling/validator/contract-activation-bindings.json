@@ -1,0 +1,105 @@
+{
+  "schema": "cerebro-contract-activation-bindings/v1",
+  "bindings": [
+    {
+      "id": "DELIVERY_KERNEL",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/delivery-kernel.yaml",
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-DELIVERY-KERNEL",
+      "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_tokens": [
+        "kernel\\Cerebro.StandardDeliveryKernel.ps1",
+        "SelfTest",
+        "Apply"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "mandatory_pre_delivery_gates"
+      ]
+    },
+    {
+      "id": "FAILURE_HANDOFF",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/delivery-kernel.yaml",
+      "declaration_tokens": [
+        "failure_handoff:",
+        "CEREBRO_PATCH_FAIL.json"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-DELIVERY-KERNEL",
+      "implementation": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "implementation_tokens": [
+        "Write-FailureCapsule",
+        "PATCH FAIL"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_tokens": [
+        "Write-FailureCapsule"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "FAILURE_DIAGNOSTIC_CAPSULE_MISSING"
+      ]
+    },
+    {
+      "id": "PATCH_ATTEMPT_HISTORY",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/patch-attempt-history.yaml",
+      "declaration_tokens": [
+        "EVERY_PATCH_EXECUTION_BECOMES_PERMANENT_ATTEMPT_EVIDENCE"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-PATCH-ATTEMPT-HISTORY",
+      "implementation": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "implementation_tokens": [
+        "New-AttemptContext",
+        "Write-AttemptEvent",
+        "Complete-Attempt"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_tokens": [
+        "ATTEMPT_STARTED",
+        "ATTEMPT_PASS",
+        "ATTEMPT_FAIL",
+        "-AttemptId"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "attempt-history-record-created-for-pass-and-fail",
+        "attempt-id-propagates-into-kernel-receipt"
+      ]
+    },
+    {
+      "id": "CONTRACT_ACTIVATION_CLOSURE",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/contract-activation-closure.yaml",
+      "declaration_tokens": [
+        "DECLARED",
+        "REGISTERED",
+        "IMPLEMENTED",
+        "WIRED",
+        "VALIDATED",
+        "OPERATIONAL"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-CONTRACT-ACTIVATION-CLOSURE",
+      "implementation": "tooling/validator/cerebro_contract_activation_closure.ps1",
+      "implementation_tokens": [
+        "Invoke-CerebroContractActivationClosure",
+        "Invoke-CerebroContractActivationAudit"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "wiring_tokens": [
+        "CONTRACT_ACTIVATION_CLOSURE",
+        "Invoke-CerebroContractActivationClosure"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "contract-activation-closure-passes-before-canonical-sync",
+        "discovery-activation-audit-is-non-blocking"
+      ]
+    }
+  ]
+}
