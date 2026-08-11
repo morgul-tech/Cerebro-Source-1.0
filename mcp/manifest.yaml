@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.3.0
+  version: 1.4.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -14,6 +14,7 @@ mcp:
   required_extensions:
   - mcp/boot-architecture-control.yaml
   - standards/development/material-commitment-preflight.yaml
+  - mcp/adaptive-control-resolver.yaml
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0
@@ -48,6 +49,15 @@ control_adapters:
     normal_machine_consumers:
     - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
     activation_probe_is_not_normal_consumer: true
+  adaptive_control_resolver:
+    contract_ref: mcp/adaptive-control-resolver.yaml
+    implementation_ref: mcp/adaptive_control_resolver.py
+    status: CANDIDATE_SHADOW_ONLY
+    live_control_authority: false
+    reuses_control_decision_contract: MCP_CONTROL_DECISION
+    reuses_execution_profile: true
+    shadow_validation_patch_ref: PATCH-AA-003
+    promotion_patch_ref: PATCH-AA-004
 principles:
 - id: MCP-P001
   statement: Analyze the task before selecting or producing a solution.

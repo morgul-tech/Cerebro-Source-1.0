@@ -641,9 +641,14 @@ rules:
   action:
     require_cwd_independent_copyable_command: true
     canonical_bridge_when_available: cpatch
+    availability_definition: fresh-callability-evidence-on-intended-LOCAL_SHELL-surface
+    source_definition_or_export_alone_proves_availability: false
+    when_callability_is_UNKNOWN_or_UNAVAILABLE: use-self-contained-standard-launcher
+    user_try_and_see_probe: prohibited
+    shell_profile_mutation_to_force_cpatch: prohibited
     prohibit_relative_dot_launcher_as_canonical_command: true
     preserve_exact_launcher_and_bundle_identity_binding: true
-  statement: Ved STANDARD-handoff SKAL den kanoniske kopierbare LOCAL_SHELL-kommandoen være uavhengig av terminalens nåværende arbeidsmappe; når den etablerte cpatch-broen er tilgjengelig, SKAL den brukes som normal identity-bound brukerflate fremfor en relativ .\\launcher-kommando.
+  statement: Ved STANDARD-handoff SKAL den kanoniske kopierbare LOCAL_SHELL-kommandoen være uavhengig av terminalens nåværende arbeidsmappe; når den etablerte cpatch-broen har fersk callability-evidens på aktuell LOCAL_SHELL-flate, SKAL den brukes som normal identity-bound brukerflate; ved UNKNOWN eller UNAVAILABLE SKAL eksisterende self-contained STANDARD-launcher brukes uten prøv-og-se hos bruker fremfor en relativ .\\launcher-kommando.
   scope: runtime
   lifecycle: candidate
   validation: error

@@ -1148,3 +1148,81 @@ continuation_presentation_regression_validation:
     - information-loss-as-default-compression-strategy
     - current-working-directory-dependent-canonical-STANDARD-command
 # END CLOSURE-PRESENTATION-CONTINUITY-001
+# BEGIN PATCH-AA-001 ADAPTIVE MCP CANDIDATE VALIDATION
+aa_001_adaptive_mcp_candidate_validation:
+  introduced_by: PATCH-AA-001
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/control-architecture.yaml
+    - mcp/adaptive-control-resolver.yaml
+    - standards/development/adaptive-quality-workform.yaml
+    - standards/operational-evidence.yaml
+    - standards/change-delivery.yaml
+    - engines/presentation/rules.yaml
+  required_files:
+    - mcp/adaptive_control_resolver.py
+    - mcp/manifest.yaml
+    - tooling/change/campaign-policy.yaml
+  required_contracts:
+    - adaptive-resolver-is-MCP-native-not-new-engine
+    - existing-control-state-decision-profile-and-outcomes-are-reused
+    - LIGHT-STANDARD-DEEP-are-reused
+    - safe-autonomy-preferred-over-low-value-user-interruption
+    - high-value-human-boundaries-preserved
+    - capability-existence-does-not-prove-current-availability
+    - fresh-callability-evidence-required-before-optional-handoff-capability-use
+    - UNKNOWN-optional-handoff-capability-uses-proven-self-contained-fallback
+    - missing-evidence-is-not-negative-evidence
+    - resource-pressure-does-not-reduce-mandatory-assurance
+    - continuation-preserve-reresolve-replace-semantics-reused
+    - AA-001-has-no-live-control-authority
+    - AA-003-shadow-validation-required-before-AA-004-promotion
+  required_canaries:
+    - adaptive-resolver-selftest-passes
+    - simple-reversible-task-selects-LIGHT
+    - architecture-high-uncertainty-selects-DEEP
+    - high-value-human-decision-yields-USER_DECISION_REQUIRED
+    - nonmaterial-detour-preserves-continuation
+    - material-insight-reresolves-continuation
+    - explicit-objective-change-replaces-continuation
+    - fresh-cpatch-PASS-evidence-allows-cpatch
+    - stale-or-missing-cpatch-evidence-remains-UNKNOWN
+    - unknown-cpatch-selects-self-contained-launcher-without-user-retry
+    - required-unknown-capability-blocks-without-proven-fallback
+    - RED-resource-pressure-keeps-DEEP-mandatory-verification
+    - handoff-callability-failure-family-has-machine-prevention
+  prohibited:
+    - new-Adaptive-Engine
+    - static-ADAPTIVE-work-mode
+    - runtime-owned-control-intelligence
+    - source-definition-as-callability-proof
+    - user-try-and-see-as-default-capability-probe
+    - PowerShell-profile-mutation-to-force-cpatch
+    - parallel-resource-manager
+    - parallel-telemetry-system
+    - live-AA-control-promotion-before-shadow-evidence
+# END PATCH-AA-001 ADAPTIVE MCP CANDIDATE VALIDATION
+
+# BEGIN ACTIVATION-EVIDENCE-DEPENDENCY-REFRESH-001
+activation_evidence_dependency_refresh_validation:
+  introduced_by: PATCH-AA-001.RECOVERY-001
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/contract-activation-closure.yaml
+    - standards/operational-evidence.yaml
+    - standards/change-delivery.yaml
+  required_contracts:
+    - changed-runtime-evidence-basis-invalidates-prior-proof
+    - stale-runtime-evidence-is-not-operational-proof
+    - dependent-activation-proof-is-refreshed-before-contract-activation-closure
+    - user-retry-is-not-the-dependency-discovery-mechanism
+  required_canaries:
+    - mcp-manifest-change-refreshes-relevance-MCP-activation-proof
+    - changed-runtime-evidence-basis-declares-required-refresh-probe
+    - refreshed-proof-fingerprint-matches-installed-Source-before-CAC
+  prohibited:
+    - prehandoff-ready-claim-with-known-stale-dependent-runtime-evidence
+    - contract-activation-gap-discovered-only-after-user-execution-when-dependency-is-statically-known
+# END ACTIVATION-EVIDENCE-DEPENDENCY-REFRESH-001

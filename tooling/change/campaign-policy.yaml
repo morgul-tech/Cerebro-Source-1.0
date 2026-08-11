@@ -1,7 +1,7 @@
 schema: cerebro-change-campaign-policy/v0.1
 policy:
   id: CEREBRO-CHANGE-CAMPAIGN-POLICY-001
-  version: 0.3.0
+  version: 0.4.0
   authority: SOURCE_DEFINED_POLICY
   regression_catalog_owner: tooling.change
 profiles:
@@ -122,6 +122,18 @@ failure_family_catalog:
     prevention_refs: [APPLICABLE_FAILURE_FAMILY_INHERITANCE]
     regression_refs: [REG-KNOWN-FAMILY-INHERITANCE]
     machine_checks: [APPLICABLE_FAILURE_REGRESSION_BINDING]
+  HANDOFF_CAPABILITY_EXISTENCE_CALLABILITY_COLLAPSE:
+    traits: [powershell, standard_delivery]
+    detection_contains: [CommandNotFoundException, HANDOFF_CAPABILITY_EXISTENCE_CALLABILITY_COLLAPSE]
+    prevention_refs: [FRESH_EXECUTION_SURFACE_CALLABILITY_EVIDENCE_OR_SELF_CONTAINED_FALLBACK]
+    regression_refs: [REG-STANDARD-HANDOFF-CALLABILITY]
+    machine_checks: [OPTIONAL_HANDOFF_COMMAND_CALLABILITY_OR_FALLBACK]
+  ACTIVATION_EVIDENCE_DEPENDENCY_NOT_REFRESHED:
+    traits: [structured_text, standard_delivery]
+    detection_contains: [CONTRACT_ACTIVATION_GAP, RUNTIME_EVIDENCE_STALE, ACTIVATION_EVIDENCE_DEPENDENCY_NOT_REFRESHED]
+    prevention_refs: [CHANGED_RUNTIME_EVIDENCE_BASIS_REQUIRES_PROBE_REFRESH_BEFORE_CONTRACT_ACTIVATION_CLOSURE]
+    regression_refs: [REG-ACTIVATION-EVIDENCE-BASIS-REFRESH]
+    machine_checks: [ACTIVATION_EVIDENCE_DEPENDENCY_REFRESH]
 positive_strengthening_metrics:
   fields: [user_execution_attempt, first_pass_success, resolved_failure_capsule_count, resulting_commit]
   authority: EVIDENCE_ONLY

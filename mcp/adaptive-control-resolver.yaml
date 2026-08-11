@@ -1,0 +1,123 @@
+schema: cerebro-adaptive-control-resolver-contract/v0.1
+adaptive_control_resolver:
+  id: CEREBRO-ADAPTIVE-CONTROL-RESOLVER-001
+  version: "0.1"
+  status: CANDIDATE
+  patch_ref: PATCH-AA-001
+  owner: MCP
+  implementation_ref: mcp/adaptive_control_resolver.py
+  live_control_authority: false
+  promotion_requires:
+    - PATCH-AA-003-shadow-validation
+    - PATCH-AA-004-controlled-promotion
+  purpose: >
+    Resolve proportional analysis depth, autonomy, human decision value,
+    verification depth, continuation effect and current capability suitability
+    by composing existing Cerebro control contracts without creating a new
+    engine, runtime control owner, resource manager, telemetry system or
+    parallel decision path.
+
+reuse:
+  control_contract: standards/control-architecture.yaml
+  quality_workform: standards/development/adaptive-quality-workform.yaml
+  operational_evidence: standards/operational-evidence.yaml
+  material_preflight: standards/development/material-commitment-preflight.yaml
+  continuation_policy: standards/continuation-surface-system-policy.yaml
+  user_profile: standards/user-operating-profile.yaml
+  delivery_owner: standards/change-delivery.yaml
+
+resolved_dimensions:
+  - analysis_depth
+  - verification_depth
+  - safe_autonomy
+  - high_value_human_boundary
+  - continuation_effect
+  - capability_availability
+  - optional_fallback_requirement
+  - human_time_and_resource_efficiency
+
+analysis_depth:
+  values: [LIGHT, STANDARD, DEEP]
+  source_ref: standards/development/adaptive-quality-workform.yaml
+  rule: consequence_uncertainty_reversibility_and_architecture_materiality_scale_depth
+
+control_outcomes:
+  values: [CONTINUE, REMEDIATE, RETRY, REORIENT, USER_DECISION_REQUIRED, BLOCK]
+  new_outcomes_prohibited: true
+
+continuation:
+  nonmaterial_interposed_event: PRESERVE
+  material_user_insight: RERESOLVE
+  explicit_objective_change: REPLACE
+  presentation_owner_remains: presentation
+  human_continuation_surface_owner_remains: standards/human-continuation-surface.yaml
+
+capability_availability:
+  principle: SOURCE_CAPABILITY_EXISTENCE_DOES_NOT_PROVE_CURRENT_EXECUTION_SURFACE_AVAILABILITY
+  evidence_contract_ref: standards/operational-evidence.yaml
+  states: [AVAILABLE, UNAVAILABLE, UNKNOWN]
+  fresh_PASS: AVAILABLE
+  fresh_FAIL: UNAVAILABLE
+  missing_stale_or_conflicting_evidence: UNKNOWN
+  source_definition_alone: UNKNOWN
+  source_export_alone: UNKNOWN
+  optional_capability_when_UNKNOWN:
+    proven_fallback_available: USE_PROVEN_FALLBACK
+    no_proven_fallback: SKIP_OPTIONAL_CAPABILITY
+  required_capability_when_UNAVAILABLE_or_UNKNOWN_without_fallback: BLOCK
+  user_trial_as_default_probe: PROHIBITED
+  invented_availability: PROHIBITED
+
+standard_handoff_learning:
+  failure_family: HANDOFF_CAPABILITY_EXISTENCE_CALLABILITY_COLLAPSE
+  invariant: OPTIONAL_EXECUTION_CAPABILITY_REQUIRES_FRESH_CALLABILITY_EVIDENCE_OR_SAFE_FALLBACK
+  cpatch:
+    preferred_when: FRESH_CALLABILITY_EVIDENCE_PASS
+    otherwise: SELF_CONTAINED_STANDARD_LAUNCHER
+    shell_profile_mutation_to_force_availability: PROHIBITED
+    user_try_and_see_probe: PROHIBITED
+
+resource_resolution:
+  may_reduce:
+    - optional_analysis_expansion
+    - low_value_cross_checks
+    - low_value_user_interruptions
+    - duplicate_tool_work
+  may_not_reduce:
+    - authority_integrity
+    - safety
+    - mandatory_verification
+    - recovery_integrity
+    - Source_equality
+    - material_commitment_gates
+  usage_percent_may_be_invented: false
+
+architecture_boundaries:
+  - MCP_REMAINS_CONTROL_OWNER
+  - RUNTIME_REMAINS_BOUNDED_EXECUTOR
+  - CONTEXT_REMAINS_RELEVANCE_AND_EVIDENCE_OWNER
+  - PRESENTATION_REMAINS_PRESENTATION_OWNER
+  - CHANGE_DELIVERY_REMAINS_STANDARD_HANDOFF_OWNER
+  - CHANGE_ENGINE_REMAINS_FAILURE_REGRESSION_OWNER
+  - NO_NEW_TOP_LEVEL_ENGINE
+  - NO_STATIC_ADAPTIVE_WORK_MODE
+  - NO_PARALLEL_RESOURCE_MANAGER
+  - NO_PARALLEL_TELEMETRY_SYSTEM
+  - NO_PARALLEL_FAILURE_RECOVERY
+  - NO_PARALLEL_RELEVANCE_OR_HISTORY_SYSTEM
+
+acceptance:
+  - candidate_resolver_is_deterministic_and_selftested
+  - existing_CONTROL_STATE_is_refined_not_replaced
+  - existing_MCP_CONTROL_DECISION_outcomes_are_preserved
+  - existing_EXECUTION_PROFILE_is_refined_not_replaced
+  - LIGHT_STANDARD_DEEP_are_reused
+  - safe_autonomous_continuation_is_preferred_over_low_value_human_interruption
+  - high_value_human_boundaries_are_preserved
+  - continuation_survives_nonmaterial_detours
+  - material_user_insight_reresolves_control
+  - explicit_objective_change_replaces_continuation
+  - stale_or_missing_capability_evidence_never_proves_availability
+  - unknown_optional_cpatch_uses_proven_self_contained_fallback_without_user_retry
+  - resource_pressure_does_not_reduce_mandatory_assurance
+  - live_control_promotion_is_deferred_to_AA_004_after_AA_003_shadow_evidence
