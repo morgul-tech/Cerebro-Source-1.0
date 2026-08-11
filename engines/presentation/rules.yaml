@@ -630,6 +630,27 @@ rules:
   lifecycle: candidate
   validation: error
   provenance: {type: repeated-user-correction-systemic-fix, source: CLOSURE-PRESENTATION-CONTINUITY-2026-08-11}
+- id: PRE-037
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition:
+    resolved_next_action:
+      owner: CEREBRO_INTERNAL
+      authorized: true
+      executable: true
+  action:
+    require_internal_execution_before_final_response: true
+    render_result_after_execution: true
+    prohibit_human_continuation_surface: true
+    prohibit_question_or_recommendation_as_execution_substitute: true
+    when_real_human_boundary_is_later_reached:
+      apply_human_continuation_surface_contract: true
+  statement: Når neste avgrensede og autoriserte handling er internt utførbar av Cerebro, SKAL Presentation Engine ikke avslutte svaret med et spørsmål, en anbefaling eller en menneskelig continuation-flate som erstatning for utførelse; resultatet SKAL presenteres etter at handlingen er gjennomført, og Human Continuation Surface blir først relevant ved en reell menneskelig boundary.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: user-corrected-runtime-consumption-gap, source: REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11}
 # END CLOSURE-PRESENTATION-CONTINUITY-001
 
 # BEGIN STANDARD-HANDOFF-CWD-INDEPENDENT-PRESENTATION-001

@@ -1132,6 +1132,9 @@ continuation_presentation_regression_validation:
     - layered-presentation-preserves-material-information
     - visible-progress-updates-share-presentation-language
     - STANDARD-canonical-command-is-CWD-independent
+    - internally-executable-next-action-is-completed-before-response-handoff
+    - human-continuation-surface-requires-real-human-boundary
+    - abstraction-gap-hypothesis-requires-bounded-Source-xref-before-user-handoff
   required_canaries:
     - question-during-active-sequence-keeps-next-step-surface
     - observation-during-active-sequence-keeps-next-step-surface
@@ -1141,13 +1144,38 @@ continuation_presentation_regression_validation:
     - complex-status-answer-exposes-fast-status-and-full-detail
     - progress-update-uses-semantic-status-hierarchy
     - standard-handoff-does-not-present-relative-dot-launcher-as-canonical-command
+    - refine-menneske-internal-Source-xref-continues-without-user-retrigger
+    - internally-executable-next-step-renders-result-not-question
+    - internally-executable-next-step-does-not-render-human-continuation-surface
+    - existing-cross-cutting-rules-are-xrefed-before-new-abstraction-gap-is-proposed
   prohibited:
     - implicit-sequence-termination-from-question-observation-critique-or-learning
     - silent-active-continuation-drop
     - presentation-profile-overriding-continuation-surface
     - information-loss-as-default-compression-strategy
     - current-working-directory-dependent-canonical-STANDARD-command
+    - internally-executable-step-returned-as-user-question-recommendation-or-trigger
+    - human-continuation-surface-without-real-human-boundary
+    - unverified-abstraction-gap-handed-to-user-before-bounded-Source-xref
 # END CLOSURE-PRESENTATION-CONTINUITY-001
+
+standard_manifest_assertion_encoding_regression:
+  introduced_by: CEREBRO-CONTINUATION-CONSUMPTION-CLOSURE-001-R2
+  severity: error
+  owner: tooling.change
+  failure_family: STANDARD_MANIFEST_ASSERTION_ENCODING_REPRESENTATION
+  required_contracts:
+    - final-sealed-manifest-assertions-survive-the-actual-Windows-PowerShell-consumer-representation
+    - non-ASCII-assertion-text-is-JSON-Unicode-escaped-or-read-by-an-explicit-UTF8-consumer
+    - assertion-validation-executes-against-final-sealed-manifest-not-only-in-memory-source-strings
+  required_canaries:
+    - UTF8-Norwegian-assertion-does-not-become-mojibake-after-Windows-PowerShell-manifest-read
+    - ASCII-only-equivalent-assertion-remains-semantically-bounded-to-the-target-file
+    - every-final-manifest-assertion-is-executed-before-redelivery
+  prohibited:
+    - raw-non-ASCII-manifest-assertion-with-implicit-Windows-PowerShell-text-decoding
+    - local-UTF8-JSON-parse-substituting-for-actual-consumer-representation-validation
+
 # BEGIN PATCH-AA-001 ADAPTIVE MCP CANDIDATE VALIDATION
 aa_001_adaptive_mcp_candidate_validation:
   introduced_by: PATCH-AA-001

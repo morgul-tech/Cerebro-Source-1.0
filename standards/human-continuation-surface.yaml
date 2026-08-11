@@ -2,7 +2,7 @@ schema: cerebro-human-continuation-surface/v0.1
 
 human_continuation_surface:
   id: CEREBRO-HUMAN-CONTINUATION-SURFACE-001
-  version: "0.1"
+  version: "0.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   introduced_by: GUARDRAILS-001
@@ -13,6 +13,14 @@ human_continuation_surface:
     short command deterministically before execution.
 
   principle: USER_COMMAND_IS_A_TRIGGER_NOT_AN_INFORMATION_CONTAINER
+
+  applicability:
+    required_when: REAL_HUMAN_ACTION_IS_NEXT
+    boundary_authority: MCP_CONTROL_DECISION
+    not_applicable_when:
+      - next-authorized-step-is-internally-executable
+      - no-user-owned-fact-choice-authorization-safety-or-local-execution-is-required
+    internally_executable_effect: CONTINUE_AUTONOMOUSLY
 
   human_action_surface:
     normal_word_budget:
@@ -103,3 +111,4 @@ human_continuation_surface:
     - full-state-remains-Cerebro-owned
     - applicable-contract-is-resolved-before-general-tool-reasoning
     - human-boundary-is-presented-not-misclassified-as-system-blocker
+    - no-human-continuation-surface-without-real-human-boundary

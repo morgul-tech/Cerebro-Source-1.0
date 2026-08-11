@@ -4778,6 +4778,99 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
       sequence: 116
+    -
+      id: "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
+      type: "WISDOM_RECORD"
+      scope: "CORRECTIVE-DELIVERY-REMEDIATION-AND-PREHANDOFF-ASSURANCE"
+      statement: "The first observed failure is not a complete defect inventory; corrective delivery shall inspect the known remaining execution path, adjacent contracts, final candidate assertions, runtime evidence and publication closure before redelivery."
+      payload:
+        maturity: "CONFIRMED_USER_AND_EXECUTION_EVIDENCE"
+        assessment:
+          observations:
+            - "AA-004 R5 initially remediated one surfaced failure per attempt and exposed additional deterministic failures on later runs."
+            - "A bounded forward sweep found and corrected the remaining visible defects together, after which the patch reached first-pass success."
+          required_behavior:
+            - "classify_the_current_failure_without_treating_it_as_the_complete_failure_surface"
+            - "inspect_the_known_remaining_execution_path_and_adjacent_contracts"
+            - "validate_final_candidate_assertions_runtime_evidence_and_publication_closure_before_redelivery"
+          prohibited:
+            - "serial_first_visible_failure_only_remediation_when_the_remaining_path_is_available_for_inspection"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_CEREBRO-HUMAN-REFINE-AND-FORWARD-SWEEP-LEARNING-001"
+        relevance:
+          domains:
+            - "corrective-delivery"
+            - "failure-remediation"
+            - "pre-handoff-assurance"
+          trigger_patterns:
+            - "patch_failure_after_prior_remediation"
+            - "known_remaining_execution_path"
+            - "redelivery_after_deterministic_failure"
+        traceability:
+          source_type: "USER_DECLARED_HISTORICAL_LEARNING"
+          conversation_date: "2026-08-11"
+          evidence_profile_ref: "WEP-FORWARD-FAILURE-SWEEP-001"
+          development_history_ref: "HIST-LEARN-AA004-R5-FORWARD-FAILURE-SWEEP-20260811"
+      provenance:
+        introduced_by_ref: "CEREBRO-HUMAN-REFINE-AND-FORWARD-SWEEP-LEARNING-001"
+        basis_refs:
+          - "CEREBRO-AA004-CONTROLLED-PROMOTION-001-R5.5"
+          - "CEREBRO-DELIVERY-KERNEL-RECEIPT-20260811-164112"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-TROUBLESHOOTING-BEFORE-MECHANISM-001"
+      sequence: 117
+    -
+      id: "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
+      type: "WISDOM_RECORD"
+      scope: "MATERIAL-INSIGHT-TO-INTERNAL-NEXT-ACTION-CLOSURE"
+      statement: "When refinement or critique resolves a bounded, authorized and internally executable next action, Cerebro shall execute it before response handoff and return the result; it shall not convert the action into a question, recommendation or user continuation trigger."
+      payload:
+        maturity: "CONFIRMED_CLEAN_SESSION_ESCAPE_AND_USER_CORRECTION"
+        assessment:
+          observations:
+            - "A clean-session refine menneske canary reconstructed the user's systemic meaning correctly but stopped at an internally executable Source cross-reference."
+            - "The governing MCP continuation decision already required CONTINUE, so the defect was incomplete downstream consumption rather than missing control authority."
+          required_behavior:
+            - "classify_the_next_action_owner_before_response_completion"
+            - "execute_bounded_authorized_internal_actions_before_final_response"
+            - "cross_reference_existing_Source_owners_and_contracts_before_asserting_a_new_general_abstraction_gap"
+            - "render_a_human_continuation_surface_only_at_a_real_human_boundary"
+          prohibited:
+            - "returning_an_internally_executable_step_as_a_user_question_recommendation_or_retrigger"
+            - "creating_a_parallel_control_mechanism_when_existing_MCP_control_is_correct"
+        confidence: "HIGH"
+        implementation_status: "IMPLEMENTED_BY_CEREBRO-CONTINUATION-CONSUMPTION-CLOSURE-001"
+        relevance:
+          domains:
+            - "refine-menneske"
+            - "critique"
+            - "continuation"
+            - "interaction"
+            - "presentation"
+          trigger_patterns:
+            - "material_insight_resolves_internal_next_action"
+            - "possible_systemic_or_architectural_hypothesis"
+            - "internally_executable_Source_xref"
+        traceability:
+          source_type: "CLEAN_SESSION_CANARY_AND_USER_CORRECTION"
+          conversation_date: "2026-08-11"
+          evidence_profile_ref: "WEP-INTERNAL-CONTINUATION-CONSUMPTION-001"
+          development_history_ref: "HIST-LEARN-HUMAN-REFINE-CONTINUATION-CONSUMPTION-GAP-20260811"
+      provenance:
+        introduced_by_ref: "CEREBRO-CONTINUATION-CONSUMPTION-CLOSURE-001"
+        basis_refs:
+          - "CEREBRO-CONTINUATION-SURFACE-SYSTEM-001"
+          - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
+          - "REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
+      sequence: 118
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4888,7 +4981,9 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-POWERSHELL-RUNTIME-SEMANTIC-COLLISION-001"
       - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
-  next_sequence: 117
+      - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
+      - "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
+  next_sequence: 119
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

@@ -215,3 +215,58 @@ development_history:
         admission: EXPLICIT_USER_HISTORICAL_REQUEST
         user_selected_historical: true
         source_ref: USER-HISTORICAL-AA004-R5-FORWARD-SWEEP-2026-08-11
+    - id: HIST-LEARN-HUMAN-REFINE-CONTINUATION-CONSUMPTION-GAP-20260811
+      event_class: LEARNING_EVENT
+      significance: MAJOR
+      role: EVENT
+      title: Clean-session human refinement test exposed continuation consumption gap
+      fact: A clean-session `refine menneske` test correctly reconstructed human meaning, separated supported interpretation from inference and identified a bounded Source question, but then returned that internally executable question to the user instead of completing the Source cross-reference. The governing self-running continuation rule already existed, so the defect was classified as incomplete consumption across Interaction and Presentation rather than missing MCP control or a need for a parallel continuation mechanism.
+      occurred_at: '2026-08-11'
+      evidence_refs:
+        - REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11
+        - USER-CORRECTION-CONTINUATION-GAP-2026-08-11
+      impact:
+        introduced:
+          - INTERNAL_NEXT_ACTION_CONSUMPTION_REGRESSION
+        retired: []
+        enabled:
+          - INTERNAL_ACTION_OWNER_CLOSURE
+          - SOURCE_XREF_BEFORE_ABSTRACTION_GAP_CONCLUSION
+        learned:
+          - DECLARED_SELF_RUNNING_POLICY_MUST_BE_CONSUMED_BEFORE_RESPONSE_HANDOFF
+          - INTERNALLY_EXECUTABLE_NEXT_STEP_MUST_RETURN_A_RESULT_NOT_A_USER_RETRIGGER
+      relations:
+        patch_refs: [CEREBRO-CONTINUATION-CONSUMPTION-CLOSURE-001]
+        baseline_commit: 49e743b2076d1c514c07c726ebb1678551eb57be
+        learning_refs: [DECLARED_BUT_NOT_OPERATIONAL_REGRESSION, CEREBRO-CONTINUATION-SURFACE-SYSTEM-001]
+      provenance:
+        admission: USER_DIRECTED_SYSTEMIC_CORRECTION
+        source_ref: USER-REFINE-DEEP-RECTIFY-CONTINUATION-GAP-2026-08-11
+    - id: HIST-LEARN-STANDARD-MANIFEST-ASSERTION-ENCODING-20260811
+      event_class: LEARNING_EVENT
+      significance: MAJOR
+      role: EVENT
+      title: Windows PowerShell manifest decoding corrupted a valid semantic assertion
+      fact: The first continuation-closure STANDARD candidate installed the exact UTF-8 payload bytes but failed at SOURCE_DIFF_VALIDATION because Windows PowerShell read a raw non-ASCII assertion from manifest.json through its implicit text encoding, changing the expected Norwegian text before comparison. The corrective method swept every final assertion and bound manifest assertion transport safety to the existing representation-and-serialization failure controls before redelivery.
+      occurred_at: '2026-08-11T20:14:25+00:00'
+      evidence_refs:
+        - DCAP-ddd5ddc14a24a04b12fd
+        - ATTEMPT-20260811T201412029Z-194fd11d0dca4069935b03991d1e44fe
+      impact:
+        introduced:
+          - STANDARD_MANIFEST_ASSERTION_ENCODING_REPRESENTATION
+        retired:
+          - RAW_NON_ASCII_ASSERTION_WITH_IMPLICIT_CONSUMER_ENCODING
+        enabled:
+          - FINAL_MANIFEST_ASSERTION_TRANSPORT_SAFETY_CHECK
+          - ACTUAL_CONSUMER_REPRESENTATION_VALIDATION
+        learned:
+          - VALID_UTF8_PAYLOAD_BYTES_DO_NOT_PROVE_MANIFEST_ASSERTION_TEXT_SURVIVES_A_DIFFERENT_CONSUMER_ENCODING
+          - ALL_FINAL_ASSERTIONS_MUST_BE_VALIDATED_THROUGH_THE_SEALED_CONSUMER_REPRESENTATION
+      relations:
+        patch_refs: [CEREBRO-CONTINUATION-CONSUMPTION-CLOSURE-001]
+        baseline_commit: 49e743b2076d1c514c07c726ebb1678551eb57be
+        learning_refs: [REPRESENTATION_AND_SERIALIZATION, CEREBRO-CHANGE-CAMPAIGN-POLICY-001]
+      provenance:
+        admission: EXECUTION_CONFIRMED_CORRECTIVE_LEARNING
+        source_ref: CEREBRO-PATCH-FAIL-20260811-201425

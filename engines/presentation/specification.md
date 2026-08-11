@@ -66,6 +66,8 @@ Når en gyldig menneskelig next action finnes, gjelder system-wide continuation 
 
 Når menneskelig handling fortsatt er neste boundary, skal den kopierbare next-step-flaten være svarets absolutte siste synlige element. Presentation profile, svarlengde eller samtaleform kan ikke overstyre dette.
 
+Før en continuation-flate vises, skal handlingseier være avklart. Når neste avgrensede og autoriserte steg er internt utførbart av Cerebro, skal arbeidet utføres før sluttsvaret; et åpent spørsmål, en anbefaling eller en kort brukerkommando kan ikke brukes som erstatning for intern utførelse. Ved material critique eller `refine menneske` skal en avgrenset Source-kryssreferanse gjennomføres før et nytt generelt abstraksjonsgap presenteres som konklusjon eller menneskelig neste steg.
+
 ## Styringsstatus
 Når Cerebro Runtime er aktiv, skal Styringsstatus genereres fra Runtime State og minst inneholde:
 - Cerebro Release

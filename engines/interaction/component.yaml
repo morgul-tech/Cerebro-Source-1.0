@@ -3,7 +3,7 @@ component:
   id: interaction
   name: Interaction Engine
   type: engine
-  version: 1.1.0
+  version: 1.2.0
   status: active-source
 responsibility:
   primary: >
@@ -45,6 +45,8 @@ interfaces:
   - interaction-assessment
   - current-intent
   - human-meaning-assessment
+  - bounded-source-xref-request
+  - internally-executable-continuation-signal
   - current-instruction
   - preference-signal
   - user-profile-operation
@@ -66,5 +68,5 @@ migration:
   - dialog
   - collaboration
 version:
-  component: 1.1.0
+  component: 1.2.0
   schema: 1

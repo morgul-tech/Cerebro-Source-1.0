@@ -1,7 +1,7 @@
 schema: cerebro-continuation-surface-system-policy/v1
 continuation_surface_system_policy:
   id: CEREBRO-CONTINUATION-SURFACE-SYSTEM-001
-  version: "1.1"
+  version: "1.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: SYSTEM_WIDE
@@ -61,6 +61,27 @@ continuation_surface_system_policy:
       without asking the user to issue another continuation trigger. Stop only at a
       real user execution, authority, safety or material decision boundary.
 
+  internal_next_action_closure:
+    classify_action_owner_before_response_completion: required
+    when:
+    - next-step-is-bounded
+    - next-step-is-authorized
+    - next-step-is-internally-executable
+    required_effect:
+    - execute-next-step-before-final-response
+    - return-result-not-unresolved-internal-question
+    - preserve-active-control-state-through-execution
+    human_continuation_surface: PROHIBITED_UNTIL_REAL_HUMAN_BOUNDARY
+    material_refine_or_critique:
+      internally_executable-source-xref: EXECUTE_BEFORE_ABSTRACTION_GAP_CONCLUSION
+      proposed-new-general-rule: XREF_EXISTING_OWNERS_AND_CONTRACTS_FIRST
+      unresolved-after-xref: PRESENT_AS_BOUNDED_HYPOTHESIS
+    prohibited:
+    - convert-internally-executable-step-into-user-question
+    - convert-internally-executable-step-into-user-continuation-trigger
+    - stop-at-recommendation-when-authorized-analysis-can-resolve-it
+    - assert-new-abstraction-gap-before-bounded-Source-xref
+
   invariants:
   - user-command-is-trigger-not-state-container
   - full-continuation-state-remains-Cerebro-owned
@@ -68,3 +89,5 @@ continuation_surface_system_policy:
   - missing-next-action-surface-is-a-presentation-regression
   - active-continuation-must-be-preserved-reresolved-or-explicitly-replaced-never-silently-dropped
   - human-next-action-surface-remains-absolute-response-end-across-interposed-conversational-events
+  - internally-executable-next-action-is-executed-not-handed-back-to-user
+  - human-continuation-surface-requires-a-real-human-boundary

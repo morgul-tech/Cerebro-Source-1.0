@@ -358,7 +358,40 @@ wisdom_evidence:
           resolution: "NOT_APPLICABLE"
       pending_action: "NONE"
 
+    -
+      id: "WEP-INTERNAL-CONTINUATION-CONSUMPTION-001"
+      subject_ref: "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
+      subject_kind: "WISDOM"
+      scope: "MATERIAL-INSIGHT-TO-INTERNAL-NEXT-ACTION-CLOSURE"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "REVIEW"
+      counts:
+        support: 1
+        conflict_prevented: 0
+        conflict_corrected: 0
+        conflict_escaped: 1
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11"
+        conflicts_after_last_review: 1
+      recent_signals:
+        -
+          ref: "REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11"
+          kind: "CONFLICT"
+          origin: "EXECUTION"
+          impact: "HIGH"
+          resolution: "ESCAPED"
+        -
+          ref: "USER-CORRECTION-CONTINUATION-GAP-2026-08-11"
+          kind: "SUPPORT"
+          origin: "USER_CORRECTION"
+          impact: "HIGH"
+          resolution: "NOT_APPLICABLE"
+      pending_action: "REPOSITION"
+
   revision:
-    sequence: 6
-    last_patch_ref: "CEREBRO-HUMAN-REFINE-AND-FORWARD-SWEEP-LEARNING-001"
-    profile_count: 11
+    sequence: 7
+    last_patch_ref: "CEREBRO-CONTINUATION-CONSUMPTION-CLOSURE-001"
+    profile_count: 12

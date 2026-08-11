@@ -982,4 +982,22 @@ rules:
   lifecycle: active
   validation: error
   provenance: {type: explicit-user-definition, source: USER-REFINE-MENNESKE-2026-08-11}
+- id: INT-HMR-005
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    human_meaning_refinement_surfaces_system_level_hypothesis: true
+  action:
+    classify_as_hypothesis_until_source_xref_complete: true
+    request_bounded_source_xref_of_existing_owners_contracts_and_cross_cutting_rules: true
+    if_xref_is_bounded_authorized_and_internally_executable:
+      emit_internally_executable_continuation: true
+      prohibit_user_retrigger_request: true
+    present_new_abstraction_gap_only_after_xref: true
+  statement: Når «refine menneske» avdekker en mulig systemisk eller arkitektonisk hypotese, SKAL Interaction Engine klassifisere den som hypotese og be om avgrenset kryssreferanse av eksisterende eiere, kontrakter og tverrgående regler før et nytt abstraksjonsgap foreslås; når kontrollen er autorisert og internt utførbar, SKAL den sende et internt continuation-signal uten å be bruker utløse arbeidet på nytt.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: user-corrected-runtime-consumption-gap, source: REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11}
 # END HUMAN-MEANING-REFINEMENT-001

@@ -1,7 +1,7 @@
 schema: cerebro-change-campaign-policy/v0.1
 policy:
   id: CEREBRO-CHANGE-CAMPAIGN-POLICY-001
-  version: 0.5.0
+  version: 0.6.0
   authority: SOURCE_DEFINED_POLICY
   regression_catalog_owner: tooling.change
 profiles:
@@ -58,6 +58,8 @@ learning_controls:
   knowable_downstream_defects_must_be_remediated_before_redelivery: required
   all_manifest_assertions_must_execute_against_final_generated_candidate_before_handoff: required
   runtime_evidence_consumer_normalization_must_cover_prehandoff_and_apply_paths: required
+  standard_manifest_assertion_text_must_survive_actual_consumer_encoding: required
+  non_ascii_manifest_assertion_text_requires_json_unicode_escape_or_explicit_utf8_consumer: required
 repeated_run_focus:
 - stale-state
 - cleanup
@@ -71,6 +73,12 @@ language_specific_regressions:
   - native-stderr-not-failure-authority
   - target-parser-preflight-before-execution
 failure_family_catalog:
+  STANDARD_MANIFEST_ASSERTION_ENCODING_REPRESENTATION:
+    traits: [structured_text, standard_delivery]
+    detection_contains: [REQUIRED_TEXT_MISSING, MANIFEST_ASSERTION_ENCODING_REPRESENTATION]
+    prevention_refs: [ASCII_SAFE_OR_JSON_UNICODE_ESCAPED_MANIFEST_ASSERTIONS, ACTUAL_CONSUMER_ENCODING_VALIDATION]
+    regression_refs: [REG-STANDARD-MANIFEST-ASSERTION-ENCODING]
+    machine_checks: [MANIFEST_ASSERTION_TEXT_TRANSPORT_SAFETY, FINAL_MANIFEST_ACTUAL_CONSUMER_REPRESENTATION]
   POWERSHELL_AUTOMATIC_VARIABLE_COLLISION:
     traits: [powershell]
     detection_contains: [POWERSHELL_AUTOMATIC_VARIABLE_COLLISION]
