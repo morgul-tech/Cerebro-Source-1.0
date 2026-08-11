@@ -4871,6 +4871,43 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
       sequence: 118
+    -
+      id: "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
+      type: "CURRENT_BASIS"
+      scope: "USER-FACING-CEREBRO-EXPLANATION-NONEXPERT"
+      statement: "A simple non-technical explanation of Cerebro is saved for reuse in a later session without relying on chat history."
+      payload:
+        applicability: "USER_REQUESTED_NEXT_SESSION_REFERENCE"
+        saved_via: "CEREBRO_LAGRE"
+        saved_at_local: "2026-08-11T22:55:00+02:00"
+        audience: "NON_EXPERT_FAMILY_MEMBER"
+        language: "nb-NO"
+        explanation:
+          short_definition: "Cerebro er et system som gjør ChatGPT mer strukturert og pålitelig for meg."
+          analogy: "Tenk på vanlig ChatGPT som en veldig flink hjelper. Cerebro er som å gi denne hjelperen en fast arbeidsbok, regler, hukommelsessystem og arbeidsmetode."
+          capabilities:
+            - "Hjelper ChatGPT å holde orden på hvordan større prosjekter henger sammen."
+            - "Skiller mellom ideer, forslag og ting som faktisk er bestemt."
+            - "Følger faste regler når noe skal bygges eller endres."
+            - "Kontrollerer arbeidet før det regnes som ferdig."
+            - "Gjør det mulig å fortsette senere uten å være avhengig av én gammel chat."
+          important_distinction: "Cerebro er ikke en ny kunstig intelligens. Det er et system rundt ChatGPT som gjør arbeidet mer strukturert over tid."
+          example: "Hvis jeg og ChatGPT utvikler noe over flere uker, skal Cerebro holde orden på hva målet er, hva vi har bestemt, hvorfor vi bestemte det, hva som er ferdig, og hva som bør gjøres videre."
+          canonical_simple_summary: "Cerebro er måten jeg har organisert ChatGPT på, slik at den kan hjelpe meg med store og langvarige prosjekter på en tryggere og mer strukturert måte."
+        continuity:
+          conversation_history_required: false
+          retrieval_hint: "simple explanation of Cerebro for sister or non-expert"
+          changes_system_rules: false
+          changes_project_continuation: false
+      provenance:
+        introduced_by_ref: "USER-LAGRE-CEREBRO-SIMPLE-EXPLANATION-2026-08-11"
+        basis_refs:
+          - "CEREBRO-SOURCE-BOOT-758b356793920e39c597fbb3ac646c3d396958d4"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 119
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4934,6 +4971,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-PATCH007-LAGRE-NEXT-SESSION-001"
       - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
       - "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
+      - "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -4983,7 +5021,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
       - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
       - "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
-  next_sequence: 119
+  next_sequence: 120
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
