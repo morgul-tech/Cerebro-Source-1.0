@@ -1,14 +1,16 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.1",
+  "classification_version": "2.3",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
       "path": "standards/mcp.yaml",
-      "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "MCP material-commitment and relevance control is activation-proven; broader adaptive control resolution remains a planned AA capability.",
-      "known_gaps": [
-        "adaptive autonomy resolver and broader event-driven control resolution remain outside the completed activation-architecture scope"
+      "classification": "OPERATIONAL",
+      "rationale": "MCP material/relevance control and the AA-003 shadow-validated adaptive resolver are now composed through one canonical MCP-owned live control-resolution surface with bound runtime activation evidence.",
+      "strict_contract_refs": [
+        "MATERIAL_COMMITMENT_PREFLIGHT",
+        "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH",
+        "ADAPTIVE_MCP_CONTROL_RESOLUTION"
       ]
     },
     {
@@ -27,9 +29,9 @@
       "standard_id": "STD-CONTROL-ARCHITECTURE",
       "path": "standards/control-architecture.yaml",
       "classification": "PARTIALLY_OPERATIONAL",
-      "rationale": "Material/relevance control and failure recovery paths are implemented; the future adaptive autonomy resolver remains deliberately deferred.",
+      "rationale": "Material/relevance control, failure recovery semantics and adaptive MCP control resolution are implemented; the standard remains partial because not every generic control-architecture surface has independent strict runtime evidence.",
       "known_gaps": [
-        "adaptive autonomy resolver remains planned under the rebaselined AA sequence"
+        "generic control-architecture surfaces beyond the strict material/adaptive control bindings are not independently activation-proven"
       ]
     },
     {
@@ -781,6 +783,82 @@
         ],
         "required_proves_binding": "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH"
       }
+    },
+    {
+      "id": "ADAPTIVE_MCP_CONTROL_RESOLUTION",
+      "standard_id": "STD-MCP",
+      "classification": "OPERATIONAL",
+      "declaration": "mcp/control-resolution.yaml",
+      "declaration_tokens": [
+        "CEREBRO-MCP-CONTROL-RESOLUTION-001",
+        "PROMOTION_MUST_REFERENCE_EXACT_SHADOW_VALIDATED_CANDIDATE_IDENTITY",
+        "MATERIAL_PREFLIGHT_BLOCK_IS_FINAL",
+        "MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "control_resolution:",
+      "implementation": "mcp/control_resolution.py",
+      "implementation_tokens": [
+        "CEREBRO-MCP-CONTROL-RESOLUTION-001",
+        "DERIVED_MCP_CONTROL_DECISION",
+        "PROMOTION_BASIS_INVALID",
+        "MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_ERROR"
+      ],
+      "wiring": "mcp/manifest.yaml",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "implementation_ref: mcp/control_resolution.py",
+        "canonical: true",
+        "live_control_authority: true"
+      ],
+      "validation": "tooling/validator/checks.yaml",
+      "validation_tokens": [
+        "aa_004_controlled_promotion_validation:"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_AA004_MCP_CONTROL_ACTIVATION_PROOF.json",
+        "schema": "cerebro-aa004-mcp-control-activation-proof/v1",
+        "accepted_binding_ids": [
+          "ADAPTIVE_MCP_CONTROL_RESOLUTION"
+        ],
+        "basis_files": [
+          "mcp/control-resolution.yaml",
+          "mcp/control_resolution.py",
+          "mcp/adaptive-control-resolver.yaml",
+          "mcp/adaptive_control_resolver.py",
+          "tooling/change/adaptive-control-shadow-scenarios.json",
+          "tooling/change/adaptive_control_shadow.py",
+          "mcp/manifest.yaml",
+          "standards/mcp.yaml",
+          "standards/control-architecture.yaml",
+          "tooling/validator/contract-activation-bindings.json",
+          "engines/project/roadmap.yaml",
+          "tooling/runtime-host/component.yaml",
+          "tooling/runtime-host/cerebro_runtime.ps1"
+        ],
+        "required_true_fields": [
+          "promotion_basis_verified",
+          "candidate_identity_verified",
+          "candidate_contract_identity_verified",
+          "shadow_oracle_identity_verified",
+          "aa003_basis_ancestry_verified",
+          "aa003_roadmap_verified",
+          "mcp_registration_verified",
+          "promotion_contract_verified",
+          "direct_resolver_non_live",
+          "canonical_control_surface_live",
+          "material_preflight_precedes_adaptive",
+          "preflight_block_not_overridden",
+          "preflight_input_failure_fails_closed",
+          "non_material_path_exercised",
+          "human_boundary_preserved",
+          "reorientation_guard_preserved",
+          "runtime_control_policy_absent",
+          "normal_control_path_exercised"
+        ],
+        "required_proves_binding": "ADAPTIVE_MCP_CONTROL_RESOLUTION"
+      }
     }
   ],
   "canonical_responsibilities": [
@@ -943,6 +1021,43 @@
           "role": "FULL_ONLY"
         }
       ]
+    },
+    {
+      "id": "MCP_ADAPTIVE_CONTROL_RESOLUTION",
+      "expected_canonical_claims": 1,
+      "blocking": true,
+      "classification": "CONVERGED",
+      "rationale": "MCP control_resolution.py is the one live adaptive control owner; AA-001 remains validated non-live logic, material preflight retains precedence for material commitments, and Runtime remains execution-only.",
+      "claims": [
+        {
+          "claim_id": "MCP_CANONICAL_ADAPTIVE_CONTROL_RESOLUTION",
+          "standard_id": "STD-MCP",
+          "canonical": true,
+          "implementation": "mcp/control_resolution.py",
+          "role": "CONTROL_OWNER"
+        },
+        {
+          "claim_id": "AA001_VALIDATED_ADAPTIVE_LOGIC",
+          "standard_id": "STD-MCP",
+          "canonical": false,
+          "implementation": "mcp/adaptive_control_resolver.py",
+          "role": "VALIDATED_LOGIC_NO_DIRECT_LIVE_AUTHORITY"
+        },
+        {
+          "claim_id": "MATERIAL_PREFLIGHT_PRECEDENCE",
+          "standard_id": "STD-MATERIAL-COMMITMENT-PREFLIGHT",
+          "canonical": false,
+          "implementation": "mcp/material_commitment_preflight.py",
+          "role": "MATERIAL_PRECEDENCE_GATE"
+        },
+        {
+          "claim_id": "RUNTIME_EXECUTION_ONLY_FOR_ADAPTIVE_CONTROL",
+          "standard_id": "STD-MCP",
+          "canonical": false,
+          "implementation": "tooling/runtime-host/cerebro_runtime.ps1",
+          "role": "EXECUTION_ONLY_NO_CONTROL_POLICY"
+        }
+      ]
     }
   ],
   "known_activation_debt": [],
@@ -976,6 +1091,21 @@
       "id": "REMAINING_SEMANTIC_ACTIVATION_SWEEP",
       "resolved_by_patch": "PATCH-ACTIVATION-ARCH-002",
       "resolution": "All required standards now have explicit traced activation dispositions; semantic-review placeholders are removed without falsely promoting policy or partially operational contracts."
+    },
+    {
+      "id": "ADAPTIVE_MCP_CONTROL_RESOLUTION_PROMOTION",
+      "resolved_by_patch": "PATCH-AA-004",
+      "resolution": "Promoted the exact AA-003 shadow-validated resolver through one canonical MCP-owned live control-resolution wrapper, preserved material preflight precedence and direct-resolver non-live semantics, and bound the normal control path to fresh runtime activation evidence."
+    },
+    {
+      "id": "AA004_PREHANDOFF_DEPENDENCY_IMPACT_INCOMPLETE",
+      "resolved_by_patch": "PATCH-AA-004-R5",
+      "resolution": "Generalized changed-path dependency closure now enumerates every RUNTIME_EVIDENCE binding across the activation registry, binds every invalidated proof to a producer, executes the producers on the exact disposable candidate, and requires actual Contract Activation Closure before human handoff."
+    },
+    {
+      "id": "CAC_RESULT_CONSUMER_SCHEMA_MISMATCH",
+      "resolved_by_patch": "PATCH-AA-004-R5",
+      "resolution": "STANDARD delivery consumes CAC v2 blocking_findings directly and reports their count and content; nonexistent legacy activation_gap_count can no longer mask the primary Contract Activation failure."
     }
   ]
 }

@@ -7,7 +7,8 @@ param(
     [string]$BundleRoot,
     [string]$WorkingSourcePath = 'D:\Cerebro\Source\Cerebro_Source_v1.0',
     [string]$LauncherPath = '',
-    [string]$AttemptId = ''
+    [string]$AttemptId = '',
+    [string]$TargetRuntimeValidationReceipt = ''
 )
 
 Set-StrictMode -Version 2.0
@@ -417,6 +418,28 @@ function Assert-ActivationProbeManifest {
     }
 }
 
+function Normalize-ActivationEvidenceForCac {
+    param($Evidence,[string]$EvidencePath,[string]$ProbeId)
+    $basisFiles=@(Get-KernelOptionalProperty -Object $Evidence -Name 'basis_files' -Default @())
+    if($basisFiles.Count -eq 0){return $Evidence}
+    $cacScript=Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\validator\cerebro_contract_activation_closure.ps1'
+    if(-not(Test-Path -LiteralPath $cacScript -PathType Leaf)){
+        throw ('ACTIVATION_EVIDENCE_CAC_CONSUMER_MISSING:{0}' -f $ProbeId)
+    }
+    . $cacScript
+    $producerFingerprint=[string](Get-KernelOptionalProperty -Object $Evidence -Name 'source_state_fingerprint' -Default '')
+    $consumerFingerprint=Get-CacEvidenceBasisFingerprint -Root $WorkingSourcePath -RelativePaths $basisFiles
+    if([string]::IsNullOrWhiteSpace($consumerFingerprint)){
+        throw ('ACTIVATION_EVIDENCE_CONSUMER_FINGERPRINT_EMPTY:{0}' -f $ProbeId)
+    }
+    $Evidence|Add-Member -NotePropertyName producer_source_state_fingerprint -NotePropertyValue $producerFingerprint -Force
+    $Evidence|Add-Member -NotePropertyName fingerprint_consumer -NotePropertyValue 'CEREBRO_CONTRACT_ACTIVATION_CLOSURE' -Force
+    $Evidence|Add-Member -NotePropertyName fingerprint_consumer_normalized -NotePropertyValue ($producerFingerprint -ne $consumerFingerprint) -Force
+    $Evidence.source_state_fingerprint=$consumerFingerprint
+    [IO.File]::WriteAllText($EvidencePath,(($Evidence|ConvertTo-Json -Depth 64)+"`r`n"),[Text.UTF8Encoding]::new($false))
+    return $Evidence
+}
+
 function Invoke-DeclaredActivationProbes {
     param($PatchManifest)
     $probes=@(Get-DeclaredActivationProbes -PatchManifest $PatchManifest)
@@ -454,6 +477,7 @@ function Invoke-DeclaredActivationProbes {
             $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
             throw ('ACTIVATION_PROBE_NOT_PASS:{0}' -f [string]$probe.id)
         }
+        $evidence=Normalize-ActivationEvidenceForCac -Evidence $evidence -EvidencePath $evidencePath -ProbeId ([string]$probe.id)
         $State.ActivationProofs += [pscustomobject]@{id=[string]$probe.id;evidence_path=$evidencePath;source_state_fingerprint=[string]$evidence.source_state_fingerprint}
     }
 }
@@ -509,9 +533,71 @@ function Invoke-SelfTest {
     Write-Host 'PAYLOAD_HASH_PASS=TRUE'
 }
 
+function Get-KernelOrdinalStrings {
+    param([object[]]$Values)
+    [string[]]$items=@($Values | ForEach-Object {[string]$_})
+    [Array]::Sort($items,[StringComparer]::Ordinal)
+    return @($items)
+}
+
+function Get-KernelCandidateIdentity {
+    param($PatchManifest)
+    [string[]]$orderedPaths=Get-KernelOrdinalStrings -Values @($PatchManifest.files | ForEach-Object {[string]$_.path})
+    $rows=@(
+        foreach($path in $orderedPaths){
+            $matches=@($PatchManifest.files | Where-Object {[string]$_.path -eq $path})
+            if($matches.Count -ne 1){throw ('KERNEL_CANDIDATE_PATH_CARDINALITY_INVALID:{0}:{1}' -f $path,$matches.Count)}
+            $item=$matches[0]
+            ('{0}|{1}|{2}' -f [string]$item.path,[string]$item.sha256,[string]$item.final_git_blob_sha)
+        }
+    )
+    $text=$rows -join "`n"
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes=[Text.Encoding]::UTF8.GetBytes($text)
+        return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
+    }
+    finally {$sha.Dispose()}
+}
+
+function Assert-TargetRuntimeValidationReceipt {
+    param($PatchManifest,[string]$ReceiptPath)
+    $spec=Get-KernelOptionalProperty -Object $PatchManifest -Name 'target_runtime_validation' -Default $null
+    if($null -eq $spec -or -not[bool](Get-KernelOptionalProperty $spec 'required' $false)){return}
+    if([string]::IsNullOrWhiteSpace($ReceiptPath) -or -not(Test-Path -LiteralPath $ReceiptPath -PathType Leaf)){
+        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+        throw 'REQUIRED_TARGET_RUNTIME_NOT_EXECUTED_BEFORE_HANDOFF:RECEIPT_MISSING'
+    }
+    try {$receipt=Get-Content -LiteralPath $ReceiptPath -Raw | ConvertFrom-Json}
+    catch {
+        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+        throw ('TARGET_RUNTIME_VALIDATION_RECEIPT_INVALID:{0}' -f $_.Exception.Message)
+    }
+    $expectedIdentity=Get-KernelCandidateIdentity -PatchManifest $PatchManifest
+    [string[]]$expectedPaths=Get-KernelOrdinalStrings -Values @($PatchManifest.files | ForEach-Object {[string]$_.path})
+    [string[]]$actualPaths=Get-KernelOrdinalStrings -Values @($receipt.changed_paths | ForEach-Object {[string]$_})
+    if([string]$receipt.schema -ne [string]$spec.receipt_schema -or
+       [string]$receipt.result -ne 'PASS' -or
+       [string]$receipt.patch_id -ne [string]$PatchManifest.patch_id -or
+       [string]$receipt.source_base_commit -ne [string]$PatchManifest.expected_base_commit -or
+       [string]$receipt.candidate_identity -ne $expectedIdentity -or
+       [string]$receipt.target_profile -ne [string]$spec.profile -or
+       -not[bool]$receipt.target_runtime_execution -or
+       [bool]$receipt.authoritative_source_mutated -or
+       [string]$receipt.producer_consumer_compatibility -ne 'PASS' -or
+       [string]$receipt.cac.result -ne 'PASS' -or
+       [string]$receipt.deep_assurance.result -ne 'PASS' -or
+       [int]$receipt.deep_assurance.required_runs -lt 3 -or
+       (($expectedPaths -join "`n") -ne ($actualPaths -join "`n"))){
+        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+        throw 'TARGET_RUNTIME_VALIDATION_RECEIPT_DOES_NOT_MATCH_EXACT_CANDIDATE'
+    }
+}
+
 function Invoke-Apply {
     $State.Manifest = Read-Manifest
     Assert-PayloadIntegrity $State.Manifest
+    Assert-TargetRuntimeValidationReceipt -PatchManifest $State.Manifest -ReceiptPath $TargetRuntimeValidationReceipt
 
     $State.ReachedStage = 'SEALED_DELIVERY_PROFILE'
     if([string]$State.Manifest.delivery_profile -ne 'STANDARD'){
@@ -697,7 +783,10 @@ function Invoke-Apply {
             $cacResult = Invoke-CerebroContractActivationClosure -Root $WorkingSourcePath -PassThru
             if ([string]$cacResult.result -ne 'PASS') {
                 $State.FailureFamily = 'CONTRACT_ACTIVATION_GAP'
-                throw ('CONTRACT_ACTIVATION_CLOSURE_FAILED:{0}' -f [string]$cacResult.activation_gap_count)
+                $blockingFindings = @($cacResult.blocking_findings)
+                $blockingCount = $blockingFindings.Count
+                $blockingSummary = @($blockingFindings | ForEach-Object { ('{0}|{1}|{2}|{3}' -f [string]$_.code,[string]$_.scope,[string]$_.subject,[string]$_.message) }) -join '; '
+                throw ('CONTRACT_ACTIVATION_CLOSURE_FAILED count={0}; findings={1}' -f $blockingCount,$blockingSummary)
             }
 
             try {

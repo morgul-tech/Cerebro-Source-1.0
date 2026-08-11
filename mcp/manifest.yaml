@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.4.0
+  version: 1.5.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -15,6 +15,7 @@ mcp:
   - mcp/boot-architecture-control.yaml
   - standards/development/material-commitment-preflight.yaml
   - mcp/adaptive-control-resolver.yaml
+  - mcp/control-resolution.yaml
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0
@@ -49,11 +50,23 @@ control_adapters:
     normal_machine_consumers:
     - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
     activation_probe_is_not_normal_consumer: true
+  control_resolution:
+    contract_ref: mcp/control-resolution.yaml
+    implementation_ref: mcp/control_resolution.py
+    status: ACTIVE
+    canonical: true
+    live_control_authority: true
+    decision_contract: MCP_CONTROL_DECISION
+    execution_profile_owner: MCP
+    material_preflight_precedence: REQUIRED
+    activation_evidence_required: true
+    activation_binding_ref: ADAPTIVE_MCP_CONTROL_RESOLUTION
   adaptive_control_resolver:
     contract_ref: mcp/adaptive-control-resolver.yaml
     implementation_ref: mcp/adaptive_control_resolver.py
-    status: CANDIDATE_SHADOW_ONLY
-    live_control_authority: false
+    status: VALIDATED_LOGIC
+    direct_live_authority: false
+    invoked_by: control_resolution
     reuses_control_decision_contract: MCP_CONTROL_DECISION
     reuses_execution_profile: true
     shadow_validation_patch_ref: PATCH-AA-003

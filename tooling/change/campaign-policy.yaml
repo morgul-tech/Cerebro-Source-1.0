@@ -37,6 +37,24 @@ learning_controls:
   known_applicable_family_without_machine_check_effect: BLOCK
   positive_success_evidence_separate_from_failure_evidence: true
   user_is_not_learning_transport_processor: true
+  changed_source_paths_require_full_dependent_evidence_impact_closure_before_handoff: required
+  producer_output_schema_must_be_executed_against_every_mandatory_consumer_before_handoff: required
+  exact_candidate_contract_activation_closure_before_handoff: required
+  target_runtime_pre_handoff_validation_when_required: required
+  candidate_source_validation_by_runtime_host: prohibited
+  missing_required_target_runtime_execution_effect: BLOCK
+  delivered_entrypoint_must_be_location_independent: required
+  unstated_artifact_placement_preconditions: prohibited
+  copyable_command_must_resolve_and_verify_actual_artifact_paths: required
+  human_execution_as_knowable_delivery_gap_discovery_mechanism: prohibited
+  native_process_stderr_must_not_override_exit_code_semantics: required
+  evidence_materialization_must_be_idempotent: required
+  runtime_evidence_fingerprint_ordering_must_be_consumer_compatible: required
+  wrapper_failure_family_must_preserve_nested_root_cause: required
+  cross_language_identity_ordering_must_be_explicit_ordinal: required
+  first_failure_remediation_requires_forward_failure_sweep: required
+  all_manifest_assertions_must_execute_against_final_generated_candidate_before_handoff: required
+  runtime_evidence_consumer_normalization_must_cover_prehandoff_and_apply_paths: required
 repeated_run_focus:
 - stale-state
 - cleanup
@@ -134,6 +152,24 @@ failure_family_catalog:
     prevention_refs: [CHANGED_RUNTIME_EVIDENCE_BASIS_REQUIRES_PROBE_REFRESH_BEFORE_CONTRACT_ACTIVATION_CLOSURE]
     regression_refs: [REG-ACTIVATION-EVIDENCE-BASIS-REFRESH]
     machine_checks: [ACTIVATION_EVIDENCE_DEPENDENCY_REFRESH]
+  DEPENDENCY_IMPACT_CLOSURE_INCOMPLETE_BEFORE_HANDOFF:
+    traits: [structured_text, standard_delivery, validator]
+    detection_contains: [DEPENDENCY_IMPACT_CLOSURE_INCOMPLETE_BEFORE_HANDOFF, RUNTIME_EVIDENCE_STALE, CONTRACT_ACTIVATION_GAP]
+    prevention_refs: [CHANGED_SOURCE_PATHS_REQUIRE_FULL_DEPENDENT_EVIDENCE_IMPACT_CLOSURE_BEFORE_HANDOFF]
+    regression_refs: [REG-FULL-DEPENDENT-EVIDENCE-IMPACT-CLOSURE]
+    machine_checks: [FULL_CHANGED_PATH_DEPENDENCY_IMPACT_CLOSURE, EXACT_CANDIDATE_CONTRACT_ACTIVATION_CLOSURE]
+  PRODUCER_OUTPUT_SCHEMA_CONSUMER_MISMATCH:
+    traits: [standard_delivery, validator]
+    detection_contains: [PRODUCER_OUTPUT_SCHEMA_CONSUMER_MISMATCH, activation_gap_count, property cannot be found]
+    prevention_refs: [PRODUCER_OUTPUT_SCHEMA_MUST_BE_EXECUTED_AGAINST_EVERY_MANDATORY_CONSUMER_BEFORE_HANDOFF]
+    regression_refs: [REG-PRODUCER-CONSUMER-OUTPUT-COMPATIBILITY]
+    machine_checks: [PRODUCER_CONSUMER_OUTPUT_SCHEMA_COMPATIBILITY]
+  REQUIRED_TARGET_RUNTIME_NOT_EXECUTED_BEFORE_HANDOFF:
+    traits: [standard_delivery, validator, target_runtime]
+    detection_contains: [REQUIRED_TARGET_RUNTIME_NOT_EXECUTED_BEFORE_HANDOFF, TARGET_RUNTIME_VALIDATION_REQUIRED]
+    prevention_refs: [TARGET_RUNTIME_PRE_HANDOFF_VALIDATION_WHEN_REQUIRED]
+    regression_refs: [REG-TARGET-RUNTIME-PRE-HANDOFF-VALIDATION]
+    machine_checks: [TARGET_RUNTIME_EXECUTION_RECEIPT, TARGET_RUNTIME_RECEIPT_CANDIDATE_BINDING]
 positive_strengthening_metrics:
   fields: [user_execution_attempt, first_pass_success, resolved_failure_capsule_count, resulting_commit]
   authority: EVIDENCE_ONLY

@@ -3,7 +3,7 @@ component:
   id: validator
   name: Validator
   type: tooling
-  version: 1.0.0
+  version: 1.1.0
   status: active-source
 responsibility:
   primary: Kontrollere struktur, konsistens, regler og release-integritet.
@@ -13,9 +13,13 @@ boundaries:
   - validate-consistency
   - validate-rules
   - block-on-error
+  - validate-exact-candidate-in-required-target-runtime
+  - produce-target-runtime-validation-receipt
   must_not:
   - modify-source
   - silently-ignore-errors
+  - authorize-candidate-source-through-runtime-host
+  - publish-or-mutate-authoritative-source
 dependencies:
   build: []
   runtime: []
@@ -23,13 +27,16 @@ interfaces:
   consumes:
   - cerebro-source
   - candidate-release
+  - exact-candidate-source
+  - target-runtime-profile
   produces:
   - validation-report
   - errors
   - warnings
   - information
+  - target-runtime-validation-receipt
 documentation:
   path: README.md
 version:
-  component: 1.0.0
+  component: 1.1.0
   schema: 1

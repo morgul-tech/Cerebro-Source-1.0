@@ -1,0 +1,22 @@
+{
+  "schema": "cerebro-target-runtime-profile/v1",
+  "profile": {
+    "id": "windows-powershell",
+    "version": "0.1.0",
+    "status": "ACTIVE",
+    "os": "windows",
+    "powershell": {
+      "accepted_editions": [
+        "Desktop",
+        "Core"
+      ],
+      "minimum_major_version": 5,
+      "actual_runtime_required": true
+    },
+    "python_required": true,
+    "git_required": true,
+    "source_publish_allowed": false,
+    "runtime_host_authority": false,
+    "receipt_schema": "cerebro-target-runtime-validation-receipt/v1"
+  }
+}

@@ -1,0 +1,76 @@
+schema: cerebro-mcp-control-resolution-contract/v1
+control_resolution:
+  id: CEREBRO-MCP-CONTROL-RESOLUTION-001
+  version: "1.0.0"
+  status: ACTIVE
+  owner: MCP
+  implementation_ref: mcp/control_resolution.py
+  canonical: true
+  live_control_authority: true
+  decision_contract: MCP_CONTROL_DECISION
+  execution_profile_owner: MCP
+  purpose: >
+    Provide the one canonical live MCP control-resolution surface that composes
+    existing material/relevance control with the exact AA-003 shadow-validated
+    adaptive resolver logic without moving control intelligence into Runtime or
+    creating a parallel Adaptive Engine.
+  promotion_basis:
+    invariant: PROMOTION_MUST_REFERENCE_EXACT_SHADOW_VALIDATED_CANDIDATE_IDENTITY
+    source_commit: 810a010d3a3395217b8263b3701b3e7d1c31ff33
+    resolver_ref: mcp/adaptive_control_resolver.py
+    resolver_git_blob_sha: c375639e0a37141e96d90da7bf00fb36d61651cf
+    resolver_contract_ref: mcp/adaptive-control-resolver.yaml
+    resolver_contract_git_blob_sha: a8a2b9d55a9f4af2f7439ded5c66425818b384be
+    shadow_oracle_ref: tooling/change/adaptive-control-shadow-scenarios.json
+    shadow_oracle_git_blob_sha: 831f7edb0545c66e92a6cfe10d376af3e2fb278e
+    shadow_patch_ref: PATCH-AA-003
+    candidate_change_effect: BLOCK_PROMOTION_AND_REQUIRE_NEW_SHADOW_VALIDATION
+    identity_authority: GIT_OBJECT_AT_SOURCE_COMMIT
+    worktree_byte_representation_authority: PROHIBITED
+  ordering:
+    material_control:
+      invariant: MATERIAL_PREFLIGHT_BLOCK_IS_FINAL
+      first: mcp/material_commitment_preflight.py
+      pass_only_then: mcp/adaptive_control_resolver.py
+      blocked_preflight_may_be_overridden: false
+      input_or_execution_error: FAIL_CLOSED_TO_BLOCK
+    non_material_control:
+      path: canonical_wrapper_to_validated_adaptive_logic
+    final_decision_owner: MCP
+  validated_logic:
+    ref: mcp/adaptive_control_resolver.py
+    status: VALIDATED_LOGIC
+    direct_live_authority: false
+    direct_invocation_is_not_live_MCP_control: true
+  runtime_boundary:
+    Runtime_is_control_owner: false
+    runtime_resident_adaptive_policy: PROHIBITED
+    Runtime_remains_bounded_executor: true
+  activation:
+    binding_id: ADAPTIVE_MCP_CONTROL_RESOLUTION
+    evidence_path: D:\Cerebro\Run\audits\CEREBRO_AA004_MCP_CONTROL_ACTIVATION_PROOF.json
+    required_schema: cerebro-aa004-mcp-control-activation-proof/v1
+    requires_existing_evidence_refresh_before_closure: true
+  invariants:
+    - PROMOTION_MUST_REFERENCE_EXACT_SHADOW_VALIDATED_CANDIDATE_IDENTITY
+    - WORKTREE_REPRESENTATION_DOES_NOT_REDEFINE_GIT_BLOB_IDENTITY
+    - MATERIAL_PREFLIGHT_BLOCK_IS_FINAL
+    - MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED
+    - DIRECT_VALIDATED_LOGIC_REMAINS_NON_LIVE
+    - ONE_CANONICAL_MCP_CONTROL_RESOLUTION_SURFACE
+    - RUNTIME_RESIDENT_ADAPTIVE_CONTROL_IS_PROHIBITED
+    - STATIC_ADAPTIVE_WORK_MODE_IS_PROHIBITED
+    - AUTOMATION_REMAINS_SEPARATE_FROM_AUTONOMY
+  acceptance:
+    - exact_AA003_promotion_basis_is_verified
+    - promotion_identity_uses_canonical_Git_object_identity_not_worktree_text_representation
+    - direct_resolver_remains_non_live
+    - canonical_control_surface_produces_live_MCP_CONTROL_DECISION
+    - material_preflight_precedes_adaptive_resolution
+    - preflight_BLOCK_cannot_be_overridden
+    - incomplete_or_failed_material_preflight_fails_closed_to_canonical_BLOCK
+    - non_material_path_is_exercised
+    - high_value_human_boundary_is_preserved
+    - bounded_reorientation_remediation_is_preserved
+    - Runtime_contains_no_promoted_adaptive_control_policy
+    - activation_binding_is_runtime_evidence_proven

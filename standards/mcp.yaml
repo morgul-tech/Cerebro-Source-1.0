@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-MCP
   name: Master Control Program Standard
-  version: 0.3.1
+  version: 0.4.0
   status: approved
   authority: authoritative
   scope: The domain-independent internal control layer governing active Cerebro operation.
@@ -68,3 +68,13 @@ rules:
   - Runtime 0.1 remains free of relevance reasoning policy.
   - Standard Delivery invokes the MCP preflight as a normal material consumer before mutation and before governing publication.
   - Activation probes verify activation but do not substitute for the normal material call path.
+- id: STD-MCP-R010
+  statement: MCP shall resolve normal adaptive control through one canonical MCP-owned control-resolution surface that preserves exact shadow-validated resolver identity, runs fresh Material Commitment Preflight before adaptive resolution for material commitments, never overrides a preflight BLOCK, keeps direct validated resolver invocation non-live, and does not move adaptive control policy into Runtime.
+  priority: critical
+  verification:
+  - mcp/manifest.yaml registers control_resolution as canonical ACTIVE live control.
+  - mcp/control-resolution.yaml binds exact PATCH-AA-003 promotion identity.
+  - mcp/control_resolution.py exercises the ADAPTIVE_MCP_CONTROL_RESOLUTION runtime binding.
+  - direct mcp/adaptive_control_resolver.py output remains non-live validated logic.
+  - material preflight BLOCK is final and cannot be promoted to CONTINUE.
+  - Runtime remains execution-only and contains no promoted adaptive control policy.

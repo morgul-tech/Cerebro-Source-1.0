@@ -5,8 +5,8 @@ roadmap:
   authority:
     contract_owner: project-engine
     state_scope: working-source
-  status: ACTIVE
-  objective: Validate the implemented AA-001 MCP-native adaptive resolver through frozen-candidate shadow evidence, close any bounded candidate defect found by the independent oracle, and advance only a shadow-verified candidate to PATCH-AA-004 controlled promotion.
+  status: COMPLETED
+  objective: Adaptive Autonomy is completed through one canonical MCP-owned control-resolution surface that promotes the exact AA-003 shadow-validated resolver while preserving material-preflight precedence, human boundaries, Runtime execution-only ownership and machine-verifiable activation evidence.
   scope:
     included:
     - project-roadmap-contract
@@ -22,6 +22,7 @@ roadmap:
     - shadow-control-evaluation-before-activation
     - continuation-presentation-closure
     - adaptive-mcp-resolver
+    - adaptive-mcp-control-promotion
     excluded:
     - conversation-history-as-authority
     - runtime-state-as-persistent-truth
@@ -81,7 +82,7 @@ roadmap:
   - id: PHASE-2
     title: adaptive_autonomy
     purpose: implement_and_promote_a_thin_mcp_native_adaptive_resolver_over_existing_verified_cerebro_capabilities
-    status: ACTIVE
+    status: COMPLETED
     dependency_refs:
     - PHASE-1
     entry_criteria:
@@ -102,7 +103,7 @@ roadmap:
     milestones:
     - id: MS-003
       title: adaptive_autonomy_foundation_and_activation
-      status: ACTIVE
+      status: COMPLETED
       acceptance:
       - operational_reliability_and_evidence_foundation_verified
       - activation_architecture_convergence_verified
@@ -1056,6 +1057,8 @@ roadmap:
     - engines/context/development-history.yaml
     - tooling/validator/checks.yaml
     - engines/project/roadmap.yaml
+    - tooling/change/campaign-policy.yaml
+    - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
     implementation_constraints:
     - reuse_current_strong_Cerebro_architecture_do_not_rebuild_old_AA_assumptions
     - no_new_top_level_engine
@@ -1191,39 +1194,73 @@ roadmap:
     title: adaptive_mcp_resolver_control_promotion
     phase_ref: PHASE-2
     milestone_ref: MS-003
-    status: ACTIVE
+    status: VERIFIED
     dependency_refs:
     - PATCH-AA-003
     decision_refs:
     - CTX-DEC-AA-ARCHITECTURE-LOCK-001
-    source_refs: []
+    source_refs:
+    - mcp/control_resolution.py
+    - mcp/control-resolution.yaml
+    - mcp/manifest.yaml
+    - standards/mcp.yaml
+    - tooling/validator/contract-activation-bindings.json
+    - tooling/validator/checks.yaml
+    - tooling/validator/component.yaml
+    - tooling/validator/target-runtime-validation.yaml
+    - tooling/validator/target_runtime_validation.py
+    - tooling/validator/target-runtime/windows-powershell.json
+    - tooling/validator/target-runtime/Invoke-CerebroWindowsPowerShellValidation.ps1
+    - engines/project/roadmap-schema.yaml
+    - engines/project/roadmap.yaml
     implementation_constraints:
-    - promotion_requires_shadow_evidence
-    - promote_validated_resolver_into_normal_MCP_CONTROL_DECISION_path
+    - promotion_requires_exact_AA003_shadow_evidence_identity
+    - frozen_AA001_resolver_and_contract_bytes_must_not_change_during_promotion
+    - one_canonical_MCP_control_resolution_surface_owns_live_adaptive_control
+    - direct_AA001_resolver_invocation_remains_non_live_validated_logic
+    - material_commitment_preflight_precedes_adaptive_resolution_and_BLOCK_is_final
     - no_Adaptive_Engine_or_static_ADAPTIVE_work_mode
     - automation_remains_separate_from_autonomy
     - Runtime_does_not_gain_control_intelligence
+    - existing_Relevance_Wisdom_MCP_activation_evidence_refreshes_before_contract_activation_closure
     - code_assurance_remains_tooling_not_new_engine
+    - terminal_project_state_must_not_invent_follow_on_patch
+    - full_changed_path_dependency_impact_closure_precedes_handoff
+    - producer_consumer_schema_compatibility_is_executed_before_handoff
+    - required_target_runtime_validation_is_executed_before_STANDARD_apply
+    - Runtime_Host_remains_execution_only_and_cannot_authorize_candidate_Source
     acceptance:
-    - adaptive_control_activation_verified
+    - exact_AA001_resolver_contract_and_AA003_oracle_identity_are_bound_to_promotion
+    - canonical_MCP_control_resolution_activation_verified
+    - material_preflight_BLOCK_cannot_be_overridden_by_adaptive_resolution
+    - direct_AA001_resolver_remains_non_live
+    - normal_non_material_adaptive_control_path_is_live_and_MCP_owned
+    - high_value_human_boundary_and_reorientation_guard_are_preserved
     - no_authority_boundary_regression
     - no_runtime_resident_control_policy
+    - ADAPTIVE_MCP_CONTROL_RESOLUTION_is_runtime_evidence_bound
+    - roadmap_closes_without_fake_AA005_or_active_terminal_execution
     - future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work
+    - AA004_R1_R4_failure_learning_is_persisted_as_general_pre_handoff_dependency_and_consumer_compatibility_controls
+    - exact_disposable_candidate_contract_activation_closure_passes_before_final_R5_handoff_execution
+    - windows_powershell_target_runtime_receipt_is_bound_to_exact_R5_candidate_before_apply
+    - target_runtime_validator_does_not_publish_or_mutate_authoritative_Source
   execution:
-    current:
-      id: EXEC-AA-004-CONTROL-PROMOTION
+    current: null
+    next: null
+    completed:
+    - id: EXEC-AA-004-CONTROL-PROMOTION
       phase_ref: PHASE-2
       milestone_ref: MS-003
       patch_ref: PATCH-AA-004
       canonical_command: promote only the AA-003 shadow-verified adaptive resolver candidate into the existing MCP_CONTROL_DECISION path without creating an Adaptive Engine, static ADAPTIVE mode or Runtime-owned control intelligence
-      status: ACTIVE
-    next:
-      id: EXEC-AA-004-PROMOTION-VERIFICATION
+      status: COMPLETED
+    - id: EXEC-AA-004-PROMOTION-VERIFICATION
       phase_ref: PHASE-2
       milestone_ref: MS-003
       patch_ref: PATCH-AA-004
-      canonical_command: after bounded control-promotion implementation, verify normal MCP path activation, authority boundaries, rollback safety and absence of Runtime-resident adaptive control before phase closure
-      status: PLANNED
+      canonical_command: verify normal MCP path activation, authority boundaries, rollback safety, terminal roadmap state and absence of Runtime-resident adaptive control before phase closure
+      status: COMPLETED
   blockers: []
   context_refs:
   - owner: context-engine
@@ -1434,7 +1471,7 @@ roadmap:
     - CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001
     - CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
   revision:
-    sequence: 25
+    sequence: 27
     last_locked_patch_ref: PATCH-AA-004
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP

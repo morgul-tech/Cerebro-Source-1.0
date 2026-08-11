@@ -1291,3 +1291,150 @@ aa_003_adaptive_mcp_shadow_validation:
     - live-AA-control-promotion-inside-PATCH-AA-003
     - mcp-manifest-change-without-independent-need
 # END PATCH-AA-003 ADAPTIVE MCP SHADOW VALIDATION
+
+
+aa_004_controlled_promotion_validation:
+  introduced_by: PATCH-AA-004
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/mcp.yaml
+    - standards/control-architecture.yaml
+    - mcp/control-resolution.yaml
+  required_files:
+    - mcp/control-resolution.yaml
+    - mcp/control_resolution.py
+    - mcp/adaptive-control-resolver.yaml
+    - mcp/adaptive_control_resolver.py
+    - tooling/change/adaptive-control-shadow-scenarios.json
+    - tooling/validator/contract-activation-bindings.json
+  required_contracts:
+    - promotion-must-reference-exact-shadow-validated-candidate-identity
+    - promotion-identity-uses-canonical-Git-object-not-worktree-byte-representation
+    - one-canonical-MCP-control-resolution-surface
+    - direct-validated-adaptive-logic-remains-non-live
+    - material-preflight-precedes-adaptive-resolution
+    - preflight-BLOCK-is-final
+    - material-preflight-input-or-execution-failure-fails-closed
+    - live-control-authority-exists-only-through-canonical-MCP-wrapper
+    - Runtime-remains-bounded-executor-without-adaptive-control-policy
+    - existing-Relevance-Wisdom-MCP-evidence-refreshes-before-contract-activation-closure
+    - AA004-runtime-evidence-binding-is-source-state-bound
+  required_canaries:
+    - exact-AA001-resolver-blob-is-required
+    - exact-AA001-contract-blob-is-required
+    - exact-AA003-shadow-oracle-blob-is-required
+    - frozen-candidate-identity-survives-CRLF-worktree-representation
+    - AA003-promotion-source-commit-is-required-in-current-ancestry
+    - direct-resolver-live-authority-is-false
+    - canonical-wrapper-live-authority-is-true
+    - blocked-material-preflight-cannot-reach-adaptive-resolver
+    - real-material-preflight-canary-supplies-required-objective-and-scope
+    - incomplete-material-preflight-input-returns-canonical-BLOCK-not-exception
+    - non-material-control-path-reaches-validated-adaptive-logic
+    - high-value-human-boundary-remains-USER_DECISION_REQUIRED
+    - unchanged-path-reorientation-remains-BLOCK
+    - runtime-control-policy-scan-is-clean
+    - ADAPTIVE_MCP_CONTROL_RESOLUTION-runtime-proof-is-PASS
+  prohibited:
+    - modified-AA001-candidate-without-new-AA003-shadow-validation
+    - physical-worktree-bytes-used-as-authoritative-Git-blob-identity
+    - oracle-change-to-fit-candidate
+    - direct-resolver-live-authority
+    - preflight-BLOCK-override
+    - material-preflight-exception-escaping-canonical-control-surface
+    - parallel-Adaptive-Engine
+    - static-ADAPTIVE-work-mode
+    - Runtime-resident-adaptive-control
+    - parallel-MCP-control-owner
+
+project_roadmap_terminal_state_validation:
+  introduced_by: PATCH-AA-004
+  severity: error
+  owner: tooling.validator
+  contract_ref: engines/project/roadmap-schema.yaml
+  required_contracts:
+    - ACTIVE-project-requires-one-active-current-execution
+    - COMPLETED-project-requires-no-active-current-execution
+    - COMPLETED-project-requires-no-next-execution
+    - completed-execution-history-may-preserve-terminal-reference-identities
+    - terminal-roadmap-does-not-invent-follow-on-patch
+  required_canaries:
+    - completed-project-with-current-null-and-next-null-is-valid
+    - terminal-AA004-execution-records-remain-referenceable-in-execution-completed
+    - PATCH-AA004-is-VERIFIED-at-project-completion
+    - PHASE2-and-MS003-are-COMPLETED
+    - fake-AA005-continuation-is-absent
+  prohibited:
+    - synthetic-active-patch-after-terminal-completion
+    - completed-project-with-active-current-execution
+    - completed-project-with-planned-next-execution
+
+
+aa_004_r1_r4_generalized_pre_handoff_learning:
+  introduced_by: PATCH-AA-004-R5
+  severity: error
+  owner: tooling.validator
+  scope: GENERAL_CEREBRO_PRE_HANDOFF
+  invariants:
+    - CHANGED_SOURCE_PATHS_REQUIRE_FULL_DEPENDENT_EVIDENCE_IMPACT_CLOSURE_BEFORE_HANDOFF
+    - PRODUCER_OUTPUT_SCHEMA_MUST_BE_EXECUTED_AGAINST_EVERY_MANDATORY_CONSUMER_BEFORE_HANDOFF
+  required_order:
+    - exact-source-delta-first
+    - enumerate-all-runtime-evidence-bindings-across-entire-activation-registry
+    - intersect-every-basis-files-set-with-changed-source-paths
+    - account-for-every-invalidated-proof-producer
+    - execute-all-required-proof-producers-on-exact-disposable-candidate
+    - execute-actual-contract-activation-closure-on-that-candidate
+    - only-after-activation-closure-run-repeated-DEEP-change-campaigns
+    - only-after-all-pre-handoff-gates-pass-allow-user-local-apply
+  producer_consumer_contracts:
+    - CAC-v2-blocking_findings-is-the-authoritative-blocking-finding-array
+    - STANDARD-delivery-kernel-consumes-blocking_findings-not-legacy-activation_gap_count
+    - producer-output-schema-consumer-compatibility-is-executed-not-inferred
+  required_canaries:
+    - changed-basis-file-invalidating-multiple-runtime-evidence-bindings-enumerates-all-bindings
+    - omitted-proof-producer-blocks-before-handoff
+    - stale-runtime-evidence-blocks-before-handoff
+    - producer-removes-consumer-field-blocks-before-handoff
+    - consumer-reads-nonexistent-producer-field-blocks-before-handoff
+    - exact-candidate-CAC-failure-surfaces-real-blocking-findings
+    - user-is-not-first-discovery-mechanism-for-known-dependency-gap
+  prohibited:
+    - subsystem-local-evidence-sweep-when-changed-paths-have-cross-system-dependents
+    - static-token-pass-substituting-for-executed-activation-closure
+    - masking-primary-CAC-failure-with-secondary-reporting-property-error
+    - sealing-handoff-before-all-invalidated-proofs-have-producers
+
+target_runtime_pre_handoff_validation:
+  introduced_by: PATCH-AA-004-R5
+  severity: error
+  owner: tooling.validator
+  governance_owner: tooling.change
+  contract_ref: tooling/validator/target-runtime-validation.yaml
+  invariant: TARGET_RUNTIME_VALIDATION_VALIDATES_CANDIDATE_SOURCE_STANDARD_DELIVERY_PUBLISHES_VALIDATED_SOURCE_RUNTIME_EXECUTES_VALIDATED_RELEASE
+  required_contracts:
+    - exact-candidate-identity-is-bound-before-target-runtime-execution
+    - required-target-runtime-is-actually-executed-not-emulated
+    - target-runtime-validator-never-publishes-authoritative-source
+    - Runtime-Host-cannot-authorize-candidate-Source
+    - all-impacted-runtime-evidence-producers-run-before-actual-CAC
+    - ephemeral-evidence-remapping-does-not-overwrite-canonical-audit-evidence
+    - actual-CAC-blocking_findings-survive-failure-transport
+    - DEEP-assurance-runs-only-after-CAC-PASS
+    - STANDARD-Apply-requires-matching-target-runtime-receipt-when-manifest-declares-it-required
+  required_canaries:
+    - candidate-source-validation-by-Runtime-Host-is-rejected
+    - missing-Windows-PowerShell-runtime-blocks-handoff
+    - missing-impacted-proof-producer-blocks-handoff
+    - stale-unaffected-baseline-proof-is-rejected-by-actual-CAC
+    - producer-consumer-schema-mismatch-blocks-before-Apply
+    - actual-CAC-failure-preserves-complete-blocking_findings
+    - target-runtime-receipt-with-wrong-candidate-identity-blocks-Apply
+    - target-runtime-receipt-with-wrong-changed-paths-blocks-Apply
+    - fully-validated-candidate-can-proceed-to-STANDARD-delivery-without-user-driven-discovery
+  prohibited:
+    - target-runtime-parity-substitute-when-actual-runtime-is-required
+    - target-runtime-validation-through-Runtime-Host
+    - authoritative-Source-publish-from-target-runtime-validator
+    - user-execution-as-first-known-dependency-discovery-mechanism
