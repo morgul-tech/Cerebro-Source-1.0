@@ -917,3 +917,69 @@ rules:
   provenance:
     type: source-revision
     source: REFINE-OPERATIVE-FREMDRIFTSSIGNALER-001
+# BEGIN HUMAN-MEANING-REFINEMENT-001
+- id: INT-HMR-001
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    human_meaning_refinement_invoked: true
+  action:
+    resolve_human_meaning_before_literal_token_interpretation: true
+    treat_as_semantic_interpretation_not_automatic_rewrite: true
+  statement: Ved «refine menneske» SKAL Interaction Engine rekonstruere brukerens sannsynlige menneskelige mening før enkeltord behandles som eksakte maskintermer; operasjonen er semantisk tolkning og IKKE automatisk tekstomskriving.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-REFINE-MENNESKE-2026-08-11}
+- id: INT-HMR-002
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    human_meaning_refinement_active: true
+  action:
+    assess:
+    - approximate-or-imperfect-terminology
+    - speech-to-text-effects
+    - ellipsis-or-incomplete-grammar
+    - metaphor-or-figurative-language
+    - active-conversation-context
+    cautiously_extrapolate_supported_broader_point: true
+  statement: Menneskelig meningsraffinering SKAL vurdere omtrentlig eller ufullstendig ordbruk, tale-til-tekst, ellipser, ufullstendig grammatikk, metaforer, billedlig språk og aktiv kontekst, og SKAL forsiktig ekstrapolere et større underliggende poeng når konteksten støtter det.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-REFINE-MENNESKE-2026-08-11}
+- id: INT-HMR-003
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    human_meaning_refinement_active: true
+  action:
+    preserve_explicit_constraints: true
+    distinguish_supported_meaning_from_inference: true
+    prohibit_invented_intent: true
+    clarify_only_when_material_ambiguity_remains: true
+  statement: Menneskelig meningsraffinering SKAL bevare eksplisitte rammer, skille støttet mening fra inferens, IKKE oppfinne intensjon og bare be om en smal avklaring når gjenværende tvetydighet kan endre resultatet vesentlig.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-REFINE-MENNESKE-2026-08-11}
+- id: INT-HMR-004
+  owner: interaction
+  authority: normative
+  priority: high
+  condition:
+    human_meaning_refinement_occurs_during_active_work: true
+  action:
+    update_active_work_with_refined_meaning: true
+    preserve_or_reresolve_continuation: true
+    replace_objective_only_on_explicit_or_material_objective_change: true
+  statement: «Refine menneske» under aktivt arbeid SKAL oppdatere arbeidet og bevare eller re-resolve continuation; det SKAL IKKE gjøre en presisering til en løsrevet tekstoppgave eller avslutte fremdriften uten en reell målendring.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-REFINE-MENNESKE-2026-08-11}
+# END HUMAN-MEANING-REFINEMENT-001

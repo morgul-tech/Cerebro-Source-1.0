@@ -183,3 +183,35 @@ development_history:
         admission: EXPLICIT_USER_HISTORICAL_REQUEST
         user_selected_historical: true
         source_ref: USER-REPORTED-STANDARD-DELIVERY-RECEIPT-20260811-005223
+    - id: HIST-LEARN-AA004-R5-FORWARD-FAILURE-SWEEP-20260811
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Forward failure sweep broke the serial AA-004 remediation loop
+      fact: AA-004 R5 initially required repeated user executions because remediation followed the first visible failure without inspecting the remaining delivery path. Before R5.5, the method changed to a forward failure sweep over the final candidate and downstream Apply path; this exposed both the current semantic assertion defect and a later CAC evidence-normalization defect, allowed both to be corrected together, and the next user execution completed directly with PATCH SUCCESS, verified canonical sync and remote equality.
+      occurred_at: '2026-08-11T16:41:12+02:00'
+      evidence_refs:
+        - USER-HISTORICAL-AA004-R5-FORWARD-SWEEP-2026-08-11
+        - CEREBRO-DELIVERY-KERNEL-RECEIPT-20260811-164112
+      impact:
+        introduced:
+          - FORWARD_FAILURE_SWEEP_AS_CORRECTIVE_DELIVERY_REQUIREMENT
+          - AA004_R5_CAUSAL_RELIABILITY_LEARNING
+        retired:
+          - FIRST_VISIBLE_FAILURE_ONLY_REMEDIATION
+        enabled:
+          - WHOLE_REMAINING_PATH_PREHANDOFF_REVIEW
+          - BATCH_REMEDIATION_OF_KNOWABLE_DOWNSTREAM_DEFECTS
+        learned:
+          - FIRST_OBSERVED_FAILURE_IS_AN_EXECUTION_STOP_NOT_A_COMPLETE_DEFECT_INVENTORY
+          - CORRECTIVE_DELIVERY_SHOULD_INSPECT_AND_REMEDIATE_THE_REMAINING_KNOWABLE_FAILURE_SURFACE_BEFORE_USER_RERUN
+      relations:
+        patch_refs: [CEREBRO-AA004-CONTROLLED-PROMOTION-001]
+        baseline_commit: 810a010d3a3395217b8263b3701b3e7d1c31ff33
+        resulting_commit: 27f00aa31c845d9c2ba87cd46aebd4f5576467c3
+        attempt_id: 20260811T144032073Z-c84ca4f76c6e41a5ac7aeca9bba2ac71
+        learning_refs: [CEREBRO-IMPLEMENTATION-LEARNING-001, CEREBRO-CHANGE-CAMPAIGN-POLICY-001]
+      provenance:
+        admission: EXPLICIT_USER_HISTORICAL_REQUEST
+        user_selected_historical: true
+        source_ref: USER-HISTORICAL-AA004-R5-FORWARD-SWEEP-2026-08-11

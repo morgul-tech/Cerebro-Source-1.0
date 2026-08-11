@@ -116,6 +116,12 @@ terms:
     requirements:
     - OFS-R001
     - OFS-R002
+  human_meaning_refinement:
+    term: Menneskelig meningsraffinering
+    aliases: [refine menneske]
+    definition: Semantisk rekonstruksjon av brukerens sannsynlige mening i lys av menneskelig, omtrentlig, kontekstavhengig, metaforisk eller tale-til-tekst-påvirket språk før ord behandles som eksakte maskintermer.
+    interpretation: Operasjonen ser forsiktig mellom linjene og kan ekstrapolere et større støttet poeng; den er ikke automatisk tekstomskriving, kan ikke oppfinne intensjon og kan ikke overstyre eksplisitte rammer.
+    owner: interaction
   status:
     term: Status
     aliases: [prosjektstatus, gi meg status, hvor er vi, oversikt]

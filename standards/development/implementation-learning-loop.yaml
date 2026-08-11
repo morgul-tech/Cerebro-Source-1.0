@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.0"
+  version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -19,8 +19,10 @@ implementation_learning_loop:
   - establish-Source-mutation-state
   - distinguish-observed-error-from-unreached-error-labels
   - retrieve-applicable-existing-failure-families-and-assurance-rules
+  - map-remaining-reachable-execution-stages-and-adjacent-contracts
+  - inspect-final-materialized-candidate-for-additional-knowable-defects
   - assess-generalizability
-  - update-current-implementation-before-redelivery-when-generalizable
+  - remediate-all-knowable-applicable-defects-before-redelivery
   - add-or-strengthen-machine-regression-control
   - rebuild-from-clean-basis-when-repeated-failure-policy-requires
   - persist-generalizable-learning-in-Source
@@ -34,6 +36,17 @@ implementation_learning_loop:
   same_patch_feedback:
     generalizable_learning_discovered_during_patch: MUST_BE_INCORPORATED_BEFORE_CLOSURE
     chat_memory_only_persistence: PROHIBITED
+
+  forward_failure_sweep:
+    first_observed_failure_is_execution_stop_not_complete_defect_inventory: true
+    required_scope:
+    - remaining-reachable-stages
+    - adjacent-producer-consumer-contracts
+    - final-candidate-assertions
+    - runtime-evidence-bindings
+    - apply-sync-and-equality-path
+    all_knowable_applicable_defects_are_corrected_together: true
+    unresolved_runtime_only_uncertainty_must_be_stated: true
 
   recurrence:
     known_failure_family_may_recur_without_explicit_exception: false

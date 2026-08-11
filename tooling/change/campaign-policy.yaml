@@ -1,7 +1,7 @@
 schema: cerebro-change-campaign-policy/v0.1
 policy:
   id: CEREBRO-CHANGE-CAMPAIGN-POLICY-001
-  version: 0.4.0
+  version: 0.5.0
   authority: SOURCE_DEFINED_POLICY
   regression_catalog_owner: tooling.change
 profiles:
@@ -53,6 +53,9 @@ learning_controls:
   wrapper_failure_family_must_preserve_nested_root_cause: required
   cross_language_identity_ordering_must_be_explicit_ordinal: required
   first_failure_remediation_requires_forward_failure_sweep: required
+  first_observed_failure_is_not_complete_defect_inventory: required
+  forward_failure_sweep_requires_remaining_reachable_stages_and_adjacent_contracts: required
+  knowable_downstream_defects_must_be_remediated_before_redelivery: required
   all_manifest_assertions_must_execute_against_final_generated_candidate_before_handoff: required
   runtime_evidence_consumer_normalization_must_cover_prehandoff_and_apply_paths: required
 repeated_run_focus:

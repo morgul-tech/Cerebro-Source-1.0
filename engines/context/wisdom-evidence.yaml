@@ -325,7 +325,40 @@ wisdom_evidence:
           resolution: "PREVENTED"
       pending_action: "NONE"
 
+    -
+      id: "WEP-FORWARD-FAILURE-SWEEP-001"
+      subject_ref: "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
+      subject_kind: "WISDOM"
+      scope: "CORRECTIVE-DELIVERY-REMEDIATION-AND-PREHANDOFF-ASSURANCE"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "PREFLIGHT"
+      friction_state: "NORMAL"
+      counts:
+        support: 1
+        conflict_prevented: 0
+        conflict_corrected: 1
+        conflict_escaped: 1
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "CEREBRO-AA004-CONTROLLED-PROMOTION-001-R5.5"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "AA004-R5-SERIAL-FIRST-FAILURE-REMEDIATION"
+          kind: "CONFLICT"
+          origin: "EXECUTION"
+          impact: "HIGH"
+          resolution: "CORRECTED"
+        -
+          ref: "CEREBRO-DELIVERY-KERNEL-RECEIPT-20260811-164112"
+          kind: "SUPPORT"
+          origin: "VERIFICATION"
+          impact: "HIGH"
+          resolution: "NOT_APPLICABLE"
+      pending_action: "NONE"
+
   revision:
-    sequence: 5
-    last_patch_ref: "PATCH-005.POST-003"
-    profile_count: 10
+    sequence: 6
+    last_patch_ref: "CEREBRO-HUMAN-REFINE-AND-FORWARD-SWEEP-LEARNING-001"
+    profile_count: 11
