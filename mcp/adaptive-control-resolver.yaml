@@ -1,7 +1,7 @@
 schema: cerebro-adaptive-control-resolver-contract/v0.1
 adaptive_control_resolver:
   id: CEREBRO-ADAPTIVE-CONTROL-RESOLVER-001
-  version: "0.1"
+  version: "0.1.1"
   status: CANDIDATE
   patch_ref: PATCH-AA-001
   owner: MCP
@@ -44,6 +44,20 @@ analysis_depth:
 control_outcomes:
   values: [CONTINUE, REMEDIATE, RETRY, REORIENT, USER_DECISION_REQUIRED, BLOCK]
   new_outcomes_prohibited: true
+
+reorientation:
+  invariant: REORIENTATION_REQUIRES_MATERIAL_PATH_DELTA
+  comparable_basis_pairs:
+    - [current_execution_mechanism, proposed_execution_mechanism]
+    - [current_execution_profile_ref, proposed_execution_profile_ref]
+    - [current_delivery_path, proposed_delivery_path]
+    - [current_recovery_strategy, proposed_recovery_strategy]
+    - [current_bounded_scope, proposed_bounded_scope]
+  when_comparable_basis_is_supplied:
+    any_material_delta: REORIENT
+    all_compared_values_equal: BLOCK
+    incomplete_current_or_proposed_pair: BLOCK
+  no_comparable_basis_supplied: trust_resolved_materially_different_path_required_signal
 
 continuation:
   nonmaterial_interposed_event: PRESERVE
@@ -120,4 +134,6 @@ acceptance:
   - stale_or_missing_capability_evidence_never_proves_availability
   - unknown_optional_cpatch_uses_proven_self_contained_fallback_without_user_retry
   - resource_pressure_does_not_reduce_mandatory_assurance
+  - reorientation_requires_material_path_delta_when_comparable_basis_is_available
+  - unchanged_or_incomplete_reorientation_basis_blocks_instead_of_reorienting
   - live_control_promotion_is_deferred_to_AA_004_after_AA_003_shadow_evidence

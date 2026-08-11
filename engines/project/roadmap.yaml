@@ -6,8 +6,7 @@ roadmap:
     contract_owner: project-engine
     state_scope: working-source
   status: ACTIVE
-  objective: Close the verified Activation Architecture state, persist the presentation/continuation/history closure, and rebase PATCH-AA-000
-    against current strong Cerebro Source so PATCH-AA-001 becomes the next adaptive control implementation without rebuilding existing architecture.
+  objective: Validate the implemented AA-001 MCP-native adaptive resolver through frozen-candidate shadow evidence, close any bounded candidate defect found by the independent oracle, and advance only a shadow-verified candidate to PATCH-AA-004 controlled promotion.
   scope:
     included:
     - project-roadmap-contract
@@ -1081,7 +1080,7 @@ roadmap:
     title: adaptive_mcp_resolver
     phase_ref: PHASE-2
     milestone_ref: MS-003
-    status: ACTIVE
+    status: VERIFIED
     dependency_refs:
     - PATCH-AA-000
     decision_refs:
@@ -1096,6 +1095,11 @@ roadmap:
     - engines/interaction/rules.yaml
     - engines/context/working-context.yaml
     - engines/presentation/rules.yaml
+    - mcp/adaptive-control-resolver.yaml
+    - mcp/adaptive_control_resolver.py
+    - mcp/manifest.yaml
+    - tooling/change/campaign-policy.yaml
+    - tooling/validator/checks.yaml
     implementation_constraints:
     - no_new_top_level_engine
     - MCP_owns_adaptive_control_resolution
@@ -1109,6 +1113,7 @@ roadmap:
     - Runtime_remains_bounded_executor_not_control_intelligence
     - Knowledge_Wisdom_and_History_remain_evidence_only
     - no_parallel_resource_manager_telemetry_system_failure_recovery_relevance_or_presentation_architecture
+    - reorientation_requires_material_path_delta_when_comparable_current_and_proposed_basis_are_available
     acceptance:
     - adaptive_resolver_composes_existing_Cerebro_capabilities_without_duplicate_architecture
     - analysis_depth_and_verification_depth_are_proportional_to_current_control_state
@@ -1117,6 +1122,8 @@ roadmap:
     - human_time_interruption_and_resource_signals_are_in_control_basis
     - fresh_usage_observation_is_consumed_only_when_available
     - continuation_is_preserved_reresolved_or_replaced_across_interposed_user_events
+    - unchanged_or_incomplete_reorientation_basis_blocks_instead_of_REORIENT
+    - candidate_activation_selftest_passes_after_bounded_reorientation_remediation
     - control_stability_and_safe_boundary_interruptibility_are_verified
   - id: PATCH-AA-002
     title: absorbed_into_AA_001_human_time_resource_and_usage_signals
@@ -1146,31 +1153,45 @@ roadmap:
     title: adaptive_mcp_resolver_shadow_validation
     phase_ref: PHASE-2
     milestone_ref: MS-003
-    status: PLANNED
+    status: VERIFIED
     dependency_refs:
     - PATCH-AA-001
     decision_refs:
     - CTX-DEC-AA-ARCHITECTURE-LOCK-001
     - CTX-WISDOM-FINAL-CRITICAL-PREIMPLEMENTATION-REVIEW-001
     - CTX-WISDOM-CONVERGENCE-BEFORE-MUTATION-001
-    source_refs: []
+    source_refs:
+    - tooling/change/adaptive_control_shadow.py
+    - tooling/change/adaptive-control-shadow-scenarios.json
+    - tooling/validator/checks.yaml
+    - engines/project/roadmap.yaml
+    - mcp/adaptive_control_resolver.py
+    - mcp/adaptive-control-resolver.yaml
     implementation_constraints:
     - shadow_mode_does_not_govern_live_control
     - reuse_existing_Change_Engine_campaign_assurance_and_regression_infrastructure
     - scenario_suite_replays_real_Cerebro_failure_and_success_patterns
     - over_questioning_and_over_autonomy_are_both_measured
     - dependency_ordering_reorientation_and_assurance_behavior_are_compared
+    - candidate_byte_change_invalidates_prior_shadow_evidence
+    - shadow_oracle_must_not_move_to_fit_candidate
+    - hard_boundary_metrics_are_zero_tolerance_not_aggregate_accuracy
+    - full_shadow_suite_runs_three_times_with_identical_semantic_projection
     - no_parallel_AA_test_platform
     acceptance:
     - successful_standard_delivery_sequence_replayed_correctly
     - prior_patch_loop_failure_patterns_detected
     - human_machine_semantic_gap_scenarios_pass
     - authority_and_dependency_boundaries_pass
+    - AA_001_reorientation_without_material_delta_gap_detected_and_boundedly_remediated
+    - remediated_candidate_restarts_shadow_validation_from_zero
+    - eighteen_shadow_scenarios_and_twenty_five_control_steps_pass_three_deterministic_runs
+    - hard_oracle_over_autonomy_over_questioning_stale_evidence_retry_continuation_assurance_authority_live_control_identity_and_nondeterminism_metrics_are_zero
   - id: PATCH-AA-004
     title: adaptive_mcp_resolver_control_promotion
     phase_ref: PHASE-2
     milestone_ref: MS-003
-    status: PLANNED
+    status: ACTIVE
     dependency_refs:
     - PATCH-AA-003
     decision_refs:
@@ -1190,20 +1211,18 @@ roadmap:
     - future_Code_Assurance_Automation_and_empirical_optimization_remain_separate_follow_on_work
   execution:
     current:
-      id: EXEC-AA-001-ADAPTIVE-MCP-RESOLVER
+      id: EXEC-AA-004-CONTROL-PROMOTION
       phase_ref: PHASE-2
       milestone_ref: MS-003
-      patch_ref: PATCH-AA-001
-      canonical_command: implement the rebaselined thin MCP-native adaptive resolver by composing existing Cerebro control, relevance, quality,
-        continuation, history and assurance capabilities; do not rebuild existing architecture
+      patch_ref: PATCH-AA-004
+      canonical_command: promote only the AA-003 shadow-verified adaptive resolver candidate into the existing MCP_CONTROL_DECISION path without creating an Adaptive Engine, static ADAPTIVE mode or Runtime-owned control intelligence
       status: ACTIVE
     next:
-      id: EXEC-AA-003-SHADOW-VALIDATION
+      id: EXEC-AA-004-PROMOTION-VERIFICATION
       phase_ref: PHASE-2
       milestone_ref: MS-003
-      patch_ref: PATCH-AA-003
-      canonical_command: after PATCH-AA-001 is VERIFIED, run shadow validation using existing Change Engine campaign and regression infrastructure
-        before live promotion
+      patch_ref: PATCH-AA-004
+      canonical_command: after bounded control-promotion implementation, verify normal MCP path activation, authority boundaries, rollback safety and absence of Runtime-resident adaptive control before phase closure
       status: PLANNED
   blockers: []
   context_refs:
@@ -1415,7 +1434,7 @@ roadmap:
     - CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001
     - CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
   revision:
-    sequence: 24
+    sequence: 25
     last_locked_patch_ref: PATCH-AA-004
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
@@ -1437,7 +1456,7 @@ patch_005_current_execution_state:
   patch_ref: PATCH-005.POST-003
   scope: DELIVERY_PROFILE_ACCESS_EFFICIENCY_AND_SESSION_LEARNING_CORRECTION
   source_state: HISTORICAL_SUPERSEDED_BY_ROADMAP_EXECUTION
-  superseded_by_execution_ref: EXEC-AA-001-ADAPTIVE-MCP-RESOLVER
+  superseded_by_execution_ref: EXEC-AA-004-CONTROL-PROMOTION
   completed_stages:
   - P5-S0
   - P5-S1

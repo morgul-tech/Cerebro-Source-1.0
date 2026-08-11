@@ -1,0 +1,565 @@
+{
+  "schema": "cerebro-adaptive-control-shadow-scenarios/v0.1",
+  "suite_id": "AA003-SHADOW-SUITE-001",
+  "patch_ref": "PATCH-AA-003",
+  "authority": "SOURCE_DEFINED_VALIDATION_ORACLE",
+  "subject": {
+    "source_commit": "4480db4e60f9d6c97578de63920b37b56f77a5c3",
+    "resolver_path": "mcp/adaptive_control_resolver.py",
+    "resolver_git_blob_sha": "c375639e0a37141e96d90da7bf00fb36d61651cf",
+    "contract_path": "mcp/adaptive-control-resolver.yaml",
+    "contract_git_blob_sha": "a8a2b9d55a9f4af2f7439ded5c66425818b384be",
+    "live_control_authority_expected": false,
+    "candidate_identity": "AA001-REMEDIATION-REORIENTATION-001"
+  },
+  "determinism_runs": 3,
+  "hard_metrics": [
+    "hard_oracle_mismatches",
+    "over_autonomy",
+    "over_questioning",
+    "stale_evidence_treated_as_available",
+    "retry_without_material_delta",
+    "continuation_drops",
+    "mandatory_assurance_reductions",
+    "authority_safety_violations",
+    "live_control_observations",
+    "candidate_identity_drift",
+    "semantic_nondeterminism"
+  ],
+  "scenarios": [
+    {
+      "id": "S01_LOW_RISK_LIGHT_CONTINUE",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "over_questioning"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S01",
+        "consequence": "LOW",
+        "uncertainty": "LOW",
+        "reversibility": "REVERSIBLE"
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "human_boundary": "NONE",
+        "analysis_depth": "LIGHT",
+        "verification_depth": "LIGHT",
+        "continuation_effect": "NONE",
+        "live_control_authority": false
+      }
+    },
+    {
+      "id": "S02_MODERATE_MATERIAL_STANDARD",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S02",
+        "material": true,
+        "consequence": "MODERATE",
+        "uncertainty": "LOW",
+        "reversibility": "REVERSIBLE"
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "human_boundary": "NONE",
+        "analysis_depth": "STANDARD",
+        "verification_depth": "STANDARD",
+        "live_control_authority": false
+      }
+    },
+    {
+      "id": "S03_ARCHITECTURE_HIGH_UNCERTAINTY_DEEP",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "mandatory_assurance_reductions"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S03",
+        "architecture_material": true,
+        "material": true,
+        "mandatory_verification": true,
+        "consequence": "HIGH",
+        "uncertainty": "HIGH",
+        "reversibility": "HARD_TO_REVERSE"
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "analysis_depth": "DEEP",
+        "verification_depth": "DEEP",
+        "live_control_authority": false
+      }
+    },
+    {
+      "id": "S04_LOCAL_EXECUTION_SEQUENCE",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "over_autonomy",
+        "over_questioning"
+      ],
+      "steps": [
+        {
+          "id": "INTERNAL_WORK",
+          "request": {
+            "objective_ref": "SHADOW-S04-A",
+            "human_decision_value": "LOW"
+          },
+          "expected": {
+            "outcome": "CONTINUE",
+            "human_boundary": "NONE"
+          }
+        },
+        {
+          "id": "LOCAL_BOUNDARY",
+          "request": {
+            "objective_ref": "SHADOW-S04-B",
+            "next_action_requires_local_user_execution": true
+          },
+          "expected": {
+            "outcome": "USER_DECISION_REQUIRED",
+            "human_boundary": "LOCAL_USER_EXECUTION"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S05_EXPLICIT_AUTHORIZATION_BOUNDARY",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "over_autonomy"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S05",
+        "authorization_required": true
+      },
+      "expected": {
+        "outcome": "USER_DECISION_REQUIRED",
+        "human_boundary": "EXPLICIT_AUTHORIZATION_REQUIRED"
+      }
+    },
+    {
+      "id": "S06_HIGH_VALUE_HUMAN_DECISION",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "over_autonomy"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S06",
+        "human_decision_value": "HIGH"
+      },
+      "expected": {
+        "outcome": "USER_DECISION_REQUIRED",
+        "human_boundary": "HIGH_VALUE_HUMAN_DECISION"
+      }
+    },
+    {
+      "id": "S07_CONTINUATION_SEQUENCE",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "continuation_drops"
+      ],
+      "steps": [
+        {
+          "id": "NONMATERIAL_DETOUR",
+          "request": {
+            "objective_ref": "SHADOW-S07-A",
+            "active_continuation": true
+          },
+          "expected": {
+            "outcome": "CONTINUE",
+            "continuation_effect": "PRESERVE"
+          }
+        },
+        {
+          "id": "MATERIAL_INSIGHT",
+          "request": {
+            "objective_ref": "SHADOW-S07-B",
+            "active_continuation": true,
+            "material_user_insight": true
+          },
+          "expected": {
+            "outcome": "CONTINUE",
+            "continuation_effect": "RERESOLVE"
+          }
+        },
+        {
+          "id": "OBJECTIVE_CHANGE",
+          "request": {
+            "objective_ref": "SHADOW-S07-C",
+            "active_continuation": true,
+            "objective_changed": true
+          },
+          "expected": {
+            "outcome": "CONTINUE",
+            "continuation_effect": "REPLACE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S08_CPATCH_FRESH_PASS",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S08",
+        "requested_capabilities": [
+          {
+            "id": "cpatch",
+            "required": false,
+            "fallback": "self-contained-standard-launcher",
+            "fallback_proven": true
+          }
+        ],
+        "capability_observations": [
+          {
+            "capability": "cpatch",
+            "evidence_id": "CP-FRESH",
+            "result": "PASS",
+            "freshness": "CURRENT"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "capabilities": {
+          "cpatch": {
+            "state": "AVAILABLE",
+            "action": "USE_CAPABILITY",
+            "selected": "cpatch"
+          }
+        }
+      }
+    },
+    {
+      "id": "S09_CPATCH_MISSING_FALLBACK",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "over_questioning"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S09",
+        "requested_capabilities": [
+          {
+            "id": "cpatch",
+            "required": false,
+            "fallback": "self-contained-standard-launcher",
+            "fallback_proven": true
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "capabilities": {
+          "cpatch": {
+            "state": "UNKNOWN",
+            "action": "USE_PROVEN_FALLBACK",
+            "selected": "self-contained-standard-launcher"
+          }
+        }
+      }
+    },
+    {
+      "id": "S10_CPATCH_STALE_PASS_FALLBACK",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "stale_evidence_treated_as_available"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S10",
+        "requested_capabilities": [
+          {
+            "id": "cpatch",
+            "required": false,
+            "fallback": "self-contained-standard-launcher",
+            "fallback_proven": true
+          }
+        ],
+        "capability_observations": [
+          {
+            "capability": "cpatch",
+            "evidence_id": "CP-STALE",
+            "result": "PASS",
+            "freshness": "STALE"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "capabilities": {
+          "cpatch": {
+            "state": "UNKNOWN",
+            "action": "USE_PROVEN_FALLBACK",
+            "selected": "self-contained-standard-launcher"
+          }
+        }
+      }
+    },
+    {
+      "id": "S11_CPATCH_CONFLICTING_FRESH_EVIDENCE",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "stale_evidence_treated_as_available"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S11",
+        "requested_capabilities": [
+          {
+            "id": "cpatch",
+            "required": false,
+            "fallback": "self-contained-standard-launcher",
+            "fallback_proven": true
+          }
+        ],
+        "capability_observations": [
+          {
+            "capability": "cpatch",
+            "evidence_id": "CP-PASS",
+            "result": "PASS",
+            "freshness": "CURRENT"
+          },
+          {
+            "capability": "cpatch",
+            "evidence_id": "CP-FAIL",
+            "result": "FAIL",
+            "freshness": "CURRENT"
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "capabilities": {
+          "cpatch": {
+            "state": "UNKNOWN",
+            "action": "USE_PROVEN_FALLBACK",
+            "selected": "self-contained-standard-launcher"
+          }
+        }
+      }
+    },
+    {
+      "id": "S12_REQUIRED_UNKNOWN_CAPABILITY_BLOCKS",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "over_autonomy"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S12",
+        "requested_capabilities": [
+          {
+            "id": "mandatory-x",
+            "required": true
+          }
+        ]
+      },
+      "expected": {
+        "outcome": "BLOCK",
+        "capabilities": {
+          "mandatory-x": {
+            "state": "UNKNOWN",
+            "action": "BLOCK_REQUIRED_CAPABILITY_UNRESOLVED",
+            "selected": null
+          }
+        }
+      }
+    },
+    {
+      "id": "S13_RECOVERY_SEQUENCE",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "retry_without_material_delta"
+      ],
+      "steps": [
+        {
+          "id": "FAILURE_WITHOUT_DELTA",
+          "request": {
+            "objective_ref": "SHADOW-S13-A",
+            "failure_recovery_needed": true,
+            "retry_has_material_delta": false
+          },
+          "expected": {
+            "outcome": "REMEDIATE"
+          }
+        },
+        {
+          "id": "RETRY_AFTER_MATERIAL_DELTA",
+          "request": {
+            "objective_ref": "SHADOW-S13-B",
+            "failure_recovery_needed": true,
+            "retry_has_material_delta": true
+          },
+          "expected": {
+            "outcome": "RETRY"
+          }
+        },
+        {
+          "id": "VERIFIED_RECOVERY",
+          "request": {
+            "objective_ref": "SHADOW-S13-C",
+            "failure_recovery_needed": false
+          },
+          "expected": {
+            "outcome": "CONTINUE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S14_REORIENTATION_REQUIRES_PATH_DELTA",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "over_autonomy"
+      ],
+      "steps": [
+        {
+          "id": "MATERIAL_DIFFERENT_PATH",
+          "request": {
+            "objective_ref": "SHADOW-S14-A",
+            "materially_different_path_required": true,
+            "current_execution_mechanism": "launcher-A",
+            "proposed_execution_mechanism": "launcher-B"
+          },
+          "expected": {
+            "outcome": "REORIENT"
+          }
+        },
+        {
+          "id": "UNCHANGED_PATH_REORIENTATION_INVALID",
+          "request": {
+            "objective_ref": "SHADOW-S14-B",
+            "materially_different_path_required": true,
+            "current_execution_mechanism": "launcher-A",
+            "proposed_execution_mechanism": "launcher-A"
+          },
+          "expected": {
+            "outcome": "BLOCK"
+          }
+        }
+      ]
+    },
+    {
+      "id": "S15_AUTHORITY_BLOCK",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "authority_safety_violations",
+        "over_autonomy"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S15",
+        "authority_block": true
+      },
+      "expected": {
+        "outcome": "BLOCK"
+      }
+    },
+    {
+      "id": "S16_SAFETY_BLOCK",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "authority_safety_violations",
+        "over_autonomy"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S16",
+        "safety_block": true
+      },
+      "expected": {
+        "outcome": "BLOCK"
+      }
+    },
+    {
+      "id": "S17_STALE_REQUIRED_DEPENDENCY_PROOF_SEQUENCE",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "stale_evidence_treated_as_available",
+        "over_autonomy"
+      ],
+      "steps": [
+        {
+          "id": "STALE_REQUIRED_PROOF",
+          "request": {
+            "objective_ref": "SHADOW-S17-A",
+            "requested_capabilities": [
+              {
+                "id": "activation-proof",
+                "required": true
+              }
+            ],
+            "capability_observations": [
+              {
+                "capability": "activation-proof",
+                "evidence_id": "OLD-PROOF",
+                "result": "PASS",
+                "freshness": "STALE"
+              }
+            ]
+          },
+          "expected": {
+            "outcome": "BLOCK",
+            "capabilities": {
+              "activation-proof": {
+                "state": "UNKNOWN",
+                "action": "BLOCK_REQUIRED_CAPABILITY_UNRESOLVED"
+              }
+            }
+          }
+        },
+        {
+          "id": "REFRESHED_REQUIRED_PROOF",
+          "request": {
+            "objective_ref": "SHADOW-S17-B",
+            "requested_capabilities": [
+              {
+                "id": "activation-proof",
+                "required": true
+              }
+            ],
+            "capability_observations": [
+              {
+                "capability": "activation-proof",
+                "evidence_id": "NEW-PROOF",
+                "result": "PASS",
+                "freshness": "CURRENT"
+              }
+            ]
+          },
+          "expected": {
+            "outcome": "CONTINUE",
+            "capabilities": {
+              "activation-proof": {
+                "state": "AVAILABLE",
+                "action": "USE_CAPABILITY",
+                "selected": "activation-proof"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "S18_RED_RESOURCE_PRESSURE_PRESERVES_ASSURANCE",
+      "metric_on_mismatch": [
+        "hard_oracle_mismatches",
+        "mandatory_assurance_reductions"
+      ],
+      "request": {
+        "objective_ref": "SHADOW-S18",
+        "resource_pressure": "RED",
+        "human_time_priority": "HIGH",
+        "architecture_material": true,
+        "material": true,
+        "mandatory_verification": true,
+        "consequence": "HIGH",
+        "uncertainty": "HIGH"
+      },
+      "expected": {
+        "outcome": "CONTINUE",
+        "analysis_depth": "DEEP",
+        "verification_depth": "DEEP",
+        "efficiency_bias": "CONSERVE_OPTIONAL_WORK",
+        "mandatory_assurance_effect": "NONE",
+        "live_control_authority": false
+      }
+    }
+  ]
+}

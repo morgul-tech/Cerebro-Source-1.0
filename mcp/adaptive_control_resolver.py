@@ -12,7 +12,7 @@ from typing import Any
 SCHEMA_ID = "cerebro-adaptive-control-resolution/v0.1"
 DECISION_SCHEMA = "cerebro-mcp-control-decision/adaptive-candidate-v0.1"
 PROFILE_SCHEMA = "cerebro-execution-profile/adaptive-candidate-v0.1"
-ENGINE_VERSION = "0.1.0"
+ENGINE_VERSION = "0.1.1"
 CONTROL_OUTCOMES = {"CONTINUE", "REMEDIATE", "RETRY", "REORIENT", "USER_DECISION_REQUIRED", "BLOCK"}
 DEPTHS = ("LIGHT", "STANDARD", "DEEP")
 
@@ -214,12 +214,45 @@ def resolve_outcome(request: dict[str, Any], capability_blockers: list[str], bou
     if boundary != "NONE":
         return "USER_DECISION_REQUIRED", []
     if bool_value(request.get("materially_different_path_required")):
+        delta_state = reorientation_delta_state(request)
+        if delta_state == "UNCHANGED":
+            blockers.append("REORIENTATION_INVALID_UNCHANGED_PATH")
+            return "BLOCK", blockers
+        if delta_state == "UNRESOLVED":
+            blockers.append("REORIENTATION_DELTA_UNRESOLVED")
+            return "BLOCK", blockers
         return "REORIENT", []
     if bool_value(request.get("failure_recovery_needed")):
         if bool_value(request.get("retry_has_material_delta")):
             return "RETRY", []
         return "REMEDIATE", []
     return "CONTINUE", []
+
+
+REORIENTATION_DELTA_PAIRS = (
+    ("current_execution_mechanism", "proposed_execution_mechanism"),
+    ("current_execution_profile_ref", "proposed_execution_profile_ref"),
+    ("current_delivery_path", "proposed_delivery_path"),
+    ("current_recovery_strategy", "proposed_recovery_strategy"),
+    ("current_bounded_scope", "proposed_bounded_scope"),
+)
+
+
+def reorientation_delta_state(request: dict[str, Any]) -> str:
+    comparisons: list[bool] = []
+    for current_key, proposed_key in REORIENTATION_DELTA_PAIRS:
+        current_present = current_key in request
+        proposed_present = proposed_key in request
+        if not current_present and not proposed_present:
+            continue
+        current = str(request.get(current_key) or "").strip()
+        proposed = str(request.get(proposed_key) or "").strip()
+        if not current or not proposed:
+            return "UNRESOLVED"
+        comparisons.append(current != proposed)
+    if not comparisons:
+        return "DECLARED_MATERIAL_DELTA"
+    return "MATERIAL_DELTA" if any(comparisons) else "UNCHANGED"
 
 
 def efficiency_resolution(request: dict[str, Any]) -> dict[str, str]:
@@ -397,6 +430,28 @@ def selftest() -> dict[str, Any]:
 
     required_unknown = resolve({"objective_ref": "REQ", "requested_capabilities": [{"id": "mandatory-x", "required": True}]})
     check("required-unknown-capability-blocks", required_unknown["mcp_control_decision"]["outcome"] == "BLOCK")
+
+    reorient_delta = resolve({
+        "objective_ref": "REORIENT-DELTA",
+        "materially_different_path_required": True,
+        "current_execution_mechanism": "launcher-A",
+        "proposed_execution_mechanism": "launcher-B",
+    })
+    check("reorientation-with-material-path-delta", reorient_delta["mcp_control_decision"]["outcome"] == "REORIENT")
+    reorient_same = resolve({
+        "objective_ref": "REORIENT-SAME",
+        "materially_different_path_required": True,
+        "current_execution_mechanism": "launcher-A",
+        "proposed_execution_mechanism": "launcher-A",
+    })
+    check("unchanged-path-cannot-reorient", reorient_same["mcp_control_decision"]["outcome"] == "BLOCK" and "REORIENTATION_INVALID_UNCHANGED_PATH" in reorient_same["mcp_control_decision"]["invalidates"])
+    reorient_unresolved = resolve({
+        "objective_ref": "REORIENT-UNRESOLVED",
+        "materially_different_path_required": True,
+        "current_execution_mechanism": "launcher-A",
+        "proposed_execution_mechanism": "",
+    })
+    check("incomplete-reorientation-delta-blocks", reorient_unresolved["mcp_control_decision"]["outcome"] == "BLOCK" and "REORIENTATION_DELTA_UNRESOLVED" in reorient_unresolved["mcp_control_decision"]["invalidates"])
 
     resource = resolve({
         "objective_ref": "RESOURCE", "resource_pressure": "RED", "human_time_priority": "HIGH",

@@ -1226,3 +1226,68 @@ activation_evidence_dependency_refresh_validation:
     - prehandoff-ready-claim-with-known-stale-dependent-runtime-evidence
     - contract-activation-gap-discovered-only-after-user-execution-when-dependency-is-statically-known
 # END ACTIVATION-EVIDENCE-DEPENDENCY-REFRESH-001
+
+# BEGIN PATCH-AA-003 ADAPTIVE MCP SHADOW VALIDATION
+aa_003_adaptive_mcp_shadow_validation:
+  introduced_by: PATCH-AA-003
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/control-architecture.yaml
+    - mcp/adaptive-control-resolver.yaml
+    - tooling/change/campaign-policy.yaml
+    - engines/project/roadmap.yaml
+  required_files:
+    - tooling/change/adaptive_control_shadow.py
+    - tooling/change/adaptive-control-shadow-scenarios.json
+    - mcp/adaptive_control_resolver.py
+    - mcp/adaptive-control-resolver.yaml
+  required_contracts:
+    - AA-003-is-read-only-shadow-evidence-and-never-live-control
+    - candidate-byte-change-invalidates-prior-shadow-evidence
+    - shadow-oracle-does-not-move-to-fit-candidate
+    - frozen-candidate-and-contract-Git-blob-identities-are-verified-before-shadow
+    - semantic-projection-is-compared-to-source-defined-independent-oracle
+    - full-shadow-suite-runs-three-times-from-the-same-candidate-basis
+    - semantic-projections-are-deterministic-across-all-three-runs
+    - hard-oracle-mismatch-count-must-be-zero
+    - over-autonomy-and-over-questioning-are-separate-zero-tolerance-metrics
+    - stale-evidence-never-proves-current-capability-availability
+    - retry-requires-material-delta
+    - reorientation-requires-material-path-delta-when-comparable-basis-is-supplied
+    - continuation-preserve-reresolve-replace-sequence-is-verified
+    - resource-pressure-never-reduces-mandatory-assurance
+    - AA-004-promotion-remains-separate-and-requires-AA-003-PASS-evidence
+    - roadmap-transition-is-atomic-with-successful-shadow-publication
+  required_canaries:
+    - low-risk-task-selects-LIGHT-without-user-interruption
+    - moderate-material-task-selects-STANDARD
+    - architecture-high-uncertainty-selects-DEEP
+    - local-user-execution-boundary-is-not-crossed-autonomously
+    - nonmaterial-detour-preserves-active-continuation
+    - material-insight-reresolves-continuation
+    - explicit-objective-change-replaces-continuation
+    - fresh-cpatch-evidence-allows-cpatch
+    - missing-stale-or-conflicting-cpatch-evidence-uses-proven-fallback
+    - required-unknown-capability-without-fallback-blocks
+    - failure-without-material-retry-delta-remediates-instead-of-retries
+    - changed-path-reorientation-is-allowed
+    - unchanged-path-reorientation-is-blocked
+    - incomplete-reorientation-delta-is-blocked
+    - authority-block-remains-BLOCK
+    - safety-block-remains-BLOCK
+    - stale-required-activation-proof-blocks-until-refreshed
+    - RED-resource-pressure-keeps-DEEP-mandatory-verification
+    - all-three-shadow-runs-have-identical-semantic-fingerprint
+    - candidate-live-control-authority-remains-false
+  prohibited:
+    - new-AA-test-engine
+    - new-shadow-runtime
+    - shadow-result-governing-live-control
+    - candidate-mutation-without-invalidating-prior-shadow-evidence
+    - oracle-adjustment-to-hide-candidate-mismatch
+    - aggregate-pass-percentage-hiding-hard-boundary-failure
+    - unchanged-path-REORIENT
+    - live-AA-control-promotion-inside-PATCH-AA-003
+    - mcp-manifest-change-without-independent-need
+# END PATCH-AA-003 ADAPTIVE MCP SHADOW VALIDATION
