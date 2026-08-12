@@ -1,0 +1,68 @@
+schema: cerebro-change-campaign-closeout-record/v1
+closeout:
+  id: C02-P001-CLOSEOUT-20260812
+  campaign_id: C02-P001-IMPLEMENTATION-20260812
+  patch_id: C02-P001
+  milestone: CEREBRO-0.2-FOUNDATION-C02-P001
+  assessment_basis_commit: 233547187b4ca3bae3af31f65debf29953a3f534
+  implementation_commit: 233547187b4ca3bae3af31f65debf29953a3f534
+  required_quality: DEEP
+  implementation_delivery:
+    result: PASS
+    receipt_attempt_id: 20260812T193306501Z-6c899f3f2af8415fbd81f572b9611bbc
+    source_equality: VERIFIED
+    cerebro_sync_verified: true
+    working_tree: CLEAN
+    operations: {create: 9, replace: 8, delete: 0}
+  delivery_history:
+    - attempt_id: 20260812T191736406Z-236d069499514b05aa73964692abf29a
+      result: FAIL
+      failure_family: SEMANTIC_ASSERTION
+      stage: SOURCE_DIFF_VALIDATION
+      detection: REQUIRED_TEXT_MISSING:standards/canonical-definition-system.yaml:FULL_PARSE_OR_NO_CANONICAL_EXECUTION
+      source_mutation_assessment: NO_UNCOMMITTED_SOURCE_MUTATION_PRESENT
+      remediation: MOVE_ASSERTION_TO_CORRECT_OWNER_AND_SWEEP_ALL_MANIFEST_ASSERTIONS
+    - attempt_id: 20260812T193306501Z-6c899f3f2af8415fbd81f572b9611bbc
+      result: PASS
+      resulting_commit: 233547187b4ca3bae3af31f65debf29953a3f534
+  dimensions:
+    intent_to_result:
+      result: PASS
+      evidence_refs:
+        - history/C02_P001_SPEC_FIX_LOCK_20260812.yaml
+        - history/C02_P001_IMPLEMENTATION_20260812.yaml
+        - commit:233547187b4ca3bae3af31f65debf29953a3f534
+    rule_to_normal_consumer:
+      result: PASS
+      evidence_refs:
+        - engines/interaction/canonical_intent.py
+        - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+        - engines/presentation/rules.yaml
+        - mcp/assurance-continuity.yaml
+    state_and_learning:
+      result: PASS
+      evidence_refs:
+        - standards/development/adaptive-quality-workform.yaml
+        - tooling/validator/quality_trace.py
+        - tooling/validator/canonical_foundation.py
+        - C02-P001-R1-SEMANTIC_ASSERTION-REMEDIATION
+    next_phase_readiness:
+      result: PASS
+      evidence_refs:
+        - modules/terminology/canonical-descriptors.yaml
+        - history/C02_P001_IMPLEMENTATION_20260812.yaml
+  declared_debt:
+    - id: C02-DEBT-HUMAN-CONTINUATION-RUNTIME-ENFORCEMENT-001
+      owner: MCP_HUMAN_CONTINUATION_PRESENTATION
+      target_phase: RUNTIME_PY_OR_NEXT_RUNTIME_ENFORCEMENT_PHASE
+      rationale: Source defines terminal next-natural-step behavior, but the present ChatGPT host cannot guarantee Cerebro-owned turn-boundary enforcement across every detour until Cerebro owns the runtime/control response boundary.
+      blocks_next_phase: false
+  deferred_enhancements:
+    - id: PATCH-BUILD-TIME-ESTIMATION
+      rationale: Accumulate more patch timing and complexity observations before introducing a derived prediction surface; not required by C02-P001 acceptance.
+  unknown_or_unclassified_debt: false
+  closeout_state: READY_WITH_DECLARED_DEBT
+  next_phase: C02-P002-WORKSPACE-CONVERGENCE
+  next_patch: C02-P002
+  next_patch_human_name: Workspace Convergence
+  physical_workspace_migration_owner: C02-P002
