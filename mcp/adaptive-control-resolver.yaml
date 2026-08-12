@@ -1,15 +1,18 @@
 schema: cerebro-adaptive-control-resolver-contract/v0.1
 adaptive_control_resolver:
   id: CEREBRO-ADAPTIVE-CONTROL-RESOLVER-001
-  version: "0.1.1"
-  status: CANDIDATE
+  version: "0.2.0"
+  status: VALIDATED_LOGIC
   patch_ref: PATCH-AA-001
   owner: MCP
   implementation_ref: mcp/adaptive_control_resolver.py
   live_control_authority: false
-  promotion_requires:
-    - PATCH-AA-003-shadow-validation
-    - PATCH-AA-004-controlled-promotion
+  direct_live_authority: false
+  canonical_live_owner: mcp/control-resolution.yaml
+  promotion_history:
+    shadow_validation: PATCH-AA-003_VERIFIED
+    controlled_promotion: PATCH-AA-004_VERIFIED
+    outcome: RETAIN_AS_VALIDATED_LOGIC_BEHIND_CANONICAL_LIVE_WRAPPER
   purpose: >
     Resolve proportional analysis depth, autonomy, human decision value,
     verification depth, continuation effect and current capability suitability
@@ -136,4 +139,4 @@ acceptance:
   - resource_pressure_does_not_reduce_mandatory_assurance
   - reorientation_requires_material_path_delta_when_comparable_basis_is_available
   - unchanged_or_incomplete_reorientation_basis_blocks_instead_of_reorienting
-  - live_control_promotion_is_deferred_to_AA_004_after_AA_003_shadow_evidence
+  - live_control_promotion_is-complete-through-the-canonical-control-resolution-wrapper

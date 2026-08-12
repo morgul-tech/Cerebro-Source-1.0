@@ -5261,13 +5261,136 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
       sequence: 124
+    -
+      id: "CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001"
+      type: "DECISION"
+      scope: "CEREBRO-GLOBAL-HUMAN-CONTINUATION-SURFACE"
+      statement: "The normal user-facing continuation surface is a 2-5 word human trigger bound to complete Cerebro-owned continuation state; the user shall not carry commit, constraints, evidence, validation or resume instructions in the visible command."
+      payload:
+        decision_status: "LOCKED_IMPLEMENTATION"
+        effective_scope: "ALL_CEREBRO_CONTROLLED_HUMAN_CONTINUATION_SURFACES"
+        alias: "humanContinuationHardEnforcement"
+        user_surface: "SHORT_HUMAN_TRIGGER_2_5_WORDS"
+        machine_state_surface: "CEREBRO_HUMAN_CONTINUATION_BINDING_V1"
+        visible_trigger_role: "SELECT_ACTIVE_BINDING_ONLY"
+        full_state_owner: "CEREBRO_SOURCE_CONTEXT_AND_MCP_CONTROL"
+        hard_precedence: "SYSTEM_WIDE_CANNOT_BE_WEAKENED_BY_PRESENTATION_PROFILE_OR_MACHINE_CONVENIENCE"
+        exact_syntax_exceptions:
+          - "LOCAL_SHELL_EXECUTION_IS_THE_HUMAN_ACTION"
+          - "EXACT_API_OR_DEBUG_PAYLOAD_IS_REQUIRED"
+          - "USER_EXPLICITLY_REQUESTS_FULL_FORM"
+        exception_guard: "EXCEPTION_CHANGES_VISIBLE_SURFACE_ONLY_AND_NEVER_TRANSFERS_STATE_OWNERSHIP_TO_USER"
+        enforcement_chain:
+          - "ACTIVE_BINDING"
+          - "FINGERPRINT_AND_FRESHNESS"
+          - "2_TO_5_WORD_ALIAS"
+          - "MACHINE_PAYLOAD_REJECTION"
+          - "ABSOLUTE_RESPONSE_END"
+          - "BLOCK_AND_RERENDER_ON_FAILURE"
+      provenance:
+        introduced_by_ref: "USER-REFINE-MENNESKE-SHORT-TRIGGER-2026-08-12"
+        basis_refs:
+          - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+          - "CEREBRO-HUMAN-CONTINUATION-SURFACE-001"
+      relations:
+        supersedes_ref: "CTX-DEC-P1B-PRE005"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-P1B-PRE005"
+          - "CTX-DEC-CEREBRO-CONTINUATION-AND-FAILURE-HANDOFF-001"
+      sequence: 125
+    -
+      id: "CTX-WISDOM-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-20260812-001"
+      type: "WISDOM_RECORD"
+      scope: "ALL-CEREBRO-HUMAN-CONTINUATION-AND-NEXT-ACTION-PRESENTATION"
+      statement: "Compress the human interface, not the machine's understanding: a short trigger selects a complete persisted continuation binding, while the user never reconstructs or transports the binding payload."
+      payload:
+        maturity: "CONFIRMED_REPEATED_USER_CORRECTION"
+        confidence: "HIGH"
+        assessment: "DECLARATIVE_RULE_EXISTED_BUT_RUNTIME_CONSUMPTION_AND_FAILURE_GATE_WERE_MISSING"
+        relevance: "ALWAYS_APPLY_WHEN_A_REAL_HUMAN_CONTINUATION_BOUNDARY_IS_NEXT"
+        traceability:
+          decision_ref: "CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001"
+          observed_failure: "LONG_MACHINE_CONTINUATION_COMMAND_AFTER_VERIFIED_WAVE_01_SUCCESS"
+          user_correction: "TWO_TO_FIVE_NATURAL_WORDS_WITH_COMPLETE_MACHINE_STATE_RETAINED"
+        correction:
+          old_failure: "LONG_MACHINE_CONTINUATION_COMMAND_WAS_HANDED_TO_USER"
+          human_need: "TWO_TO_FIVE_NATURAL_WORDS"
+          machine_need: "LOSSLESS_OBJECTIVE_COMMIT_CONSTRAINT_EVIDENCE_VALIDATION_AND_RESUME_STATE"
+          resolved_model: "VISIBLE_TRIGGER_TO_FINGERPRINTED_CEREBRO_OWNED_BINDING"
+        required_behavior:
+          - "SHORTEN_ONLY_THE_VISIBLE_TRIGGER"
+          - "PRESERVE_FULL_MACHINE_SEMANTICS_IN_CEREBRO_OWNED_STATE"
+          - "RESOLVE_THE_BINDING_BEFORE_EXECUTION"
+          - "BLOCK_RESPONSE_HANDOFF_WHEN_THE_SURFACE_IS_INVALID"
+        implementation_status: "BOUND_BY_DUALITYARC_WAVE_02_R1"
+      provenance:
+        introduced_by_ref: "USER-REPEATED-CORRECTION-SHORT-HUMAN-NEXT-STEP-2026-08-12"
+        basis_refs:
+          - "CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001"
+      relations:
+        supersedes_ref: "CTX-WISDOM-NEXT-ACTION-COPYABLE-CANONICAL-COMMAND-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-NEXT-ACTION-COPYABLE-CANONICAL-COMMAND-001"
+          - "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
+      sequence: 126
+    -
+      id: "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "DUALITYARC-WAVE-02-CONTRACT-AND-LIFECYCLE-CONVERGENCE"
+      statement: "Wave 02 R1 converges the first contract/lifecycle slice by activating and machine-binding the short human continuation surface, retiring its ambiguous predecessor semantics, converging the adaptive resolver from candidate to validated logic, and automating success-receipt transport."
+      payload:
+        applicability: "CURRENT_DUALITYARC_WAVE_02_IMPLEMENTATION_BASIS"
+        confirmation_basis:
+          - "USER_EXPLICIT_LAGRE_AND_CONTINUE_WAVE_02_DIRECTION"
+          - "VERIFIED_SOURCE_BASE_C2A6751B5669C0C759905E4BAB9C274FF558B8BD"
+          - "REPEATED_USER_CORRECTION_ESTABLISHES_HARD_HUMAN_INTERFACE_REQUIREMENT"
+        alias: "dualityArcWave02"
+        source_base_commit: "c2a6751b5669c0c759905e4bab9c274ff558b8bd"
+        patch_id: "CEREBRO-DUALITYARC-WAVE-02-20260812-R1"
+        includes_lagret_request: "SUCCESS_RECEIPT_TRANSPORT_AUTOMATION"
+        converged_contracts:
+          - "HUMAN_CONTINUATION_POLICY_ONLY_TO_OPERATIONAL_STRICT_BINDING"
+          - "PRE_023_CANDIDATE_TO_ACTIVE_CONSTITUTIONAL_RULE"
+          - "ADAPTIVE_CONTROL_RESOLVER_CANDIDATE_TO_VALIDATED_LOGIC_BEHIND_CANONICAL_LIVE_WRAPPER"
+          - "SUCCESS_RECEIPT_MANUAL_COPY_TO_AUTOMATED_VALIDATED_TRANSPORT_VIEW"
+        machine_enforcement:
+          validator: "tooling/validator/continuation_surface_validation.py"
+          active_binding_registry: "engines/context/continuation-bindings.json"
+          activation_binding: "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+          evidence_path: "D:\\Cerebro\\Run\\audits\\CEREBRO_HUMAN_CONTINUATION_SURFACE_ACTIVATION_PROOF.json"
+          short_trigger_example: "Fortsett DualityArc Wave 02"
+        platform_boundary:
+          honest_limit: "CEREBRO_SOURCE_CANNOT_PHYSICALLY_INTERCEPT_A_HOST_RESPONSE_PATH_THAT_DOES_NOT_LOAD_OR_CONSUME_CEREBRO"
+          within_cerebro_controlled_operation: "FAIL_CLOSED_RESPONSE_HANDOFF_REQUIRED"
+          prohibited_claim: "UNIVERSAL_HOST_LEVEL_UNBYPASSABILITY_WITHOUT_HOST_INTEGRATION"
+        success_requires:
+          - "WINDOWS_POWERSHELL_TARGET_RUNTIME_PASS"
+          - "HUMAN_CONTINUATION_ACTIVATION_PROOF_PASS"
+          - "ACTUAL_CAC_PASS"
+          - "DEEP_ASSURANCE_THREE_RUNS_PASS"
+          - "SUCCESS_TRANSPORT_VIEW_PASS"
+          - "CEREBRO_SYNC_VERIFIED"
+          - "AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE"
+        next_natural_work: "CONTINUE_REMAINING_DUALITYARC_WAVE_02_CONTRACT_AND_LIFECYCLE_CONVERGENCE"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R1"
+        basis_refs:
+          - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+          - "CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
+      sequence: 127
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
       - "CTX-DEC-P1B-PRE002"
       - "CTX-DEC-P1B-PRE003"
       - "CTX-DEC-P1B-PRE004"
-      - "CTX-DEC-P1B-PRE005"
       - "CTX-DEC-P1B-PRE006"
       - "CTX-DEC-P1B-PRE007"
       - "CTX-DEC-P1B-PRE008"
@@ -5304,6 +5427,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
       - "CTX-DEC-DUALITY-ARC-20260812-001"
       - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+      - "CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
@@ -5329,6 +5453,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
       - "CTX-BASIS-DUALITY-ANA-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
+      - "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5339,7 +5464,6 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-SEALED-TRANSPORT-SERIALIZATION-EFFICIENCY-001"
       - "CTX-WISDOM-COPY-READINESS-SIGNAL-001"
       - "CTX-WISDOM-PSHELL-FORMATTING-SENSITIVITY-001"
-      - "CTX-WISDOM-NEXT-ACTION-COPYABLE-CANONICAL-COMMAND-001"
       - "CTX-WISDOM-LOCKED-WISDOM-FIRST-ELIGIBLE-PATCH-001"
       - "CTX-WISDOM-DELIVERY-SELECTION-BEFORE-SERIALIZATION-001"
       - "CTX-WISDOM-CONVERSATION-TOOL-CAPABILITY-PREFLIGHT-001"
@@ -5379,7 +5503,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
       - "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
       - "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
-  next_sequence: 125
+      - "CTX-WISDOM-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-20260812-001"
+  next_sequence: 128
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

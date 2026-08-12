@@ -1,7 +1,7 @@
 schema: cerebro-continuation-surface-system-policy/v1
 continuation_surface_system_policy:
   id: CEREBRO-CONTINUATION-SURFACE-SYSTEM-001
-  version: "1.2"
+  version: "1.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: SYSTEM_WIDE
@@ -21,6 +21,19 @@ continuation_surface_system_policy:
     - absolute-response-end
     - no-visible-content-after-command-surface
     - explanatory-code-must-not-compete-with-command-surface
+    failure_effect: BLOCK_RESPONSE_HANDOFF_AND_RERENDER
+    visible_surface_is_human_trigger_not-machine-state: true
+
+  canonical_binding:
+    decision_owner: MCP
+    state_owner: context
+    presentation_owner: presentation
+    interpretation_consumer: interaction
+    deterministic_validator: tooling/validator/continuation_surface_validation.py
+    one_active_binding_per_unique_path: true
+    binding_fingerprint_required: true
+    full_payload_reference_required: true
+    reconstructing-state-from-visible-trigger: PROHIBITED
 
   continuation_continuity:
     principle: ACTIVE_CONTINUATION_SURVIVES_CONVERSATIONAL_DETOURS
@@ -91,3 +104,5 @@ continuation_surface_system_policy:
   - human-next-action-surface-remains-absolute-response-end-across-interposed-conversational-events
   - internally-executable-next-action-is-executed-not-handed-back-to-user
   - human-continuation-surface-requires-a-real-human-boundary
+  - a-long-machine-instruction-is-not-a-valid-normal-human-continuation-surface
+  - response-handoff-requires-machine-validation-of-the-final-visible-trigger

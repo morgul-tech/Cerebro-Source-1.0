@@ -3,7 +3,7 @@ component:
   id: context
   name: Context Engine
   type: engine
-  version: 1.4.0
+  version: 1.5.0
   status: active-source
 responsibility:
   primary: Forvalte aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger, historikk, samtalelokale markører, avgrenset konsolideringskontekst og lettvekts evidens rundt Wisdom.
@@ -45,6 +45,7 @@ interfaces:
   - cumulative-change-learning-evidence
   - consolidation-context
   - conversation-marker
+  - active-human-continuation-binding
 rules:
   path: rules.yaml
 state:
@@ -60,6 +61,11 @@ state:
     path: development-history.yaml
     schema: development-history-schema.yaml
     authority: evidence-only
+    lifecycle: ACTIVE
+  continuation_bindings:
+    path: continuation-bindings.json
+    schema: cerebro-human-continuation-binding-registry/v1
+    authority: governing-current-state
     lifecycle: ACTIVE
 documentation:
   path: specification.md
@@ -86,6 +92,7 @@ boundaries:
   - use-event-driven-signal-capture
   - keep-micro-signal-storage-bounded
   - keep-conversation-markers-non-authoritative-and-conversation-local
+  - keep-complete-human-continuation-state-machine-owned-and-fingerprinted
   must_not:
   - create-parallel-learning-engine
   - auto-promote-wisdom-from-signal-count
@@ -98,5 +105,5 @@ boundaries:
   - auto-admit-effect-feedback-as-knowledge
   - create-parallel-learning-research-or-decision-engine
 version:
-  component: 1.4.0
+  component: 1.5.0
   schema: 1

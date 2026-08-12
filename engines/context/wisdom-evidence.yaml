@@ -391,7 +391,40 @@ wisdom_evidence:
           resolution: "NOT_APPLICABLE"
       pending_action: "REPOSITION"
 
+    -
+      id: "WEP-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-001"
+      subject_ref: "CTX-WISDOM-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-20260812-001"
+      subject_kind: "WISDOM"
+      scope: "ALL-CEREBRO-HUMAN-CONTINUATION-AND-NEXT-ACTION-PRESENTATION"
+      evidence_maturity: "CONFIRMED"
+      control_tier: "ENFORCEMENT"
+      friction_state: "CORRECTED_PENDING_RUNTIME_PROOF"
+      counts:
+        support: 2
+        conflict_prevented: 0
+        conflict_corrected: 1
+        conflict_escaped: 1
+        contradiction: 0
+      review:
+        review_count: 1
+        last_review_ref: "USER-REFINE-MENNESKE-SHORT-TRIGGER-2026-08-12"
+        conflicts_after_last_review: 0
+      recent_signals:
+        -
+          ref: "LONG-MACHINE-CONTINUATION-AFTER-WAVE-01-SUCCESS"
+          kind: "CONFLICT"
+          origin: "EXECUTION"
+          impact: "HIGH"
+          resolution: "CORRECTED"
+        -
+          ref: "USER-REPEATED-CORRECTION-SHORT-HUMAN-NEXT-STEP-2026-08-12"
+          kind: "SUPPORT"
+          origin: "USER_CORRECTION"
+          impact: "HIGH"
+          resolution: "ADMITTED"
+      pending_action: "VERIFY_DUALITYARC_WAVE_02_R1_RUNTIME_ENFORCEMENT"
+
   revision:
-    sequence: 7
-    last_patch_ref: "CEREBRO-CONTINUATION-CONSUMPTION-CLOSURE-001"
-    profile_count: 12
+    sequence: 8
+    last_patch_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R1"
+    profile_count: 13

@@ -1,7 +1,7 @@
 schema: cerebro-patch-attempt-history/v1
 patch_attempt_history:
   id: CEREBRO-PATCH-ATTEMPT-HISTORY-001
-  version: "1.1"
+  version: "1.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: SYSTEM_WIDE_STANDARD_DELIVERY
@@ -64,6 +64,7 @@ patch_attempt_history:
     - failure_family
     - source_mutation_assessment
     - receipt_ref
+    - success_transport_ref
     - diagnostic_ref
     - bundle_sha256
     - kernel_sha256
@@ -81,6 +82,14 @@ patch_attempt_history:
     overwrite_existing_attempt: PROHIBITED
     delete_prior_failure_on_later_success: PROHIBITED
     launcher_directory_failure_handoff_is_transport_only: true
+    launcher_directory_success_handoff_is_transport_only: true
+
+  success_transport:
+    canonical_receipt_remains: D:\Cerebro\Run\receipts
+    stable_transport_filename: CEREBRO_PATCH_SUCCESS.json
+    byte_identity_required: true
+    attempt_record_field: success_transport_ref
+    overwrite_of_transport_view_does_not-delete-canonical-history: true
 
   analysis:
     group_by_patch_id: true

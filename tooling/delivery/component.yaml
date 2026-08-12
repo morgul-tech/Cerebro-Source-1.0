@@ -3,7 +3,7 @@ component:
   id: delivery
   name: Cerebro Delivery Controller
   type: tooling
-  version: 0.4.0
+  version: 0.5.0
   status: active-source
 responsibility:
   primary: Select and persist a Source-bound delivery profile, then deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
@@ -34,6 +34,9 @@ boundaries:
     - treat-standard-launcher-and-bundle-as-one-identity-bound-delivery-unit
     - preserve-process-scoped-execution-policy-only
     - limit-delete-to-exact-declared-files
+    - validate-success-receipt-after-canonical-sync
+    - publish-byte-identical-success-transport-view-to-launcher-directory
+    - emit-upload-file-pointer-without-manual-copy-step
   must_not:
     - design-or-generate-source-content
     - create-source-authority
@@ -67,3 +70,4 @@ interfaces:
     - canonical-delivery-profile-controls
     - handoff-assurance-receipt
     - identity-bound-standard-delivery-unit
+    - validated-success-transport-view

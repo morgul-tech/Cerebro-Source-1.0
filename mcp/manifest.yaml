@@ -17,6 +17,8 @@ mcp:
   - standards/development/material-commitment-preflight.yaml
   - mcp/adaptive-control-resolver.yaml
   - mcp/control-resolution.yaml
+  - standards/human-continuation-surface.yaml
+  - standards/continuation-surface-system-policy.yaml
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0
@@ -73,6 +75,21 @@ control_adapters:
     reuses_execution_profile: true
     shadow_validation_patch_ref: PATCH-AA-003
     promotion_patch_ref: PATCH-AA-004
+  continuation_surface:
+    contract_ref: standards/human-continuation-surface.yaml
+    system_policy_ref: standards/continuation-surface-system-policy.yaml
+    validator_ref: tooling/validator/continuation_surface_validation.py
+    active_binding_registry_ref: engines/context/continuation-bindings.json
+    status: ACTIVE
+    decision_owner: MCP
+    state_owner: context
+    presentation_owner: presentation
+    interpretation_consumer: interaction
+    invocation: REQUIRED_BEFORE_REAL_HUMAN_BOUNDARY_RESPONSE
+    resolution_invocation: continuation_surface_validation.py resolve-active-binding
+    failure_effect: BLOCK_RESPONSE_HANDOFF_AND_RERENDER
+    activation_evidence_required: true
+    activation_binding_ref: HUMAN_CONTINUATION_SURFACE_ENFORCEMENT
 principles:
 - id: MCP-P001
   statement: Analyze the task before selecting or producing a solution.

@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.3",
+  "classification_version": "2.4",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -37,14 +37,20 @@
     {
       "standard_id": "STD-HUMAN-CONTINUATION-SURFACE",
       "path": "standards/human-continuation-surface.yaml",
-      "classification": "POLICY_ONLY",
-      "rationale": "Human continuation surface is a normative interaction contract consumed by presentation and delivery; it is not a standalone runtime subsystem."
+      "classification": "OPERATIONAL",
+      "rationale": "The system-wide short-trigger contract is registered through MCP, consumed by Interaction and Presentation, fail-closed before response handoff and runtime-proven by deterministic positive and negative response-candidate canaries.",
+      "strict_contract_refs": [
+        "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+      ]
     },
     {
       "standard_id": "STD-CONTINUATION-SURFACE-SYSTEM-POLICY",
       "path": "standards/continuation-surface-system-policy.yaml",
-      "classification": "POLICY_ONLY",
-      "rationale": "Continuation surface system policy defines cross-surface behavior and is intentionally policy rather than a separate executable owner."
+      "classification": "OPERATIONAL",
+      "rationale": "The cross-surface policy remains owner-distributed rather than a new component, but its canonical binding and final-response constraints are now machine-consumed and runtime-evidenced through one strict enforcement contract.",
+      "strict_contract_refs": [
+        "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+      ]
     },
     {
       "standard_id": "STD-BOOT-CRITICAL-PATH",
@@ -59,7 +65,8 @@
       "rationale": "Canonical STANDARD delivery path is explicitly bound and regression-controlled.",
       "strict_contract_refs": [
         "DELIVERY_KERNEL",
-        "FAILURE_HANDOFF"
+        "FAILURE_HANDOFF",
+        "SUCCESS_RECEIPT_TRANSPORT"
       ]
     },
     {
@@ -348,6 +355,103 @@
       "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
     },
     {
+      "id": "SUCCESS_RECEIPT_TRANSPORT",
+      "standard_id": "STD-DELIVERY-KERNEL",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/delivery-kernel.yaml",
+      "declaration_tokens": [
+        "success_handoff:",
+        "CEREBRO_PATCH_SUCCESS.json",
+        "UPLOAD_FILE"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-DELIVERY-KERNEL",
+      "implementation": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "implementation_tokens": [
+        "Publish-SuccessHandoff",
+        "SUCCESS_RECEIPT_CONTRACT_MISMATCH",
+        "SUCCESS_RECEIPT_TRANSPORT_COPY_VERIFICATION_FAILED"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_proof_kind": "EXPLICIT_ADAPTER",
+      "wiring_tokens": [
+        "CEREBRO_SYNC_VERIFIED=TRUE",
+        "AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE=TRUE",
+        "UPLOAD_FILE={0}"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "success-receipt-is-machine-validated-against-patch-attempt-sync-equality-and-recovery-snapshot",
+        "success-produces-byte-identical-CEREBRO_PATCH_SUCCESS-json-in-launcher-directory",
+        "post-sync-success-transport-failure-does-not-trigger-source-rollback-or-false-PATCH-FAIL"
+      ],
+      "runtime_evidence_state": "EXECUTED_BY_EVERY_SUCCESSFUL_STANDARD_LAUNCHER_AFTER_KERNEL_PASS"
+    },
+    {
+      "id": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
+      "standard_id": "STD-HUMAN-CONTINUATION-SURFACE",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/human-continuation-surface.yaml",
+      "declaration_tokens": [
+        "USER_COMMAND_IS_A_TRIGGER_NOT_AN_INFORMATION_CONTAINER",
+        "HARD_SYSTEM_INVARIANT",
+        "BLOCK_RESPONSE_HANDOFF_AND_RERENDER"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
+      "implementation": "tooling/validator/continuation_surface_validation.py",
+      "implementation_tokens": [
+        "def validate_binding(",
+        "def validate_response(",
+        "alias-word-budget-2-to-5-required",
+        "alias-machine-payload-prohibited"
+      ],
+      "wiring": "engines/presentation/rules.yaml",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "PRE-023",
+        "required_before_response_handoff: true",
+        "failure_effect: BLOCK_AND_RERENDER"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "human-continuation-normal-surface-enforces-2-to-5-words",
+        "human-continuation-visible-trigger-never-carries-commit-path-constraints-or-machine-payload",
+        "human-continuation-response-preflight-rejects-nonterminal-or-mismatched-trigger"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_HUMAN_CONTINUATION_SURFACE_ACTIVATION_PROOF.json",
+        "schema": "cerebro-human-continuation-activation-proof/v1",
+        "accepted_binding_ids": [
+          "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+        ],
+        "basis_files": [
+          "standards/human-continuation-surface.yaml",
+          "standards/continuation-surface-system-policy.yaml",
+          "engines/interaction/rules.yaml",
+          "engines/presentation/rules.yaml",
+          "engines/context/continuation-bindings.json",
+          "mcp/manifest.yaml",
+          "tooling/validator/continuation_surface_validation.py",
+          "tooling/validator/checks.yaml",
+          "tooling/validator/contract-activation-bindings.json"
+        ],
+        "required_true_fields": [
+          "binding_validation_executed",
+          "active_binding_registry_validated",
+          "response_candidate_consumer_exercised",
+          "normal_word_budget_enforced",
+          "machine_payload_separation_enforced",
+          "absolute_response_end_enforced",
+          "full_state_reference_required",
+          "visible_alias_is_trigger_not_state",
+          "negative_canaries_passed"
+        ],
+        "required_proves_binding": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+      }
+    },
+    {
       "id": "PATCH_ATTEMPT_HISTORY",
       "standard_id": "STD-PATCH-ATTEMPT-HISTORY",
       "classification": "OPERATIONAL",
@@ -361,7 +465,8 @@
       "implementation_tokens": [
         "New-AttemptContext",
         "Write-AttemptEvent",
-        "Complete-Attempt"
+        "Complete-Attempt",
+        "success_transport_ref"
       ],
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
       "wiring_proof_kind": "STATIC_CALLSITE",
@@ -374,7 +479,8 @@
       "validation": "standards/development/delivery-failure-regression.yaml",
       "validation_tokens": [
         "attempt-history-record-created-for-pass-and-fail",
-        "attempt-id-propagates-into-kernel-receipt"
+        "attempt-id-propagates-into-kernel-receipt",
+        "success-attempt-record-preserves-success-transport-ref"
       ],
       "runtime_evidence_state": "SEPARATE_NOT_PROVEN_BY_STATIC_CLOSURE"
     },
@@ -1106,6 +1212,16 @@
       "id": "CAC_RESULT_CONSUMER_SCHEMA_MISMATCH",
       "resolved_by_patch": "PATCH-AA-004-R5",
       "resolution": "STANDARD delivery consumes CAC v2 blocking_findings directly and reports their count and content; nonexistent legacy activation_gap_count can no longer mask the primary Contract Activation failure."
+    },
+    {
+      "id": "HUMAN_CONTINUATION_POLICY_ONLY_ACTIVATION_GAP",
+      "resolved_by_patch": "CEREBRO-DUALITYARC-WAVE-02-20260812-R1",
+      "resolution": "The 2-5 word human continuation rule is now an OPERATIONAL constitutional binding with an Interaction consumer, Presentation pre-handoff block-and-rerender gate, deterministic response validator, sealed-candidate selftest and runtime activation evidence. Full continuation state remains machine-owned and the visible phrase is only a trigger."
+    },
+    {
+      "id": "SUCCESS_RECEIPT_MANUAL_TRANSPORT_GAP",
+      "resolved_by_patch": "CEREBRO-DUALITYARC-WAVE-02-20260812-R1",
+      "resolution": "The Standard Delivery launcher now validates the canonical PASS receipt and recovery proof, verifies a byte-identical stable CEREBRO_PATCH_SUCCESS.json transport copy, records its path in attempt history and prints one UPLOAD_FILE value."
     }
   ]
 }

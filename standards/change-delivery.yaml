@@ -65,6 +65,7 @@ profiles:
     - failure-evidence-seed
     - diagnostic-capsule-capture
     - diagnostic-resolution-on-success
+    - success-receipt-validation-and-transport
     prohibited_script_scope:
     - Source-content-generation
     - YAML-transformation
@@ -312,6 +313,9 @@ diagnostic_failure_protocol:
     - resolve-related-unresolved-capsules-when-canonical-tool-is-available
     - bind-resolution-to-resulting-commit
     - resolution-failure-does-not-invalidate-verified-primary-operation-success
+    - validate-canonical-delivery-receipt-against-patch-attempt-sync-and-equality
+    - copy-byte-identical-success-transport-view-to-launcher-directory
+    - emit-UPLOAD_FILE-without-requiring-user-copy-command
   next_operation:
     - Host-auto-rehydrates-latest-unresolved-diagnostic-context
     - Change-may-consume-rehydrated-context-as-evidence

@@ -2,7 +2,7 @@ schema: cerebro-human-continuation-surface/v0.1
 
 human_continuation_surface:
   id: CEREBRO-HUMAN-CONTINUATION-SURFACE-001
-  version: "0.2"
+  version: "0.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
   introduced_by: GUARDRAILS-001
@@ -13,6 +13,17 @@ human_continuation_surface:
     short command deterministically before execution.
 
   principle: USER_COMMAND_IS_A_TRIGGER_NOT_AN_INFORMATION_CONTAINER
+
+  authority_and_precedence:
+    class: HARD_SYSTEM_INVARIANT
+    cannot_be_weakened_by:
+      - presentation-profile
+      - response-length-preference
+      - user-operating-profile
+      - machine-convenience
+      - prior-long-form-continuation-pattern
+    exact-shell-API-or-debug-exceptions_change_surface_only: true
+    exceptions_do_not_transfer_continuation_state_to_user: true
 
   applicability:
     required_when: REAL_HUMAN_ACTION_IS_NEXT
@@ -38,6 +49,9 @@ human_continuation_surface:
       - user-explicitly-requests-full-form
 
   binding_contract:
+    schema: cerebro-human-continuation-binding/v1
+    active_registry: engines/context/continuation-bindings.json
+    validator: tooling/validator/continuation_surface_validation.py
     required_fields:
       - alias
       - target_ref
@@ -53,6 +67,20 @@ human_continuation_surface:
       - resume_order
       - alternative_paths
       - binding_fingerprint
+
+  response_handoff_gate:
+    required_before_every_real_human_boundary_response: true
+    machine_consumer: tooling/validator/continuation_surface_validation.py
+    normal_surface_requires:
+      - active-binding-fingerprint-valid
+      - visible-alias-is-2-to-5-words
+      - visible-alias-contains-no-machine-payload
+      - exactly-one-visible-trigger
+      - trigger-is-absolute-response-end
+      - full-state-remains-reference-bound
+      - active-registry-binding-resolves-and-validates
+    failure_effect: BLOCK_RESPONSE_HANDOFF_AND_RERENDER
+    declaration_without_machine-consumption_is_not-implemented: true
 
   resolution:
     sequence:
@@ -112,3 +140,6 @@ human_continuation_surface:
     - applicable-contract-is-resolved-before-general-tool-reasoning
     - human-boundary-is-presented-not-misclassified-as-system-blocker
     - no-human-continuation-surface-without-real-human-boundary
+    - human-does-not-encode-machine-continuation-payload
+    - normal-trigger-is-2-to-5-words-not-a-compressed-machine-command
+    - response-handoff-blocks-until-the-active-binding-and-visible-trigger-match

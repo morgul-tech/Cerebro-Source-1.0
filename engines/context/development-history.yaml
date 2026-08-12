@@ -270,3 +270,36 @@ development_history:
       provenance:
         admission: EXECUTION_CONFIRMED_CORRECTIVE_LEARNING
         source_ref: CEREBRO-PATCH-FAIL-20260811-201425
+    - id: HIST-LEARN-SHORT-HUMAN-TRIGGER-ENFORCEMENT-GAP-20260812
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Repeated long continuation commands exposed declaration without response-handoff enforcement
+      fact: Cerebro already declared that the normal user-facing next action should be a 2-5 word trigger and that complete continuation state should remain Cerebro-owned. A later response nevertheless required the user to paste a long machine instruction containing persistence, commit and validation details. The failure proved that a policy-only rule, candidate Presentation lifecycle and static canaries were insufficient without an active binding, a deterministic final-response consumer and fail-closed handoff behavior.
+      occurred_at: '2026-08-12'
+      evidence_refs:
+        - USER-REPEATED-CORRECTION-SHORT-HUMAN-NEXT-STEP-2026-08-12
+        - CTX-DEC-P1B-PRE005
+        - CEREBRO-HUMAN-CONTINUATION-SURFACE-001
+      impact:
+        introduced:
+          - HUMAN_CONTINUATION_SURFACE_RUNTIME_ENFORCEMENT
+          - FINGERPRINTED_SHORT_TRIGGER_BINDING
+          - RESPONSE_HANDOFF_BLOCK_AND_RERENDER
+        retired:
+          - LONG_MACHINE_CONTINUATION_AS_NORMAL_USER_SURFACE
+          - AMBIGUOUS_CANONICAL_COMMAND_WORDING
+          - POLICY_ONLY_CONTINUATION_CLASSIFICATION
+        enabled:
+          - TWO_TO_FIVE_WORD_HUMAN_TRIGGER_WITH_LOSSLESS_MACHINE_STATE
+          - MACHINE_VALIDATED_ABSOLUTE_RESPONSE_END
+        learned:
+          - COMPRESS_THE_HUMAN_INTERFACE_NOT_THE_MACHINE_UNDERSTANDING
+          - DECLARED_RULES_REQUIRE_A_CONSUMER_FAILURE_EFFECT_AND_EVIDENCE_TO_GOVERN_RELIABLY
+      relations:
+        patch_refs: [CEREBRO-DUALITYARC-WAVE-02-20260812-R1]
+        baseline_commit: c2a6751b5669c0c759905e4bab9c274ff558b8bd
+        learning_refs: [CTX-WISDOM-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-20260812-001]
+      provenance:
+        admission: USER_DIRECTED_REPEATED_SYSTEMIC_CORRECTION
+        source_ref: USER-REFINE-MENNESKE-SHORT-TRIGGER-2026-08-12

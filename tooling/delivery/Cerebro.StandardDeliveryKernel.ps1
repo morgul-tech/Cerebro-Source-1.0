@@ -743,6 +743,20 @@ function Invoke-SelfTest {
     Assert-PayloadIntegrity $manifestObject
     Assert-ActivationProbeManifest -PatchManifest $manifestObject
 
+    $State.ReachedStage = 'SELFTEST_HUMAN_CONTINUATION_SURFACE'
+    $continuationValidator = Join-Path -Path $BundleRoot -ChildPath 'payload\tooling\validator\continuation_surface_validation.py'
+    if (-not (Test-Path -LiteralPath $continuationValidator -PathType Leaf)) {
+        throw 'HUMAN_CONTINUATION_SURFACE_VALIDATOR_MISSING'
+    }
+    $continuationPython = Resolve-PythonRunner
+    $continuationArgs = @($continuationPython.PrefixArgs) + @($continuationValidator,'selftest')
+    $continuationResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $continuationArgs
+    try { $continuationEvidence = $continuationResult.Stdout | ConvertFrom-Json }
+    catch { throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_OUTPUT_INVALID' }
+    if ($continuationResult.ExitCode -ne 0 -or [string]$continuationEvidence.result -ne 'PASS') {
+        throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_FAILED'
+    }
+
     $State.ReachedStage = 'SELFTEST_NATIVE'
     $cmdPath = Resolve-Executable 'cmd.exe'
     $benign = Invoke-NativeCommand -Executable $cmdPath -ArgumentList @('/d','/s','/c','echo BENIGN_STDERR 1>&2 & exit /b 0')
@@ -770,6 +784,7 @@ function Invoke-SelfTest {
     Write-Host 'BOUNDED_DELETE_ROLLBACK_PASS=TRUE'
     Write-Host 'FULL_RECOVERY_SNAPSHOT_PASS=TRUE'
     Write-Host 'PAYLOAD_HASH_PASS=TRUE'
+    Write-Host 'HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS=TRUE'
 }
 
 function Get-KernelOrdinalStrings {

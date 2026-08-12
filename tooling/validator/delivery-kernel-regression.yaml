@@ -13,6 +13,7 @@ delivery_kernel_regression_tool:
   - FULL_RECOVERY_SNAPSHOT_PASS
   - PAYLOAD_HASH_PASS
   - BASELINE_MANIFEST_PASS
+  - HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS
   required_canaries:
   - declared-delete-requires-exact-baseline-git-blob
   - declared-delete-rejects-payload-fields
@@ -22,3 +23,4 @@ delivery_kernel_regression_tool:
   - full-snapshot-includes-dot-git-and-verifies-every-entry
   - local-git-fixture-includes-required-cerebro-source-root-marker
   - insufficient-normal-user-capability-stops-before-mutation
+  - sealed-candidate-selftest-rejects-invalid-human-continuation-surfaces

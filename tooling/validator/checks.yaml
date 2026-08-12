@@ -1499,3 +1499,39 @@ dualityarc_wave_01_delivery_and_source_hygiene:
     - stale-root-inventory-or-audit-blocks-closure
     - source-mapping-or-physical-target-resolution-active-path-blocks-closure
     - missing-history-copy-blocks-closure
+
+dualityarc_wave_02_human_continuation_and_success_handoff:
+  introduced_by: CEREBRO-DUALITYARC-WAVE-02-20260812-R1
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/human-continuation-surface.yaml
+    - standards/continuation-surface-system-policy.yaml
+    - standards/delivery-kernel.yaml
+    - standards/patch-attempt-history.yaml
+  invariants:
+    - user-visible-continuation-is-a-short-trigger-not-a-machine-state-container
+    - full-objective-commit-constraints-evidence-validation-and-resume-order-remain-Cerebro-owned
+    - PRE-023-is-active-constitutional-and-machine-preflight-bound
+    - continuation-short-trigger-binding-is-runtime-evidence-proven
+    - active-human-continuation-binding-is-persisted-fingerprinted-and-machine-resolvable
+    - success-receipt-is-validated-after-kernel-PASS
+    - success-transport-view-is-byte-identical-and-automatically-placed-in-launcher-directory
+    - post-sync-transport-failure-never-rolls-back-or-mislabels-the-published-Source-change
+  required_canaries:
+    - valid-2-to-5-word-trigger-is-accepted
+    - one-word-trigger-is-rejected
+    - six-word-trigger-is-rejected
+    - commit-path-shell-or-machine-payload-in-normal-trigger-is-rejected
+    - nonterminal-trigger-is-rejected
+    - trigger-that-does-not-match-active-binding-is-rejected
+    - missing-full-payload-reference-or-invalid-binding-fingerprint-is-rejected
+    - missing-duplicate-or-invalid-active-binding-registry-entry-is-rejected
+    - success-receipt-patch-attempt-commit-sync-equality-and-snapshot-mismatch-is-rejected
+    - successful-receipt-copy-emits-UPLOAD_FILE
+  prohibited:
+    - requiring-user-to-retype-machine-continuation-state
+    - treating-a-long-machine-command-as-the-normal-human-continuation-surface
+    - policy-only-classification-after-runtime-enforcement-is-bound
+    - manual-Copy-Item-as-normal-success-handoff
+    - content-after-the-short-trigger

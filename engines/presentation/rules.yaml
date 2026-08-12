@@ -413,7 +413,7 @@ rules:
 
 - id: PRE-023
   owner: presentation
-  authority: normative
+  authority: constitutional
   priority: critical
   condition:
     next_action:
@@ -431,10 +431,14 @@ rules:
         preserve_full_canonical_command: true
         preserve_full_continuation_payload: true
         visible_alias_is_trigger_not_information_container: true
+      machine_preflight:
+        validator: tooling/validator/continuation_surface_validation.py
+        required_before_response_handoff: true
+        failure_effect: BLOCK_AND_RERENDER
       prohibit_content_after: true
   statement: Når neste handling er brukerutførbar, SKAL Presentation Engine normalt vise en kort menneskelig trigger på 2–5 ord som siste kopierbare element; full kanonisk kommando, mål, constraints, evidence og continuation state SKAL forbli bundet internt i Cerebro uten semantisk tap. Lang form er bare tillatt når Human Continuation Surface eksplisitt krever eksakt shell-, API- eller debug-syntaks.
   scope: runtime
-  lifecycle: candidate
+  lifecycle: active
   validation: error
   provenance:
     type: repeated-user-correction-systemic-fix

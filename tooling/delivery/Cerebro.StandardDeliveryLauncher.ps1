@@ -12,6 +12,7 @@ $ExpectedBundleFilename = '__BUNDLE_FILENAME__'
 $LauncherFile = $MyInvocation.MyCommand.Path
 $LauncherDirectory = Split-Path -Parent ([IO.Path]::GetFullPath($LauncherFile))
 $StableFailureHandoff = Join-Path -Path $LauncherDirectory -ChildPath 'CEREBRO_PATCH_FAIL.json'
+$StableSuccessHandoff = Join-Path -Path $LauncherDirectory -ChildPath 'CEREBRO_PATCH_SUCCESS.json'
 
 function Get-Sha256 {
     param([string]$LiteralPath)
@@ -74,7 +75,8 @@ function Complete-Attempt {
         [string]$FailureFamily='',
         [string]$MutationAssessment='',
         [string]$ReceiptRef='',
-        [string]$DiagnosticRef=''
+        [string]$DiagnosticRef='',
+        [string]$SuccessTransportRef=''
     )
 
     $completed=[DateTime]::UtcNow
@@ -114,6 +116,7 @@ function Complete-Attempt {
         source_mutation_assessment=$MutationAssessment
         receipt_ref=$ReceiptRef
         receipt_copy=$receiptCopy
+        success_transport_ref=$SuccessTransportRef
         diagnostic_ref=$DiagnosticRef
         diagnostic_copy=$diagnosticCopy
         bundle_sha256=$Context.bundle_sha256
@@ -182,6 +185,59 @@ function Get-CapturedField {
     $match = [regex]::Match($Text,$pattern)
     if ($match.Success) { return $match.Groups[1].Value.Trim() }
     return ''
+}
+
+function Publish-SuccessHandoff {
+    param(
+        [Parameter(Mandatory=$true)]$Manifest,
+        [Parameter(Mandatory=$true)][string]$ReceiptPath,
+        [Parameter(Mandatory=$true)][string]$ResultingCommit
+    )
+
+    if([string]::IsNullOrWhiteSpace($ReceiptPath) -or -not(Test-Path -LiteralPath $ReceiptPath -PathType Leaf)){
+        throw 'SUCCESS_RECEIPT_NOT_FOUND'
+    }
+    try {$receipt=Get-Content -LiteralPath $ReceiptPath -Raw|ConvertFrom-Json}
+    catch {throw ('SUCCESS_RECEIPT_JSON_INVALID:{0}' -f $_.Exception.Message)}
+
+    $valid=(
+        [string]$receipt.schema -eq 'cerebro-delivery-kernel-receipt/v2' -and
+        [string]$receipt.result -eq 'PASS' -and
+        [string]$receipt.patch_id -eq [string]$Manifest.patch_id -and
+        [string]$receipt.attempt_id -eq [string]$Attempt.attempt_id -and
+        [string]$receipt.authoritative_source -eq 'origin/main' -and
+        [string]$receipt.authoritative_commit -eq $ResultingCommit -and
+        [string]$receipt.working_source_commit -eq $ResultingCommit -and
+        [bool]$receipt.authoritative_source_equals_working_source -and
+        [string]$receipt.source_equality -eq 'VERIFIED' -and
+        [string]$receipt.working_tree -eq 'CLEAN' -and
+        [string]$receipt.sync_action -eq 'CEREBRO_SYNC_EXECUTED' -and
+        [bool]$receipt.cerebro_sync_verified
+    )
+    if (-not $valid) { throw 'SUCCESS_RECEIPT_CONTRACT_MISMATCH' }
+
+    $archivePath=[string]$receipt.full_recovery_snapshot.archive_path
+    $archiveSha=[string]$receipt.full_recovery_snapshot.archive_sha256
+    $snapshotReceipt=[string]$receipt.full_recovery_snapshot.receipt_path
+    if([string]::IsNullOrWhiteSpace($archivePath) -or -not(Test-Path -LiteralPath $archivePath -PathType Leaf) -or
+       [string]::IsNullOrWhiteSpace($snapshotReceipt) -or -not(Test-Path -LiteralPath $snapshotReceipt -PathType Leaf) -or
+       [string]::IsNullOrWhiteSpace($archiveSha) -or (Get-Sha256 -LiteralPath $archivePath) -ne $archiveSha){
+        throw 'SUCCESS_RECEIPT_RECOVERY_SNAPSHOT_PROOF_INVALID'
+    }
+
+    Copy-Item -LiteralPath $ReceiptPath -Destination $StableSuccessHandoff -Force
+    if(-not(Test-Path -LiteralPath $StableSuccessHandoff -PathType Leaf) -or
+       (Get-Sha256 -LiteralPath $StableSuccessHandoff) -ne (Get-Sha256 -LiteralPath $ReceiptPath)){
+        throw 'SUCCESS_RECEIPT_TRANSPORT_COPY_VERIFICATION_FAILED'
+    }
+
+    return [pscustomobject]@{
+        CanonicalPath=$ReceiptPath
+        TransportPath=$StableSuccessHandoff
+        ResultCommit=$ResultingCommit
+        SourceEquality='VERIFIED'
+        CerebroSyncVerified=$true
+    }
 }
 
 function Get-WorkingSourceSnapshot {
@@ -421,12 +477,28 @@ try {
     Resolve-CanonicalDiagnostics -PatchId ([string]$manifest.patch_id) -ResultingCommit $resultingCommit
 
     $receipt = Get-CapturedField -Text ([string]$apply.Stdout) -Name 'RECEIPT'
+    try {
+        $successHandoff=Publish-SuccessHandoff -Manifest $manifest -ReceiptPath $receipt -ResultingCommit $resultingCommit
+    }
+    catch {
+        Write-Host ''
+        Write-Host 'PATCH SUCCESS'
+        Write-Host 'CEREBRO_SYNC_VERIFIED=TRUE'
+        Write-Host ('RESULT_COMMIT={0}' -f $resultingCommit)
+        Write-Host ('RECEIPT={0}' -f $receipt)
+        Write-Host 'SUCCESS_HANDOFF=FAIL'
+        Write-Host ('SUCCESS_HANDOFF_ERROR={0}' -f $_.Exception.Message)
+        Complete-Attempt -Context $Attempt -Result 'PASS' -ReceiptRef $receipt
+        exit 2
+    }
     Write-Host ''
     Write-Host 'PATCH SUCCESS'
-    if (-not [string]::IsNullOrWhiteSpace($receipt)) {
-        Write-Host ('RECEIPT={0}' -f $receipt)
-    }
-    Complete-Attempt -Context $Attempt -Result 'PASS' -ReceiptRef $receipt
+    Write-Host 'CEREBRO_SYNC_VERIFIED=TRUE'
+    Write-Host 'AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE=TRUE'
+    Write-Host ('RESULT_COMMIT={0}' -f $successHandoff.ResultCommit)
+    Write-Host ('RECEIPT={0}' -f $successHandoff.CanonicalPath)
+    Write-Host ('UPLOAD_FILE={0}' -f $successHandoff.TransportPath)
+    Complete-Attempt -Context $Attempt -Result 'PASS' -ReceiptRef $receipt -SuccessTransportRef $successHandoff.TransportPath
     exit 0
 }
 catch {

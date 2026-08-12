@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "2.0"
+  version: "2.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -76,6 +76,8 @@ delivery_kernel:
     - verify-kernel-integrity
     - invoke-kernel-selftest
     - invoke-kernel-apply
+    - validate-success-receipt
+    - publish-bounded-success-transport-view
     prohibited_launcher_roles:
     - Source-content-generation
     - Git-policy-reimplementation
@@ -215,12 +217,45 @@ delivery_kernel:
       failure_attachment: CEREBRO_PATCH_FAIL.json
       manual_error_paste: PROHIBITED
 
+  success_handoff:
+    status: REQUIRED
+    principle: MACHINE_VALIDATES_AND_TRANSPORTS_SUCCESS_EVIDENCE_BEFORE_USER_HANDOFF
+    canonical_receipt_authority: D:\Cerebro\Run\receipts
+    validation_owner: canonical-launcher
+    required_validation:
+      - receipt-schema-and-result
+      - patch-and-attempt-identity
+      - authoritative-and-working-commit-equality
+      - clean-working-tree
+      - cerebro-sync-executed-and-verified
+      - recovery-snapshot-presence-and-archive-hash
+    user_transport:
+      stable_filename: CEREBRO_PATCH_SUCCESS.json
+      placement: launcher-directory
+      authority: DERIVED_BYTE_IDENTICAL_VIEW
+      generated_automatically_on-success: true
+      manual-copy-command-required: false
+      terminal_pointer: UPLOAD_FILE
+    post_sync_transport_failure:
+      invalidates-primary-patch-success: false
+      source-rollback: PROHIBITED
+      terminal_state: PATCH_SUCCESS_SUCCESS_HANDOFF_FAIL
+    terminal_surface:
+      required:
+        - PATCH_SUCCESS
+        - CEREBRO_SYNC_VERIFIED
+        - AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE
+        - RESULT_COMMIT
+        - RECEIPT
+        - UPLOAD_FILE
+
   attempt_history:
     contract: standards/patch-attempt-history.yaml
     implementation_owner: canonical-launcher
     every_execution_recorded: true
     pass_and_fail_retained: true
     attempt_id_propagated_to_kernel: true
+    success_transport_ref_recorded: true
 
   active_source_integrity_closure:
     contract: standards/active-source-closure.yaml#patch_close_integrity_closure

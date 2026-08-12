@@ -1001,6 +1001,26 @@ rules:
   validation: error
   provenance: {type: user-corrected-runtime-consumption-gap, source: REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11}
 # END HUMAN-MEANING-REFINEMENT-001
+# BEGIN HUMAN-CONTINUATION-TRIGGER-CONSUMPTION-001
+- id: INT-HCS-001
+  owner: interaction
+  authority: constitutional
+  priority: critical
+  condition:
+    user_input_matches_active_short_continuation_trigger: true
+  action:
+    treat_visible_words_as_trigger_not-state-container: true
+    resolve_active_binding_fingerprint: true
+    load_full_payload_constraints_evidence_and-resume-order: true
+    verify_source_revision_and-freshness: true
+    execute-bound-continuation-without-requiring-machine-language-from-user: true
+    prohibit-reconstructing-full-state-from-visible-words: true
+  statement: En kort menneskelig continuation-trigger SKAL bare velge den aktive Cerebro-eide bindingen; Interaction Engine SKAL laste full maskinsemantikk fra bindingen og SKAL IKKE kreve at brukeren gjentar commit, constraints, validering, lagringsmål eller resume-rekkefølge.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: repeated-user-correction-systemic-enforcement, source: USER-REFINE-MENNESKE-SHORT-TRIGGER-2026-08-12}
+# END HUMAN-CONTINUATION-TRIGGER-CONSUMPTION-001
 # BEGIN CONVERSATION-EVOLUTION-ANALYSIS-001
 - id: INT-CEA-001
   owner: interaction
