@@ -4908,6 +4908,188 @@ RECEIPT-76656fa9d8e617e98414c9fe
         revokes_ref: null
         derived_from_refs: []
       sequence: 119
+    -
+      id: "CTX-DEC-DUALITY-ARC-20260812-001"
+      type: "DECISION"
+      scope: "CEREBRO-GLOBAL-DUALITY-ENFORCEMENT-TEMPORARIS-CONVERGENCE"
+      statement: "dualityArc locks Cerebro toward one canonical truth, decision and execution path per responsibility while preserving only separations that protect real authority, capability, security, lifecycle, semantic responsibility or independent verification."
+      payload:
+        decision_status: "LOCKED"
+        alias: "dualityArc"
+        retrieval_aliases: ["dualityArc", "duality arc"]
+        saved_via: "CEREBRO_LAGRE"
+        locked_by_user: true
+        locked_at_local: "2026-08-12T07:27:00+02:00"
+        architecture_outcome: "GLOBAL_CONVERGENCE_WITHOUT_NEW_TOP_LEVEL_ENGINE"
+        optimization_objective: "MINIMIZE_END_TO_END_EXPECTED_HUMAN_AND_MACHINE_COST_SUBJECT_TO_CORRECTNESS_AUTHORITY_SAFETY_EVIDENCE_AND_RECOVERABILITY"
+        permanent_separation_allowed_when:
+          - "AUTHORITY_BOUNDARY"
+          - "CAPABILITY_BOUNDARY"
+          - "SECURITY_BOUNDARY"
+          - "LIFECYCLE_BOUNDARY"
+          - "UNIQUE_SEMANTIC_RESPONSIBILITY"
+          - "INDEPENDENT_VERIFICATION"
+        otherwise_resolve_as: ["MERGE", "DERIVE", "RETIRE"]
+        enforcement_chain:
+          - "RULE"
+          - "OWNER"
+          - "CANONICAL_BINDING"
+          - "EXECUTION_OR_BLOCK"
+          - "VERIFICATION"
+          - "EVIDENCE"
+          - "CLOSURE"
+        material_change_impact_required:
+          - "INTRODUCES"
+          - "CHANGES"
+          - "DERIVES"
+          - "SUPERSEDES"
+          - "RETIRES"
+        coherence_depths:
+          LIGHT: "continuous deterministic Source coherence"
+          MATERIAL: "relevance-scoped architecture enforcement and retirement closure"
+          DEEP: "global Architectural Regrounding"
+        temporaris:
+          role: "CHANGE_CANDIDATE_DEVELOPMENT_AND_IMMUTABLE_QUALIFICATION_LIFECYCLE"
+          new_engine: false
+          working_source_role_target: "QUALIFIED_LOCAL_PROMOTION_AND_REAL_WORLD_VERIFICATION_SURFACE"
+          qualification_requires:
+            - "BEHAVIORAL_ASSURANCE"
+            - "FAILURE_LEARNING_CLOSURE"
+            - "ENFORCEMENT_COVERAGE"
+            - "NO_UNRESOLVED_BYPASS"
+            - "COHERENCE"
+            - "RETIREMENT_CLOSURE"
+            - "RELEVANT_FIDELITY"
+            - "REQUIRED_TARGET_RUNTIME"
+        prohibited_new_top_level_components:
+          - "TEMPORARIS_ENGINE"
+          - "COHERENCE_ENGINE"
+          - "ENFORCEMENT_ENGINE"
+        convergence_direction:
+          - "DELIVERY_SELECTOR_TO_MCP_EXECUTION_PROFILE"
+          - "SOURCE_MAPPING_AND_PHYSICAL_TARGET_RESOLUTION_TO_ONE_EXECUTION_SURFACE_RESOLUTION"
+          - "PROMOTED_ADAPTIVE_WRAPPER_TO_CANONICAL_MCP_RESOLVER_AFTER_EQUIVALENCE_PROOF"
+          - "DELIVERY_PATHS_TO_ONE_TRANSACTION_PROTOCOL_WITH_BOUNDARY_PRESERVING_PROFILES"
+          - "DETERMINISTIC_CLOSURE_TO_VALIDATOR_PROFILES"
+          - "CHANGE_DELIVERY_OVERLAYS_TO_ONE_CURRENT_CONTRACT"
+          - "OPERATIONAL_PROGRESS_OVERLAP_TO_CONTROL_ARCHITECTURE"
+          - "BUILDER_TO_PURE_DETERMINISTIC_BUILD_ROLE"
+          - "PUBLISHER_TO_ACTUAL_PRIVILEGED_PUBLICATION_EXECUTOR"
+          - "WORKING_CONTEXT_TO_SMALL_CURRENT_PROJECTION_WITH_HISTORY_ON_DEMAND"
+          - "ENGINE_MIGRATION_RULES_TO_CURRENT_ACTIVE_KERNELS_PLUS_HISTORY"
+          - "BOOT_AND_HANDOFF_LEGACY_TO_MODERN_SOURCE_FIRST_BOOT_AND_OPTIONAL_RESUME_CACHE"
+        implementation_state: "DECISION_LOCKED_NOT_YET_GLOBALLY_IMPLEMENTED"
+        invalidation: "NEW_MATERIAL_EVIDENCE_THAT_FALSIFIES_THE_LOCKED_BASIS"
+        next_natural_work: "CANONICAL_TARGET_ARCHITECTURE_AND_DEPENDENCY_SAFE_KEEP_MERGE_DERIVE_RETIRE_MIGRATION_PLAN"
+        continuity:
+          conversation_history_required: false
+          retrieve_by_alias: "dualityArc"
+      provenance:
+        introduced_by_ref: "USER-LOCK-DUALITYARC-2026-08-12"
+        basis_refs:
+          - "standards/system-metamodel.yaml"
+          - "standards/control-architecture.yaml"
+          - "standards/active-source-closure.yaml"
+          - "standards/contract-activation-closure.yaml"
+          - "standards/development/architectural-regrounding.yaml"
+          - "standards/change-architecture.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs: []
+      sequence: 120
+    -
+      id: "CTX-BASIS-DUALITY-ANA-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "FULL-CONVERSATION-SOLUTION-EVOLUTION-ANALYSIS-DUALITY-TEMPORARIS-ENFORCEMENT"
+      statement: "dualityAna preserves the complete solution-evolution analysis of this conversation so the result can be retrieved in a later session without depending on chat history."
+      payload:
+        applicability: "CURRENT_ARCHITECTURE_ANALYSIS_BASIS"
+        alias: "dualityAna"
+        retrieval_aliases: ["dualityAna", "duality ana"]
+        saved_via: "CEREBRO_LAGRE"
+        saved_at_local: "2026-08-12T07:27:00+02:00"
+        analysis_command: "analyse convo"
+        conversation_scope:
+          start: "Definer promotion gate"
+          end: "LAGRE dualityAna dualityArc and implement analyse convo"
+          coverage: "ENTIRE_AVAILABLE_CONVERSATION_IN_CHRONOLOGICAL_ORDER"
+        initial_state: "Temporaris needed a promotion boundary after its development and qualification lifecycle had been conceptually defined."
+        evolution:
+          - "PROMOTION_GATE separated qualification proof from current promotion admission, local delivery and publication."
+          - "ISOLATION became a technical capability boundary rather than a policy request."
+          - "FIDELITY became property-specific evidence instead of a percentage or vague production likeness."
+          - "QUALIFICATION_RECEIPT was refined into a compact attestation that indexes existing proof instead of duplicating it."
+          - "WHOLE_CEREBRO_XREF showed Temporaris should be Change Architecture lifecycle, not a new Engine."
+          - "CHANGE_VS_DELIVERY question expanded into a global duality audit across all Cerebro."
+          - "DUALITY_AUDIT found duplicated representations, migration overlays, stale current-state, ownership drift and promotion scaffolding."
+          - "USER_OPTIMIZATION_MODEL reframed success as minimum total end-to-end human and machine cost."
+          - "HUMAN_MACHINE_DEVELOPMENT_MODEL explained additive architectural entropy from locally correct incremental changes."
+          - "COHERENCE_ATTACK rejected a large permanent Coherence Engine in favor of proportional use of existing metamodel, closure, Quality and regrounding."
+          - "ENFORCEMENT_INSIGHT unified the findings: defined ownership is insufficient until one canonical binding makes the rule unavoidable and independently evidenced."
+          - "DUALITYARC was user-locked as the final architecture direction."
+        decisive_findings:
+          - "Cerebro does not primarily have too many valid Engines; it has too many parallel representations and transition layers that remained active after migration."
+          - "Duality is often the symptom; incomplete enforcement of singular ownership and path selection is often the deeper cause."
+          - "Good independent verification must be preserved and must not be misclassified as harmful duplication."
+          - "Every material change must analyze both what is added and what becomes unnecessary."
+          - "Temporaris is the proper pre-Working-Source place to develop, learn, qualify enforcement and prove coherence before promotion."
+        source_xref_examples:
+          - "multiple topology and mutable metadata representations can diverge"
+          - "Working Context contains broad historical/current state despite an intended active-state role"
+          - "Engine migration rules remain candidate-era while newer control architecture owns parts of their former decisions"
+          - "delivery selection overlaps MCP Execution Profile"
+          - "multiple delivery transaction paths and convergence overlays remain"
+          - "boot policy and local executable path are on different architecture generations"
+          - "MCP target/source mapping contracts overlap"
+          - "promotion scaffolding remains in the live resolver path"
+          - "Builder contains legacy patch and transport responsibilities"
+          - "Publisher declaration and actual publication implementation are not cleanly aligned"
+          - "old handoff implementation depends on project execution state that is now null after roadmap completion"
+        final_solution:
+          architecture_ref: "CTX-DEC-DUALITY-ARC-20260812-001"
+          summary: "Use existing Cerebro owners with one canonical truth and binding per responsibility, distributed enforcement, proportional coherence closure, mandatory retirement impact and Temporaris qualification before Working Source."
+        learning_for_cerebro:
+          - "A new correct mechanism is not architecture closure until superseded mechanisms and consumers are resolved."
+          - "One mutable fact needs one canonical owner; other views should be derived."
+          - "One execution responsibility needs one canonical owner; observers and independent verifiers may remain separate."
+          - "Transitional and compatibility architecture requires explicit retirement triggers."
+          - "Current state and historical evidence must be separated so normal control paths do not repeatedly pay history cost."
+          - "Enforcement should be treated as RULE_TO_OWNER_TO_BINDING_TO_EXECUTION_OR_BLOCK_TO_VERIFY_TO_EVIDENCE_TO_CLOSURE."
+          - "Optimization is expected total cost, not minimum code size or CPU in isolation."
+        reach_best_result_earlier:
+          required_questions:
+            - "WHAT_CANONICAL_RESPONSIBILITY_IS_CHANGING"
+            - "WHO_ALREADY_OWNS_IT"
+            - "WHAT_EXISTING_PATH_ALREADY_IMPLEMENTED_IT"
+            - "WHAT_BECOMES_UNNECESSARY_IF_THIS_IS_ADDED"
+            - "CAN_THIS_BE_DERIVED_INSTEAD_OF_STORED"
+            - "HOW_IS_THE_RULE_PHYSICALLY_ENFORCED"
+            - "CAN_ANY_ACTIVE_PATH_BYPASS_IT"
+            - "HOW_IS_ENFORCEMENT_INDEPENDENTLY_PROVEN"
+            - "DOES_TOTAL_END_TO_END_COST_FALL"
+        automation_direction: "Derive a commit-bound architecture graph for affected scope, classify overlaps, require INTRODUCES/CHANGES/DERIVES/SUPERSEDES/RETIRES, bind enforcement, qualify in Temporaris, close retirement, then admit through MCP."
+        open_items:
+          - "Global dualityArc migration is not yet implemented."
+          - "Exact final-delivery transaction qualification inside Temporaris still needs implementation design."
+          - "Working Context compaction must preserve all stable historical references."
+          - "Measured performance benefits require later runtime evidence."
+        continuity:
+          conversation_history_required: false
+          retrieve_by_alias: "dualityAna"
+          paired_locked_architecture_alias: "dualityArc"
+          human_text_export_name: "dualityAna.txt"
+      provenance:
+        introduced_by_ref: "USER-LAGRE-DUALITYANA-AND-DUALITYARC-2026-08-12"
+        basis_refs:
+          - "CTX-DEC-DUALITY-ARC-20260812-001"
+          - "CEREBRO-SOURCE-bb1570df1f017975e48da75ce21a3fcb03aa97f6"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-DUALITY-ARC-20260812-001"
+      sequence: 121
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -4949,6 +5131,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001"
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
+      - "CTX-DEC-DUALITY-ARC-20260812-001"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
@@ -4972,6 +5155,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-SESSION-EVOLUTION-LAGRE-001"
       - "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
       - "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
+      - "CTX-BASIS-DUALITY-ANA-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5021,7 +5205,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
       - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
       - "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
-  next_sequence: 120
+  next_sequence: 122
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

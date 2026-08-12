@@ -122,6 +122,13 @@ terms:
     definition: Semantisk rekonstruksjon av brukerens sannsynlige mening i lys av menneskelig, omtrentlig, kontekstavhengig, metaforisk eller tale-til-tekst-påvirket språk før ord behandles som eksakte maskintermer.
     interpretation: Operasjonen ser forsiktig mellom linjene og kan ekstrapolere et større støttet poeng; den er ikke automatisk tekstomskriving, kan ikke oppfinne intensjon og kan ikke overstyre eksplisitte rammer.
     owner: interaction
+  conversation_evolution_analysis:
+    term: Samtaleutviklingsanalyse
+    aliases: [analyse convo, analyser convo, analyze convo]
+    definition: Kronologisk analyse av hvordan et problem, forståelse, antakelser, krav, beslutninger og løsningsretning utvikler seg gjennom en samtale, med vurdering av sluttløsning, læring, effektivitet og hvordan forbedringsveien kan gjenbrukes eller automatiseres.
+    default_scope: complete-current-conversation
+    persistence: analysis-only-unless-explicit-CEREBRO-LAGRE
+    owner: interaction
   status:
     term: Status
     aliases: [prosjektstatus, gi meg status, hvor er vi, oversikt]

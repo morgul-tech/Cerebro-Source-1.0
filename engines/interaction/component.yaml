@@ -3,7 +3,7 @@ component:
   id: interaction
   name: Interaction Engine
   type: engine
-  version: 1.2.0
+  version: 1.3.0
   status: active-source
 responsibility:
   primary: >
@@ -14,6 +14,7 @@ boundaries:
   must:
   - interpret-current-user-intent
   - resolve-human-meaning-before-literal-token-interpretation
+  - resolve-conversation-evolution-analysis-command
   - distinguish-instruction-from-preference-signal
   - identify-genuine-clarification-need
   - identify-user-decision-boundary
@@ -58,6 +59,7 @@ interfaces:
   - human-boundary-assessment
   - presentation-request
   - consolidation-request
+  - conversation-evolution-analysis-request
 rules:
   path: rules.yaml
 documentation:
@@ -68,5 +70,5 @@ migration:
   - dialog
   - collaboration
 version:
-  component: 1.2.0
+  component: 1.3.0
   schema: 1

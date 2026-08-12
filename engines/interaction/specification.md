@@ -29,5 +29,24 @@ A human-meaning refinement remains part of the active work sequence. Unless the
 user changes the objective, the refined meaning updates the work and continuation
 rather than replacing progress with a detached text-editing exercise.
 
+## Conversation evolution analysis
+
+When the user invokes `analyse convo`, Interaction Engine emits a conversation
+evolution analysis request. Unless the user narrows the scope, the analysis covers
+the complete available current conversation in chronological order.
+
+The analysis establishes the initial problem, proposed solution and assumptions;
+traces changes in understanding, scope, requirements and constraints; identifies
+material decision points and the separate contributions of the user and machine;
+compares the initial and final solution; extracts reusable learning; and evaluates
+how the best result could have been reached earlier or the improvement path could
+be automated. Supported observations must remain distinct from extrapolation, and
+material rejected paths are preserved while nonmaterial repetition is compressed.
+
+The command is domain-general and analysis-only by default. It creates no Source
+authority by itself. A text export is produced when requested, and persistence in
+Cerebro occurs only when the user separately invokes `LAGRE` through the governed
+Context and Source-delivery path.
+
 Legacy DIA-* and COL-* rule identifiers are preserved inside the Interaction
 rule set for traceability during PATCH-005. Their active owner is Interaction.

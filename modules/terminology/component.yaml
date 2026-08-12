@@ -3,7 +3,7 @@ component:
   id: terminology
   name: Terminology Module
   type: module
-  version: 1.2.0
+  version: 1.3.0
   status: active-source
 responsibility:
   primary: Forvalte autoritative systembegreper.
@@ -29,5 +29,5 @@ migration:
   sections:
   - Vedlegg A
 version:
-  component: 1.2.0
+  component: 1.3.0
   schema: 1

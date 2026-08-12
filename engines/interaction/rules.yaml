@@ -1001,3 +1001,112 @@ rules:
   validation: error
   provenance: {type: user-corrected-runtime-consumption-gap, source: REFINE-MENNESKE-CLEAN-SESSION-CANARY-2026-08-11}
 # END HUMAN-MEANING-REFINEMENT-001
+# BEGIN CONVERSATION-EVOLUTION-ANALYSIS-001
+- id: INT-CEA-001
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    conversation_evolution_analysis_invoked: true
+  action:
+    emit_conversation_evolution_analysis_request: true
+    default_scope: COMPLETE_CURRENT_CONVERSATION
+    preserve_user_scope_override: true
+  statement: Ved «analyse convo» SKAL Interaction Engine tolke forespørselen som en gjenbrukbar analyse av samtalens løsningsutvikling; uten snevrere scope fra bruker SKAL hele tilgjengelige aktuelle samtale fra første relevante tur til invocation analyseres.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-ANALYSE-CONVO-2026-08-12}
+- id: INT-CEA-002
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    conversation_evolution_analysis_active: true
+  action:
+    required_sequence:
+      - ESTABLISH_INITIAL_STATE
+      - TRACE_CONVERSATION_EVOLUTION
+      - IDENTIFY_DECISION_POINTS
+      - EVALUATE_FINAL_SOLUTION
+      - LESSONS_FOR_CEREBRO_OR_APPLICABLE_SYSTEM
+      - HOW_TO_REACH_BEST_RESULT_EARLIER
+      - AUTOMATE_IMPROVEMENT_PATH
+      - CONCLUSION
+  statement: Samtaleanalysen SKAL rekonstruere opprinnelig problem, antakelser og foreslått løsning, følge kronologiske endringer, identifisere beslutningspunkter og årsaker, vurdere sluttløsningen, trekke ut læring og forklare hvordan beste resultat kunne vært nådd tidligere og forbedringsveien automatisert.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-ANALYSE-CONVO-2026-08-12}
+- id: INT-CEA-003
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    conversation_evolution_analysis_active: true
+  action:
+    preserve_chronology: true
+    distinguish_user_and_machine_contributions: true
+    distinguish_explicitly_supported_from_extrapolated: true
+    retain_material_abandoned_paths_and_rejected_assumptions: true
+    remove_nonmaterial_repetition: true
+  statement: «analyse convo» SKAL bevare den materielle kronologien, skille menneskets og maskinens bidrag, skille tydelig støttet innhold fra ekstrapolasjon, inkludere viktige forkastede veier og antakelser, og komprimere ren repetisjon uten å miste utviklingsårsaken.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-ANALYSE-CONVO-2026-08-12}
+- id: INT-CEA-004
+  owner: interaction
+  authority: normative
+  priority: high
+  condition:
+    conversation_evolution_analysis_active: true
+  action:
+    assess_patterns:
+      - RECURRING_FAILURE_OR_LOOP
+      - SCOPE_EXPANSION
+      - REQUIREMENT_REFINEMENT
+      - ASSUMPTION_REPLACEMENT
+      - OWNERSHIP_OR_ARCHITECTURE_SHIFT
+      - USER_CORRECTION_EFFECT
+      - MACHINE_INFERENCE_EFFECT
+      - PROCESS_EFFICIENCY
+    compare_initial_and_final_solution: true
+  statement: Analysen SKAL se etter gjentakende mønstre og løkker, scope- og kravendringer, skift i antakelser, ownership eller arkitektur og effekten av brukerens korreksjoner og maskinens inferenser, og SKAL sammenligne første og endelige løsning på samme relevante kriterier.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-ANALYSE-CONVO-2026-08-12}
+- id: INT-CEA-005
+  owner: interaction
+  authority: normative
+  priority: high
+  condition:
+    conversation_evolution_analysis_active: true
+  action:
+    derive_reusable_learning_when_supported: true
+    analyze_human_and_machine_efficiency: true
+    propose_reusable_command_or_process_improvement_when_material: true
+    command_is_domain_general: true
+  statement: «analyse convo» SKAL, når evidensen støtter det, trekke ut gjenbrukbar læring, vurdere hvordan menneske og maskin kunne redusert omveier eller loops, og gjøre forbedringsveien gjenbrukbar uavhengig av samtalens tema.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-ANALYSE-CONVO-2026-08-12}
+- id: INT-CEA-006
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    conversation_evolution_analysis_active: true
+  action:
+    source_mutation_by_command_alone: false
+    conversation_memory_is_persistence: false
+    if_text_export_requested: EMIT_TEXT_EXPORT
+    if_CEREBRO_LAGRE_explicitly_requested: PERSIST_SELECTED_RESULT_THROUGH_CONTEXT_AND_GOVERNED_SOURCE_DELIVERY
+  statement: «analyse convo» er analyse og oppretter ikke Source-authoritet alene; tekstfil produseres når bruker ber om det, og varig Cerebro-persistens skjer bare ved eksplisitt LAGRE gjennom Context og styrt Source-leveranse, aldri gjennom samtaleminne.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: USER-ANALYSE-CONVO-2026-08-12}
+# END CONVERSATION-EVOLUTION-ANALYSIS-001
