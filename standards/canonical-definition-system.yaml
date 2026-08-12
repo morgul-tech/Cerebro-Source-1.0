@@ -1,42 +1,137 @@
-schema: cerebro-canonical-definition-system/v0.1
+schema: cerebro-canonical-definition-system/v0.2
 
 canonical_definition_system:
   id: CEREBRO-CANONICAL-DEFINITION-SYSTEM-001
-  version: "0.1"
+  version: "0.2"
   status: ACTIVE
   introduced_by: PATCH-005
+  extended_by: C02-P001
 
   purpose: >
-    Resolve human language and aliases into canonical Cerebro terms and
-    canonical system types before architecture, ownership, authority, or
-    control decisions are made.
+    Resolve human language and aliases into one canonical descriptor model before
+    architecture, ownership, authority, control, capability, location, change or
+    version decisions are made. Human syntax, introspection and machine views are
+    consumers of the same Source-defined model and do not create parallel truth.
 
   authority:
     canonical_definitions: Cerebro Source 1.0
     user_need_authority: USER
     user_wording_classification_authority: false
+    descriptor_views_authoritative: false
+
+  common_descriptor_envelope:
+    required_fields:
+      - identity
+      - kind
+      - canonical_name
+      - lifecycle
+      - authority_scope
+      - authority_owner
+      - operational_steward
+      - implementation_owner
+      - source_ref
+      - relationships
+    optional_human_fields:
+      - human_name
+      - aliases
+      - purpose
+    human_name_creates_identity_or_authority: false
+
+  descriptor_kinds:
+    - TERM
+    - COMMAND
+    - OPERATOR
+    - CAPABILITY
+    - LOCATION
+    - CHANGE
+    - VERSION_AXIS
+  descriptor_kinds_are_new_top_level_metamodel_entities: false
+
+  source_descriptors:
+    canonical: modules/terminology/canonical-descriptors.yaml
+    lifecycle_overrides: modules/terminology/canonical-overrides.yaml
+    legacy_terms: modules/terminology/terms.yaml
+    precedence:
+      - canonical-descriptor
+      - active-lifecycle-override
+      - legacy-term-for-reading
 
   layers:
     terminology_registry:
-      responsibility:
-        - canonical-terms
-        - aliases
-        - human-meaning
+      responsibility: [canonical-terms, aliases, human-meaning]
     system_metamodel:
-      responsibility:
-        - entity-kind
-        - component-subtype
-        - ownership-dimensions
-        - lifecycle
-        - authority-scope
-        - structural-prohibitions
+      responsibility: [entity-kind, component-subtype, ownership-dimensions, lifecycle, authority-scope, structural-prohibitions]
+    descriptor_model:
+      responsibility: [addressable-identity, command-effects, operators, capabilities, locations, change-lineage, version-axes]
+
+  human_control_language:
+    owner: interaction
+    implementation_ref: engines/interaction/canonical_intent.py
+    natural_language_normal_path: true
+    canonical_syntax_optional: true
+    operators: [AND, OR, NOT, THEN, IF, ELSE]
+    operator_case: UPPERCASE_ONLY
+    grouping: PARENTHESES
+    literal_boundary: DOUBLE_QUOTES
+    introspection: QUESTION_MARK
+    introspection_read_only: true
+    mixed_operator_families_require_explicit_grouping: true
+    invalid_canonical_expression_partial_execution: PROHIBITED
+    full_parse_or_no_canonical_execution: true
+
+  introspection:
+    source: CANONICAL_DESCRIPTORS
+    separate_help_database: PROHIBITED
+    examples: ['?', 'commands ?', 'operators ?', 'capabilities ?', 'Singularity ?']
+
+  capability_model:
+    definition_authority: SOURCE
+    state_dimensions: [DEFINED, IMPLEMENTED, AVAILABLE, AUTHORIZED, VERIFIED]
+    state_dimensions_are_independent: true
+    availability_creates_authorization: false
+    speculative_discovery_creates_execution_authority: false
+    required_descriptor_fields:
+      - capability_id
+      - canonical_name
+      - purpose
+      - input_contract
+      - output_contract
+      - implementation_ref
+      - allowed_side_effects
+      - authority_requirement
+      - timeout_policy
+      - verification_policy
+      - lifecycle
+
+  change_lineage:
+    milestone_contains: PATCH
+    patch_contains: [WAVE, FOLLOWUP]
+    wave_contains: PAYLOAD
+    followup_types: [HOTFIX, CORRECTION, ADDON]
+    base_is_change_type: false
+    release_is_change_type: false
+    canonical_id_independent_of_human_name_and_path: true
+
+  version_axes:
+    independent:
+      - CEREBRO_PRODUCT_MATURITY
+      - SOURCE_VERSION
+      - RUNTIME_VERSION
+      - RELEASE_VERSION
+      - COMPONENT_VERSION
+      - CONTRACT_VERSION
+    target_product_maturity: 0.2.0
+    runtime_0_1_unchanged_by_foundation: true
+    blind_source_1_0_renumbering: PROHIBITED
 
   resolution:
-    - resolve-user-phrase
-    - map-alias-to-canonical-term
-    - resolve-canonical-kind
-    - resolve-authority-owner
-    - resolve-operational-steward
+    - protect-literals-and-read-only-introspection
+    - resolve-active-human-continuation-binding
+    - attempt-full-canonical-syntax-parse
+    - resolve-exact-registered-command-alias
+    - resolve-natural-language-through-interaction
+    - map-to-canonical-descriptor
+    - resolve-authority-and-owner
     - apply-to-control-or-architecture
 
   constraints:
@@ -44,3 +139,6 @@ canonical_definition_system:
     - no-user-wording-may-create-a-new-component-kind
     - unresolved-canonical-type-blocks-authoritative-classification
     - historical-aliases-may-resolve-for-reading-without-reactivating-superseded-architecture
+    - invalid-formal-expression-must-not-fallback-to-partial-formal-execution
+    - one-canonical-model-may-have-multiple-derived-views
+    - no-registry-engine-language-engine-capability-engine-or-environment-engine-is-created

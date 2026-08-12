@@ -10,7 +10,8 @@
       "strict_contract_refs": [
         "MATERIAL_COMMITMENT_PREFLIGHT",
         "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH",
-        "ADAPTIVE_MCP_CONTROL_RESOLUTION"
+        "ADAPTIVE_MCP_CONTROL_RESOLUTION",
+        "ASSURANCE_CONTINUITY"
       ]
     },
     {
@@ -1208,6 +1209,38 @@
         "missing-dimension-blocked",
         "unknown-debt-blocked",
         "declared-nonblocking-debt-accepted"
+      ],
+      "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
+    },
+    {
+      "id": "ASSURANCE_CONTINUITY",
+      "standard_id": "STD-MCP",
+      "classification": "OPERATIONAL",
+      "declaration": "mcp/assurance-continuity.yaml",
+      "declaration_tokens": [
+        "CEREBRO-ASSURANCE-CONTINUITY-001",
+        "BEFORE_COMPLETION_CLAIM",
+        "PERSISTENT_CEREBRO_STATE"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "assurance_continuity:",
+      "implementation": "tooling/validator/assurance_continuity.py",
+      "implementation_tokens": [
+        "BEFORE_COMPLETION_CLAIM",
+        "CEREBRO_SYNC_NOT_VERIFIED",
+        "GOVERNING_STANDARD_PROFILE_MISSING"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
+      "wiring_tokens": [
+        "Invoke-AssuranceContinuityGate",
+        "BEFORE_MUTATION",
+        "BEFORE_PUBLICATION",
+        "BEFORE_COMPLETION_CLAIM"
+      ],
+      "validation": "tooling/validator/checks.yaml",
+      "validation_tokens": [
+        "c02_p001_canonical_foundation:"
       ],
       "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
     }

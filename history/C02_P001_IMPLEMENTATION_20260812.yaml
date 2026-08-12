@@ -1,0 +1,21 @@
+schema: cerebro-change-implementation-record/v1
+implementation:
+  id: C02-P001-IMPLEMENTATION-20260812
+  patch_id: C02-P001
+  human_name: PATCH-001 - Canonical Foundation
+  milestone: CEREBRO-0.2-FOUNDATION
+  source_basis_commit: cce27b54494d03dda5686149c966e9d4a303a1ff
+  required_quality: DEEP
+  waves:
+    WAVE-A: {name: Canonical Model, state: IMPLEMENTED_CANDIDATE}
+    WAVE-B: {name: Human Control Language, state: IMPLEMENTED_CANDIDATE}
+    WAVE-C: {name: Commands and Capabilities, state: IMPLEMENTED_CANDIDATE}
+    WAVE-D: {name: Identity Version and Change Lineage, state: IMPLEMENTED_CANDIDATE}
+    WAVE-E: {name: Assurance Continuity, state: IMPLEMENTED_CANDIDATE}
+  boundaries:
+    physical_workspace_migration: EXCLUDED_TO_C02-P002
+    runtime_py: DEFERRED
+    new_top_level_engine: false
+  acceptance_owner: tooling/validator/canonical_foundation.py
+  standard_delivery_required: true
+  completion_state_before_verified_delivery: IMPLEMENTATION_CANDIDATE

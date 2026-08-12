@@ -1,0 +1,187 @@
+schema: cerebro-canonical-descriptors/v0.2
+model_ref: CEREBRO-CANONICAL-DEFINITION-SYSTEM-001
+authority: Cerebro Source 1.0
+descriptors:
+- identity: LOC-TEMPORARIS
+  kind: LOCATION
+  canonical_name: CANDIDATE_ENVIRONMENT
+  human_name: Temporaris
+  aliases:
+  - candidate environment
+  - test environment
+  lifecycle: ACTIVE
+  authority_scope: NON_AUTHORITATIVE
+  authority_owner: Cerebro Source 1.0
+  operational_steward: tooling.change
+  implementation_owner: environment-binding
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships:
+    promotion_target: LOC-SINGULARITY
+  purpose: isolated disposable candidate development and test surface
+- identity: LOC-SINGULARITY
+  kind: LOCATION
+  canonical_name: WORKING_SOURCE
+  human_name: Singularity
+  aliases:
+  - Working Source
+  - lokal source
+  lifecycle: ACTIVE
+  authority_scope: SOURCE_DEFINITIONAL
+  authority_owner: Cerebro Source 1.0
+  operational_steward: tooling.delivery
+  implementation_owner: workspace-binding
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships:
+    publication_target: LOC-TRANQUILITY
+  purpose: qualified mutable Working Source surface; physical path is a binding, not
+    identity
+- identity: LOC-TRANQUILITY
+  kind: LOCATION
+  canonical_name: PUBLISHED_SOURCE
+  human_name: Tranquility
+  aliases:
+  - Published Source baseline
+  - publisert source
+  lifecycle: ACTIVE
+  authority_scope: SOURCE_DEFINITIONAL
+  authority_owner: Cerebro Source 1.0
+  operational_steward: tooling.publication
+  implementation_owner: repository-binding
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships:
+    source_role: authoritative-published-baseline
+  purpose: published authoritative Source role resolved to repository branch and exact
+    commit
+- identity: OP-AND
+  kind: OPERATOR
+  canonical_name: AND
+  human_name: AND
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: NORMATIVE_POLICY
+  authority_owner: Cerebro Source 1.0
+  operational_steward: interaction
+  implementation_owner: engines/interaction/canonical_intent.py
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships: {}
+  purpose: conjunction
+- identity: OP-OR
+  kind: OPERATOR
+  canonical_name: OR
+  human_name: OR
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: NORMATIVE_POLICY
+  authority_owner: Cerebro Source 1.0
+  operational_steward: interaction
+  implementation_owner: engines/interaction/canonical_intent.py
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships: {}
+  purpose: alternative satisfaction or selection
+- identity: OP-NOT
+  kind: OPERATOR
+  canonical_name: NOT
+  human_name: NOT
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: NORMATIVE_POLICY
+  authority_owner: Cerebro Source 1.0
+  operational_steward: interaction
+  implementation_owner: engines/interaction/canonical_intent.py
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships: {}
+  purpose: negation or prohibition, not undo
+- identity: OP-THEN
+  kind: OPERATOR
+  canonical_name: THEN
+  human_name: THEN
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: NORMATIVE_POLICY
+  authority_owner: Cerebro Source 1.0
+  operational_steward: interaction
+  implementation_owner: engines/interaction/canonical_intent.py
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships: {}
+  purpose: sequence
+- identity: OP-IF
+  kind: OPERATOR
+  canonical_name: IF
+  human_name: IF
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: NORMATIVE_POLICY
+  authority_owner: Cerebro Source 1.0
+  operational_steward: interaction
+  implementation_owner: engines/interaction/canonical_intent.py
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships: {}
+  purpose: condition start
+- identity: OP-ELSE
+  kind: OPERATOR
+  canonical_name: ELSE
+  human_name: ELSE
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: NORMATIVE_POLICY
+  authority_owner: Cerebro Source 1.0
+  operational_steward: interaction
+  implementation_owner: engines/interaction/canonical_intent.py
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships: {}
+  purpose: conditional alternative
+- identity: CAPABILITY-DESCRIPTOR
+  kind: CAPABILITY
+  canonical_name: CAPABILITY_DESCRIPTOR
+  human_name: Capability descriptor
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: SOURCE_DEFINITIONAL
+  authority_owner: Cerebro Source 1.0
+  operational_steward: MCP
+  implementation_owner: capability-implementation-owner
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships:
+    state_dimensions:
+    - DEFINED
+    - IMPLEMENTED
+    - AVAILABLE
+    - AUTHORIZED
+    - VERIFIED
+  purpose: canonical capability definition contract
+- identity: CHANGE-C02-P001
+  kind: CHANGE
+  canonical_name: C02-P001
+  human_name: PATCH-001 - Canonical Foundation
+  aliases:
+  - patch 1
+  lifecycle: ACTIVE
+  authority_scope: SOURCE_DEFINITIONAL
+  authority_owner: Cerebro Source 1.0
+  operational_steward: tooling.change
+  implementation_owner: tooling.delivery
+  source_ref: history/C02_P001_SPEC_FIX_LOCK_20260812.yaml
+  relationships:
+    milestone: CEREBRO-0.2-FOUNDATION
+    waves:
+    - WAVE-A
+    - WAVE-B
+    - WAVE-C
+    - WAVE-D
+    - WAVE-E
+  purpose: Cerebro 0.2 semantic foundation
+- identity: VERSION-CEREBRO-PRODUCT-MATURITY
+  kind: VERSION_AXIS
+  canonical_name: CEREBRO_PRODUCT_MATURITY
+  human_name: Cerebro product maturity
+  aliases: []
+  lifecycle: ACTIVE
+  authority_scope: SOURCE_DEFINITIONAL
+  authority_owner: Cerebro Source 1.0
+  operational_steward: project
+  implementation_owner: project-state
+  source_ref: modules/terminology/canonical-descriptors.yaml
+  relationships:
+    foundation_target: 0.2.0
+  purpose: product maturity independent from technical Source Runtime Release component
+    and contract versions

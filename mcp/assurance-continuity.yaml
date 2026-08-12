@@ -1,0 +1,31 @@
+schema: cerebro-assurance-continuity/v0.2
+assurance_continuity:
+  id: CEREBRO-ASSURANCE-CONTINUITY-001
+  status: ACTIVE
+  introduced_by: C02-P001
+  new_component: false
+  control_owner: MCP
+  execution_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+  presentation_consumer: engines/presentation/rules.yaml
+  principles:
+    - governing-contract-follows-control-state-not-conversation-memory
+    - conversation-length-session-boundary-and-context-compaction-cannot-weaken-governing-contract
+    - claim-strength-must-not-exceed-verified-persistence-state
+  execution_contract_continuity:
+    remains_governing_until: [OPERATION_COMPLETE, BASIS_STALE, MCP_EXPLICIT_RERESOLUTION]
+    boundary_revalidation_required: [BEFORE_ARTIFACT_DESIGN, BEFORE_HUMAN_HANDOFF, BEFORE_MUTATION, BEFORE_PUBLICATION, BEFORE_COMPLETION_CLAIM]
+  persistence_effect_binding:
+    model: EFFECT_CLASS_NOT_LITERAL_COMMAND_WORD
+    persistent_effect_class: PERSISTENT_CEREBRO_STATE
+    required_sequence: [RESOLVE_GOVERNING_PERSISTENCE_AND_DELIVERY_CONTRACT, EXECUTE_REQUIRED_PERSISTENCE_PATH, VERIFY_DURABLE_RESULT, ALLOW_PERSISTENT_COMPLETION_CLAIM]
+    chat_state_satisfies_persistence: false
+    loose_user_artifact_satisfies_source_persistence: false
+  standard_handoff:
+    delivery_profile: STANDARD
+    exact_surface: {bundle_zip: 1, launcher_powershell: 1, generated_copyable_command: 1}
+    alternate_handoff: PROHIBITED
+    direct_remote_mutation_substitute: PROHIBITED
+    handoff_assurance_required: true
+  completion_claim_integrity:
+    presentation_may_infer_completion_without_evidence: false
+    persistent_completion_requires: [SOURCE_EQUALITY_VERIFIED, CLEAN_WORKING_TREE, CEREBRO_SYNC_VERIFIED]

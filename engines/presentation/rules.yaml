@@ -687,3 +687,36 @@ rules:
   validation: error
   provenance: {type: user-observed-handoff-correction, source: ACTIVATION-ARCHITECTURE-HANDOFF-2026-08-11}
 # END STANDARD-HANDOFF-CWD-INDEPENDENT-PRESENTATION-001
+
+# BEGIN C02-P001-QUALITY-CONFORMANCE-TRACE
+- id: PRE-C02-001
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {material-cerebro-work: true}
+  action:
+    render_compact_quality_trace_when_available: true
+    source: DERIVED_QUALITY_TRACE
+    expose_stage_state_not_private_reasoning: true
+    presentation_may_manufacture_pass: false
+  statement: Materielt Cerebro-arbeid SKAL kunne vise kompakt Quality Trace med stadium/status/evidence state, aldri privat resonnering eller selvpåståtte haker.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: admin-locked-foundation, source: C02-P001}
+- id: PRE-C02-002
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {persistent-completion-claim-candidate: true}
+  action:
+    contract_ref: mcp/assurance-continuity.yaml
+    require_verified_persistence_evidence: true
+    claim_strength_must_not_exceed_verified_state: true
+    decided_without_persistence_surface: DECIDED_PERSISTENCE_PENDING
+  statement: LOCKED, SAVED, APPLIED eller PERSISTED som Cerebro-status kan bare vises når den nødvendige persistenseffekten er verifisert; presentation kan ikke inferere completion.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: admin-corrected-standard-delivery-gap, source: C02-P001}
+# END C02-P001-QUALITY-CONFORMANCE-TRACE

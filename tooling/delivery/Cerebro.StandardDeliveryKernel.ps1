@@ -629,6 +629,40 @@ function Invoke-MaterialCommitmentPreflightGate {
     }
 }
 
+
+function Invoke-AssuranceContinuityGate {
+    param(
+        [Parameter(Mandatory=$true)]$PatchManifest,
+        [Parameter(Mandatory=$true)][string]$Stage,
+        [hashtable]$Evidence=@{}
+    )
+    $validator = Join-Path $WorkingSourcePath 'tooling\validator\assurance_continuity.py'
+    if(-not(Test-Path -LiteralPath $validator -PathType Leaf)){
+        $sealed = Join-Path $BundleRoot 'payload\tooling\validator\assurance_continuity.py'
+        if(Test-Path -LiteralPath $sealed -PathType Leaf){$validator=$sealed}
+        else{$State.FailureFamily='ASSURANCE_CONTINUITY_MISSING';throw 'ASSURANCE_CONTINUITY_VALIDATOR_NOT_FOUND'}
+    }
+    $python=Resolve-PythonRunner
+    $manifestPath=Join-Path $BundleRoot 'manifest.json'
+    $evidencePath=''
+    try{
+        $args=@($python.PrefixArgs)+@($validator,'validate','--manifest',$manifestPath,'--stage',$Stage)
+        if($Evidence.Count -gt 0){
+            $evidencePath=[IO.Path]::GetTempFileName()
+            [IO.File]::WriteAllText($evidencePath,(($Evidence|ConvertTo-Json -Depth 8)+"`r`n"),[Text.UTF8Encoding]::new($false))
+            $args += @('--evidence',$evidencePath)
+        }
+        $native=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $args -AllowedExitCodes @(0,1)
+        try{$result=$native.Stdout|ConvertFrom-Json}catch{throw ('ASSURANCE_CONTINUITY_OUTPUT_INVALID:{0}' -f $Stage)}
+        if($native.ExitCode -ne 0 -or [string]$result.result -ne 'PASS'){
+            $State.FailureFamily='ASSURANCE_CONTINUITY'
+            throw ('ASSURANCE_CONTINUITY_BLOCKED:{0}:{1}' -f $Stage,(@($result.errors)-join ','))
+        }
+        return $result
+    }
+    finally{if(-not[string]::IsNullOrWhiteSpace($evidencePath)){Remove-Item -LiteralPath $evidencePath -Force -ErrorAction SilentlyContinue}}
+}
+
 function Get-DeclaredActivationProbes {
     param($PatchManifest)
     if($null -eq $PatchManifest){return @()}
@@ -995,6 +1029,21 @@ function Invoke-SelfTest {
             throw 'MCP_PHASE_TRANSITION_BLOCKED'
         }
 
+
+        $State.ReachedStage = 'SELFTEST_C02_P001_CANONICAL_FOUNDATION'
+        $foundationValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/canonical_foundation.py'
+        if (-not (Test-Path -LiteralPath $foundationValidator -PathType Leaf)) { throw 'C02_P001_FOUNDATION_VALIDATOR_MISSING' }
+        $foundationArgs = @($continuationPython.PrefixArgs) + @($foundationValidator,'selftest','--source-root',$candidateView)
+        $foundationResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $foundationArgs
+        try { $foundationEvidence = $foundationResult.Stdout | ConvertFrom-Json } catch { throw 'C02_P001_FOUNDATION_SELFTEST_OUTPUT_INVALID' }
+        if ($foundationResult.ExitCode -ne 0 -or [string]$foundationEvidence.result -ne 'PASS') { throw 'C02_P001_FOUNDATION_SELFTEST_FAILED' }
+
+        $State.ReachedStage = 'SELFTEST_ASSURANCE_CONTINUITY'
+        $assuranceValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/assurance_continuity.py'
+        $assuranceResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList (@($continuationPython.PrefixArgs)+@($assuranceValidator,'selftest'))
+        try { $assuranceEvidence = $assuranceResult.Stdout | ConvertFrom-Json } catch { throw 'ASSURANCE_CONTINUITY_SELFTEST_OUTPUT_INVALID' }
+        if ($assuranceResult.ExitCode -ne 0 -or [string]$assuranceEvidence.result -ne 'PASS') { throw 'ASSURANCE_CONTINUITY_SELFTEST_FAILED' }
+
         $State.ReachedStage = 'SELFTEST_HUMAN_EXECUTION_HANDOFF'
         $executionHandoffValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/human_execution_handoff.py'
         if (-not (Test-Path -LiteralPath $executionHandoffValidator -PathType Leaf)) {
@@ -1043,6 +1092,8 @@ function Invoke-SelfTest {
     Write-Host 'PAYLOAD_HASH_PASS=TRUE'
     Write-Host 'CANDIDATE_SOURCE_COMPOSITION_PASS=TRUE'
     Write-Host 'HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS=TRUE'
+    Write-Host 'C02_P001_CANONICAL_FOUNDATION_SELFTEST_PASS=TRUE'
+    Write-Host 'ASSURANCE_CONTINUITY_SELFTEST_PASS=TRUE'
     Write-Host 'MCP_DELIVERY_PROFILE_ADAPTER_SELFTEST_PASS=TRUE'
     Write-Host 'SEALED_MCP_DELIVERY_CONTROL_BINDING_PASS=TRUE'
     Write-Host 'CHANGE_CAMPAIGN_CLOSEOUT_PASS=TRUE'
@@ -1306,6 +1357,7 @@ function Invoke-Apply {
         $executeEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_EXECUTE_PREFLIGHT.json'
         [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'MATERIAL_EXECUTE' -SourceIdentity $localHead -EvidencePath $executeEvidence -AllowBootstrapDefer)
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'MATERIAL_EXECUTE'
+        [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_MUTATION')
 
         $State.ReachedStage='FULL_RECOVERY_SNAPSHOT'
         $State.FullRecoverySnapshot=New-VerifiedFullRecoverySnapshot `
@@ -1400,6 +1452,7 @@ function Invoke-Apply {
         $publishEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'
         [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'GOVERNING_PUBLISH' -SourceIdentity $localHead -EvidencePath $publishEvidence)
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'GOVERNING_PUBLISH'
+        [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_PUBLICATION')
 
         Invoke-DeclaredActivationProbes -PatchManifest $State.Manifest
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'ACTIVATION_PROBES'
@@ -1445,6 +1498,9 @@ function Invoke-Apply {
             $State.FailureFamily = 'POST_SYNC_EQUALITY_FAILURE'
             throw ('POST_SYNC_PROOF_FAILED local={0} remote={1} dirty={2}' -f $finalLocal,$finalRemote,$finalDirty)
         }
+
+        $completionEvidence=@{source_equality='VERIFIED';working_tree='CLEAN';cerebro_sync_verified=$true}
+        [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_COMPLETION_CLAIM' -Evidence $completionEvidence)
 
         $State.ReachedStage = 'RECEIPT'
         $receiptRoot = 'D:\Cerebro\Run\receipts'

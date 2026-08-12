@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.7.0
+  version: 1.8.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -21,6 +21,7 @@ mcp:
   - mcp/control-resolution.yaml
   - standards/human-continuation-surface.yaml
   - standards/continuation-surface-system-policy.yaml
+  - mcp/assurance-continuity.yaml
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0
@@ -115,6 +116,19 @@ control_adapters:
       runtime_consumer_ref: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
       activation_binding_ref: HUMAN_EXECUTION_HANDOFF_TRANSPORT
       failure_effect: BLOCK_HANDOFF_OR_FAIL_BEFORE_SOURCE_MUTATION
+  assurance_continuity:
+    contract_ref: mcp/assurance-continuity.yaml
+    implementation_ref: tooling/validator/assurance_continuity.py
+    status: ACTIVE
+    control_owner: MCP
+    normal_machine_consumers:
+    - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    required_boundaries:
+    - BEFORE_MUTATION
+    - BEFORE_PUBLICATION
+    - BEFORE_COMPLETION_CLAIM
+    failure_effect: BLOCK_BOUNDARY_OR_COMPLETION_CLAIM
+    new_component: false
 principles:
 - id: MCP-P001
   statement: Analyze the task before selecting or producing a solution.
@@ -134,7 +148,7 @@ state_commands:
   status:
   - mcp
   activate:
-  - "mcp pÃ¥"
+  - mcp pÃ¥
   - mcp pa
   - aktiver mcp
   deactivate:

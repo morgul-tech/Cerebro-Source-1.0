@@ -1643,3 +1643,25 @@ constitution_and_adaptive_analysis_lock:
     - fixed-lens-to-depth-authority
     - raw-score-as-learning-authority
     - automatic-rule-control-source-or-constitutional-mutation
+
+
+c02_p001_canonical_foundation:
+  introduced_by: C02-P001
+  severity: error
+  owner: tooling.validator
+  validator: tooling/validator/canonical_foundation.py
+  invariants:
+    - one-canonical-descriptor-model-with-multiple-derived-views
+    - environment-human-names-are-exactly-Temporaris-Singularity-Tranquility
+    - legacy-dialog-and-collaboration-are-superseded-reading-aliases
+    - canonical-syntax-is-full-parse-or-no-execution
+    - quality-stage-pass-is-evidence-bound-and-stales-on-basis-change
+    - governing-standard-profile-survives-context-and-subtask-boundaries
+    - completion-claim-cannot-exceed-verified-persistence-state
+  required_canaries:
+    - mixed-operator-families-require-explicit-grouping
+    - quoted-content-is-literal
+    - introspection-is-read-only
+    - availability-does-not-create-authorization
+    - profile-drop-is-blocked-before-mutation
+    - completion-without-source-equality-is-blocked

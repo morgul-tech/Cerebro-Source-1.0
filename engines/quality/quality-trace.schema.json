@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cerebro Quality Trace v0.2",
+  "type": "object",
+  "required": [
+    "schema",
+    "work_item_ref",
+    "required_depth",
+    "basis_fingerprint",
+    "stages",
+    "overall_assurance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-quality-trace/v0.2"
+    },
+    "work_item_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "required_depth": {
+      "enum": [
+        "LIGHT",
+        "STANDARD",
+        "DEEP"
+      ]
+    },
+    "basis_fingerprint": {
+      "type": "string",
+      "minLength": 8
+    },
+    "overall_assurance": {
+      "enum": [
+        "IN_PROGRESS",
+        "PASS",
+        "BLOCKED",
+        "STALE"
+      ]
+    },
+    "stages": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "state",
+          "basis_fingerprint",
+          "evidence_refs"
+        ],
+        "properties": {
+          "state": {
+            "enum": [
+              "PENDING",
+              "IN_PROGRESS",
+              "PASS",
+              "BLOCKED",
+              "STALE"
+            ]
+          },
+          "basis_fingerprint": {
+            "type": "string"
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

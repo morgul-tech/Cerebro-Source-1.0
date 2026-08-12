@@ -1131,3 +1131,39 @@ rules:
   validation: error
   provenance: {type: explicit-user-definition, source: USER-ANALYSE-CONVO-2026-08-12}
 # END CONVERSATION-EVOLUTION-ANALYSIS-001
+
+# BEGIN C02-P001-CANONICAL-HUMAN-CONTROL-LANGUAGE
+- id: INT-C02-001
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition: {canonical-control-language-candidate: true}
+  action:
+    implementation_ref: engines/interaction/canonical_intent.py
+    parse_policy: FULL_PARSE_OR_NO_CANONICAL_EXECUTION
+    protect_double_quoted_literals_first: true
+    uppercase_operators_only: [AND, OR, NOT, THEN, IF, ELSE]
+    mixed_operator_families_require_explicit_grouping: true
+    invalid_canonical_expression_effect: NO_EXECUTION
+    natural_language_remains_normal_path: true
+  statement: Canonical syntax er valgfri; når den tydelig brukes SKAL hele uttrykket parse gyldig eller blokkere canonical execution, uten delvis fallback.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: admin-locked-foundation, source: C02-P001}
+- id: INT-C02-002
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition: {introspection-query: true}
+  action:
+    marker: '?'
+    read_only: true
+    source: modules/terminology/canonical-descriptors.yaml
+    separate_help_database: prohibited
+  statement: '? SKAL være en read-only projeksjon av canonical descriptors og kan ikke skape authority eller execution.'
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: admin-locked-foundation, source: C02-P001}
+# END C02-P001-CANONICAL-HUMAN-CONTROL-LANGUAGE

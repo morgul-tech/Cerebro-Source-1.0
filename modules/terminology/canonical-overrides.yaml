@@ -1,0 +1,17 @@
+schema: cerebro-terminology-lifecycle-overrides/v0.2
+model_ref: CEREBRO-CANONICAL-DEFINITION-SYSTEM-001
+authority: Cerebro Source 1.0
+overrides:
+  dialog_engine:
+    canonical_term: Interaction Engine
+    lifecycle: SUPERSEDED
+    reading_alias_only: true
+    active_owner: interaction
+  collaboration_engine:
+    canonical_term: Interaction Engine
+    lifecycle: SUPERSEDED
+    reading_alias_only: true
+    active_owner: interaction
+invariants:
+  - superseded-legacy-term-does-not-reactivate-component
+  - lifecycle-override-does-not-rewrite-history
