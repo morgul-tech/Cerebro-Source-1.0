@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "1.9"
+  version: "2.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -70,6 +70,9 @@ delivery_failure_regression:
   - PYTHON_VALIDATION_WRITES_WORKING_SOURCE_BYTECODE
   - PYTHON_BYTECODE_TRANSIENT_CLEANUP_DELETES_TRACKED_SOURCE
   - PYTHON_BYTECODE_SOURCE_HYGIENE_REGRESSION
+  - NESTED_RECEIPT_FIELD_NAMESPACE_COLLISION
+  - CANDIDATE_VIEW_PAYLOAD_BASELINE_SOURCE_CONFLATION
+  - PRECOMMIT_PROMOTION_IDENTITY_FALSE_GREEN_AFTER_CONTRACT_LIFECYCLE_CHANGE
 
   mandatory_pre_delivery_gates:
   - native-PowerShell-parser-zero-errors
@@ -94,6 +97,16 @@ delivery_failure_regression:
   - success-receipt-is-machine-validated-against-patch-attempt-sync-equality-and-recovery-snapshot
   - success-produces-byte-identical-CEREBRO_PATCH_SUCCESS-json-in-launcher-directory
   - success-terminal-emits-UPLOAD_FILE-without-manual-copy-command
+  - target-runtime-and-delivery-kernel-receipts-use-distinct-machine-field-names
+  - success-handoff-consumes-exactly-one-DELIVERY_RECEIPT-never-first-generic-RECEIPT
+  - machine-consumed-composition-preserves-message-producer-cardinality-lifecycle-and-artifact-origin
+  - owner-namespaced-fields-are-required-for-flat-multiplexed-channels-not-every-structured-envelope
+  - nested-machine-output-is-encapsulated-or-explicitly-mapped-never-blindly-concatenated
+  - sealed-candidate-view-is-exact-baseline-plus-declared-create-replace-delete-operations
+  - unchanged-selftest-dependencies-resolve-from-exact-manifest-baseline-not-payload-presence
+  - declared-create-or-replace-selftest-dependencies-resolve-from-sealed-payload
+  - declared-delete-selftest-dependencies-resolve-as-absent
+  - candidate-selftest-never-resolves-undeclared-dependency-from-unverified-working-tree
   - post-sync-success-transport-failure-does-not-trigger-source-rollback-or-false-PATCH-FAIL
   - attempt-history-record-created-for-pass-and-fail
   - attempt-id-created-before-bundle-verification

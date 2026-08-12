@@ -21,6 +21,15 @@ control_resolution:
     resolver_git_blob_sha: c375639e0a37141e96d90da7bf00fb36d61651cf
     resolver_contract_ref: mcp/adaptive-control-resolver.yaml
     resolver_contract_git_blob_sha: a8a2b9d55a9f4af2f7439ded5c66425818b384be
+    resolver_contract_identity_scope: AA003_SHADOW_VALIDATION_BASIS
+    current_promoted_contract_policy:
+      lifecycle_metadata_may_evolve: true
+      exact_resolver_logic_may_evolve_without-new-shadow-validation: false
+      required_current_semantics:
+        - status-is-VALIDATED_LOGIC
+        - direct-live-authority-is-false
+        - canonical-live-owner-is-mcp-control-resolution
+        - AA003-shadow-and-AA004-promotion-history-remain-verified
     shadow_oracle_ref: tooling/change/adaptive-control-shadow-scenarios.json
     shadow_oracle_git_blob_sha: 831f7edb0545c66e92a6cfe10d376af3e2fb278e
     shadow_patch_ref: PATCH-AA-003
@@ -53,6 +62,7 @@ control_resolution:
     requires_existing_evidence_refresh_before_closure: true
   invariants:
     - PROMOTION_MUST_REFERENCE_EXACT_SHADOW_VALIDATED_CANDIDATE_IDENTITY
+    - PROMOTION_BASIS_IDENTITY_AND_CURRENT_LIFECYCLE_CONTRACT_SEMANTICS_ARE_SEPARATELY_VERIFIED
     - WORKTREE_REPRESENTATION_DOES_NOT_REDEFINE_GIT_BLOB_IDENTITY
     - MATERIAL_PREFLIGHT_BLOCK_IS_FINAL
     - MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED

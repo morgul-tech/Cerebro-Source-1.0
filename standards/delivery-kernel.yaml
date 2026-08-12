@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "2.1"
+  version: "2.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -63,6 +63,19 @@ delivery_kernel:
     runtime_source_generation: PROHIBITED
     runtime_yaml_transformation: PROHIBITED
     runtime_architecture_decision: PROHIBITED
+
+  sealed_candidate_source_view:
+    contract_ref: standards/machine-contract-composition.yaml#candidate_artifact_view
+    definition: VERIFIED_BASELINE_PLUS_SEALED_MANIFEST_OPERATIONS
+    selftest_source:
+      declared_create_or_replace: SEALED_PAYLOAD
+      declared_delete: ABSENT
+      undeclared_dependency: EXACT_MANIFEST_BASE_COMMIT
+    implementation: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1#New-SealedCandidateSourceView
+    source_worktree_mutation: PROHIBITED
+    payload_presence_as_dependency_existence: PROHIBITED
+    exact_base_identity_required: true
+    candidate_payload_hash_reverification_required: true
 
   standard_user_handoff:
     bundle_zip: exactly-one
@@ -222,6 +235,13 @@ delivery_kernel:
     principle: MACHINE_VALIDATES_AND_TRANSPORTS_SUCCESS_EVIDENCE_BEFORE_USER_HANDOFF
     canonical_receipt_authority: D:\Cerebro\Run\receipts
     validation_owner: canonical-launcher
+    receipt_protocol:
+      target_runtime_field: TARGET_RUNTIME_RECEIPT
+      delivery_kernel_field: DELIVERY_RECEIPT
+      legacy_human_display_field: RECEIPT
+      launcher_consumes_only: DELIVERY_RECEIPT
+      delivery_receipt_cardinality: EXACTLY_ONE
+      composition_contract_ref: standards/machine-contract-composition.yaml
     required_validation:
       - receipt-schema-and-result
       - patch-and-attempt-identity

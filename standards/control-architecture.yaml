@@ -2,7 +2,7 @@ schema: cerebro-control-architecture/v0.2
 
 control_architecture:
   id: CEREBRO-CONTROL-ARCHITECTURE-001
-  version: "0.4"
+  version: "0.5"
   status: ACTIVE
   introduced_by: GUARDRAILS-001
 
@@ -238,6 +238,8 @@ control_architecture:
     - mutation-on-unresolved-or-wrong-surface-is-prohibited
     - retry-requires-progress-delta
     - recovery-preserves-architectural-boundaries
+    - machine-contract-composition-is-resolved-before-cross-boundary-consumption
+    - MCP-control-authority-does-not-make-MCP-the-universal-protocol-implementation-owner
     - reorient-requires-material-path-delta
     - unchanged-reorientation-is-invalid
     - control-evidence-does-not-create-Source-authority

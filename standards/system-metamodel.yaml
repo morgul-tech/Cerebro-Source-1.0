@@ -2,7 +2,7 @@ schema: cerebro-system-metamodel/v0.1
 
 system_metamodel:
   id: CEREBRO-SYSTEM-METAMODEL-001
-  version: "0.1"
+  version: "0.2"
   status: ACTIVE
   introduced_by: PATCH-005
 
@@ -100,6 +100,8 @@ system_metamodel:
       statement: Gates are policy-defined decision contracts and are not components solely by being gates.
     - id: META-007
       statement: Historical entities may preserve superseded terminology without becoming active consumers.
+    - id: META-008
+      statement: Machine-consumed cross-boundary composition shall preserve unambiguous identity and authority through an explicit envelope or a sealed channel contract; field order, generic names and implicit location do not create authority.
 diagnostic_capsule_classification:
   introduced_by: PATCH-007.PRE-004
   canonical_kind: ARTIFACT

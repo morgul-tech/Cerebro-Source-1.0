@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.4",
+  "classification_version": "2.5",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -206,6 +206,15 @@
       ]
     },
     {
+      "standard_id": "STD-MACHINE-CONTRACT-COMPOSITION",
+      "path": "standards/machine-contract-composition.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The system-wide composition invariant is authoritative and its Standard Delivery receipt and sealed-candidate-view boundary is strictly bound; remaining cross-component boundaries require enumerated producer-consumer audits before a universal operational claim.",
+      "known_gaps": [
+        "non-delivery machine-consumed boundaries are not yet all enumerated and strict-bound"
+      ]
+    },
+    {
       "standard_id": "STD-PROJECT-STATUS",
       "path": "standards/project-status.yaml",
       "classification": "POLICY_ONLY",
@@ -369,12 +378,17 @@
       "implementation": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
       "implementation_tokens": [
         "Publish-SuccessHandoff",
+        "Assert-SuccessReceiptProtocol",
+        "DELIVERY_RECEIPT",
+        "CAPTURED_FIELD_CARDINALITY_INVALID",
         "SUCCESS_RECEIPT_CONTRACT_MISMATCH",
         "SUCCESS_RECEIPT_TRANSPORT_COPY_VERIFICATION_FAILED"
       ],
       "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
       "wiring_proof_kind": "EXPLICIT_ADAPTER",
       "wiring_tokens": [
+        "TARGET_RUNTIME_RECEIPT",
+        "DELIVERY_RECEIPT",
         "CEREBRO_SYNC_VERIFIED=TRUE",
         "AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE=TRUE",
         "UPLOAD_FILE={0}"
@@ -382,10 +396,45 @@
       "validation": "standards/development/delivery-failure-regression.yaml",
       "validation_tokens": [
         "success-receipt-is-machine-validated-against-patch-attempt-sync-equality-and-recovery-snapshot",
+        "success-handoff-consumes-exactly-one-DELIVERY_RECEIPT-never-first-generic-RECEIPT",
         "success-produces-byte-identical-CEREBRO_PATCH_SUCCESS-json-in-launcher-directory",
         "post-sync-success-transport-failure-does-not-trigger-source-rollback-or-false-PATCH-FAIL"
       ],
       "runtime_evidence_state": "EXECUTED_BY_EVERY_SUCCESSFUL_STANDARD_LAUNCHER_AFTER_KERNEL_PASS"
+    },
+    {
+      "id": "MACHINE_CONTRACT_COMPOSITION_DELIVERY",
+      "standard_id": "STD-MACHINE-CONTRACT-COMPOSITION",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/machine-contract-composition.yaml",
+      "declaration_tokens": [
+        "identity-and-authority-survive-composition",
+        "candidate-view-is-not-equivalent-to-payload-directory",
+        "owner-namespacing-is-conditional-not-universal"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-MACHINE-CONTRACT-COMPOSITION",
+      "implementation": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "implementation_tokens": [
+        "New-SealedCandidateSourceView",
+        "Get-CandidateViewTargetPath",
+        "Assert-CandidateSourceCompositionProtocol",
+        "CANDIDATE_SOURCE_COMPOSITION_PASS=TRUE"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_proof_kind": "EXPLICIT_ADAPTER",
+      "wiring_tokens": [
+        "-Mode','SelfTest'",
+        "-WorkingSourcePath",
+        "Assert-SuccessReceiptProtocol"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "sealed-candidate-view-is-exact-baseline-plus-declared-create-replace-delete-operations",
+        "unchanged-selftest-dependencies-resolve-from-exact-manifest-baseline-not-payload-presence",
+        "nested-machine-output-is-encapsulated-or-explicitly-mapped-never-blindly-concatenated"
+      ],
+      "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
     },
     {
       "id": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
@@ -947,6 +996,7 @@
           "promotion_basis_verified",
           "candidate_identity_verified",
           "candidate_contract_identity_verified",
+          "current_contract_semantics_verified",
           "shadow_oracle_identity_verified",
           "aa003_basis_ancestry_verified",
           "aa003_roadmap_verified",

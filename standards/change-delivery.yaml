@@ -66,6 +66,8 @@ profiles:
     - diagnostic-capsule-capture
     - diagnostic-resolution-on-success
     - success-receipt-validation-and-transport
+    - namespaced-target-runtime-and-delivery-receipt-protocol
+    - sealed-candidate-source-view-from-baseline-plus-manifest-operations
     prohibited_script_scope:
     - Source-content-generation
     - YAML-transformation

@@ -5385,6 +5385,180 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
       sequence: 127
+    -
+      id: "CTX-ASSESS-MCP-CONTROL-DEPTH-AFTER-WAVE02-20260812-001"
+      type: "ASSESSMENT"
+      scope: "MCP-INFORMATION-CONVERSATION-AND-CONTINUATION-CONTROL"
+      statement: "MCP has already received the material control upgrade contemplated by PATCH-005 and AA-004; the Wave 02 R1 handoff failure was a namespaced delivery-protocol defect, not evidence that MCP needs to absorb Context, Interaction, Presentation or Host ownership."
+      payload:
+        assessment_status: "VERIFIED_SOURCE_XREF_AND_RUNTIME_FAILURE_EVIDENCE"
+        clearly_supported:
+          - "PATCH_005_MADE_MCP_THE_CONSTITUTIONAL_DOMAIN_INDEPENDENT_FINAL_CONTROL_OWNER"
+          - "AA_004_ACTIVATED_ONE_CANONICAL_MCP_CONTROL_RESOLUTION_SURFACE_WITH_MATERIAL_PREFLIGHT_PRECEDENCE"
+          - "WAVE_02_R1_ADDED_ACTIVE_CONTINUATION_BINDING_INTERACTION_CONSUMPTION_PRESENTATION_HANDOFF_GATE_AND_RUNTIME_EVIDENCE"
+          - "C1EC0DD_SYNC_AND_REMOTE_EQUALITY_PASSED_BEFORE_SUCCESS_TRANSPORT_FAILED"
+        conclusion: "PRESERVE_DISTRIBUTED_OWNERSHIP_AND_STRENGTHEN_INVOCATION_CONSUMPTION_AND_PROTOCOL_BOUNDARIES"
+        not_recommended:
+          - "MOVE_PERSISTENT_STATE_FROM_CONTEXT_TO_MCP"
+          - "MOVE_USER_MEANING_INTERPRETATION_FROM_INTERACTION_TO_MCP"
+          - "MOVE_RESPONSE_RENDERING_FROM_PRESENTATION_TO_MCP"
+          - "TREAT_EVERY_DOWNSTREAM_DEFECT_AS_INSUFFICIENT_MCP_AUTHORITY"
+        remaining_hard_boundary: "A_HOST_RESPONSE_PATH_THAT_DOES_NOT_LOAD_AND_INVOKE_CEREBRO_CANNOT_BE_MADE_UNBYPASSABLE_BY_SOURCE_POLICY_ALONE"
+        next_architectural_question: "VERIFY_HOST_CONSUMPTION_CLOSURE_WITHOUT_CREATING_A_PARALLEL_CONTROL_OWNER"
+      provenance:
+        introduced_by_ref: "USER-REFINE-MENNESKE-MCP-CONTROL-QUESTION-2026-08-12"
+        basis_refs:
+          - "PATCH-005"
+          - "PATCH-AA-004"
+          - "CEREBRO-DUALITYARC-WAVE-02-20260812-R1"
+          - "CEREBRO_DELIVERY_KERNEL_20260812-094310"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
+      sequence: 128
+    -
+      id: "CTX-BASIS-DUALITY-ARC-WAVE-02-R2-20260812-001"
+      type: "HISTORICAL_BASIS"
+      scope: "DUALITYARC-WAVE-02-SUCCESS-HANDOFF-PROTOCOL-CORRECTION"
+      statement: "Wave 02 R2 attempted to correct the post-sync success handoff by separating Target Runtime and Delivery Kernel receipt fields, but stopped before Source mutation because its selftest mistook the differential payload for the complete candidate Source. Its receipt correction remains valid input to the superseding R3 composition solution."
+      payload:
+        applicability: "SUPERSEDED_FAILED_PRE_MUTATION_DELIVERY_BASIS"
+        confirmation_basis:
+          - "VALID_DELIVERY_KERNEL_RECEIPT_CEREBRO_DELIVERY_KERNEL_20260812_094310"
+          - "INDEPENDENT_ORIGIN_MAIN_EQUALITY_AT_C1EC0DDCB2CBF984AC5B0B4AC06F416A289B555F"
+          - "TERMINAL_SUCCESS_HANDOFF_ERROR_IDENTIFIED_AS_FIRST_GENERIC_RECEIPT_SELECTION"
+        source_base_commit: "c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f"
+        patch_id: "CEREBRO-DUALITYARC-WAVE-02-20260812-R2"
+        primary_patch_state: "R1_SYNC_AND_REMOTE_EQUALITY_VERIFIED"
+        R2_execution_state: "SELFTEST_FAIL_BEFORE_SOURCE_MUTATION"
+        R2_failure_evidence: "CEREBRO_PATCH_FAIL_20260812_075820"
+        corrective_scope:
+          - "TARGET_RUNTIME_RECEIPT_FIELD_NAMESPACE"
+          - "DELIVERY_RECEIPT_FIELD_NAMESPACE"
+          - "UNIQUE_DELIVERY_RECEIPT_CARDINALITY"
+          - "SEALED_LAUNCHER_PROTOCOL_SELFTEST"
+          - "EXECUTION_CONFIRMED_FAILURE_LEARNING_AND_REGRESSION"
+          - "AA004_PROMOTION_BASIS_IDENTITY_VS_CURRENT_LIFECYCLE_SEMANTICS_CORRECTION"
+          - "POST_COMMIT_CONTROL_RESOLUTION_SELFTEST_CLOSURE"
+        mcp_assessment_ref: "CTX-ASSESS-MCP-CONTROL-DEPTH-AFTER-WAVE02-20260812-001"
+        success_requires:
+          - "WINDOWS_POWERSHELL_TARGET_RUNTIME_PASS"
+          - "ACTUAL_CAC_PASS"
+          - "DEEP_ASSURANCE_THREE_RUNS_PASS"
+          - "SUCCESS_TRANSPORT_VIEW_PASS"
+          - "CEREBRO_SYNC_VERIFIED"
+          - "AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE"
+        next_natural_work: "SUPERSEDED_BY_WAVE_02_R3_MACHINE_CONTRACT_COMPOSITION_CORRECTION"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R2"
+        basis_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
+          - "CTX-ASSESS-MCP-CONTROL-DEPTH-AFTER-WAVE02-20260812-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
+      sequence: 129
+    -
+      id: "CTX-WISDOM-MACHINE-CONTRACT-COMPOSITION-20260812-001"
+      type: "WISDOM"
+      scope: "SYSTEM-WIDE-MACHINE-CONSUMED-CROSS-BOUNDARY-COMPOSITION"
+      statement: "When machine contracts are composed, identity and authority must remain unambiguous across message kind, schema, producer, subject or instance, cardinality, channel, lifecycle and artifact origin. Owner-named fields are one conditional mechanism for flat multiplexed channels, not a universal requirement inside every structured envelope."
+      payload:
+        maturity: "STRONG"
+        evidence: "TWO_EXECUTION_CONFIRMED_FAILURES_PLUS_SYSTEM_CONTRACT_CROSS_REFERENCE"
+        clearly_supported:
+          - "R1_SUCCESS_HANDOFF_SELECTED_THE_FIRST_GENERIC_RECEIPT_FROM_NESTED_OUTPUT"
+          - "R2_SELFTEST_REQUIRED_AN_UNCHANGED_DEPENDENCY_INSIDE_A_DIFFERENTIAL_PAYLOAD"
+          - "BOTH_FAILURES_PRESERVED_CLEAN_SOURCE_AND_EXPOSED_CONSUMER_SELECTION_ASSUMPTIONS"
+        refined_extrapolation:
+          - "THE_COMMON_FAILURE_CLASS_IS_AMBIGUOUS_MACHINE_CONTRACT_COMPOSITION_NOT_ONLY_RECEIPT_FIELD_NAMING"
+          - "ARTIFACT_ORIGIN_AND_CANDIDATE_VIEW_RESOLUTION_ARE_CONTRACT_DIMENSIONS"
+          - "GLOBAL_POLICY_REQUIRES_BOUNDARY_SCOPED_ENFORCEMENT_AND_ENUMERATED_CONSUMER_PROOF"
+        required_behavior:
+          - "USE_SCHEMA_OR_CHANNEL_BOUND_IDENTITY_AT_EVERY_MACHINE_CONSUMED_BOUNDARY"
+          - "REQUIRE_EXACT_CARDINALITY_AND_FAIL_ON_AMBIGUITY"
+          - "ENCAPSULATE_OR_MAP_NESTED_OUTPUT_INSTEAD_OF_BLIND_CONCATENATION"
+          - "RESOLVE_CANDIDATE_ARTIFACTS_AS_EXACT_BASELINE_PLUS_SEALED_OPERATIONS"
+          - "PRESERVE_DISTRIBUTED_COMPONENT_OWNERSHIP"
+        prohibited_overgeneralization:
+          - "PREFIX_EVERY_FIELD_WITH_OWNER_INSIDE_ISOLATED_VALIDATED_ENVELOPES"
+          - "MAKE_MCP_THE_UNIVERSAL_PROTOCOL_IMPLEMENTATION_OWNER"
+          - "CLAIM_SYSTEM_WIDE_OPERATIONAL_ENFORCEMENT_BEFORE_BOUNDARIES_ARE_ENUMERATED"
+        implementation_status: "DELIVERY_BOUNDARY_STRICT_BOUND_BY_WAVE_02_R3;SYSTEM_WIDE_AUDIT_REMAINS_EXPLICIT"
+      provenance:
+        introduced_by_ref: "USER-REFINE-MENNESKE-MACHINE-CONTRACT-COMPOSITION-SCOPE-2026-08-12"
+        basis_refs:
+          - "CEREBRO_DELIVERY_KERNEL_20260812-094310"
+          - "CEREBRO_PATCH_FAIL_20260812_075820"
+          - "standards/machine-contract-composition.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
+          - "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
+      sequence: 130
+    -
+      id: "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "DUALITYARC-WAVE-02-MACHINE-CONTRACT-COMPOSITION-AND-SEALED-CANDIDATE-VIEW"
+      statement: "Wave 02 R3 preserves the valid R2 receipt correction, replaces its overgeneralized owner-field learning with a system-wide machine-contract composition invariant, and makes pre-mutation selftests execute against an exact sealed candidate view composed from the verified baseline plus manifest create, replace and delete operations."
+      payload:
+        applicability: "CURRENT_DUALITYARC_WAVE_02_R3_CORRECTIVE_DELIVERY_BASIS"
+        confirmation_basis:
+          - "VERIFIED_SOURCE_BASE_C1EC0DDCB2CBF984AC5B0B4AC06F416A289B555F"
+          - "R2_FAILED_BEFORE_MUTATION_WITH_HUMAN_CONTINUATION_SURFACE_VALIDATOR_MISSING"
+          - "DEEP_SCOPE_REVIEW_REJECTED_OWNER_PREFIX_EVERY_FIELD_AS_UNIVERSAL_RULE"
+        source_base_commit: "c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f"
+        patch_id: "CEREBRO-DUALITYARC-WAVE-02-20260812-R3"
+        composition_contract: "standards/machine-contract-composition.yaml"
+        corrective_scope:
+          - "TARGET_RUNTIME_AND_DELIVERY_RECEIPT_MACHINE_NAMESPACE"
+          - "EXACT_DELIVERY_RECEIPT_CARDINALITY"
+          - "SYSTEM_WIDE_MACHINE_CONTRACT_COMPOSITION_POLICY"
+          - "SEALED_CANDIDATE_SOURCE_VIEW"
+          - "UNCHANGED_DEPENDENCY_EXACT_BASELINE_RESOLUTION"
+          - "CREATE_REPLACE_PAYLOAD_PRECEDENCE"
+          - "DECLARED_DELETE_ABSENCE"
+          - "AA004_PROMOTION_IDENTITY_VS_LIFECYCLE_SEMANTICS_CORRECTION"
+        ownership:
+          definitional_authority: "CEREBRO_SOURCE"
+          control_resolution: "MCP"
+          producer_contract: "EACH_PRODUCER"
+          consumer_validation: "EACH_CONSUMER"
+          transport_integrity: "HOST_OR_TRANSPORT"
+          compatibility_proof: "VALIDATOR_AND_CAC"
+        activation_scope:
+          delivery_boundary: "STRICT_BOUND"
+          remaining_machine_boundaries: "AUDIT_REQUIRED_BEFORE_UNIVERSAL_OPERATIONAL_CLAIM"
+        success_requires:
+          - "WINDOWS_POWERSHELL_KERNEL_SELFTEST_PASS"
+          - "CANDIDATE_SOURCE_COMPOSITION_PASS"
+          - "WINDOWS_POWERSHELL_TARGET_RUNTIME_PASS"
+          - "ACTUAL_CAC_PASS"
+          - "DEEP_ASSURANCE_THREE_RUNS_PASS"
+          - "SUCCESS_TRANSPORT_VIEW_PASS"
+          - "CEREBRO_SYNC_VERIFIED"
+          - "AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE"
+        next_natural_work: "CONTINUE_REMAINING_DUALITYARC_WAVE_02_FROM_VERIFIED_R3_COMMIT"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R3"
+        basis_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R2-20260812-001"
+          - "CTX-WISDOM-MACHINE-CONTRACT-COMPOSITION-20260812-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-DUALITY-ARC-WAVE-02-R2-20260812-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R2-20260812-001"
+          - "CTX-ASSESS-MCP-CONTROL-DEPTH-AFTER-WAVE02-20260812-001"
+      sequence: 131
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -5453,7 +5627,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
       - "CTX-BASIS-DUALITY-ANA-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
-      - "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001"
+      - "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5504,7 +5678,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
       - "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
       - "CTX-WISDOM-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-20260812-001"
-  next_sequence: 128
+      - "CTX-WISDOM-MACHINE-CONTRACT-COMPOSITION-20260812-001"
+  next_sequence: 132
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

@@ -655,6 +655,151 @@ function Assert-ActivationProbeManifest {
     }
 }
 
+function Get-CandidateRelativePath {
+    param([Parameter(Mandatory=$true)][string]$RelativePath)
+
+    if([IO.Path]::IsPathRooted($RelativePath)){
+        throw ('CANDIDATE_VIEW_ROOTED_PATH_FORBIDDEN:{0}' -f $RelativePath)
+    }
+    $normalized=$RelativePath.Replace('\','/').Trim()
+    if([string]::IsNullOrWhiteSpace($normalized)){
+        throw 'CANDIDATE_VIEW_EMPTY_PATH_FORBIDDEN'
+    }
+    foreach($segment in @($normalized.Split('/'))){
+        if([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.' -or $segment -eq '..'){
+            throw ('CANDIDATE_VIEW_PATH_SEGMENT_FORBIDDEN:{0}' -f $RelativePath)
+        }
+    }
+    return $normalized
+}
+
+function Get-CandidateViewTargetPath {
+    param(
+        [Parameter(Mandatory=$true)][string]$CandidateRoot,
+        [Parameter(Mandatory=$true)][string]$RelativePath
+    )
+
+    $normalized=Get-CandidateRelativePath -RelativePath $RelativePath
+    $rootFull=[IO.Path]::GetFullPath($CandidateRoot).TrimEnd([char[]]'\/')+[IO.Path]::DirectorySeparatorChar
+    $targetFull=[IO.Path]::GetFullPath((Join-Path $CandidateRoot ($normalized -replace '/','\')))
+    if(-not$targetFull.StartsWith($rootFull,[StringComparison]::OrdinalIgnoreCase)){
+        throw ('CANDIDATE_VIEW_PATH_ESCAPE:{0}' -f $RelativePath)
+    }
+    return $targetFull
+}
+
+function New-SealedCandidateSourceView {
+    param(
+        [Parameter(Mandatory=$true)]$PatchManifest,
+        [string]$SourceRepositoryPath=$WorkingSourcePath,
+        [string]$PayloadRoot=$BundleRoot
+    )
+
+    if(-not(Test-Path -LiteralPath $SourceRepositoryPath -PathType Container)){
+        throw ('CANDIDATE_VIEW_WORKING_SOURCE_NOT_FOUND:{0}' -f $SourceRepositoryPath)
+    }
+    $gitPath=Resolve-Executable 'git.exe'
+    $candidateRoot=Join-Path ([IO.Path]::GetTempPath()) ('CerebroCandidateView-'+[guid]::NewGuid().ToString('N'))
+    try {
+        [void](Invoke-Git -GitPath $gitPath -ArgumentList @('clone','--local','--no-hardlinks','--no-checkout',$SourceRepositoryPath,$candidateRoot))
+        [void](Invoke-Git -GitPath $gitPath -ArgumentList @('-C',$candidateRoot,'config','core.autocrlf','false'))
+        [void](Invoke-Git -GitPath $gitPath -ArgumentList @('-C',$candidateRoot,'config','core.eol','lf'))
+        [void](Invoke-Git -GitPath $gitPath -ArgumentList @('-C',$candidateRoot,'checkout','--detach',[string]$PatchManifest.expected_base_commit))
+        $actualBase=(Invoke-Git -GitPath $gitPath -ArgumentList @('-C',$candidateRoot,'rev-parse','HEAD')).Stdout
+        if($actualBase -ne [string]$PatchManifest.expected_base_commit){
+            throw ('CANDIDATE_VIEW_BASE_IDENTITY_MISMATCH expected={0} actual={1}' -f [string]$PatchManifest.expected_base_commit,$actualBase)
+        }
+
+        $seen=@{}
+        foreach($entry in @($PatchManifest.files)){
+            $relative=Get-CandidateRelativePath -RelativePath ([string]$entry.path)
+            if($seen.ContainsKey($relative)){
+                throw ('CANDIDATE_VIEW_DUPLICATE_OPERATION:{0}' -f $relative)
+            }
+            $seen[$relative]=$true
+            $target=Get-CandidateViewTargetPath -CandidateRoot $candidateRoot -RelativePath $relative
+            $operation=[string]$entry.operation
+            if($operation -eq 'delete'){
+                if(Test-Path -LiteralPath $target -PathType Container){
+                    throw ('CANDIDATE_VIEW_DELETE_DIRECTORY_FORBIDDEN:{0}' -f $relative)
+                }
+                if(Test-Path -LiteralPath $target -PathType Leaf){
+                    Remove-Item -LiteralPath $target -Force
+                }
+                continue
+            }
+            if(@('create','replace') -notcontains $operation){
+                throw ('CANDIDATE_VIEW_OPERATION_INVALID:{0}:{1}' -f $relative,$operation)
+            }
+            $payload=Join-Path $PayloadRoot (([string]$entry.payload_path) -replace '/','\')
+            if(-not(Test-Path -LiteralPath $payload -PathType Leaf)){
+                throw ('CANDIDATE_VIEW_PAYLOAD_MISSING:{0}' -f $relative)
+            }
+            $parent=Split-Path -Parent $target
+            if(-not[string]::IsNullOrWhiteSpace($parent)){[IO.Directory]::CreateDirectory($parent)|Out-Null}
+            [IO.File]::Copy($payload,$target,$true)
+            if((Get-Sha256 -LiteralPath $target) -ne [string]$entry.sha256){
+                throw ('CANDIDATE_VIEW_PAYLOAD_HASH_MISMATCH:{0}' -f $relative)
+            }
+        }
+        return $candidateRoot
+    }
+    catch {
+        if(Test-Path -LiteralPath $candidateRoot){
+            Remove-Item -LiteralPath $candidateRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        throw
+    }
+}
+
+function Assert-CandidateSourceCompositionProtocol {
+    param([Parameter(Mandatory=$true)]$PatchManifest)
+
+    $fixtureRoot=Join-Path ([IO.Path]::GetTempPath()) ('CerebroCandidateProtocol-'+[guid]::NewGuid().ToString('N'))
+    $payloadRoot=Join-Path $fixtureRoot 'bundle'
+    $replacement=Join-Path $payloadRoot 'payload\README.md'
+    $created=Join-Path $payloadRoot 'payload\candidate-view-created.txt'
+    $candidate=''
+    try {
+        [IO.Directory]::CreateDirectory((Split-Path -Parent $replacement))|Out-Null
+        [IO.File]::WriteAllText($replacement,'CANDIDATE_VIEW_REPLACEMENT',[Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($created,'CANDIDATE_VIEW_CREATED',[Text.UTF8Encoding]::new($false))
+        $fixtureManifest=[pscustomobject]@{
+            expected_base_commit=[string]$PatchManifest.expected_base_commit
+            files=@(
+                [pscustomobject]@{operation='replace';path='README.md';payload_path='payload/README.md';sha256=(Get-Sha256 -LiteralPath $replacement)},
+                [pscustomobject]@{operation='create';path='candidate-view-created.txt';payload_path='payload/candidate-view-created.txt';sha256=(Get-Sha256 -LiteralPath $created)},
+                [pscustomobject]@{operation='delete';path='cerebro.yaml'}
+            )
+        }
+        $candidate=New-SealedCandidateSourceView -PatchManifest $fixtureManifest -SourceRepositoryPath $WorkingSourcePath -PayloadRoot $payloadRoot
+        $replacementTarget=Get-CandidateViewTargetPath -CandidateRoot $candidate -RelativePath 'README.md'
+        $createdTarget=Get-CandidateViewTargetPath -CandidateRoot $candidate -RelativePath 'candidate-view-created.txt'
+        $deletedTarget=Get-CandidateViewTargetPath -CandidateRoot $candidate -RelativePath 'cerebro.yaml'
+        $baselineTarget=Get-CandidateViewTargetPath -CandidateRoot $candidate -RelativePath 'standards/source-authority.yaml'
+        if([IO.File]::ReadAllText($replacementTarget) -ne 'CANDIDATE_VIEW_REPLACEMENT'){
+            throw 'CANDIDATE_VIEW_REPLACE_PRECEDENCE_CANARY_FAILED'
+        }
+        if([IO.File]::ReadAllText($createdTarget) -ne 'CANDIDATE_VIEW_CREATED'){
+            throw 'CANDIDATE_VIEW_CREATE_CANARY_FAILED'
+        }
+        if(Test-Path -LiteralPath $deletedTarget){
+            throw 'CANDIDATE_VIEW_DELETE_ABSENCE_CANARY_FAILED'
+        }
+        if(-not(Test-Path -LiteralPath $baselineTarget -PathType Leaf)){
+            throw 'CANDIDATE_VIEW_UNCHANGED_BASELINE_CANARY_FAILED'
+        }
+    }
+    finally {
+        if(-not[string]::IsNullOrWhiteSpace($candidate) -and (Test-Path -LiteralPath $candidate)){
+            Remove-Item -LiteralPath $candidate -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        if(Test-Path -LiteralPath $fixtureRoot){
+            Remove-Item -LiteralPath $fixtureRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Normalize-ActivationEvidenceForCac {
     param($Evidence,[string]$EvidencePath,[string]$ProbeId)
     $basisFiles=@(Get-KernelOptionalProperty -Object $Evidence -Name 'basis_files' -Default @())
@@ -742,19 +887,30 @@ function Invoke-SelfTest {
     $manifestObject = Read-Manifest
     Assert-PayloadIntegrity $manifestObject
     Assert-ActivationProbeManifest -PatchManifest $manifestObject
+    Assert-CandidateSourceCompositionProtocol -PatchManifest $manifestObject
 
-    $State.ReachedStage = 'SELFTEST_HUMAN_CONTINUATION_SURFACE'
-    $continuationValidator = Join-Path -Path $BundleRoot -ChildPath 'payload\tooling\validator\continuation_surface_validation.py'
-    if (-not (Test-Path -LiteralPath $continuationValidator -PathType Leaf)) {
-        throw 'HUMAN_CONTINUATION_SURFACE_VALIDATOR_MISSING'
+    $State.ReachedStage = 'SELFTEST_CANDIDATE_SOURCE_VIEW'
+    $candidateView=''
+    try {
+        $candidateView=New-SealedCandidateSourceView -PatchManifest $manifestObject
+        $State.ReachedStage = 'SELFTEST_HUMAN_CONTINUATION_SURFACE'
+        $continuationValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/continuation_surface_validation.py'
+        if (-not (Test-Path -LiteralPath $continuationValidator -PathType Leaf)) {
+            throw 'HUMAN_CONTINUATION_SURFACE_VALIDATOR_MISSING_FROM_CANDIDATE_VIEW'
+        }
+        $continuationPython = Resolve-PythonRunner
+        $continuationArgs = @($continuationPython.PrefixArgs) + @($continuationValidator,'selftest')
+        $continuationResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $continuationArgs
+        try { $continuationEvidence = $continuationResult.Stdout | ConvertFrom-Json }
+        catch { throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_OUTPUT_INVALID' }
+        if ($continuationResult.ExitCode -ne 0 -or [string]$continuationEvidence.result -ne 'PASS') {
+            throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_FAILED'
+        }
     }
-    $continuationPython = Resolve-PythonRunner
-    $continuationArgs = @($continuationPython.PrefixArgs) + @($continuationValidator,'selftest')
-    $continuationResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $continuationArgs
-    try { $continuationEvidence = $continuationResult.Stdout | ConvertFrom-Json }
-    catch { throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_OUTPUT_INVALID' }
-    if ($continuationResult.ExitCode -ne 0 -or [string]$continuationEvidence.result -ne 'PASS') {
-        throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_FAILED'
+    finally {
+        if(-not[string]::IsNullOrWhiteSpace($candidateView) -and (Test-Path -LiteralPath $candidateView)){
+            Remove-Item -LiteralPath $candidateView -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 
     $State.ReachedStage = 'SELFTEST_NATIVE'
@@ -784,6 +940,7 @@ function Invoke-SelfTest {
     Write-Host 'BOUNDED_DELETE_ROLLBACK_PASS=TRUE'
     Write-Host 'FULL_RECOVERY_SNAPSHOT_PASS=TRUE'
     Write-Host 'PAYLOAD_HASH_PASS=TRUE'
+    Write-Host 'CANDIDATE_SOURCE_COMPOSITION_PASS=TRUE'
     Write-Host 'HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS=TRUE'
 }
 
@@ -977,6 +1134,7 @@ function Invoke-Apply {
             Write-Host ('AUTHORITATIVE_COMMIT={0}' -f $remoteHead)
             Write-Host 'SOURCE_EQUALITY=VERIFIED'
             Write-Host 'CEREBRO_SYNC_VERIFIED=TRUE'
+            Write-Host ('DELIVERY_RECEIPT={0}' -f $receiptPath)
             Write-Host ('RECEIPT={0}' -f $receiptPath)
             return
         }
@@ -1219,6 +1377,7 @@ function Invoke-Apply {
         Write-Host ('WORKING_SOURCE_COMMIT={0}' -f $finalLocal)
         Write-Host 'SOURCE_EQUALITY=VERIFIED'
         Write-Host 'CEREBRO_SYNC_VERIFIED=TRUE'
+        Write-Host ('DELIVERY_RECEIPT={0}' -f $receiptPath)
         Write-Host ('RECEIPT={0}' -f $receiptPath)
     }
     finally {

@@ -10,22 +10,25 @@
       "alias": "Fortsett DualityArc Wave 02",
       "target_ref": "DUALITYARC-WAVE-02",
       "operation": "CONTINUE_REMAINING_CONTRACT_AND_LIFECYCLE_CONVERGENCE",
-      "current_basis_ref": "CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001",
-      "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS-DUALITY-ARC-WAVE-02-R1-20260812-001",
+      "current_basis_ref": "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001",
+      "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001",
       "constraints_refs": [
         "CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001",
         "standards/human-continuation-surface.yaml",
-        "standards/continuation-surface-system-policy.yaml"
+        "standards/continuation-surface-system-policy.yaml",
+        "standards/machine-contract-composition.yaml"
       ],
       "evidence_refs": [
+        "CEREBRO_DELIVERY_KERNEL_20260812-094310.json",
+        "CEREBRO_PATCH_FAIL_20260812-075820.json",
         "CEREBRO_PATCH_SUCCESS.json",
         "D:/Cerebro/Run/audits/CEREBRO_HUMAN_CONTINUATION_SURFACE_ACTIVATION_PROOF.json"
       ],
       "maturity": "LOCKED",
-      "readiness": "REQUIRES_VERIFIED_WAVE_02_R1_SUCCESS_RECEIPT",
-      "source_revision": "c2a6751b5669c0c759905e4bab9c274ff558b8bd+CEREBRO-DUALITYARC-WAVE-02-20260812-R1",
+      "readiness": "REQUIRES_VERIFIED_WAVE_02_R3_SUCCESS_RECEIPT",
+      "source_revision": "c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f+CEREBRO-DUALITYARC-WAVE-02-20260812-R3",
       "required_next_behavior": [
-        "VALIDATE_SUCCESS_RECEIPT",
+        "VALIDATE_WAVE_02_R3_SUCCESS_RECEIPT",
         "VERIFY_AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE",
         "RESOLVE_CURRENT_SOURCE_AND_SUPERSESSION",
         "CONTINUE_REMAINING_DUALITYARC_WAVE_02"
@@ -41,7 +44,7 @@
         "AUTO_REBASE_TO_UNAMBIGUOUS_SUCCESSOR",
         "REQUEST_ONLY_MATERIAL_USER_DECISION_IF_AMBIGUOUS"
       ],
-      "binding_fingerprint": "929522364bed802afce5354c5ea3b78f6a158f968c3f7767a576ce820632adca"
+      "binding_fingerprint": "eeab353c43df36020c0b4de5761805456fc33e3d5eebc933379cb8ca76db80f3"
     }
   ]
 }

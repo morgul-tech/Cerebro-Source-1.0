@@ -180,11 +180,38 @@ function Invoke-ChildCaptured {
 }
 
 function Get-CapturedField {
-    param([string]$Text,[string]$Name)
+    param(
+        [string]$Text,
+        [string]$Name,
+        [ValidateSet('FIRST','LAST','UNIQUE')][string]$Selection='FIRST'
+    )
     $pattern = '(?m)^' + [regex]::Escape($Name) + '=(.*)$'
-    $match = [regex]::Match($Text,$pattern)
-    if ($match.Success) { return $match.Groups[1].Value.Trim() }
-    return ''
+    $fieldMatches = [regex]::Matches($Text,$pattern)
+    if ($fieldMatches.Count -eq 0) { return '' }
+    if ($Selection -eq 'UNIQUE' -and $fieldMatches.Count -ne 1) {
+        throw ('CAPTURED_FIELD_CARDINALITY_INVALID:{0}:{1}' -f $Name,$fieldMatches.Count)
+    }
+    $index = if ($Selection -eq 'LAST') { $fieldMatches.Count - 1 } else { 0 }
+    return $fieldMatches[$index].Groups[1].Value.Trim()
+}
+
+function Assert-SuccessReceiptProtocol {
+    $fixture = "TARGET_RUNTIME_RECEIPT=trv.json`r`nDELIVERY_RECEIPT=delivery.json`r`nRECEIPT=legacy.json"
+    $selected = Get-CapturedField -Text $fixture -Name 'DELIVERY_RECEIPT' -Selection 'UNIQUE'
+    if ($selected -ne 'delivery.json') { throw 'SUCCESS_RECEIPT_PROTOCOL_SELECTION_FAILED' }
+
+    $duplicateRejected = $false
+    try {
+        [void](Get-CapturedField -Text ($fixture + "`r`nDELIVERY_RECEIPT=duplicate.json") `
+            -Name 'DELIVERY_RECEIPT' -Selection 'UNIQUE')
+    }
+    catch {
+        if ($_.Exception.Message -like 'CAPTURED_FIELD_CARDINALITY_INVALID:DELIVERY_RECEIPT:*') {
+            $duplicateRejected = $true
+        }
+        else { throw }
+    }
+    if (-not $duplicateRejected) { throw 'SUCCESS_RECEIPT_PROTOCOL_DUPLICATE_NOT_REJECTED' }
 }
 
 function Publish-SuccessHandoff {
@@ -424,6 +451,7 @@ try {
 
     $manifestPath = Join-Path -Path $temporaryRoot -ChildPath 'manifest.json'
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    Assert-SuccessReceiptProtocol
     $Attempt.patch_id=[string]$manifest.patch_id
     $Attempt.expected_base_commit=[string]$manifest.expected_base_commit
     $Attempt.bundle_sha256=$bundleSha
@@ -473,10 +501,10 @@ try {
 
     Write-AttemptEvent -Context $Attempt -Event 'APPLY_PASS'
 
-    $resultingCommit=Get-CapturedField -Text ([string]$apply.Stdout) -Name 'AUTHORITATIVE_COMMIT'
+    $resultingCommit=Get-CapturedField -Text ([string]$apply.Stdout) -Name 'AUTHORITATIVE_COMMIT' -Selection 'LAST'
     Resolve-CanonicalDiagnostics -PatchId ([string]$manifest.patch_id) -ResultingCommit $resultingCommit
 
-    $receipt = Get-CapturedField -Text ([string]$apply.Stdout) -Name 'RECEIPT'
+    $receipt = Get-CapturedField -Text ([string]$apply.Stdout) -Name 'DELIVERY_RECEIPT' -Selection 'UNIQUE'
     try {
         $successHandoff=Publish-SuccessHandoff -Manifest $manifest -ReceiptPath $receipt -ResultingCommit $resultingCommit
     }

@@ -266,7 +266,7 @@ try {
     Write-Host 'CEREBRO_TARGET_RUNTIME_VALIDATION=PASS'
     Write-Host ('TARGET_RUNTIME_PROFILE={0}' -f $ProfileId)
     Write-Host ('CANDIDATE_IDENTITY={0}' -f [string]$plan.candidate_identity)
-    Write-Host ('RECEIPT={0}' -f $OutputPath)
+    Write-Host ('TARGET_RUNTIME_RECEIPT={0}' -f $OutputPath)
 }
 finally {
     Remove-Item -LiteralPath $ephemeralRegistryDirectory -Recurse -Force -ErrorAction SilentlyContinue

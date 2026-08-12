@@ -303,3 +303,100 @@ development_history:
       provenance:
         admission: USER_DIRECTED_REPEATED_SYSTEMIC_CORRECTION
         source_ref: USER-REFINE-MENNESKE-SHORT-TRIGGER-2026-08-12
+    - id: HIST-LEARN-NESTED-RECEIPT-FIELD-COLLISION-20260812
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Receipt collision exposed a general machine-contract composition invariant
+      fact: DUALITYARC Wave 02 R1 completed target-runtime validation, DEEP assurance, canonical sync and remote equality at c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f, but the post-sync success transport selected the first generic RECEIPT field from nested output. That field named the Target Runtime receipt rather than the later Delivery Kernel receipt, so strict success validation correctly rejected it. The Source change remained a verified success; only the derived success transport failed.
+      occurred_at: '2026-08-12T07:43:10Z'
+      evidence_refs:
+        - CEREBRO_DELIVERY_KERNEL_20260812-094310
+        - CEREBRO_TARGET_RUNTIME_20260812-094232
+        - USER-REPORTED-SUCCESS-HANDOFF-CONTRACT-MISMATCH-20260812
+      impact:
+        introduced:
+          - NESTED_RECEIPT_FIELD_NAMESPACE_COLLISION
+          - MACHINE_CONTRACT_COMPOSITION_AMBIGUITY
+        retired:
+          - FIRST_GENERIC_RECEIPT_WINS
+          - OWNER_PREFIX_EVERY_FIELD_AS_UNIVERSAL_RULE
+        enabled:
+          - TARGET_RUNTIME_RECEIPT_MACHINE_FIELD
+          - DELIVERY_RECEIPT_MACHINE_FIELD
+          - UNIQUE_DELIVERY_RECEIPT_CARDINALITY_GATE
+          - MACHINE_CONTRACT_COMPOSITION_DELIVERY
+        learned:
+          - MACHINE_CONTRACT_COMPOSITION_MUST_PRESERVE_UNAMBIGUOUS_IDENTITY_AND_AUTHORITY
+          - OWNER_NAMESPACED_FIELDS_ARE_REQUIRED_FOR_FLAT_MULTIPLEXED_CHANNELS_NOT_EVERY_STRUCTURED_ENVELOPE
+          - CONSUMERS_MUST_NOT_DERIVE_AUTHORITY_FROM_FIELD_ORDER_GENERIC_NAMES_OR_IMPLICIT_LOCATION
+          - A_VALID_DOWNSTREAM_SCHEMA_CHECK_CAN_EXPOSE_AN_UPSTREAM_SELECTION_BUG_WITHOUT_INVALIDATING_PRIMARY_SUCCESS
+      relations:
+        patch_refs: [CEREBRO-DUALITYARC-WAVE-02-20260812-R2, CEREBRO-DUALITYARC-WAVE-02-20260812-R3]
+        baseline_commit: c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f
+        learning_refs: [NESTED_RECEIPT_FIELD_NAMESPACE_COLLISION, PRODUCER_OUTPUT_SCHEMA_CONSUMER_MISMATCH]
+      provenance:
+        admission: EXECUTION_CONFIRMED_CORRECTIVE_LEARNING
+        source_ref: CEREBRO_DELIVERY_KERNEL_20260812-094310
+    - id: HIST-LEARN-CANDIDATE-VIEW-DEPENDENCY-SOURCE-20260812
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Differential payload was mistaken for the complete candidate Source
+      fact: Wave 02 R2 stopped before Source mutation at SELFTEST_HUMAN_CONTINUATION_SURFACE because the Delivery Kernel required tooling/validator/continuation_surface_validation.py inside the differential payload even though the unchanged validator already existed at the exact manifest baseline c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f. The failure proved that payload membership, dependency existence and logical candidate membership are separate concepts. The candidate Source is the exact verified baseline plus sealed create, replace and delete operations.
+      occurred_at: '2026-08-12T07:58:05Z'
+      evidence_refs:
+        - CEREBRO_PATCH_FAIL_20260812_075820
+        - DCAP-6ffd78fc3a72c4b6f36a
+        - BUNDLE-SHA256-00564e2549d2b1aada9f23570763279889936904533c5e22c5bd2aa33e92e05b
+      impact:
+        introduced:
+          - CANDIDATE_VIEW_PAYLOAD_BASELINE_SOURCE_CONFLATION
+        retired:
+          - DIFFERENTIAL_PAYLOAD_IS_COMPLETE_CANDIDATE_SOURCE
+          - PAYLOAD_PRESENCE_PROVES_DEPENDENCY_EXISTENCE
+        enabled:
+          - SEALED_CANDIDATE_SOURCE_VIEW
+          - EXACT_BASELINE_FALLBACK_FOR_UNCHANGED_DEPENDENCIES
+          - PAYLOAD_PRECEDENCE_FOR_DECLARED_CREATE_OR_REPLACE
+          - ABSENCE_FOR_DECLARED_DELETE
+        learned:
+          - CANDIDATE_VIEW_IS_EXACT_BASELINE_PLUS_DECLARED_OPERATIONS
+          - ARTIFACT_ORIGIN_AND_RESOLUTION_RULE_ARE_PART_OF_MACHINE_CONTRACT_IDENTITY
+          - A_DIFFERENTIAL_PATCH_MUST_NOT_REDUNDANTLY_COPY_UNCHANGED_DEPENDENCIES_TO_SATISFY_SELFTEST_ASSUMPTIONS
+      relations:
+        patch_refs: [CEREBRO-DUALITYARC-WAVE-02-20260812-R3]
+        baseline_commit: c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f
+        learning_refs: [MACHINE_CONTRACT_COMPOSITION_AMBIGUITY, CANDIDATE_VIEW_PAYLOAD_BASELINE_SOURCE_CONFLATION]
+      provenance:
+        admission: EXECUTION_CONFIRMED_CORRECTIVE_LEARNING
+        source_ref: CEREBRO_PATCH_FAIL_20260812_075820
+    - id: HIST-LEARN-PROMOTION-IDENTITY-VS-LIFECYCLE-SEMANTICS-20260812
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Pre-commit promotion proof masked a post-commit lifecycle-contract identity failure
+      fact: Wave 02 R1 legitimately promoted the adaptive resolver contract from CANDIDATE to VALIDATED_LOGIC without changing the shadow-validated resolver implementation, but the AA-004 verifier required the current lifecycle contract blob to remain byte-identical to the earlier AA-003 candidate contract. Target Runtime ran before commit and read the baseline Git object, so it passed; after publication at c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f the canonical control-resolution selftest failed. The correction preserves exact AA-003 Git identity for resolver logic, promotion-basis contract and oracle while independently validating the current promoted contract semantics.
+      occurred_at: '2026-08-12'
+      evidence_refs:
+        - CEREBRO_AA004_MCP_CONTROL_ACTIVATION_PROOF_AT_WAVE02_R1
+        - C1EC0DD_POST_COMMIT_CONTROL_RESOLUTION_SELFTEST
+        - USER-REFINE-MENNESKE-MCP-CONTROL-QUESTION-2026-08-12
+      impact:
+        introduced:
+          - PRECOMMIT_PROMOTION_IDENTITY_FALSE_GREEN_AFTER_CONTRACT_LIFECYCLE_CHANGE
+        retired:
+          - CURRENT_PROMOTED_CONTRACT_MUST_EQUAL_AA003_CANDIDATE_BLOB
+        enabled:
+          - SEPARATE_PROMOTION_BASIS_GIT_IDENTITY_AND_CURRENT_CONTRACT_SEMANTIC_VALIDATION
+          - POST_COMMIT_CONTROL_RESOLUTION_SELFTEST_PASS
+        learned:
+          - IMMUTABLE_EXECUTABLE_IDENTITY_AND_EVOLVING_LIFECYCLE_METADATA_REQUIRE_DIFFERENT_VALIDATION_RULES
+          - PRECOMMIT_PROOF_MUST_NOT_DERIVE_CURRENT_CANDIDATE_IDENTITY_ONLY_FROM_BASELINE_HEAD
+      relations:
+        patch_refs: [CEREBRO-DUALITYARC-WAVE-02-20260812-R2]
+        baseline_commit: c1ec0ddcb2cbf984ac5b0b4ac06f416a289b555f
+        learning_refs: [ADAPTIVE_MCP_CONTROL_RESOLUTION, ACTIVATION_EVIDENCE_DEPENDENCY_NOT_REFRESHED]
+      provenance:
+        admission: CORRECTIVE_VALIDATION_DISCOVERY
+        source_ref: C1EC0DD_POST_COMMIT_CONTROL_RESOLUTION_SELFTEST

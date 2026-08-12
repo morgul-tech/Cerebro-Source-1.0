@@ -1,7 +1,7 @@
 schema: cerebro-target-runtime-validation-contract/v1
 target_runtime_validation:
   id: CEREBRO-TARGET-RUNTIME-VALIDATION-001
-  version: 0.2.0
+  version: 0.3.0
   status: ACTIVE
   owner: tooling.validator
   assurance_governance: tooling.change
@@ -43,6 +43,8 @@ boundary:
 
 evidence:
   receipt_schema: cerebro-target-runtime-validation-receipt/v1
+  terminal_protocol_field: TARGET_RUNTIME_RECEIPT
+  generic_RECEIPT_field: PROHIBITED
   required_receipt_fields:
     - source_base_commit
     - candidate_identity

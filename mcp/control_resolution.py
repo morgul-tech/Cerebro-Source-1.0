@@ -148,9 +148,27 @@ def verify_promotion_basis(root: Path, require_git_ancestry: bool = True) -> dic
     )
     checks["candidate_contract_identity_verified"] = (
         contract.is_file()
-        and contract_blob == EXPECTED_CANDIDATE_CONTRACT_BLOB
         and promotion_contract_blob == EXPECTED_CANDIDATE_CONTRACT_BLOB
     )
+    current_contract_semantics_verified = False
+    try:
+        current_contract = _load_yaml(contract)
+        adaptive = current_contract.get("adaptive_control_resolver", {}) if isinstance(current_contract, dict) else {}
+        history = adaptive.get("promotion_history", {}) if isinstance(adaptive, dict) else {}
+        current_contract_semantics_verified = (
+            str(adaptive.get("id")) == "CEREBRO-ADAPTIVE-CONTROL-RESOLVER-001"
+            and str(adaptive.get("status")) == "VALIDATED_LOGIC"
+            and str(adaptive.get("implementation_ref")) == "mcp/adaptive_control_resolver.py"
+            and adaptive.get("live_control_authority") is False
+            and adaptive.get("direct_live_authority") is False
+            and str(adaptive.get("canonical_live_owner")) == "mcp/control-resolution.yaml"
+            and str(history.get("shadow_validation")) == "PATCH-AA-003_VERIFIED"
+            and str(history.get("controlled_promotion")) == "PATCH-AA-004_VERIFIED"
+            and str(history.get("outcome")) == "RETAIN_AS_VALIDATED_LOGIC_BEHIND_CANONICAL_LIVE_WRAPPER"
+        )
+    except Exception:
+        current_contract_semantics_verified = False
+    checks["current_contract_semantics_verified"] = current_contract_semantics_verified
     checks["shadow_oracle_identity_verified"] = (
         oracle.is_file()
         and oracle_blob == EXPECTED_SHADOW_ORACLE_BLOB
@@ -225,6 +243,7 @@ def verify_promotion_basis(root: Path, require_git_ancestry: bool = True) -> dic
     required_boolean_checks = (
         "candidate_identity_verified",
         "candidate_contract_identity_verified",
+        "current_contract_semantics_verified",
         "shadow_oracle_identity_verified",
         "git_object_identity_verified",
         "shadow_oracle_subject_matches_candidate",
@@ -446,6 +465,10 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
         "promotion-identity-uses-git-object-not-worktree-representation",
         basis.get("git_object_identity_verified") is True and basis.get("identity_authority") == "GIT_OBJECT_AT_SOURCE_COMMIT",
     )
+    check(
+        "promoted-contract-lifecycle-semantics-verified",
+        basis.get("current_contract_semantics_verified") is True,
+    )
 
     adaptive = load_module(root / "mcp/adaptive_control_resolver.py", "cerebro_adaptive_control_direct_canary")
     direct = adaptive.resolve({"objective_ref": "AA004-DIRECT-CANARY", "consequence": "LOW", "uncertainty": "LOW"})
@@ -531,6 +554,7 @@ def activation_probe(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True
         "promotion_basis_verified": basis.get("promotion_basis_verified") is True,
         "candidate_identity_verified": basis.get("candidate_identity_verified") is True,
         "candidate_contract_identity_verified": basis.get("candidate_contract_identity_verified") is True,
+        "current_contract_semantics_verified": basis.get("current_contract_semantics_verified") is True,
         "shadow_oracle_identity_verified": basis.get("shadow_oracle_identity_verified") is True,
         "git_object_identity_verified": basis.get("git_object_identity_verified") is True,
         "identity_authority": basis.get("identity_authority"),

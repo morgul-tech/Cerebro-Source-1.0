@@ -69,6 +69,7 @@ standards:
   release_platform: standards/release-platform.yaml
   operational_progress: standards/operational-progress.yaml
   operational_evidence: standards/operational-evidence.yaml
+  machine_contract_composition: standards/machine-contract-composition.yaml
   project_status: standards/project-status.yaml
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
   wisdom_control_binding: standards/development/wisdom-control-binding.yaml

@@ -1,7 +1,7 @@
 schema: cerebro-standards-manifest/v0.1
 standards_engine:
   id: standards
-  version: 0.6.0
+  version: 0.7.0
   role: authoritative-policy-registry
   runtime_engine: false
   policy_owner: Cerebro Source 1.0
@@ -78,6 +78,9 @@ documents:
   required: true
 - id: STD-OPERATIONAL-EVIDENCE
   path: standards/operational-evidence.yaml
+  required: true
+- id: STD-MACHINE-CONTRACT-COMPOSITION
+  path: standards/machine-contract-composition.yaml
   required: true
 - id: STD-PROJECT-STATUS
   path: standards/project-status.yaml

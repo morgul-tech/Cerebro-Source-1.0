@@ -1205,6 +1205,7 @@ aa_001_adaptive_mcp_candidate_validation:
     - resource-pressure-does-not-reduce-mandatory-assurance
     - continuation-preserve-reresolve-replace-semantics-reused
     - AA-001-has-no-live-control-authority
+    - AA003-promotion-Git-identity-is-distinct-from-current-promoted-contract-lifecycle-semantics
     - AA-003-shadow-validation-required-before-AA-004-promotion
   required_canaries:
     - adaptive-resolver-selftest-passes
@@ -1509,6 +1510,7 @@ dualityarc_wave_02_human_continuation_and_success_handoff:
     - standards/continuation-surface-system-policy.yaml
     - standards/delivery-kernel.yaml
     - standards/patch-attempt-history.yaml
+    - standards/machine-contract-composition.yaml
   invariants:
     - user-visible-continuation-is-a-short-trigger-not-a-machine-state-container
     - full-objective-commit-constraints-evidence-validation-and-resume-order-remain-Cerebro-owned
@@ -1518,6 +1520,9 @@ dualityarc_wave_02_human_continuation_and_success_handoff:
     - success-receipt-is-validated-after-kernel-PASS
     - success-transport-view-is-byte-identical-and-automatically-placed-in-launcher-directory
     - post-sync-transport-failure-never-rolls-back-or-mislabels-the-published-Source-change
+    - target-runtime-and-delivery-receipt-fields-are-machine-namespaced
+    - owner-namespacing-is-applied-to-flat-multiplexed-machine-fields-not-every-structured-field
+    - pre-mutation-selftest-executes-against-baseline-plus-sealed-manifest-operations
   required_canaries:
     - valid-2-to-5-word-trigger-is-accepted
     - one-word-trigger-is-rejected
@@ -1529,9 +1534,42 @@ dualityarc_wave_02_human_continuation_and_success_handoff:
     - missing-duplicate-or-invalid-active-binding-registry-entry-is-rejected
     - success-receipt-patch-attempt-commit-sync-equality-and-snapshot-mismatch-is-rejected
     - successful-receipt-copy-emits-UPLOAD_FILE
+    - nested-target-runtime-RECEIPT-cannot-be-selected-as-delivery-success-receipt
+    - duplicate-or-missing-DELIVERY_RECEIPT-is-rejected-before-success-transport
+    - unchanged-continuation-validator-resolves-from-exact-baseline-candidate-view
+    - payload-presence-is-not-treated-as-dependency-existence
   prohibited:
     - requiring-user-to-retype-machine-continuation-state
     - treating-a-long-machine-command-as-the-normal-human-continuation-surface
     - policy-only-classification-after-runtime-enforcement-is-bound
     - manual-Copy-Item-as-normal-success-handoff
     - content-after-the-short-trigger
+
+machine_contract_composition:
+  introduced_by: CEREBRO-DUALITYARC-WAVE-02-20260812-R3
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/machine-contract-composition.yaml
+  scope: MACHINE_CONSUMED_CROSS_BOUNDARY_COMPOSITION
+  invariants:
+    - identity-and-authority-survive-composition
+    - producer-message-schema-instance-cardinality-channel-lifecycle-and-artifact-origin-are-bound
+    - consumer-never-selects-authority-by-field-order-generic-name-or-implicit-location
+    - structured-isolated-envelope-does-not-require-owner-prefix-on-every-inner-field
+    - flat-or-multiplexed-channel-requires-owner-type-namespace-or-explicit-envelope
+    - nested-output-is-encapsulated-or-explicitly-mapped
+    - candidate-view-is-exact-baseline-plus-create-replace-delete-operations
+    - MCP-control-authority-does-not-create-universal-protocol-implementation-ownership
+  required_canaries:
+    - duplicate-machine-field-is-rejected-when-cardinality-is-exactly-one
+    - nested-generic-child-field-cannot-shadow-parent-owned-machine-field
+    - unchanged-dependency-resolves-from-exact-manifest-baseline
+    - changed-dependency-resolves-from-sealed-payload
+    - deleted-dependency-resolves-as-absent
+    - unverified-working-tree-is-never-an-implicit-candidate-dependency-source
+  prohibited:
+    - universal-owner-prefix-requirement-inside-isolated-validated-envelopes
+    - first-or-last-generic-field-selection-as-authority
+    - blind-child-output-concatenation-before-machine-parsing
+    - differential-payload-treated-as-complete-source-tree
+    - universal-operational-claim-before-enumerated-consumer-proof

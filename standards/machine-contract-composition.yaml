@@ -1,0 +1,112 @@
+schema: cerebro-machine-contract-composition-standard/v1
+
+machine_contract_composition:
+  id: CEREBRO-MACHINE-CONTRACT-COMPOSITION-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  scope: SYSTEM_WIDE_MACHINE_CONSUMED_CROSS_BOUNDARY_COMPOSITION
+
+  purpose: >
+    Preserve unambiguous identity, authority and source semantics when machine
+    contracts cross component, process, storage, envelope or nested invocation
+    boundaries without imposing owner prefixes on every internal field.
+
+  governing_invariant: >
+    Every machine-consumed composition boundary shall bind message kind,
+    contract or schema identity, producer, subject or instance identity,
+    cardinality, channel, lifecycle and artifact origin either explicitly in
+    the envelope or unambiguously through a sealed channel contract. A consumer
+    shall fail closed rather than select by accidental order, shared generic
+    field name, implicit filesystem location or unstated baseline assumptions.
+
+  applicability:
+    required_when:
+      - output-crosses-a-component-or-process-boundary
+      - child-output-is-forwarded-through-a-parent-protocol
+      - multiple-message-types-or-producers-share-a-channel
+      - an-artifact-is-resolved-across-payload-baseline-runtime-or-evidence-stores
+      - machine-readable-output-and-human-display-share-a-transport
+    not_required_for:
+      - internal-variables-that-do-not-cross-a-contract-boundary
+      - fields-inside-an-isolated-schema-validated-envelope-when-ownership-is-already-unambiguous
+      - human-only-display-values-that-no-machine-consumer-parses
+
+  required_dimensions:
+    - message_kind
+    - schema_id_and_version
+    - producer_ref
+    - subject_or_instance_ref
+    - correlation_or_attempt_ref_when_multi-step
+    - accepted_cardinality
+    - transport_channel
+    - lifecycle_or_freshness_basis
+    - artifact_origin_and_resolution_rule_when-files-are-consumed
+
+  transport_profiles:
+    structured_isolated_envelope:
+      generic_inner_field_names_allowed: true
+      requires:
+        - validated-schema-or-contract-identity
+        - unambiguous-producer-and-subject-binding
+        - duplicate-and-cardinality-policy
+    flat_or_multiplexed_channel:
+      examples: [stdout-key-value, environment, shared-header-space]
+      requires_one_of:
+        - owner-or-message-type-namespaced-machine-fields
+        - explicit-nested-envelope
+      consumer_rules:
+        - exact-cardinality-is-validated
+        - duplicate-or-ambiguous-values-fail-closed
+        - first-or-last-match-is-not-authority
+    nested_forwarding:
+      parent_must:
+        - encapsulate-or-explicitly-map-child-output
+        - preserve-child-contract-identity
+        - expose-only-parent-owned-machine-fields-on-parent-channel
+      prohibited:
+        - blind-concatenation-followed-by-generic-field-selection
+
+  candidate_artifact_view:
+    definition: VERIFIED_BASELINE_PLUS_SEALED_MANIFEST_OPERATIONS
+    resolution_order:
+      declared_create_or_replace: SEALED_PAYLOAD
+      declared_delete: ABSENT
+      undeclared_path: EXACT_VERIFIED_BASELINE
+    requirements:
+      - candidate-selftests-execute-against-the-logical-candidate-view
+      - payload-presence-is-not-used-as-a-proxy-for-dependency-existence
+      - baseline-fallback-is-bound-to-the-manifest-expected-base-commit
+      - delete-semantics-remain-visible-to-the-resolver
+    prohibited:
+      - require-unchanged-dependencies-to-be-redundantly-copied-into-a-differential-payload
+      - resolve-undeclared-dependencies-from-an-unverified-working-tree
+
+  human_machine_separation:
+    human_friendly_legacy_fields_allowed: true
+    condition: HUMAN_DISPLAY_ONLY
+    machine_consumer_requires: NAMESPACED_FIELD_OR_VALIDATED_ENVELOPE
+    invariant: HUMAN_SIMPLICITY_MUST_NOT_CREATE_MACHINE_AMBIGUITY
+
+  ownership:
+    definitional_authority: Cerebro Source 1.0
+    control_resolution_owner: MCP
+    producer: owns-emitted-contract-and-schema-conformance
+    consumer: owns-selection-cardinality-and-fail-closed-validation
+    host_or_transport: owns-channel-separation-and-lossless-forwarding
+    validator_and_CAC: prove-declared-producer-consumer-compatibility
+    mcp_is_universal_protocol_implementation_owner: false
+
+  activation:
+    global_policy_state: ACTIVE
+    enforcement_model: BOUNDARY_SCOPED
+    first_strict_binding: MACHINE_CONTRACT_COMPOSITION_DELIVERY
+    remaining_boundary_audit: REQUIRED_BEFORE_UNIVERSAL_OPERATIONAL_CLAIM
+
+  invariants:
+    - identity-and-authority-survive-composition
+    - schema-valid-data-selected-from-the-wrong-producer-is-not-valid-consumption
+    - owner-namespacing-is-conditional-not-universal
+    - candidate-view-is-not-equivalent-to-payload-directory
+    - distributed-ownership-is-preserved
+    - no-universal-enforcement-claim-without-enumerated-consumer-proof

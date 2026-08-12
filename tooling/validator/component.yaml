@@ -3,7 +3,7 @@ component:
   id: validator
   name: Validator
   type: tooling
-  version: 1.2.0
+  version: 1.4.0
   status: active-source
 responsibility:
   primary: Kontrollere struktur, konsistens, regler og release-integritet.
@@ -15,7 +15,9 @@ boundaries:
   - block-on-error
   - validate-exact-candidate-in-required-target-runtime
   - produce-target-runtime-validation-receipt
+  - emit-namespaced-target-runtime-receipt-pointer
   - validate-human-continuation-binding-and-final-response-surface
+  - prove-boundary-scoped-machine-contract-composition
   must_not:
   - modify-source
   - silently-ignore-errors
@@ -37,8 +39,9 @@ interfaces:
   - information
   - target-runtime-validation-receipt
   - human-continuation-surface-activation-proof
+  - machine-contract-composition-boundary-proof
 documentation:
   path: README.md
 version:
-  component: 1.2.0
+  component: 1.4.0
   schema: 1
