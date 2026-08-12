@@ -169,17 +169,57 @@ function Assert-PayloadIntegrity {
     }
 }
 
+function Get-GitCanonicalBlobShaFromFile {
+    param(
+        [Parameter(Mandatory=$true)][string]$GitPath,
+        [Parameter(Mandatory=$true)][string]$SourceRoot,
+        [Parameter(Mandatory=$true)][string]$RelativePath,
+        [Parameter(Mandatory=$true)][string]$LiteralPath
+    )
+    if(-not(Test-Path -LiteralPath $LiteralPath -PathType Leaf)){
+        throw ('CANONICAL_BLOB_SOURCE_MISSING:{0}' -f $RelativePath)
+    }
+    $result=Invoke-Git -GitPath $GitPath -ArgumentList @(
+        '-C',$SourceRoot,
+        'hash-object',
+        ('--path={0}' -f $RelativePath),
+        '--',
+        $LiteralPath
+    )
+    if([string]::IsNullOrWhiteSpace($result.Stdout)){
+        throw ('CANONICAL_BLOB_HASH_EMPTY:{0}' -f $RelativePath)
+    }
+    return [string]$result.Stdout
+}
+
 function Test-AllFinalBlobsAtHead {
-    param([string]$GitPath,$PatchManifest)
+    param(
+        [string]$GitPath,
+        $PatchManifest,
+        [string]$SourceRoot=$WorkingSourcePath
+    )
     foreach ($fileEntry in @($PatchManifest.files)) {
+        $relative=[string]$fileEntry.path
         if([string]$fileEntry.operation -eq 'delete'){
-            $listing=Invoke-Git -GitPath $GitPath -ArgumentList @('ls-tree','HEAD','--',[string]$fileEntry.path)
+            $listing=Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$SourceRoot,'ls-tree','HEAD','--',$relative)
             if(-not[string]::IsNullOrWhiteSpace($listing.Stdout)){return $false}
             continue
         }
-        $spec = ('HEAD:{0}' -f [string]$fileEntry.path)
-        $result = Invoke-Git -GitPath $GitPath -ArgumentList @('rev-parse',$spec) -AllowedExitCodes @(0,128)
-        if ($result.ExitCode -ne 0 -or $result.Stdout -ne [string]$fileEntry.final_git_blob_sha) {
+
+        $target=Join-Path -Path $SourceRoot -ChildPath ($relative -replace '/','\')
+        if(-not(Test-Path -LiteralPath $target -PathType Leaf)){return $false}
+
+        if((Get-Sha256 -LiteralPath $target) -ne [string]$fileEntry.sha256){return $false}
+
+        $canonicalBlob=Get-GitCanonicalBlobShaFromFile `
+            -GitPath $GitPath `
+            -SourceRoot $SourceRoot `
+            -RelativePath $relative `
+            -LiteralPath $target
+
+        $spec=('HEAD:{0}' -f $relative)
+        $headBlob=Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$SourceRoot,'rev-parse',$spec) -AllowedExitCodes @(0,128)
+        if($headBlob.ExitCode -ne 0 -or [string]$headBlob.Stdout -ne $canonicalBlob){
             return $false
         }
     }
@@ -452,6 +492,37 @@ function Invoke-LocalGitFixture {
         if(-not(Test-Path -LiteralPath $snapshot.archive_path -PathType Leaf) -or
            -not(Test-Path -LiteralPath $snapshot.receipt_path -PathType Leaf)){
             throw 'FIXTURE_FULL_RECOVERY_SNAPSHOT_FAILED'
+        }
+
+        [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'config','user.name','Cerebro Kernel SelfTest'))
+        [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'config','user.email','cerebro-selftest@example.invalid'))
+        [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'config','core.autocrlf','true'))
+        $lineEndingPath=Join-Path $workPath 'line-endings.txt'
+        [IO.File]::WriteAllText(
+            $lineEndingPath,
+            "ALPHA`r`nBETA`r`n",
+            [Text.UTF8Encoding]::new($false)
+        )
+        $lineEndingSha=Get-Sha256 -LiteralPath $lineEndingPath
+        $rawLineEndingBlob=Get-GitBlobShaFromFile -LiteralPath $lineEndingPath
+        [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'add','--','line-endings.txt'))
+        [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'commit','-m','fixture canonical line ending normalization'))
+        $committedLineEndingBlob=(Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'rev-parse','HEAD:line-endings.txt')).Stdout
+        if($committedLineEndingBlob -eq $rawLineEndingBlob){
+            throw 'FIXTURE_GIT_NORMALIZATION_NOT_EXERCISED'
+        }
+        $fixtureManifest=[pscustomobject]@{
+            files=@(
+                [pscustomobject]@{
+                    path='line-endings.txt'
+                    operation='create'
+                    sha256=$lineEndingSha
+                    final_git_blob_sha=$rawLineEndingBlob
+                }
+            )
+        }
+        if(-not(Test-AllFinalBlobsAtHead -GitPath $GitPath -PatchManifest $fixtureManifest -SourceRoot $workPath)){
+            throw 'FIXTURE_GIT_CLEAN_FILTER_CANONICAL_BLOB_PROOF_FAILED'
         }
     }
     finally {
@@ -1087,6 +1158,7 @@ function Invoke-SelfTest {
     Write-Host 'NATIVE_STDERR_ZERO_EXIT_PASS=TRUE'
     Write-Host 'NATIVE_NONZERO_EXIT_PASS=TRUE'
     Write-Host 'LOCAL_GIT_FIXTURE_PASS=TRUE'
+    Write-Host 'GIT_CLEAN_FILTER_CANONICAL_BLOB_PASS=TRUE'
     Write-Host 'BOUNDED_DELETE_ROLLBACK_PASS=TRUE'
     Write-Host 'FULL_RECOVERY_SNAPSHOT_PASS=TRUE'
     Write-Host 'PAYLOAD_HASH_PASS=TRUE'

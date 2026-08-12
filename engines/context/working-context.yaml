@@ -5854,6 +5854,56 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml"
       sequence: 138
+    -
+      id: "CTX-WISDOM-GIT-WORKTREE-OBJECT-REPRESENTATION-20260813-001"
+      type: "WISDOM_RECORD"
+      scope: "STANDARD-DELIVERY-GIT-IDENTITY-AND-POST-SYNC-PROOF"
+      statement: "Exact working-tree payload bytes and committed Git object bytes are distinct representation layers when Git clean filters are active; delivery must verify each layer with its own identity and prove the transformation boundary instead of assuming their blob hashes are identical."
+      payload:
+        maturity: "CONFIRMED_REAL_FAILURE_EVIDENCE"
+        assessment: "SYSTEMIC_FALSE_FAILURE_IN_POST_SYNC_EQUALITY_PROOF"
+        confidence: "HIGH"
+        implementation_status: "BOUND_TO_DELIVERY_KERNEL_GIT_CLEAN_FILTER_REGRESSION"
+        relevance: "ALL_STANDARD_DELIVERY_CREATE_OR_REPLACE_OPERATIONS"
+        failure_evidence:
+          patch_id: "C02-P002-RESUME-STATE-001"
+          failure_family: "POST_SYNC_EQUALITY_FAILURE"
+          observed_local_remote_commit: "66345896b638211ecccdf2b08ee2734a8a1e2356"
+          working_tree: "CLEAN"
+          affected_paths:
+            - "history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json"
+            - "history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json"
+          root_cause: "RAW_CRLF_PAYLOAD_BLOB_WAS_COMPARED_DIRECTLY_TO_GIT_CLEAN_FILTERED_LF_HEAD_BLOB"
+        verified_pattern:
+          workspace_discovery_raw_blob: "fec5aa92f1f828c29456bebf1410117fb3d8614f"
+          workspace_discovery_canonical_head_blob: "6f21b3de919b89bdf631a0e0eebecebf6823bbd6"
+          dependency_audit_raw_blob: "b91edf7ce11f61f5ab42a130dad25bd2e9ed8056"
+          dependency_audit_canonical_head_blob: "efa0cc44facc46f5fc42c44a0dc9335598f39c39"
+          normalization: "CRLF_TO_LF"
+        machine_rules:
+          - "VERIFY_EXACT_PAYLOAD_BYTES_BEFORE_GIT_COMMIT"
+          - "DERIVE_COMMITTED_OBJECT_IDENTITY_WITH_GIT_HASH_OBJECT_PATH_UNDER_ACTIVE_REPOSITORY_FILTERS"
+          - "COMPARE_HEAD_BLOB_TO_CANONICAL_FILTERED_IDENTITY_AFTER_COMMIT"
+          - "DO_NOT_CLASSIFY_LOCAL_REMOTE_EQUAL_CLEAN_SOURCE_AS_SYNC_FAILURE_SOLELY_BECAUSE_RAW_AND_CANONICAL_BLOB_IDS_DIFFER"
+          - "REGRESSION_MUST_EXERCISE_CRLF_TO_LF_CLEAN_FILTER_BOUNDARY"
+        family_validation:
+          family: "GIT_REPRESENTATION_BOUNDARY"
+          correction_scope: "KERNEL_PROOF_MODEL_NOT_C02_P002_DATA"
+          original_resume_state: "PERSISTED_AND_VALID"
+          original_patch_rerun_required: false
+      provenance:
+        introduced_by_ref: "C02-P002-RESUME-STATE-001-POSTSYNC-FAIL-2026-08-12"
+        basis_refs:
+          - "CEREBRO_PATCH_FAIL(20260812-215509).json"
+          - "66345896b638211ecccdf2b08ee2734a8a1e2356"
+          - "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-EXPECTED-OBSERVED-STATE-MISMATCH-001"
+          - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
+      sequence: 139
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -5979,7 +6029,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-GENERATED-HASH-BOUND-HUMAN-EXECUTION-HANDOFF-20260812-001"
       - "CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001"
       - "CTX-WISDOM-MULTIPATCH-MILESTONE-CLOSEOUT-20260812-001"
-  next_sequence: 139
+      - "CTX-WISDOM-GIT-WORKTREE-OBJECT-REPRESENTATION-20260813-001"
+  next_sequence: 140
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP
