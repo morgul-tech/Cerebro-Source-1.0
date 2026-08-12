@@ -59,6 +59,7 @@ DELIVERY_PROFILE_ALIASES = {
     "STANDARD_C": "FULL",
 }
 DELIVERY_OPERATIONS = {"replace", "create", "delete"}
+CONSTITUTIONAL_STATES = {"CLEAR", "SUSPECTED", "VERIFIED_MATERIAL_BREACH", "VERIFIED_NONMATERIAL_BREACH"}
 
 sys.dont_write_bytecode = True
 
@@ -262,6 +263,66 @@ def resolve_phase_transition(request: dict[str, Any]) -> dict[str, Any]:
         "next_phase": receipt.get("next_phase"),
         "closeout_contract_fingerprint": receipt.get("contract_fingerprint"),
         "reasons": reasons,
+    }
+
+
+def evaluate_constitutional_compliance(request: dict[str, Any]) -> dict[str, Any]:
+    raw = request.get("constitutional_breach_candidates", [])
+    candidates = raw if isinstance(raw, list) else []
+    normalized: list[dict[str, Any]] = []
+    verified_material: list[str] = []
+    suspected: list[str] = []
+    verified_nonmaterial: list[str] = []
+    for index, item in enumerate(candidates):
+        if not isinstance(item, dict):
+            continue
+        article = str(item.get("article_id") or "").strip()
+        state = str(item.get("state") or "SUSPECTED").upper()
+        material = item.get("material") is True
+        evidence_ref = str(item.get("evidence_ref") or "").strip()
+        candidate_id = str(item.get("candidate_id") or f"CBR-{index + 1}").strip()
+        if article not in {f"C-{value:02d}" for value in range(1, 9)}:
+            state = "SUSPECTED"
+        if state not in {"SUSPECTED", "VERIFIED", "DISPROVED", "RESOLVED"}:
+            state = "SUSPECTED"
+        row = {
+            "candidate_id": candidate_id,
+            "article_id": article or "UNRESOLVED",
+            "state": state,
+            "material": material,
+            "evidence_ref": evidence_ref or None,
+        }
+        normalized.append(row)
+        if state == "VERIFIED" and material and evidence_ref:
+            verified_material.append(candidate_id)
+        elif state == "VERIFIED" and evidence_ref:
+            verified_nonmaterial.append(candidate_id)
+        elif state == "SUSPECTED":
+            suspected.append(candidate_id)
+
+    if verified_material:
+        state = "VERIFIED_MATERIAL_BREACH"
+        effect = "BLOCK_AFFECTED_ACTION"
+    elif verified_nonmaterial:
+        state = "VERIFIED_NONMATERIAL_BREACH"
+        effect = "REMEDIATE_WITH_TRACEABILITY"
+    elif suspected:
+        state = "SUSPECTED"
+        effect = "RECORD_AND_INVESTIGATE"
+    else:
+        state = "CLEAR"
+        effect = "NONE"
+    if state not in CONSTITUTIONAL_STATES:
+        raise AssertionError("constitutional-state-noncanonical")
+    return {
+        "schema": "cerebro-constitutional-compliance-decision/v1",
+        "authority": "MCP",
+        "constitution_ref": "mcp/constitution.yaml",
+        "state": state,
+        "effect": effect,
+        "blockers": verified_material,
+        "candidates": normalized,
+        "automatic_constitution_amendment": False,
     }
 
 
@@ -625,6 +686,46 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
     if not basis.get("promotion_basis_verified"):
         return _block_due_to_basis(request, basis)
 
+    constitutional = evaluate_constitutional_compliance(request)
+    if constitutional["state"] == "VERIFIED_MATERIAL_BREACH":
+        objective = str(request.get("objective_ref") or "UNSPECIFIED")
+        digest = sha256_bytes(json.dumps({"objective": objective, "constitutional": constitutional}, sort_keys=True).encode("utf-8"))
+        return {
+            "schema": SCHEMA,
+            "result": "PASS",
+            "authority": "DERIVED_MCP_CONTROL_DECISION",
+            "live_control_authority": True,
+            "normal_control_path_exercised": True,
+            "promotion_basis_verified": True,
+            "promotion_basis": basis,
+            "constitutional_compliance": constitutional,
+            "material_preflight_exercised": False,
+            "material_preflight_passed": None,
+            "material_preflight_precedes_adaptive": True,
+            "adaptive_invoked": False,
+            "mcp_control_decision": {
+                "schema": DECISION_SCHEMA,
+                "control_decision_id": "MCPD-CONSTITUTION-BLOCK-" + digest[:12].upper(),
+                "control_state_ref": "CTRL-CONSTITUTIONAL-COMPLIANCE",
+                "objective_ref": objective,
+                "basis_refs": ["CEREBRO-CONSTITUTION-001"],
+                "basis_fingerprint": digest,
+                "effective_user_config_ref": "CURRENT_EFFECTIVE_CONFIGURATION",
+                "execution_profile_ref": "NONE",
+                "applicable_control_refs": ["CEREBRO-CONSTITUTION-001"],
+                "outcome": "BLOCK",
+                "invalidates": constitutional["blockers"],
+                "verification_requirement": "RESOLVE_VERIFIED_MATERIAL_CONSTITUTIONAL_BREACH",
+                "human_boundary": "NONE",
+                "evidence_scope": "VERIFIED_MATERIAL_CONSTITUTIONAL_BREACH",
+                "authority": "MCP",
+                "control_resolution_surface": CONTROL_SURFACE_ID,
+                "resolved_at": utc_now(),
+            },
+            "execution_profile": None,
+            "continuation_effect": "NONE",
+        }
+
     adaptive = load_module(root / "mcp/adaptive_control_resolver.py", "cerebro_adaptive_control_validated_logic")
     stage = str(request.get("stage") or "UNDERSTAND_FRAME").upper()
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
@@ -746,6 +847,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
         "normal_control_path_exercised": True,
         "promotion_basis_verified": True,
         "promotion_basis": basis,
+        "constitutional_compliance": constitutional,
         "material_preflight_exercised": material,
         "material_preflight_passed": True if material else None,
         "material_preflight_precedes_adaptive": True,
@@ -794,6 +896,28 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
 
     simple = resolve({"objective_ref": "AA004-SIMPLE", "consequence": "LOW", "uncertainty": "LOW"}, root, require_git_ancestry=require_git_ancestry)
     check("canonical-nonmaterial-path-live", simple.get("live_control_authority") is True and simple.get("adaptive_invoked") is True and simple.get("mcp_control_decision", {}).get("outcome") == "CONTINUE")
+    check("constitutional-normal-consumer-clear", simple.get("constitutional_compliance", {}).get("state") == "CLEAR")
+
+    suspected_constitutional = resolve({
+        "objective_ref": "CONSTITUTION-SUSPECTED",
+        "constitutional_breach_candidates": [{"candidate_id": "CBR-S", "article_id": "C-03", "state": "SUSPECTED", "material": True}],
+    }, root, require_git_ancestry=require_git_ancestry)
+    check(
+        "suspected-constitutional-breach-does-not-auto-block",
+        suspected_constitutional.get("constitutional_compliance", {}).get("state") == "SUSPECTED"
+        and suspected_constitutional.get("mcp_control_decision", {}).get("outcome") == "CONTINUE",
+    )
+
+    verified_constitutional = resolve({
+        "objective_ref": "CONSTITUTION-VERIFIED",
+        "constitutional_breach_candidates": [{"candidate_id": "CBR-V", "article_id": "C-05", "state": "VERIFIED", "material": True, "evidence_ref": "EVIDENCE-1"}],
+    }, root, require_git_ancestry=require_git_ancestry)
+    check(
+        "verified-material-constitutional-breach-blocks-before-adaptive",
+        verified_constitutional.get("constitutional_compliance", {}).get("state") == "VERIFIED_MATERIAL_BREACH"
+        and verified_constitutional.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
+        and verified_constitutional.get("adaptive_invoked") is False,
+    )
 
     delivery_cases = [
         (
@@ -1014,6 +1138,9 @@ def activation_probe(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True
         "promotion_contract_verified": basis.get("promotion_contract_verified") is True,
         "direct_resolver_non_live": test_map.get("direct-resolver-remains-non-live", False),
         "canonical_control_surface_live": test_map.get("canonical-nonmaterial-path-live", False),
+        "constitutional_normal_consumer_clear": test_map.get("constitutional-normal-consumer-clear", False),
+        "suspected_constitutional_breach_nonblocking": test_map.get("suspected-constitutional-breach-does-not-auto-block", False),
+        "verified_material_constitutional_breach_blocking": test_map.get("verified-material-constitutional-breach-blocks-before-adaptive", False),
         "delivery_profile_resolution_owned_by_mcp": all(
             test_map.get(name, False)
             for name in (

@@ -4,6 +4,8 @@ reflective_adjustment_loop:
   id: "CEREBRO-REFLECTIVE-ADJUSTMENT-LOOP-001"
   status: "LOCKED"
   maturity: "PROCESS_GOVERNANCE_STANDARD"
+  adaptive_analysis_model_ref: "standards/development/adaptive-analysis-model.yaml"
+  constitutional_learning_boundary_ref: "mcp/constitution.yaml#C-07"
 
   definition: >
     Significant outcomes, failures, corrections, recurring inefficiencies and

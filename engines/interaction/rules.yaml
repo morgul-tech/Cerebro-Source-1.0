@@ -1004,7 +1004,8 @@ rules:
 # BEGIN HUMAN-CONTINUATION-TRIGGER-CONSUMPTION-001
 - id: INT-HCS-001
   owner: interaction
-  authority: constitutional
+  authority: normative
+  constitutional_article_ref: C-06
   priority: critical
   condition:
     user_input_matches_active_short_continuation_trigger: true

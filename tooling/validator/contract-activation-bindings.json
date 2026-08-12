@@ -244,6 +244,18 @@
       "rationale": "Adaptive Quality Workform defines analysis depth and decision assurance policy consumed by development/control, not a standalone execution owner."
     },
     {
+      "standard_id": "STD-ADAPTIVE-ANALYSIS-MODEL",
+      "path": "standards/development/adaptive-analysis-model.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The locked model is registered, parity-validated and activation-proven as a composition of existing analysis, reflection and learning mechanisms. Generic automatic session tagging remains intentionally admin-supervised at current maturity.",
+      "strict_contract_refs": [
+        "CONSTITUTION_AND_ADAPTIVE_ANALYSIS_LOCK"
+      ],
+      "known_gaps": [
+        "durable machine-originated session tags require admin confirmation during the locked calibration maturity"
+      ]
+    },
+    {
       "standard_id": "STD-WISDOM-CONTROL-BINDING",
       "path": "standards/development/wisdom-control-binding.yaml",
       "classification": "OPERATIONAL",
@@ -986,6 +998,83 @@
       }
     },
     {
+      "id": "CONSTITUTION_AND_ADAPTIVE_ANALYSIS_LOCK",
+      "standard_id": "STD-ADAPTIVE-ANALYSIS-MODEL",
+      "classification": "OPERATIONAL",
+      "declaration": "mcp/constitution.yaml",
+      "declaration_tokens": [
+        "CEREBRO-CONSTITUTION-001",
+        "C-07",
+        "NO_SELF_AMENDMENT",
+        "CONSTITUTIONAL_BREACH_CANDIDATE"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "activation_binding_ref: CONSTITUTION_AND_ADAPTIVE_ANALYSIS_LOCK",
+      "implementation": "tooling/validator/constitution_adaptive_lock.py",
+      "implementation_tokens": [
+        "validate_constitution_document",
+        "validate_human_parity",
+        "validate_legacy_consolidation",
+        "validate_model_document"
+      ],
+      "wiring": "mcp/manifest.yaml",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "constitutional_control:",
+        "validator_ref: tooling/validator/constitution_adaptive_lock.py",
+        "parallel_constitutional_authority: PROHIBITED"
+      ],
+      "validation": "tooling/validator/checks.yaml",
+      "validation_tokens": [
+        "constitution_and_adaptive_analysis_lock:",
+        "complete-disposition-for-all-40-former-MCP-and-engine-constitutional-rules",
+        "automatic-source-mutation-is-rejected"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_CONSTITUTION_ADAPTIVE_ANALYSIS_ACTIVATION_PROOF.json",
+        "schema": "cerebro-constitution-adaptive-analysis-activation-proof/v1",
+        "accepted_binding_ids": [
+          "CONSTITUTION_AND_ADAPTIVE_ANALYSIS_LOCK"
+        ],
+        "basis_files": [
+          "mcp/constitution.yaml",
+          "mcp/constitution.md",
+          "standards/development/adaptive-analysis-model.yaml",
+          "history/CONSTITUTION_ADAPTIVE_ANALYSIS_LOCK_20260812.yaml",
+          "mcp/identity.yaml",
+          "mcp/authority.yaml",
+          "mcp/architecture.yaml",
+          "mcp/priorities.yaml",
+          "mcp/activation.yaml",
+          "mcp/boot-architecture-control.yaml",
+          "engines/presentation/rules.yaml",
+          "engines/interaction/rules.yaml",
+          "cerebro.yaml",
+          "mcp/manifest.yaml",
+          "mcp/control-resolution.yaml",
+          "mcp/control_resolution.py",
+          "standards/standards.yaml",
+          "standards/rule-model.yaml",
+          "standards/development/adaptive-quality-workform.yaml",
+          "standards/development/reflective-adjustment-loop.yaml",
+          "standards/development/implementation-learning-loop.yaml",
+          "tooling/validator/checks.yaml",
+          "tooling/validator/contract-activation-bindings.json",
+          "tooling/validator/constitution_adaptive_lock.py"
+        ],
+        "required_true_fields": [
+          "constitution_locked",
+          "machine_human_parity_verified",
+          "legacy_constitutional_rules_consolidated",
+          "parallel_constitutional_authority_absent",
+          "adaptive_analysis_model_locked",
+          "negative_canaries_passed"
+        ],
+        "required_proves_binding": "CONSTITUTION_AND_ADAPTIVE_ANALYSIS_LOCK"
+      }
+    },
+    {
       "id": "ADAPTIVE_MCP_CONTROL_RESOLUTION",
       "standard_id": "STD-MCP",
       "classification": "OPERATIONAL",
@@ -1066,6 +1155,9 @@
           "promotion_contract_verified",
           "direct_resolver_non_live",
           "canonical_control_surface_live",
+          "constitutional_normal_consumer_clear",
+          "suspected_constitutional_breach_nonblocking",
+          "verified_material_constitutional_breach_blocking",
           "delivery_profile_resolution_owned_by_mcp",
           "delivery_profile_adapter_non_deciding",
           "delivery_resolution_fail_closed",

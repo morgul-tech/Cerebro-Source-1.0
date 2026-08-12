@@ -21,62 +21,64 @@ command_resolution:
   stale_derived_input_effect: REJECT_INPUT_CONTINUE_CURRENT_SOURCE
 rules:
 - id: MCP-040
-  authority: constitutional
+  authority: normative
   statement: Oppstartsprotokollen SKAL være ekstern til Cerebro.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-041
-  authority: constitutional
+  authority: normative
   statement: Oppstartsprotokollen SKAL hente Cerebro Manifest fra den autoritative plasseringen.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-042
-  authority: constitutional
+  authority: normative
   statement: Cerebro SKAL IKKE anses som aktiv før angitt release er hentet, validert og lastet.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-043
-  authority: constitutional
+  authority: normative
   statement: Runtime Host SKAL bruke Cerebro Manifest som eneste autoritative inngangspunkt.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-044
-  authority: constitutional
+  authority: normative
   statement: Runtime Host SKAL IKKE aktivere en release som ikke har bestått obligatorisk validering.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-045
-  authority: constitutional
-  statement: Aktivering SKAL opprette en avledet Bootstrap State for source/release-verifikasjon og kontrolloverfÃ¸ring; Runtime State tilhÃ¸rer den pÃ¥fÃ¸lgende Runtime 0.1-invokasjonen.
+  authority: normative
+  statement: Aktivering SKAL opprette en avledet Bootstrap State for source/release-verifikasjon og kontrolloverføring; Runtime State tilhører den påfølgende Runtime 0.1-invokasjonen.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-046
-  authority: constitutional
+  authority: normative
   statement: Kommandoen boot cerebro SKAL alltid resolve til bootCerebro gjennom Source-first authority preflight.
   provenance:
     type: approved-refinement
     basis: PATCH-006 boot authority ambiguity refinement
 - id: MCP-047
-  authority: constitutional
+  authority: normative
   statement: DOCX-filer, CURRENT-filnavn, bibliotekroot, samtaleminne, receipts og handoffs SKAL IKKE konkurrere med Cerebro Source om authority.
   provenance:
     type: approved-refinement
     basis: PATCH-006 boot authority ambiguity refinement
 - id: MCP-048
-  authority: constitutional
+  authority: normative
   statement: Stale derived state SKAL avvises som continuity-input og SKAL IKKE gjenåpne eller blokkere en verifisert gjeldende Source-state.
   provenance:
     type: approved-refinement
     basis: PATCH-006 boot authority ambiguity refinement
 - id: MCP-049
-  authority: constitutional
-  statement: Grønn operativ status SKAL kreve en ACTIVE_CONTROL_TRANSFERRED receipt bundet til gjeldende Source-commit.
+  authority: normative
+  statement: Verifisert operativ Source-status og lokal Runtime-verifikasjon SKAL holdes adskilt. ACTIVE_CONTROL_TRANSFERRED er lokal Runtime-evidens og SKAL IKKE kreves for å erklære verifisert gjeldende Source operativ.
+  constitutional_article_ref: C-03
+  supersedes: MCP-049@PRE_CONSOLIDATION
   provenance:
     type: approved-refinement
     basis: PATCH-006 boot authority ambiguity refinement
@@ -111,7 +113,9 @@ handboot_activation:
   activation_gate:
     required_state_before_handoff: ACTIVE
     required_state_after_control_transfer: ACTIVE_CONTROL_TRANSFERRED
-    operational_requires_control_transfer: true
+    source_operational_requires_control_transfer: false
+    runtime_operational_requires_control_transfer: true
+    universal_source_and_local_runtime_status_separated: true
     partial_activation_allowed: false
 
   handoff_gate:

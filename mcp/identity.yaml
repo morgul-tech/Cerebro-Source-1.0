@@ -16,25 +16,25 @@ release_model:
   runtime_activation_required: true
 rules:
 - id: MCP-001
-  authority: constitutional
+  authority: normative
   statement: Cerebro SKAL være den autoritative samarbeidsplattformen mellom bruker og assistent etter aktivering.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-002
-  authority: constitutional
+  authority: normative
   statement: Cerebro SKAL eksistere som én aktiv Cerebro Release i hver Runtime.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-003
-  authority: constitutional
+  authority: normative
   statement: Cerebro SKAL bygges fra autoritative og versjonerte kildekomponenter.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-004
-  authority: constitutional
+  authority: normative
   statement: En manuelt sammensatt hovedfil SKAL IKKE utgjøre en Cerebro Release.
   provenance:
     type: approved-revision

@@ -1,0 +1,206 @@
+schema: cerebro-adaptive-analysis-model/v1
+
+adaptive_analysis_model:
+  id: CEREBRO-ADAPTIVE-ANALYSIS-MODEL-001
+  version: "1.0.0"
+  status: LOCKED
+  kind: STANDARD
+  authority: NORMATIVE_UNDER_CONSTITUTION
+  constitutional_basis: [C-01, C-03, C-04, C-06, C-07, C-08]
+  decision_record: history/CONSTITUTION_ADAPTIVE_ANALYSIS_LOCK_20260812.yaml
+
+  purpose: >
+    Select the minimum sufficient session-review depth and relevant analysis
+    lenses, preserve material evidence across sessions, synthesize larger
+    patterns at bounded checkpoints, and verify learning by later effect without
+    creating a parallel learning engine or self-amending authority.
+
+  architecture:
+    new_top_level_component: false
+    parallel_learning_engine: PROHIBITED
+    composition:
+      analysis_depth_and_work_stages: standards/development/adaptive-quality-workform.yaml
+      evidence_friction_and_adjustment: standards/development/reflective-adjustment-loop.yaml
+      implementation_failure_learning: standards/development/implementation-learning-loop.yaml
+      relevance_and_history_retrieval: standards/development/relevance-retrieval.yaml
+      final_control_owner: MCP
+
+  maturity:
+    current_mode: ADMIN_SUPERVISED_CALIBRATION
+    admin_may_apply_durable_tags: true
+    cerebro_may_propose_tags: true
+    cerebro_may_persist_unconfirmed_tags: false
+    autonomy_increase_requires:
+    - measured_proposal_acceptance_and_rejection
+    - false_positive_and_false_negative_review
+    - explicit_admin_decision
+    - bounded_reversible_configuration_change
+
+  analysis_lenses:
+    cardinality: ZERO_TO_MANY
+    weighting: [PRIMARY, SECONDARY, SUPPORTING]
+    values:
+      SYSTEM_GOVERNANCE:
+        asks: architecture-authority-ownership-contracts-and-system-coherence
+      EXECUTION:
+        asks: implementation-delivery-failure-recovery-validation-and-operational-flow
+      HUMAN_ALIGNMENT:
+        asks: intent-communication-assumptions-human-boundaries-and-shared-understanding
+      OUTCOME_FIDELITY:
+        asks: whether-the-result-preserves-explicit-content-structure-and-user-defined-success
+    learning_is_a_process_not_a_lens: true
+    multiple_causal_lenses_may_be_primary: true
+
+  session_review_depth:
+    namespace_distinct_from_execution_analysis_depth: true
+    values: [NONE, LIGHT, STANDARD, DEEP]
+    NONE:
+      use_when: no-material-reusable-or-unresolved-signal
+      output: NO_REVIEW_RECORD_REQUIRED
+    LIGHT:
+      use_when: bounded-low-impact-signal-with-low-uncertainty
+      required: [classify-signal, confirm-no-escalation-trigger]
+    STANDARD:
+      use_when: material-learning-opportunity-or-moderate-uncertainty
+      required: [multi-lens-causal-check, evidence-candidate, next-effect-check]
+    DEEP:
+      use_when: architecture-or-high-impact-or-high-uncertainty-or-material-recurrence-or-constitutional-relevance
+      required:
+      - zero-base-alternative-when-architecture-is-material
+      - causal-chain-and-cross-lens-analysis
+      - counterevidence-and-falsification
+      - prior-adjustment-effect-review
+      - explicit-convergence
+      - constitutional-boundary-check
+
+  depth_resolution:
+    inputs:
+    - consequence
+    - uncertainty
+    - reversibility
+    - recurrence
+    - current_friction_state
+    - causal_entanglement
+    - architecture_materiality
+    - constitutional_relevance
+    - evidence_quality
+    - human_time_and_resource_cost
+    rules:
+    - select-minimum-sufficient-depth
+    - optional-analysis-cost-never-reduces-mandatory-assurance
+    - LIGHT-may-escalate-immediately-on-material-discovery
+    - repeated-same-family-unresolved-signal-escalates-at-least-one-level
+    - material-system-architecture-review-is-DEEP
+    - constitutional-breach-candidate-is-DEEP
+    - suspected-breach-does-not-block-until-verified-and-material
+    fixed-lens-to-depth-table: PROHIBITED
+
+  signal_contract:
+    eligible_origins:
+    - ADMIN_TAG
+    - CEREBRO_TAG_PROPOSAL_CONFIRMED_BY_ADMIN
+    - USER_CORRECTION
+    - ASSISTANT_SELF_CORRECTION_DISCLOSED_OR_MATERIAL
+    - VALIDATOR
+    - EXECUTION
+    - VERIFICATION
+    - EFFECT_REVIEW
+    required_fields:
+    - signal_id
+    - session_ref
+    - lens
+    - impact
+    - evidence_ref
+    - observed_state
+    - confirmation_state
+    unconfirmed_machine_proposal_authority: OBSERVATION_ONLY
+    signal_count_creates_truth_or_authority: false
+
+  escalation:
+    signal_states: [NORMAL, WATCH, REVIEW, ESCALATE]
+    constitutional_candidate_event: CONSTITUTIONAL_BREACH_CANDIDATE
+    immediate_review_triggers:
+    - high-impact-signal
+    - constitutional-breach-candidate
+    - repeated-material-correction
+    - prior-adjustment-failed-effect-verification
+    - unresolved-cross-lens-causal-conflict
+    blocking_rule: ONLY_VERIFIED_MATERIAL_CONSTITUTIONAL_OR_GOVERNING_BLOCKER
+
+  cross_session_learning:
+    qualifying_analysis_requires: material-reusable-or-unresolved-evidence
+    trivial_sessions_count_toward_synthesis: false
+    default_synthesis_window: 3
+    default_synthesis_window_is_configuration_not_constitution: true
+    material_trigger_may_synthesize_early: true
+    synthesis_compares:
+    - recurring-causes-not-only-symptoms
+    - loops-and-stalled-progress
+    - human-machine-alignment-patterns
+    - execution-and-contract-failure-families
+    - outcome-fidelity-loss
+    - prior-learning-application-and-effect
+    - counterevidence-and-regression
+    output: BOUNDED_PATTERN_EVIDENCE_AND_ADJUSTMENT_PROPOSAL
+
+  carryover:
+    model: EVIDENCE_BACKED_FRICTION_STATE
+    scalar_poison_or_reputation_score: PROHIBITED
+    blind_time_decay: PROHIBITED
+    WATCH_may_clear_when:
+    - one-qualifying-later-session-has-no-recurrence
+    - applicable-adjustment-effect-is-verified
+    REVIEW_clears_only_after: resolution-and-effect-verification
+    ESCALATE_clears_only_after: admin-reviewed-resolution-and-effect-verification
+    aggregate_counts_and_keep_bounded_recent_refs: true
+
+  learning_and_governance:
+    lesson_lifecycle: [CANDIDATE, PROVISIONAL, CONFIRMED, REVISED, REJECTED]
+    lesson_requires_later_effect_check: true
+    counterevidence_required: true
+    automatic_rule_creation: false
+    automatic_control_promotion: false
+    automatic_source_mutation: false
+    automatic_constitution_amendment: false
+    outputs_are_evidence_and_proposals_not_authority: true
+    persistence_path: next-eligible-source-transaction-or-safe-governance-checkpoint
+
+  human_surface:
+    default_visibility: COMPACT_OR_SILENT
+    explain_when:
+    - analysis-changes-current-direction
+    - material-tag-confirmation-is-requested
+    - control-change-is-recommended
+    - human-decision-boundary-is-reached
+    machine_state_must_not_be_retyped_by_user: true
+
+  acceptance_scenarios:
+  - trivial-preference-session-resolves-NONE-or-LIGHT-without-governance-noise
+  - long-corrective-patch-session-selects-EXECUTION-and-proportionate-review
+  - early-human-misalignment-causing-code-rework-selects-HUMAN_ALIGNMENT-and-EXECUTION
+  - explicit-output-drift-selects-OUTCOME_FIDELITY
+  - LIGHT-material-discovery-escalates
+  - three-qualifying-analyses-open-bounded-cross-session-synthesis
+  - high-impact-signal-opens-synthesis-without-waiting-for-window
+  - repeated-confirmed-tag-proposals-inform-calibration-but-do-not-grant-autonomy
+  - counterevidence-can-narrow-revise-or-reject-a-lesson
+  - constitutional-breach-candidate-cannot-self-amend-or-auto-block-without-verification
+
+  lock:
+    decision: LOCK
+    locked_elements:
+    - four-lens-multi-label-model
+    - adaptive-session-review-depth-with-runtime-escalation
+    - admin-supervised-current-maturity
+    - evidence-backed-cross-session-carryover
+    - bounded-three-qualifying-analysis-default-synthesis-window
+    - early-material-synthesis
+    - effect-and-counterevidence-based-learning
+    - no-parallel-engine
+    - no-automatic-authority-or-source-mutation
+    configurable_without_model_amendment:
+    - default_synthesis_window
+    - bounded_signal_retention
+    - user_visibility_preferences
+    - calibrated_tag_proposal_thresholds
+    amendment_requires: explicit-admin-decision-and-regression-validation

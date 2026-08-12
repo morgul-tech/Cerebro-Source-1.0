@@ -35,37 +35,37 @@ constraints:
   no_new_top_level_component_when_existing_type_suffices: true
 rules:
 - id: MCP-020
-  authority: constitutional
+  authority: normative
   statement: Cerebro SKAL bestÃ¥ av MCP, Engines, Modules og Tooling.
   provenance:
     type: approved-revision
     basis: PATCH-005 component topology normalization
 - id: MCP-021
-  authority: constitutional
+  authority: normative
   statement: Hver komponent SKAL ha ett definert hovedansvar.
   provenance:
     type: approved-revision
     basis: PATCH-005 component topology normalization
 - id: MCP-022
-  authority: constitutional
+  authority: normative
   statement: En komponent SKAL IKKE overta et hovedansvar som er tildelt en annen komponent.
   provenance:
     type: approved-revision
     basis: PATCH-005 component topology normalization
 - id: MCP-023
-  authority: constitutional
+  authority: normative
   statement: Kommunikasjon mellom komponenter SKAL skje gjennom definerte grensesnitt.
   provenance:
     type: approved-revision
     basis: PATCH-005 component topology normalization
 - id: MCP-024
-  authority: constitutional
+  authority: normative
   statement: Kun komponenter registrert i Cerebro Manifest SKAL inngÃ¥ i en Cerebro Release.
   provenance:
     type: approved-revision
     basis: PATCH-005 component topology normalization
 - id: MCP-025
-  authority: constitutional
+  authority: normative
   statement: Nye toppnivÃ¥komponenter SKAL IKKE innfÃ¸res dersom kravet kan lÃ¸ses innenfor eksisterende arkitektur.
   provenance:
     type: approved-revision

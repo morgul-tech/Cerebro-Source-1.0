@@ -14,6 +14,13 @@ control_resolution:
     existing material/relevance control with the exact AA-003 shadow-validated
     adaptive resolver logic without moving control intelligence into Runtime or
     creating a parallel Adaptive Engine.
+  constitutional_control:
+    contract_ref: mcp/constitution.yaml
+    normal_consumer: mcp/control_resolution.py#evaluate_constitutional_compliance
+    invocation: EVERY_CANONICAL_CONTROL_RESOLUTION
+    verified_material_breach_effect: BLOCK
+    suspected_breach_effect: RECORD_AND_INVESTIGATE
+    automatic_constitution_amendment: PROHIBITED
   promotion_basis:
     invariant: PROMOTION_MUST_REFERENCE_EXACT_SHADOW_VALIDATED_CANDIDATE_IDENTITY
     source_commit: 810a010d3a3395217b8263b3701b3e7d1c31ff33
@@ -71,6 +78,7 @@ control_resolution:
     required_schema: cerebro-aa004-mcp-control-activation-proof/v1
     requires_existing_evidence_refresh_before_closure: true
   invariants:
+    - CONSTITUTIONAL_COMPLIANCE_PRECEDES_ADAPTIVE_EXECUTION
     - PROMOTION_MUST_REFERENCE_EXACT_SHADOW_VALIDATED_CANDIDATE_IDENTITY
     - PROMOTION_BASIS_IDENTITY_AND_CURRENT_LIFECYCLE_CONTRACT_SEMANTICS_ARE_SEPARATELY_VERIFIED
     - WORKTREE_REPRESENTATION_DOES_NOT_REDEFINE_GIT_BLOB_IDENTITY

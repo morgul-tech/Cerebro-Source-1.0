@@ -413,7 +413,8 @@ rules:
 
 - id: PRE-023
   owner: presentation
-  authority: constitutional
+  authority: normative
+  constitutional_article_ref: C-06
   priority: critical
   condition:
     next_action:

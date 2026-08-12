@@ -1610,3 +1610,36 @@ human_execution_handoff_transport:
     - hand-authored-exact-shell-command-for-standard-delivery
     - artifact-selection-by-visible-filename
     - claim-that-source-policy-can-intercept-every-external-renderer-or-clipboard
+
+constitution_and_adaptive_analysis_lock:
+  introduced_by: CEREBRO-CONSTITUTION-ADAPTIVE-ANALYSIS-LOCK-20260812
+  severity: error
+  owner: tooling.validator
+  constitution_ref: mcp/constitution.yaml
+  human_representation_ref: mcp/constitution.md
+  adaptive_model_ref: standards/development/adaptive-analysis-model.yaml
+  validator: tooling/validator/constitution_adaptive_lock.py
+  invariants:
+    - one-canonical-machine-constitution-and-one-semantic-human-representation
+    - exactly-eight-locked-constitutional-articles
+    - complete-disposition-for-all-40-former-MCP-and-engine-constitutional-rules
+    - no-parallel-constitutional-authority-remains
+    - adaptive-analysis-composes-existing-mechanisms-without-parallel-engine
+    - canonical-MCP-control-resolution-consumes-constitutional-compliance-before-adaptive-execution
+    - session-review-depth-is-proportional-and-may-escalate
+    - cross-session-learning-is-bounded-evidence-backed-and-effect-verified
+    - analysis-model-cannot-amend-constitution-or-increase-its-own-authority
+  required_canaries:
+    - semantic-fingerprint-tamper-is-rejected
+    - human-machine-representation-drift-is-rejected
+    - duplicate-article-id-is-rejected
+    - incomplete-legacy-migration-is-rejected
+    - remaining-parallel-constitutional-authority-is-rejected
+    - unlocked-adaptive-model-is-rejected
+    - automatic-source-mutation-is-rejected
+  prohibited:
+    - distributed-parallel-constitutional-rule-set
+    - adaptive-analysis-as-new-top-level-component
+    - fixed-lens-to-depth-authority
+    - raw-score-as-learning-authority
+    - automatic-rule-control-source-or-constitutional-mutation

@@ -13,12 +13,20 @@ rule_model:
 
   definitional_authority: Cerebro Source 1.0
 
+  constitutional_authority:
+    canonical_constitution: mcp/constitution.yaml
+    human_representation: mcp/constitution.md
+    highest_internal_control: true
+    parallel_constitutional_authority: PROHIBITED
+    distributed_pre_consolidation_MCP_rules: RECLASSIFIED_AS_NORMATIVE_IMPLEMENTING_CONTROLS
+
   authority_classes:
     constitutional:
       meaning: highest internal Cerebro control rule class
       defined_by: Cerebro Source 1.0
       operationally_enforced_by: MCP
       does_not_outrank_source: true
+      canonical_definition_ref: mcp/constitution.yaml
     normative:
       meaning: binding policy within its declared scope
     operational:

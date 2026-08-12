@@ -13,6 +13,12 @@ adaptive_quality_workform:
     the work while preserving explicit challenge, convergence, verification,
     and calibrated decision readiness.
 
+  adaptive_session_review:
+    locked_model_ref: standards/development/adaptive-analysis-model.yaml
+    relationship: EXECUTION_ANALYSIS_DEPTH_AND_SESSION_REVIEW_DEPTH_ARE_DISTINCT_BUT_COORDINATED
+    final_control_owner: MCP
+    parallel_analysis_engine: PROHIBITED
+
   canonical_stages:
     - UNDERSTAND_FRAME
     - EXPLORE_RESEARCH

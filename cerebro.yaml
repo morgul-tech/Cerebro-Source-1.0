@@ -12,6 +12,7 @@ source:
 mcp:
   path: mcp/
   manifest: mcp/manifest.yaml
+  constitution: mcp/constitution.yaml
   standard: standards/mcp.yaml
   execution_surface_resolution: mcp/execution-surface-resolution.yaml
   version: 1.3.0
@@ -72,6 +73,7 @@ standards:
   machine_contract_composition: standards/machine-contract-composition.yaml
   project_status: standards/project-status.yaml
   adaptive_quality_workform: standards/development/adaptive-quality-workform.yaml
+  adaptive_analysis_model: standards/development/adaptive-analysis-model.yaml
   wisdom_control_binding: standards/development/wisdom-control-binding.yaml
   relevance_retrieval: standards/development/relevance-retrieval.yaml
   material_commitment_preflight: standards/development/material-commitment-preflight.yaml

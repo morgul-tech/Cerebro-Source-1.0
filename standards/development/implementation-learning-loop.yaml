@@ -4,6 +4,8 @@ implementation_learning_loop:
   version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
+  adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
+  constitutional_learning_boundary_ref: mcp/constitution.yaml#C-07
 
   trigger:
   - implementation-failure

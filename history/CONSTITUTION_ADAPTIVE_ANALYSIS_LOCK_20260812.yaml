@@ -1,0 +1,56 @@
+schema: cerebro-governance-decision-record/v1
+
+decision:
+  id: CEREBRO-CONSTITUTION-ADAPTIVE-ANALYSIS-LOCK-20260812
+  date: 2026-08-12
+  status: LOCKED
+  decision_owner: ADMIN
+  source_basis_commit: ca4764781d991e8087a13ffdcdd176388f1269be
+  decisions:
+  - consolidate-all-constitutional-authority-into-mcp-constitution
+  - retain-one-constitution-with-machine-and-human-representations
+  - reclassify-distributed-MCP-rules-as-normative-implementing-controls
+  - replace-the-MCP-049-source-runtime-status-conflation
+  - lock-the-adaptive-analysis-model-as-a-composition-of-existing-mechanisms
+  - retain-admin-supervised-tag-calibration-at-current-maturity
+  - use-four-multi-label-analysis-lenses
+  - use-proportionate-session-review-depth-with-evidence-driven-escalation
+  - synthesize-cross-session-patterns-after-three-qualifying-analyses-by-default
+  - permit-early-synthesis-on-material-signals
+  - require-later-effect-and-counterevidence-before-strengthening-learning
+  - prohibit-parallel-learning-engine-self-amendment-and-automatic-authority-growth
+
+  problem_consolidation:
+    observed:
+    - constitutional-authority-was-distributed-across-40-MCP-and-engine-rules
+    - existing-adaptive-quality-reflection-and-implementation-learning-were-not-session-orchestrated
+    - fixed-depth-or-analyze-every-session-would-waste-resources
+    - raw-score-carryover-would-be-lossy-and-risk-self-reinforcement
+    - learning-without-effect-check-could-confirm-the-system-own-errors
+    conclusion: >
+      The smallest coherent solution is one constitutional envelope and one
+      adaptive analysis standard that composes existing mechanisms. Stable
+      invariants belong in the Constitution; lenses, thresholds, windows and
+      persistence mechanics remain subordinate and adjustable.
+
+  alternatives_rejected:
+  - alternative: new-parallel-analysis-or-learning-engine
+    reason: duplicates-existing-ownership-and-increases-system-cost
+  - alternative: put-complete-adaptive-model-mechanics-in-constitution
+    reason: would-freeze-adjustable-implementation-policy
+  - alternative: automatic-analysis-after-every-session
+    reason: disproportionate-cost-and-high-noise
+  - alternative: fixed-one-lens-per-session
+    reason: loses-cross-lens-causal-chains
+  - alternative: automatic-tag-persistence-and-rule-promotion
+    reason: current-maturity-does-not-justify-autonomous-authority
+  - alternative: raw-points-with-blind-decay
+    reason: loses-evidence-severity-resolution-and-effect-context
+
+  verification_requirements:
+  - machine-human-constitution-semantic-parity
+  - complete-40-rule-consolidation-ledger
+  - no-remaining-parallel-constitutional-authority
+  - adaptive-model-lock-and-constitutional-boundary-validation
+  - negative-tamper-canaries
+  - source-registration-and-activation-proof

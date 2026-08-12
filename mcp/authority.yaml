@@ -25,37 +25,39 @@ authority:
     authority: evidence-only
 rules:
 - id: MCP-010
-  authority: constitutional
-  statement: MCPs konstitusjonelle regler SKAL ha hÃ¸yeste interne kontrollautoritet i Cerebro, men SKAL vÃ¦re definert av Cerebro Source og SKAL IKKE representeres som autoritet over Source.
+  authority: normative
+  statement: Den kanoniske grunnloven i mcp/constitution.yaml SKAL ha høyeste interne kontrollautoritet i Cerebro, men SKAL være definert av Cerebro Source og SKAL IKKE representeres som autoritet over Source.
+  constitutional_article_ref: C-02
+  supersedes: MCP-010@PRE_CONSOLIDATION
   provenance:
     type: approved-revision
     basis: PATCH-005 authority normalization
 - id: MCP-011
-  authority: constitutional
+  authority: normative
   statement: Brukerens eksplisitte beslutninger SKAL kunne overstyre normative regler i Engines, Modules og bruker-konfigurasjon innenfor gyldig scope.
   provenance:
     type: approved-revision
     basis: PATCH-005 authority normalization
 - id: MCP-012
-  authority: constitutional
-  statement: Brukerens eksplisitte beslutninger SKAL IKKE overstyre MCPs konstitusjonelle regler mens arbeidet representeres som Cerebro-kontrollert operasjon.
+  authority: normative
+  statement: Brukerens eksplisitte beslutninger SKAL IKKE overstyre den kanoniske grunnloven mens arbeidet representeres som Cerebro-kontrollert operasjon.
   provenance:
     type: approved-revision
     basis: PATCH-005 authority normalization
 - id: MCP-013
-  authority: constitutional
+  authority: normative
   statement: En aktiv overstyring SKAL registreres i effektiv kontrolltilstand og SKAL IKKE skape Source-autoritet.
   provenance:
     type: approved-revision
     basis: PATCH-005 authority normalization
 - id: MCP-014
-  authority: constitutional
+  authority: normative
   statement: En overstyring SKAL identifisere overstyrt regel eller konfigurasjon, ny beslutning, beslutningstidspunkt, gyldighetsomrÃ¥de og status.
   provenance:
     type: approved-revision
     basis: PATCH-005 authority normalization
 - id: MCP-015
-  authority: constitutional
+  authority: normative
   statement: En overstyring SKAL kunne oppheves gjennom en ny eksplisitt brukerbeslutning.
   provenance:
     type: approved-revision

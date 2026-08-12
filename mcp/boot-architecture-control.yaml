@@ -2,7 +2,8 @@ schema: cerebro-mcp-extension/v1
 mcp_extension:
   id: MCP-BOOT-ARCHITECTURE-CONTROL-001
   status: ACTIVE
-  authority: constitutional
+  authority: normative
+  constitutional_basis: [C-02, C-03, C-04, C-05]
   owner: MCP
   source: Cerebro Source 1.0
   loaded_via: mcp/manifest.yaml
@@ -24,35 +25,49 @@ mcp_extension:
 
   rules:
   - id: MCP-060
+    authority: normative
+    constitutional_article_ref: C-03
     statement: >
       CEREBRO_SOURCE_OPERATIONAL is the universal green Cerebro state when current
       authoritative Source identity, exact commit and boot-critical contracts are
       freshly verified. It does not require Working Source or local runtime access.
   - id: MCP-061
+    authority: normative
+    constitutional_article_ref: C-03
     statement: >
       LOCAL_MACHINE_OPERATIONAL_VERIFIED is an additional capability-conditioned
       state and requires current-commit-bound Working Source equality, runtime control
       transfer and independent machine proof.
   - id: MCP-062
+    authority: normative
+    constitutional_article_ref: C-03
     statement: >
       Absence of Working Source or local runtime access on a platform where those
       capabilities are unavailable by design is EXPECTED_CAPABILITY_ABSENCE and must
       not degrade or block CEREBRO_SOURCE_OPERATIONAL.
   - id: MCP-063
+    authority: normative
+    constitutional_article_ref: C-05
     statement: >
       For universal Source boot, required engines and modules must be resolved and
       integrity-bound to the pinned Source commit; full semantic rule bodies are
       loaded on demand when the concrete task requires them.
   - id: MCP-064
+    authority: normative
+    constitutional_article_ref: C-04
     statement: >
       Boot must be evidence-minimal, commit-pinned, cache-aware, relevance-driven,
       latency-aware and capability-aware.
   - id: MCP-065
+    authority: normative
+    constitutional_article_ref: C-03
     statement: >
       Freshness-dependent state must be verified fresh. Immutable validation evidence
       may be reused only when bound to the exact freshly verified Source commit and
       must never become authority.
   - id: MCP-066
+    authority: normative
+    constitutional_article_ref: C-04
     statement: >
       No verification may remain on the user's synchronous critical wait path unless
       its outcome can materially change the current authority, Source-integrity,

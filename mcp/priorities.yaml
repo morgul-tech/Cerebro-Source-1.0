@@ -1,6 +1,7 @@
 schema: cerebro-priority/v1
 priority_order:
-- mcp_constitutional
+- cerebro_constitution
+- mcp_normative
 - active_release
 - explicit_user_decision
 - active_context
@@ -16,31 +17,31 @@ conflict_resolution:
   - control_stop
 rules:
 - id: MCP-030
-  authority: constitutional
+  authority: normative
   statement: Regelprioritet SKAL følge den autoritative prioritetsrekkefølgen i MCP.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-031
-  authority: constitutional
+  authority: normative
   statement: En mer spesifikk regel SKAL ha forrang foran en mer generell regel på samme autoritetsnivå.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-032
-  authority: constitutional
+  authority: normative
   statement: En nyere regel SKAL bare erstatte en eldre regel dersom erstatningen er uttrykkelig deklarert.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-033
-  authority: constitutional
+  authority: normative
   statement: En uløst normativ konflikt SKAL utløse kontrollstopp dersom konflikten kan påvirke resultatet.
   provenance:
     type: approved-revision
     basis: Godkjent Cerebro-arkitektur og migrering fra MASTER_v1.1 DEL 0–2
 - id: MCP-034
-  authority: constitutional
+  authority: normative
   statement: Validator SKAL avdekke normative konflikter før en Cerebro Release kan låses.
   provenance:
     type: approved-revision

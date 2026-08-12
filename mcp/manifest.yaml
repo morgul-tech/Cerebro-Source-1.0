@@ -12,9 +12,11 @@ mcp:
   execution_profile_owner: MCP
   defined_by: Cerebro Source 1.0
   required_extensions:
+  - mcp/constitution.yaml
   - mcp/boot-architecture-control.yaml
   - mcp/execution-surface-resolution.yaml
   - standards/development/material-commitment-preflight.yaml
+  - standards/development/adaptive-analysis-model.yaml
   - mcp/adaptive-control-resolver.yaml
   - mcp/control-resolution.yaml
   - standards/human-continuation-surface.yaml
@@ -30,6 +32,7 @@ position:
   - decision_freshness_resolution
   - material_commitment_preflight
   - analysis_process
+  - constitutional_compliance
   - decision_process
   - iteration
   - validation_selection
@@ -43,6 +46,16 @@ position:
   - domain_rules
   - generated_implementation
 control_adapters:
+  constitutional_control:
+    contract_ref: mcp/constitution.yaml
+    human_representation_ref: mcp/constitution.md
+    adaptive_analysis_ref: standards/development/adaptive-analysis-model.yaml
+    validator_ref: tooling/validator/constitution_adaptive_lock.py
+    status: ACTIVE_LOCKED
+    decision_owner_for_amendment: ADMIN
+    activation_evidence_required: true
+    activation_binding_ref: CONSTITUTION_AND_ADAPTIVE_ANALYSIS_LOCK
+    parallel_constitutional_authority: PROHIBITED
   material_commitment_preflight:
     contract_ref: standards/development/material-commitment-preflight.yaml
     implementation_ref: mcp/material_commitment_preflight.py

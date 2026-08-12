@@ -94,6 +94,9 @@ documents:
 - id: STD-ADAPTIVE-QUALITY-WORKFORM
   path: standards/development/adaptive-quality-workform.yaml
   required: true
+- id: STD-ADAPTIVE-ANALYSIS-MODEL
+  path: standards/development/adaptive-analysis-model.yaml
+  required: true
 - id: STD-WISDOM-CONTROL-BINDING
   path: standards/development/wisdom-control-binding.yaml
   required: true
