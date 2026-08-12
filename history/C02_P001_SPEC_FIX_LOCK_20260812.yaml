@@ -1,0 +1,270 @@
+schema: cerebro-governance-decision-record/v1
+decision:
+  id: C02-P001-SPEC-FIX-LOCK-20260812
+  date: '2026-08-12'
+  status: LOCKED
+  decision_owner: ADMIN
+  source_basis_commit: bdd2a7e557189ceab1813da0bb5e1c0206b0db8d
+  milestone:
+    id: CEREBRO-0.2-FOUNDATION
+    human_name: Cerebro 0.2 Foundation
+  patch:
+    canonical_id: C02-P001
+    human_name: Canonical Foundation
+    status: SPEC_AND_FIX_LOCKED
+    implementation_status: NOT_STARTED
+    required_quality: DEEP
+  scope:
+    included:
+    - canonical-descriptor-envelope
+    - canonical-kinds-term-command-operator-capability-location-change-version-axis
+    - terminology-lifecycle-cleanup
+    - environment-names-temporaris-singularity-tranquility
+    - human-control-language
+    - uppercase-only-operators
+    - grouping-parentheses
+    - hard-literal-double-quotes
+    - strict-full-parse-no-partial-execution
+    - universal-read-only-introspection-question-mark
+    - command-descriptors
+    - capability-descriptors-and-state-separation
+    - version-axis-separation
+    - change-lineage-patch-wave-payload-followups
+    - human-name-plus-canonical-id-separation
+    - deep-assurance-continuity
+    - machine-readable-quality-trace
+    - presentation-quality-trace-projection
+    - assurance-and-negative-canaries
+    excluded:
+    - physical-D-Cerebro-workspace-migration
+    - legacy-folder-moves-or-deletion
+    - runtime-py-implementation
+    - resident-runtime
+    - new-top-level-engine
+    - capability-engine
+    - language-engine
+    - activity-engine
+  environment_names:
+    canonical:
+      Temporaris: CANDIDATE_ENVIRONMENT
+      Singularity: WORKING_SOURCE
+      Tranquility: PUBLISHED_SOURCE
+    exact_count: 3
+  grammar:
+    operators:
+    - AND
+    - OR
+    - NOT
+    - THEN
+    - IF
+    - ELSE
+    operator_case: UPPERCASE_ONLY
+    grouping: PARENTHESES
+    literal_boundary: DOUBLE_QUOTES
+    introspection: QUESTION_MARK
+    mixed_operator_families_require_explicit_grouping: true
+    invalid_canonical_expression_partial_execution: PROHIBITED
+  capability_state_dimensions:
+  - DEFINED
+  - IMPLEMENTED
+  - AVAILABLE
+  - AUTHORIZED
+  - VERIFIED
+  invariants:
+  - availability-does-not-create-authorization
+  - undeclared-capability-does-not-become-executable
+  - human-name-does-not-create-identity-or-authority
+  - folder-path-does-not-create-change-identity
+  - environment-name-does-not-create-source-authority
+  change_lineage:
+    patch_contains:
+    - WAVE
+    - FOLLOWUP
+    wave_contains:
+    - PAYLOAD
+    followup_types:
+    - HOTFIX
+    - CORRECTION
+    - ADDON
+    machine_identity_example: C02-P001
+    human_display_example: PATCH-001 - Canonical Foundation
+  version_architecture:
+    separate_axes:
+    - CEREBRO_PRODUCT_MATURITY
+    - SOURCE_VERSION
+    - RUNTIME_VERSION
+    - RELEASE_VERSION
+    - COMPONENT_VERSION
+    - CONTRACT_VERSION
+    target_product_maturity: 0.2.0
+    runtime_0_1_unchanged: true
+    blind-source-1.0-renumbering: PROHIBITED
+  deep_assurance_continuity:
+    owner: standards/development/adaptive-quality-workform.yaml
+    applies_when_parent_work_resolves_to_deep: true
+    material-child-work-may-not-silently-downgrade: true
+    downgrade_requires_explicit-depth-reresolution: true
+    full-deep-recursion-for-every-microstep: false
+    material-transition_assurance_required:
+    - REFINE
+    - CRITIQUE
+    - CONVERGE
+    major-phase-boundary_full_deep_workform_required: true
+  quality_trace:
+    purpose: machine-readable proof-of-required-quality-stages-without-private-reasoning
+    presentation_owner: presentation
+    presentation_may_not_manufacture-stage-pass: true
+    basis-change-invalidates-affected-downstream-stages: true
+    stage_states:
+    - PENDING
+    - IN_PROGRESS
+    - PASS
+    - BLOCKED
+    - STALE
+    canonical_stages:
+    - UNDERSTAND_FRAME
+    - EXPLORE_RESEARCH
+    - REFINE
+    - CRITIQUE
+    - COMPARE_CONVERGE
+    - DECIDE
+    - EXECUTE_GENERATE
+    - VERIFY
+    - LEARN
+  waves:
+  - id: WAVE-A
+    human_name: Canonical Model
+  - id: WAVE-B
+    human_name: Human Control Language
+  - id: WAVE-C
+    human_name: Commands and Capabilities
+  - id: WAVE-D
+    human_name: Identity Version and Change Lineage
+  - id: WAVE-E
+    human_name: Assurance Continuity
+  acceptance:
+  - canonical-model-single-coherent-authoritative-semantic-model
+  - no-giant-parallel-registry-truth
+  - terminology-active-superseded-historical-separation
+  - exact-three-environment-names
+  - uppercase-operator-canaries
+  - literal-boundary-canaries
+  - malformed-canonical-expression-no-partial-execution
+  - introspection-resolves-canonical-descriptors
+  - capability-state-separation
+  - availability-not-authorization
+  - lineage-identity-independent-from-folder-path
+  - version-axes-separated
+  - runtime-0.1-unchanged
+  - deep-assurance-continuity-enforced
+  - quality-trace-stage-pass-evidence-bound
+  - stale-basis-invalidates-dependent-assurance
+  - presentation-cannot-manufacture-assurance
+  - long-context-cannot-drop-governing-contract
+  - session-boundary-cannot-drop-governing-contract
+  - context-compaction-cannot-drop-governing-contract
+  - persistent-effect-cannot-complete-in-chat-only-state
+  - loose-artifact-cannot-substitute-for-required-source-persistence
+  - STANDARD-cannot-produce-alternate-handoff
+  - STANDARD-handoff-shape-exactly-one-zip-one-launcher-one-generated-command
+  - completion-claim-cannot-exceed-verified-persistence-state
+  - stale-control-basis-forces-reresolution
+  - presentation-cannot-manufacture-conformance
+  implementation_boundary:
+    next_patch_after_C02-P001: C02-P002
+    C02-P002_human_name: Workspace Convergence
+    C02-P002_owns_physical_workspace_migration: true
+  lock:
+    decision: LOCK
+    locked_scope:
+    - C02-P001_SPEC
+    - C02-P001_ASSURANCE_CONTINUITY_FIX
+    scope_change_requires:
+    - EXPLICIT_ADMIN_DECISION
+    - MATERIAL_DELTA
+    - RENEWED_DEEP_ASSURANCE
+    implementation_may_refine_nonmaterial_details_without_reopening_architecture: true
+    implementation_must_use_governing_delivery_contract: true
+    implementation_status: PENDING_C02_P001
+  lock_intent:
+    prior_unfulfilled_persistence_intent: LOCK C02-P001 SPEC
+    current_user_command: LOCK C02-P001 FIX
+    resolution: CONSOLIDATE_IN_ONE_GOVERNANCE_LOCK_RECORD
+    implementation_effect: SPEC_AND_FIX_LOCK_ONLY
+    implementation_of_fix: PENDING_C02_P001
+  assurance_continuity:
+    wave_ref: WAVE-E
+    human_name: Assurance Continuity
+    new_top_level_component: false
+    ownership:
+      deep_assurance_continuity: standards/development/adaptive-quality-workform.yaml
+      execution_contract_continuity: MCP_AND_CONTROL_ARCHITECTURE
+      persistence_effect_binding: CANONICAL_COMMAND_AND_CONTROL_MODEL
+      standard_handoff_enforcement: HUMAN_CONTINUATION_SURFACE_AND_CHANGE_DELIVERY
+      completion_claim_integrity: PRESENTATION
+      conformance_trace: DERIVED_PRESENTATION_ONLY
+    execution_contract_continuity:
+      governing_contract_remains_active_until:
+      - OPERATION_COMPLETE
+      - BASIS_STALE
+      - MCP_EXPLICIT_RERESOLUTION
+      cannot_be_weakened_by:
+      - CONVERSATION_LENGTH
+      - SESSION_BOUNDARY
+      - CONTEXT_COMPACTION
+      - PRESENTATION_CHOICE
+      - IMPLEMENTATION_CONVENIENCE
+      - SUBTASK_TRANSITION
+      boundary_revalidation_required:
+      - BEFORE_ARTIFACT_DESIGN
+      - BEFORE_HUMAN_HANDOFF
+      - BEFORE_MUTATION
+      - BEFORE_PUBLICATION
+      - BEFORE_COMPLETION_CLAIM
+    persistence_effect_binding:
+      model: EFFECT_CLASS_NOT_LITERAL_COMMAND_WORD
+      persistent_effect_class: PERSISTENT_CEREBRO_STATE
+      required_sequence:
+      - RESOLVE_GOVERNING_PERSISTENCE_AND_DELIVERY_CONTRACT
+      - EXECUTE_REQUIRED_PERSISTENCE_PATH
+      - VERIFY_DURABLE_RESULT
+      - ALLOW_PERSISTENT_COMPLETION_CLAIM
+      chat_state_satisfies_persistence: false
+      loose_user_artifact_satisfies_source_persistence: false
+    standard_handoff_enforcement:
+      when_delivery_profile: STANDARD
+      exact_user_surface:
+        bundle_zip: 1
+        launcher_powershell: 1
+        generated_copyable_command: 1
+      alternate_handoff: PROHIBITED
+      direct_remote_mutation_substitute: PROHIBITED
+      sealed_package_identity_required: true
+      handoff_assurance_required: true
+    completion_claim_integrity:
+      principle: CLAIM_STRENGTH_MUST_NOT_EXCEED_VERIFIED_PERSISTENCE_STATE
+      presentation_may_infer_completion_without_evidence: false
+      admin_decision_without_source_persistence: DECIDED_PERSISTENCE_PENDING
+      locked_saved_applied_persisted_require_verified_effect: true
+    conformance_trace:
+      authority: DERIVED_EVIDENCE_VIEW
+      must_separate:
+      - QUALITY_ASSURANCE
+      - EXECUTION_CONFORMANCE
+      - PERSISTENCE_STATE
+      presentation_cannot_manufacture_pass: true
+      basis_change_invalidates_dependent_pass: true
+    canonical_control_ids:
+    - DEEP_ASSURANCE_CONTINUITY
+    - EXECUTION_CONTRACT_CONTINUITY
+    - PERSISTENCE_EFFECT_BINDING
+    - STANDARD_HANDOFF_ENFORCEMENT
+    - COMPLETION_CLAIM_INTEGRITY
+    - CONFORMANCE_TRACE
+  provenance:
+    source_basis_commit: bdd2a7e557189ceab1813da0bb5e1c0206b0db8d
+    admin_commands:
+    - LOCK C02-P001 SPEC
+    - REFINE C02-P001 FIX
+    - LOCK C02-P001 FIX
+    delivery_correction_basis: STANDARD_EXECUTION_MUST_REMAIN_GOVERNING_INDEPENDENT_OF_CONVERSATION_LENGTH_OR_CONTEXT_COMPACTION
