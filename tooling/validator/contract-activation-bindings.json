@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.6",
+  "classification_version": "2.7",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -159,6 +159,15 @@
       "rationale": "Host, Change Engine, FULL Delivery Controller and sealed STANDARD Kernel now have explicit non-overlapping canonical ownership; broader FULL operational proof remains separate.",
       "known_gaps": [
         "FULL controlled workspace transaction path remains separately capability- and profile-conditioned"
+      ]
+    },
+    {
+      "standard_id": "STD-CHANGE-CAMPAIGN-CLOSEOUT",
+      "path": "standards/change-campaign-closeout.yaml",
+      "classification": "OPERATIONAL",
+      "rationale": "Change Engine owns milestone closeout evidence, Validator executes the four deterministic dimensions, Standard Delivery consumes the exact closeout on its normal pre-mutation path, and MCP blocks an unproven dependent phase transition.",
+      "strict_contract_refs": [
+        "CHANGE_CAMPAIGN_CLOSEOUT_GATE"
       ]
     },
     {
@@ -1061,6 +1070,10 @@
           "delivery_profile_adapter_non_deciding",
           "delivery_resolution_fail_closed",
           "delivery_profile_namespace_preserved",
+          "sealed_delivery_binding_normal_consumer",
+          "sealed_delivery_binding_tamper_blocked",
+          "campaign_closeout_allows_ready_transition",
+          "campaign_closeout_blocks_unproven_transition",
           "material_preflight_precedes_adaptive",
           "preflight_block_not_overridden",
           "preflight_input_failure_fails_closed",
@@ -1072,6 +1085,39 @@
         ],
         "required_proves_binding": "ADAPTIVE_MCP_CONTROL_RESOLUTION"
       }
+    },
+    {
+      "id": "CHANGE_CAMPAIGN_CLOSEOUT_GATE",
+      "standard_id": "STD-CHANGE-CAMPAIGN-CLOSEOUT",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/change-campaign-closeout.yaml",
+      "declaration_tokens": [
+        "CEREBRO-CHANGE-CAMPAIGN-CLOSEOUT-001",
+        "LOCAL_PATCH_SUCCESS_DOES_NOT_PROVE_CAMPAIGN_COMPLETENESS",
+        "CAMPAIGN_CLOSEOUT_PRECEDES_DEPENDENT_PHASE_DEVELOPMENT"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-CHANGE-CAMPAIGN-CLOSEOUT",
+      "implementation": "tooling/validator/change_campaign_closeout.py",
+      "implementation_tokens": [
+        "REQUIRED_DIMENSIONS",
+        "unknown_or_unclassified_debt",
+        "phase_transition_allowed"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
+      "wiring_tokens": [
+        "SELFTEST_CHANGE_CAMPAIGN_CLOSEOUT",
+        "change_campaign_closeout.py",
+        "MCP_PHASE_TRANSITION_BLOCKED"
+      ],
+      "validation": "tooling/validator/change_campaign_closeout.py",
+      "validation_tokens": [
+        "missing-dimension-blocked",
+        "unknown-debt-blocked",
+        "declared-nonblocking-debt-accepted"
+      ],
+      "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
     }
   ],
   "canonical_responsibilities": [
@@ -1269,6 +1315,36 @@
           "canonical": false,
           "implementation": "tooling/runtime-host/cerebro_runtime.ps1",
           "role": "EXECUTION_ONLY_NO_CONTROL_POLICY"
+        }
+      ]
+    },
+    {
+      "id": "CHANGE_CAMPAIGN_MILESTONE_CLOSEOUT",
+      "expected_canonical_claims": 1,
+      "blocking": true,
+      "classification": "CONVERGED",
+      "rationale": "Change Engine owns campaign evidence and milestone completion; Validator performs deterministic checks and MCP alone controls dependent phase transition.",
+      "claims": [
+        {
+          "claim_id": "CHANGE_ENGINE_CLOSEOUT_OWNER",
+          "standard_id": "STD-CHANGE-CAMPAIGN-CLOSEOUT",
+          "canonical": true,
+          "implementation": "tooling/change/change_engine.py",
+          "role": "CAMPAIGN_EVIDENCE_AND_CLOSEOUT_OWNER"
+        },
+        {
+          "claim_id": "VALIDATOR_CLOSEOUT_EXECUTOR",
+          "standard_id": "STD-CHANGE-CAMPAIGN-CLOSEOUT",
+          "canonical": false,
+          "implementation": "tooling/validator/change_campaign_closeout.py",
+          "role": "DETERMINISTIC_EXECUTOR"
+        },
+        {
+          "claim_id": "MCP_PHASE_TRANSITION_CONTROL",
+          "standard_id": "STD-MCP",
+          "canonical": false,
+          "implementation": "mcp/control_resolution.py",
+          "role": "CONTROL_CONSUMER"
         }
       ]
     }

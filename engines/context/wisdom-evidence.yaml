@@ -398,7 +398,7 @@ wisdom_evidence:
       scope: "ALL-CEREBRO-HUMAN-CONTINUATION-AND-NEXT-ACTION-PRESENTATION"
       evidence_maturity: "CONFIRMED"
       control_tier: "ENFORCEMENT"
-      friction_state: "CORRECTED_PENDING_RUNTIME_PROOF"
+      friction_state: "NORMAL"
       counts:
         support: 2
         conflict_prevented: 0
@@ -422,9 +422,9 @@ wisdom_evidence:
           origin: "USER_CORRECTION"
           impact: "HIGH"
           resolution: "ADMITTED"
-      pending_action: "VERIFY_DUALITYARC_WAVE_02_R1_RUNTIME_ENFORCEMENT"
+      pending_action: "NONE"
 
   revision:
-    sequence: 8
-    last_patch_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R1"
+    sequence: 9
+    last_patch_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-PRE-R6-CLOSEOUT"
     profile_count: 13

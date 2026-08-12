@@ -64,6 +64,9 @@ documents:
 - id: STD-CHANGE-ARCHITECTURE
   path: standards/change-architecture.yaml
   required: true
+- id: STD-CHANGE-CAMPAIGN-CLOSEOUT
+  path: standards/change-campaign-closeout.yaml
+  required: true
 - id: STD-CHANGE-DELIVERY
   path: standards/change-delivery.yaml
   required: true

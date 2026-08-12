@@ -3,7 +3,7 @@ component:
   id: validator
   name: Validator
   type: tooling
-  version: 1.4.0
+  version: 1.5.0
   status: active-source
 responsibility:
   primary: Kontrollere struktur, konsistens, regler og release-integritet.
@@ -19,6 +19,7 @@ boundaries:
   - validate-human-continuation-binding-and-final-response-surface
   - prove-boundary-scoped-machine-contract-composition
   - generate-and-validate-hash-bound-human-execution-handoffs
+  - validate-change-campaign-closeout-without-owning-transition-policy
   must_not:
   - modify-source
   - silently-ignore-errors
@@ -42,8 +43,9 @@ interfaces:
   - human-continuation-surface-activation-proof
   - machine-contract-composition-boundary-proof
   - human-execution-handoff-activation-proof
+  - change-campaign-closeout-receipt
 documentation:
   path: README.md
 version:
-  component: 1.4.0
+  component: 1.5.0
   schema: 1

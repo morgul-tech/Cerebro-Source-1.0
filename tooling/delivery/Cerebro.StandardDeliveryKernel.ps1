@@ -941,6 +941,60 @@ function Invoke-SelfTest {
             }
         }
 
+        $State.ReachedStage = 'SELFTEST_SEALED_MCP_DELIVERY_CONTROL_BINDING'
+        $mcpResolver = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'mcp/control_resolution.py'
+        if (-not (Test-Path -LiteralPath $mcpResolver -PathType Leaf)) {
+            throw 'MCP_CONTROL_RESOLVER_MISSING_FROM_CANDIDATE_VIEW'
+        }
+        $manifestPath = Join-Path -Path $BundleRoot -ChildPath 'manifest.json'
+        $bindingArgs = @($continuationPython.PrefixArgs) + @(
+            $mcpResolver,'validate-delivery-binding','--manifest',$manifestPath,'--source-root',$candidateView
+        )
+        $bindingResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $bindingArgs
+        try { $bindingEvidence = $bindingResult.Stdout | ConvertFrom-Json }
+        catch { throw 'SEALED_MCP_DELIVERY_CONTROL_BINDING_OUTPUT_INVALID' }
+        if ($bindingResult.ExitCode -ne 0 -or [string]$bindingEvidence.result -ne 'PASS' -or
+            -not[bool]$bindingEvidence.normal_call_path_exercised) {
+            throw 'SEALED_MCP_DELIVERY_CONTROL_BINDING_FAILED'
+        }
+
+        $State.ReachedStage = 'SELFTEST_CHANGE_CAMPAIGN_CLOSEOUT'
+        $closeoutValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/change_campaign_closeout.py'
+        if (-not (Test-Path -LiteralPath $closeoutValidator -PathType Leaf)) {
+            throw 'CHANGE_CAMPAIGN_CLOSEOUT_VALIDATOR_MISSING_FROM_CANDIDATE_VIEW'
+        }
+        $closeoutArgs = @($continuationPython.PrefixArgs) + @(
+            $closeoutValidator,'validate-manifest','--manifest',$manifestPath,'--source-root',$candidateView
+        )
+        $closeoutResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $closeoutArgs
+        try { $closeoutEvidence = $closeoutResult.Stdout | ConvertFrom-Json }
+        catch { throw 'CHANGE_CAMPAIGN_CLOSEOUT_OUTPUT_INVALID' }
+        if ($closeoutResult.ExitCode -ne 0 -or [string]$closeoutEvidence.result -ne 'PASS' -or
+            -not[bool]$closeoutEvidence.phase_transition_allowed) {
+            throw 'CHANGE_CAMPAIGN_CLOSEOUT_BLOCKED'
+        }
+
+        $phaseRequestPath = Join-Path -Path $candidateView -ChildPath 'CEREBRO_CLOSEOUT_PHASE_REQUEST.json'
+        $phaseRequest = [ordered]@{
+            objective_ref = 'DUALITYARC-WAVE-02-PRE-R6-PHASE-TRANSITION'
+            phase_transition_requested = $true
+            campaign_closeout_receipt = $closeoutEvidence
+            consequence = 'LOW'
+            uncertainty = 'LOW'
+        }
+        [IO.File]::WriteAllText($phaseRequestPath,(($phaseRequest|ConvertTo-Json -Depth 32)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        $phaseArgs = @($continuationPython.PrefixArgs) + @(
+            $mcpResolver,'resolve','--request',$phaseRequestPath,'--source-root',$candidateView
+        )
+        $phaseResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $phaseArgs
+        try { $phaseEvidence = $phaseResult.Stdout | ConvertFrom-Json }
+        catch { throw 'MCP_PHASE_TRANSITION_OUTPUT_INVALID' }
+        if ($phaseResult.ExitCode -ne 0 -or
+            [string]$phaseEvidence.campaign_phase_transition.outcome -ne 'CONTINUE' -or
+            [string]$phaseEvidence.mcp_control_decision.outcome -ne 'CONTINUE') {
+            throw 'MCP_PHASE_TRANSITION_BLOCKED'
+        }
+
         $State.ReachedStage = 'SELFTEST_HUMAN_EXECUTION_HANDOFF'
         $executionHandoffValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/human_execution_handoff.py'
         if (-not (Test-Path -LiteralPath $executionHandoffValidator -PathType Leaf)) {
@@ -990,6 +1044,9 @@ function Invoke-SelfTest {
     Write-Host 'CANDIDATE_SOURCE_COMPOSITION_PASS=TRUE'
     Write-Host 'HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS=TRUE'
     Write-Host 'MCP_DELIVERY_PROFILE_ADAPTER_SELFTEST_PASS=TRUE'
+    Write-Host 'SEALED_MCP_DELIVERY_CONTROL_BINDING_PASS=TRUE'
+    Write-Host 'CHANGE_CAMPAIGN_CLOSEOUT_PASS=TRUE'
+    Write-Host 'MCP_PHASE_TRANSITION_PASS=TRUE'
 }
 
 function Get-KernelOrdinalStrings {
@@ -1112,6 +1169,14 @@ function Invoke-Apply {
     if([string]$State.Manifest.delivery_execution_contract -ne 'CEREBRO-STANDARD-DELIVERY-KERNEL-001'){
         $State.FailureFamily = 'DELIVERY_EXECUTION_CONTRACT_IDENTITY'
         throw ('DELIVERY_EXECUTION_CONTRACT_MISMATCH:{0}' -f [string]$State.Manifest.delivery_execution_contract)
+    }
+    if($State.Manifest.PSObject.Properties.Name -notcontains 'delivery_control_binding'){
+        $State.FailureFamily = 'DELIVERY_CONTROL_BINDING'
+        throw 'SEALED_DELIVERY_CONTROL_BINDING_REQUIRED'
+    }
+    if($State.Manifest.PSObject.Properties.Name -notcontains 'campaign_closeout'){
+        $State.FailureFamily = 'CAMPAIGN_CLOSEOUT'
+        throw 'CHANGE_CAMPAIGN_CLOSEOUT_REQUIRED'
     }
 
     $gitPath = Resolve-Executable 'git.exe'

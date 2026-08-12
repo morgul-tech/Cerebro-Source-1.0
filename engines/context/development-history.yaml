@@ -469,3 +469,36 @@ development_history:
       provenance:
         admission: DUALITYARC_DEEP_ARCHITECTURE_CONVERGENCE
         source_ref: DUALITYANA_AND_CURRENT_SOURCE_EXECUTABLE_OWNERSHIP_AUDIT
+    - id: HIST-LEARN-MULTIPATCH-MILESTONE-CLOSEOUT-20260812
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Local patch success did not prove architectural campaign completeness
+      fact: DualityArc Wave 02 R1 through R5 each reached a bounded result, and R5 was verified at bebf355fd06129f6d76d06cbcea7917dc6f3369c. A deliberate pre-R6 review still found that the MCP delivery decision was exercised in selftests but its exact identity was not consumed by the sealed STANDARD package, while continuation and wisdom evidence still described earlier pending states. The correction introduces a lightweight milestone closeout owned by Change Engine, deterministically executed by Validator, consumed on the normal Standard Delivery path and enforced by MCP before dependent phase transition.
+      occurred_at: '2026-08-12'
+      evidence_refs:
+        - CEREBRO_PATCH_SUCCESS(2).json
+        - RESULT_COMMIT_BEBF355FD06129F6D76D06CBCEA7917DC6F3369C
+        - CEREBRO-DUALITYARC-WAVE-02-R1-TO-R5-PRE-R6-AUDIT
+      impact:
+        introduced:
+          - CHANGE_CAMPAIGN_MILESTONE_CLOSEOUT
+          - SEALED_MCP_DELIVERY_CONTROL_BINDING
+        retired:
+          - LOCAL_PATCH_SUCCESS_AS_CAMPAIGN_COMPLETENESS_PROOF
+          - PROFILE_LABEL_ONLY_AS_MCP_DECISION_BINDING
+        enabled:
+          - FOUR_DIMENSION_CAMPAIGN_CLOSEOUT
+          - MCP_GATED_DEPENDENT_PHASE_TRANSITION
+          - READY_WITH_EXPLICIT_NONBLOCKING_DEBT
+        learned:
+          - COLLECT_CAMPAIGN_EVIDENCE_INCREMENTALLY_AND_COMPARE_ONLY_THE_FINAL_DELTA
+          - SELFTEST_SUCCESS_REQUIRES_A_NORMAL_CONSUMER_BEFORE_OPERATIONAL_CLAIM
+          - THE_MINIMUM_SUFFICIENT_CLOSEOUT_REUSES_EXISTING_OWNERS_AND_VALIDATORS
+      relations:
+        patch_refs: [CEREBRO-DUALITYARC-WAVE-02-20260812-R1, CEREBRO-DUALITYARC-WAVE-02-20260812-R3, CEREBRO-DUALITYARC-WAVE-02-20260812-R4, CEREBRO-DUALITYARC-WAVE-02-20260812-R5, CEREBRO-DUALITYARC-WAVE-02-20260812-PRE-R6-CLOSEOUT]
+        baseline_commit: bebf355fd06129f6d76d06cbcea7917dc6f3369c
+        learning_refs: [CTX-WISDOM-MULTIPATCH-MILESTONE-CLOSEOUT-20260812-001]
+      provenance:
+        admission: USER_DIRECTED_PRE_NEXT_PHASE_REVIEW
+        source_ref: USER-REFINE-MENNESKE-OPTIMIZED-CLOSEOUT-GATE-20260812

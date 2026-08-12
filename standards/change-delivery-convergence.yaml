@@ -44,9 +44,15 @@ change_delivery_convergence:
     required_manifest_fields:
       delivery_profile: STANDARD
       delivery_execution_contract: CEREBRO-STANDARD-DELIVERY-KERNEL-001
+      delivery_control_binding: EXACT_MCP_DECISION_AND_EXECUTION_PROFILE_IDENTITY
     profile_identity_after_sealing: IMMUTABLE_PACKAGE_IDENTITY
     active_selection_state_after_sealing: NON_GOVERNING_EVIDENCE
     wrong_or_missing_profile_identity: FAIL_BEFORE_SOURCE_MUTATION
+    delivery_control_binding_validation:
+      normal_consumer: mcp/control_resolution.py#validate_delivery_control_binding
+      must_reproduce_exact_MCP_decision: true
+      source_commit_operations_profile_and_fingerprint_must_match: true
+      tamper_effect: FAIL_BEFORE_SOURCE_MUTATION
 
   execution_ownership:
     profile: STANDARD
@@ -136,3 +142,4 @@ change_delivery_convergence:
     - MCP_IS_THE_ONLY_DELIVERY_PROFILE_DECISION_OWNER
     - DELIVERY_ADAPTER_BINDS_AND_PROJECTS_BUT_DOES_NOT_DECIDE
     - DELIVERY_PROFILE_CAPABILITY_BOUNDARIES_REMAIN_DISTINCT
+    - SEALED_STANDARD_PACKAGE_PROVES_THE_EXACT_MCP_DELIVERY_DECISION

@@ -211,6 +211,11 @@ delivery_failure_regression:
   - delivery-adapter-selftest-proves-MCP-owned-resolution-and-no-local-policy-recomputation
   - blocked-MCP-delivery-resolution-writes-no-selection-state
   - delivery-profile-artifact-and-assurance-namespaces-remain-distinct
+  - sealed-MCP-delivery-decision-is-bound-to-manifest-and-reproduced-by-normal-consumer
+  - tampered-sealed-delivery-binding-blocks-before-source-mutation
+  - multipatch-architectural-milestone-requires-four-dimension-closeout
+  - unknown-or-unclassified-campaign-debt-blocks-dependent-phase-transition
+  - declared-nonblocking-debt-requires-owner-target-phase-and-rationale
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the

@@ -1,0 +1,59 @@
+schema: cerebro-change-campaign-closeout-standard/v1
+
+change_campaign_closeout:
+  id: CEREBRO-CHANGE-CAMPAIGN-CLOSEOUT-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  purpose: >
+    Close a multi-patch architectural milestone before dependent development
+    continues, without creating a parallel engine, debt store or validator.
+
+  owner: tooling.change
+  deterministic_executor: tooling/validator/change_campaign_closeout.py
+  control_consumer: MCP
+  standard_delivery_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+
+  trigger_when:
+    - ARCHITECTURAL_MILESTONE_ENDS
+    - NEXT_WAVE_OR_PHASE_WILL_DEPEND_ON_RESULT
+    - ONE_INTENT_SPANS_MULTIPLE_PATCHES
+    - CORRECTIVE_REVISIONS_CHANGED_THE_ORIGINAL_SOLUTION
+    - STRONG_OPERATIONAL_OR_CONVERGED_CLAIM_WILL_BE_MADE
+  not_triggered_by_fixed_patch_count: true
+
+  incremental_collection:
+    required_during_campaign:
+      - original-intent-and-acceptance
+      - delivered-change-and-receipts
+      - failed-attempts-and-corrections
+      - declared-debt-and-placement
+      - maturity-and-operational-claims
+    final_closeout_is_delta_comparison: true
+
+  dimensions:
+    - intent_to_result
+    - rule_to_normal_consumer
+    - state_and_learning
+    - next_phase_readiness
+
+  results:
+    READY: next phase may start with zero debt
+    READY_WITH_DECLARED_DEBT: next phase may start only when every debt item is owned, placed, justified and nonblocking
+    BLOCKED: next phase must not start
+
+  optimization:
+    new_top_level_engine: false
+    parallel_debt_database: false
+    reuses_change_engine: true
+    reuses_contract_activation_closure: true
+    one_closeout_receipt: true
+    human_interface: EXCEPTIONS_AND_NEXT_ACTION_ONLY
+
+  invariants:
+    - LOCAL_PATCH_SUCCESS_DOES_NOT_PROVE_CAMPAIGN_COMPLETENESS
+    - EVERY_GOVERNING_RULE_REQUIRES_A_NORMAL_CONSUMER_FAILURE_EFFECT_AND_EVIDENCE
+    - SELFTEST_ONLY_DOES_NOT_PROVE_NORMAL_PATH_CONSUMPTION
+    - UNKNOWN_OR_UNCLASSIFIED_DEBT_BLOCKS_PHASE_TRANSITION
+    - DECLARED_NONBLOCKING_DEBT_MUST_HAVE_OWNER_TARGET_PHASE_AND_RATIONALE
+    - CAMPAIGN_CLOSEOUT_PRECEDES_DEPENDENT_PHASE_DEVELOPMENT

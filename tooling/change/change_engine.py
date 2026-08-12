@@ -25,7 +25,7 @@ SCHEMA_ID = "cerebro-change-capsule/v0.2"
 REPORT_SCHEMA = "cerebro-change-campaign-report/v0.1"
 KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.2"
 LEGACY_KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.1"
-ENGINE_VERSION = "0.4.0"
+ENGINE_VERSION = "0.5.0"
 
 PROFILE_RUNS = {"FAST": 1, "STANDARD": 2, "DEEP": 3}
 CAMPAIGN_POLICY_PATH = Path(__file__).with_name("campaign-policy.yaml")
@@ -756,6 +756,13 @@ def selftest() -> dict[str, Any]:
         try:
             policy = load_campaign_policy()
             record("failure_regression_catalog", bool(policy.get("failure_family_catalog")))
+            closeout = policy.get("campaign_closeout", {})
+            record(
+                "campaign_closeout_owned_and_gated",
+                closeout.get("owner") == "tooling.change"
+                and closeout.get("final_gate_before_dependent_phase") == "required"
+                and closeout.get("MCP_phase_transition_consumption") == "required",
+            )
             ps_manifest = json.loads(json.dumps(manifest))
             ps_manifest["files"][0]["path"] = "runner.ps1"
             selected = select_regression_bindings(ps_manifest, {"capsule_id": "DCAP-X", "failure": {"detection": "InvalidRegularExpression"}})

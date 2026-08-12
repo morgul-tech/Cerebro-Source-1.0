@@ -3,7 +3,7 @@ component:
   id: change
   name: Cerebro Change Engine
   type: tooling
-  version: 0.4.0
+  version: 0.5.0
   status: active-source
 responsibility:
   primary: Execute non-authoritative change assurance from immutable tooling snapshots before Working Source publication.
@@ -21,6 +21,8 @@ boundaries:
   - select-relevance-scoped-regression-bindings
   - bind-learning-basis-fingerprint-to-campaign-report
   - keep-positive-strengthening-evidence-separate-from-failure-events
+  - collect-multi-patch-campaign-closeout-evidence-incrementally
+  - own-milestone-closeout-before-dependent-phase-transition
   must_not:
   - create-source-authority
   - silently-promote-wisdom
@@ -47,8 +49,10 @@ interfaces:
   - assured-change-capsule-for-delivery
   - applicable-regression-bindings
   - learning-basis-fingerprint
+  - campaign-closeout-contract
+  - phase-transition-readiness
 version:
-  component: 0.4.0
+  component: 0.5.0
   schema: 1
 assurance:
   known_failure_family_regressions:

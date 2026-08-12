@@ -1,7 +1,7 @@
 schema: cerebro-change-campaign-policy/v0.1
 policy:
   id: CEREBRO-CHANGE-CAMPAIGN-POLICY-001
-  version: 0.6.0
+  version: 0.7.0
   authority: SOURCE_DEFINED_POLICY
   regression_catalog_owner: tooling.change
 profiles:
@@ -64,6 +64,17 @@ learning_controls:
   runtime_evidence_consumer_normalization_must_cover_prehandoff_and_apply_paths: required
   standard_manifest_assertion_text_must_survive_actual_consumer_encoding: required
   non_ascii_manifest_assertion_text_requires_json_unicode_escape_or_explicit_utf8_consumer: required
+campaign_closeout:
+  contract_ref: standards/change-campaign-closeout.yaml
+  owner: tooling.change
+  collect_incrementally: required
+  final_gate_before_dependent_phase: required
+  fixed_patch_count_trigger: prohibited
+  dimensions: [intent_to_result, rule_to_normal_consumer, state_and_learning, next_phase_readiness]
+  unknown_or_unclassified_debt_effect: BLOCK
+  validator_executor: tooling/validator/change_campaign_closeout.py
+  MCP_phase_transition_consumption: required
+  Standard_Delivery_normal_consumer: required
 repeated_run_focus:
 - stale-state
 - cleanup

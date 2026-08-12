@@ -12,10 +12,19 @@ delivery_kernel:
     contract: standards/change-delivery-convergence.yaml
     delivery_profile: STANDARD
     sealed_manifest_profile_identity_required: true
+    sealed_MCP_delivery_control_binding_required: true
+    exact_MCP_binding_normal_consumer: mcp/control_resolution.py#validate_delivery_control_binding
     mutable_selection_state_at_execution: NON_GOVERNING
     explicit_launcher_invocation_is_run_to_pass_authorization: true
     legacy_cpatch_for_new_standard_packages: SUPERSEDED
     LIMITED_and_FULL_profiles: OUTSIDE_KERNEL_SCOPE
+
+  campaign_closeout:
+    contract: standards/change-campaign-closeout.yaml
+    manifest_contract_required_for_milestone_closeout_delivery: true
+    normal_consumer_stage: SELFTEST_CHANGE_CAMPAIGN_CLOSEOUT
+    MCP_phase_transition_must_continue: true
+    failure_effect: BLOCK_BEFORE_SOURCE_MUTATION
 
   activation_runtime_proof:
     manifest_scoped: true

@@ -236,6 +236,105 @@ def resolve_delivery_profile(request: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def resolve_phase_transition(request: dict[str, Any]) -> dict[str, Any]:
+    """Consume a validated campaign closeout before dependent work starts."""
+    receipt = request.get("campaign_closeout_receipt")
+    reasons: list[str] = []
+    if not isinstance(receipt, dict):
+        reasons.append("CLOSEOUT_RECEIPT_REQUIRED")
+        receipt = {}
+    if receipt.get("schema") != "cerebro-change-campaign-closeout-receipt/v1":
+        reasons.append("CLOSEOUT_RECEIPT_SCHEMA_MISMATCH")
+    if receipt.get("result") != "PASS":
+        reasons.append("CLOSEOUT_NOT_PASS")
+    if receipt.get("phase_transition_allowed") is not True:
+        reasons.append("PHASE_TRANSITION_NOT_ALLOWED")
+    if receipt.get("closeout_state") not in {"READY", "READY_WITH_DECLARED_DEBT"}:
+        reasons.append("CLOSEOUT_STATE_NOT_READY")
+    if receipt.get("unknown_or_unclassified_debt_absent") is not True:
+        reasons.append("UNKNOWN_OR_UNCLASSIFIED_DEBT")
+    return {
+        "schema": "cerebro-mcp-phase-transition-decision/v1",
+        "authority": "MCP",
+        "outcome": "CONTINUE" if not reasons else "BLOCK",
+        "classification": "CAMPAIGN_CLOSEOUT_ACCEPTED" if not reasons else "CAMPAIGN_CLOSEOUT_BLOCKED",
+        "campaign_id": receipt.get("campaign_id"),
+        "next_phase": receipt.get("next_phase"),
+        "closeout_contract_fingerprint": receipt.get("contract_fingerprint"),
+        "reasons": reasons,
+    }
+
+
+def build_delivery_control_binding(result: dict[str, Any], request: dict[str, Any]) -> dict[str, Any]:
+    decision = result.get("mcp_control_decision") or {}
+    profile = result.get("execution_profile") or {}
+    delivery = result.get("mcp_delivery_profile_resolution") or {}
+    subject = {
+        "schema": "cerebro-sealed-delivery-control-binding/v1",
+        "decision_owner": "MCP",
+        "control_resolution_surface": CONTROL_SURFACE_ID,
+        "control_decision_id": decision.get("control_decision_id"),
+        "control_decision_basis_fingerprint": decision.get("basis_fingerprint"),
+        "execution_profile_id": profile.get("execution_profile_id"),
+        "execution_profile_basis_fingerprint": profile.get("basis_fingerprint"),
+        "delivery_profile_resolution_fingerprint": delivery.get("basis_fingerprint"),
+        "requested_profile": str(request.get("requested_delivery_profile") or "").upper(),
+        "resolved_profile": delivery.get("resolved_profile"),
+        "operations": [str(value).lower() for value in request.get("delivery_operations", [])],
+        "direct_workspace_access_declared": bool(request.get("direct_workspace_access_declared")),
+        "source_commit": str(request.get("authoritative_source_commit") or ""),
+        "adapter_recomputed": False,
+    }
+    subject["binding_fingerprint"] = sha256_bytes(
+        json.dumps(subject, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    )
+    return subject
+
+
+def validate_delivery_control_binding(manifest: dict[str, Any], root: Path) -> dict[str, Any]:
+    binding = manifest.get("delivery_control_binding")
+    reasons: list[str] = []
+    if not isinstance(binding, dict):
+        binding = {}
+        reasons.append("SEALED_DELIVERY_CONTROL_BINDING_REQUIRED")
+    request = {
+        "objective_ref": "SEALED-STANDARD-DELIVERY-BINDING",
+        "requested_delivery_profile": binding.get("requested_profile"),
+        "delivery_operations": binding.get("operations") or [],
+        "direct_workspace_access_declared": binding.get("direct_workspace_access_declared") is True,
+        "authoritative_source_commit": binding.get("source_commit"),
+        "consequence": "LOW",
+        "uncertainty": "LOW",
+    }
+    result = resolve(request, root)
+    expected = build_delivery_control_binding(result, request)
+    if binding != expected:
+        reasons.append("SEALED_DELIVERY_CONTROL_BINDING_MISMATCH")
+    if not str(binding.get("control_decision_id") or "").startswith("MCPD-"):
+        reasons.append("DELIVERY_CONTROL_DECISION_ID_INVALID")
+    if not str(binding.get("execution_profile_id") or "").startswith("EXECP-"):
+        reasons.append("DELIVERY_EXECUTION_PROFILE_ID_INVALID")
+    if binding.get("source_commit") != manifest.get("expected_base_commit"):
+        reasons.append("DELIVERY_CONTROL_SOURCE_COMMIT_MISMATCH")
+    if binding.get("resolved_profile") != manifest.get("delivery_profile"):
+        reasons.append("DELIVERY_CONTROL_PROFILE_MISMATCH")
+    declared_operations = sorted(str(item.get("operation") or "") for item in manifest.get("files", []))
+    if sorted(str(value) for value in binding.get("operations", [])) != declared_operations:
+        reasons.append("DELIVERY_CONTROL_OPERATIONS_MISMATCH")
+    if result.get("mcp_control_decision", {}).get("outcome") != "CONTINUE":
+        reasons.append("MCP_DELIVERY_CONTROL_NOT_CONTINUE")
+    return {
+        "schema": "cerebro-sealed-delivery-control-binding-validation/v1",
+        "result": "PASS" if not reasons else "BLOCKED",
+        "normal_call_path_exercised": True,
+        "decision_owner": binding.get("decision_owner"),
+        "binding_fingerprint": binding.get("binding_fingerprint"),
+        "control_decision_id": binding.get("control_decision_id"),
+        "execution_profile_id": binding.get("execution_profile_id"),
+        "errors": reasons,
+    }
+
+
 def _roadmap_patch_status(root: Path, patch_id: str) -> str:
     doc = _load_yaml(root / "engines/project/roadmap.yaml")
     roadmap = doc.get("roadmap", {}) if isinstance(doc, dict) else {}
@@ -532,6 +631,39 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
     preflight_result = None
     adaptive_request = dict(request)
     delivery_resolution = None
+    phase_transition = None
+
+    if bool(request.get("phase_transition_requested")):
+        phase_transition = resolve_phase_transition(request)
+        if phase_transition.get("outcome") != "CONTINUE":
+            return {
+                "schema": SCHEMA,
+                "result": "PASS",
+                "authority": "DERIVED_MCP_CONTROL_DECISION",
+                "live_control_authority": True,
+                "normal_control_path_exercised": True,
+                "promotion_basis_verified": True,
+                "promotion_basis": basis,
+                "material_preflight_exercised": False,
+                "material_preflight_passed": None,
+                "material_preflight_precedes_adaptive": True,
+                "adaptive_invoked": False,
+                "mcp_control_decision": {
+                    "schema": DECISION_SCHEMA,
+                    "authority": "MCP",
+                    "control_resolution_surface": CONTROL_SURFACE_ID,
+                    "outcome": "BLOCK",
+                    "classification": "CAMPAIGN_CLOSEOUT_BLOCKED",
+                    "invalidates": ["DEPENDENT_PHASE_TRANSITION"],
+                },
+                "execution_profile": None,
+                "campaign_phase_transition": phase_transition,
+                "continuation_effect": "BLOCK_DEPENDENT_PHASE",
+            }
+        adaptive_request["governing_basis_refs"] = sorted(set(
+            [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
+            + ["CAMPAIGN-CLOSEOUT:" + str(phase_transition.get("closeout_contract_fingerprint") or "")]
+        ))
 
     if "requested_delivery_profile" in request:
         delivery_resolution = resolve_delivery_profile(request)
@@ -621,6 +753,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
         "mcp_control_decision": decision,
         "execution_profile": profile,
         "mcp_delivery_profile_resolution": delivery_resolution,
+        "campaign_phase_transition": phase_transition,
         "continuation_effect": candidate.get("continuation_effect"),
         "capability_resolution": candidate.get("capability_resolution", {}),
         "preflight_result": preflight_result,
@@ -729,6 +862,70 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
         and standard_resolution.get("controls", {}).get("artifact_format") == "PAYLOAD_PLUS_INSTALLER"
         and standard_profile.get("verification_depth") in {"LIGHT", "STANDARD", "DEEP"},
     )
+    binding_request = {
+        "objective_ref": "SEALED-STANDARD-DELIVERY-BINDING",
+        "requested_delivery_profile": "STANDARD",
+        "delivery_operations": ["replace", "create"],
+        "direct_workspace_access_declared": False,
+        "authoritative_source_commit": git_head(root),
+        "consequence": "LOW",
+        "uncertainty": "LOW",
+    }
+    binding_result = resolve(binding_request, root, require_git_ancestry=require_git_ancestry)
+    sealed_binding = build_delivery_control_binding(binding_result, binding_request)
+    binding_manifest = {
+        "expected_base_commit": git_head(root),
+        "delivery_profile": "STANDARD",
+        "delivery_control_binding": sealed_binding,
+        "files": [{"operation": "replace"}, {"operation": "create"}],
+    }
+    binding_validation = validate_delivery_control_binding(binding_manifest, root)
+    check(
+        "sealed-delivery-binding-normal-consumer",
+        binding_validation.get("result") == "PASS"
+        and binding_validation.get("normal_call_path_exercised") is True,
+    )
+    tampered_manifest = json.loads(json.dumps(binding_manifest))
+    tampered_manifest["delivery_control_binding"]["control_decision_id"] = "MCPD-TAMPERED"
+    check(
+        "sealed-delivery-binding-tamper-blocked",
+        validate_delivery_control_binding(tampered_manifest, root).get("result") == "BLOCKED",
+    )
+
+    ready_closeout = {
+        "schema": "cerebro-change-campaign-closeout-receipt/v1",
+        "result": "PASS",
+        "campaign_id": "SELFTEST-CAMPAIGN",
+        "closeout_state": "READY",
+        "next_phase": "SELFTEST-NEXT",
+        "phase_transition_allowed": True,
+        "unknown_or_unclassified_debt_absent": True,
+        "contract_fingerprint": "a" * 64,
+    }
+    ready_transition = resolve({
+        "objective_ref": "CAMPAIGN-CLOSEOUT-READY",
+        "phase_transition_requested": True,
+        "campaign_closeout_receipt": ready_closeout,
+        "consequence": "LOW",
+        "uncertainty": "LOW",
+    }, root, require_git_ancestry=require_git_ancestry)
+    check(
+        "campaign-closeout-allows-ready-phase-transition",
+        ready_transition.get("campaign_phase_transition", {}).get("outcome") == "CONTINUE"
+        and ready_transition.get("mcp_control_decision", {}).get("outcome") == "CONTINUE",
+    )
+    blocked_transition = resolve({
+        "objective_ref": "CAMPAIGN-CLOSEOUT-MISSING",
+        "phase_transition_requested": True,
+        "consequence": "LOW",
+        "uncertainty": "LOW",
+    }, root, require_git_ancestry=require_git_ancestry)
+    check(
+        "campaign-closeout-blocks-unproven-phase-transition",
+        blocked_transition.get("campaign_phase_transition", {}).get("outcome") == "BLOCK"
+        and blocked_transition.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
+        and blocked_transition.get("adaptive_invoked") is False,
+    )
 
     human = resolve({"objective_ref": "AA004-HUMAN", "human_decision_value": "HIGH"}, root, require_git_ancestry=require_git_ancestry)
     check("human-boundary-preserved", human.get("mcp_control_decision", {}).get("outcome") == "USER_DECISION_REQUIRED")
@@ -830,6 +1027,10 @@ def activation_probe(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True
         "delivery_profile_adapter_non_deciding": test_map.get("delivery-profile-resolution-is-bound-into-execution-profile", False),
         "delivery_resolution_fail_closed": test_map.get("delivery-auto-without-evidence-fails-closed", False) and test_map.get("delivery-limited-rejects-create", False),
         "delivery_profile_namespace_preserved": test_map.get("delivery-profile-namespaces-remain-distinct", False),
+        "sealed_delivery_binding_normal_consumer": test_map.get("sealed-delivery-binding-normal-consumer", False),
+        "sealed_delivery_binding_tamper_blocked": test_map.get("sealed-delivery-binding-tamper-blocked", False),
+        "campaign_closeout_allows_ready_transition": test_map.get("campaign-closeout-allows-ready-phase-transition", False),
+        "campaign_closeout_blocks_unproven_transition": test_map.get("campaign-closeout-blocks-unproven-phase-transition", False),
         "material_preflight_precedes_adaptive": test_map.get("material-preflight-precedes-adaptive", False),
         "preflight_block_not_overridden": test_map.get("preflight-block-not-overridden", False),
         "preflight_input_failure_fails_closed": test_map.get("material-preflight-input-failure-fails-closed", False),
@@ -849,8 +1050,9 @@ def activation_probe(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Cerebro canonical MCP control resolution surface")
-    parser.add_argument("command", nargs="?", choices=["resolve", "activation-probe", "selftest"], default="resolve")
+    parser.add_argument("command", nargs="?", choices=["resolve", "validate-delivery-binding", "activation-probe", "selftest"], default="resolve")
     parser.add_argument("--request")
+    parser.add_argument("--manifest")
     parser.add_argument("--output")
     parser.add_argument("--source-root", default=str(SOURCE_ROOT))
     parser.add_argument("--allow-no-git-ancestry", action="store_true")
@@ -861,6 +1063,12 @@ def main() -> int:
         result = activation_probe(root, require_git_ancestry=require_git)
     elif args.command == "selftest":
         result = selftest(root, require_git_ancestry=require_git)
+    elif args.command == "validate-delivery-binding":
+        if not args.manifest:
+            parser.error("validate-delivery-binding requires --manifest")
+        result = validate_delivery_control_binding(
+            json.loads(Path(args.manifest).read_text(encoding="utf-8")), root
+        )
     else:
         if not args.request:
             parser.error("resolve requires --request")

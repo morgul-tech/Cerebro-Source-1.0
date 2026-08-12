@@ -5689,6 +5689,62 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
       sequence: 135
+    -
+      id: "CTX-WISDOM-MULTIPATCH-MILESTONE-CLOSEOUT-20260812-001"
+      type: "WISDOM"
+      scope: "MULTI-PATCH-ARCHITECTURAL-CAMPAIGNS-AND-PHASE-TRANSITIONS"
+      statement: "Several locally successful patches do not prove that their combined architectural intent is complete. Before dependent development begins, Cerebro must compare intent to result, rule to normal consumer, state to learning evidence and current completion to next-phase readiness; unknown debt blocks, while explicit owned and nonblocking debt may be carried forward. The optimized mechanism collects evidence during the campaign and reuses Change Engine, Validator, Contract Activation Closure and MCP instead of creating a parallel subsystem."
+      payload:
+        maturity: "LOCKED"
+        contract_ref: "standards/change-campaign-closeout.yaml"
+        trigger: "SEMANTIC_MILESTONE_NOT_FIXED_PATCH_COUNT"
+        dimensions: ["INTENT_TO_RESULT", "RULE_TO_NORMAL_CONSUMER", "STATE_AND_LEARNING", "NEXT_PHASE_READINESS"]
+        results: ["READY", "READY_WITH_DECLARED_DEBT", "BLOCKED"]
+        human_surface: "EXCEPTIONS_AND_NEXT_ACTION_ONLY"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-PRE-R6-CLOSEOUT"
+        basis_refs:
+          - "CEREBRO-DUALITYARC-WAVE-02-R1-TO-R5-PRE-R6-AUDIT"
+          - "CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
+          - "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
+      sequence: 136
+    -
+      id: "CTX-BASIS-DUALITY-ARC-WAVE-02-PRE-R6-CLOSEOUT-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "DUALITYARC-WAVE-02-R1-TO-R5-MILESTONE-CLOSEOUT"
+      statement: "R5 is verified at bebf355fd06129f6d76d06cbcea7917dc6f3369c. The pre-R6 closeout persists the optimized milestone gate, binds the exact MCP delivery decision into the sealed STANDARD package, clears stale continuation and wisdom state, and carries only explicit nonblocking later-wave debt before R6 begins."
+      payload:
+        applicability: "CURRENT_DUALITYARC_WAVE_02_PRE_R6_CLOSEOUT_BASIS"
+        source_base_commit: "bebf355fd06129f6d76d06cbcea7917dc6f3369c"
+        verified_prior_patch: "CEREBRO-DUALITYARC-WAVE-02-20260812-R5"
+        verified_prior_receipt: "CEREBRO_PATCH_SUCCESS(2).json"
+        patch_id: "CEREBRO-DUALITYARC-WAVE-02-20260812-PRE-R6-CLOSEOUT"
+        closeout_state_after_validated_delivery: "READY_WITH_DECLARED_DEBT"
+        closes:
+          - "R5_MCP_DECISION_TO_SEALED_PACKAGE_NORMAL_CONSUMER_GAP"
+          - "STALE_R5_CONTINUATION_READINESS"
+          - "STALE_R1_WISDOM_RUNTIME_PROOF_STATUS"
+        declared_nonblocking_debt:
+          - "UNIVERSAL_NON_DELIVERY_MACHINE_CONTRACT_BOUNDARY_AUDIT"
+          - "ADAPTIVE_PROMOTION_SCAFFOLDING_RETIREMENT_AFTER_EQUIVALENCE"
+          - "GLOBAL_CANDIDATE_LIFECYCLE_SWEEP"
+        next_natural_work: "START_DUALITYARC_WAVE_02_R6_ONLY_AFTER_VERIFIED_CLOSEOUT_SUCCESS"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-PRE-R6-CLOSEOUT"
+        basis_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
+          - "CTX-WISDOM-MULTIPATCH-MILESTONE-CLOSEOUT-20260812-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
+      sequence: 137
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -5758,6 +5814,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-DUALITY-ANA-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
+      - "CTX-BASIS-DUALITY-ARC-WAVE-02-PRE-R6-CLOSEOUT-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5811,7 +5868,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-MACHINE-CONTRACT-COMPOSITION-20260812-001"
       - "CTX-WISDOM-GENERATED-HASH-BOUND-HUMAN-EXECUTION-HANDOFF-20260812-001"
       - "CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001"
-  next_sequence: 136
+      - "CTX-WISDOM-MULTIPATCH-MILESTONE-CLOSEOUT-20260812-001"
+  next_sequence: 138
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

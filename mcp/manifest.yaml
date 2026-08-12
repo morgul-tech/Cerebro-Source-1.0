@@ -65,6 +65,9 @@ control_adapters:
     delivery_profile_decision_owner: MCP
     delivery_profile_adapter_ref: tooling/delivery/cerebro_delivery.ps1
     delivery_profile_adapter_role: CAPABILITY_BINDING_AND_STATE_PROJECTION
+    sealed_delivery_binding_validation: REQUIRED_BEFORE_STANDARD_MUTATION
+    campaign_closeout_phase_transition_control: MCP
+    unproven_campaign_closeout_effect: BLOCK_DEPENDENT_PHASE
     material_preflight_precedence: REQUIRED
     activation_evidence_required: true
     activation_binding_ref: ADAPTIVE_MCP_CONTROL_RESOLUTION

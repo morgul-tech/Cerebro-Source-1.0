@@ -81,6 +81,8 @@ control_resolution:
     - MCP_IS_THE_ONLY_DELIVERY_PROFILE_DECISION_OWNER
     - DELIVERY_ADAPTER_MUST_NOT_RECOMPUTE_MCP_DELIVERY_POLICY
     - DELIVERY_PROFILE_CAPABILITY_BOUNDARIES_REMAIN_DISTINCT
+    - SEALED_DELIVERY_BINDING_MUST_REPRODUCE_THE_EXACT_MCP_DECISION
+    - DEPENDENT_PHASE_TRANSITION_REQUIRES_PASSING_CAMPAIGN_CLOSEOUT
     - RUNTIME_RESIDENT_ADAPTIVE_CONTROL_IS_PROHIBITED
     - STATIC_ADAPTIVE_WORK_MODE_IS_PROHIBITED
     - AUTOMATION_REMAINS_SEPARATE_FROM_AUTONOMY
@@ -99,3 +101,5 @@ control_resolution:
     - activation_binding_is_runtime_evidence_proven
     - delivery_profile_resolution_is_MCP_owned_and_execution_profile_bound
     - delivery_adapter_is_non_deciding_and_fails_closed
+    - sealed_delivery_binding_is_reproduced_by_the_normal_MCP_consumer
+    - campaign_closeout_allows_ready_and_blocks_unproven_phase_transition
