@@ -36,6 +36,9 @@ engines:
 - id: presentation
   path: engines/presentation/
   required: true
+- id: convergence
+  path: engines/convergence/
+  required: true
 modules:
 - id: terminology
   path: modules/terminology/

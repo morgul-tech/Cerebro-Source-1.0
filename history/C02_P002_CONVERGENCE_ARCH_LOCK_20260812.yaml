@@ -1,0 +1,66 @@
+schema: cerebro-governance-decision-record/v1
+decision:
+  id: C02-P002-CONVERGENCE-ARCH-LOCK-001
+  date: 2026-08-12
+  status: LOCKED
+  decision_owner: ADMIN
+  source_basis_commit: f573febed731d91fdf5815f2e269d1eef532636c
+  human_name: Convergence Engine Architecture Lock
+  required_quality: DEEP
+
+  problem:
+    classification: STRUCTURAL_GAP
+    missing_level: MESO_ORCHESTRATION
+    observed_pattern:
+      - applicable-family-learning-and-regression-rules-already-existed
+      - repeated-human-probe-retry-roundtrips-still-occurred
+      - no-single-operational-owner-for-work-family-batching-and-invalidation
+      - P002-exposed-the-gap-through-real-workspace-discovery-friction
+
+  evidence:
+    source_refs:
+      - standards/development/implementation-learning-loop.yaml
+      - standards/development/delivery-failure-regression.yaml
+      - standards/development/adaptive-quality-workform.yaml
+      - standards/development/architectural-regrounding.yaml
+      - standards/control-architecture.yaml
+      - mcp/constitution.yaml#C-04
+    local_external_evidence_refs:
+      - CEREBRO_C02_P002_WORKSPACE_DISCOVERY.json
+      - CEREBRO_C02_P002_DEPENDENCY_AUDIT.json
+      - CEREBRO_C02_P002_WORKSPACE_DISCOVERY_R2.ps1
+      - CEREBRO_C02_P002_WORKSPACE_DISCOVERY_R3.ps1
+    external_evidence_authority: EVIDENCE_ONLY
+
+  foundational_rule:
+    id: CEREBRO-FOUNDATIONAL-TRUST-AND-CHALLENGE-001
+    effect: LOCKED_AND_SUPERSEDES_PRIOR_NON_AUTHORITATIVE_NO_NEW_STRUCTURE_HEURISTIC
+    constitutional_clarification: MINIMUM_SUFFICIENT_ACTION_IS_NOT_MINIMUM_STRUCTURAL_DELTA
+
+  architecture:
+    new_top_level_engine: convergence
+    architecture_ref: engines/convergence/architecture.yaml
+    component_ref: engines/convergence/component.yaml
+    model_ref: engines/convergence/model.yaml
+    rules_ref: engines/convergence/rules.yaml
+    structural_role: MESO_ORCHESTRATION
+    architecture_state: LOCKED
+    implementation_state: DEFINED
+    operational_state: PENDING_EXECUTABLE_BINDING
+
+  temporaris:
+    remains: CANDIDATE_ENVIRONMENT
+    convergence_relationship: ORCHESTRATION_DRIVES_CANDIDATE_ITERATION
+    future_local_loop: INTENDED
+    current_local_runtime_activation_claimed: false
+
+  boundaries:
+    no_constitution_amendment: true
+    no_runtime_activation_claim: true
+    C02_P002_physical_migration_not_performed_by_this_lock: true
+    history_rewrite: false
+
+  next_phase:
+    id: C02-P002-WORKSPACE-CONVERGENCE
+    mode: RESUME_AS_FIRST_PROVING_GROUND
+    use_locked_convergence_model: true

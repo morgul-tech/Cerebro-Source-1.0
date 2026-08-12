@@ -1,0 +1,67 @@
+schema: cerebro-convergence-model/v0.1
+convergence_model:
+  id: CEREBRO-CONVERGENCE-MODEL-001
+  version: "0.1"
+  status: LOCKED_ARCHITECTURE
+  owner: convergence
+  authority_scope: DERIVED_ORCHESTRATION
+  definitional_authority: Cerebro Source 1.0
+  control_authority: MCP
+
+  work_family:
+    kind: DERIVED_WORK_UNIT
+    required_fields:
+      - family_id
+      - objective_ref
+      - scope
+      - basis_refs
+      - depends_on
+      - prevention_refs
+      - validation_refs
+      - execution_refs
+      - evidence_refs
+      - state
+      - pass_basis_fingerprint
+      - invalidated_by
+    states: [PENDING, READY, IN_PROGRESS, PASS, BLOCKED, STALE]
+
+  convergence_plan:
+    kind: DERIVED_STATE
+    required_fields:
+      - convergence_plan_id
+      - objective_ref
+      - mcp_control_decision_ref
+      - basis_fingerprint
+      - work_family_graph
+      - invalidation_graph
+      - prevention_bindings
+      - current_ready_set
+      - human_boundary
+      - convergence_state
+    convergence_states: [PLANNED, ITERATING, BLOCKED, CONVERGED, STALE]
+
+  broadest_safe_convergence_unit:
+    objective: MAXIMIZE_SAFE_BATCHING
+    required_properties:
+      - shared-or-relevant-basis
+      - coherent-dependency-scope
+      - bounded-blast-radius
+      - compatible-observation-method
+      - meaningful-combined-remediation
+      - deterministic-revalidation
+      - proportionate-resource-cost
+
+  invalidation:
+    principle: DEPENDENCY_AWARE_REVALIDATION
+    material_basis_change_effect: STALE_ALL_DEPENDENT_PASS
+    restart_rule: RERUN_FROM_EARLIEST_AFFECTED_FAMILY
+
+  local_iteration_projection:
+    preferred_environment: Temporaris
+    deterministic-known-family-retries_should_be_local_when-capable: true
+    chat-or-human-return_condition:
+      - novel-unresolved-failure
+      - material-user-decision
+      - authority-boundary
+      - safety-boundary
+      - local-capability-exhausted

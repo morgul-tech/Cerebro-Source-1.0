@@ -1,11 +1,12 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.1"
+  version: "1.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
   constitutional_learning_boundary_ref: mcp/constitution.yaml#C-07
+  structural_challenge_ref: standards/development/architectural-regrounding.yaml#foundational_trust_and_challenge
 
   trigger:
   - implementation-failure
@@ -14,6 +15,8 @@ implementation_learning_loop:
   - validator-gap
   - known-failure-family-recurrence
   - execution-context-gap
+  - rule-present-behavior-recurrence
+  - structural-owner-gap
 
   mandatory_sequence:
   - identify-reached-stage
@@ -21,6 +24,8 @@ implementation_learning_loop:
   - establish-Source-mutation-state
   - distinguish-observed-error-from-unreached-error-labels
   - retrieve-applicable-existing-failure-families-and-assurance-rules
+  - assess-whether-recurrence-indicates-activation-ownership-or-structural-gap
+  - invoke-foundational-challenge-when-structural-gap-evidence-is-material
   - map-remaining-reachable-execution-stages-and-adjacent-contracts
   - inspect-final-materialized-candidate-for-additional-knowable-defects
   - assess-generalizability
@@ -50,6 +55,20 @@ implementation_learning_loop:
     all_knowable_applicable_defects_are_corrected_together: true
     unresolved_runtime_only_uncertainty_must_be_stated: true
 
+  structural_learning_escalation:
+    rule_present_behavior_recurrence_effect: STRUCTURAL_REVIEW_REQUIRED
+    repeated_failure_after_machine_prevention_effect: STRUCTURAL_REVIEW_REQUIRED
+    unclear_cross_component_ownership_effect: STRUCTURAL_REVIEW_REQUIRED
+    required_review_dimensions:
+      - activation
+      - ownership
+      - orchestration
+      - structure
+    adding_more_policy_before_required_structural_review: PROHIBITED
+    existing_structure_default_winner: false
+    new_structure_default_winner: false
+    resolution_ref: CEREBRO-FOUNDATIONAL-TRUST-AND-CHALLENGE-001
+
   recurrence:
     known_failure_family_may_recur_without_explicit_exception: false
     repeat_threshold_for_clean_rebuild: 2
@@ -61,5 +80,6 @@ implementation_learning_loop:
   closure_gate:
   - failure-classification-complete
   - mutation-state-known
+  - structural-review-complete-when-triggered
   - generalizable-learning-persisted-or-explicitly-rejected-with-reason
   - relevant-regression-controls-pass

@@ -1,0 +1,78 @@
+schema: cerebro-component/v1
+component:
+  id: convergence
+  name: Convergence Engine
+  type: engine
+  version: 0.1.0
+  status: LOCKED_DEFINITION
+
+architecture:
+  path: architecture.yaml
+  state: LOCKED
+  lock_id: C02-P002-CONVERGENCE-ARCH-LOCK-001
+implementation_state: DEFINED
+operational_state: PENDING_EXECUTABLE_BINDING
+
+responsibility:
+  primary: >
+    Organize authorized material work into the broadest safe work families and
+    drive dependency-aware iteration toward a converged candidate with the
+    minimum necessary human boundaries and redundant executions.
+
+boundaries:
+  must:
+    - form-work-family-graph
+    - maximize-safe-batching
+    - bind-applicable-known-prevention-and-regression
+    - determine-family-order-from-dependencies
+    - track-pass-basis-and-invalidation
+    - rerun-earliest-affected-family-after-material-change
+    - collect-complete-family-defect-set-when-no-hard-stop
+    - drive-final-cross-family-convergence-sweep
+    - expose-convergence-state-to-MCP-and-quality
+    - request-human-boundary-only-when-real
+  must_not:
+    - own-user-objective
+    - own-Source-authority
+    - own-MCP-control-decision
+    - define-quality-criteria
+    - execute-capabilities-directly
+    - own-Temporaris
+    - promote-evidence-to-authority
+    - mutate-Source-by-itself
+
+dependencies:
+  runtime:
+    - context
+    - quality
+  optional_runtime:
+    - project
+interfaces:
+  input:
+    - authorized-objective
+    - mcp-control-decision
+    - execution-profile
+    - applicable-learning
+    - quality-requirements
+    - candidate-environment-state
+    - execution-evidence
+  output:
+    - convergence-plan
+    - work-family-graph
+    - execution-batch
+    - invalidation-set
+    - revalidation-plan
+    - convergence-state
+    - human-boundary-request
+control_integration:
+  governing_control_owner: MCP
+  candidate_environment: Temporaris
+  quality_owner: quality
+  execution_binding: PENDING_EXECUTABLE_BINDING
+  architecture_lock_is_operational_execution_proof: false
+model:
+  path: model.yaml
+rules:
+  path: rules.yaml
+documentation:
+  path: specification.md

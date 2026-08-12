@@ -2,19 +2,25 @@ schema: cerebro-architectural-regrounding/v0.1
 
 architectural_regrounding:
   id: CEREBRO-ARCHITECTURAL-REGROUNDING-001
-  version: "0.1"
+  version: "0.2"
   status: ACTIVE
   introduced_by: PATCH-005
   kind: STANDARD
 
   purpose: >
-    Treat the current architecture as a hypothesis at major phase boundaries,
-    reassess it against real evidence, and prevent local patch accumulation from
-    becoming unchallenged architectural sediment.
+    Treat the current architecture as a trusted working hypothesis rather than an
+    untouchable default winner, reassess it against real evidence, and prevent local
+    patch accumulation or inherited structural assumptions from becoming
+    unchallenged architectural sediment.
 
   trigger:
     event: MAJOR_PHASE_BOUNDARY
     required_control_state: ARCHITECTURAL_REGROUNDING_REQUIRED
+    additional_events:
+      - MATERIAL_CONTRADICTORY_EVIDENCE
+      - MATERIAL_STRUCTURAL_GAP_EVIDENCE
+      - REPEATED_RULE_PRESENT_BEHAVIOR_RECURRENCE
+      - MATERIAL_HUMAN_STRUCTURAL_INSIGHT
 
   scope:
     local_source_closure:
@@ -22,7 +28,7 @@ architectural_regrounding:
       frequency: every-material-source-change
     global_architectural_regrounding:
       purpose: challenge whether the architecture itself remains the best model
-      frequency: major-phase-boundary-or-material-contradictory-evidence
+      frequency: major-phase-boundary-or-material-contradictory-or-structural-gap-evidence
 
   required_flow:
     - CONSOLIDATE_REAL_EVIDENCE
@@ -37,7 +43,66 @@ architectural_regrounding:
 
   zero_base_rule:
     current_architecture_is_candidate_not_default_winner: true
-    preserve_only-when-evidence-justifies: true
+    preserve_only_when-evidence-justifies: true
+    structural_change_is_neither_preferred_nor_prohibited: true
+    existing_structure_is_neither_preferred_nor_prohibited: true
+
+  foundational_trust_and_challenge:
+    id: CEREBRO-FOUNDATIONAL-TRUST-AND-CHALLENGE-001
+    status: LOCKED
+    decision_owner: ADMIN
+    machine_statement: >
+      Cerebro SHALL trust verified established architecture as the current working
+      foundation, but SHALL NOT protect that architecture as the default winner when
+      material evidence indicates a structural gap. Repeated systemic friction,
+      recurring behavior that contradicts already-applicable rules, distributed or
+      missing ownership, workaround accumulation, or material contradictory evidence
+      SHALL trigger an explicit challenge of the relevant foundation. Existing and
+      structurally different candidates SHALL be compared on the same criteria. The
+      selected solution SHALL be the smallest sufficient solution at the correct
+      structural level, which MAY require a structural change.
+    human_statement: >
+      Cerebro skal stole på en grunnmur som er verifisert og fungerer, men ikke
+      behandle den som urørlig. Når gjentatte problemer, uklart eierskap eller andre
+      tegn tyder på at svakheten kan ligge i selve strukturen, skal grunnmuren
+      utfordres. Målet er ikke mest eller minst mulig strukturendring, men den
+      minste tilstrekkelige løsningen på riktig nivå.
+    replaces_non_authoritative_heuristics:
+      - heuristic: EXISTING_STRUCTURE_FIRST_AS_DEFAULT_WINNER
+        disposition: SUPERSEDED
+      - heuristic: NO_NEW_STRUCTURE_BY_DEFAULT
+        disposition: SUPERSEDED
+    supersession_scope:
+      canonical_source_rule_replaced: false
+      prior_non_authoritative_work_heuristic_replaced: true
+      history_rewrite: false
+    constitutional_clarification:
+      article_ref: mcp/constitution.yaml#C-04
+      rule: MINIMUM_SUFFICIENT_ACTION_IS_NOT_MINIMUM_STRUCTURAL_DELTA
+      structural_change_may_be_minimum_sufficient_when_problem_is_structural: true
+      no_constitution_amendment_required: true
+    structural_challenge_triggers:
+      - repeated-systemic-friction-despite-applicable-policy
+      - recurring-known-family-after-machine-prevention-exists
+      - no-clear-operational-owner-for-material-responsibility
+      - cross-component-workaround-accumulation
+      - policy-present-but-normal-behavior-still-contradicts-policy
+      - material-contradictory-evidence
+      - material-human-structural-insight
+      - major-phase-boundary
+    required_behavior:
+      - trust-current-architecture-as-starting-hypothesis
+      - challenge-current-architecture-when-triggered
+      - inspect-activation-ownership-and-structure-before-adding-more-policy
+      - generate-at-least-one-structurally-different-candidate-when-gap-evidence-is-material
+      - compare-existing-and-structural-candidates-on-same-criteria
+      - allow-KEEP-REFINE-RESTRUCTURE-or-REPLACE-by-evidence
+      - document-why-no-structural-change-is-sufficient-when-existing-structure-wins
+    prohibited_shortcuts:
+      - reject-new-structure-only-because-current-structure-exists
+      - prefer-new-structure-only-because-current-structure-showed-friction
+      - add-more-policy-when-the-material-unresolved-question-is-ownership-or-structure
+      - treat-historical-scope-exclusion-as-permanent-architecture-prohibition
 
   evidence_inputs:
     - operational-evidence
@@ -64,3 +129,5 @@ architectural_regrounding:
     - global-regrounding-does-not-rewrite-history
     - architecture-change-requires-evidence-and-decision-readiness
     - no-change-is-valid-only-after-challenge
+    - minimum-sufficient-action-is-not-minimum-structural-delta
+    - current-architecture-is-not-protected-from-evidence-based-structural-challenge

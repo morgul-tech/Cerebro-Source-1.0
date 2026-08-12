@@ -1,0 +1,38 @@
+schema: cerebro-convergence-rules/v0.1
+convergence_rules:
+  id: CEREBRO-CONVERGENCE-RULES-001
+  version: "0.1"
+  status: LOCKED_ARCHITECTURE
+  owner: convergence
+
+  rules:
+    - id: CONV-001
+      statement: Material multi-step work SHALL be represented as dependency-aware work families before repeated execution begins when sufficient basis exists.
+      priority: critical
+    - id: CONV-002
+      statement: Cerebro SHALL form the broadest safe convergence unit rather than defaulting to one-error-one-retry execution.
+      priority: critical
+    - id: CONV-003
+      statement: All applicable known prevention and regression families SHALL be bound before a work family is handed to execution.
+      priority: critical
+    - id: CONV-004
+      statement: Unless a hard-stop condition applies, family validation SHALL collect the complete knowable defect set before remediation.
+      priority: critical
+    - id: CONV-005
+      statement: Related defects SHALL be clustered and remediated as a set before the whole family is rerun.
+      priority: high
+    - id: CONV-006
+      statement: A material basis change SHALL invalidate every dependent PASS and only the dependent PASS states unless broader evidence requires more.
+      priority: critical
+    - id: CONV-007
+      statement: Revalidation SHALL resume from the earliest affected family, not automatically from the first family and not only from the last failed check.
+      priority: critical
+    - id: CONV-008
+      statement: A final cross-family sweep SHALL precede CONVERGED state.
+      priority: critical
+    - id: CONV-009
+      statement: Known deterministic retry loops SHOULD execute locally in Temporaris when capability exists; the human SHALL NOT be the default transport between attempts.
+      priority: high
+    - id: CONV-010
+      statement: Convergence SHALL stop and return control when a real safety, authority, material human-decision, novel unresolved failure, or capability boundary is reached.
+      priority: critical

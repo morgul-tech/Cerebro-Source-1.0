@@ -1,0 +1,152 @@
+schema: cerebro-convergence-architecture/v0.1
+convergence_architecture:
+  id: CEREBRO-CONVERGENCE-ARCHITECTURE-001
+  version: "0.1"
+  status: LOCKED
+  decision_id: C02-P002-CONVERGENCE-ARCH-LOCK-001
+  decision_owner: ADMIN
+  owner: convergence
+  definitional_authority: Cerebro Source 1.0
+  control_authority: MCP
+
+  structural_decision:
+    new_top_level_engine: true
+    engine_id: convergence
+    missing_level: MESO_ORCHESTRATION
+    rationale: >
+      Cerebro already has macro project structure and micro execution/validation
+      mechanisms, but lacked one explicit owner for work-family formation, safe
+      batching, dependency-aware iteration, PASS invalidation and whole-candidate
+      convergence across material multi-step work.
+
+  responsibility:
+    owns:
+      - work-decomposition-into-coherent-families
+      - broadest-safe-batching
+      - dependency-and-invalidation-graph
+      - prevention-and-regression-binding
+      - family-execution-order
+      - complete-family-defect-collection-when-safe
+      - set-based-remediation-loop
+      - dependency-aware-revalidation
+      - final-cross-family-convergence
+    does_not_own:
+      - user-objective
+      - Source-authority
+      - MCP-control-decision
+      - quality-criteria
+      - capability-implementation
+      - candidate-environment-authority
+      - evidence-promotion-to-authority
+
+  relationship_model:
+    Context: WHAT_IS_KNOWN
+    Project: WHAT_THE_PROJECT_IS_TRYING_TO_ACHIEVE
+    MCP: WHAT_IS_AUTHORIZED_AND_WHICH_CONTROL_OUTCOME_APPLIES
+    Convergence: HOW_AUTHORIZED_MULTI_STEP_WORK_IS_ORGANIZED_TO_CONVERGE
+    Quality: WHETHER_REQUIRED_QUALITY_IS_SATISFIED
+    Change_and_Capabilities: HOW_CONCRETE_WORK_IS_PERFORMED
+    Temporaris: WHERE_CANDIDATE_ITERATION_MAY_OCCUR
+
+  target_control_insertion:
+    after:
+      - MCP_CONTROL_DECISION
+      - EXECUTION_PROFILE
+    before:
+      - EXECUTION_SURFACE_RESOLUTION
+      - CAPABILITY_BINDING
+    target_stages:
+      - CONVERGENCE_RESOLUTION
+      - CONVERGENCE_PLAN
+      - WORK_FAMILY_ITERATION
+      - CROSS_FAMILY_CONVERGENCE
+    current_activation_state: DEFINED_NOT_YET_BOUND_TO_NORMAL_EXECUTION_PATH
+    activation_requires:
+      - executable-convergence-orchestrator
+      - normal-consumer-binding
+      - deterministic-validator
+      - MCP-and-Quality-integration
+      - regression-validation
+    architecture_lock_must_not_be_claimed_as_runtime_activation: true
+
+  work_family:
+    meaning: >
+      A coherent derived unit of work that should be understood, prevented,
+      executed, diagnosed, remediated and revalidated together.
+    distinct_from_failure_family: true
+    may_bind_multiple_failure_families: true
+
+  broadest_safe_convergence_unit:
+    rule: MAXIMIZE_BATCHING_SUBJECT_TO_SAFETY_AUTHORITY_EVIDENCE_AND_BOUNDED_BLAST_RADIUS
+    merge_when:
+      - basis-is-shared-or-materially-related
+      - dependency-scope-is-coherent
+      - observation-methods-are-compatible
+      - combined-remediation-is-meaningful
+      - deterministic-revalidation-is-possible
+      - evidence-quality-does-not-degrade
+    split_when:
+      - safety-requires-hard-stop
+      - authority-boundary-differs
+      - observation-integrity-would-degrade
+      - blast-radius-becomes-unbounded
+      - resource-cost-is-disproportionate
+
+  iteration_rule:
+    normal_sequence:
+      - FORM_BROADEST_SAFE_FAMILY
+      - APPLY_KNOWN_PREVENTION
+      - RUN_ALL_RELEVANT_NON_HARD_STOP_CHECKS
+      - COLLECT_COMPLETE_KNOWABLE_DEFECT_SET
+      - CLUSTER_COMMON_CAUSES
+      - REMEDIATE_AS_SET
+      - RERUN_WHOLE_FAMILY
+      - PROPAGATE_STALE_BY_DEPENDENCY
+      - ADVANCE_NEXT_READY_FAMILY
+      - FINAL_CROSS_FAMILY_SWEEP
+    fail_fast_only_when:
+      - safety-risk
+      - authority-invalid
+      - destructive-continuation-risk
+      - continued-execution-would-corrupt-evidence
+
+  invalidation:
+    principle: DEPENDENCY_AWARE_REVALIDATION
+    basis_change_effect: STALE_AFFECTED_DEPENDENT_PASS_ONLY
+    rerun_rule: RERUN_FROM_EARLIEST_AFFECTED_FAMILY
+    always_restart_from_beginning: false
+    never_retest_prior_pass: false
+
+  temporaris_binding:
+    Temporaris_role: CANDIDATE_ENVIRONMENT
+    convergence_role: ORCHESTRATION_OWNER
+    relationship: CONVERGENCE_DRIVES_ITERATION_WITHIN_TEMPORARIS_WHEN_LOCAL_CAPABILITY_EXISTS
+    Temporaris_is_not_convergence_engine: true
+
+  future_local_runtime:
+    architectural_intent: >
+      Deterministic and previously learned convergence loops should migrate from
+      repeated human chat handoffs to local Cerebro execution when runtime
+      capability exists. A local Temporaris may run candidate families, collect
+      defects, apply known remediation, revalidate affected graph segments and
+      iterate until CONVERGED or a real novel/blocking boundary is reached.
+    optimize_for:
+      - fewer-human-execution-roundtrips
+      - less-human-waiting-and-transport
+      - broader-machine-side-defect-discovery
+      - compact-novel-failure-handoff-to-chat-or-human
+    machine_compute_time_may_increase_to_reduce_human_time: true
+    chat_required_for_every-retry: false
+    novel-or-material-decision-boundary_returns_to_higher-level-control: true
+    runtime_py_or_equivalent_binding: DEFERRED_IMPLEMENTATION
+
+  invariants:
+    - work-family-is-not-failure-family
+    - known-prevention-precedes-family-execution
+    - first-observed-error-is-not-complete-defect-inventory
+    - PASS-is-bound-to-basis
+    - affected-PASS-becomes-STALE-after-material-basis-change
+    - human-is-not-default-retry-or-diagnostic-controller
+    - convergence-does-not-create-control-authority
+    - convergence-does-not-create-Source-authority
+    - architecture-lock-does-not-equal-runtime-activation
