@@ -435,6 +435,13 @@ rules:
         validator: tooling/validator/continuation_surface_validation.py
         required_before_response_handoff: true
         failure_effect: BLOCK_AND_RERENDER
+      exact_shell_exception_preflight:
+        validator: tooling/validator/human_execution_handoff.py
+        profile: HASH_BOUND_POWERSHELL
+        require_generated_terminal_surface: true
+        require_hash_bound_runtime_consumer: true
+        prohibit_literal_artifact_filename_dependency: true
+        failure_effect: BLOCK_AND_RERENDER
       prohibit_content_after: true
   statement: Når neste handling er brukerutførbar, SKAL Presentation Engine normalt vise en kort menneskelig trigger på 2–5 ord som siste kopierbare element; full kanonisk kommando, mål, constraints, evidence og continuation state SKAL forbli bundet internt i Cerebro uten semantisk tap. Lang form er bare tillatt når Human Continuation Surface eksplisitt krever eksakt shell-, API- eller debug-syntaks.
   scope: runtime

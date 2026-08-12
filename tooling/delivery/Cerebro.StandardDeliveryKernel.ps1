@@ -906,6 +906,19 @@ function Invoke-SelfTest {
         if ($continuationResult.ExitCode -ne 0 -or [string]$continuationEvidence.result -ne 'PASS') {
             throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_FAILED'
         }
+
+        $State.ReachedStage = 'SELFTEST_HUMAN_EXECUTION_HANDOFF'
+        $executionHandoffValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/human_execution_handoff.py'
+        if (-not (Test-Path -LiteralPath $executionHandoffValidator -PathType Leaf)) {
+            throw 'HUMAN_EXECUTION_HANDOFF_VALIDATOR_MISSING_FROM_CANDIDATE_VIEW'
+        }
+        $executionHandoffArgs = @($continuationPython.PrefixArgs) + @($executionHandoffValidator,'selftest')
+        $executionHandoffResult = Invoke-NativeCommand -Executable $continuationPython.Executable -ArgumentList $executionHandoffArgs
+        try { $executionHandoffEvidence = $executionHandoffResult.Stdout | ConvertFrom-Json }
+        catch { throw 'HUMAN_EXECUTION_HANDOFF_SELFTEST_OUTPUT_INVALID' }
+        if ($executionHandoffResult.ExitCode -ne 0 -or [string]$executionHandoffEvidence.result -ne 'PASS') {
+            throw 'HUMAN_EXECUTION_HANDOFF_SELFTEST_FAILED'
+        }
     }
     finally {
         if(-not[string]::IsNullOrWhiteSpace($candidateView) -and (Test-Path -LiteralPath $candidateView)){

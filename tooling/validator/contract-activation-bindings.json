@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.5",
+  "classification_version": "2.6",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -40,7 +40,8 @@
       "classification": "OPERATIONAL",
       "rationale": "The system-wide short-trigger contract is registered through MCP, consumed by Interaction and Presentation, fail-closed before response handoff and runtime-proven by deterministic positive and negative response-candidate canaries.",
       "strict_contract_refs": [
-        "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+        "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
+        "HUMAN_EXECUTION_HANDOFF_TRANSPORT"
       ]
     },
     {
@@ -49,7 +50,8 @@
       "classification": "OPERATIONAL",
       "rationale": "The cross-surface policy remains owner-distributed rather than a new component, but its canonical binding and final-response constraints are now machine-consumed and runtime-evidenced through one strict enforcement contract.",
       "strict_contract_refs": [
-        "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+        "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
+        "HUMAN_EXECUTION_HANDOFF_TRANSPORT"
       ]
     },
     {
@@ -499,6 +501,41 @@
         ],
         "required_proves_binding": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
       }
+    },
+    {
+      "id": "HUMAN_EXECUTION_HANDOFF_TRANSPORT",
+      "standard_id": "STD-HUMAN-CONTINUATION-SURFACE",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/human-continuation-surface.yaml",
+      "declaration_tokens": [
+        "GENERATED_VISIBLE_COMMAND_AND_CONSUMED_ARTIFACT_IDENTITY_MUST_MATCH",
+        "HASH_BOUND_POWERSHELL",
+        "BLOCK_HANDOFF_OR_FAIL_BEFORE_SOURCE_MUTATION"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "HUMAN_EXECUTION_HANDOFF_TRANSPORT",
+      "implementation": "tooling/validator/human_execution_handoff.py",
+      "implementation_tokens": [
+        "def generate_command(",
+        "def validate_response(",
+        "EXACT_SHA256_AND_UNIQUE_CARDINALITY",
+        "markdown-underscore-escape-surface-prohibited"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+      "wiring_proof_kind": "EXPLICIT_ADAPTER",
+      "wiring_tokens": [
+        "Assert-HumanExecutionHandoff",
+        "HumanExecutionHandoffFingerprint",
+        "HUMAN_EXECUTION_HANDOFF_FINGERPRINT_MISMATCH",
+        "HUMAN_EXECUTION_HANDOFF_VERIFIED"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "exact-shell-command-is-generated-from-final-launcher-and-bundle-hashes",
+        "launcher-and-bundle-resolve-by-exact-sha256-and-unique-cardinality",
+        "markdown-backslash-underscore-filename-escape-canary-is-rejected"
+      ],
+      "runtime_evidence_state": "LAUNCHER_CONSUMPTION_REQUIRED_PER_STANDARD_ATTEMPT"
     },
     {
       "id": "PATCH_ATTEMPT_HISTORY",

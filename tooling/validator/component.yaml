@@ -18,6 +18,7 @@ boundaries:
   - emit-namespaced-target-runtime-receipt-pointer
   - validate-human-continuation-binding-and-final-response-surface
   - prove-boundary-scoped-machine-contract-composition
+  - generate-and-validate-hash-bound-human-execution-handoffs
   must_not:
   - modify-source
   - silently-ignore-errors
@@ -40,6 +41,7 @@ interfaces:
   - target-runtime-validation-receipt
   - human-continuation-surface-activation-proof
   - machine-contract-composition-boundary-proof
+  - human-execution-handoff-activation-proof
 documentation:
   path: README.md
 version:

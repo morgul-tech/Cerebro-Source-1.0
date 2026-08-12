@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$BundlePath = '',
-    [string]$WorkingSourcePath = 'D:\Cerebro\Source\Cerebro_Source_v1.0'
+    [string]$WorkingSourcePath = 'D:\Cerebro\Source\Cerebro_Source_v1.0',
+    [string]$HumanExecutionHandoffFingerprint = ''
 )
 
 Set-StrictMode -Version 2.0
@@ -17,6 +18,63 @@ $StableSuccessHandoff = Join-Path -Path $LauncherDirectory -ChildPath 'CEREBRO_P
 function Get-Sha256 {
     param([string]$LiteralPath)
     return (Get-FileHash -LiteralPath $LiteralPath -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-Sha256FromText {
+    param([Parameter(Mandatory=$true)][string]$Text)
+    $algorithm=[Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes=[Text.UTF8Encoding]::new($false).GetBytes($Text)
+        return ([BitConverter]::ToString($algorithm.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
+    }
+    finally {
+        $algorithm.Dispose()
+    }
+}
+
+function Get-HumanExecutionHandoffFingerprint {
+    param(
+        [Parameter(Mandatory=$true)][string]$LauncherSha256,
+        [Parameter(Mandatory=$true)][string]$BundleSha256
+    )
+    $subject=('cerebro-human-execution-handoff/v1|HASH_BOUND_POWERSHELL|{0}|{1}' -f $LauncherSha256.ToLowerInvariant(),$BundleSha256.ToLowerInvariant())
+    return Get-Sha256FromText -Text $subject
+}
+
+function Assert-HumanExecutionHandoff {
+    param(
+        [Parameter(Mandatory=$true)]$Manifest,
+        [Parameter(Mandatory=$true)][string]$BundleSha256
+    )
+
+    if($Manifest.PSObject.Properties.Name -notcontains 'human_execution_handoff'){
+        throw 'HUMAN_EXECUTION_HANDOFF_CONTRACT_MISSING'
+    }
+    $contract=$Manifest.human_execution_handoff
+    $validContract=(
+        [bool]$contract.required -and
+        [string]$contract.schema -eq 'cerebro-human-execution-handoff/v1' -and
+        [string]$contract.profile -eq 'HASH_BOUND_POWERSHELL' -and
+        [string]$contract.fingerprint_parameter -eq 'HumanExecutionHandoffFingerprint'
+    )
+    if(-not$validContract){throw 'HUMAN_EXECUTION_HANDOFF_CONTRACT_INVALID'}
+    if([string]::IsNullOrWhiteSpace($HumanExecutionHandoffFingerprint)){
+        throw 'HUMAN_EXECUTION_HANDOFF_FINGERPRINT_REQUIRED'
+    }
+    $launcherSha=Get-Sha256 -LiteralPath $LauncherFile
+    $expected=Get-HumanExecutionHandoffFingerprint -LauncherSha256 $launcherSha -BundleSha256 $BundleSha256
+    if(-not[string]::Equals($HumanExecutionHandoffFingerprint,$expected,[StringComparison]::OrdinalIgnoreCase)){
+        throw 'HUMAN_EXECUTION_HANDOFF_FINGERPRINT_MISMATCH'
+    }
+    return @{
+        schema='cerebro-human-execution-handoff-launch-proof/v1'
+        result='PASS'
+        profile='HASH_BOUND_POWERSHELL'
+        launcher_sha256=$launcherSha
+        bundle_sha256=$BundleSha256
+        handoff_fingerprint=$expected
+        artifact_identity_consumed=$true
+    }
 }
 
 function New-AttemptContext {
@@ -452,10 +510,12 @@ try {
     $manifestPath = Join-Path -Path $temporaryRoot -ChildPath 'manifest.json'
     $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
     Assert-SuccessReceiptProtocol
+    $humanExecutionProof=Assert-HumanExecutionHandoff -Manifest $manifest -BundleSha256 $bundleSha
     $Attempt.patch_id=[string]$manifest.patch_id
     $Attempt.expected_base_commit=[string]$manifest.expected_base_commit
     $Attempt.bundle_sha256=$bundleSha
     $Attempt.start_commit=(Get-WorkingSourceSnapshot -Path $WorkingSourcePath).head
+    Write-AttemptEvent -Context $Attempt -Event 'HUMAN_EXECUTION_HANDOFF_VERIFIED' -Data $humanExecutionProof
     Write-AttemptEvent -Context $Attempt -Event 'BUNDLE_VERIFIED'
     $kernelPath = Join-Path -Path $temporaryRoot -ChildPath 'kernel\Cerebro.StandardDeliveryKernel.ps1'
     $kernelSha = Get-Sha256 $kernelPath

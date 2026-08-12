@@ -39,6 +39,7 @@ boundaries:
     - emit-upload-file-pointer-without-manual-copy-step
     - consume-one-namespaced-delivery-receipt-after-nested-target-runtime-validation
     - execute-pre-mutation-selftests-against-sealed-candidate-source-view
+    - consume-hash-bound-human-execution-handoff-before-source-mutation
   must_not:
     - design-or-generate-source-content
     - create-source-authority
@@ -75,3 +76,4 @@ interfaces:
     - validated-success-transport-view
     - namespaced-delivery-receipt-pointer
     - sealed-candidate-source-view
+    - human-execution-handoff-launch-proof

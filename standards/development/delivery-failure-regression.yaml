@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "2.1"
+  version: "2.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -27,6 +27,9 @@ delivery_failure_regression:
   - DUPLICATE_EXECUTION
   - POST_SYNC_EQUALITY_FAILURE
   - AMBIGUOUS_COPYABLE_EXECUTION_SURFACE
+  - RENDERED_OR_COPIED_EXECUTION_SURFACE_DIVERGENCE
+  - LITERAL_ARTIFACT_FILENAME_TRANSPORT_ESCAPE
+  - HUMAN_EXECUTION_HANDOFF_FINGERPRINT_MISMATCH
   - MANUAL_TERMINAL_ERROR_TRANSPORT_REGRESSION
   - FAILURE_DIAGNOSTIC_CAPSULE_MISSING
   - FAILURE_HANDOFF_STACKTRACE_LEAK
@@ -88,6 +91,13 @@ delivery_failure_regression:
   - rollback-fixture-passes
   - duplicate-run-detection-passes
   - exactly-one-user-copyable-execution-surface
+  - exact-shell-command-is-generated-from-final-launcher-and-bundle-hashes
+  - exact-shell-response-candidate-byte-matches-generated-command
+  - launcher-and-bundle-resolve-by-exact-sha256-and-unique-cardinality
+  - launcher-consumes-human-execution-handoff-fingerprint-before-Source-mutation
+  - visible-command-does-not-depend-on-literal-artifact-filenames
+  - hash-bound-powershell-visible-command-is-underscore-free
+  - markdown-backslash-underscore-filename-escape-canary-is-rejected
   - failure-produces-timestamped-diagnostic-capsule
   - failure-produces-stable-launcher-directory-handoff-file
   - failure-terminal-is-short-and-does-not-require-stacktrace-copy

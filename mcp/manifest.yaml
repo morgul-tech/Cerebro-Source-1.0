@@ -90,6 +90,12 @@ control_adapters:
     failure_effect: BLOCK_RESPONSE_HANDOFF_AND_RERENDER
     activation_evidence_required: true
     activation_binding_ref: HUMAN_CONTINUATION_SURFACE_ENFORCEMENT
+    exact_shell_handoff:
+      profile: HASH_BOUND_POWERSHELL
+      generator_validator_ref: tooling/validator/human_execution_handoff.py
+      runtime_consumer_ref: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+      activation_binding_ref: HUMAN_EXECUTION_HANDOFF_TRANSPORT
+      failure_effect: BLOCK_HANDOFF_OR_FAIL_BEFORE_SOURCE_MUTATION
 principles:
 - id: MCP-P001
   statement: Analyze the task before selecting or producing a solution.

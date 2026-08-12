@@ -400,3 +400,39 @@ development_history:
       provenance:
         admission: CORRECTIVE_VALIDATION_DISCOVERY
         source_ref: C1EC0DD_POST_COMMIT_CONTROL_RESOLUTION_SELFTEST
+    - id: HIST-LEARN-RENDERED-COPY-SURFACE-VS-INTENDED-SYNTAX-20260812
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Intended PowerShell syntax diverged from the copied execution surface
+      fact: The Wave 02 R3 launcher command was presented with a literal artifact filename, but the copied path contained backslash-underscore sequences. Windows PowerShell therefore received a different nonexistent path and rejected the -File argument before the launcher started. A filename-independent hash-resolved command then launched the same verified artifacts successfully and R3 completed canonical sync at 428773f631c14b17d342ec00916f91f001983ca1. The permanent correction makes exact shell handoff a generated, response-validated, hash-bound contract that the launcher consumes before Source mutation.
+      occurred_at: '2026-08-12'
+      evidence_refs:
+        - USER-REPORTED-POWERSHELL-FILE-PATH-NOT-FOUND-20260812
+        - CEREBRO_PATCH_SUCCESS.json
+        - RESULT_COMMIT_428773F631C14B17D342EC00916F91F001983CA1
+      impact:
+        introduced:
+          - RENDERED_OR_COPIED_EXECUTION_SURFACE_DIVERGENCE
+          - LITERAL_ARTIFACT_FILENAME_TRANSPORT_ESCAPE
+        retired:
+          - HAND_AUTHORED_STANDARD_EXACT_SHELL_COMMAND
+          - VISIBLE_FILENAME_AS_ARTIFACT_IDENTITY
+          - INTENDED_MARKDOWN_SOURCE_AS_COPY_SURFACE_PROOF
+        enabled:
+          - GENERATED_HASH_BOUND_HUMAN_EXECUTION_HANDOFF
+          - UNIQUE_SHA256_ARTIFACT_RESOLUTION
+          - LAUNCHER_CONSUMED_HANDOFF_FINGERPRINT
+          - PRE_MUTATION_HANDOFF_IDENTITY_FAILURE
+        learned:
+          - THE_ACTUAL_CONSUMER_REPRESENTATION_IS_THE_RELEVANT_EXECUTION_CONTRACT
+          - CONTENT_IDENTITY_IS_MORE_ROBUST_THAN_HUMAN_VISIBLE_FILENAMES_ACROSS_CHAT_TRANSPORT
+          - PERMANENT_LEARNING_REQUIRES_GENERATION_VALIDATION_AND_RUNTIME_CONSUMPTION_NOT_ONLY_POLICY_TEXT
+          - THE_MINIMUM_SUFFICIENT_MECHANISM_IS_OFTEN_THE_CORRECT_SYSTEMIC_FIX
+      relations:
+        patch_refs: [CEREBRO-DUALITYARC-WAVE-02-20260812-R3, CEREBRO-DUALITYARC-WAVE-02-20260812-R4]
+        baseline_commit: 428773f631c14b17d342ec00916f91f001983ca1
+        learning_refs: [RENDERED_OR_COPIED_EXECUTION_SURFACE_DIVERGENCE, GENERATED_HASH_BOUND_HUMAN_EXECUTION_HANDOFF]
+      provenance:
+        admission: USER_DIRECTED_EXECUTION_CONFIRMED_PERMANENT_LEARNING
+        source_ref: USER-REFINE-PERMANENT-LEARNING-2026-08-12

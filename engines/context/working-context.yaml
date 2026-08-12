@@ -5559,6 +5559,73 @@ RECEIPT-76656fa9d8e617e98414c9fe
           - "CTX-BASIS-DUALITY-ARC-WAVE-02-R2-20260812-001"
           - "CTX-ASSESS-MCP-CONTROL-DEPTH-AFTER-WAVE02-20260812-001"
       sequence: 131
+    -
+      id: "CTX-WISDOM-GENERATED-HASH-BOUND-HUMAN-EXECUTION-HANDOFF-20260812-001"
+      type: "WISDOM"
+      scope: "SYSTEM-WIDE-HUMAN-TO-LOCAL-SHELL-EXECUTION-BOUNDARY"
+      statement: "For exact local shell handoffs, intended syntax is not proof of the rendered or copied execution surface. The visible command must be generated from final artifact identities, validated as the exact terminal response surface, and consumed by the runtime entrypoint before Source mutation. The minimum sufficient robust mechanism is content-hash resolution plus a launcher-consumed fingerprint, not additional prose or filename escaping rules."
+      payload:
+        maturity: "LOCKED"
+        evidence:
+          - "USER_OBSERVED_LITERAL_BACKSLASH_UNDERSCORE_IN_COPIED_POWERSHELL_PATH"
+          - "POWERSHELL_FILE_PARAMETER_REJECTED_NONEXISTENT_ESCAPED_PATH"
+          - "HASH_RESOLVED_R3_RECOVERY_COMMAND_COMPLETED_WITH_VERIFIED_SYNC"
+          - "CEREBRO_PATCH_SUCCESS_AT_428773F631C14B17D342EC00916F91F001983CA1"
+        causal_chain:
+          - "HAND_AUTHORED_VISIBLE_FILENAME"
+          - "MARKDOWN_OR_COPY_TRANSPORT_INTRODUCED_LITERAL_ESCAPE"
+          - "POWERSHELL_RECEIVED_DIFFERENT_PATH_BYTES"
+          - "LAUNCHER_NEVER_STARTED"
+        required_behavior:
+          - "GENERATE_EXACT_SHELL_SURFACE_FROM_FINAL_LAUNCHER_AND_BUNDLE_HASHES"
+          - "RESOLVE_BOTH_ARTIFACTS_BY_EXACT_SHA256_AND_UNIQUE_CARDINALITY"
+          - "AVOID_VISIBLE_LITERAL_ARTIFACT_FILENAMES"
+          - "VALIDATE_THE_ACTUAL_RESPONSE_CANDIDATE_NOT_ONLY_INTENDED_COMMAND_TEXT"
+          - "REQUIRE_LAUNCHER_TO_RECOMPUTE_AND_CONSUME_HANDOFF_FINGERPRINT_BEFORE_SOURCE_MUTATION"
+        honest_boundary: "CEREBRO_SOURCE_CANNOT_UNIVERSALLY_INTERCEPT_EVERY_EXTERNAL_RENDERER_OR_CLIPBOARD;RUNTIME_CONTENT_IDENTITY_CONSUMPTION_CLOSES_THE_MATERIAL_RISK"
+        design_principle: "USE_THE_MINIMUM_SUFFICIENT_MECHANISM;A_HAMMER_IS_CORRECT_WHEN_A_HAMMER_CLOSES_THE_BOUNDARY"
+      provenance:
+        introduced_by_ref: "USER-REFINE-PERMANENT-LEARNING-2026-08-12"
+        basis_refs:
+          - "CEREBRO-DUALITYARC-WAVE-02-20260812-R3"
+          - "CEREBRO_PATCH_SUCCESS.json"
+          - "standards/human-continuation-surface.yaml"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-COMMAND-EXECUTION-SURFACE-001"
+          - "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
+          - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
+      sequence: 132
+    -
+      id: "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "DUALITYARC-WAVE-02-PERMANENT-HUMAN-EXECUTION-HANDOFF"
+      statement: "Wave 02 R3 is verified successful at 428773f631c14b17d342ec00916f91f001983ca1. R4 immediately persists the execution-surface learning as generated hash-bound handoff enforcement and then returns control to the remaining Wave 02 convergence."
+      payload:
+        applicability: "CURRENT_DUALITYARC_WAVE_02_R4_CORRECTIVE_DELIVERY_BASIS"
+        source_base_commit: "428773f631c14b17d342ec00916f91f001983ca1"
+        verified_prior_patch: "CEREBRO-DUALITYARC-WAVE-02-20260812-R3"
+        patch_id: "CEREBRO-DUALITYARC-WAVE-02-20260812-R4"
+        corrective_scope:
+          - "GENERATED_EXACT_SHELL_HANDOFF"
+          - "HASH_BOUND_ARTIFACT_DISCOVERY"
+          - "TERMINAL_RESPONSE_CANDIDATE_VALIDATION"
+          - "LAUNCHER_FINGERPRINT_CONSUMPTION_BEFORE_SOURCE_MUTATION"
+          - "PERMANENT_FAILURE_LEARNING_AND_REGRESSION"
+        next_natural_work: "CONTINUE_REMAINING_DUALITYARC_WAVE_02_AFTER_VERIFIED_R4_SUCCESS"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R4"
+        basis_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001"
+          - "CTX-WISDOM-GENERATED-HASH-BOUND-HUMAN-EXECUTION-HANDOFF-20260812-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001"
+      sequence: 133
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -5627,7 +5694,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
       - "CTX-BASIS-DUALITY-ANA-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
-      - "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001"
+      - "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5679,7 +5746,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
       - "CTX-WISDOM-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-20260812-001"
       - "CTX-WISDOM-MACHINE-CONTRACT-COMPOSITION-20260812-001"
-  next_sequence: 132
+      - "CTX-WISDOM-GENERATED-HASH-BOUND-HUMAN-EXECUTION-HANDOFF-20260812-001"
+  next_sequence: 134
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

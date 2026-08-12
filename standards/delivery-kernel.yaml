@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "2.3"
+  version: "2.4"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -82,8 +82,16 @@ delivery_kernel:
     launcher_powershell: exactly-one
     copyable_command: exactly-one
     canonical_launcher_template: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+    human_execution_handoff:
+      schema: cerebro-human-execution-handoff/v1
+      profile: HASH_BOUND_POWERSHELL
+      generator_validator: tooling/validator/human_execution_handoff.py
+      artifact_resolution: EXACT_SHA256_AND_UNIQUE_CARDINALITY
+      fingerprint_consumer: launcher-before-Source-mutation
+      literal_artifact_filename_dependency: PROHIBITED
     launcher_role:
     - locate-bundle
+    - consume-hash-bound-human-execution-handoff
     - verify-bundle-integrity
     - extract-bundle
     - verify-kernel-integrity

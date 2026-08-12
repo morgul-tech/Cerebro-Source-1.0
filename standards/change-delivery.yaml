@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.9.0
+  version: 0.10.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -43,6 +43,14 @@ profiles:
     - exactly-one-bundle-zip
     - exactly-one-launcher-powershell
     - short-copyable-launch-command
+    execution_handoff_contract:
+      schema: cerebro-human-execution-handoff/v1
+      profile: HASH_BOUND_POWERSHELL
+      generator_owned_visible_command: required
+      exact_response_candidate_validation: required
+      launcher_and_bundle_resolution: EXACT_SHA256_AND_UNIQUE_CARDINALITY
+      launcher_runtime_fingerprint_consumption: required-before-Source-mutation
+      literal_artifact_filename_dependency: prohibited
     user_handoff_format: BUNDLE_ZIP_PLUS_LAUNCHER
     alternate_user_handoff: PROHIBITED
     execution_owner: USER_LOCAL_RUNNER
@@ -68,6 +76,7 @@ profiles:
     - success-receipt-validation-and-transport
     - namespaced-target-runtime-and-delivery-receipt-protocol
     - sealed-candidate-source-view-from-baseline-plus-manifest-operations
+    - hash-bound-human-execution-handoff-consumption
     prohibited_script_scope:
     - Source-content-generation
     - YAML-transformation

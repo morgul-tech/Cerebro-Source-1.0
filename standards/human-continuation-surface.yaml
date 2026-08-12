@@ -2,7 +2,7 @@ schema: cerebro-human-continuation-surface/v0.1
 
 human_continuation_surface:
   id: CEREBRO-HUMAN-CONTINUATION-SURFACE-001
-  version: "0.3"
+  version: "0.4"
   status: ACTIVE
   authority: Cerebro Source 1.0
   introduced_by: GUARDRAILS-001
@@ -47,6 +47,28 @@ human_continuation_surface:
       - exact-shell-syntax-is-the-human-action
       - exact-API-or-debug-payload-is-required
       - user-explicitly-requests-full-form
+
+  exact_shell_execution_handoff:
+    schema: cerebro-human-execution-handoff/v1
+    profile: HASH_BOUND_POWERSHELL
+    applies_when: EXACT_LOCAL_SHELL_SYNTAX_IS_THE_HUMAN_ACTION
+    generator_and_validator: tooling/validator/human_execution_handoff.py
+    runtime_consumer: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+    invariant: GENERATED_VISIBLE_COMMAND_AND_CONSUMED_ARTIFACT_IDENTITY_MUST_MATCH
+    requirements:
+      - visible-command-is-generated-not-hand-authored
+      - launcher-and-bundle-resolve-by-exact-sha256-with-unique-cardinality
+      - visible-command-does-not-depend-on-artifact-filenames
+      - visible-command-uses-an-underscore-free-transport-profile
+      - generated-envelope-binds-launcher-bundle-profile-and-fingerprint-parameter
+      - response-candidate-contains-exactly-one-terminal-powershell-surface
+      - launcher-recomputes-fingerprint-from-its-own-bytes-and-actual-bundle-before-Source-mutation
+      - known-markdown-backslash-underscore-filename-escape-canary-is-rejected
+    failure_effect: BLOCK_HANDOFF_OR_FAIL_BEFORE_SOURCE_MUTATION
+    host_boundary: >
+      Source cannot universally intercept every external chat renderer or clipboard.
+      The canonical surface therefore avoids literal artifact filenames and binds
+      the actual files at the runtime consumer by content identity.
 
   binding_contract:
     schema: cerebro-human-continuation-binding/v1
@@ -143,3 +165,5 @@ human_continuation_surface:
     - human-does-not-encode-machine-continuation-payload
     - normal-trigger-is-2-to-5-words-not-a-compressed-machine-command
     - response-handoff-blocks-until-the-active-binding-and-visible-trigger-match
+    - exact-shell-handoff-is-generated-hash-bound-and-runtime-consumed
+    - rendered-intent-alone-is-not-proof-of-delivered-copy-surface

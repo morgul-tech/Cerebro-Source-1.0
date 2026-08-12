@@ -1573,3 +1573,30 @@ machine_contract_composition:
     - blind-child-output-concatenation-before-machine-parsing
     - differential-payload-treated-as-complete-source-tree
     - universal-operational-claim-before-enumerated-consumer-proof
+
+human_execution_handoff_transport:
+  introduced_by: CEREBRO-DUALITYARC-WAVE-02-20260812-R4
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/human-continuation-surface.yaml#exact_shell_execution_handoff
+  invariants:
+    - exact-shell-visible-command-is-generated-from-final-artifact-hashes
+    - launcher-and-bundle-are-resolved-by-exact-sha256-with-unique-cardinality
+    - visible-command-has-no-literal-artifact-filename-dependency
+    - visible-command-is-underscore-free-under-the-hash-bound-powershell-profile
+    - handoff-fingerprint-binds-schema-profile-launcher-and-bundle
+    - launcher-recomputes-and-consumes-fingerprint-before-Source-mutation
+    - response-candidate-contains-one-exact-terminal-powershell-surface
+    - intended-markdown-source-is-not-treated-as-rendered-copy-proof
+  required_canaries:
+    - valid-generated-envelope-and-response-are-accepted
+    - changed-artifact-hash-is-rejected
+    - changed-generated-command-is-rejected
+    - nonterminal-command-surface-is-rejected
+    - duplicate-powershell-surface-is-rejected
+    - markdown-backslash-underscore-injection-is-rejected
+    - missing-or-mismatched-launcher-fingerprint-fails-before-Source-mutation
+  prohibited:
+    - hand-authored-exact-shell-command-for-standard-delivery
+    - artifact-selection-by-visible-filename
+    - claim-that-source-policy-can-intercept-every-external-renderer-or-clipboard
