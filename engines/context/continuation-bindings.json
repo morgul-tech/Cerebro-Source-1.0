@@ -1,7 +1,7 @@
 {
   "schema": "cerebro-human-continuation-binding-registry/v1",
   "status": "ACTIVE",
-  "active_binding_id": "DUALITYARC-WAVE-02-CONTINUE",
+  "active_binding_id": "C02-P002-WORKSPACE-CONVERGENCE-CONTINUE",
   "bindings": [
     {
       "schema": "cerebro-human-continuation-binding/v1",
@@ -47,6 +47,48 @@
         "REQUEST_ONLY_MATERIAL_USER_DECISION_IF_AMBIGUOUS"
       ],
       "binding_fingerprint": "865cf8f87364ed704678046e9626f577d5c404e5c9b59659980404e093078980"
+    },
+    {
+      "schema": "cerebro-human-continuation-binding/v1",
+      "binding_id": "C02-P002-WORKSPACE-CONVERGENCE-CONTINUE",
+      "surface_kind": "SHORT_HUMAN_TRIGGER",
+      "alias": "Fortsett C02-P002",
+      "target_ref": "C02-P002",
+      "operation": "CONTINUE_WORKSPACE_CONVERGENCE_FROM_ACTIVE_EXECUTION",
+      "current_basis_ref": "CTX-BASIS-C02-P002-RESUME-20260812-001",
+      "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS-C02-P002-RESUME-20260812-001",
+      "constraints_refs": [
+        "engines/convergence/architecture.yaml",
+        "engines/convergence/rules.yaml",
+        "standards/human-continuation-surface.yaml",
+        "standards/continuation-surface-system-policy.yaml"
+      ],
+      "evidence_refs": [
+        "SOURCE:1af863ce5804dc057c20c180c507acc8aa18e53c",
+        "history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json#sha256=f80e4fcc4993cb605ffc8b167ef33bfc538dd5518e64db69d32761249f6f051a",
+        "history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json#sha256=d77c733fcfa163a6765424d98ee04b723860ef269d4ac7f05dae4a590f9dd654"
+      ],
+      "maturity": "LOCKED",
+      "readiness": "READY",
+      "source_revision": "1af863ce5804dc057c20c180c507acc8aa18e53c+C02-P002-RESUME-STATE-001",
+      "required_next_behavior": [
+        "VERIFY_CURRENT_AUTHORITATIVE_SOURCE",
+        "LOAD_C02_P002_CURRENT_BASIS",
+        "RESOLVE_ACTIVE_ROADMAP_EXECUTION",
+        "CONTINUE_FULL_WORKSPACE_CLASSIFICATION"
+      ],
+      "resume_order": [
+        "LOAD_ACTIVE_BINDING",
+        "VERIFY_SOURCE",
+        "LOAD_CURRENT_BASIS",
+        "VERIFY_EVIDENCE_FRESHNESS",
+        "EXECUTE_BOUND_CONTINUATION"
+      ],
+      "alternative_paths": [
+        "AUTO_REBASE_TO_UNAMBIGUOUS_SUCCESSOR",
+        "REQUEST_ONLY_MATERIAL_USER_DECISION_IF_AMBIGUOUS"
+      ],
+      "binding_fingerprint": "f4cc434fea7bb6b9783b81d92c3b30ab74bfb3f33a6613003238c3116e4ca998"
     }
   ]
 }

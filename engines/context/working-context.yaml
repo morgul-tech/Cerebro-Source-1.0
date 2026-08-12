@@ -5745,6 +5745,115 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
       sequence: 137
+    -
+      id: "CTX-BASIS-C02-P002-RESUME-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "C02-P002-WORKSPACE-CONVERGENCE-RESUME"
+      statement: "C02-P001 is verified and C02-P002 is active. Workspace discovery and dependency audit are complete read-only evidence, the Convergence Engine architecture is locked and verified at Source commit 1af863ce5804dc057c20c180c507acc8aa18e53c, and the exact next work family is full workspace classification from existing evidence before placement mapping, dependency remap, migration-family planning, Temporaris simulation and one converged STANDARD migration; conversation history is not required."
+      payload:
+        applicability: "CURRENT_C02_P002_WORKSPACE_CONVERGENCE"
+        confirmation_basis: "VERIFIED_SOURCE_PLUS_PERSISTED_READ_ONLY_WORKSPACE_EVIDENCE"
+        evidence_authority: "EVIDENCE_ONLY"
+        source_basis_commit: "1af863ce5804dc057c20c180c507acc8aa18e53c"
+        source_state:
+          convergence_architecture_lock: "VERIFIED"
+          source_equality: "VERIFIED"
+          working_tree: "CLEAN"
+          cerebro_sync_verified: true
+          success_receipt: "CEREBRO_PATCH_SUCCESS(8).json"
+        completed:
+          - "C02-P001_CANONICAL_FOUNDATION_VERIFIED"
+          - "C02-P001_CLOSEOUT_VERIFIED"
+          - "C02-P002_WORKSPACE_DISCOVERY_COMPLETE"
+          - "C02-P002_DEPENDENCY_AUDIT_COMPLETE"
+          - "C02-P002_CONVERGENCE_ARCHITECTURE_LOCK_VERIFIED"
+        workspace_discovery:
+          source_evidence_path: "history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json"
+          original_transport_name: "CEREBRO_C02_P002_WORKSPACE_DISCOVERY.json"
+          sha256: "f80e4fcc4993cb605ffc8b167ef33bfc538dd5518e64db69d32761249f6f051a"
+          schema: "cerebro-c02-p002-workspace-discovery/v0.3"
+          generated_at_utc: "2026-08-12T20:30:25.7404564Z"
+          mutation_performed: false
+          top_level_directory_count: 13
+          total_directories: 5390
+          total_files: 9655
+          total_bytes: 121004299
+          root_file_count: 3
+          git_repository_count: 36
+          workspace_path_reference_file_count: 391
+        dependency_audit:
+          source_evidence_path: "history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json"
+          original_transport_name: "CEREBRO_C02_P002_DEPENDENCY_AUDIT.json"
+          sha256: "d77c733fcfa163a6765424d98ee04b723860ef269d4ac7f05dae4a590f9dd654"
+          schema: "cerebro-c02-p002-dependency-audit/v0.1"
+          generated_at_utc: "2026-08-12T20:36:15.7204113Z"
+          mutation_performed: false
+          active_path_reference_count: 154
+          active_reference_distribution:
+            Source: 123
+            scripts: 24
+            Client: 6
+            Config: 1
+        workspace_topology:
+          canonical_existing:
+            - "Source"
+            - "Run"
+            - "Client"
+            - "Config"
+            - "User"
+          canonical_missing:
+            - "Changes"
+            - "Releases"
+            - "Archive"
+          legacy_or_noncanonical:
+            - "Backup"
+            - "Backups"
+            - "Reports"
+            - "scripts"
+            - "Test"
+            - "zip"
+            - "Inspo til UI"
+            - "New folder"
+        convergence_model:
+          owner: "engines/convergence"
+          broadest_safe_family: true
+          collect_family_defects_before_remediation: true
+          remediate_as_set: true
+          dependency_aware_PASS_invalidation: true
+          human_inside_inner_retry_loop: false
+          Temporaris_role: "CANDIDATE_ENVIRONMENT_FOR_LOCAL_CONVERGENCE"
+        continuation_order:
+          - "FULL_WORKSPACE_CLASSIFICATION"
+          - "CANONICAL_PLACEMENT_MAP"
+          - "DEPENDENCY_REMAP"
+          - "MIGRATION_FAMILIES_AND_RECOVERY_STRATEGY"
+          - "TEMPORARIS_SIMULATION_AND_CANDIDATE_CONVERGENCE"
+          - "ONE_STANDARD_WORKSPACE_MIGRATION"
+          - "VALIDATE_VERIFY_CLEAN_CONVERGENCE_AND_CLOSEOUT"
+        next_execution:
+          execution_id: "EXEC-C02-P002-WORKSPACE-CLASSIFICATION"
+          patch_ref: "C02-P002"
+          action: "CLASSIFY_FULL_WORKSPACE_FROM_EXISTING_DISCOVERY_AND_DEPENDENCY_EVIDENCE"
+          additional_probe_before_classification: "PROHIBITED_UNLESS_CURRENT_EVIDENCE_IS_MATERIALLY_INSUFFICIENT_OR_STALE"
+        reconstructability:
+          conversation_history_required: false
+          chat_memory_authority: "NONE"
+          roadmap_and_context_are_primary: true
+          evidence_is_source_retrievable: true
+          active_continuation_binding_required: true
+      provenance:
+        introduced_by_ref: "USER-PERSIST-C02-P002-RESUME-STATE-2026-08-12"
+        basis_refs:
+          - "1af863ce5804dc057c20c180c507acc8aa18e53c"
+          - "history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml"
+          - "history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json#sha256=f80e4fcc4993cb605ffc8b167ef33bfc538dd5518e64db69d32761249f6f051a"
+          - "history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json#sha256=d77c733fcfa163a6765424d98ee04b723860ef269d4ac7f05dae4a590f9dd654"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml"
+      sequence: 138
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -5815,6 +5924,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-02-PRE-R6-CLOSEOUT-20260812-001"
+      - "CTX-BASIS-C02-P002-RESUME-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5869,7 +5979,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-GENERATED-HASH-BOUND-HUMAN-EXECUTION-HANDOFF-20260812-001"
       - "CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001"
       - "CTX-WISDOM-MULTIPATCH-MILESTONE-CLOSEOUT-20260812-001"
-  next_sequence: 138
+  next_sequence: 139
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

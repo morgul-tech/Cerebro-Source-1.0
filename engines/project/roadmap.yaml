@@ -5,8 +5,8 @@ roadmap:
   authority:
     contract_owner: project-engine
     state_scope: working-source
-  status: COMPLETED
-  objective: Adaptive Autonomy is completed through one canonical MCP-owned control-resolution surface that promotes the exact AA-003 shadow-validated resolver while preserving material-preflight precedence, human boundaries, Runtime execution-only ownership and machine-verifiable activation evidence.
+  status: ACTIVE
+  objective: Cerebro 0.2 Foundation continues through active C02-P002 Workspace Convergence, using the locked Convergence Engine to classify, map, simulate and migrate the physical workspace from persisted evidence without conversation-history dependency.
   scope:
     included:
     - project-roadmap-contract
@@ -23,6 +23,9 @@ roadmap:
     - continuation-presentation-closure
     - adaptive-mcp-resolver
     - adaptive-mcp-control-promotion
+    - canonical-foundation-0-2
+    - workspace-convergence
+    - convergence-engine-meso-orchestration
     excluded:
     - conversation-history-as-authority
     - runtime-state-as-persistent-truth
@@ -113,6 +116,35 @@ roadmap:
       - human_time_resource_signals_integrated_without_parallel_resource_manager
       - shadow_scenario_suite_passed
       - adaptive_control_promotion_verified
+  - id: PHASE-3
+    title: cerebro_0_2_foundation_and_workspace_convergence
+    purpose: converge_the_physical_Cerebro_workspace_onto_the_locked_canonical_0_2_structure
+    status: ACTIVE
+    dependency_refs:
+    - PHASE-2
+    entry_criteria:
+    - C02-P001_VERIFIED
+    - C02-P002_CONVERGENCE_ARCHITECTURE_LOCK_VERIFIED
+    exit_criteria:
+    - C02-P002_VERIFIED
+    - CANONICAL_WORKSPACE_CONVERGENCE_VERIFIED
+    deliverable_refs:
+    - engines/convergence/architecture.yaml
+    - history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml
+    - history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json
+    - history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json
+    milestones:
+    - id: MS-004
+      title: canonical_foundation_and_workspace_convergence
+      status: ACTIVE
+      acceptance:
+      - canonical_foundation_verified
+      - workspace_discovery_and_dependency_audit_complete
+      - convergence_architecture_locked
+      - canonical_placement_map_verified
+      - dependency_remap_verified
+      - Temporaris_simulation_passed_when_applicable
+      - physical_workspace_convergence_verified
   patches:
   - id: PATCH-001A
     title: cerebro_architecture_contracts
@@ -1245,9 +1277,92 @@ roadmap:
     - exact_disposable_candidate_contract_activation_closure_passes_before_final_R5_handoff_execution
     - windows_powershell_target_runtime_receipt_is_bound_to_exact_R5_candidate_before_apply
     - target_runtime_validator_does_not_publish_or_mutate_authoritative_Source
+  - id: C02-P001
+    title: canonical_foundation
+    phase_ref: PHASE-3
+    milestone_ref: MS-004
+    status: VERIFIED
+    dependency_refs:
+    - PATCH-AA-004
+    decision_refs: []
+    source_refs:
+    - standards/canonical-definition-system.yaml
+    - tooling/validator/canonical_foundation.py
+    - engines/project/roadmap.yaml
+    implementation_constraints:
+    - do_not_reopen_without_new_invalidating_evidence
+    acceptance:
+    - canonical_foundation_implementation_verified
+    - canonical_foundation_closeout_verified
+    - source_equality_verified
+    - cerebro_sync_verified
+  - id: C02-P002-CONVERGENCE-ARCH-LOCK-001
+    title: convergence_engine_architecture_and_foundational_challenge_rule
+    phase_ref: PHASE-3
+    milestone_ref: MS-004
+    status: VERIFIED
+    dependency_refs:
+    - C02-P001
+    decision_refs: []
+    source_refs:
+    - engines/convergence/architecture.yaml
+    - engines/convergence/component.yaml
+    - engines/convergence/model.yaml
+    - engines/convergence/rules.yaml
+    - history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml
+    acceptance:
+    - convergence_engine_architecture_locked
+    - foundational_trust_and_challenge_rule_locked
+    - source_equality_verified
+    - cerebro_sync_verified
+  - id: C02-P002
+    title: workspace_convergence
+    phase_ref: PHASE-3
+    milestone_ref: MS-004
+    status: ACTIVE
+    dependency_refs:
+    - C02-P002-CONVERGENCE-ARCH-LOCK-001
+    decision_refs: []
+    source_refs:
+    - engines/convergence/architecture.yaml
+    - engines/convergence/model.yaml
+    - engines/convergence/rules.yaml
+    - engines/context/working-context.yaml
+    - engines/project/roadmap.yaml
+    - history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml
+    - history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json
+    - history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json
+    implementation_constraints:
+    - reuse_persisted_workspace_discovery_and_dependency_audit_before_requesting_new_probe
+    - form_broadest_safe_work_families
+    - collect_and_remediate_all_knowable_family_defects_before_human_retry
+    - invalidate_only_prior_PASS_whose_basis_materially_changed
+    - no_physical_workspace_mutation_before_classification_placement_dependency_and_recovery_plan_converge
+    - use_Temporaris_simulation_before_real_workspace_mutation_when_feasible
+    - human_is_not_default_transport_inside_inner_debug_or_validation_loops
+    acceptance:
+    - full_workspace_classification_complete
+    - canonical_placement_map_complete
+    - dependency_remap_complete
+    - migration_families_and_recovery_strategy_complete
+    - Temporaris_candidate_converged_when_applicable
+    - one_converged_STANDARD_workspace_migration
+    - clean_workspace_convergence_verified
   execution:
-    current: null
-    next: null
+    current:
+      id: EXEC-C02-P002-WORKSPACE-CLASSIFICATION
+      phase_ref: PHASE-3
+      milestone_ref: MS-004
+      patch_ref: C02-P002
+      canonical_command: classify the full workspace from the persisted discovery and dependency evidence into broad safe convergence families before any migration mutation
+      status: ACTIVE
+    next:
+      id: EXEC-C02-P002-PLACEMENT-AND-DEPENDENCY-MAP
+      phase_ref: PHASE-3
+      milestone_ref: MS-004
+      patch_ref: C02-P002
+      canonical_command: derive the canonical placement map and dependency remap from the completed workspace classification, then form migration families and a Temporaris simulation plan
+      status: PLANNED
     completed:
     - id: EXEC-AA-004-CONTROL-PROMOTION
       phase_ref: PHASE-2
@@ -1431,6 +1546,10 @@ roadmap:
     object_type: DECISION
     object_ref: CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
     requirement: REQUIRED
+  - owner: context-engine
+    object_type: CURRENT_BASIS
+    object_ref: CTX-BASIS-C02-P002-RESUME-20260812-001
+    requirement: REQUIRED
   traceability:
     basis_refs:
     - CTX-BASIS-WORKPLAN
@@ -1443,6 +1562,7 @@ roadmap:
     - CTX-BASIS-PATCH-005-POST-001-VERIFIED-001
     - CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001
     - CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001
+    - CTX-BASIS-C02-P002-RESUME-20260812-001
     revision_refs:
     - CTX-DEC-P1B-PRE001
     - CTX-DEC-P1B-PRE002
@@ -1471,8 +1591,8 @@ roadmap:
     - CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001
     - CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
   revision:
-    sequence: 27
-    last_locked_patch_ref: PATCH-AA-004
+    sequence: 28
+    last_locked_patch_ref: C02-P002-CONVERGENCE-ARCH-LOCK-001
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
   decision_assurance_required: true
