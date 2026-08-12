@@ -257,7 +257,7 @@ roadmap:
     - tooling/runtime-host/runtime-state-schema.yaml
     - tooling/builder/component.yaml
     - tooling/builder/builder.yaml
-    - FILE_INVENTORY.json
+    - history/FILE_INVENTORY_v1.0.json
   - id: PATCH-001C.PRE-001
     title: sealed_pshell_transport_and_source_sync_recovery
     phase_ref: PHASE-0

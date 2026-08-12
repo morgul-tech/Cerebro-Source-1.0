@@ -1,8 +1,8 @@
-schema: cerebro-active-source-closure/v0.2
+schema: cerebro-active-source-closure/v0.3
 
 active_source_closure:
   id: CEREBRO-ACTIVE-SOURCE-CLOSURE-001
-  version: "0.2"
+  version: "0.3"
   status: ACTIVE
   introduced_by: PATCH-005
   kind: STANDARD
@@ -49,7 +49,7 @@ active_source_closure:
     implementation_ref: tooling/validator/Cerebro.ActiveSourceIntegrityClosure.ps1
     deterministic_validator_ref: tooling/validator/cerebro_active_source_closure.ps1
     active_set:
-      source: git-tracked-current-Source
+      source: candidate-working-tree-tracked-and-untracked-excluding-deleted
       history_prefix: history/
       history_in_active_set: PROHIBITED
       text_source_extensions: [.yaml, .yml, .json, .ps1, .py, .md, .txt, .toml, .ini, .cfg, .csv]
@@ -60,6 +60,7 @@ active_source_closure:
       - duplicate_canonical_definition_key
       - prohibited_active_legacy_path
       - explicit-active-generated-metadata-freshness
+      - dualityarc-wave-01-canonical-source-hygiene
     mutation_allowed: false
     release_repository_required: false
     release_evidence_required: false
@@ -94,6 +95,24 @@ active_source_closure:
     - tooling/loader/
     - standards/runtime/handboot-runtime-state-schema.yaml
 
+  dualityarc_wave_01_canonical_source_hygiene:
+    canonical_contract: mcp/execution-surface-resolution.yaml
+    topology_authority: cerebro.yaml
+    retired_active_paths_must_be_absent:
+      - mcp/source-mapping.yaml
+      - mcp/physical-target-resolution.yaml
+      - FILE_INVENTORY.json
+      - SOURCE_AUDIT_v1.0.json
+    required_history_paths:
+      - history/DUALITYARC_WAVE_01_RETIREMENT.json
+      - history/mcp/source-mapping.yaml
+      - history/mcp/physical-target-resolution.yaml
+      - history/FILE_INVENTORY_v1.0.json
+      - history/SOURCE_AUDIT_v1.0.json
+    history_blob_identity_must_equal_retired_baseline: true
+    stored_duplicate_component_topology: PROHIBITED
+    failure_effect: BLOCK_BEFORE_CANONICAL_SYNC
+
   invariants:
     - active-Source-describes-current-system
     - history-is-not-rewritten-to-fake-currentness
@@ -102,3 +121,4 @@ active_source_closure:
     - full-system-release-closure-is-not-on-ordinary-patch-critical-path
     - deterministic-checks-do-not-claim-semantic-fuzzy-coherence
     - semantic-coherence-remains-Quality-and-Decision-Assurance-responsibility
+    - retired-active-paths-are-physically-absent-not-hidden-by-compatibility-stubs

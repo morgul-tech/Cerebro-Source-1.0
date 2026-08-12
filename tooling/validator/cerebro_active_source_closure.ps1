@@ -9,6 +9,18 @@ function New-AscFinding {
     [pscustomobject]@{code=$Code;path=$Path;message=$Message}
 }
 
+function Get-AscGitBlobShaFromFile {
+    param([Parameter(Mandatory)][string]$LiteralPath)
+    $bytes=[IO.File]::ReadAllBytes($LiteralPath)
+    $header=[Text.Encoding]::ASCII.GetBytes(('blob {0}' -f $bytes.Length)+[char]0)
+    $all=[byte[]]::new($header.Length+$bytes.Length)
+    [Array]::Copy($header,0,$all,0,$header.Length)
+    [Array]::Copy($bytes,0,$all,$header.Length,$bytes.Length)
+    $sha=[Security.Cryptography.SHA1]::Create()
+    try {return ([BitConverter]::ToString($sha.ComputeHash($all))).Replace('-','').ToLowerInvariant()}
+    finally {$sha.Dispose()}
+}
+
 function Invoke-CerebroActiveSourceClosure {
     [CmdletBinding()]
     param(
@@ -89,6 +101,78 @@ function Invoke-CerebroActiveSourceClosure {
             if($text -notmatch $escaped){
                 $findings += (New-AscFinding -Code 'ASC_GENERATED_STALE' -Path $normalized -Message 'Generated metadata does not match expected source commit.')
             }
+        }
+    }
+
+    $wave01Required=@(
+        'mcp/execution-surface-resolution.yaml',
+        'history/DUALITYARC_WAVE_01_RETIREMENT.json',
+        'history/mcp/source-mapping.yaml',
+        'history/mcp/physical-target-resolution.yaml',
+        'history/FILE_INVENTORY_v1.0.json',
+        'history/SOURCE_AUDIT_v1.0.json'
+    )
+    foreach($relative in $wave01Required){
+        $full=Join-Path $rootPath ($relative -replace '/','\')
+        if(-not(Test-Path -LiteralPath $full -PathType Leaf)){
+            $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_REQUIRED_FILE_MISSING' -Path $relative -Message 'DUALITYARC Wave 01 required file is missing.')
+        }
+    }
+
+    $retirementEvidencePath=Join-Path $rootPath 'history\DUALITYARC_WAVE_01_RETIREMENT.json'
+    if(Test-Path -LiteralPath $retirementEvidencePath -PathType Leaf){
+        try {$retirementEvidence=Get-Content -LiteralPath $retirementEvidencePath -Raw | ConvertFrom-Json}
+        catch {
+            $retirementEvidence=$null
+            $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_RETIREMENT_EVIDENCE_INVALID' -Path 'history/DUALITYARC_WAVE_01_RETIREMENT.json' -Message $_.Exception.Message)
+        }
+        if($null -ne $retirementEvidence){
+            if([string]$retirementEvidence.schema -ne 'cerebro-dualityarc-retirement-evidence/v1'){
+                $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_RETIREMENT_SCHEMA_INVALID' -Path 'history/DUALITYARC_WAVE_01_RETIREMENT.json' -Message 'Unexpected retirement evidence schema.')
+            }
+            foreach($entry in @($retirementEvidence.retirements)){
+                $retired=[string]$entry.retired_path
+                $history=[string]$entry.history_path
+                $retiredFull=Join-Path $rootPath ($retired -replace '/','\')
+                $historyFull=Join-Path $rootPath ($history -replace '/','\')
+                if(Test-Path -LiteralPath $retiredFull){
+                    $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_RETIRED_ACTIVE_PATH_PRESENT' -Path $retired -Message 'Retired active path must be physically absent.')
+                }
+                if(-not(Test-Path -LiteralPath $historyFull -PathType Leaf)){
+                    $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_HISTORY_FILE_MISSING' -Path $history -Message 'Historical byte-preserving copy is missing.')
+                }
+                elseif((Get-AscGitBlobShaFromFile -LiteralPath $historyFull) -ne [string]$entry.git_blob_sha){
+                    $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_HISTORY_BLOB_MISMATCH' -Path $history -Message 'Historical copy does not equal the recorded retired baseline blob.')
+                }
+            }
+        }
+    }
+
+    foreach($relative in @('mcp/source-mapping.yaml','mcp/physical-target-resolution.yaml','FILE_INVENTORY.json','SOURCE_AUDIT_v1.0.json')){
+        $full=Join-Path $rootPath ($relative -replace '/','\')
+        if(Test-Path -LiteralPath $full){
+            $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_RETIRED_ACTIVE_PATH_PRESENT' -Path $relative -Message 'Retired active path must be physically absent.')
+        }
+    }
+
+    $resolutionPath=Join-Path $rootPath 'mcp\execution-surface-resolution.yaml'
+    if(Test-Path -LiteralPath $resolutionPath -PathType Leaf){
+        $resolutionText=[IO.File]::ReadAllText($resolutionPath)
+        foreach($requiredText in @('CEREBRO-MCP-EXECUTION-SURFACE-RESOLUTION-001','canonical_definition_key: mcp.execution_surface_resolution')){
+            if(-not$resolutionText.Contains($requiredText)){
+                $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_CANONICAL_CONTRACT_INVALID' -Path 'mcp/execution-surface-resolution.yaml' -Message ('Missing canonical contract marker: '+$requiredText))
+            }
+        }
+    }
+
+    $architecturePath=Join-Path $rootPath 'mcp\architecture.yaml'
+    if(Test-Path -LiteralPath $architecturePath -PathType Leaf){
+        $architectureText=[IO.File]::ReadAllText($architecturePath)
+        if($architectureText -match '(?m)^\s*active_component_topology:\s*$'){
+            $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_DUPLICATE_TOPOLOGY_PRESENT' -Path 'mcp/architecture.yaml' -Message 'Stored duplicate component topology is prohibited.')
+        }
+        if(-not$architectureText.Contains('topology_authority: cerebro.yaml')){
+            $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_TOPOLOGY_AUTHORITY_MISSING' -Path 'mcp/architecture.yaml' -Message 'cerebro.yaml must be the declared topology authority.')
         }
     }
 

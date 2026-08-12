@@ -1,0 +1,71 @@
+schema: cerebro-execution-surface-resolution/v1
+
+execution_surface_resolution:
+  id: CEREBRO-MCP-EXECUTION-SURFACE-RESOLUTION-001
+  version: "1.0"
+  status: ACTIVE
+  owner: MCP
+  authority: Cerebro Source 1.0
+  canonical_definition_key: mcp.execution_surface_resolution
+
+  purpose: >
+    Resolve one declared component responsibility to its exact physical Source
+    target and required baseline before build, mutation, or capability binding.
+
+  canonical_inputs:
+    - component_owner
+    - responsibility
+    - architecture_contract
+    - source_manifest
+
+  canonical_outputs:
+    - target_file
+    - operation
+    - baseline_requirement
+
+  resolution_order:
+    - resolve-canonical-component-owner
+    - verify-owner-registration-in-cerebro-manifest
+    - resolve-declared-responsibility
+    - resolve-exact-physical-target
+    - bind-operation-and-baseline
+    - block-unknown-or-ambiguous-target
+
+  rules:
+    must:
+      - use-declared-component-ownership
+      - use-cerebro-yaml-as-component-topology-authority
+      - resolve-before-build-or-mutation
+      - preserve-source-authority
+      - block-unknown-or-ambiguous-targets
+    must_not:
+      - guess-paths
+      - infer-targets-from-chat
+      - create-parallel-architecture
+      - override-component-boundaries
+      - store-a-second-active-component-topology
+
+  consumers:
+    - MCP-control-resolution
+    - change-engine
+    - builder
+    - delivery
+    - validator
+
+  supersession:
+    replaces:
+      - id: SM-001
+        retired_active_path: mcp/source-mapping.yaml
+        history_path: history/mcp/source-mapping.yaml
+      - id: PTR-001
+        retired_active_path: mcp/physical-target-resolution.yaml
+        history_path: history/mcp/physical-target-resolution.yaml
+    retired_paths_physically_absent: true
+    compatibility_aliases: PROHIBITED
+    new_consumers_must_use_this_contract: true
+
+  invariants:
+    - ONE_CANONICAL_EXECUTION_SURFACE_RESOLUTION_CONTRACT
+    - CEREBRO_YAML_IS_THE_ONLY_ACTIVE_COMPONENT_TOPOLOGY_AUTHORITY
+    - UNKNOWN_TARGET_BLOCKS_BEFORE_BUILD_OR_MUTATION
+    - RETIRED_ACTIVE_PATHS_ARE_PHYSICALLY_ABSENT

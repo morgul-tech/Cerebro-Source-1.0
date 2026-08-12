@@ -42,11 +42,22 @@ def candidate_identity(manifest: dict[str, Any]) -> str:
     rows: list[str] = []
     for item in sorted(manifest.get("files", []), key=lambda x: str(x.get("path", ""))):
         path = str(item.get("path", ""))
+        operation = str(item.get("operation", ""))
+        expected = str(item.get("expected_git_blob_sha", ""))
         sha256 = str(item.get("sha256", ""))
         blob = str(item.get("final_git_blob_sha", ""))
-        if not path or not sha256 or not blob or "GENERATED_AT_LAUNCH" in (sha256, blob):
+        if operation not in {"create", "replace", "delete"}:
+            raise ValueError(f"candidate-identity-operation-invalid:{path}:{operation}")
+        if operation in {"replace", "delete"} and not expected:
+            raise ValueError(f"candidate-identity-baseline-missing:{path}")
+        if operation == "delete":
+            if sha256 or blob:
+                raise ValueError(f"candidate-identity-delete-payload-forbidden:{path}")
+        elif not sha256 or not blob:
             raise ValueError(f"candidate-identity-field-unresolved:{path}")
-        rows.append(f"{path}|{sha256}|{blob}")
+        if "GENERATED_AT_LAUNCH" in (expected, sha256, blob):
+            raise ValueError(f"candidate-identity-field-unresolved:{path}")
+        rows.append(f"{path}|{operation}|{expected}|{blob}|{sha256}")
     payload = "\n".join(rows).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
@@ -59,7 +70,10 @@ def source_file_sha256(root: Path, relative: str) -> str:
 
 
 def basis_fingerprint(root: Path, basis_files: list[str]) -> str:
-    rows = [f"{p}|{source_file_sha256(root, p)}" for p in sorted(basis_files)]
+    rows = [
+        f"{p}|{source_file_sha256(root, p) if (root / p).is_file() else 'ABSENT'}"
+        for p in sorted(basis_files)
+    ]
     return hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest()
 
 
@@ -85,8 +99,13 @@ def build_plan(source_root: Path, manifest_path: Path, profile_id: str) -> dict[
 
     for item in manifest.get("files", []):
         relative = str(item["path"])
+        operation = str(item.get("operation", ""))
+        if operation == "delete":
+            if (source_root / relative).exists():
+                raise RuntimeError(f"candidate-delete-not-effective:{relative}")
+            continue
         actual = source_file_sha256(source_root, relative)
-        expected = str(item["sha256"])
+        expected = str(item.get("sha256", ""))
         if actual != expected:
             raise RuntimeError(f"candidate-sha256-mismatch:{relative}:expected={expected}:actual={actual}")
 

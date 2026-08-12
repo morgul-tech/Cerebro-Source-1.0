@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.5.0
+  version: 1.6.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -13,6 +13,7 @@ mcp:
   defined_by: Cerebro Source 1.0
   required_extensions:
   - mcp/boot-architecture-control.yaml
+  - mcp/execution-surface-resolution.yaml
   - standards/development/material-commitment-preflight.yaml
   - mcp/adaptive-control-resolver.yaml
   - mcp/control-resolution.yaml
@@ -32,6 +33,7 @@ position:
   - validation_selection
   - mode_selection
   - tool_selection
+  - execution_surface_resolution
   does_not_own:
   - source_specification
   - persistent_definition_authority

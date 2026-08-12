@@ -3,7 +3,7 @@ component:
   id: delivery
   name: Cerebro Delivery Controller
   type: tooling
-  version: 0.3.0
+  version: 0.4.0
   status: active-source
 responsibility:
   primary: Select and persist a Source-bound delivery profile, then deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
@@ -14,6 +14,9 @@ boundaries:
     - back-up-physical-prestate
     - enforce-declared-path-scope
     - verify-installed-payload-bytes
+    - execute-declared-delete-with-baseline-identity-backup-rollback-and-final-absence-proof
+    - preserve-verified-full-working-source-recovery-snapshot-before-mutation
+    - discover-required-local-capabilities-before-mutation
     - preserve-lossless-failure-and-recovery-evidence
     - persist-explicit-terminal-delivery-selection-outside-source
     - bind-selection-to-exact-source-commit
@@ -30,6 +33,7 @@ boundaries:
     - require-machine-verified-handoff-assurance-before-standard-user-handoff
     - treat-standard-launcher-and-bundle-as-one-identity-bound-delivery-unit
     - preserve-process-scoped-execution-policy-only
+    - limit-delete-to-exact-declared-files
   must_not:
     - design-or-generate-source-content
     - create-source-authority
@@ -40,6 +44,8 @@ boundaries:
     - request-agent-local-access-under-LIMITED-or-STANDARD
     - retry-a-denied-FULL-access-request-without-explicit-reselection
     - expose-alternate-standard-handoff
+    - delete-directories-or-undeclared-paths
+    - request-or-perform-privilege-escalation
     - allow-user-profile-to-override-standard-handoff
 dependencies:
   runtime:

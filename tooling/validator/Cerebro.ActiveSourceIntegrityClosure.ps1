@@ -48,7 +48,7 @@ function Get-CerebroActiveTrackedFiles {
     }
     if($null -eq $git){ throw 'ASC_GIT_NOT_FOUND' }
 
-    $native=Invoke-AscNative -Executable ([string]$git.Source) -ArgumentList @('ls-files') -WorkingDirectory $Root
+    $native=Invoke-AscNative -Executable ([string]$git.Source) -ArgumentList @('ls-files','--cached','--others','--exclude-standard') -WorkingDirectory $Root
     if($native.ExitCode -ne 0){
         throw ('ASC_GIT_LS_FILES_FAILED:{0}:{1}' -f $native.ExitCode,$native.Stderr)
     }
@@ -60,6 +60,9 @@ function Get-CerebroActiveTrackedFiles {
         $relative=$raw.Trim().Replace('\','/')
         if([string]::IsNullOrWhiteSpace($relative)){continue}
         if($relative.StartsWith('history/',[StringComparison]::OrdinalIgnoreCase)){continue}
+
+        $full=Join-Path $Root ($relative -replace '/','\')
+        if(-not(Test-Path -LiteralPath $full -PathType Leaf)){continue}
 
         $extension=[IO.Path]::GetExtension($relative).ToLowerInvariant()
         if($allowedExtensions -notcontains $extension){continue}

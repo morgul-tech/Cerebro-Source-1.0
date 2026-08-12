@@ -1,15 +1,18 @@
 schema: cerebro-target-runtime-validation-contract/v1
 target_runtime_validation:
   id: CEREBRO-TARGET-RUNTIME-VALIDATION-001
-  version: 0.1.0
+  version: 0.2.0
   status: ACTIVE
   owner: tooling.validator
   assurance_governance: tooling.change
   delivery_consumer: tooling.delivery
-  authority: PRE_HANDOFF_ASSURANCE_ONLY
+  authority: PREPUBLICATION_ASSURANCE_ONLY
 
 purpose:
-  validate_exact_candidate_in_required_target_runtime_before_handoff_or_publish: true
+  validate_exact_candidate_in_required_target_runtime_before_publish: true
+  before_handoff_when_builder_has_required_target_runtime: true
+  otherwise_execute_inside_sealed_user_initiated_automation_before_sync: true
+  package_handoff_is_not_patch_success: true
   first_target_profile: windows-powershell
   reusable_across_target_runtimes: true
 
@@ -28,11 +31,14 @@ boundary:
     - run-DEEP-assurance-after-activation-closure
     - produce-machine-readable-receipt
     - fail-closed-on-missing-target-runtime
+    - accept-user-initiated-automated-local-validation-as-machine-evidence
+    - validate-declared-delete-by-baseline-identity-and-candidate-absence
+    - complete-before-cerebro-sync-and-authoritative-source-publication
   must_not:
     - mutate-or-publish-authoritative-source
     - use-runtime-host-to-authorize-candidate-source
     - substitute-parity-emulation-for-required-target-runtime
-    - treat-user-execution-as-pre-handoff-validation
+    - treat-manual-user-judgment-as-machine-validation
     - weaken-CAC-or-change-assurance-to-obtain-pass
 
 evidence:

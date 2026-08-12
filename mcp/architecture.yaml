@@ -14,23 +14,12 @@ architecture:
     type: build-and-distribution-layer
     required: true
 
-  active_component_topology:
-    control:
-    - mcp
-    engines:
-    - interaction
-    - context
-    - project
-    - quality
-    - presentation
-    modules:
-    - terminology
-    - visual-language
-    tooling:
-    - builder
-    - validator
-    - runtime-host
-    - publisher
+  component_topology:
+    topology_authority: cerebro.yaml
+    derivation: manifest-registration
+    materialized_active_component_list: prohibited
+    registration_rule: only-manifest-registered-components-enter-release
+    freshness_rule: derive-from-current-pinned-source-commit
 
   topology_state:
     dialog: SUPERSEDED_BY_INTERACTION

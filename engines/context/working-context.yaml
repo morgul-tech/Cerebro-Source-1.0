@@ -5090,6 +5090,177 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-DEC-DUALITY-ARC-20260812-001"
       sequence: 121
+    -
+      id: "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+      type: "DECISION"
+      scope: "CEREBRO-GLOBAL-CANONICAL-OWNERSHIP-ENFORCEMENT-AND-CONVERGENCE"
+      statement: "dualityArcFinal is the locked implementation plan for converging Cerebro toward one canonical truth and binding per responsibility while preserving legitimate separation and independent verification."
+      payload:
+        decision_status: "LOCKED_IMPLEMENTATION_PLAN"
+        effective_scope: "CEREBRO_GLOBAL_ARCHITECTURE_AND_ALL_FUTURE_MATERIAL_CHANGES"
+        alias: "dualityArcFinal"
+        saved_via: "CEREBRO_LAGRE"
+        derived_from:
+          - "CTX-DEC-DUALITY-ARC-20260812-001"
+          - "CTX-BASIS-DUALITY-ANA-20260812-001"
+        canonical_enforcement_chain: "RULE_TO_OWNER_TO_CANONICAL_BINDING_TO_EXECUTION_OR_BLOCK_TO_VERIFICATION_TO_EVIDENCE_TO_CLOSURE"
+        legitimate_separations_to_preserve:
+          - "AUTHORITY_FROM_CAPABILITY"
+          - "SECURITY_BOUNDARIES"
+          - "LIFECYCLE_PHASES"
+          - "UNIQUE_SEMANTIC_RESPONSIBILITY"
+          - "INDEPENDENT_VERIFICATION_FROM_EXECUTION"
+        overlap_disposition: "IF_NO_LEGITIMATE_BOUNDARY_EXISTS_THEN_MERGE_DERIVE_OR_RETIRE"
+        canonical_ownership:
+          system_manifest_and_component_topology: "cerebro.yaml"
+          control_decision_and_execution_profile: "MCP"
+          candidate_development_and_qualification: "CHANGE_ARCHITECTURE_AND_TEMPORARIS_LIFECYCLE"
+          full_working_source_transaction: "DELIVERY_CONTROLLER"
+          standard_sealed_patch_transaction: "STANDARD_DELIVERY_KERNEL"
+          source_publication: "cerebro_sync"
+          release_documentation_and_history_publication: "PUBLISHER"
+          deterministic_source_checks: "VALIDATOR"
+          full_system_and_release_evidence_aggregation: "CLOSURE"
+          canonical_context_records: "CONTEXT_LEDGER_WITH_SMALL_DERIVED_CURRENT_PROJECTION"
+        waves:
+          wave_01: "CANONICAL_SOURCE_HYGIENE_AND_SAFE_PHYSICAL_RETIREMENT"
+          wave_02: "CONTRACT_AND_LIFECYCLE_CONVERGENCE"
+          wave_03: "CURRENT_CONTEXT_PROJECTION_AND_HISTORY_SEPARATION"
+          wave_04: "TEMPORARIS_QUALIFICATION_LIFECYCLE"
+          wave_05: "GLOBAL_RETIREMENT_AND_CLOSURE"
+        wave_01:
+          canonical_execution_surface_contract: "mcp/execution-surface-resolution.yaml"
+          only_active_topology_authority: "cerebro.yaml"
+          physically_retired_active_paths:
+            - "mcp/source-mapping.yaml"
+            - "mcp/physical-target-resolution.yaml"
+            - "FILE_INVENTORY.json"
+            - "SOURCE_AUDIT_v1.0.json"
+          byte_preserving_history_evidence: "history/DUALITYARC_WAVE_01_RETIREMENT.json"
+          no_compatibility_stubs: true
+        critical_correction:
+          finding: "The first final recommendation required physical retirement without verifying that the STANDARD execution kernel and all candidate validators supported delete."
+          cause: "ARCHITECTURE_REASONING_STOPPED_BEFORE_EXECUTABLE_END_TO_END_ENFORCEMENT_PROOF"
+          correction: "A migration is not final until every executing consumer supports and proves every required operation, including rollback and final-state identity."
+        minimum_sufficient_mechanism:
+          principle: "Choose the smallest mechanism that demonstrably closes the entire need; add complexity only for a concrete uncovered risk."
+          simple_path_check:
+            - "STATE_THE_ACTUAL_PROBLEM"
+            - "LIST_THE_PROPERTIES_THAT_MUST_BE_PROVEN"
+            - "REUSE_EXISTING_HUMAN_MACHINE_AND_CONTROL_SURFACES"
+            - "MAKE_THE_ACTION_REVERSIBLE"
+            - "PRODUCE_OBJECTIVE_MACHINE_PASS_OR_FAIL"
+            - "IDENTIFY_THE_CONCRETE_REMAINING_RISK"
+            - "ALLOW_ONLY_THAT_RISK_TO_JUSTIFY_MORE_COMPLEXITY"
+          stop_rule: "IF_ALL_REQUIRED_PROPERTIES_ARE_PROVEN_AND_NO_CONCRETE_RISK_REMAINS_STOP_ARCHITECTURE_EXPANSION"
+        local_execution_environment_basis:
+          confirmation: "EXPLICIT_USER_CONFIRMED_2026_08_12"
+          host_role: "FIXED_PRIMARY_CEREBRO_WINDOWS_PC"
+          working_source: "D:\\Cerebro\\Source\\Cerebro_Source_v1.0"
+          network_and_repo_access: "ALWAYS_AVAILABLE"
+          local_launcher_may_cerebro_sync_and_push: true
+          chatgpt_work_mode_required_for_local_launcher: false
+          execution_user: "CURRENT_NORMAL_USER"
+          privilege_escalation: "PROHIBITED_STOP_IF_INSUFFICIENT"
+          full_recovery_snapshot_root: "D:\\Cerebro\\Backups"
+          verified_snapshot_retention: 10
+          user_role: "START_AUTOMATION_AND_RETURN_MACHINE_PASS_OR_FAIL"
+          volatile_capabilities: "DISCOVER_FRESH_PER_ATTEMPT_NOT_HARDCODED"
+        next_natural_work: "DUALITYARC_WAVE_02_CONTRACT_AND_LIFECYCLE_CONVERGENCE"
+        continuity:
+          conversation_history_required: false
+          retrieve_by_alias: "dualityArcFinal"
+      provenance:
+        introduced_by_ref: "USER-LAGRE-DUALITYARC-FINAL-AND-WAVE-01-2026-08-12"
+        basis_refs:
+          - "CTX-DEC-DUALITY-ARC-20260812-001"
+          - "CTX-BASIS-DUALITY-ANA-20260812-001"
+          - "CEREBRO-SOURCE-3d89ace1ff911646ab2246aa24fc41e959dd94c0"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-DUALITY-ARC-20260812-001"
+          - "CTX-BASIS-DUALITY-ANA-20260812-001"
+      sequence: 122
+    -
+      id: "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "DUALITYARC-WAVE-01-CANONICAL-SOURCE-HYGIENE"
+      statement: "Wave 01 establishes the first delivered dualityArcFinal basis: one execution-surface-resolution contract, one active topology authority, physical retirement with byte-identical history, and an end-to-end delete-capable STANDARD path."
+      payload:
+        applicability: "CURRENT_DUALITYARC_IMPLEMENTATION_BASIS"
+        confirmation_basis: "PRESENT_ONLY_AFTER_TRANSACTIONAL_STANDARD_DELIVERY_CEREBRO_SYNC_AND_REMOTE_EQUALITY"
+        alias: "dualityArcWave01"
+        source_base_commit: "3d89ace1ff911646ab2246aa24fc41e959dd94c0"
+        patch_id: "CEREBRO-DUALITYARC-WAVE-01-20260812-R2"
+        prepublication_revision:
+          supersedes_failed_candidate: "CEREBRO-DUALITYARC-WAVE-01-20260812-R1"
+          failure_stage: "SELFTEST_GIT_FIXTURE"
+          failure_cause: "DISPOSABLE_FIXTURE_MISSING_REQUIRED_CEREBRO_YAML_ROOT_MARKER"
+          source_mutation: "NONE"
+          correction: "ALIGN_FIXTURE_WITH_FULL_SOURCE_SNAPSHOT_PRECONDITIONS_BEFORE_REBUILD"
+        delivered_outcomes:
+          - "STANDARD_DELETE_WITH_BASELINE_BACKUP_ROLLBACK_AND_FINAL_ABSENCE_PROOF"
+          - "USER_INITIATED_AUTOMATED_WINDOWS_TARGET_RUNTIME_VALIDATION"
+          - "VERIFIED_FULL_SOURCE_SNAPSHOT_BEFORE_MUTATION_WITH_RETENTION_10"
+          - "CANDIDATE_AWARE_ACTIVE_SOURCE_CLOSURE"
+          - "ONE_MCP_EXECUTION_SURFACE_RESOLUTION_CONTRACT"
+          - "CEREBRO_YAML_ONLY_ACTIVE_COMPONENT_TOPOLOGY_AUTHORITY"
+          - "FOUR_STALE_ACTIVE_PATHS_PHYSICALLY_RETIRED"
+          - "FOUR_RETIRED_BASELINE_BLOBS_PRESERVED_BYTE_IDENTICALLY_IN_HISTORY"
+        success_requires:
+          - "WINDOWS_POWERSHELL_SELFTEST_PASS"
+          - "FULL_RECOVERY_SNAPSHOT_PASS"
+          - "DELETE_ROLLBACK_CANARY_PASS"
+          - "TARGET_RUNTIME_VALIDATION_PASS"
+          - "ALL_IMPACTED_RUNTIME_EVIDENCE_PASS"
+          - "ACTUAL_CAC_PASS"
+          - "DEEP_ASSURANCE_THREE_RUNS_PASS"
+          - "CEREBRO_SYNC_PASS"
+          - "AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE"
+        next_wave: "DUALITYARC-WAVE-02-CONTRACT-AND-LIFECYCLE-CONVERGENCE"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-01-20260812-R2"
+        basis_refs:
+          - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+          - "history/DUALITYARC_WAVE_01_RETIREMENT.json"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+      sequence: 123
+    -
+      id: "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
+      type: "WISDOM_RECORD"
+      scope: "ALL_CEREBRO_PROBLEM_SOLVING_ARCHITECTURE_AND_DELIVERY"
+      statement: "A simple reversible machine-verifiable mechanism is preferable when it closes every requirement; added complexity requires a specific uncovered risk, not generalized uncertainty."
+      payload:
+        maturity: "STRONG"
+        assessment: "GENERALIZABLE_FROM_DUALITYARC_WAVE_01_DELIVERY_CORRECTION"
+        confidence: "HIGH"
+        implementation_status: "BOUND_TO_DUALITYARC_FINAL_SIMPLE_PATH_CHECK_AND_DELIVERY_CANARIES"
+        relevance: "APPLIES_BEFORE_NEW_COMPONENT_CONTRACT_LAYER_OR_EXECUTION_PATH"
+        traceability:
+          decision_ref: "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+          observed_failure: "WINDOWS_RUNTIME_ABSENCE_WAS_MISCLASSIFIED_AS_NEED_FOR_ADDITIONAL_ARCHITECTURE"
+          user_correction: "USE_THE_EXISTING_PRIMARY_WINDOWS_PC_BACKUP_AND_AUTOMATED_PATCH_RUN"
+        alias: "minimumSufficientMechanism"
+        principle: "MINIMUM_SUFFICIENT_MECHANISM"
+        machine_rule: "SIMPLE_PATH_CHECK_BEFORE_ARCHITECTURE_EXPANSION"
+        metaphor_interpretation: "USE_A_HAMMER_WHEN_A_HAMMER_PROVES_THE_WHOLE_JOB;_DO_NOT_BUILD_A_MACHINE_GUN_WITHOUT_A_CONCRETE_UNCLOSED_RISK"
+        guardrail: "SIMPLE_DOES_NOT_MEAN_UNVERIFIED_OR_IRREVERSIBLE"
+      provenance:
+        introduced_by_ref: "USER-REFINE-MENNESKE-MINIMUM-SUFFICIENT-MECHANISM-2026-08-12"
+        basis_refs:
+          - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+      sequence: 124
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -5132,6 +5303,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-DEC-MATERIAL-COMMITMENT-RELEVANCE-PREFLIGHT-LOCK-001"
       - "CTX-DEC-STANDARD-DELIVERY-HANDOFF-LOCK-001"
       - "CTX-DEC-DUALITY-ARC-20260812-001"
+      - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
     current_basis_refs:
       - "CTX-BASIS-RUNTIME-0-1-ENTRY"
       - "CTX-BASIS-RUNTIME-0-1-ANALYSIS-LOCKED-001"
@@ -5156,6 +5328,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-ACTIVATION-ARCHITECTURE-NEXT-SESSION-001"
       - "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
       - "CTX-BASIS-DUALITY-ANA-20260812-001"
+      - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5205,7 +5378,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-STANDARD-DELIVERY-HANDOFF-EXECUTION-VALIDATION-001"
       - "CTX-WISDOM-FORWARD-FAILURE-SWEEP-001"
       - "CTX-WISDOM-INTERNAL-CONTINUATION-CONSUMPTION-001"
-  next_sequence: 122
+      - "CTX-WISDOM-MINIMUM-SUFFICIENT-MECHANISM-20260812-001"
+  next_sequence: 125
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

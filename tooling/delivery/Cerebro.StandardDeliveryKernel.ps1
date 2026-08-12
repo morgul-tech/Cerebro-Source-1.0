@@ -24,6 +24,8 @@ $State = [ordered]@{
     Manifest = $null
     ActivationProofs = @()
     TransientCleanup = @()
+    FullRecoverySnapshot = $null
+    TargetRuntimeValidationReceipt = ''
 }
 
 function Get-Sha256 {
@@ -122,6 +124,30 @@ function Read-Manifest {
 function Assert-PayloadIntegrity {
     param([Parameter(Mandatory=$true)]$PatchManifest)
     foreach ($fileEntry in @($PatchManifest.files)) {
+        $operation=[string](Get-KernelOptionalProperty -Object $fileEntry -Name 'operation' -Default '')
+        if(@('create','replace','delete') -notcontains $operation){
+            throw ('PAYLOAD_OPERATION_INVALID:{0}:{1}' -f $fileEntry.path,$operation)
+        }
+        if($operation -eq 'delete'){
+            if([string]::IsNullOrWhiteSpace([string](Get-KernelOptionalProperty $fileEntry 'expected_git_blob_sha' ''))){
+                throw ('DELETE_BASELINE_IDENTITY_MISSING:{0}' -f $fileEntry.path)
+            }
+            foreach($forbiddenField in @('payload_path','sha256','final_git_blob_sha')){
+                if(-not[string]::IsNullOrWhiteSpace([string](Get-KernelOptionalProperty $fileEntry $forbiddenField ''))){
+                    throw ('DELETE_PAYLOAD_FIELD_FORBIDDEN:{0}:{1}' -f $fileEntry.path,$forbiddenField)
+                }
+            }
+            continue
+        }
+        foreach($requiredField in @('payload_path','sha256','final_git_blob_sha')){
+            if([string]::IsNullOrWhiteSpace([string](Get-KernelOptionalProperty $fileEntry $requiredField ''))){
+                throw ('PAYLOAD_FIELD_MISSING:{0}:{1}' -f $fileEntry.path,$requiredField)
+            }
+        }
+        if($operation -eq 'replace' -and
+           [string]::IsNullOrWhiteSpace([string](Get-KernelOptionalProperty $fileEntry 'expected_git_blob_sha' ''))){
+            throw ('REPLACE_BASELINE_IDENTITY_MISSING:{0}' -f $fileEntry.path)
+        }
         $payloadPath = Join-Path -Path $BundleRoot -ChildPath ([string]$fileEntry.payload_path)
         if (-not (Test-Path -LiteralPath $payloadPath -PathType Leaf)) {
             throw ('PAYLOAD_FILE_MISSING:{0}' -f $fileEntry.path)
@@ -146,6 +172,11 @@ function Assert-PayloadIntegrity {
 function Test-AllFinalBlobsAtHead {
     param([string]$GitPath,$PatchManifest)
     foreach ($fileEntry in @($PatchManifest.files)) {
+        if([string]$fileEntry.operation -eq 'delete'){
+            $listing=Invoke-Git -GitPath $GitPath -ArgumentList @('ls-tree','HEAD','--',[string]$fileEntry.path)
+            if(-not[string]::IsNullOrWhiteSpace($listing.Stdout)){return $false}
+            continue
+        }
         $spec = ('HEAD:{0}' -f [string]$fileEntry.path)
         $result = Invoke-Git -GitPath $GitPath -ArgumentList @('rev-parse',$spec) -AllowedExitCodes @(0,128)
         if ($result.ExitCode -ne 0 -or $result.Stdout -ne [string]$fileEntry.final_git_blob_sha) {
@@ -182,6 +213,194 @@ function Install-ExactPayloadFile {
     }
 }
 
+function Remove-ExactTargetFile {
+    param([Parameter(Mandatory=$true)][string]$TargetPath)
+    if(Test-Path -LiteralPath $TargetPath -PathType Container){
+        throw ('DELETE_TARGET_IS_DIRECTORY:{0}' -f $TargetPath)
+    }
+    if(-not(Test-Path -LiteralPath $TargetPath -PathType Leaf)){
+        throw ('DELETE_TARGET_FILE_MISSING:{0}' -f $TargetPath)
+    }
+    Remove-Item -LiteralPath $TargetPath -Force
+    if(Test-Path -LiteralPath $TargetPath){
+        throw ('DELETE_TARGET_STILL_EXISTS:{0}' -f $TargetPath)
+    }
+}
+
+function Get-Sha256FromStream {
+    param([Parameter(Mandatory=$true)][IO.Stream]$Stream)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try {return ([BitConverter]::ToString($sha.ComputeHash($Stream))).Replace('-','').ToLowerInvariant()}
+    finally {$sha.Dispose()}
+}
+
+function Get-Sha256FromText {
+    param([Parameter(Mandatory=$true)][string]$Text)
+    $stream=[IO.MemoryStream]::new([Text.Encoding]::UTF8.GetBytes($Text),$false)
+    try {return Get-Sha256FromStream -Stream $stream}
+    finally {$stream.Dispose()}
+}
+
+function Get-KernelRelativeFilePath {
+    param([Parameter(Mandatory=$true)][string]$Root,[Parameter(Mandatory=$true)][string]$FullPath)
+    $rootFull=[IO.Path]::GetFullPath($Root).TrimEnd([char[]]'\/')+[IO.Path]::DirectorySeparatorChar
+    $fileFull=[IO.Path]::GetFullPath($FullPath)
+    if(-not$fileFull.StartsWith($rootFull,[StringComparison]::OrdinalIgnoreCase)){
+        throw ('SNAPSHOT_PATH_ESCAPE:{0}' -f $fileFull)
+    }
+    return $fileFull.Substring($rootFull.Length).Replace('\','/')
+}
+
+function New-VerifiedFullRecoverySnapshot {
+    param(
+        [Parameter(Mandatory=$true)][string]$SourceRoot,
+        [Parameter(Mandatory=$true)][string]$BackupRoot,
+        [Parameter(Mandatory=$true)][string]$SourceCommit,
+        [int]$RetentionCount=10
+    )
+    if($RetentionCount -lt 1){throw 'SNAPSHOT_RETENTION_INVALID'}
+    [IO.Directory]::CreateDirectory($BackupRoot)|Out-Null
+    $backupFull=[IO.Path]::GetFullPath($BackupRoot)
+    $sourceFull=[IO.Path]::GetFullPath($SourceRoot)
+    if($backupFull.StartsWith($sourceFull.TrimEnd([char[]]'\/')+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){
+        throw 'SNAPSHOT_ROOT_INSIDE_WORKING_SOURCE_FORBIDDEN'
+    }
+
+    [string[]]$sourceFiles=@([IO.Directory]::EnumerateFiles($sourceFull,'*',[IO.SearchOption]::AllDirectories))
+    [Array]::Sort($sourceFiles,[StringComparer]::Ordinal)
+    if($sourceFiles.Count -eq 0){throw 'SNAPSHOT_SOURCE_EMPTY'}
+    $inventory=@()
+    [int64]$totalBytes=0
+    foreach($file in $sourceFiles){
+        $info=[IO.FileInfo]::new($file)
+        $relative=Get-KernelRelativeFilePath -Root $sourceFull -FullPath $file
+        $inventory += [pscustomobject]@{path=$relative;bytes=[int64]$info.Length;sha256=(Get-Sha256 -LiteralPath $file)}
+        $totalBytes += [int64]$info.Length
+    }
+    $inventoryRows=@($inventory|ForEach-Object{('{0}|{1}|{2}' -f [string]$_.path,[int64]$_.bytes,[string]$_.sha256)})
+    $inventoryIdentity=Get-Sha256FromText -Text ($inventoryRows -join "`n")
+
+    $driveRoot=[IO.Path]::GetPathRoot($backupFull)
+    $drive=[IO.DriveInfo]::new($driveRoot)
+    if(-not$drive.IsReady){throw ('SNAPSHOT_DRIVE_NOT_READY:{0}' -f $driveRoot)}
+    $requiredFree=[int64]$totalBytes+67108864
+    if([int64]$drive.AvailableFreeSpace -lt $requiredFree){
+        throw ('SNAPSHOT_INSUFFICIENT_SPACE required={0} available={1}' -f $requiredFree,$drive.AvailableFreeSpace)
+    }
+
+    Add-Type -AssemblyName System.IO.Compression -ErrorAction Stop
+    Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
+    $stamp=(Get-Date).ToString('yyyyMMdd-HHmmss')
+    $suffix=[guid]::NewGuid().ToString('N').Substring(0,8)
+    $shortCommit=$SourceCommit.Substring(0,[Math]::Min(12,$SourceCommit.Length))
+    $baseName=('CEREBRO_FULL_SOURCE_{0}_{1}_{2}' -f $shortCommit,$stamp,$suffix)
+    $archivePath=Join-Path $backupFull ($baseName+'.zip')
+    $receiptPath=Join-Path $backupFull ($baseName+'.receipt.json')
+
+    $archive=[IO.Compression.ZipFile]::Open($archivePath,[IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach($item in $inventory){
+            $sourcePath=Join-Path $sourceFull (([string]$item.path)-replace '/','\')
+            $entry=$archive.CreateEntry([string]$item.path,[IO.Compression.CompressionLevel]::Optimal)
+            $input=[IO.File]::OpenRead($sourcePath)
+            $output=$entry.Open()
+            try {$input.CopyTo($output)}
+            finally {$output.Dispose();$input.Dispose()}
+        }
+    }
+    finally {$archive.Dispose()}
+
+    $verifiedArchive=[IO.Compression.ZipFile]::OpenRead($archivePath)
+    try {
+        if($verifiedArchive.Entries.Count -ne $inventory.Count){
+            throw ('SNAPSHOT_ENTRY_COUNT_MISMATCH expected={0} actual={1}' -f $inventory.Count,$verifiedArchive.Entries.Count)
+        }
+        $entryMap=@{}
+        foreach($entry in $verifiedArchive.Entries){
+            if($entryMap.ContainsKey($entry.FullName)){throw ('SNAPSHOT_DUPLICATE_ENTRY:{0}' -f $entry.FullName)}
+            $entryMap[$entry.FullName]=$entry
+        }
+        foreach($item in $inventory){
+            $relative=[string]$item.path
+            if(-not$entryMap.ContainsKey($relative)){throw ('SNAPSHOT_ENTRY_MISSING:{0}' -f $relative)}
+            $entry=$entryMap[$relative]
+            if([int64]$entry.Length -ne [int64]$item.bytes){throw ('SNAPSHOT_ENTRY_LENGTH_MISMATCH:{0}' -f $relative)}
+            $entryStream=$entry.Open()
+            try {$entrySha=Get-Sha256FromStream -Stream $entryStream}
+            finally {$entryStream.Dispose()}
+            if($entrySha -ne [string]$item.sha256){throw ('SNAPSHOT_ENTRY_SHA256_MISMATCH:{0}' -f $relative)}
+        }
+        foreach($requiredEntry in @('cerebro.yaml','.git/HEAD')){
+            if(-not$entryMap.ContainsKey($requiredEntry)){throw ('SNAPSHOT_REQUIRED_ENTRY_MISSING:{0}' -f $requiredEntry)}
+        }
+    }
+    finally {$verifiedArchive.Dispose()}
+
+    $receipt=[ordered]@{
+        schema='cerebro-full-source-recovery-snapshot-receipt/v1'
+        result='PASS'
+        authority='RECOVERY_EVIDENCE_ONLY'
+        source_root=$sourceFull
+        source_commit=$SourceCommit
+        archive_path=$archivePath
+        archive_sha256=(Get-Sha256 -LiteralPath $archivePath)
+        file_count=$inventory.Count
+        total_uncompressed_bytes=$totalBytes
+        inventory_sha256=$inventoryIdentity
+        includes_dot_git=$true
+        archive_entries_verified=$true
+        created_at_utc=[DateTime]::UtcNow.ToString('o')
+    }
+    [IO.File]::WriteAllText($receiptPath,(($receipt|ConvertTo-Json -Depth 8)+"`r`n"),[Text.UTF8Encoding]::new($false))
+    $readBack=Get-Content -LiteralPath $receiptPath -Raw|ConvertFrom-Json
+    if([string]$readBack.result -ne 'PASS' -or [string]$readBack.archive_sha256 -ne (Get-Sha256 -LiteralPath $archivePath)){
+        throw 'SNAPSHOT_RECEIPT_REREAD_FAILED'
+    }
+
+    $verifiedReceipts=@()
+    foreach($candidateReceipt in @(Get-ChildItem -LiteralPath $backupFull -Filter 'CEREBRO_FULL_SOURCE_*.receipt.json' -File)){
+        try {
+            $candidate=Get-Content -LiteralPath $candidateReceipt.FullName -Raw|ConvertFrom-Json
+            if([string]$candidate.schema -ne 'cerebro-full-source-recovery-snapshot-receipt/v1' -or [string]$candidate.result -ne 'PASS'){continue}
+            if(-not(Test-Path -LiteralPath ([string]$candidate.archive_path) -PathType Leaf)){continue}
+            $verifiedReceipts += [pscustomobject]@{receipt=$candidateReceipt.FullName;archive=[string]$candidate.archive_path;created=[DateTime]::Parse([string]$candidate.created_at_utc).ToUniversalTime()}
+        }
+        catch {continue}
+    }
+    $expired=@($verifiedReceipts|Sort-Object -Property created -Descending|Select-Object -Skip $RetentionCount)
+    foreach($item in $expired){
+        Remove-Item -LiteralPath $item.archive -Force
+        Remove-Item -LiteralPath $item.receipt -Force
+    }
+    return [pscustomobject]@{archive_path=$archivePath;receipt_path=$receiptPath;archive_sha256=[string]$receipt.archive_sha256;inventory_sha256=$inventoryIdentity}
+}
+
+function Assert-DeclaredTargetMutationCapabilities {
+    param([Parameter(Mandatory=$true)][string]$SourceRoot,[Parameter(Mandatory=$true)]$PatchManifest)
+    $parents=@{}
+    foreach($entry in @($PatchManifest.files)){
+        $target=Join-Path $SourceRoot (([string]$entry.path)-replace '/','\')
+        $parent=Split-Path -Parent $target
+        while(-not[string]::IsNullOrWhiteSpace($parent) -and -not(Test-Path -LiteralPath $parent -PathType Container)){
+            $parent=Split-Path -Parent $parent
+        }
+        if([string]::IsNullOrWhiteSpace($parent)){throw ('CAPABILITY_PARENT_NOT_FOUND:{0}' -f $entry.path)}
+        $parents[[IO.Path]::GetFullPath($parent)]=$true
+    }
+    foreach($parent in @($parents.Keys)){
+        $probe=Join-Path $parent ('.cerebro-capability-'+[guid]::NewGuid().ToString('N')+'.tmp')
+        try {
+            [IO.File]::WriteAllText($probe,'CEREBRO_CAPABILITY_PROBE',[Text.UTF8Encoding]::new($false))
+            if(-not(Test-Path -LiteralPath $probe -PathType Leaf)){throw ('CAPABILITY_CREATE_FAILED:{0}' -f $parent)}
+            Remove-Item -LiteralPath $probe -Force
+            if(Test-Path -LiteralPath $probe){throw ('CAPABILITY_DELETE_FAILED:{0}' -f $parent)}
+        }
+        finally {
+            if(Test-Path -LiteralPath $probe -PathType Leaf){Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue}
+        }
+    }
+}
+
 function Invoke-LocalGitFixture {
     param([string]$GitPath)
     $fixtureRoot = Join-Path -Path ([IO.Path]::GetTempPath()) -ChildPath ('CerebroKernelFixture-' + [guid]::NewGuid().ToString('N'))
@@ -195,7 +414,8 @@ function Invoke-LocalGitFixture {
         [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$seedPath,'config','user.name','Cerebro Kernel SelfTest'))
         [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$seedPath,'config','user.email','cerebro-selftest@example.invalid'))
         [IO.File]::WriteAllText((Join-Path $seedPath 'baseline.txt'),'BASELINE',[Text.UTF8Encoding]::new($false))
-        [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$seedPath,'add','baseline.txt'))
+        [IO.File]::WriteAllText((Join-Path $seedPath 'cerebro.yaml'),"schema: cerebro-selftest-fixture/v1`n",[Text.UTF8Encoding]::new($false))
+        [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$seedPath,'add','--','baseline.txt','cerebro.yaml'))
         [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$seedPath,'commit','-m','fixture baseline'))
         [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$seedPath,'branch','-M','main'))
         [void](Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$seedPath,'remote','add','origin',$remotePath))
@@ -215,6 +435,23 @@ function Invoke-LocalGitFixture {
         $status = Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'status','--porcelain')
         if (-not [string]::IsNullOrWhiteSpace($status.Stdout)) {
             throw ('FIXTURE_ROLLBACK_NOT_CLEAN:{0}' -f $status.Stdout)
+        }
+
+        Remove-ExactTargetFile -TargetPath (Join-Path $workPath 'baseline.txt')
+        if(Test-Path -LiteralPath (Join-Path $workPath 'baseline.txt')){
+            throw 'FIXTURE_BOUNDED_DELETE_FAILED'
+        }
+        Copy-Item -LiteralPath $backup -Destination (Join-Path $workPath 'baseline.txt') -Force
+        $deleteRollbackStatus=Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'status','--porcelain')
+        if(-not[string]::IsNullOrWhiteSpace($deleteRollbackStatus.Stdout)){
+            throw ('FIXTURE_DELETE_ROLLBACK_NOT_CLEAN:{0}' -f $deleteRollbackStatus.Stdout)
+        }
+
+        $fixtureHead=(Invoke-Git -GitPath $GitPath -ArgumentList @('-C',$workPath,'rev-parse','HEAD')).Stdout
+        $snapshot=New-VerifiedFullRecoverySnapshot -SourceRoot $workPath -BackupRoot (Join-Path $fixtureRoot 'snapshots') -SourceCommit $fixtureHead -RetentionCount 10
+        if(-not(Test-Path -LiteralPath $snapshot.archive_path -PathType Leaf) -or
+           -not(Test-Path -LiteralPath $snapshot.receipt_path -PathType Leaf)){
+            throw 'FIXTURE_FULL_RECOVERY_SNAPSHOT_FAILED'
         }
     }
     finally {
@@ -530,6 +767,8 @@ function Invoke-SelfTest {
     Write-Host 'NATIVE_STDERR_ZERO_EXIT_PASS=TRUE'
     Write-Host 'NATIVE_NONZERO_EXIT_PASS=TRUE'
     Write-Host 'LOCAL_GIT_FIXTURE_PASS=TRUE'
+    Write-Host 'BOUNDED_DELETE_ROLLBACK_PASS=TRUE'
+    Write-Host 'FULL_RECOVERY_SNAPSHOT_PASS=TRUE'
     Write-Host 'PAYLOAD_HASH_PASS=TRUE'
 }
 
@@ -548,7 +787,12 @@ function Get-KernelCandidateIdentity {
             $matches=@($PatchManifest.files | Where-Object {[string]$_.path -eq $path})
             if($matches.Count -ne 1){throw ('KERNEL_CANDIDATE_PATH_CARDINALITY_INVALID:{0}:{1}' -f $path,$matches.Count)}
             $item=$matches[0]
-            ('{0}|{1}|{2}' -f [string]$item.path,[string]$item.sha256,[string]$item.final_git_blob_sha)
+            ('{0}|{1}|{2}|{3}|{4}' -f
+                [string]$item.path,
+                [string](Get-KernelOptionalProperty $item 'operation' ''),
+                [string](Get-KernelOptionalProperty $item 'expected_git_blob_sha' ''),
+                [string](Get-KernelOptionalProperty $item 'final_git_blob_sha' ''),
+                [string](Get-KernelOptionalProperty $item 'sha256' ''))
         }
     )
     $text=$rows -join "`n"
@@ -594,10 +838,51 @@ function Assert-TargetRuntimeValidationReceipt {
     }
 }
 
+function Invoke-RequiredTargetRuntimeValidation {
+    param($PatchManifest)
+    $spec=Get-KernelOptionalProperty -Object $PatchManifest -Name 'target_runtime_validation' -Default $null
+    if($null -eq $spec -or -not[bool](Get-KernelOptionalProperty $spec 'required' $false)){return ''}
+    if(-not[string]::IsNullOrWhiteSpace($TargetRuntimeValidationReceipt)){
+        Assert-TargetRuntimeValidationReceipt -PatchManifest $PatchManifest -ReceiptPath $TargetRuntimeValidationReceipt
+        $State.TargetRuntimeValidationReceipt=$TargetRuntimeValidationReceipt
+        return $TargetRuntimeValidationReceipt
+    }
+
+    $validator=Join-Path $WorkingSourcePath 'tooling\validator\target-runtime\Invoke-CerebroWindowsPowerShellValidation.ps1'
+    if(-not(Test-Path -LiteralPath $validator -PathType Leaf)){
+        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+        throw 'TARGET_RUNTIME_VALIDATOR_NOT_FOUND'
+    }
+    $capsuleRoot=Join-Path $BundleRoot 'capsule'
+    if(-not(Test-Path -LiteralPath (Join-Path $capsuleRoot 'capsule.json') -PathType Leaf)){
+        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+        throw 'TARGET_RUNTIME_CAPSULE_NOT_FOUND'
+    }
+    $receiptRoot='D:\Cerebro\Run\receipts'
+    [IO.Directory]::CreateDirectory($receiptRoot)|Out-Null
+    $receiptPath=Join-Path $receiptRoot ('CEREBRO_TARGET_RUNTIME_'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.json')
+    $manifestPath=Join-Path $BundleRoot 'manifest.json'
+    $State.ReachedStage='TARGET_RUNTIME_VALIDATION_EXECUTE'
+    try {
+        $trvOutput=& $validator -CandidateRoot $WorkingSourcePath -ManifestPath $manifestPath `
+            -CapsuleRoot $capsuleRoot -RepositoryRoot $WorkingSourcePath `
+            -OutputPath $receiptPath -ProfileId ([string]$spec.profile)
+    }
+    catch {
+        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+        throw
+    }
+    Assert-TargetRuntimeValidationReceipt -PatchManifest $PatchManifest -ReceiptPath $receiptPath
+    $State.TargetRuntimeValidationReceipt=$receiptPath
+    return $receiptPath
+}
+
 function Invoke-Apply {
     $State.Manifest = Read-Manifest
     Assert-PayloadIntegrity $State.Manifest
-    Assert-TargetRuntimeValidationReceipt -PatchManifest $State.Manifest -ReceiptPath $TargetRuntimeValidationReceipt
+    if(-not[string]::IsNullOrWhiteSpace($TargetRuntimeValidationReceipt)){
+        Assert-TargetRuntimeValidationReceipt -PatchManifest $State.Manifest -ReceiptPath $TargetRuntimeValidationReceipt
+    }
 
     $State.ReachedStage = 'SEALED_DELIVERY_PROFILE'
     if([string]$State.Manifest.delivery_profile -ne 'STANDARD'){
@@ -652,10 +937,32 @@ function Invoke-Apply {
         $localHead = (Invoke-Git -GitPath $gitPath -ArgumentList @('rev-parse','HEAD')).Stdout
 
         if ($localHead -eq $remoteHead -and (Test-AllFinalBlobsAtHead -GitPath $gitPath -PatchManifest $State.Manifest)) {
+            $receiptRoot='D:\Cerebro\Run\receipts'
+            [IO.Directory]::CreateDirectory($receiptRoot)|Out-Null
+            $receiptPath=Join-Path $receiptRoot ('CEREBRO_DELIVERY_KERNEL_'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.json')
+            $receipt=[ordered]@{
+                schema='cerebro-delivery-kernel-receipt/v2'
+                result='ALREADY_APPLIED'
+                kernel=$KernelId
+                patch_id=[string]$State.Manifest.patch_id
+                attempt_id=$AttemptId
+                authoritative_source='origin/main'
+                working_source=$WorkingSourcePath
+                authoritative_commit=$remoteHead
+                working_source_commit=$localHead
+                authoritative_source_equals_working_source=$true
+                source_equality='VERIFIED'
+                working_tree='CLEAN'
+                sync_action='NOT_REQUIRED'
+                cerebro_sync_verified=$true
+                completed_at_utc=[DateTime]::UtcNow.ToString('o')
+            }
+            [IO.File]::WriteAllText($receiptPath,(($receipt|ConvertTo-Json -Depth 8)+"`r`n"),[Text.UTF8Encoding]::new($false))
             Write-Host 'CEREBRO_DELIVERY_KERNEL_RESULT=ALREADY_APPLIED'
             Write-Host ('AUTHORITATIVE_COMMIT={0}' -f $remoteHead)
             Write-Host 'SOURCE_EQUALITY=VERIFIED'
             Write-Host 'CEREBRO_SYNC_VERIFIED=TRUE'
+            Write-Host ('RECEIPT={0}' -f $receiptPath)
             return
         }
 
@@ -680,11 +987,16 @@ function Invoke-Apply {
 
         $State.ReachedStage = 'BASELINE_FILE_IDENTITY'
         foreach ($fileEntry in @($State.Manifest.files)) {
-            if ([string]$fileEntry.operation -eq 'replace') {
+            if (@('replace','delete') -contains [string]$fileEntry.operation) {
                 $blob = (Invoke-Git -GitPath $gitPath -ArgumentList @('rev-parse',('HEAD:{0}' -f [string]$fileEntry.path))).Stdout
                 if ($blob -ne [string]$fileEntry.expected_git_blob_sha) {
                     $State.FailureFamily = 'PATCH_BASE_IDENTITY'
                     throw ('BASELINE_BLOB_MISMATCH:{0}:expected={1}:actual={2}' -f $fileEntry.path,$fileEntry.expected_git_blob_sha,$blob)
+                }
+                $physical=Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
+                if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+                    $State.FailureFamily='PATCH_BASE_IDENTITY'
+                    throw ('BASELINE_FILE_MISSING:{0}' -f $fileEntry.path)
                 }
             }
             else {
@@ -701,10 +1013,26 @@ function Invoke-Apply {
             }
         }
 
+        $dryRunLease=('--force-with-lease=refs/heads/{0}:{1}' -f [string]$State.Manifest.branch,$remoteHead)
+        [void](Invoke-Git -GitPath $gitPath -ArgumentList @('push','--dry-run',$dryRunLease,'origin',('HEAD:refs/heads/{0}' -f [string]$State.Manifest.branch)))
+
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_EXECUTE'
         $executeEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_EXECUTE_PREFLIGHT.json'
         [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'MATERIAL_EXECUTE' -SourceIdentity $localHead -EvidencePath $executeEvidence -AllowBootstrapDefer)
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'MATERIAL_EXECUTE'
+
+        $State.ReachedStage='FULL_RECOVERY_SNAPSHOT'
+        $State.FullRecoverySnapshot=New-VerifiedFullRecoverySnapshot `
+            -SourceRoot $WorkingSourcePath -BackupRoot 'D:\Cerebro\Backups' `
+            -SourceCommit $localHead -RetentionCount 10
+
+        $State.ReachedStage='LOCAL_EXECUTION_ENVIRONMENT_PREFLIGHT'
+        Assert-DeclaredTargetMutationCapabilities -SourceRoot $WorkingSourcePath -PatchManifest $State.Manifest
+        $postCapabilityStatus=(Invoke-Git -GitPath $gitPath -ArgumentList @('status','--porcelain','--untracked-files=all')).Stdout
+        if(-not[string]::IsNullOrWhiteSpace($postCapabilityStatus)){
+            $State.FailureFamily='LOCAL_EXECUTION_ENVIRONMENT'
+            throw ('CAPABILITY_PROBE_DIRTIED_SOURCE:{0}' -f $postCapabilityStatus)
+        }
 
         $State.ReachedStage = 'BACKUP'
         $backupRoot = 'D:\Cerebro\Backups'
@@ -712,7 +1040,7 @@ function Invoke-Apply {
         $State.BackupDirectory = Join-Path -Path $backupRoot -ChildPath ('delivery-kernel-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
         [IO.Directory]::CreateDirectory($State.BackupDirectory) | Out-Null
         foreach ($fileEntry in @($State.Manifest.files)) {
-            if ([string]$fileEntry.operation -ne 'replace') { continue }
+            if (@('replace','delete') -notcontains [string]$fileEntry.operation) { continue }
             $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
             $backup = Join-Path -Path $State.BackupDirectory -ChildPath (([string]$fileEntry.path) -replace '/','\')
             [IO.Directory]::CreateDirectory((Split-Path -Parent $backup)) | Out-Null
@@ -725,15 +1053,27 @@ function Invoke-Apply {
 
         $State.ReachedStage = 'EXACT_BYTE_INSTALL'
         foreach ($fileEntry in @($State.Manifest.files)) {
-            $payload = Join-Path -Path $BundleRoot -ChildPath ([string]$fileEntry.payload_path)
             $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
-            Install-ExactPayloadFile -PayloadPath $payload -TargetPath $target -ExpectedSha256 ([string]$fileEntry.sha256)
+            if([string]$fileEntry.operation -eq 'delete'){
+                Remove-ExactTargetFile -TargetPath $target
+            }
+            else{
+                $payload = Join-Path -Path $BundleRoot -ChildPath ([string]$fileEntry.payload_path)
+                Install-ExactPayloadFile -PayloadPath $payload -TargetPath $target -ExpectedSha256 ([string]$fileEntry.sha256)
+            }
             $State.MutationStarted = $true
         }
 
         $State.ReachedStage = 'INSTALLED_BYTE_VERIFY'
         foreach ($fileEntry in @($State.Manifest.files)) {
             $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
+            if([string]$fileEntry.operation -eq 'delete'){
+                if(Test-Path -LiteralPath $target){
+                    $State.FailureFamily='INSTALLED_BYTE_INTEGRITY'
+                    throw ('DELETED_TARGET_STILL_EXISTS:{0}' -f $fileEntry.path)
+                }
+                continue
+            }
             if ((Get-Sha256 $target) -ne [string]$fileEntry.sha256 -or
                 (Get-GitBlobShaFromFile $target) -ne [string]$fileEntry.final_git_blob_sha) {
                 $State.FailureFamily = 'INSTALLED_BYTE_INTEGRITY'
@@ -767,6 +1107,8 @@ function Invoke-Apply {
             $State.FailureFamily = 'ACTIVE_SOURCE_CLOSURE_FAILURE'
             throw ('ACTIVE_SOURCE_INTEGRITY_CLOSURE_FAILED:{0}' -f @($ascResult.findings).Count)
         }
+
+        [void](Invoke-RequiredTargetRuntimeValidation -PatchManifest $State.Manifest)
 
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_PUBLISH'
         $publishEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'
@@ -823,16 +1165,33 @@ function Invoke-Apply {
         [IO.Directory]::CreateDirectory($receiptRoot) | Out-Null
         $receiptPath = Join-Path -Path $receiptRoot -ChildPath ('CEREBRO_DELIVERY_KERNEL_' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
         $receipt = [ordered]@{
-            schema='cerebro-delivery-kernel-receipt/v1'
+            schema='cerebro-delivery-kernel-receipt/v2'
             result='PASS'
             kernel=$KernelId
             patch_id=[string]$State.Manifest.patch_id
             attempt_id=$AttemptId
+            authoritative_source='origin/main'
+            working_source=$WorkingSourcePath
             authoritative_commit=$finalRemote
             working_source_commit=$finalLocal
+            authoritative_source_equals_working_source=$true
             source_equality='VERIFIED'
             working_tree='CLEAN'
+            sync_action='CEREBRO_SYNC_EXECUTED'
             cerebro_sync_verified=$true
+            full_recovery_snapshot=[ordered]@{
+                archive_path=[string]$State.FullRecoverySnapshot.archive_path
+                receipt_path=[string]$State.FullRecoverySnapshot.receipt_path
+                archive_sha256=[string]$State.FullRecoverySnapshot.archive_sha256
+                inventory_sha256=[string]$State.FullRecoverySnapshot.inventory_sha256
+            }
+            target_runtime_validation_receipt=$State.TargetRuntimeValidationReceipt
+            operation_counts=[ordered]@{
+                create=@($State.Manifest.files | Where-Object {[string]$_.operation -eq 'create'}).Count
+                replace=@($State.Manifest.files | Where-Object {[string]$_.operation -eq 'replace'}).Count
+                delete=@($State.Manifest.files | Where-Object {[string]$_.operation -eq 'delete'}).Count
+            }
+            deleted_paths=@($State.Manifest.files | Where-Object {[string]$_.operation -eq 'delete'} | ForEach-Object {[string]$_.path})
             activation_proofs=@($State.ActivationProofs)
             completed_at_utc=[DateTime]::UtcNow.ToString('o')
         }
@@ -862,9 +1221,10 @@ catch {
         try {
             foreach ($fileEntry in @($State.Manifest.files)) {
                 $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
-                if ([string]$fileEntry.operation -eq 'replace') {
+                if (@('replace','delete') -contains [string]$fileEntry.operation) {
                     $backup = Join-Path -Path $State.BackupDirectory -ChildPath (([string]$fileEntry.path) -replace '/','\')
                     if (Test-Path -LiteralPath $backup -PathType Leaf) {
+                        [IO.Directory]::CreateDirectory((Split-Path -Parent $target)) | Out-Null
                         Copy-Item -LiteralPath $backup -Destination $target -Force
                     }
                 }
@@ -884,6 +1244,10 @@ catch {
     Write-Host ('ERROR={0}' -f $errorText)
     if (-not [string]::IsNullOrWhiteSpace($State.BackupDirectory)) {
         Write-Host ('BACKUP={0}' -f $State.BackupDirectory)
+    }
+    if($null -ne $State.FullRecoverySnapshot){
+        Write-Host ('FULL_RECOVERY_SNAPSHOT={0}' -f [string]$State.FullRecoverySnapshot.archive_path)
+        Write-Host ('FULL_RECOVERY_SNAPSHOT_RECEIPT={0}' -f [string]$State.FullRecoverySnapshot.receipt_path)
     }
     throw
 }

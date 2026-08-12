@@ -381,6 +381,15 @@ backup_contract:
   - repository-wide-restore
   - overwrite-of-unknown-current-bytes
   - delete-of-unknown-current-files
+  full_recovery_snapshot:
+    purpose: catastrophic-recovery-safety-net
+    normal_bounded_rollback_substitute: false
+    scope: entire-Working-Source-including-dot-git
+    root: D:\Cerebro\Backups
+    verify_archive_hash: true
+    verify_every-file-entry: true
+    retain_latest_verified: 10
+    prune_only_after-new-verified-snapshot: true
 working_source_preflight:
   required:
   - repository-root-match
@@ -392,7 +401,23 @@ working_source_preflight:
   - payload-hashes-valid
   - tracked-target-baselines-match-git-blob-identities
   - physical-working-tree-is-clean-against-index
+  - normal-user-write-and-delete-capability-for-declared-target-parents
+  - local-git-push-dry-run-with-existing-credentials
   failure_effect: NO_MUTATION
+
+local_standard_execution_environment:
+  user_confirmed_primary_host: WINDOWS_PC
+  working_source: D:\Cerebro\Source\Cerebro_Source_v1.0
+  network_and_repository_access: NORMALLY_AVAILABLE
+  local_launcher_may_push_via_cerebro_sync: true
+  execution_identity: CURRENT_NORMAL_USER
+  privilege_escalation: PROHIBITED
+  insufficient_capability: STOP_BEFORE_SOURCE_MUTATION
+  user_role: INITIATE_AND_RETURN_MACHINE_RESULT
+  user_manual_validation_role: NONE
+  work_mode_scope: CHATGPT_TOOL_ACCESS_ONLY
+  work_mode_required_for_local_launcher: false
+  volatile_environment_facts: DISCOVER_FRESH_PER_ATTEMPT
 post_apply:
   success_state: READY_FOR_LOCAL_VALIDATION
   publication_performed: false

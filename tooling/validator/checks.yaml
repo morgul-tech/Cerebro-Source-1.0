@@ -1399,40 +1399,43 @@ project_roadmap_terminal_state_validation:
     - completed-project-with-planned-next-execution
 
 
-aa_004_r1_r4_generalized_pre_handoff_learning:
+aa_004_r1_r4_generalized_prepublication_learning:
   introduced_by: PATCH-AA-004-R5
   severity: error
   owner: tooling.validator
-  scope: GENERAL_CEREBRO_PRE_HANDOFF
+  scope: GENERAL_CEREBRO_PREPUBLICATION_WITH_PREHANDOFF_WHEN_TARGET_RUNTIME_AVAILABLE
   invariants:
-    - CHANGED_SOURCE_PATHS_REQUIRE_FULL_DEPENDENT_EVIDENCE_IMPACT_CLOSURE_BEFORE_HANDOFF
-    - PRODUCER_OUTPUT_SCHEMA_MUST_BE_EXECUTED_AGAINST_EVERY_MANDATORY_CONSUMER_BEFORE_HANDOFF
+    - CHANGED_SOURCE_PATHS_REQUIRE_FULL_DEPENDENT_EVIDENCE_IMPACT_CLOSURE_BEFORE_PUBLICATION
+    - PRODUCER_OUTPUT_SCHEMA_MUST_BE_EXECUTED_AGAINST_EVERY_MANDATORY_CONSUMER_BEFORE_PUBLICATION
+    - SEALED_HANDOFF_MAY_DEFER_REQUIRED_TARGET_RUNTIME_ONLY_TO_AUTOMATED_LOCAL_PREPUBLICATION_EXECUTION
   required_order:
     - exact-source-delta-first
     - enumerate-all-runtime-evidence-bindings-across-entire-activation-registry
     - intersect-every-basis-files-set-with-changed-source-paths
     - account-for-every-invalidated-proof-producer
-    - execute-all-required-proof-producers-on-exact-disposable-candidate
-    - execute-actual-contract-activation-closure-on-that-candidate
-    - only-after-activation-closure-run-repeated-DEEP-change-campaigns
-    - only-after-all-pre-handoff-gates-pass-allow-user-local-apply
+    - execute-all-builder-available-proof-producers-on-exact-disposable-candidate
+    - execute-builder-available-contract-activation-and-DEEP-assurance
+    - run-kernel-selftest-and-verified-full-snapshot-before-Working-Source-mutation
+    - install-exact-candidate-as-bounded-reversible-local-transaction
+    - execute-automated-target-runtime-validation-on-exact-unsynced-candidate
+    - only-after-all-local-prepublication-gates-pass-allow-cerebro-sync
   producer_consumer_contracts:
     - CAC-v2-blocking_findings-is-the-authoritative-blocking-finding-array
     - STANDARD-delivery-kernel-consumes-blocking_findings-not-legacy-activation_gap_count
     - producer-output-schema-consumer-compatibility-is-executed-not-inferred
   required_canaries:
     - changed-basis-file-invalidating-multiple-runtime-evidence-bindings-enumerates-all-bindings
-    - omitted-proof-producer-blocks-before-handoff
-    - stale-runtime-evidence-blocks-before-handoff
+    - omitted-proof-producer-blocks-before-publication
+    - stale-runtime-evidence-blocks-before-publication
     - producer-removes-consumer-field-blocks-before-handoff
     - consumer-reads-nonexistent-producer-field-blocks-before-handoff
     - exact-candidate-CAC-failure-surfaces-real-blocking-findings
-    - user-is-not-first-discovery-mechanism-for-known-dependency-gap
+    - local-machine-is-automated-execution-surface-not-human-validation-or-diagnosis
   prohibited:
     - subsystem-local-evidence-sweep-when-changed-paths-have-cross-system-dependents
     - static-token-pass-substituting-for-executed-activation-closure
     - masking-primary-CAC-failure-with-secondary-reporting-property-error
-    - sealing-handoff-before-all-invalidated-proofs-have-producers
+    - sealing-handoff-without-complete-dependency-plan-declared-producers-and-mandatory-local-prepublication-gate
 
 target_runtime_pre_handoff_validation:
   introduced_by: PATCH-AA-004-R5
@@ -1451,18 +1454,48 @@ target_runtime_pre_handoff_validation:
     - actual-CAC-blocking_findings-survive-failure-transport
     - DEEP-assurance-runs-only-after-CAC-PASS
     - STANDARD-Apply-requires-matching-target-runtime-receipt-when-manifest-declares-it-required
+    - user-initiated-automated-local-validation-is-valid-machine-evidence
+    - manual-user-judgment-is-not-machine-evidence
+    - declared-delete-is-validated-by-baseline-identity-and-candidate-absence
   required_canaries:
     - candidate-source-validation-by-Runtime-Host-is-rejected
-    - missing-Windows-PowerShell-runtime-blocks-handoff
-    - missing-impacted-proof-producer-blocks-handoff
+    - missing-Windows-PowerShell-runtime-blocks-cerebro-sync
+    - missing-impacted-proof-producer-blocks-publication
     - stale-unaffected-baseline-proof-is-rejected-by-actual-CAC
     - producer-consumer-schema-mismatch-blocks-before-Apply
     - actual-CAC-failure-preserves-complete-blocking_findings
     - target-runtime-receipt-with-wrong-candidate-identity-blocks-Apply
     - target-runtime-receipt-with-wrong-changed-paths-blocks-Apply
     - fully-validated-candidate-can-proceed-to-STANDARD-delivery-without-user-driven-discovery
+    - exact-local-candidate-can-be-validated-before-publication-and-rolled-back-on-failure
   prohibited:
     - target-runtime-parity-substitute-when-actual-runtime-is-required
     - target-runtime-validation-through-Runtime-Host
     - authoritative-Source-publish-from-target-runtime-validator
-    - user-execution-as-first-known-dependency-discovery-mechanism
+    - manual-user-judgment-as-target-runtime-proof
+    - handoff-requiring-user-to-diagnose-known-dependency-gaps
+
+dualityarc_wave_01_delivery_and_source_hygiene:
+  introduced_by: CEREBRO-DUALITYARC-WAVE-01
+  severity: error
+  owner: tooling.validator
+  invariants:
+    - STANDARD-kernel-supports-declared-create-replace-delete
+    - delete-is-baseline-bound-backed-up-bounded-and-rollback-capable
+    - full-recovery-snapshot-is-verified-before-first-Source-mutation
+    - active-set-is-derived-from-exact-candidate-not-stale-index-only
+    - retired-active-paths-are-physically-absent
+    - historical-bytes-equal-retired-baseline-blobs
+    - cerebro-yaml-is-only-active-component-topology-authority
+    - one-canonical-execution-surface-resolution-contract
+    - user-initiated-local-Windows-validation-is-automated-machine-evidence
+    - CEREBRO_SYNC-remains-the-only-Source-publication-path
+  required_canaries:
+    - delete-entry-with-payload-is-rejected
+    - delete-entry-without-baseline-blob-is-rejected
+    - delete-before-sync-failure-restores-exact-baseline
+    - local-git-fixture-includes-required-cerebro-yaml-before-full-snapshot-selftest
+    - candidate-active-set-contains-created-files-and-excludes-deleted-files
+    - stale-root-inventory-or-audit-blocks-closure
+    - source-mapping-or-physical-target-resolution-active-path-blocks-closure
+    - missing-history-copy-blocks-closure

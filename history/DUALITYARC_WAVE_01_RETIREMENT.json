@@ -1,0 +1,32 @@
+{
+  "schema": "cerebro-dualityarc-retirement-evidence/v1",
+  "wave": "DUALITYARC-WAVE-01",
+  "source_base_commit": "3d89ace1ff911646ab2246aa24fc41e959dd94c0",
+  "authority": "HISTORICAL_EVIDENCE_ONLY",
+  "retirements": [
+    {
+      "retired_path": "mcp/source-mapping.yaml",
+      "history_path": "history/mcp/source-mapping.yaml",
+      "git_blob_sha": "dd5747eba13b0bb88ca6db371acfdd0cef9aee06",
+      "disposition": "MERGED_INTO_MCP_EXECUTION_SURFACE_RESOLUTION"
+    },
+    {
+      "retired_path": "mcp/physical-target-resolution.yaml",
+      "history_path": "history/mcp/physical-target-resolution.yaml",
+      "git_blob_sha": "7a99eee04bff73301112d8225ba65c08963e89aa",
+      "disposition": "MERGED_INTO_MCP_EXECUTION_SURFACE_RESOLUTION"
+    },
+    {
+      "retired_path": "FILE_INVENTORY.json",
+      "history_path": "history/FILE_INVENTORY_v1.0.json",
+      "git_blob_sha": "9609fc6437e50b9f19b354fbb8e468515bddd2dd",
+      "disposition": "REMOVED_FROM_ACTIVE_SOURCE"
+    },
+    {
+      "retired_path": "SOURCE_AUDIT_v1.0.json",
+      "history_path": "history/SOURCE_AUDIT_v1.0.json",
+      "git_blob_sha": "222228338ef60d1431b397674881bcd3cd583414",
+      "disposition": "REMOVED_FROM_ACTIVE_SOURCE"
+    }
+  ]
+}

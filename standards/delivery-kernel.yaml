@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "1.9"
+  version: "2.0"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -96,14 +96,17 @@ delivery_kernel:
     invariant: WORK_MODE_IS_NEVER_PART_OF_STANDARD_DELIVERY
 
   kernel_transaction:
+    supported_operations: [create, replace, delete]
     phases:
     - native-parser-and-kernel-selftest
     - bundle-and-payload-hash-verification
     - exact-Source-baseline-verification
+    - verified-full-recovery-snapshot
     - bounded-physical-backup
     - exact-byte-installation
     - installed-byte-verification
     - Source-diff-validation
+    - user-initiated-automated-target-runtime-validation
     - canonical-cerebro-sync
     - fresh-remote-fetch
     - local-remote-commit-equality-proof
@@ -114,7 +117,36 @@ delivery_kernel:
     existing_file_identity_before: git-blob-sha
     delivered_file_identity: sha256-and-git-blob-sha
     physical_backup_identity: sha256
+    delete_identity_before: git-blob-sha
+    delete_payload_fields: PROHIBITED
+    delete_target_scope: EXACT_DECLARED_FILE_ONLY
+    delete_directory_operation: PROHIBITED
+    deleted_file_backup_before_mutation: REQUIRED
+    deleted_file_rollback_before_sync: REQUIRED
+    deleted_file_final_identity: ABSENT_AT_HEAD
     runtime_text_replacement: PROHIBITED
+
+  local_execution_environment:
+    execution_host: USER_PRIMARY_WINDOWS_MACHINE
+    working_source: D:\Cerebro\Source\Cerebro_Source_v1.0
+    normal_user_only: true
+    privilege_escalation: PROHIBITED
+    local_launcher_may_use_existing_git_credentials: true
+    work_mode_required_for_local_launcher: false
+    volatile_machine_facts: DISCOVER_FRESH_BEFORE_MUTATION
+    missing_required_capability: STOP_BEFORE_MUTATION
+
+  full_recovery_snapshot:
+    root: D:\Cerebro\Backups
+    scope: ENTIRE_WORKING_SOURCE_INCLUDING_DOT_GIT
+    required_before_first_source_mutation: true
+    archive_hash_required: true
+    file_inventory_identity_required: true
+    archive_entry_roundtrip_verification_required: true
+    verified_retention_count: 10
+    pruning_allowed_only_after_new_snapshot_verified: true
+    unverified_snapshot_auto_delete: false
+    role: CATASTROPHIC_RECOVERY_NOT_NORMAL_ROLLBACK
 
   native_command_contract:
     stderr_alone_is_failure: false
@@ -124,7 +156,7 @@ delivery_kernel:
     ErrorActionPreference_restored_after_native_execution: true
 
   duplicate_execution:
-    if_current_Source_already_matches_all_final_git_blobs: ALREADY_APPLIED_PASS
+    if_current_Source_matches_all_final_blobs_and_declared_absences: ALREADY_APPLIED_PASS
     otherwise_if_base_changed: FAIL_CLOSED
 
   failure_behavior:

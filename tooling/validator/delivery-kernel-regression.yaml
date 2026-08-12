@@ -9,5 +9,16 @@ delivery_kernel_regression_tool:
   - NATIVE_STDERR_ZERO_EXIT_PASS
   - NATIVE_NONZERO_EXIT_PASS
   - LOCAL_GIT_FIXTURE_PASS
+  - BOUNDED_DELETE_ROLLBACK_PASS
+  - FULL_RECOVERY_SNAPSHOT_PASS
   - PAYLOAD_HASH_PASS
   - BASELINE_MANIFEST_PASS
+  required_canaries:
+  - declared-delete-requires-exact-baseline-git-blob
+  - declared-delete-rejects-payload-fields
+  - declared-delete-backs-up-and-restores-before-sync-failure
+  - declared-delete-proves-final-absence-at-HEAD
+  - delete-is-limited-to-one-exact-file-and-never-a-directory
+  - full-snapshot-includes-dot-git-and-verifies-every-entry
+  - local-git-fixture-includes-required-cerebro-source-root-marker
+  - insufficient-normal-user-capability-stops-before-mutation

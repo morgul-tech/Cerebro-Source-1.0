@@ -2,7 +2,7 @@
   "schema": "cerebro-target-runtime-profile/v1",
   "profile": {
     "id": "windows-powershell",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "status": "ACTIVE",
     "os": "windows",
     "powershell": {

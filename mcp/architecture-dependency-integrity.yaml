@@ -23,7 +23,8 @@ architecture_dependency_integrity:
 
     - component_contracts
     - ownership_model
-    - source_mapping
+    - canonical_component_topology
+    - execution_surface_resolution
     - activation_contract
     - builder_contract
 
@@ -35,7 +36,8 @@ architecture_dependency_integrity:
       - patch_identity_resolution
       - dependency_snapshot_check
       - architecture_state_check
-      - source_mapping_check
+      - canonical_topology_check
+      - execution_surface_resolution_check
 
 
   outcomes:
@@ -67,6 +69,16 @@ architecture_dependency_integrity:
         - architecture_state_definition
         - compatibility_rules
         - change_impact_classification
+
+    mcp:
+
+      owns:
+
+        - execution_surface_resolution
+
+      consumes:
+
+        - cerebro_yaml_component_topology
 
 
     patch_system:

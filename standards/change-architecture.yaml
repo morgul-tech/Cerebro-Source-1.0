@@ -169,7 +169,9 @@ change_model:
     working_source_mutation: prohibited
   delivery_sandbox:
     exact-delivered-payload-required: true
-    user-environment-exercise_required_before_authoritative_mutation: true
+    user-initiated-automated-target-runtime-exercise_before-publication: true
+    manual-user-validation: prohibited
+    reversible-Working-Source-candidate-before-publication: allowed
   working_source:
     role: mutable-local-development-surface
     publication_path: cerebro_sync
