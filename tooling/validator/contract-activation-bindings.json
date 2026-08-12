@@ -6,7 +6,7 @@
       "standard_id": "STD-MCP",
       "path": "standards/mcp.yaml",
       "classification": "OPERATIONAL",
-      "rationale": "MCP material/relevance control and the AA-003 shadow-validated adaptive resolver are now composed through one canonical MCP-owned live control-resolution surface with bound runtime activation evidence.",
+      "rationale": "MCP material/relevance control, delivery-profile resolution and the AA-003 shadow-validated adaptive resolver are composed through one canonical MCP-owned live control-resolution surface with bound runtime activation evidence.",
       "strict_contract_refs": [
         "MATERIAL_COMMITMENT_PREFLIGHT",
         "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH",
@@ -985,7 +985,9 @@
         "CEREBRO-MCP-CONTROL-RESOLUTION-001",
         "PROMOTION_MUST_REFERENCE_EXACT_SHADOW_VALIDATED_CANDIDATE_IDENTITY",
         "MATERIAL_PREFLIGHT_BLOCK_IS_FINAL",
-        "MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED"
+        "MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED",
+        "MCP_IS_THE_ONLY_DELIVERY_PROFILE_DECISION_OWNER",
+        "DELIVERY_ADAPTER_MUST_NOT_RECOMPUTE_MCP_DELIVERY_POLICY"
       ],
       "registration": "mcp/manifest.yaml",
       "registration_token": "control_resolution:",
@@ -994,14 +996,18 @@
         "CEREBRO-MCP-CONTROL-RESOLUTION-001",
         "DERIVED_MCP_CONTROL_DECISION",
         "PROMOTION_BASIS_INVALID",
-        "MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_ERROR"
+        "MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_ERROR",
+        "resolve_delivery_profile",
+        "adapter_may_recompute"
       ],
       "wiring": "mcp/manifest.yaml",
       "wiring_proof_kind": "RUNTIME_EVIDENCE",
       "wiring_tokens": [
         "implementation_ref: mcp/control_resolution.py",
         "canonical: true",
-        "live_control_authority: true"
+        "live_control_authority: true",
+        "delivery_profile_decision_owner: MCP",
+        "delivery_profile_adapter_role: CAPABILITY_BINDING_AND_STATE_PROJECTION"
       ],
       "validation": "tooling/validator/checks.yaml",
       "validation_tokens": [
@@ -1024,6 +1030,16 @@
           "mcp/manifest.yaml",
           "standards/mcp.yaml",
           "standards/control-architecture.yaml",
+          "standards/change-delivery.yaml",
+          "standards/change-delivery-convergence.yaml",
+          "tooling/delivery/cerebro_delivery.ps1",
+          "tooling/delivery/selection-state-schema.json",
+          "tooling/delivery/component.yaml",
+          "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+          "standards/delivery-kernel.yaml",
+          "tooling/validator/target-runtime/Invoke-CerebroWindowsPowerShellValidation.ps1",
+          "tooling/validator/target_runtime_validation.py",
+          "standards/development/delivery-failure-regression.yaml",
           "tooling/validator/contract-activation-bindings.json",
           "engines/project/roadmap.yaml",
           "tooling/runtime-host/component.yaml",
@@ -1041,6 +1057,10 @@
           "promotion_contract_verified",
           "direct_resolver_non_live",
           "canonical_control_surface_live",
+          "delivery_profile_resolution_owned_by_mcp",
+          "delivery_profile_adapter_non_deciding",
+          "delivery_resolution_fail_closed",
+          "delivery_profile_namespace_preserved",
           "material_preflight_precedes_adaptive",
           "preflight_block_not_overridden",
           "preflight_input_failure_fails_closed",

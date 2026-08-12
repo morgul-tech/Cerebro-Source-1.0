@@ -23,9 +23,12 @@ param(
 
 Set-StrictMode -Version 2.0
 
-$script:CerebroDeliverySelectionSchema = 'cerebro-delivery-selection/v0.2'
-$script:CerebroDeliveryLegacySelectionSchema = 'cerebro-delivery-selection/v0.1'
-$script:CerebroDeliverySelectorVersion = '0.3.0'
+$script:CerebroDeliverySelectionSchema = 'cerebro-delivery-selection/v0.3'
+$script:CerebroDeliveryLegacySelectionSchemas = @(
+    'cerebro-delivery-selection/v0.1',
+    'cerebro-delivery-selection/v0.2'
+)
+$script:CerebroDeliverySelectorVersion = '0.4.0'
 $script:CerebroDeliveryProfiles = @(
     'LIMITED',
     'STANDARD',
@@ -209,6 +212,68 @@ function Invoke-CerebroDeliveryNative {
     }
 }
 
+function Resolve-CerebroDeliveryPythonRunner {
+    foreach ($name in @('python.exe', 'python')) {
+        try {
+            $command = Get-Command $name -ErrorAction Stop |
+                Select-Object -First 1
+            if (-not [string]::IsNullOrWhiteSpace($command.Source)) {
+                return [pscustomobject]@{
+                    executable = $command.Source
+                    prefix_arguments = @('-B')
+                }
+            }
+        }
+        catch {}
+    }
+    foreach ($name in @('py.exe', 'py')) {
+        try {
+            $command = Get-Command $name -ErrorAction Stop |
+                Select-Object -First 1
+            if (-not [string]::IsNullOrWhiteSpace($command.Source)) {
+                return [pscustomobject]@{
+                    executable = $command.Source
+                    prefix_arguments = @('-3', '-B')
+                }
+            }
+        }
+        catch {}
+    }
+    throw 'CEREBRO_DELIVERY_MCP_CONTROL_PYTHON_NOT_FOUND'
+}
+
+function Invoke-CerebroDeliveryNativeArguments {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Executable,
+
+        [string[]]$ArgumentList = @()
+    )
+
+    $stdoutPath = [IO.Path]::GetTempFileName()
+    $stderrPath = [IO.Path]::GetTempFileName()
+    $previousErrorAction = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $Executable @ArgumentList 1> $stdoutPath 2> $stderrPath
+        $nativeExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorAction
+    }
+    try {
+        return [pscustomobject]@{
+            exit_code = [int]$nativeExitCode
+            stdout = [IO.File]::ReadAllText($stdoutPath).Trim()
+            stderr = [IO.File]::ReadAllText($stderrPath).Trim()
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $stdoutPath, $stderrPath -Force `
+            -ErrorAction SilentlyContinue
+    }
+}
+
 function Get-CerebroDeliverySourceIdentity {
     param(
         [Parameter(Mandatory)]
@@ -306,115 +371,206 @@ function Resolve-CerebroDeliveryProfile {
 
         [string[]]$Operations = @(),
 
-        [switch]$DirectWorkspaceAccess
+        [switch]$DirectWorkspaceAccess,
+
+        [string]$WorkingSourcePath =
+            'D:\Cerebro\Source\Cerebro_Source_v1.0',
+
+        [object]$SourceIdentity
     )
 
-    $requestedInput = $RequestedProfile.ToUpperInvariant()
-    $requested = ConvertTo-CerebroCanonicalDeliveryProfile `
-        -Profile $requestedInput
-    $normalizedOperations = @(
-        $Operations |
-            ForEach-Object { ([string]$_).ToLowerInvariant() }
-    )
-    $unknownOperations = @(
-        $normalizedOperations |
-            Where-Object { $_ -notin @('replace', 'create', 'delete') }
-    )
-
-    if ($unknownOperations.Count -gt 0) {
-        return [pscustomobject]@{
-            result = 'BLOCKED'
-            classification = 'UNKNOWN_PATCH_OPERATION'
-            requested_profile = $requested
-            resolved_profile = $null
-            reason = ($unknownOperations -join ',')
+    if ($null -eq $SourceIdentity) {
+        try {
+            $SourceIdentity = Get-CerebroDeliverySourceIdentity `
+                -WorkingSourcePath $WorkingSourcePath
         }
-    }
-
-    if ($requested -eq 'AUTO') {
-        if ($DirectWorkspaceAccess) {
-            return [pscustomobject]@{
-                result = 'PASS'
-                classification = 'DELIVERY_PROFILE_RESOLVED'
-                requested_profile = 'AUTO'
-                resolved_profile = 'FULL'
-                reason = 'direct-workspace-access-declared'
-            }
-        }
-
-        if ($normalizedOperations.Count -eq 0) {
+        catch {
             return [pscustomobject]@{
                 result = 'BLOCKED'
-                classification = 'INSUFFICIENT_CAPABILITY_EVIDENCE'
-                requested_profile = 'AUTO'
+                classification = 'SOURCE_IDENTITY_NOT_VERIFIED'
+                requested_profile = $(
+                    ConvertTo-CerebroCanonicalDeliveryProfile `
+                        -Profile $RequestedProfile
+                )
                 resolved_profile = $null
-                reason = 'AUTO requires patch operations or declared direct workspace access'
+                reason = $_.Exception.Message
+                decision_owner = 'MCP'
+                adapter_recomputed = $false
             }
         }
+    }
 
+    $sourceRoot = [IO.Path]::GetFullPath(
+        [string]$SourceIdentity.working_source_path
+    )
+    $resolver = Join-Path $sourceRoot 'mcp\control_resolution.py'
+    if (-not (Test-Path -LiteralPath $resolver -PathType Leaf)) {
+        return [pscustomobject]@{
+            result = 'BLOCKED'
+            classification = 'MCP_CONTROL_RESOLVER_NOT_FOUND'
+            requested_profile = $(
+                ConvertTo-CerebroCanonicalDeliveryProfile `
+                    -Profile $RequestedProfile
+            )
+            resolved_profile = $null
+            reason = $resolver
+            decision_owner = 'MCP'
+            adapter_recomputed = $false
+        }
+    }
+
+    try {
+        $python = Resolve-CerebroDeliveryPythonRunner
+    }
+    catch {
+        return [pscustomobject]@{
+            result = 'BLOCKED'
+            classification = 'MCP_CONTROL_PYTHON_NOT_FOUND'
+            requested_profile = $(
+                ConvertTo-CerebroCanonicalDeliveryProfile `
+                    -Profile $RequestedProfile
+            )
+            resolved_profile = $null
+            reason = $_.Exception.Message
+            decision_owner = 'MCP'
+            adapter_recomputed = $false
+        }
+    }
+
+    $requestPath = Join-Path ([IO.Path]::GetTempPath()) (
+        'cerebro-mcp-delivery-request-' +
+        [guid]::NewGuid().ToString('N') + '.json'
+    )
+    $outputPath = Join-Path ([IO.Path]::GetTempPath()) (
+        'cerebro-mcp-delivery-result-' +
+        [guid]::NewGuid().ToString('N') + '.json'
+    )
+    $utf8 = New-Object Text.UTF8Encoding($false)
+    $request = [ordered]@{
+        objective_ref = 'CEREBRO-DELIVERY-PROFILE-SELECTION'
+        stage = 'UNDERSTAND_FRAME'
+        material = $false
+        consequence = 'LOW'
+        uncertainty = 'LOW'
+        requested_delivery_profile = $RequestedProfile.ToUpperInvariant()
+        delivery_operations = @(
+            $Operations |
+                ForEach-Object { ([string]$_).ToLowerInvariant() }
+        )
+        direct_workspace_access_declared = [bool]$DirectWorkspaceAccess
+        authoritative_source_commit = [string]$SourceIdentity.commit
+        governing_basis_refs = @(
+            'STD-CHANGE-DELIVERY',
+            'CEREBRO-MCP-CONTROL-RESOLUTION-001'
+        )
+    }
+
+    try {
+        [IO.File]::WriteAllText(
+            $requestPath,
+            (($request | ConvertTo-Json -Depth 16) + "`n"),
+            $utf8
+        )
+        $arguments = @($python.prefix_arguments) + @(
+            $resolver,
+            'resolve',
+            '--request',
+            $requestPath,
+            '--output',
+            $outputPath,
+            '--source-root',
+            $sourceRoot
+        )
+        $native = Invoke-CerebroDeliveryNativeArguments `
+            -Executable $python.executable `
+            -ArgumentList $arguments
         if (
-            @(
-                $normalizedOperations |
-                    Where-Object { $_ -ne 'replace' }
-            ).Count -eq 0
+            $native.exit_code -ne 0 -or
+            -not (Test-Path -LiteralPath $outputPath -PathType Leaf)
         ) {
             return [pscustomobject]@{
-                result = 'PASS'
-                classification = 'DELIVERY_PROFILE_RESOLVED'
-                requested_profile = 'AUTO'
-                resolved_profile = 'LIMITED'
-                reason = 'existing-file-replacements-only'
+                result = 'BLOCKED'
+                classification = 'MCP_CONTROL_RESOLUTION_FAILED'
+                requested_profile = $(
+                    ConvertTo-CerebroCanonicalDeliveryProfile `
+                        -Profile $RequestedProfile
+                )
+                resolved_profile = $null
+                reason = ($native.stderr + ' ' + $native.stdout).Trim()
+                decision_owner = 'MCP'
+                adapter_recomputed = $false
             }
         }
-
+        $control = [IO.File]::ReadAllText($outputPath) |
+            ConvertFrom-Json
+        $delivery = $control.mcp_delivery_profile_resolution
+        $decision = $control.mcp_control_decision
+        if ($null -eq $delivery -or $null -eq $decision) {
+            throw 'CEREBRO_MCP_DELIVERY_CONTRACT_MISSING'
+        }
         return [pscustomobject]@{
-            result = 'PASS'
-            classification = 'DELIVERY_PROFILE_RESOLVED'
-            requested_profile = 'AUTO'
-            resolved_profile = 'STANDARD'
-            reason = 'structured-file-operations-required'
+            result = [string]$delivery.result
+            classification = [string]$delivery.classification
+            requested_profile = [string]$delivery.requested_profile
+            resolved_profile = $(
+                if ($null -eq $delivery.resolved_profile) {
+                    $null
+                }
+                else {
+                    [string]$delivery.resolved_profile
+                }
+            )
+            reason = [string]$delivery.reason
+            controls = $delivery.controls
+            delivery_basis_fingerprint = `
+                [string]$delivery.basis_fingerprint
+            control_decision_id = [string]$decision.control_decision_id
+            control_decision_outcome = [string]$decision.outcome
+            control_decision_basis_fingerprint = `
+                [string]$decision.basis_fingerprint
+            execution_profile_id = $(
+                if ($null -eq $control.execution_profile) {
+                    $null
+                }
+                else {
+                    [string]$control.execution_profile.execution_profile_id
+                }
+            )
+            execution_profile_basis_fingerprint = $(
+                if ($null -eq $control.execution_profile) {
+                    $null
+                }
+                else {
+                    [string]$control.execution_profile.basis_fingerprint
+                }
+            )
+            control_resolution_surface = `
+                [string]$decision.control_resolution_surface
+            decision_owner = 'MCP'
+            adapter_recomputed = $false
         }
     }
-
-    if ($requested -notin $script:CerebroDeliveryProfiles) {
+    catch {
         return [pscustomobject]@{
             result = 'BLOCKED'
-            classification = 'UNKNOWN_DELIVERY_PROFILE'
-            requested_profile = $requested
+            classification = 'MCP_CONTROL_RESOLUTION_CONTRACT_INVALID'
+            requested_profile = $(
+                ConvertTo-CerebroCanonicalDeliveryProfile `
+                    -Profile $RequestedProfile
+            )
             resolved_profile = $null
-            reason = 'allowed=LIMITED,STANDARD,FULL,AUTO; aliases=STANDARD_A,STANDARD_B,STANDARD_C'
+            reason = $_.Exception.Message
+            decision_owner = 'MCP'
+            adapter_recomputed = $false
         }
     }
-
-    if (
-        $requested -eq 'LIMITED' -and
-        @(
-            $normalizedOperations |
-                Where-Object { $_ -ne 'replace' }
-        ).Count -gt 0
-    ) {
-        return [pscustomobject]@{
-            result = 'BLOCKED'
-            classification = 'DELIVERY_PROFILE_NOT_APPLICABLE'
-            requested_profile = $requested
-            resolved_profile = $null
-            reason = 'LIMITED permits replacement of existing files only'
+    finally {
+        foreach ($temporaryPath in @($requestPath, $outputPath)) {
+            if (Test-Path -LiteralPath $temporaryPath -PathType Leaf) {
+                Remove-Item -LiteralPath $temporaryPath -Force `
+                    -ErrorAction SilentlyContinue
+            }
         }
-    }
-
-    return [pscustomobject]@{
-        result = 'PASS'
-        classification = 'DELIVERY_PROFILE_RESOLVED'
-        requested_profile = $requested
-        resolved_profile = $requested
-        reason = $(
-            if ($requestedInput -eq $requested) {
-                'explicit-user-terminal-selection'
-            }
-            else {
-                'legacy-alias-resolved-to-canonical-profile'
-            }
-        )
     }
 }
 
@@ -514,24 +670,6 @@ function Set-CerebroDeliverySelection {
             'D:\Cerebro\Run\delivery\selections'
     )
 
-    $resolution = Resolve-CerebroDeliveryProfile `
-        -RequestedProfile $Profile `
-        -Operations $Operations `
-        -DirectWorkspaceAccess:$DirectWorkspaceAccess
-
-    if ($resolution.result -ne 'PASS') {
-        return [pscustomobject]@{
-            state = 'BLOCKED'
-            classification = $resolution.classification
-            requested_profile = $resolution.requested_profile
-            resolved_profile = $null
-            reason = $resolution.reason
-            state_changed = $false
-            source_mutation = $false
-            silent_fallback = $false
-        }
-    }
-
     try {
         $source = Get-CerebroDeliverySourceIdentity `
             -WorkingSourcePath $WorkingSourcePath
@@ -540,7 +678,10 @@ function Set-CerebroDeliverySelection {
         return [pscustomobject]@{
             state = 'BLOCKED'
             classification = 'SOURCE_IDENTITY_NOT_VERIFIED'
-            requested_profile = $resolution.requested_profile
+            requested_profile = $(
+                ConvertTo-CerebroCanonicalDeliveryProfile `
+                    -Profile $Profile
+            )
             resolved_profile = $null
             reason = $_.Exception.Message
             state_changed = $false
@@ -549,13 +690,53 @@ function Set-CerebroDeliverySelection {
         }
     }
 
+    $resolution = Resolve-CerebroDeliveryProfile `
+        -RequestedProfile $Profile `
+        -Operations $Operations `
+        -DirectWorkspaceAccess:$DirectWorkspaceAccess `
+        -WorkingSourcePath $WorkingSourcePath `
+        -SourceIdentity $source
+
+    if ($resolution.result -ne 'PASS') {
+        $blockedDecisionId = $null
+        $blockedDecisionOutcome = 'BLOCK'
+        if ($null -ne $resolution.PSObject.Properties[
+            'control_decision_id'
+        ]) {
+            $blockedDecisionId = $resolution.control_decision_id
+        }
+        if ($null -ne $resolution.PSObject.Properties[
+            'control_decision_outcome'
+        ]) {
+            $blockedDecisionOutcome = `
+                $resolution.control_decision_outcome
+        }
+        return [pscustomobject]@{
+            state = 'BLOCKED'
+            classification = $resolution.classification
+            requested_profile = $resolution.requested_profile
+            resolved_profile = $null
+            reason = $resolution.reason
+            control_decision_id = $blockedDecisionId
+            control_decision_outcome = `
+                $blockedDecisionOutcome
+            decision_owner = 'MCP'
+            adapter_recomputed = $false
+            state_changed = $false
+            source_mutation = $false
+            silent_fallback = $false
+        }
+    }
+
     $selectedAt = [DateTimeOffset]::UtcNow.ToString('o')
     $fingerprintMaterial = (
-        '{0}|{1}|{2}|{3}' -f
+        '{0}|{1}|{2}|{3}|{4}|{5}' -f
         $script:CerebroDeliverySelectionSchema,
         $resolution.resolved_profile,
         $source.commit,
-        'STD-CHANGE-DELIVERY@0.7.0'
+        'STD-CHANGE-DELIVERY@0.11.0',
+        $resolution.control_decision_id,
+        $resolution.delivery_basis_fingerprint
     )
     $fingerprint = Get-CerebroDeliveryTextSha256 `
         -Text $fingerprintMaterial
@@ -564,8 +745,7 @@ function Set-CerebroDeliverySelection {
         ([DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')),
         ([guid]::NewGuid().ToString('N').Substring(0, 8))
     )
-    $profileControls = Get-CerebroDeliveryProfileControls `
-        -Profile $resolution.resolved_profile
+    $profileControls = $resolution.controls
 
     $state = [ordered]@{
         schema = $script:CerebroDeliverySelectionSchema
@@ -576,6 +756,7 @@ function Set-CerebroDeliverySelection {
         resolved_profile = $resolution.resolved_profile
         resolution_reason = $resolution.reason
         selected_at_utc = $selectedAt
+        binding_fingerprint = $fingerprint
         decision_fingerprint = $fingerprint
         source = [ordered]@{
             repository = $source.repository
@@ -603,6 +784,23 @@ function Set-CerebroDeliverySelection {
             state = 'PENDING_PATCH_SCOPE_VALIDATION'
             revalidate_before_payload_design = $true
             revalidate_before_delivery = $true
+        }
+        mcp_control_binding = [ordered]@{
+            decision_owner = 'MCP'
+            control_resolution_surface = `
+                $resolution.control_resolution_surface
+            control_decision_id = $resolution.control_decision_id
+            control_decision_outcome = `
+                $resolution.control_decision_outcome
+            control_decision_basis_fingerprint = `
+                $resolution.control_decision_basis_fingerprint
+            execution_profile_id = $resolution.execution_profile_id
+            execution_profile_basis_fingerprint = `
+                $resolution.execution_profile_basis_fingerprint
+            delivery_profile_resolution_fingerprint = `
+                $resolution.delivery_basis_fingerprint
+            adapter_role = 'CAPABILITY_BINDING_AND_STATE_PROJECTION'
+            adapter_recomputed = $false
         }
         controls = [ordered]@{
             source_mutation = $false
@@ -637,6 +835,11 @@ function Set-CerebroDeliverySelection {
         resolved_profile = $state.resolved_profile
         source_commit = $state.source.commit
         decision_fingerprint = $state.decision_fingerprint
+        binding_fingerprint = $state.binding_fingerprint
+        control_decision_id = `
+            $state.mcp_control_binding.control_decision_id
+        decision_owner = 'MCP'
+        adapter_recomputed = $false
         state_path = [IO.Path]::GetFullPath($StatePath)
         history_path = [IO.Path]::GetFullPath($historyPath)
         state_changed = $true
@@ -691,10 +894,10 @@ function Get-CerebroDeliverySelectionStatus {
     }
 
     if (
-        [string]$selection.schema -notin @(
-            $script:CerebroDeliverySelectionSchema,
-            $script:CerebroDeliveryLegacySelectionSchema
-        )
+        [string]$selection.schema -ne
+            $script:CerebroDeliverySelectionSchema -and
+        [string]$selection.schema -notin
+            $script:CerebroDeliveryLegacySelectionSchemas
     ) {
         return [pscustomobject]@{
             state = 'DEGRADED'
@@ -741,12 +944,32 @@ function Get-CerebroDeliverySelectionStatus {
         resolved_profile = $canonicalResolved
         stored_schema = $selection.schema
         compatibility_projection = $(
-            [string]$selection.schema -eq
-            $script:CerebroDeliveryLegacySelectionSchema
+            [string]$selection.schema -in
+            $script:CerebroDeliveryLegacySelectionSchemas
         )
         selected_source_commit = $selection.source.commit
         current_source_commit = $source.commit
         decision_fingerprint = $selection.decision_fingerprint
+        binding_fingerprint = $(
+            if ($null -ne $selection.PSObject.Properties[
+                'binding_fingerprint'
+            ]) {
+                $selection.binding_fingerprint
+            }
+            else {
+                $selection.decision_fingerprint
+            }
+        )
+        decision_owner = $(
+            if ($null -ne $selection.PSObject.Properties[
+                'mcp_control_binding'
+            ]) {
+                $selection.mcp_control_binding.decision_owner
+            }
+            else {
+                'LEGACY_DELIVERY_SELECTOR'
+            }
+        )
         applicability = $selection.applicability.state
         state_path = [IO.Path]::GetFullPath($StatePath)
         source_mutation = $false
@@ -774,8 +997,35 @@ function Invoke-CerebroDeliverySelectionSelfTest {
         $tests.Add($scriptTest) | Out-Null
     }
 
+    $selfTestSource = [IO.Path]::GetFullPath(
+        (Join-Path $PSScriptRoot '..\..')
+    )
+    $selfTestGit = (
+        Get-Command git.exe, git -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+    )
+    if ($null -eq $selfTestGit) {
+        throw 'CEREBRO_DELIVERY_SELFTEST_GIT_NOT_FOUND'
+    }
+    $selfTestHead = Invoke-CerebroDeliveryNative `
+        -FilePath $selfTestGit.Source `
+        -WorkingDirectory $selfTestSource `
+        -Arguments 'rev-parse HEAD'
+    if (
+        $selfTestHead.exit_code -ne 0 -or
+        [string]$selfTestHead.stdout -notmatch '^[a-fA-F0-9]{40}$'
+    ) {
+        throw 'CEREBRO_DELIVERY_SELFTEST_SOURCE_COMMIT_INVALID'
+    }
+    $selfTestSourceIdentity = [pscustomobject]@{
+        commit = ([string]$selfTestHead.stdout).ToLowerInvariant()
+        working_source_path = $selfTestSource
+    }
+
     $autoBlocked = Resolve-CerebroDeliveryProfile `
-        -RequestedProfile 'AUTO'
+        -RequestedProfile 'AUTO' `
+        -WorkingSourcePath $selfTestSource `
+        -SourceIdentity $selfTestSourceIdentity
     Add-TestResult `
         -Name 'auto_without_evidence_fails_closed' `
         -Passed (
@@ -785,14 +1035,18 @@ function Invoke-CerebroDeliverySelectionSelfTest {
 
     $autoA = Resolve-CerebroDeliveryProfile `
         -RequestedProfile 'AUTO' `
-        -Operations @('replace', 'replace')
+        -Operations @('replace', 'replace') `
+        -WorkingSourcePath $selfTestSource `
+        -SourceIdentity $selfTestSourceIdentity
     Add-TestResult `
         -Name 'auto_replacement_scope_resolves_limited' `
         -Passed ($autoA.resolved_profile -eq 'LIMITED')
 
     $autoB = Resolve-CerebroDeliveryProfile `
         -RequestedProfile 'AUTO' `
-        -Operations @('replace', 'create')
+        -Operations @('replace', 'create') `
+        -WorkingSourcePath $selfTestSource `
+        -SourceIdentity $selfTestSourceIdentity
     Add-TestResult `
         -Name 'auto_structured_scope_resolves_standard' `
         -Passed ($autoB.resolved_profile -eq 'STANDARD')
@@ -800,14 +1054,18 @@ function Invoke-CerebroDeliverySelectionSelfTest {
     $autoC = Resolve-CerebroDeliveryProfile `
         -RequestedProfile 'AUTO' `
         -Operations @('create') `
-        -DirectWorkspaceAccess
+        -DirectWorkspaceAccess `
+        -WorkingSourcePath $selfTestSource `
+        -SourceIdentity $selfTestSourceIdentity
     Add-TestResult `
         -Name 'auto_direct_workspace_resolves_full' `
         -Passed ($autoC.resolved_profile -eq 'FULL')
 
     $invalidA = Resolve-CerebroDeliveryProfile `
         -RequestedProfile 'LIMITED' `
-        -Operations @('create')
+        -Operations @('create') `
+        -WorkingSourcePath $selfTestSource `
+        -SourceIdentity $selfTestSourceIdentity
     Add-TestResult `
         -Name 'limited_rejects_create_scope' `
         -Passed (
@@ -820,12 +1078,14 @@ function Invoke-CerebroDeliverySelectionSelfTest {
     $fingerprint2 = Get-CerebroDeliveryTextSha256 `
         -Text 'schema|FULL|commit|contract'
     Add-TestResult `
-        -Name 'decision_fingerprint_is_deterministic' `
+        -Name 'adapter_binding_fingerprint_is_deterministic' `
         -Passed ($fingerprint1 -eq $fingerprint2)
 
     $legacyB = Resolve-CerebroDeliveryProfile `
         -RequestedProfile 'STANDARD_B' `
-        -Operations @('create')
+        -Operations @('create') `
+        -WorkingSourcePath $selfTestSource `
+        -SourceIdentity $selfTestSourceIdentity
     Add-TestResult `
         -Name 'legacy_standard_b_resolves_canonical_standard' `
         -Passed (
@@ -855,13 +1115,30 @@ function Invoke-CerebroDeliverySelectionSelfTest {
             $fullControls.agent_local_access -eq
                 'EXPLICIT_GRANT_REQUIRED'
         )
+    Add-TestResult `
+        -Name 'delivery_profile_resolution_is_mcp_owned' `
+        -Passed (
+            $autoB.decision_owner -eq 'MCP' -and
+            $autoB.adapter_recomputed -eq $false -and
+            $autoB.control_decision_outcome -eq 'CONTINUE' -and
+            $autoB.control_resolution_surface -eq
+                'CEREBRO-MCP-CONTROL-RESOLUTION-001'
+        )
+    Add-TestResult `
+        -Name 'delivery_profile_namespaces_remain_distinct' `
+        -Passed (
+            $autoB.resolved_profile -eq 'STANDARD' -and
+            $autoB.controls.artifact_format -eq
+                'PAYLOAD_PLUS_INSTALLER' -and
+            $autoB.execution_profile_id -match '^EXECP-'
+        )
 
     $passed = @(
         @($tests) | Where-Object { $_.result -ne 'PASS' }
     ).Count -eq 0
 
     return [pscustomobject]@{
-        schema = 'cerebro-delivery-selector-selftest/v0.2'
+        schema = 'cerebro-delivery-adapter-selftest/v0.3'
         result = $(if ($passed) { 'PASS' } else { 'FAIL' })
         selector_version = $script:CerebroDeliverySelectorVersion
         tests = @($tests)

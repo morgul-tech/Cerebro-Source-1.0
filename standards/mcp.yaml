@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-MCP
   name: Master Control Program Standard
-  version: 0.4.0
+  version: 0.5.0
   status: approved
   authority: authoritative
   scope: The domain-independent internal control layer governing active Cerebro operation.
@@ -78,3 +78,12 @@ rules:
   - direct mcp/adaptive_control_resolver.py output remains non-live validated logic.
   - material preflight BLOCK is final and cannot be promoted to CONTINUE.
   - Runtime remains execution-only and contains no promoted adaptive control policy.
+- id: STD-MCP-R011
+  statement: MCP shall be the sole delivery-profile decision owner inside the canonical execution profile; delivery adapters may bind, persist and execute the result but shall not recompute policy or collapse delivery-profile, artifact-format and assurance namespaces.
+  priority: critical
+  verification:
+  - mcp/control_resolution.py resolves AUTO and explicit delivery profiles and fails closed on insufficient or inapplicable capability evidence.
+  - execution_profile.delivery_mode carries the MCP-resolved canonical profile.
+  - tooling/delivery/cerebro_delivery.ps1 invokes MCP and persists the MCP control binding without local policy recomputation.
+  - Windows Target Runtime executes delivery adapter canaries before publication.
+  - LIMITED, STANDARD and FULL remain distinct capability profiles.

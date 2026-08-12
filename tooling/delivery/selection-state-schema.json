@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "cerebro-delivery-selection/v0.2",
+  "$id": "cerebro-delivery-selection/v0.3",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,15 +12,17 @@
     "resolved_profile",
     "resolution_reason",
     "selected_at_utc",
+    "binding_fingerprint",
     "decision_fingerprint",
     "source",
     "evidence",
     "applicability",
+    "mcp_control_binding",
     "controls",
     "invalidated_by"
   ],
   "properties": {
-    "schema": {"const": "cerebro-delivery-selection/v0.2"},
+    "schema": {"const": "cerebro-delivery-selection/v0.3"},
     "selector_version": {"type": "string"},
     "selection_id": {"type": "string", "pattern": "^DELIVERY-"},
     "state": {"const": "LOCKED"},
@@ -32,9 +34,14 @@
     },
     "resolution_reason": {"type": "string", "minLength": 1},
     "selected_at_utc": {"type": "string", "format": "date-time"},
-    "decision_fingerprint": {
+    "binding_fingerprint": {
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
+    },
+    "decision_fingerprint": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "Compatibility projection equal to binding_fingerprint; the delivery adapter does not own the MCP decision."
     },
     "source": {
       "type": "object",
@@ -85,6 +92,34 @@
         "state": {"const": "PENDING_PATCH_SCOPE_VALIDATION"},
         "revalidate_before_payload_design": {"const": true},
         "revalidate_before_delivery": {"const": true}
+      }
+    },
+    "mcp_control_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_owner",
+        "control_resolution_surface",
+        "control_decision_id",
+        "control_decision_outcome",
+        "control_decision_basis_fingerprint",
+        "execution_profile_id",
+        "execution_profile_basis_fingerprint",
+        "delivery_profile_resolution_fingerprint",
+        "adapter_role",
+        "adapter_recomputed"
+      ],
+      "properties": {
+        "decision_owner": {"const": "MCP"},
+        "control_resolution_surface": {"const": "CEREBRO-MCP-CONTROL-RESOLUTION-001"},
+        "control_decision_id": {"type": "string", "pattern": "^MCPD-"},
+        "control_decision_outcome": {"const": "CONTINUE"},
+        "control_decision_basis_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "execution_profile_id": {"type": "string", "pattern": "^EXECP-"},
+        "execution_profile_basis_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "delivery_profile_resolution_fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "adapter_role": {"const": "CAPABILITY_BINDING_AND_STATE_PROJECTION"},
+        "adapter_recomputed": {"const": false}
       }
     },
     "controls": {

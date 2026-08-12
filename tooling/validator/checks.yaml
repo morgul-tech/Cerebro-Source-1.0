@@ -1349,6 +1349,9 @@ aa_004_controlled_promotion_validation:
     - Runtime-remains-bounded-executor-without-adaptive-control-policy
     - existing-Relevance-Wisdom-MCP-evidence-refreshes-before-contract-activation-closure
     - AA004-runtime-evidence-binding-is-source-state-bound
+    - MCP-is-the-only-delivery-profile-decision-owner
+    - delivery-adapter-binds-and-projects-without-policy-recomputation
+    - delivery-profile-artifact-and-assurance-namespaces-remain-distinct
   required_canaries:
     - exact-AA001-resolver-blob-is-required
     - exact-AA001-contract-blob-is-required
@@ -1365,6 +1368,10 @@ aa_004_controlled_promotion_validation:
     - unchanged-path-reorientation-remains-BLOCK
     - runtime-control-policy-scan-is-clean
     - ADAPTIVE_MCP_CONTROL_RESOLUTION-runtime-proof-is-PASS
+    - AUTO-without-delivery-capability-evidence-blocks-in-MCP
+    - AUTO-replace-create-and-direct-access-resolve-through-MCP
+    - MCP-delivery-resolution-is-bound-into-execution-profile
+    - PowerShell-delivery-adapter-consumes-MCP-decision
   prohibited:
     - modified-AA001-candidate-without-new-AA003-shadow-validation
     - physical-worktree-bytes-used-as-authoritative-Git-blob-identity
@@ -1376,6 +1383,9 @@ aa_004_controlled_promotion_validation:
     - static-ADAPTIVE-work-mode
     - Runtime-resident-adaptive-control
     - parallel-MCP-control-owner
+    - delivery-tool-owned-profile-policy
+    - adapter-recomputed-delivery-profile
+    - delivery-profile-artifact-format-namespace-collapse
 
 project_roadmap_terminal_state_validation:
   introduced_by: PATCH-AA-004

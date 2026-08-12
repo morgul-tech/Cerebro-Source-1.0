@@ -436,3 +436,36 @@ development_history:
       provenance:
         admission: USER_DIRECTED_EXECUTION_CONFIRMED_PERMANENT_LEARNING
         source_ref: USER-REFINE-PERMANENT-LEARNING-2026-08-12
+    - id: HIST-LEARN-DECLARED-OWNER-VS-EXECUTABLE-POLICY-OWNER-20260812
+      event_class: LEARNING_EVENT
+      significance: FOUNDATIONAL
+      role: EVENT
+      title: Delivery profile exposed a gap between declared and executable control ownership
+      fact: Cerebro declared MCP as execution-profile owner while tooling/delivery/cerebro_delivery.ps1 independently resolved AUTO and profile applicability. DualityArc analysis showed that formal ownership was therefore incomplete in the live path. The bounded correction moves the policy decision into canonical MCP control resolution and reduces the delivery script to a Source-bound capability-binding and state-projection adapter, without collapsing LIMITED, STANDARD and FULL or conflating delivery profile with artifact and assurance namespaces.
+      occurred_at: '2026-08-12'
+      evidence_refs:
+        - CTX-DEC-DUALITY-ARC-FINAL-20260812-001
+        - CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001
+        - CEREBRO-MCP-CONTROL-RESOLUTION-001
+        - STD-CHANGE-DELIVERY
+      impact:
+        introduced:
+          - MCP_OWNED_DELIVERY_PROFILE_RESOLUTION
+          - MCP_BOUND_DELIVERY_SELECTION_STATE
+        retired:
+          - DELIVERY_ADAPTER_AS_PARALLEL_PROFILE_POLICY_OWNER
+          - ADAPTER_DECISION_FINGERPRINT_AS_CANONICAL_DECISION_AUTHORITY
+        enabled:
+          - ONE_CONTROL_DECISION_OWNER_FOR_EXECUTION_PROFILE_DELIVERY_MODE
+          - FAIL_CLOSED_DELIVERY_CAPABILITY_RESOLUTION_BEFORE_STATE_WRITE
+        learned:
+          - DECLARED_CANONICAL_OWNER_MUST_ALSO_OWN_EXECUTABLE_POLICY
+          - ADAPTERS_BIND_PROJECT_AND_EXECUTE_BUT_DO_NOT_RECOMPUTE_CONTROL_POLICY
+          - CONVERGENCE_MUST_PRESERVE_LEGITIMATE_CAPABILITY_AND_NAMESPACE_BOUNDARIES
+      relations:
+        patch_refs: [CEREBRO-DUALITYARC-WAVE-02-20260812-R5]
+        baseline_commit: e4cd7d6a4ac07585c96da512974825685195fc40
+        learning_refs: [CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001]
+      provenance:
+        admission: DUALITYARC_DEEP_ARCHITECTURE_CONVERGENCE
+        source_ref: DUALITYANA_AND_CURRENT_SOURCE_EXECUTABLE_OWNERSHIP_AUDIT

@@ -1,7 +1,7 @@
 schema: cerebro-mcp-control-resolution-contract/v1
 control_resolution:
   id: CEREBRO-MCP-CONTROL-RESOLUTION-001
-  version: "1.0.0"
+  version: "1.1.0"
   status: ACTIVE
   owner: MCP
   implementation_ref: mcp/control_resolution.py
@@ -46,6 +46,16 @@ control_resolution:
     non_material_control:
       path: canonical_wrapper_to_validated_adaptive_logic
     final_decision_owner: MCP
+  delivery_profile_resolution:
+    owner: MCP
+    input_namespace: delivery_profile
+    output_field: execution_profile.delivery_mode
+    canonical_profiles: [LIMITED, STANDARD, FULL]
+    AUTO_without_capability_evidence: BLOCK
+    adapter_ref: tooling/delivery/cerebro_delivery.ps1
+    adapter_role: CAPABILITY_BINDING_AND_STATE_PROJECTION
+    adapter_policy_recomputation: PROHIBITED
+    namespace_invariant: DELIVERY_PROFILE_ARTIFACT_FORMAT_AND_ASSURANCE_PROFILE_ARE_INDEPENDENT_NAMESPACES
   validated_logic:
     ref: mcp/adaptive_control_resolver.py
     status: VALIDATED_LOGIC
@@ -68,6 +78,9 @@ control_resolution:
     - MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED
     - DIRECT_VALIDATED_LOGIC_REMAINS_NON_LIVE
     - ONE_CANONICAL_MCP_CONTROL_RESOLUTION_SURFACE
+    - MCP_IS_THE_ONLY_DELIVERY_PROFILE_DECISION_OWNER
+    - DELIVERY_ADAPTER_MUST_NOT_RECOMPUTE_MCP_DELIVERY_POLICY
+    - DELIVERY_PROFILE_CAPABILITY_BOUNDARIES_REMAIN_DISTINCT
     - RUNTIME_RESIDENT_ADAPTIVE_CONTROL_IS_PROHIBITED
     - STATIC_ADAPTIVE_WORK_MODE_IS_PROHIBITED
     - AUTOMATION_REMAINS_SEPARATE_FROM_AUTONOMY
@@ -84,3 +97,5 @@ control_resolution:
     - bounded_reorientation_remediation_is_preserved
     - Runtime_contains_no_promoted_adaptive_control_policy
     - activation_binding_is_runtime_evidence_proven
+    - delivery_profile_resolution_is_MCP_owned_and_execution_profile_bound
+    - delivery_adapter_is_non_deciding_and_fails_closed

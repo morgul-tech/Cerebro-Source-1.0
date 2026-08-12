@@ -91,6 +91,10 @@ if(-not(Test-Path -LiteralPath $ManifestPath -PathType Leaf)){throw 'TARGET_RUNT
 $python=Resolve-TrvPython
 $planner=Join-Path $CandidateRoot 'tooling\validator\target_runtime_validation.py'
 if(-not(Test-Path -LiteralPath $planner -PathType Leaf)){throw 'TARGET_RUNTIME_PLANNER_MISSING'}
+$deliveryAdapter=Join-Path $CandidateRoot 'tooling\delivery\cerebro_delivery.ps1'
+if(-not(Test-Path -LiteralPath $deliveryAdapter -PathType Leaf)){throw 'TARGET_RUNTIME_DELIVERY_ADAPTER_MISSING'}
+$powershellCommand=Get-Command powershell.exe -ErrorAction Stop | Select-Object -First 1
+if([string]::IsNullOrWhiteSpace($powershellCommand.Source)){throw 'TARGET_RUNTIME_WINDOWS_POWERSHELL_NOT_FOUND'}
 
 $temp=Join-Path ([IO.Path]::GetTempPath()) ('CerebroTargetRuntimeValidation-'+[guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($temp)|Out-Null
@@ -103,6 +107,32 @@ $ephemeralRegistryRelative=((Split-Path -Leaf $ephemeralRegistryDirectory) + '/c
 $sourceTouched=$false
 
 try {
+    $adapterArguments=@(
+        '-NoLogo','-NoProfile','-NonInteractive',
+        '-ExecutionPolicy','Bypass',
+        '-File',$deliveryAdapter,
+        '-SelfTest'
+    )
+    $adapterNative=Invoke-TrvNative -Executable $powershellCommand.Source -Arguments $adapterArguments
+    try {$adapterSelfTest=$adapterNative.Stdout|ConvertFrom-Json}
+    catch {throw 'TARGET_RUNTIME_DELIVERY_ADAPTER_SELFTEST_OUTPUT_INVALID'}
+    if([string]$adapterSelfTest.result -ne 'PASS' -or [string]$adapterSelfTest.schema -ne 'cerebro-delivery-adapter-selftest/v0.3'){
+        throw 'TARGET_RUNTIME_DELIVERY_ADAPTER_SELFTEST_NOT_PASS'
+    }
+    $adapterRequiredTests=@(
+        'auto_without_evidence_fails_closed',
+        'auto_replacement_scope_resolves_limited',
+        'auto_structured_scope_resolves_standard',
+        'auto_direct_workspace_resolves_full',
+        'limited_rejects_create_scope',
+        'delivery_profile_resolution_is_mcp_owned',
+        'delivery_profile_namespaces_remain_distinct'
+    )
+    foreach($requiredTest in $adapterRequiredTests){
+        $matches=@($adapterSelfTest.tests|Where-Object{[string]$_.name -eq $requiredTest -and [string]$_.result -eq 'PASS'})
+        if($matches.Count -ne 1){throw ('TARGET_RUNTIME_DELIVERY_ADAPTER_CANARY_NOT_PASS:{0}' -f $requiredTest)}
+    }
+
     $planArgs=@($python.Prefix)+@($planner,'plan','--source-root',$CandidateRoot,'--manifest',$ManifestPath,'--profile',$ProfileId,'--output',$planPath)
     [void](Invoke-TrvNative -Executable $python.Executable -Arguments $planArgs)
     $plan=Get-Content -LiteralPath $planPath -Raw | ConvertFrom-Json
@@ -250,6 +280,13 @@ try {
         impacted_runtime_evidence_bindings=@($plan.impacted_runtime_evidence_bindings)
         activation_proofs=@($activationProofs)
         producer_consumer_compatibility='PASS'
+        delivery_adapter_selftest=[ordered]@{
+            result='PASS'
+            schema=[string]$adapterSelfTest.schema
+            decision_owner='MCP'
+            adapter_recomputed=$false
+            required_canaries=@($adapterRequiredTests)
+        }
         cac=[ordered]@{result=[string]$cac.result;health=[string]$cac.health;blocking_findings=@($cac.blocking_findings);nonblocking_findings=@($cac.nonblocking_findings)}
         deep_assurance=[ordered]@{result='PASS';required_runs=[int]$deep.required_runs;stability_gate=[string]$deep.stability_gate}
         authoritative_source_mutated=$false

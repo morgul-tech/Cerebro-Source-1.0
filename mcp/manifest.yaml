@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.6.0
+  version: 1.7.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -62,6 +62,9 @@ control_adapters:
     live_control_authority: true
     decision_contract: MCP_CONTROL_DECISION
     execution_profile_owner: MCP
+    delivery_profile_decision_owner: MCP
+    delivery_profile_adapter_ref: tooling/delivery/cerebro_delivery.ps1
+    delivery_profile_adapter_role: CAPABILITY_BINDING_AND_STATE_PROJECTION
     material_preflight_precedence: REQUIRED
     activation_evidence_required: true
     activation_binding_ref: ADAPTIVE_MCP_CONTROL_RESOLUTION

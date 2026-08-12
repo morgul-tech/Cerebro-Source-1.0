@@ -2,7 +2,7 @@ schema: cerebro-change-delivery-convergence/v1
 
 change_delivery_convergence:
   id: CEREBRO-CHANGE-DELIVERY-CONVERGENCE-001
-  version: "1.0"
+  version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
   extends: STD-CHANGE-DELIVERY
@@ -26,7 +26,11 @@ change_delivery_convergence:
 
   profile_selection:
     implementation: tooling/delivery/cerebro_delivery.ps1
-    role: PRE_ARTIFACT_PROFILE_DECISION
+    canonical_decision_owner: MCP
+    canonical_control_surface: mcp/control_resolution.py
+    role: PRE_ARTIFACT_CAPABILITY_BINDING_AND_STATE_PROJECTION
+    local_policy_resolution: PROHIBITED
+    MCP_execution_profile_binding: REQUIRED
     derived_runtime_state_is_source_authority: false
     selection_must_be_resolved_before_artifact_design: true
     selection_state_must_govern_sealed_standard_runtime: false
@@ -129,3 +133,6 @@ change_delivery_convergence:
     - LEGACY_CPATCH_DOES_NOT_GOVERN_NEW_STANDARD_PACKAGES
     - LIMITED_AND_FULL_REMAIN_DISTINCT_PROFILES
     - FAILURE_LEARNING_EVIDENCE_IS_NORMALIZED_NOT_DUPLICATED
+    - MCP_IS_THE_ONLY_DELIVERY_PROFILE_DECISION_OWNER
+    - DELIVERY_ADAPTER_BINDS_AND_PROJECTS_BUT_DOES_NOT_DECIDE
+    - DELIVERY_PROFILE_CAPABILITY_BOUNDARIES_REMAIN_DISTINCT

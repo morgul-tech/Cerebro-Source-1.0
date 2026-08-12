@@ -36,11 +36,29 @@ EVIDENCE_BASIS_FILES = [
     "mcp/manifest.yaml",
     "standards/mcp.yaml",
     "standards/control-architecture.yaml",
+    "standards/change-delivery.yaml",
+    "standards/change-delivery-convergence.yaml",
+    "tooling/delivery/cerebro_delivery.ps1",
+    "tooling/delivery/selection-state-schema.json",
+    "tooling/delivery/component.yaml",
+    "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+    "standards/delivery-kernel.yaml",
+    "tooling/validator/target-runtime/Invoke-CerebroWindowsPowerShellValidation.ps1",
+    "tooling/validator/target_runtime_validation.py",
+    "standards/development/delivery-failure-regression.yaml",
     "tooling/validator/contract-activation-bindings.json",
     "engines/project/roadmap.yaml",
     "tooling/runtime-host/component.yaml",
     "tooling/runtime-host/cerebro_runtime.ps1",
 ]
+
+DELIVERY_PROFILES = {"LIMITED", "STANDARD", "FULL"}
+DELIVERY_PROFILE_ALIASES = {
+    "STANDARD_A": "LIMITED",
+    "STANDARD_B": "STANDARD",
+    "STANDARD_C": "FULL",
+}
+DELIVERY_OPERATIONS = {"replace", "create", "delete"}
 
 sys.dont_write_bytecode = True
 
@@ -116,6 +134,106 @@ def git_is_ancestor(root: Path, ancestor: str, head: str) -> bool:
 def _load_yaml(path: Path) -> dict[str, Any]:
     value = yaml.safe_load(path.read_text(encoding="utf-8"))
     return value if isinstance(value, dict) else {}
+
+
+def _delivery_profile_controls(profile: str) -> dict[str, Any]:
+    controls = {
+        "LIMITED": {
+            "execution_owner": "USER",
+            "agent_local_access": "PROHIBITED",
+            "access_request_budget": 0,
+            "artifact_format": "FILES",
+        },
+        "STANDARD": {
+            "execution_owner": "USER_LOCAL_RUNNER",
+            "agent_local_access": "PROHIBITED",
+            "access_request_budget": 0,
+            "artifact_format": "PAYLOAD_PLUS_INSTALLER",
+        },
+        "FULL": {
+            "execution_owner": "AGENT_CONTROLLED",
+            "agent_local_access": "EXPLICIT_GRANT_REQUIRED",
+            "access_request_budget": 1,
+            "artifact_format": "CONTROLLED_TRANSACTION",
+        },
+    }
+    if profile not in controls:
+        raise ValueError(f"unknown-delivery-profile:{profile}")
+    return dict(controls[profile])
+
+
+def resolve_delivery_profile(request: dict[str, Any]) -> dict[str, Any]:
+    """Resolve delivery capability inside the canonical MCP control owner."""
+    requested_input = str(request.get("requested_delivery_profile") or "").upper()
+    requested = DELIVERY_PROFILE_ALIASES.get(requested_input, requested_input)
+    operations = [str(value).lower() for value in request.get("delivery_operations", [])]
+    unknown_operations = sorted(set(operations).difference(DELIVERY_OPERATIONS))
+    direct_access = bool(request.get("direct_workspace_access_declared"))
+    classification = "DELIVERY_PROFILE_RESOLVED"
+    reason = ""
+    resolved: str | None = None
+
+    if unknown_operations:
+        classification = "UNKNOWN_PATCH_OPERATION"
+        reason = ",".join(unknown_operations)
+    elif requested == "AUTO":
+        if direct_access:
+            resolved = "FULL"
+            reason = "direct-workspace-access-declared"
+        elif not operations:
+            classification = "INSUFFICIENT_CAPABILITY_EVIDENCE"
+            reason = "AUTO requires patch operations or declared direct workspace access"
+        elif all(operation == "replace" for operation in operations):
+            resolved = "LIMITED"
+            reason = "existing-file-replacements-only"
+        else:
+            resolved = "STANDARD"
+            reason = "structured-file-operations-required"
+    elif requested not in DELIVERY_PROFILES:
+        classification = "UNKNOWN_DELIVERY_PROFILE"
+        reason = "allowed=LIMITED,STANDARD,FULL,AUTO; aliases=STANDARD_A,STANDARD_B,STANDARD_C"
+    elif requested == "LIMITED" and any(operation != "replace" for operation in operations):
+        classification = "DELIVERY_PROFILE_NOT_APPLICABLE"
+        reason = "LIMITED permits replacement of existing files only"
+    else:
+        resolved = requested
+        reason = (
+            "explicit-user-terminal-selection"
+            if requested_input == requested
+            else "legacy-alias-resolved-to-canonical-profile"
+        )
+
+    basis_material = {
+        "requested_input": requested_input,
+        "requested_profile": requested,
+        "operations": operations,
+        "direct_workspace_access_declared": direct_access,
+        "resolved_profile": resolved,
+        "classification": classification,
+        "reason": reason,
+        "authoritative_source_commit": str(request.get("authoritative_source_commit") or "UNKNOWN"),
+        "contract": "STD-CHANGE-DELIVERY@0.11.0",
+    }
+    basis_fingerprint = sha256_bytes(
+        json.dumps(basis_material, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    )
+    return {
+        "schema": "cerebro-mcp-delivery-profile-resolution/v1",
+        "authority": "MCP",
+        "result": "PASS" if resolved else "BLOCKED",
+        "classification": classification,
+        "requested_input": requested_input,
+        "requested_profile": requested,
+        "resolved_profile": resolved,
+        "reason": reason,
+        "operations": operations,
+        "direct_workspace_access_declared": direct_access,
+        "controls": _delivery_profile_controls(resolved) if resolved else None,
+        "basis_fingerprint": basis_fingerprint,
+        "source_commit": str(request.get("authoritative_source_commit") or "UNKNOWN"),
+        "decision_owner": "MCP",
+        "adapter_may_recompute": False,
+    }
 
 
 def _roadmap_patch_status(root: Path, patch_id: str) -> str:
@@ -350,6 +468,56 @@ def _block_due_to_preflight_error(
     }
 
 
+def _block_due_to_delivery_profile(
+    request: dict[str, Any],
+    basis: dict[str, Any],
+    delivery: dict[str, Any],
+) -> dict[str, Any]:
+    objective = str(request.get("objective_ref") or "UNSPECIFIED")
+    digest = sha256_bytes(json.dumps(
+        {"objective": objective, "delivery": delivery, "basis": basis},
+        sort_keys=True,
+        default=str,
+    ).encode("utf-8"))
+    decision = {
+        "schema": DECISION_SCHEMA,
+        "control_decision_id": "MCPD-DELIVERY-BLOCK-" + digest[:12].upper(),
+        "control_state_ref": "CTRL-MCP-DELIVERY-PROFILE",
+        "objective_ref": objective,
+        "basis_refs": ["STD-CHANGE-DELIVERY", CONTROL_SURFACE_ID],
+        "basis_fingerprint": digest,
+        "effective_user_config_ref": str(request.get("effective_user_configuration") or "CURRENT_EFFECTIVE_CONFIGURATION"),
+        "execution_profile_ref": "NONE",
+        "applicable_control_refs": ["STD-CHANGE-DELIVERY", CONTROL_SURFACE_ID],
+        "outcome": "BLOCK",
+        "invalidates": [str(delivery.get("classification") or "DELIVERY_PROFILE_RESOLUTION_FAILED")],
+        "verification_requirement": "RE_RESOLVE_DELIVERY_CAPABILITY_EVIDENCE",
+        "human_boundary": "NONE",
+        "evidence_scope": "MCP_DELIVERY_PROFILE_RESOLUTION",
+        "authority": "MCP",
+        "control_resolution_surface": CONTROL_SURFACE_ID,
+        "resolved_at": utc_now(),
+    }
+    return {
+        "schema": SCHEMA,
+        "result": "PASS",
+        "authority": "DERIVED_MCP_CONTROL_DECISION",
+        "live_control_authority": True,
+        "direct_resolver_live_authority": False,
+        "normal_control_path_exercised": True,
+        "promotion_basis_verified": True,
+        "promotion_basis": basis,
+        "material_preflight_exercised": False,
+        "material_preflight_passed": None,
+        "material_preflight_precedes_adaptive": True,
+        "adaptive_invoked": False,
+        "mcp_control_decision": decision,
+        "execution_profile": None,
+        "mcp_delivery_profile_resolution": delivery,
+        "continuation_effect": "NONE",
+    }
+
+
 
 def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dict[str, Any]:
     if not isinstance(request, dict):
@@ -363,6 +531,20 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
     preflight_result = None
     adaptive_request = dict(request)
+    delivery_resolution = None
+
+    if "requested_delivery_profile" in request:
+        delivery_resolution = resolve_delivery_profile(request)
+        if delivery_resolution.get("result") != "PASS":
+            return _block_due_to_delivery_profile(request, basis, delivery_resolution)
+        adaptive_request["delivery_mode"] = delivery_resolution["resolved_profile"]
+        adaptive_request["governing_basis_refs"] = sorted(set(
+            [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
+            + [
+                "STD-CHANGE-DELIVERY",
+                "MCP-DELIVERY-PROFILE:" + str(delivery_resolution["basis_fingerprint"]),
+            ]
+        ))
 
     if material:
         preflight = load_module(root / "mcp/material_commitment_preflight.py", "cerebro_material_commitment_preflight_live")
@@ -421,6 +603,8 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
         profile["candidate_schema"] = profile.get("schema")
         profile["schema"] = PROFILE_SCHEMA
         profile["authority"] = "MCP"
+        if delivery_resolution is not None:
+            profile["mcp_delivery_profile_resolution"] = delivery_resolution
     return {
         "schema": SCHEMA,
         "result": "PASS",
@@ -436,6 +620,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
         "adaptive_invoked": True,
         "mcp_control_decision": decision,
         "execution_profile": profile,
+        "mcp_delivery_profile_resolution": delivery_resolution,
         "continuation_effect": candidate.get("continuation_effect"),
         "capability_resolution": candidate.get("capability_resolution", {}),
         "preflight_result": preflight_result,
@@ -476,6 +661,74 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
 
     simple = resolve({"objective_ref": "AA004-SIMPLE", "consequence": "LOW", "uncertainty": "LOW"}, root, require_git_ancestry=require_git_ancestry)
     check("canonical-nonmaterial-path-live", simple.get("live_control_authority") is True and simple.get("adaptive_invoked") is True and simple.get("mcp_control_decision", {}).get("outcome") == "CONTINUE")
+
+    delivery_cases = [
+        (
+            "delivery-auto-without-evidence-fails-closed",
+            {"requested_delivery_profile": "AUTO"},
+            None,
+            "BLOCK",
+        ),
+        (
+            "delivery-auto-replace-resolves-limited",
+            {"requested_delivery_profile": "AUTO", "delivery_operations": ["replace", "replace"]},
+            "LIMITED",
+            "CONTINUE",
+        ),
+        (
+            "delivery-auto-create-resolves-standard",
+            {"requested_delivery_profile": "AUTO", "delivery_operations": ["replace", "create"]},
+            "STANDARD",
+            "CONTINUE",
+        ),
+        (
+            "delivery-auto-direct-resolves-full",
+            {"requested_delivery_profile": "AUTO", "delivery_operations": ["create"], "direct_workspace_access_declared": True},
+            "FULL",
+            "CONTINUE",
+        ),
+        (
+            "delivery-limited-rejects-create",
+            {"requested_delivery_profile": "LIMITED", "delivery_operations": ["create"]},
+            None,
+            "BLOCK",
+        ),
+    ]
+    delivery_results: dict[str, dict[str, Any]] = {}
+    for name, fields, expected_profile, expected_outcome in delivery_cases:
+        candidate = resolve(
+            {"objective_ref": name.upper(), "authoritative_source_commit": git_head(root), **fields},
+            root,
+            require_git_ancestry=require_git_ancestry,
+        )
+        delivery_results[name] = candidate
+        resolution = candidate.get("mcp_delivery_profile_resolution") or {}
+        profile = candidate.get("execution_profile") or {}
+        check(
+            name,
+            candidate.get("mcp_control_decision", {}).get("outcome") == expected_outcome
+            and resolution.get("resolved_profile") == expected_profile
+            and resolution.get("authority") == "MCP"
+            and resolution.get("adapter_may_recompute") is False
+            and (expected_profile is None or profile.get("delivery_mode") == expected_profile),
+        )
+
+    standard_delivery = delivery_results["delivery-auto-create-resolves-standard"]
+    standard_resolution = standard_delivery.get("mcp_delivery_profile_resolution") or {}
+    standard_profile = standard_delivery.get("execution_profile") or {}
+    check(
+        "delivery-profile-resolution-is-bound-into-execution-profile",
+        standard_profile.get("mcp_delivery_profile_resolution", {}).get("basis_fingerprint")
+        == standard_resolution.get("basis_fingerprint")
+        and str(standard_delivery.get("mcp_control_decision", {}).get("basis_fingerprint") or "")
+        == str(standard_profile.get("basis_fingerprint") or ""),
+    )
+    check(
+        "delivery-profile-namespaces-remain-distinct",
+        standard_profile.get("delivery_mode") == "STANDARD"
+        and standard_resolution.get("controls", {}).get("artifact_format") == "PAYLOAD_PLUS_INSTALLER"
+        and standard_profile.get("verification_depth") in {"LIGHT", "STANDARD", "DEEP"},
+    )
 
     human = resolve({"objective_ref": "AA004-HUMAN", "human_decision_value": "HIGH"}, root, require_git_ancestry=require_git_ancestry)
     check("human-boundary-preserved", human.get("mcp_control_decision", {}).get("outcome") == "USER_DECISION_REQUIRED")
@@ -564,6 +817,19 @@ def activation_probe(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True
         "promotion_contract_verified": basis.get("promotion_contract_verified") is True,
         "direct_resolver_non_live": test_map.get("direct-resolver-remains-non-live", False),
         "canonical_control_surface_live": test_map.get("canonical-nonmaterial-path-live", False),
+        "delivery_profile_resolution_owned_by_mcp": all(
+            test_map.get(name, False)
+            for name in (
+                "delivery-auto-without-evidence-fails-closed",
+                "delivery-auto-replace-resolves-limited",
+                "delivery-auto-create-resolves-standard",
+                "delivery-auto-direct-resolves-full",
+                "delivery-limited-rejects-create",
+            )
+        ),
+        "delivery_profile_adapter_non_deciding": test_map.get("delivery-profile-resolution-is-bound-into-execution-profile", False),
+        "delivery_resolution_fail_closed": test_map.get("delivery-auto-without-evidence-fails-closed", False) and test_map.get("delivery-limited-rejects-create", False),
+        "delivery_profile_namespace_preserved": test_map.get("delivery-profile-namespaces-remain-distinct", False),
         "material_preflight_precedes_adaptive": test_map.get("material-preflight-precedes-adaptive", False),
         "preflight_block_not_overridden": test_map.get("preflight-block-not-overridden", False),
         "preflight_input_failure_fails_closed": test_map.get("material-preflight-input-failure-fails-closed", False),

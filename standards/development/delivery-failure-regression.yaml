@@ -207,6 +207,10 @@ delivery_failure_regression:
   - material-execute-preflight-leaves-no-untracked-Python-bytecode
   - governing-publish-preflight-leaves-no-untracked-Python-bytecode
   - activation-probes-leave-no-untracked-Python-bytecode
+  - target-runtime-executes-delivery-adapter-selftest-before-publication
+  - delivery-adapter-selftest-proves-MCP-owned-resolution-and-no-local-policy-recomputation
+  - blocked-MCP-delivery-resolution-writes-no-selection-state
+  - delivery-profile-artifact-and-assurance-namespaces-remain-distinct
 
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the

@@ -205,6 +205,14 @@ def verify_receipt(manifest_path: Path, receipt_path: Path, profile_id: str | No
         reasons.append("DEEP_ASSURANCE_NOT_PASS")
     if receipt.get("producer_consumer_compatibility") != "PASS":
         reasons.append("PRODUCER_CONSUMER_COMPATIBILITY_NOT_PASS")
+    adapter = receipt.get("delivery_adapter_selftest") or {}
+    if (
+        adapter.get("result") != "PASS"
+        or adapter.get("schema") != "cerebro-delivery-adapter-selftest/v0.3"
+        or adapter.get("decision_owner") != "MCP"
+        or adapter.get("adapter_recomputed") is not False
+    ):
+        reasons.append("DELIVERY_ADAPTER_SELFTEST_NOT_PASS")
     expected_paths = sorted(str(x["path"]) for x in manifest.get("files", []))
     if sorted(str(x) for x in receipt.get("changed_paths", [])) != expected_paths:
         reasons.append("CHANGED_PATHS_MISMATCH")

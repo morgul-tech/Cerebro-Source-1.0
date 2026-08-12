@@ -907,6 +907,40 @@ function Invoke-SelfTest {
             throw 'HUMAN_CONTINUATION_SURFACE_SELFTEST_FAILED'
         }
 
+        $State.ReachedStage = 'SELFTEST_MCP_DELIVERY_PROFILE_ADAPTER'
+        $deliveryAdapter = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/delivery/cerebro_delivery.ps1'
+        if (-not (Test-Path -LiteralPath $deliveryAdapter -PathType Leaf)) {
+            throw 'MCP_DELIVERY_PROFILE_ADAPTER_MISSING_FROM_CANDIDATE_VIEW'
+        }
+        $adapterPowerShell = Resolve-Executable 'powershell.exe'
+        $adapterResult = Invoke-NativeCommand -Executable $adapterPowerShell -ArgumentList @(
+            '-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass',
+            '-File',$deliveryAdapter,'-SelfTest'
+        )
+        try { $adapterEvidence = $adapterResult.Stdout | ConvertFrom-Json }
+        catch { throw 'MCP_DELIVERY_PROFILE_ADAPTER_SELFTEST_OUTPUT_INVALID' }
+        if ($adapterResult.ExitCode -ne 0 -or
+            [string]$adapterEvidence.result -ne 'PASS' -or
+            [string]$adapterEvidence.schema -ne 'cerebro-delivery-adapter-selftest/v0.3') {
+            throw 'MCP_DELIVERY_PROFILE_ADAPTER_SELFTEST_FAILED'
+        }
+        foreach($requiredTest in @(
+            'auto_without_evidence_fails_closed',
+            'auto_replacement_scope_resolves_limited',
+            'auto_structured_scope_resolves_standard',
+            'auto_direct_workspace_resolves_full',
+            'limited_rejects_create_scope',
+            'delivery_profile_resolution_is_mcp_owned',
+            'delivery_profile_namespaces_remain_distinct'
+        )) {
+            $matches=@($adapterEvidence.tests|Where-Object{
+                [string]$_.name -eq $requiredTest -and [string]$_.result -eq 'PASS'
+            })
+            if($matches.Count -ne 1){
+                throw ('MCP_DELIVERY_PROFILE_ADAPTER_CANARY_FAILED:{0}' -f $requiredTest)
+            }
+        }
+
         $State.ReachedStage = 'SELFTEST_HUMAN_EXECUTION_HANDOFF'
         $executionHandoffValidator = Get-CandidateViewTargetPath -CandidateRoot $candidateView -RelativePath 'tooling/validator/human_execution_handoff.py'
         if (-not (Test-Path -LiteralPath $executionHandoffValidator -PathType Leaf)) {
@@ -955,6 +989,7 @@ function Invoke-SelfTest {
     Write-Host 'PAYLOAD_HASH_PASS=TRUE'
     Write-Host 'CANDIDATE_SOURCE_COMPOSITION_PASS=TRUE'
     Write-Host 'HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS=TRUE'
+    Write-Host 'MCP_DELIVERY_PROFILE_ADAPTER_SELFTEST_PASS=TRUE'
 }
 
 function Get-KernelOrdinalStrings {

@@ -2,7 +2,7 @@ schema: cerebro-control-architecture/v0.2
 
 control_architecture:
   id: CEREBRO-CONTROL-ARCHITECTURE-001
-  version: "0.5"
+  version: "0.6"
   status: ACTIVE
   introduced_by: GUARDRAILS-001
 
@@ -134,6 +134,14 @@ control_architecture:
       - execution-profile-is-not-runtime-profile
       - level-1-level-2-level-3-are-human-aliases-not-canonical-system-types
       - stale-profile-must-not-authorize-execution
+      - delivery-mode-is-resolved-by-MCP-not-by-a-delivery-adapter
+      - delivery-profile-artifact-format-and-assurance-profile-remain-distinct
+    delivery_profile_resolution:
+      owner: MCP
+      canonical_values: [LIMITED, STANDARD, FULL]
+      AUTO_is_input_alias_not_canonical_output: true
+      insufficient_capability_evidence_effect: BLOCK
+      adapter_policy_recomputation: PROHIBITED
 
   execution_surface_resolution:
     required_before:

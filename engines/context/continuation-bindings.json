@@ -10,8 +10,8 @@
       "alias": "Fortsett DualityArc Wave 02",
       "target_ref": "DUALITYARC-WAVE-02",
       "operation": "CONTINUE_REMAINING_CONTRACT_AND_LIFECYCLE_CONVERGENCE",
-      "current_basis_ref": "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001",
-      "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001",
+      "current_basis_ref": "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001",
+      "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001",
       "constraints_refs": [
         "CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001",
         "standards/human-continuation-surface.yaml",
@@ -22,14 +22,14 @@
       "evidence_refs": [
         "CEREBRO_DELIVERY_KERNEL_20260812-094310.json",
         "CEREBRO_PATCH_FAIL_20260812-075820.json",
-        "CEREBRO_PATCH_SUCCESS.json",
+        "CEREBRO_PATCH_SUCCESS(1).json",
         "D:/Cerebro/Run/audits/CEREBRO_HUMAN_CONTINUATION_SURFACE_ACTIVATION_PROOF.json"
       ],
       "maturity": "LOCKED",
-      "readiness": "REQUIRES_VERIFIED_WAVE_02_R4_SUCCESS_RECEIPT",
-      "source_revision": "428773f631c14b17d342ec00916f91f001983ca1+CEREBRO-DUALITYARC-WAVE-02-20260812-R4",
+      "readiness": "REQUIRES_VERIFIED_WAVE_02_R5_SUCCESS_RECEIPT",
+      "source_revision": "e4cd7d6a4ac07585c96da512974825685195fc40+CEREBRO-DUALITYARC-WAVE-02-20260812-R5",
       "required_next_behavior": [
-        "VALIDATE_WAVE_02_R4_SUCCESS_RECEIPT",
+        "VALIDATE_WAVE_02_R5_SUCCESS_RECEIPT",
         "VERIFY_AUTHORITATIVE_SOURCE_EQUALS_WORKING_SOURCE",
         "RESOLVE_CURRENT_SOURCE_AND_SUPERSESSION",
         "CONTINUE_REMAINING_DUALITYARC_WAVE_02"
@@ -45,7 +45,7 @@
         "AUTO_REBASE_TO_UNAMBIGUOUS_SUCCESSOR",
         "REQUEST_ONLY_MATERIAL_USER_DECISION_IF_AMBIGUOUS"
       ],
-      "binding_fingerprint": "74d5ca8419501c45f44770bc073169e7e7890d63c9eda90adcac60edcca518dc"
+      "binding_fingerprint": "3aea2397c490dc6daa081ef4acdbbe2dedc44f1b4260ee40d5464b5d956c3b27"
     }
   ]
 }

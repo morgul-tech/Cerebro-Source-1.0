@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.10.0
+  version: 0.11.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -123,7 +123,10 @@ selection:
   state_schema: tooling/delivery/selection-state-schema.json
   active_state_default: D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json
   history_root_default: D:\Cerebro\Run\delivery\selections
-  authority: DERIVED_RUNTIME_STATE
+  authority: DERIVED_MCP_BOUND_RUNTIME_STATE
+  decision_owner: MCP
+  canonical_control_surface: mcp/control_resolution.py
+  adapter_role: CAPABILITY_BINDING_AND_STATE_PROJECTION
   semantics:
   - selection-locks-delivery-profile-not-patch-identity
   - selection-does-not-mutate-source
@@ -134,6 +137,8 @@ selection:
   - canonical-state-never-persists-legacy-profile-names
   - LIMITED-and-STANDARD-prohibit-agent-access-requests
   - FULL-permits-at-most-one-aggregated-platform-access-request
+  - MCP-resolves-delivery-profile-inside-the-canonical-execution-profile
+  - delivery-adapter-must-not-recompute-or-override-MCP-resolution
   source_binding:
   - expected-repository
   - branch-main
@@ -144,12 +149,23 @@ selection:
   - verified-capability-change
   - selected-profile-validation-failure
   deterministic_identity:
-    field: decision_fingerprint
+    field: binding_fingerprint
+    compatibility_projection_field: decision_fingerprint
     inputs:
     - state-schema
     - resolved-profile
     - exact-source-commit
     - change-delivery-standard-version
+    - MCP-control-decision-id
+    - MCP-delivery-profile-resolution-fingerprint
+  mcp_binding:
+    required_fields:
+    - control-decision-id
+    - control-decision-basis-fingerprint
+    - execution-profile-id
+    - execution-profile-basis-fingerprint
+    - delivery-profile-resolution-fingerprint
+    blocked-MCP-outcome-effect: NO_SELECTION_STATE_WRITE
 compatibility_aliases:
   STANDARD_A: LIMITED
   STANDARD_B: STANDARD
@@ -184,6 +200,17 @@ namespace_separation:
     values: [FAST, STANDARD, DEEP]
     meaning: depth of change assurance
   invariant: DELIVERY_PROFILE_ARTIFACT_FORMAT_AND_ASSURANCE_PROFILE_ARE_INDEPENDENT_NAMESPACES
+control_ownership_convergence:
+  former_delivery_selector_policy_owner: SUPERSEDED
+  canonical_delivery_profile_decision_owner: MCP
+  delivery_tool_role: CAPABILITY_BINDING_AND_STATE_PROJECTION
+  profile_namespace_preserved: true
+  profile_capability_boundaries_preserved: [LIMITED, STANDARD, FULL]
+  explicit_invariants:
+  - MCP_EXECUTION_PROFILE_OWNS_DELIVERY_MODE
+  - DELIVERY_ADAPTER_MUST_NOT_RECOMPUTE_CONTROL_POLICY
+  - DELIVERY_PROFILE_AND_ARTIFACT_FORMAT_REMAIN_DISTINCT
+  - BLOCKED_MCP_RESOLUTION_MUST_NOT_MUTATE_SELECTION_STATE
 access_request_policy:
   LIMITED:
     budget: 0

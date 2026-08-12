@@ -5626,6 +5626,69 @@ RECEIPT-76656fa9d8e617e98414c9fe
         derived_from_refs:
           - "CTX-BASIS-DUALITY-ARC-WAVE-02-R3-20260812-001"
       sequence: 133
+    -
+      id: "CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001"
+      type: "WISDOM"
+      scope: "CONTROL-AUTHORITY-AND-CAPABILITY-BINDING"
+      statement: "A declared canonical decision owner is not operationally canonical while a downstream adapter still recomputes the same policy. The owner must produce the decision and execution profile; the adapter may validate, bind, persist and execute that result but must not independently decide it. Convergence must preserve legitimate capability and namespace boundaries instead of collapsing every related concept."
+      payload:
+        applicability: "SYSTEM_WIDE_FOR_CONTROL_DECISION_AND_EXECUTION_ADAPTER_BOUNDARIES"
+        learned:
+          - "FORMAL_OWNER_AND_EXECUTABLE_OWNER_MUST_BE_THE_SAME"
+          - "ADAPTERS_MAY_PROJECT_CONTROL_STATE_BUT_MUST_NOT_RECOMPUTE_POLICY"
+          - "CONVERGENCE_REMOVES_DUPLICATE_AUTHORITY_NOT_LEGITIMATE_CAPABILITY_BOUNDARIES"
+          - "BLOCKED_CONTROL_RESOLUTION_MUST_FAIL_BEFORE_DERIVED_STATE_MUTATION"
+        delivery_application:
+          canonical_owner: "MCP"
+          output: "EXECUTION_PROFILE.DELIVERY_MODE"
+          adapter: "tooling/delivery/cerebro_delivery.ps1"
+          adapter_role: "CAPABILITY_BINDING_AND_STATE_PROJECTION"
+          preserved_profiles: ["LIMITED", "STANDARD", "FULL"]
+          preserved_namespace_separation: "DELIVERY_PROFILE_ARTIFACT_FORMAT_AND_ASSURANCE_PROFILE"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R5"
+        basis_refs:
+          - "CTX-DEC-DUALITY-ARC-FINAL-20260812-001"
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
+          - "dualityAna.txt"
+      relations:
+        supersedes_ref: null
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-WISDOM-MACHINE-CONTRACT-COMPOSITION-20260812-001"
+      sequence: 134
+    -
+      id: "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
+      type: "CURRENT_BASIS"
+      scope: "DUALITYARC-WAVE-02-MCP-DELIVERY-PROFILE-CONVERGENCE"
+      statement: "Wave 02 continues from verified R4 commit e4cd7d6a4ac07585c96da512974825685195fc40 by converging Delivery Selector policy into the canonical MCP execution-profile owner while preserving delivery-profile capability boundaries and namespace separation."
+      payload:
+        applicability: "CURRENT_DUALITYARC_WAVE_02_R5_IMPLEMENTATION_BASIS"
+        source_base_commit: "e4cd7d6a4ac07585c96da512974825685195fc40"
+        verified_prior_patch: "CEREBRO-DUALITYARC-WAVE-02-20260812-R4"
+        patch_id: "CEREBRO-DUALITYARC-WAVE-02-20260812-R5"
+        convergence_scope:
+          - "MCP_OWNS_DELIVERY_PROFILE_RESOLUTION"
+          - "DELIVERY_ADAPTER_BINDS_AND_PROJECTS_WITHOUT_POLICY_RECOMPUTATION"
+          - "SELECTION_STATE_BINDS_MCP_DECISION_EXECUTION_PROFILE_AND_SOURCE"
+          - "LIMITED_STANDARD_FULL_CAPABILITY_BOUNDARIES_REMAIN_DISTINCT"
+          - "DELIVERY_ARTIFACT_ASSURANCE_NAMESPACES_REMAIN_DISTINCT"
+        explicitly_not_in_scope:
+          - "DELIVERY_CONTROLLER_AND_STANDARD_KERNEL_TRANSACTION_PROTOCOL_CONVERGENCE"
+          - "GLOBAL_CANDIDATE_LIFECYCLE_RETIREMENT"
+          - "WORKING_CONTEXT_CURRENT_HISTORY_SPLIT"
+        next_natural_work: "CONTINUE_REMAINING_DUALITYARC_WAVE_02_AFTER_VERIFIED_R5_SUCCESS"
+      provenance:
+        introduced_by_ref: "CEREBRO-DUALITYARC-WAVE-02-20260812-R5"
+        basis_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
+          - "CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001"
+      relations:
+        supersedes_ref: "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
+        revokes_ref: null
+        derived_from_refs:
+          - "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
+      sequence: 135
   current_index:
     decision_refs:
       - "CTX-DEC-P1B-PRE001"
@@ -5694,7 +5757,7 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-BASIS-CEREBRO-SIMPLE-EXPLANATION-SISTER-20260811-001"
       - "CTX-BASIS-DUALITY-ANA-20260812-001"
       - "CTX-BASIS-DUALITY-ARC-WAVE-01-20260812-001"
-      - "CTX-BASIS-DUALITY-ARC-WAVE-02-R4-20260812-001"
+      - "CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001"
     override_refs: []
     current_wisdom_refs:
       - "CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001"
@@ -5747,7 +5810,8 @@ RECEIPT-76656fa9d8e617e98414c9fe
       - "CTX-WISDOM-HUMAN-TRIGGER-MACHINE-STATE-SEPARATION-20260812-001"
       - "CTX-WISDOM-MACHINE-CONTRACT-COMPOSITION-20260812-001"
       - "CTX-WISDOM-GENERATED-HASH-BOUND-HUMAN-EXECUTION-HANDOFF-20260812-001"
-  next_sequence: 134
+      - "CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001"
+  next_sequence: 136
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

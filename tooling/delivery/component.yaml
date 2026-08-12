@@ -3,10 +3,10 @@ component:
   id: delivery
   name: Cerebro Delivery Controller
   type: tooling
-  version: 0.7.0
+  version: 0.8.0
   status: active-source
 responsibility:
-  primary: Select and persist a Source-bound delivery profile, then deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
+  primary: Bind and persist the MCP-resolved Source-bound delivery profile, then deliver an assured Change Capsule into local Working Source as a bounded, journaled, recoverable transaction.
 boundaries:
   must:
     - verify-exact-source-baseline
@@ -19,6 +19,9 @@ boundaries:
     - discover-required-local-capabilities-before-mutation
     - preserve-lossless-failure-and-recovery-evidence
     - persist-explicit-terminal-delivery-selection-outside-source
+    - invoke-canonical-MCP-control-resolution-for-delivery-profile
+    - persist-MCP-control-decision-and-execution-profile-binding
+    - remain-a-non-deciding-capability-binding-and-state-projection-adapter
     - bind-selection-to-exact-source-commit
     - fail-closed-when-auto-resolution-evidence-is-insufficient
     - revalidate-selected-profile-before-payload-design-and-delivery
@@ -47,6 +50,8 @@ boundaries:
     - bypass-change-assurance
     - overwrite-unknown-concurrent-state
     - silently-fallback-to-another-delivery-profile
+    - independently-resolve-or-recompute-delivery-profile-policy
+    - claim-delivery-profile-decision-authority
     - request-agent-local-access-under-LIMITED-or-STANDARD
     - retry-a-denied-FULL-access-request-without-explicit-reselection
     - expose-alternate-standard-handoff
@@ -64,6 +69,8 @@ interfaces:
     - assured-change-capsule
     - clean-working-source
     - explicit-user-delivery-selection
+    - mcp-control-decision
+    - mcp-execution-profile
   produces:
     - delivery-receipt
     - bounded-backup
@@ -77,3 +84,4 @@ interfaces:
     - namespaced-delivery-receipt-pointer
     - sealed-candidate-source-view
     - human-execution-handoff-launch-proof
+    - mcp-bound-delivery-capability-state

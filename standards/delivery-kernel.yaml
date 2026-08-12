@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "2.4"
+  version: "2.5"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -76,6 +76,14 @@ delivery_kernel:
     payload_presence_as_dependency_existence: PROHIBITED
     exact_base_identity_required: true
     candidate_payload_hash_reverification_required: true
+    required_candidate_selftests:
+      - human-continuation-surface
+      - human-execution-handoff
+      - MCP-owned-delivery-profile-adapter
+    delivery_adapter_selftest_requires:
+      decision_owner: MCP
+      adapter_policy_recomputation: false
+      profile_namespace_preservation: true
 
   standard_user_handoff:
     bundle_zip: exactly-one
@@ -122,6 +130,7 @@ delivery_kernel:
     supported_operations: [create, replace, delete]
     phases:
     - native-parser-and-kernel-selftest
+    - sealed-candidate-MCP-delivery-profile-adapter-selftest
     - bundle-and-payload-hash-verification
     - exact-Source-baseline-verification
     - verified-full-recovery-snapshot
