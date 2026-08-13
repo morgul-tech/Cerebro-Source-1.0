@@ -1167,3 +1167,83 @@ rules:
   validation: error
   provenance: {type: admin-locked-foundation, source: C02-P001}
 # END C02-P001-CANONICAL-HUMAN-CONTROL-LANGUAGE
+
+# BEGIN OPERATIONAL-STATUS-SEMANTICS-001
+- id: INT-OPS-001
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    unqualified_cerebro_operational_status_question: true
+  action:
+    resolve_primary_dimension: CEREBRO_SOURCE_OPERATIONAL
+    include_conversation_alignment: true
+    infer_local_machine_status: false
+  statement: Et ordinært spørsmål om Cerebro er operativt, fullt operativt, aktivert eller i bruk SKAL først besvares for samtale- og Source-dimensjonen; lokal Working Source- eller maskinverifikasjon er en separat dimensjon.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-correction, source: TASK-CEREBRO-REFINE-OPERATIONAL-STATUS-SEMANTICS-2026-08-13}
+- id: INT-OPS-002
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    authoritative_source_connection_or_sync_phrase: true
+  action:
+    resolve_primary_dimension: CONVERSATION_SOURCE_ALIGNMENT
+    require_fresh_source_verification: true
+    do_not_promote_to: CEREBRO_SYNC_VERIFIED
+  statement: Formuleringer som «koblet til authoritative Source/main» eller ordinært «synced with authoritative main» SKAL forstås som samtalens ferske Source-alignment når konteksten gjelder boot/status, ikke som lokal filesystem-sync.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-correction, source: TASK-CEREBRO-REFINE-OPERATIONAL-STATUS-SEMANTICS-2026-08-13}
+- id: INT-OPS-003
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    strict_sync_claim_candidate: true
+  action:
+    token: CEREBRO_SYNC_VERIFIED
+    require_canonical_cerebro_sync_receipt: true
+    require_independent_remote_equality: true
+    inference_from_conversation_source_alignment: prohibited
+  statement: CEREBRO_SYNC_VERIFIED SKAL bare brukes ved fersk streng lokal sync/equality-evidens og kan aldri utledes av at samtalen er aktiv mot gjeldende authoritative Source.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-correction, source: TASK-CEREBRO-REFINE-OPERATIONAL-STATUS-SEMANTICS-2026-08-13}
+- id: INT-OPS-004
+  owner: interaction
+  authority: normative
+  priority: high
+  condition:
+    local_capability_evidence_not_material_to_status_question: true
+  action:
+    suppress_automatic_working_source_caveat: true
+    suppress_automatic_machine_proof_caveat: true
+    surface_only_when_explicitly_asked_or_material: true
+  statement: Manglende lokal Working Source-, runtime- eller machine-proof-evidens SKAL ikke automatisk legges inn som reservasjon eller blocker i et ordinært Cerebro-statussvar når den dimensjonen ikke er spurt om og ikke er materiell.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-correction, source: TASK-CEREBRO-REFINE-OPERATIONAL-STATUS-SEMANTICS-2026-08-13}
+- id: INT-OPS-005
+  owner: interaction
+  authority: normative
+  priority: high
+  condition:
+    source_operational_and_conversation_alignment_verified: true
+  action:
+    answer_primary_status_first: true
+    allowed_success_semantics: "Yes — this conversation is now running against the current authoritative Cerebro Source, and Cerebro is actively being used for my responses."
+    separate_known_capability_limits_after_primary_status_when_material: true
+    overclaim_local_sync: prohibited
+  statement: Når Source-operativ status og samtale-alignment er verifisert, SKAL svaret tydelig bekrefte dette først; eventuelle relevante lokale kapabilitetsgrenser kommer separat og må ikke omskrive hovedstatusen til en lokal sync-reservasjon.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-correction, source: TASK-CEREBRO-REFINE-OPERATIONAL-STATUS-SEMANTICS-2026-08-13}
+# END OPERATIONAL-STATUS-SEMANTICS-001

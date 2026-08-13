@@ -968,7 +968,7 @@
       ],
       "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
       "runtime_evidence": {
-        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json",
+        "path": "D:\\Cerebro\\Run\\Evidence\\Audits\\CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json",
         "schema": "cerebro-material-commitment-consumption/v1",
         "accepted_binding_ids": [
           "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH"

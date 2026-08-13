@@ -73,6 +73,45 @@ mcp_extension:
       its outcome can materially change the current authority, Source-integrity,
       activation, operational-status or safety decision.
 
+  - id: MCP-067
+    authority: normative
+    constitutional_article_ref: C-03
+    statement: >
+      An unqualified human question about whether Cerebro is operational, fully
+      operational, activated, in use, connected to authoritative Source, or synced
+      with authoritative main resolves first to CEREBRO_SOURCE_OPERATIONAL and the
+      current conversation's Source alignment, not to local-machine verification.
+  - id: MCP-068
+    authority: normative
+    constitutional_article_ref: C-03
+    statement: >
+      CONVERSATION_SOURCE_ALIGNMENT means that the current authoritative repository,
+      branch and exact Source commit were freshly verified and the current conversation
+      is governed by the applicable controls from that pinned Source. It does not require
+      local Working Source equality or local runtime machine proof.
+  - id: MCP-069
+    authority: normative
+    constitutional_article_ref: C-05
+    statement: >
+      CEREBRO_SYNC_VERIFIED is reserved for fresh evidence from canonical cerebro_sync
+      and independent local Working Source versus authoritative remote equality proof.
+      Conversation Source alignment must never be promoted to this strict local-sync claim.
+  - id: MCP-070
+    authority: normative
+    constitutional_article_ref: C-04
+    statement: >
+      Working Source equality, local runtime execution and machine proof are
+      relevance-conditioned capability evidence. They must not be automatic caveats,
+      blockers or lead reservations in ordinary conversation or Source operational-status
+      answers unless the user asks for that dimension or the active task materially requires it.
+  - id: MCP-071
+    authority: normative
+    constitutional_article_ref: C-05
+    statement: >
+      A known incomplete local capability may be stated separately after the primary
+      conversation and Source status when it is material, but it must not negate
+      CEREBRO_SOURCE_OPERATIONAL or CONVERSATION_SOURCE_ALIGNMENT.
+
   bindings:
     boot_architecture: standards/boot-critical-path-architecture.yaml
     delivery_kernel: standards/delivery-kernel.yaml

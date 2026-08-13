@@ -8,11 +8,23 @@ handboot:
   maturity: OPERATIONAL_MINIMUM
   delivery_level: 3
 
+  semantic_scope:
+    class: LOCAL_MACHINE_CAPABILITY_EXTENSION
+    universal_source_operational_owner: mcp/boot-architecture-control.yaml
+    universal_source_operational_state: CEREBRO_SOURCE_OPERATIONAL
+    conversation_source_alignment_state: CONVERSATION_SOURCE_ALIGNMENT
+    legacy_operational_claim_requires_applies_to: LOCAL_MACHINE_OPERATIONAL_VERIFIED
+    must_not_gate:
+      - CEREBRO_SOURCE_OPERATIONAL
+      - CONVERSATION_SOURCE_ALIGNMENT
+    local_absence_effect_on_universal_source_status: NONE
+
   purpose: >
-    Initialize a fresh controlled Cerebro environment from local Working
-    Source, verify that Working Source is aligned with the sole authoritative
-    Source, activate a derived runtime, and process a valid session handoff
-    only after Cerebro activation has succeeded.
+    Initialize the local-machine Cerebro capability extension from local Working
+    Source, verify local equality with the sole authoritative Source, activate a
+    derived local runtime, and process a valid session handoff only after local
+    activation has succeeded. This contract does not define or gate universal
+    conversation or Source operational status.
 
   entrypoints:
     canonical: bootCerebro
@@ -52,6 +64,7 @@ handboot:
       - old-failure-evidence-remains-history-and-cannot-reopen-a-closed-current-state
       - authority-ambiguity-is-a-contract-failure-not-a-document-selection-task
     stale_input_effect: REJECT_INPUT_CONTINUE_CURRENT_SOURCE
+    operational_claim_scope: LOCAL_MACHINE_OPERATIONAL_VERIFIED
     operational_claim_requires:
       - current-Source-commit-bound-receipt
       - ACTIVE_CONTROL_TRANSFERRED
@@ -276,6 +289,8 @@ handboot:
       disposition: SKIPPED_EXPLICITLY
 
   operational_definition:
+    status_dimension: LOCAL_MACHINE_OPERATIONAL_VERIFIED
+    does_not_gate: [CEREBRO_SOURCE_OPERATIONAL, CONVERSATION_SOURCE_ALIGNMENT]
     required:
       - bootengine_verified
       - authoritative_source_fetched
@@ -370,5 +385,5 @@ handboot:
     - push_working_source
     - recover_uncommitted_development
     - reconcile_diverged_git_history
-    - activate_chat_conversation_without_machine_execution
+    - claim_local_machine_operational_verification_without_machine_execution
     - replace_external_bootengine

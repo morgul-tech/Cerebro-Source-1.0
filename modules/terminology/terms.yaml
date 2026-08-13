@@ -72,6 +72,27 @@ terms:
     term: Synkronisering
     aliases: [synk, synkron, synkronisert, samme versjon]
     definition: Verifisert likhetsforhold mellom eksplisitt navngitte objekter for et deklarert scope og commit; aldri en frittstående systemstatus.
+  cerebro_source_operational:
+    term: CEREBRO_SOURCE_OPERATIONAL
+    aliases: [cerebro operativ, cerebro fully operational, cerebro aktivert, bruker cerebro nå]
+    definition: Gjeldende universelle Cerebro-status når autoritativt Source-repository, branch og eksakt commit er ferskt verifisert og den aktive samtalen styres av gjeldende boot-kritiske Cerebro-kontroller.
+    default_scope: conversation-and-authoritative-source
+    excludes_by_default: [local-working-source-equality, local-runtime-machine-proof]
+    owner: MCP
+  conversation_source_alignment:
+    term: CONVERSATION_SOURCE_ALIGNMENT
+    aliases: [koblet til authoritative source, koblet til authoritative main, synced with authoritative main, synkronisert med authoritative main]
+    definition: Ferskt verifisert Published Source baseline kombinert med at den aktuelle samtalen er bundet til og styres av denne Source-committen.
+    does_not_mean: local-working-source-filesystem-equality
+    strict_non_equivalence: CEREBRO_SYNC_VERIFIED
+    owner: MCP
+  cerebro_sync_verified:
+    term: CEREBRO_SYNC_VERIFIED
+    aliases: [lokal cerebro_sync verifisert, working source sync verifisert]
+    definition: Streng lokal leveranse- og likhetsstatus som bare kan etableres av fersk canonical cerebro_sync med etterfølgende uavhengig verifikasjon av at lokal Working Source og autoritativ remote er på samme commit og at working tree er ren.
+    default_scope: local-working-source-and-authoritative-remote
+    cannot_be_inferred_from: [CEREBRO_SOURCE_OPERATIONAL, CONVERSATION_SOURCE_ALIGNMENT]
+    owner: delivery
   manifest:
     term: Cerebro Manifest
     definition: Autoritativt inngangspunkt som identifiserer releasen og komponentene som inngår i den.

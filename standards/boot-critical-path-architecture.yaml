@@ -27,6 +27,19 @@ boot_critical_path:
     - detect-environment-capabilities
     - load-task-relevant-semantics-on-demand
 
+  conversation_source_alignment:
+    result: CONVERSATION_SOURCE_ALIGNMENT
+    established_when:
+    - current-authoritative-repository-and-branch-freshly-verified
+    - exact-Source-commit-pinned
+    - boot-critical-controls-active-for-current-conversation
+    proves:
+    - current-conversation-governed-by-pinned-Cerebro-Source
+    local_working_source_equality_required: false
+    local_runtime_machine_proof_required: false
+    strict_local_sync_claim: CEREBRO_SYNC_VERIFIED
+    strict_local_sync_claim_requires_separate_evidence: true
+
   freshness:
     always_fresh:
     - repository-identity
