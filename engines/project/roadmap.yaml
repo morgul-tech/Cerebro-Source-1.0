@@ -5,8 +5,8 @@ roadmap:
   authority:
     contract_owner: project-engine
     state_scope: working-source
-  status: ACTIVE
-  objective: Cerebro 0.2 Foundation continues through active C02-P002 Workspace Convergence, using the locked Convergence Engine to classify, map, simulate and migrate the physical workspace from persisted evidence without conversation-history dependency.
+  status: COMPLETED
+  objective: Cerebro 0.2 Foundation and C02-P002 Workspace Convergence are verified complete with canonical physical workspace convergence, Source rebind, remote equality and clean closeout.
   scope:
     included:
     - project-roadmap-contract
@@ -119,7 +119,7 @@ roadmap:
   - id: PHASE-3
     title: cerebro_0_2_foundation_and_workspace_convergence
     purpose: converge_the_physical_Cerebro_workspace_onto_the_locked_canonical_0_2_structure
-    status: ACTIVE
+    status: COMPLETED
     dependency_refs:
     - PHASE-2
     entry_criteria:
@@ -133,10 +133,11 @@ roadmap:
     - history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml
     - history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json
     - history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json
+    - history/C02_P002_WORKSPACE_CONVERGENCE_CLOSEOUT_20260813.yaml
     milestones:
     - id: MS-004
       title: canonical_foundation_and_workspace_convergence
-      status: ACTIVE
+      status: COMPLETED
       acceptance:
       - canonical_foundation_verified
       - workspace_discovery_and_dependency_audit_complete
@@ -1319,7 +1320,7 @@ roadmap:
     title: workspace_convergence
     phase_ref: PHASE-3
     milestone_ref: MS-004
-    status: ACTIVE
+    status: VERIFIED
     dependency_refs:
     - C02-P002-CONVERGENCE-ARCH-LOCK-001
     decision_refs: []
@@ -1349,20 +1350,8 @@ roadmap:
     - one_converged_STANDARD_workspace_migration
     - clean_workspace_convergence_verified
   execution:
-    current:
-      id: EXEC-C02-P002-WORKSPACE-CLASSIFICATION
-      phase_ref: PHASE-3
-      milestone_ref: MS-004
-      patch_ref: C02-P002
-      canonical_command: classify the full workspace from the persisted discovery and dependency evidence into broad safe convergence families before any migration mutation
-      status: ACTIVE
-    next:
-      id: EXEC-C02-P002-PLACEMENT-AND-DEPENDENCY-MAP
-      phase_ref: PHASE-3
-      milestone_ref: MS-004
-      patch_ref: C02-P002
-      canonical_command: derive the canonical placement map and dependency remap from the completed workspace classification, then form migration families and a Temporaris simulation plan
-      status: PLANNED
+    current: null
+    next: null
     completed:
     - id: EXEC-AA-004-CONTROL-PROMOTION
       phase_ref: PHASE-2
@@ -1375,6 +1364,12 @@ roadmap:
       milestone_ref: MS-003
       patch_ref: PATCH-AA-004
       canonical_command: verify normal MCP path activation, authority boundaries, rollback safety, terminal roadmap state and absence of Runtime-resident adaptive control before phase closure
+      status: COMPLETED
+    - id: EXEC-C02-P002-WORKSPACE-CONVERGENCE-CLOSEOUT
+      phase_ref: PHASE-3
+      milestone_ref: MS-004
+      patch_ref: C02-P002
+      canonical_command: verify and persist terminal C02-P002 canonical workspace convergence state
       status: COMPLETED
   blockers: []
   context_refs:
@@ -1548,7 +1543,7 @@ roadmap:
     requirement: REQUIRED
   - owner: context-engine
     object_type: CURRENT_BASIS
-    object_ref: CTX-BASIS-C02-P002-RESUME-20260812-001
+    object_ref: CTX-BASIS-C02-P002-CLOSEOUT-20260813-001
     requirement: REQUIRED
   traceability:
     basis_refs:
@@ -1562,7 +1557,7 @@ roadmap:
     - CTX-BASIS-PATCH-005-POST-001-VERIFIED-001
     - CTX-BASIS-PATCH-005-POST-003-NEXT-SESSION-001
     - CTX-BASIS-ADAPTIVE-AUTONOMY-NEXT-SESSION-001
-    - CTX-BASIS-C02-P002-RESUME-20260812-001
+    - CTX-BASIS-C02-P002-CLOSEOUT-20260813-001
     revision_refs:
     - CTX-DEC-P1B-PRE001
     - CTX-DEC-P1B-PRE002
@@ -1591,8 +1586,8 @@ roadmap:
     - CTX-DEC-SEMANTIC-LOCK-ALIAS-BOUNDARY-001
     - CTX-DEC-ACTIVATION-ARCHITECTURE-SESSION-REALIGNMENT-001
   revision:
-    sequence: 28
-    last_locked_patch_ref: C02-P002-CONVERGENCE-ARCH-LOCK-001
+    sequence: 29
+    last_locked_patch_ref: C02-P002
 patch_005_workform:
   adaptive_quality_self_hosting: DEEP
   decision_assurance_required: true

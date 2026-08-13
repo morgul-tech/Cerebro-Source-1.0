@@ -1,0 +1,104 @@
+schema: cerebro-governance-decision-record/v1
+decision:
+  id: C02-P002-WORKSPACE-CONVERGENCE-CLOSEOUT-001
+  date: '2026-08-13'
+  status: VERIFIED
+  decision_owner: ADMIN
+  source_basis_commit: 9464f2ff38b5cb6a3cc6b9cf0de5843504117e68
+  human_name: C02-P002 Workspace Convergence Closeout
+  required_quality: DEEP
+  result:
+    workspace_convergence: VERIFIED
+    source_rebind: VERIFIED
+    physical_migration: COMPLETED
+    global_validation: PASS
+    clean_convergence: PASS
+  verified_evidence:
+    migration_operations: 110
+    move_operations: 95
+    create_operations: 3
+    repository_count_before: 36
+    repository_count_after: 36
+    unresolved_units: 0
+    plan_issues: 0
+    legacy_roots_remaining: 0
+    missing_canonical_roots: 0
+    missing_run_domains: 0
+    source_mutated_by_workspace_migration: false
+    recovery_root: D:\Cerebro-Recovery\C02-P002_20260813-125908-a37cc6a1
+    retired_root: D:\Cerebro-Retired\C02-P002_20260813-125908-a37cc6a1
+    migration_receipt: D:\Cerebro\Run\Receipts\C02-P002\C02_P002_REAL_WORKSPACE_MIGRATION_20260813-125908-a37cc6a1.json
+  rejected_closeout_implementation_family_r1:
+    identity: C02-P002-CLOSEOUT-STANDARD-R1
+    attempts:
+    - R1
+    - R1F1
+    - R1F2
+    result: REJECTED_AFTER_REPEATED_FAILURE_REASSESSMENT
+    source_mutation: NONE
+    root_cause: POWERSHELL_HERE_STRING_NEWLINE_AND_STRUCTURED_TEXT_MUTATION_DEPENDENCE
+    governing_recovery: PS-L3-009_REBUILD_FROM_CLEAN_BASIS
+  rejected_closeout_implementation_family_r2:
+    identity: C02-P002-CLOSEOUT-STANDARD-R2
+    attempts:
+    - R2
+    - R2F1
+    result: REJECTED_AFTER_REPEATED_FAILURE_THRESHOLD
+    source_mutation: NONE
+    commit_created: false
+    rollback_required: false
+    failure_families:
+    - attempt: R2
+      stage: ISOLATED_CANDIDATE
+      family: DETERMINISTIC_PATCH_SCOPE_AMBIGUITY
+      signal: PHASE3_CLOSEOUT_DELIVERABLE_EXPECTED_1_OBSERVED_2
+    - attempt: R2F1
+      stage: ISOLATED_CANDIDATE
+      family: GENERATED_YAML_SCALAR_REPRESENTATION
+      signal: SCANNERERROR_UNKNOWN_ESCAPE_CHARACTER_C_IN_WINDOWS_PATH
+    governing_recovery: REBUILD_R3_FROM_CLEAN_BASIS_WITH_SERIALIZER_OWNED_YAML_AND_POST_GENERATION_PARSE_GATE
+  r3_rebuild:
+    identity: C02-P002-CLOSEOUT-STANDARD-R3
+    implementation_model: STRUCTURAL_LINE_BOUNDARIES_PLUS_SERIALIZER_OWNED_YAML_SNIPPETS
+    pre_handoff_assurance:
+    - COMPLETE_ANCHOR_FAMILY_CARDINALITY_AUDIT
+    - SERIALIZER_GENERATED_CONTEXT_RECORD
+    - GENERATED_CONTEXT_RECORD_PARSE_BACK
+    - WINDOWS_PATH_VALUE_ROUNDTRIP
+    - HISTORY_PAYLOAD_PARSE_BACK
+    - LF_AND_CRLF_FIXTURES
+    - MULTI_DEFECT_FAMILY_CANARY
+    - FULL_TRANSFORMED_CANDIDATE_PARSE_BEFORE_LIVE_MUTATION
+    live_source_mutation_before_isolated_candidate_pass: false
+  closure:
+    project_status: COMPLETED
+    phase_3_status: COMPLETED
+    milestone_ms_004_status: COMPLETED
+    c02_p002_status: VERIFIED
+    active_execution_pointer: NONE
+    next_execution_pointer: NONE
+    conversation_history_required_for_resume: false
+  asc_prerequisite_fix:
+    status: VERIFIED_AND_REMOTE
+    commit: 9464f2ff38b5cb6a3cc6b9cf0de5843504117e68
+    message: Fix ASC Git representation boundary
+    candidate_result: PASS
+    live_result: PASS
+    remote_equality: true
+    final_source_clean: true
+    raw_canonical_difference_count: 4
+    standard_version: '0.4'
+    representation: GIT_CANONICAL_OBJECT_VIA_HASH_OBJECT_PATH
+  r3_resume:
+    implementation_identity: C02-P002-CLOSEOUT-STANDARD-R3
+    basis_revision: B1
+    previous_attempt:
+      result: FAILED_PRE_MUTATION
+      stage: CANDIDATE_VALIDATION
+      family: PREEXISTING_CANONICAL_ASC_REPRESENTATION_DEFECT
+      source_mutation: false
+      commit_created: false
+      rollback: NOT_REQUIRED
+    resume_basis: 9464f2ff38b5cb6a3cc6b9cf0de5843504117e68
+    semantic_closeout_model_changed: false
+    known_refspec_family_swept_before_handoff: true
