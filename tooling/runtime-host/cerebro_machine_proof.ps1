@@ -98,10 +98,10 @@ function Invoke-CerebroMachineProofCore {
         [string]$Branch = 'main',
 
         [string]$RuntimeStatePath =
-            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_RUNTIME_STATE_v1.json',
 
         [string]$ProofPath =
-            'D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_MACHINE_PROOF_v1.json',
 
         [switch]$NoClipboard
     )

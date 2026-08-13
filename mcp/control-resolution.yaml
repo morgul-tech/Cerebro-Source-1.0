@@ -74,7 +74,7 @@ control_resolution:
     Runtime_remains_bounded_executor: true
   activation:
     binding_id: ADAPTIVE_MCP_CONTROL_RESOLUTION
-    evidence_path: D:\Cerebro\Run\audits\CEREBRO_AA004_MCP_CONTROL_ACTIVATION_PROOF.json
+    evidence_path: D:\Cerebro\Run\Evidence\Audits\CEREBRO_AA004_MCP_CONTROL_ACTIVATION_PROOF.json
     required_schema: cerebro-aa004-mcp-control-activation-proof/v1
     requires_existing_evidence_refresh_before_closure: true
   invariants:

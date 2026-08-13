@@ -11,7 +11,7 @@ patch_attempt_history:
     immutable evidence so delivery quality, recurring failure families and
     corrective effectiveness can be analyzed over time.
 
-  canonical_root: D:\Cerebro\Run\attempts
+  canonical_root: D:\Cerebro\Run\Evidence\Attempts
 
   identity:
     generated_before:

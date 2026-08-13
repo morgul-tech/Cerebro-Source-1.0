@@ -540,7 +540,7 @@ function Invoke-CerebroContractActivationAudit {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$Root,
-        [string]$OutputPath='D:\Cerebro\Run\audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json'
+        [string]$OutputPath='D:\Cerebro\Run\Evidence\Audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json'
     )
 
     $rootPath=[IO.Path]::GetFullPath($Root)

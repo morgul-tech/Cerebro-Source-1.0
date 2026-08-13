@@ -359,7 +359,7 @@ catch {
     if ($commitCreated -and -not $pushCompleted) {
         $finalState = 'SUCCESS_LOCAL_COMMIT'
         $userActionRequired = 'PUSH_RETRY_REQUIRED'
-        $nextCommand = "& 'D:\Cerebro\Scripts\cerebro_sync.ps1'"
+        $nextCommand = "& 'D:\Cerebro\Run\Operations\Publication\LegacyRootScripts\cerebro_sync.ps1'"
     }
     elseif ($pushCompleted) {
         $finalState = 'FAILED_PARTIAL_REQUIRES_ATTENTION'

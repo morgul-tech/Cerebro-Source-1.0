@@ -178,7 +178,7 @@ delivery_kernel:
     missing_required_capability: STOP_BEFORE_MUTATION
 
   full_recovery_snapshot:
-    root: D:\Cerebro\Backups
+    root: D:\Cerebro\Run\Recovery\Backups
     scope: ENTIRE_WORKING_SOURCE_INCLUDING_DOT_GIT
     required_before_first_source_mutation: true
     archive_hash_required: true
@@ -324,7 +324,7 @@ delivery_kernel:
     known_activation_debt_may_be_nonblocking_when_explicitly_classified: true
     reference_existence_alone_proves_operational: false
     runtime_execution_evidence_axis: SEPARATE
-    inventory_output: D:\Cerebro\Run\audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json
+    inventory_output: D:\Cerebro\Run\Evidence\Audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json
 
   assurance:
     existing_contract: standards/development/powershell-level3-delivery-assurance.yaml

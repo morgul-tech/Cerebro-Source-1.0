@@ -134,7 +134,7 @@ material_commitment_preflight:
       - VALIDATED
       - EVIDENCED
     machine_probe_command: material_commitment_preflight.py activation-probe
-    evidence_path: D:\Cerebro\Run\audits\CEREBRO_RELEVANCE_MCP_ACTIVATION_PROOF.json
+    evidence_path: D:\Cerebro\Run\Evidence\Audits\CEREBRO_RELEVANCE_MCP_ACTIVATION_PROOF.json
     stale_proof_must_not_satisfy_activation: true
 
   invariants:

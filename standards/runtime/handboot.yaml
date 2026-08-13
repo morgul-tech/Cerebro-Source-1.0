@@ -72,7 +72,7 @@ handboot:
       role: external_boot_orchestration
       authority_over_cerebro_source: false
     bootstrap_state:
-      default_path: D:\Cerebro\Run\active\CEREBRO_BOOTSTRAP_STATE_v1.json
+      default_path: D:\Cerebro\Run\State\Active\CEREBRO_BOOTSTRAP_STATE_v1.json
       role: derived_operational_state
       authority: non_authoritative
     handoff:
@@ -310,7 +310,7 @@ handboot:
     default_on_successful_boot: true
     explicit_command: cerebro_verify
     implementation: tooling/runtime-host/cerebro_machine_proof.ps1
-    proof_path: D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json
+    proof_path: D:\Cerebro\Run\State\Active\CEREBRO_MACHINE_PROOF_v1.json
     clipboard_transport:
       default: true
       payload: compact_machine_proof_text

@@ -15,10 +15,10 @@ param(
         'D:\Cerebro\Source\Cerebro_Source_v1.0',
 
     [string]$CliStatePath =
-        'D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json',
+        'D:\Cerebro\Run\State\Active\CEREBRO_DELIVERY_SELECTION.json',
 
     [string]$CliHistoryRoot =
-        'D:\Cerebro\Run\delivery\selections'
+        'D:\Cerebro\Run\Operations\Delivery\selections'
 )
 
 Set-StrictMode -Version 2.0
@@ -664,10 +664,10 @@ function Set-CerebroDeliverySelection {
             'D:\Cerebro\Source\Cerebro_Source_v1.0',
 
         [string]$StatePath =
-            'D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_DELIVERY_SELECTION.json',
 
         [string]$HistoryRoot =
-            'D:\Cerebro\Run\delivery\selections'
+            'D:\Cerebro\Run\Operations\Delivery\selections'
     )
 
     try {
@@ -866,7 +866,7 @@ function Get-CerebroDeliverySelectionStatus {
             'D:\Cerebro\Source\Cerebro_Source_v1.0',
 
         [string]$StatePath =
-            'D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json'
+            'D:\Cerebro\Run\State\Active\CEREBRO_DELIVERY_SELECTION.json'
     )
 
     if (-not (Test-Path -LiteralPath $StatePath -PathType Leaf)) {
@@ -1163,10 +1163,10 @@ function Invoke-CerebroDeliveryCommand {
             'D:\Cerebro\Source\Cerebro_Source_v1.0',
 
         [string]$StatePath =
-            'D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_DELIVERY_SELECTION.json',
 
         [string]$HistoryRoot =
-            'D:\Cerebro\Run\delivery\selections'
+            'D:\Cerebro\Run\Operations\Delivery\selections'
     )
 
     switch ($Action) {

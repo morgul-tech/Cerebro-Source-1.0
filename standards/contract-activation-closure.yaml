@@ -103,7 +103,7 @@ contract_activation_closure:
     failure_effect: BLOCK_PATCH_BEFORE_SYNC
 
   activation_inventory:
-    output_default: D:\Cerebro\Run\audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json
+    output_default: D:\Cerebro\Run\Evidence\Audits\CEREBRO_CONTRACT_ACTIVATION_AUDIT.json
     required_content:
     - all-required-standards
     - explicit-classification

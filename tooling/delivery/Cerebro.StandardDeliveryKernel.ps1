@@ -1426,14 +1426,14 @@ function Invoke-Apply {
         [void](Invoke-Git -GitPath $gitPath -ArgumentList @('push','--dry-run',$dryRunLease,'origin',('HEAD:refs/heads/{0}' -f [string]$State.Manifest.branch)))
 
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_EXECUTE'
-        $executeEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_EXECUTE_PREFLIGHT.json'
+        $executeEvidence=Join-Path 'D:\Cerebro\Run\Evidence\Audits' 'CEREBRO_STANDARD_MATERIAL_EXECUTE_PREFLIGHT.json'
         [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'MATERIAL_EXECUTE' -SourceIdentity $localHead -EvidencePath $executeEvidence -AllowBootstrapDefer)
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'MATERIAL_EXECUTE'
         [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_MUTATION')
 
         $State.ReachedStage='FULL_RECOVERY_SNAPSHOT'
         $State.FullRecoverySnapshot=New-VerifiedFullRecoverySnapshot `
-            -SourceRoot $WorkingSourcePath -BackupRoot 'D:\Cerebro\Backups' `
+            -SourceRoot $WorkingSourcePath -BackupRoot 'D:\Cerebro\Run\Recovery\Backups' `
             -SourceCommit $localHead -RetentionCount 10
 
         $State.ReachedStage='LOCAL_EXECUTION_ENVIRONMENT_PREFLIGHT'
@@ -1445,7 +1445,7 @@ function Invoke-Apply {
         }
 
         $State.ReachedStage = 'BACKUP'
-        $backupRoot = 'D:\Cerebro\Backups'
+        $backupRoot = 'D:\Cerebro\Run\Recovery\Backups'
         [IO.Directory]::CreateDirectory($backupRoot) | Out-Null
         $State.BackupDirectory = Join-Path -Path $backupRoot -ChildPath ('delivery-kernel-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
         [IO.Directory]::CreateDirectory($State.BackupDirectory) | Out-Null
@@ -1521,7 +1521,7 @@ function Invoke-Apply {
         [void](Invoke-RequiredTargetRuntimeValidation -PatchManifest $State.Manifest)
 
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_PUBLISH'
-        $publishEvidence=Join-Path 'D:\Cerebro\Run\audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'
+        $publishEvidence=Join-Path 'D:\Cerebro\Run\Evidence\Audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'
         [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'GOVERNING_PUBLISH' -SourceIdentity $localHead -EvidencePath $publishEvidence)
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'GOVERNING_PUBLISH'
         [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_PUBLICATION')

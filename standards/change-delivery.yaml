@@ -121,8 +121,8 @@ selection:
   explanation_command: cerebro delivery explain [profile]
   implementation: tooling/delivery/cerebro_delivery.ps1
   state_schema: tooling/delivery/selection-state-schema.json
-  active_state_default: D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json
-  history_root_default: D:\Cerebro\Run\delivery\selections
+  active_state_default: D:\Cerebro\Run\State\Active\CEREBRO_DELIVERY_SELECTION.json
+  history_root_default: D:\Cerebro\Run\Operations\Delivery\selections
   authority: DERIVED_MCP_BOUND_RUNTIME_STATE
   decision_owner: MCP
   canonical_control_surface: mcp/control_resolution.py
@@ -394,7 +394,7 @@ failure_learning_evidence:
 
 backup_contract:
   required_for: STANDARD
-  root_default: D:\Cerebro\Backups
+  root_default: D:\Cerebro\Run\Recovery\Backups
   backup_identity:
   - change-id
   - timestamp
@@ -427,7 +427,7 @@ backup_contract:
     purpose: catastrophic-recovery-safety-net
     normal_bounded_rollback_substitute: false
     scope: entire-Working-Source-including-dot-git
-    root: D:\Cerebro\Backups
+    root: D:\Cerebro\Run\Recovery\Backups
     verify_archive_hash: true
     verify_every-file-entry: true
     retain_latest_verified: 10

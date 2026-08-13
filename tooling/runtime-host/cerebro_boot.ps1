@@ -192,7 +192,7 @@ function Invoke-CerebroBootCore {
             'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
 
         [string]$RuntimeStatePath =
-            'D:\Cerebro\Run\active\CEREBRO_BOOTSTRAP_STATE_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_BOOTSTRAP_STATE_v1.json',
 
         [switch]$SkipHandoff
     )

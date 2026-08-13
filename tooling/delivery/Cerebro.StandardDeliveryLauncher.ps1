@@ -80,7 +80,7 @@ function Assert-HumanExecutionHandoff {
 function New-AttemptContext {
     $started=[DateTime]::UtcNow
     $attemptId=$started.ToString('yyyyMMddTHHmmssfffZ')+'-'+[guid]::NewGuid().ToString('N')
-    $root='D:\Cerebro\Run\attempts'
+    $root='D:\Cerebro\Run\Evidence\Attempts'
 
     try {
         [IO.Directory]::CreateDirectory($root) | Out-Null

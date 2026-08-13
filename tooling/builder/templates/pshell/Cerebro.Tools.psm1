@@ -876,7 +876,7 @@ function cerebro_sync {
         [switch]$AllowRemainingChanges
     )
 
-    $scriptPath = 'D:\Cerebro\Scripts\cerebro_sync.ps1'
+    $scriptPath = 'D:\Cerebro\Run\Operations\Publication\LegacyRootScripts\cerebro_sync.ps1'
 
     if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
         throw "CEREBRO_SYNC_SCRIPT_NOT_FOUND:$scriptPath"
@@ -949,10 +949,10 @@ function bootCerebro {
             'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
 
         [string]$RuntimeStatePath =
-            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_RUNTIME_STATE_v1.json',
 
         [string]$ProofPath =
-            'D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_MACHINE_PROOF_v1.json',
 
         [switch]$SkipHandoff,
 
@@ -1050,10 +1050,10 @@ function cerebro_verify {
             'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
 
         [string]$RuntimeStatePath =
-            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_RUNTIME_STATE_v1.json',
 
         [string]$ProofPath =
-            'D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_MACHINE_PROOF_v1.json',
 
         [switch]$SkipHandoff,
 
@@ -1089,10 +1089,10 @@ function bootini {
             'D:\Cerebro\Run\handoff\CEREBRO_SESSION_HANDOFF_v1.json',
 
         [string]$RuntimeStatePath =
-            'D:\Cerebro\Run\active\CEREBRO_RUNTIME_STATE_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_RUNTIME_STATE_v1.json',
 
         [string]$ProofPath =
-            'D:\Cerebro\Run\active\CEREBRO_MACHINE_PROOF_v1.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_MACHINE_PROOF_v1.json',
 
         [switch]$SkipHandoff,
 
@@ -1126,10 +1126,10 @@ function cerebro {
         [string]$WorkingSourcePath,
 
         [string]$StatePath =
-            'D:\Cerebro\Run\active\CEREBRO_DELIVERY_SELECTION.json',
+            'D:\Cerebro\Run\State\Active\CEREBRO_DELIVERY_SELECTION.json',
 
         [string]$HistoryRoot =
-            'D:\Cerebro\Run\delivery\selections'
+            'D:\Cerebro\Run\Operations\Delivery\selections'
     )
 
     if ([string]::IsNullOrWhiteSpace($WorkingSourcePath)) {
