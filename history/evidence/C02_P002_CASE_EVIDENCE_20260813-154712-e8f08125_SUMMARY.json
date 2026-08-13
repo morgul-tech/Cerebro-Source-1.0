@@ -1,0 +1,14 @@
+{
+  "schema": "cerebro-c02-p002-case-evidence-collector-summary/v1",
+  "result": "SUCCESS",
+  "case_id": "C02-P002",
+  "run_id": "20260813-154712-e8f08125",
+  "source_head": "f3a159d2d3d5a45b9e3321dad6426b46640f39f0",
+  "source_mutation": false,
+  "inventory_count": 241,
+  "unique_payload_count": 150,
+  "missing_count": 2,
+  "warning_count": 0,
+  "conversation_supplied": false,
+  "zip_path": "C:\\Users\\Livan\\Downloads\\C02_P002_CASE_EVIDENCE_20260813-154712-e8f08125.zip"
+}

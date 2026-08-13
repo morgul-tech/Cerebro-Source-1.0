@@ -1,7 +1,7 @@
 {
   "schema": "cerebro-human-continuation-binding-registry/v1",
   "status": "ACTIVE",
-  "active_binding_id": "C02-P002-WORKSPACE-CONVERGENCE-CONTINUE",
+  "active_binding_id": "C02-P002-CASE-FINAL-CONTINUE",
   "bindings": [
     {
       "schema": "cerebro-human-continuation-binding/v1",
@@ -89,6 +89,52 @@
         "REQUEST_ONLY_MATERIAL_USER_DECISION_IF_AMBIGUOUS"
       ],
       "binding_fingerprint": "f4cc434fea7bb6b9783b81d92c3b30ab74bfb3f33a6613003238c3116e4ca998"
+    },
+    {
+      "schema": "cerebro-human-continuation-binding/v1",
+      "binding_id": "C02-P002-CASE-FINAL-CONTINUE",
+      "surface_kind": "SHORT_HUMAN_TRIGGER",
+      "alias": "Fortsett Cerebro case",
+      "target_ref": "C02-P002-CASE-FINAL-20260813-001",
+      "operation": "DEFINE_NEXT_CEREBRO_PROJECT_FROM_FINAL_CASE_FINDINGS",
+      "current_basis_ref": "CTX-BASIS-C02-P002-CASE-FINAL-20260813-001",
+      "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS-C02-P002-CASE-FINAL-20260813-001",
+      "constraints_refs": [
+        "history/C02_P002_CASE_FINAL_20260813.yaml",
+        "engines/convergence/architecture.yaml",
+        "engines/convergence/rules.yaml",
+        "standards/human-continuation-surface.yaml",
+        "standards/continuation-surface-system-policy.yaml"
+      ],
+      "evidence_refs": [
+        "history/C02_P002_CASE_FINAL_20260813.yaml",
+        "history/evidence/C02_P002_CASE_FAILURE_LEDGER_20260813.json",
+        "history/evidence/C02_P002_CASE_FINAL_DECISION_20260813.json",
+        "history/evidence/C02_P002_CASE_FINAL_CONCLUSION_20260813.md",
+        "history/evidence/C02_P002_CASE_EVIDENCE_20260813-154712-e8f08125_SUMMARY.json",
+        "ARCHIVE_SHA256:0d91ba936f28c75cb060dd9f8e909daae1ca8f08d29535904de771068c29fc3b"
+      ],
+      "maturity": "VERIFIED_ANALYSIS",
+      "readiness": "READY_FOR_PROJECT_DEFINITION_ONLY",
+      "source_revision": "f3a159d2d3d5a45b9e3321dad6426b46640f39f0+C02-P002-CASE-FINAL-20260813-001",
+      "required_next_behavior": [
+        "VERIFY_CURRENT_AUTHORITATIVE_SOURCE",
+        "LOAD_C02_P002_CASE_FINAL_CURRENT_BASIS",
+        "LOAD_CASE_FINAL_DECISION_AND_FAILURE_LEDGER",
+        "DEFINE_NEXT_CEREBRO_PROJECT_FROM_FINAL_CASE_FINDINGS",
+        "DO_NOT_START_IMPLEMENTATION_BEFORE_PROJECT_DEFINITION"
+      ],
+      "resume_order": [
+        "LOAD_ACTIVE_BINDING",
+        "VERIFY_SOURCE",
+        "LOAD_CURRENT_BASIS",
+        "VERIFY_CASE_EVIDENCE_REFS",
+        "DEFINE_NEXT_PROJECT"
+      ],
+      "alternative_paths": [
+        "REQUEST_ONLY_MATERIAL_USER_DECISION_IF_PROJECT_SCOPE_AMBIGUOUS"
+      ],
+      "binding_fingerprint": "1022f9f4c223c721f0125f28cb28d1b9958564433a9a845186fe2219a2a5b8c5"
     }
   ]
 }

@@ -1,0 +1,145 @@
+schema: cerebro-governance-decision-record/v1
+decision:
+  id: C02-P002-CASE-FINAL-20260813-001
+  date: '2026-08-13'
+  status: VERIFIED_ANALYSIS
+  decision_owner: ADMIN
+  source_basis_commit: f3a159d2d3d5a45b9e3321dad6426b46640f39f0
+  human_name: C02-P002 implementation case final analysis and next-session handoff
+  case_scope: C02-P002 full implementation history through C02_P002_CLOSEOUT_R3B1 SUCCESS
+  analysis_result:
+    classification: C
+    A: SUBSTANTIALLY_TRUE
+    B: PARTLY_TRUE_BUT_REJECTED_AS_SOLE_EXPLANATION
+    C: STRONGLY_SUPPORTED
+    primary_finding: POLICY_TO_EXECUTION_AND_EXECUTION_PATH_BINDING_GAP
+  evidence:
+    collector_run_id: 20260813-154712-e8f08125
+    inventory_count: 241
+    unique_payload_count: 150
+    warning_count: 0
+    conservative_execution_stop_events: 17
+    failure_ledger_ref: history/evidence/C02_P002_CASE_FAILURE_LEDGER_20260813.json
+    final_decision_ref: history/evidence/C02_P002_CASE_FINAL_DECISION_20260813.json
+    final_conclusion_ref: history/evidence/C02_P002_CASE_FINAL_CONCLUSION_20260813.md
+    full_evidence_archive_ref: D:/Cerebro/Archive/C02-P002/Case-Final/C02_P002_CASE_EVIDENCE_20260813-154712-e8f08125.zip
+    full_evidence_archive_sha256: 0d91ba936f28c75cb060dd9f8e909daae1ca8f08d29535904de771068c29fc3b
+    conversation_export_in_archive: false
+    full_evidence_archive_authority: PRESERVED_RAW_EVIDENCE_NON_SOURCE
+  critical_findings:
+  - The project was genuinely high-complexity and produced substantial one-time Cerebro maturation.
+  - A material majority of human-visible retry events were bespoke implementation/delivery defects or repeated members of
+    already-known failure families.
+  - Locked Source policy did not guarantee mandatory execution-time consumption by every generated implementation artifact.
+  - Bespoke execution surfaces could duplicate canonical delivery/runtime responsibilities and thereby bypass the place where
+    policy should be enforced.
+  - The existing Convergence architecture already models the required meso-orchestration behavior but is not bound to the
+    normal execution path.
+  - Future work should become easier in specifically repaired areas, but broad automatic retry reduction is not guaranteed
+    until policy-to-execution binding is operationalized.
+  next_development:
+    candidate: POLICY_TO_EXECUTION_AND_CONVERGENCE_ACTIVATION
+    status: CANDIDATE_NOT_STARTED
+    recommendation: Define the next Cerebro project from these findings before implementation. Favor activation/binding of
+      existing Convergence architecture and canonical implementation/delivery ownership; do not create a parallel new system.
+    do_not_start_new_implementation_yet: true
+  continuity:
+    conversation_history_required: false
+    chat_memory_authority: NONE
+    next_session_action: DEFINE_NEXT_CEREBRO_PROJECT_FROM_FINAL_CASE_FINDINGS
+    current_basis_ref: CTX-BASIS-C02-P002-CASE-FINAL-20260813-001
+  post_analysis_observations:
+  - id: POST-CASE-TRANSPORT-001
+    classification: USER_CLIENT_DOWNLOAD_MEDIATION_ARTIFACT_MATERIALIZATION_GAP
+    status: OBSERVED_AND_USER_CONFIRMED_MECHANISM
+    statement: A ChatGPT artifact offered for download is not equivalent to a file physically materialized on the Windows
+      host. Browser/security mediation can block the download until the user explicitly chooses to download the unverified
+      file.
+    evidence:
+    - R1 persistence failed at BUNDLE_DISCOVERY with CASE_FINAL_PERSIST_BUNDLE_NOT_FOUND before Source mutation.
+    - User reported that some ChatGPT downloads are blocked until Downloads -> file -> 'last ned ubekreftet fil'.
+    - The behavior is intermittent enough that the user may reasonably believe the artifact was downloaded when it was not.
+    learning: Model transport as GENERATED -> OFFERED_FOR_DOWNLOAD -> HOST_MATERIALIZED -> HASH_VERIFIED. Do not infer HOST_MATERIALIZED
+      from offering a download link.
+    case_failure_count_effect: EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation
+  - id: POST-CASE-LIVENESS-001
+    classification: USER_HOST_EXECUTION_LIVENESS_VISIBILITY_GAP
+    status: R1F1_USER_DECLARED_HUNG_AND_IMPLEMENTATION_FAMILY_REJECTED
+    statement: A user-facing patch can preserve terminal visibility yet still provide insufficient liveness information during
+      long silent stages. The user cannot reliably distinguish normal work from a stalled process.
+    evidence:
+    - R1F1 emitted no continuous progress or heartbeat during potentially long candidate/validation operations.
+    - User observed a terminal that appeared hung and explicitly classified the run as hung.
+    - Existing locked PowerShell visibility contract preserves terminal SUCCESS/FAIL visibility but does not require continuous
+      stage/liveness signaling.
+    learning: Every user-facing long-running execution must expose deterministic stage identity plus periodic liveness/elapsed
+      heartbeat, and external child operations should have bounded timeout behavior.
+    case_failure_count_effect: EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation
+  - id: POST-CASE-CODE-DELIVERY-001
+    classification: USER_FACING_CODE_TARGET_PARSE_ASSURANCE_GAP
+    status: OBSERVED_R2_PRE_EXECUTION_PARSE_FAILURE
+    statement: A generated launcher was marked build-pass without proving that the exact user-facing PowerShell artifact was
+      accepted by the target Windows PowerShell parser before handoff.
+    evidence:
+    - R2 failed in the user's pre-execution ParseFile gate.
+    - The parser interpreted embedded bundle material as PowerShell tokens and terminated with C02_P002_CASE_FINAL_PERSIST_R2_PARSE_FAILED.
+    - No R2 Source mutation or commit occurred because the parser gate blocked execution.
+    learning: Do not equate artifact generation with target parser validity. User-facing code must be small enough to minimize
+      parser surface, must avoid embedding opaque multi-megabyte payloads when a sealed archive can own them, and must pass
+      the target parser gate before execution.
+    case_failure_count_effect: EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation
+  - id: POST-CASE-NATIVE-PROCESS-001
+    classification: NATIVE_PROCESS_EXIT_CODE_SENSOR_MISCLASSIFICATION
+    status: OBSERVED_R2F1_STAGE1_PRE_MUTATION
+    statement: R2F1 forwarded native arguments correctly and the Python canary produced the exact expected stdout, but the
+      PowerShell Start-Process wrapper observed an empty ExitCode and misclassified the successful child process as failure.
+    evidence:
+    - native-argument-canary stdout was exactly ["alpha beta", "plus+slash/value", "C:\\path with spaces\\item.txt"].
+    - failure message reported exit= with no numeric value.
+    - R2F1 stopped at stage 1 before Source mutation or commit.
+    learning: A native-process wrapper must treat process completion and numeric exit-code acquisition as one deterministic
+      contract. R3 removes PowerShell Start-Process as the orchestration owner and uses Python subprocess returncode for native
+      process control, heartbeat and timeout.
+    case_failure_count_effect: EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation
+  - id: POST-CASE-VALIDATOR-RESULT-001
+    classification: STRUCTURED_VALIDATOR_RESULT_TEXT_MATCH_FALSE_NEGATIVE
+    status: OBSERVED_R3_STAGE4_PRE_MUTATION
+    statement: R3 candidate validation received an ASC JSON result whose semantic result field was PASS, but R3 classified
+      it as failure because it searched for exact textual spacing variants instead of parsing the structured JSON result.
+    evidence:
+    - 'R3 failure receipt contains ASC output with "result": "PASS" semantically.'
+    - ASC checked 175 active files with no findings.
+    - R3 stopped in candidate semantic validation before Source mutation or commit.
+    learning: Structured validator output must be consumed structurally. Parse JSON and inspect the result field; never use
+      formatting-sensitive string matching as the semantic result sensor.
+    case_failure_count_effect: EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation
+  - id: POST-CASE-IDENTITY-REFERENCE-001
+    classification: CORRECTIVE_BUILD_STALE_INTERNAL_IDENTITY_REFERENCE
+    status: OBSERVED_R3F1_STAGE1_PRE_MUTATION
+    statement: R3F1 renamed the runtime launcher to the R3F1 identity but its stage-1 self-test retained a literal reference
+      to the prior R3 launcher filename, so the corrected artifact failed while trying to validate a file that no longer existed.
+    evidence:
+    - R3F1 outer target parser passed.
+    - R3F1 stage 1 attempted to parse run/CEREBRO_C02_P002_CASE_FINAL_PERSIST_R3.ps1.
+    - The actual R3F1 bundle contained run/CEREBRO_C02_P002_CASE_FINAL_PERSIST_R3F1.ps1.
+    - The run stopped before Source mutation or commit.
+    learning: Revision identity must not be duplicated as uncontrolled literals across corrective runtime logic. Runtime self-validation
+      should discover actual executable surfaces from the sealed bundle or consume one authoritative manifest binding.
+    case_failure_count_effect: EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation
+  persistence_learning:
+    R1: BUNDLE_DISCOVERY failed before mutation; likely upstream artifact-materialization/download mediation.
+    R1F1: User classified run as hung after silent execution; R1 family rejected at threshold 2.
+    R2_requirement: Clean rebuild with deterministic visible stages, heartbeat, bounded external-process timeout, and exact
+      recognized partial-state recovery.
+    R2: 'Pre-execution Windows PowerShell ParseFile failed; no Source mutation. Root family: user-facing code target-parse
+      assurance gap. R2F1 must remove embedded payload and automatic-variable collision surfaces.'
+    R2F1: Native argv canary produced exact expected stdout but Start-Process exit-code sensor returned empty and falsely
+      failed. No Source mutation. R2 family rejected at threshold 2.
+    R3_requirement: New implementation identity. Python subprocess owns native process exit-code, timeout and heartbeat; PowerShell
+      remains only a thin entrypoint and required ASC host.
+    R3: Candidate ASC semantically returned PASS but formatting-sensitive text matching produced a false FAIL. No Source mutation.
+      R3F1 replaces text sensors for all JSON validators with structured parsing.
+    R3F1: Outer parser passed, but stage-1 self-test referenced obsolete R3 launcher filename after R3F1 rename. No Source
+      mutation. R3 family rejected at threshold 2.
+    R4_requirement: New identity. Runtime PowerShell surfaces are discovered from the actual sealed bundle, not hard-coded
+      by revision filename; all runtime path bindings are cross-checked before execution.

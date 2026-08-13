@@ -1,0 +1,261 @@
+{
+  "schema": "cerebro-c02-p002-case-final-decision/v1",
+  "case_id": "C02-P002",
+  "status": "FINAL_ANALYSIS_APPROVED_FOR_CEREBRO_PERSISTENCE_WITH_POST_ANALYSIS_OBSERVATIONS",
+  "generated_at_utc": "2026-08-13T14:24:41.053013+00:00",
+  "classification": {
+    "best_fit": "C",
+    "A": "SUBSTANTIALLY_TRUE",
+    "B": "PARTLY_TRUE_BUT_REJECTED_AS_SOLE_EXPLANATION",
+    "C": "STRONGLY_SUPPORTED"
+  },
+  "evidence_summary": {
+    "collector_inventory": 241,
+    "collector_unique_payloads": 150,
+    "collector_warnings": 0,
+    "known_missing": [
+      "complete conversation export",
+      ".gitattributes at current Source path"
+    ],
+    "conservative_execution_stop_events": 17,
+    "event_root_domain_counts": {
+      "BESPOKE_IMPLEMENTATION_OR_DELIVERY_DEFECT": 10,
+      "PRE_EXISTING_CEREBRO_INFRASTRUCTURE_OR_VALIDATOR_DEBT": 5,
+      "PATCH_SPECIFIC_SEMANTIC_OR_SCOPING_DEFECT": 2
+    }
+  },
+  "critical_findings": [
+    {
+      "id": "F1",
+      "finding": "C02-P002 was genuinely high-complexity, but the destructive core was safer and smoother than the surrounding implementation/delivery meta-layer.",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "F2",
+      "finding": "Multiple failure classes reaching the human were already represented in pre-existing Cerebro Level-3 assurance or delivery-regression policy before C02-P002.",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "F3",
+      "finding": "The decisive systemic gap is policy-to-execution binding: knowledge in Source did not guarantee that bespoke implementation artifacts consumed or machine-enforced that knowledge before handoff.",
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "id": "F4",
+      "finding": "The gap is also an execution-path/ownership gap: bespoke C02-P002 and ASC launchers implemented their own native/Git/transaction plumbing instead of consuming the canonical Standard Delivery Launcher + Kernel path.",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "F5",
+      "finding": "C02-P002 did permanently mature canonical infrastructure in specific areas, especially Git worktree/object identity and ASC history-blob verification.",
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "id": "F6",
+      "finding": "R3 materially improved the closeout implementation model, but most R3-specific assurance is preserved as case implementation/history rather than universally operationalized enforcement.",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "F7",
+      "finding": "The existing Convergence architecture describes the correct meso-orchestration direction but remains DEFINED_NOT_YET_BOUND_TO_NORMAL_EXECUTION_PATH.",
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "id": "F8",
+      "finding": "Artifact handoff requires an explicit HOST_MATERIALIZED state; a download offered in chat may be blocked by browser/security mediation and therefore absent from the execution host.",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "F9",
+      "finding": "Terminal visibility at completion is insufficient for long-running user execution; deterministic stage plus liveness/heartbeat is required so the human can distinguish active work from a stall.",
+      "confidence": "HIGH"
+    },
+    {
+      "id": "F10",
+      "finding": "A build-pass user-facing launcher is not operationally valid until the exact artifact passes the target Windows PowerShell parser. Embedding multi-megabyte opaque payload data inside the script unnecessarily enlarges the parser and delivery surface.",
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "id": "F11",
+      "finding": "Native argument correctness and native process result sensing are separate assurance dimensions. R2F1 passed argv semantics but its PowerShell Start-Process exit-code sensor falsely failed a successful process.",
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "id": "F12",
+      "finding": "Structured validator semantics must not be inferred from serialization formatting. R3 received ASC result=PASS but exact text matching falsely classified it as failure.",
+      "confidence": "VERY_HIGH"
+    },
+    {
+      "id": "F13",
+      "finding": "Corrective revision identity must be bound once or discovered from the sealed artifact. R3F1 failed because runtime self-validation retained a stale literal R3 filename after the corrective rename.",
+      "confidence": "VERY_HIGH"
+    }
+  ],
+  "rejected_hypotheses": [
+    {
+      "hypothesis": "B_ALONE",
+      "reason": "Patch complexity does not explain repeated delivery/runtime defects whose governing prevention rules already existed before the case."
+    },
+    {
+      "hypothesis": "JUST_ADD_MORE_RULES",
+      "reason": "The case demonstrates rule availability without guaranteed consumption; additional declarative policy alone does not close the observed gap."
+    },
+    {
+      "hypothesis": "R3B1_ALREADY_SOLVES_FUTURE_PATCHES_AUTOMATICALLY",
+      "reason": "R3B1 proves a stronger case-specific implementation model, but Convergence is not normally bound and bespoke execution paths remain possible."
+    }
+  ],
+  "next_development_recommendation": {
+    "priority": "NEXT_NATURAL_CEREBRO_DEVELOPMENT_THEME",
+    "name": "POLICY_TO_EXECUTION_AND_CONVERGENCE_ACTIVATION",
+    "recommendation": "Use the completed case to define and then close the gap between locked Cerebro knowledge and mandatory normal-path machine enforcement. Treat activation/binding of existing Convergence architecture and canonical implementation/delivery ownership as the primary direction; do not create a parallel new system.",
+    "why_now": [
+      "The case has direct failure evidence rather than speculative design motivation.",
+      "Existing policy is mature enough that adding more rules has diminishing value without enforcement.",
+      "Convergence architecture already models broadest-safe-family, known-prevention, complete-defect collection, set remediation and local iteration.",
+      "The architecture explicitly records that normal-path binding is still missing.",
+      "Human execution roundtrips are now a measured development cost and not merely a usability preference."
+    ],
+    "not_yet_design_decisions": [
+      "exact component/API shape",
+      "whether a new executable orchestrator is required versus extension of an existing owner",
+      "exact Temporaris runtime implementation",
+      "exact Quality/MCP binding mechanics",
+      "whether evidence collector becomes permanent capability"
+    ]
+  },
+  "case_completion_state": {
+    "analysis_complete": true,
+    "critical_counterargument_pass_complete": true,
+    "ready_for_persistence": true,
+    "persisted_to_cerebro_source": false,
+    "post_analysis_observations_included": true
+  },
+  "post_analysis_observations": [
+    {
+      "id": "POST-CASE-TRANSPORT-001",
+      "classification": "USER_CLIENT_DOWNLOAD_MEDIATION_ARTIFACT_MATERIALIZATION_GAP",
+      "status": "OBSERVED_AND_USER_CONFIRMED_MECHANISM",
+      "statement": "A ChatGPT artifact offered for download is not equivalent to a file physically materialized on the Windows host. Browser/security mediation can block the download until the user explicitly chooses to download the unverified file.",
+      "evidence": [
+        "R1 persistence failed at BUNDLE_DISCOVERY with CASE_FINAL_PERSIST_BUNDLE_NOT_FOUND before Source mutation.",
+        "User reported that some ChatGPT downloads are blocked until Downloads -> file -> 'last ned ubekreftet fil'.",
+        "The behavior is intermittent enough that the user may reasonably believe the artifact was downloaded when it was not."
+      ],
+      "learning": "Model transport as GENERATED -> OFFERED_FOR_DOWNLOAD -> HOST_MATERIALIZED -> HASH_VERIFIED. Do not infer HOST_MATERIALIZED from offering a download link.",
+      "case_failure_count_effect": "EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation"
+    },
+    {
+      "id": "POST-CASE-LIVENESS-001",
+      "classification": "USER_HOST_EXECUTION_LIVENESS_VISIBILITY_GAP",
+      "status": "R1F1_USER_DECLARED_HUNG_AND_IMPLEMENTATION_FAMILY_REJECTED",
+      "statement": "A user-facing patch can preserve terminal visibility yet still provide insufficient liveness information during long silent stages. The user cannot reliably distinguish normal work from a stalled process.",
+      "evidence": [
+        "R1F1 emitted no continuous progress or heartbeat during potentially long candidate/validation operations.",
+        "User observed a terminal that appeared hung and explicitly classified the run as hung.",
+        "Existing locked PowerShell visibility contract preserves terminal SUCCESS/FAIL visibility but does not require continuous stage/liveness signaling."
+      ],
+      "learning": "Every user-facing long-running execution must expose deterministic stage identity plus periodic liveness/elapsed heartbeat, and external child operations should have bounded timeout behavior.",
+      "case_failure_count_effect": "EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation"
+    },
+    {
+      "id": "POST-CASE-CODE-DELIVERY-001",
+      "classification": "USER_FACING_CODE_TARGET_PARSE_ASSURANCE_GAP",
+      "status": "OBSERVED_R2_PRE_EXECUTION_PARSE_FAILURE",
+      "statement": "A generated launcher was marked build-pass without proving that the exact user-facing PowerShell artifact was accepted by the target Windows PowerShell parser before handoff.",
+      "evidence": [
+        "R2 failed in the user's pre-execution ParseFile gate.",
+        "The parser interpreted embedded bundle material as PowerShell tokens and terminated with C02_P002_CASE_FINAL_PERSIST_R2_PARSE_FAILED.",
+        "No R2 Source mutation or commit occurred because the parser gate blocked execution."
+      ],
+      "learning": "Do not equate artifact generation with target parser validity. User-facing code must be small enough to minimize parser surface, must avoid embedding opaque multi-megabyte payloads when a sealed archive can own them, and must pass the target parser gate before execution.",
+      "case_failure_count_effect": "EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation"
+    },
+    {
+      "id": "POST-CASE-NATIVE-PROCESS-001",
+      "classification": "NATIVE_PROCESS_EXIT_CODE_SENSOR_MISCLASSIFICATION",
+      "status": "OBSERVED_R2F1_STAGE1_PRE_MUTATION",
+      "statement": "R2F1 forwarded native arguments correctly and the Python canary produced the exact expected stdout, but the PowerShell Start-Process wrapper observed an empty ExitCode and misclassified the successful child process as failure.",
+      "evidence": [
+        "native-argument-canary stdout was exactly [\"alpha beta\", \"plus+slash/value\", \"C:\\\\path with spaces\\\\item.txt\"].",
+        "failure message reported exit= with no numeric value.",
+        "R2F1 stopped at stage 1 before Source mutation or commit."
+      ],
+      "learning": "A native-process wrapper must treat process completion and numeric exit-code acquisition as one deterministic contract. R3 removes PowerShell Start-Process as the orchestration owner and uses Python subprocess returncode for native process control, heartbeat and timeout.",
+      "case_failure_count_effect": "EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation"
+    },
+    {
+      "id": "POST-CASE-VALIDATOR-RESULT-001",
+      "classification": "STRUCTURED_VALIDATOR_RESULT_TEXT_MATCH_FALSE_NEGATIVE",
+      "status": "OBSERVED_R3_STAGE4_PRE_MUTATION",
+      "statement": "R3 candidate validation received an ASC JSON result whose semantic result field was PASS, but R3 classified it as failure because it searched for exact textual spacing variants instead of parsing the structured JSON result.",
+      "evidence": [
+        "R3 failure receipt contains ASC output with \"result\": \"PASS\" semantically.",
+        "ASC checked 175 active files with no findings.",
+        "R3 stopped in candidate semantic validation before Source mutation or commit."
+      ],
+      "learning": "Structured validator output must be consumed structurally. Parse JSON and inspect the result field; never use formatting-sensitive string matching as the semantic result sensor.",
+      "case_failure_count_effect": "EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation"
+    },
+    {
+      "id": "POST-CASE-IDENTITY-REFERENCE-001",
+      "classification": "CORRECTIVE_BUILD_STALE_INTERNAL_IDENTITY_REFERENCE",
+      "status": "OBSERVED_R3F1_STAGE1_PRE_MUTATION",
+      "statement": "R3F1 renamed the runtime launcher to the R3F1 identity but its stage-1 self-test retained a literal reference to the prior R3 launcher filename, so the corrected artifact failed while trying to validate a file that no longer existed.",
+      "evidence": [
+        "R3F1 outer target parser passed.",
+        "R3F1 stage 1 attempted to parse run/CEREBRO_C02_P002_CASE_FINAL_PERSIST_R3.ps1.",
+        "The actual R3F1 bundle contained run/CEREBRO_C02_P002_CASE_FINAL_PERSIST_R3F1.ps1.",
+        "The run stopped before Source mutation or commit."
+      ],
+      "learning": "Revision identity must not be duplicated as uncontrolled literals across corrective runtime logic. Runtime self-validation should discover actual executable surfaces from the sealed bundle or consume one authoritative manifest binding.",
+      "case_failure_count_effect": "EXCLUDED_FROM_ORIGINAL_17; post-analysis persistence observation"
+    }
+  ],
+  "persistence_attempts": {
+    "R1": {
+      "result": "FAIL",
+      "stage": "BUNDLE_DISCOVERY",
+      "source_mutation": false
+    },
+    "R1F1": {
+      "result": "HUNG",
+      "classification_authority": "USER",
+      "family_effect": "REJECT_R1_FAMILY_NO_R1F2"
+    },
+    "R2": {
+      "result": "FAIL_PRE_EXECUTION",
+      "failure_family": "USER_FACING_CODE_TARGET_PARSE_ASSURANCE_GAP",
+      "source_mutation": false,
+      "commit_created": false,
+      "correction": "R2F1_REMOVE_EMBEDDED_BUNDLE_AND_USE_SINGLE_ZIP_MATERIALIZATION"
+    },
+    "R2F1": {
+      "result": "FAIL_PRE_MUTATION",
+      "failure_family": "NATIVE_PROCESS_EXIT_CODE_SENSOR_MISCLASSIFICATION",
+      "source_mutation": false,
+      "commit_created": false,
+      "family_effect": "R2_FAMILY_REJECTED_NO_R2F2"
+    },
+    "R3": {
+      "result": "FAIL_PRE_MUTATION",
+      "failure_family": "STRUCTURED_VALIDATOR_RESULT_TEXT_MATCH_FALSE_NEGATIVE",
+      "observed_validator_semantics": "ASC_PASS",
+      "source_mutation": false,
+      "commit_created": false,
+      "correction": "R3F1_STRUCTURED_JSON_RESULT_CONSUMPTION"
+    },
+    "R3F1": {
+      "result": "FAIL_PRE_MUTATION",
+      "failure_family": "CORRECTIVE_BUILD_STALE_INTERNAL_IDENTITY_REFERENCE",
+      "source_mutation": false,
+      "commit_created": false,
+      "family_effect": "R3_FAMILY_REJECTED_NO_R3F2"
+    },
+    "R4": {
+      "status": "CLEAN_REBUILD",
+      "runtime_identity_binding": "DISCOVER_ACTUAL_SEALED_RUNTIME_SURFACES",
+      "native_process_owner": "PYTHON_SUBPROCESS"
+    }
+  }
+}
