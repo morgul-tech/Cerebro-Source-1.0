@@ -112,7 +112,56 @@ mcp_extension:
       conversation and Source status when it is material, but it must not negate
       CEREBRO_SOURCE_OPERATIONAL or CONVERSATION_SOURCE_ALIGNMENT.
 
+  - id: MCP-072
+    authority: normative
+    constitutional_article_ref: C-04
+    statement: >
+      The natural-language command boot cerebro must automatically complete the
+      human boot completion surface after successful universal Source boot. No
+      second user command is required to request status, Constitution, architecture,
+      structure or task-routing readiness.
+  - id: MCP-073
+    authority: normative
+    constitutional_article_ref: C-03
+    statement: >
+      The boot completion surface must be derived from the exact freshly pinned
+      Source commit and must confirm overall Source status, every current
+      constitutional article at concise human-summary level, canonical architecture
+      and structure, and task-routing readiness.
+  - id: MCP-074
+    authority: normative
+    constitutional_article_ref: C-03
+    statement: >
+      Constitution confirmation during boot must resolve the canonical
+      mcp/constitution.yaml from the pinned Source commit, cover all current article
+      identifiers and titles, and must not use a stale, partial or parallel
+      constitutional representation.
+  - id: MCP-075
+    authority: normative
+    constitutional_article_ref: C-04
+    statement: >
+      Boot task-routing readiness means Cerebro is prepared to resolve applicable
+      project, refine, change, patch, delivery, validation and other Source contracts
+      automatically when later task context makes them relevant. It does not require
+      eager loading of all semantic rule bodies during boot.
+  - id: MCP-076
+    authority: normative
+    constitutional_article_ref: C-05
+    statement: >
+      The human boot completion surface is additive presentation and routing control.
+      It must not redefine Source authority, existing boot gates, local-machine
+      verification requirements, handboot semantics or the evidence threshold for
+      CEREBRO_SYNC_VERIFIED.
+  - id: MCP-077
+    authority: normative
+    constitutional_article_ref: C-03
+    statement: >
+      WORKING_SOURCE_TARGET_READY on the boot completion surface means that the
+      configured Working Source target is known for later local delivery. It must
+      not be interpreted as local equality, Runtime activation or sync proof.
+
   bindings:
     boot_architecture: standards/boot-critical-path-architecture.yaml
+    boot_completion_surface: standards/boot-critical-path-architecture.yaml#human_boot_completion_surface
     delivery_kernel: standards/delivery-kernel.yaml
     continuation_surface: standards/continuation-surface-system-policy.yaml

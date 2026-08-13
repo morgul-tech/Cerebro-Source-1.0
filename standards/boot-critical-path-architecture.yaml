@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.0"
+  version: "1.1"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -26,6 +26,7 @@ boot_critical_path:
     - establish-Source-operational-state
     - detect-environment-capabilities
     - load-task-relevant-semantics-on-demand
+    - emit-human-boot-completion-surface
 
   conversation_source_alignment:
     result: CONVERSATION_SOURCE_ALIGNMENT
@@ -81,8 +82,123 @@ boot_critical_path:
       blocks_source_boot: false
 
   semantic_loading:
-    boot: BOOT_CRITICAL_IDENTITIES_AND_CONTRACTS_ONLY
+    boot: BOOT_CRITICAL_IDENTITIES_AND_CONTRACTS_PLUS_BOOT_COMPLETION_SUMMARIES
     task_phase: DEMAND_DRIVEN
+    eager_full_rule_loading: false
+
+  human_boot_completion_surface:
+    id: CEREBRO-BOOT-COMPLETION-SURFACE-001
+    invocation: AUTOMATIC_AFTER_SUCCESSFUL_UNIVERSAL_SOURCE_BOOT
+    result: CEREBRO_BOOT_READY
+    additional_user_command_required: false
+    authority: DERIVED_FROM_PINNED_SOURCE
+    purpose: >
+      Complete the human boot experience by confirming current Source status,
+      the complete current Constitution at human-summary level, canonical
+      architecture and structure, and task-routing readiness before normal work.
+
+    presentation:
+      mode: PROGRESSIVE_CONCISE
+      source_contact_update:
+        timing: AFTER_EXACT_COMMIT_PIN_WHEN_RESPONSE_IS_STILL_IN_PROGRESS
+        content: repository-branch-exact-commit
+        duplicate_status_detail: PROHIBITED
+      final_surface:
+        timing: AFTER_BOOT_COMPLETION_ASSERTIONS
+        sections_in_order:
+        - OVERALL_STATUS
+        - CONSTITUTION
+        - ARCHITECTURE_AND_STRUCTURE
+        - TASK_ROUTING_READINESS
+        final_state: READY_FOR_USER_WORK
+
+    overall_status:
+      required:
+      - CEREBRO_SOURCE_ACTIVATED
+      - CEREBRO_SOURCE_OPERATIONAL
+      - CONVERSATION_SOURCE_ALIGNMENT
+      - authoritative-repository
+      - branch
+      - exact-commit
+      working_source_target:
+        human_label: WORKING_SOURCE_TARGET_READY
+        source_ref: standards/runtime/handboot.yaml#surfaces.working_source.default_path
+        meaning: configured-local-target-is-known
+        proves_local_equality: false
+        proves_local_runtime: false
+      strict_sync_claim:
+        label: CEREBRO_SYNC_VERIFIED
+        emit_only_with_fresh_canonical_sync_and-independent-local-equality-evidence: true
+
+    constitution:
+      source_ref: mcp/constitution.yaml
+      required_identity_fields:
+      - constitution.id
+      - constitution.version
+      - constitution.status
+      article_coverage: ALL_CURRENT_ARTICLES
+      per_article_human_confirmation:
+      - id
+      - title
+      - concise-human-meaning-derived-from-human_statement
+      stale_or_partial_article_set: PROHIBITED
+      parallel_constitutional_authority: PROHIBITED
+
+    architecture_and_structure:
+      source_refs:
+      - cerebro.yaml
+      - mcp/manifest.yaml
+      - standards/control-architecture.yaml
+      - standards/system-metamodel.yaml
+      authority_chain:
+      - Cerebro Source 1.0
+      - Constitution
+      - MCP
+      - Standards and normative contracts
+      - Engines and modules
+      - Tooling and Runtime
+      - Evidence, receipts and history
+      required_confirmation:
+      - sole-Source-definitional-authority
+      - Constitution-highest-internal-control-within-Source-bounds
+      - MCP-active-control-owner
+      - Runtime-derived-execution-not-policy-authority
+      - Evidence-proves-state-but-does-not-create-Source-authority
+      - canonical-control-flow-active
+
+    task_routing_readiness:
+      state: TASK_RELEVANT_SEMANTICS_AUTOLOAD_READY
+      principle: ROUTING_READY_NOT_EAGERLY_PRELOADED
+      rule: >
+        After boot, resolve and load the applicable Source contracts automatically
+        from the pinned commit when the user's concrete task makes them relevant,
+        before tool selection, mutation, or material result claims.
+      routing_examples:
+        PROJECT_WORK:
+        - engines/project
+        - applicable-project-standards
+        - relevant-context-and-user-configuration
+        REFINE:
+        - engines/interaction
+        - adaptive-analysis-controls
+        - relevant-user-operating-profile-and-context
+        SOURCE_CHANGE_OR_PATCH:
+        - change-and-control-architecture
+        - delivery-and-validation-contracts
+        - canonical-sync-and-equality-proof
+        - evidence-and-human-handoff-before-completion-claim
+      user_repetition_of_boot_context_required: false
+
+    completion_invariants:
+    - surface-is-additive-and-does-not-redefine-existing-boot-gates
+    - Source-operational-state-is-established-before-human-completion-presentation
+    - local-machine-verification-remains-capability-conditioned
+    - CEREBRO_SYNC_VERIFIED-remains-separately-evidenced
+    - Constitution-summary-is-current-commit-bound
+    - architecture-summary-is-current-commit-bound
+    - task-specific-semantics-remain-demand-driven
+    - boot-does-not-require-project-refine-or-patch-rules-to-be-eagerly-loaded
+    - no-second-user-command-is-required-to-complete-normal-boot
 
   critical_path_invariant: >
     A check may block the user's synchronous boot only when its result can materially
