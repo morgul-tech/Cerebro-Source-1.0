@@ -9,16 +9,59 @@ function New-AscFinding {
     [pscustomobject]@{code=$Code;path=$Path;message=$Message}
 }
 
-function Get-AscGitBlobShaFromFile {
-    param([Parameter(Mandatory)][string]$LiteralPath)
-    $bytes=[IO.File]::ReadAllBytes($LiteralPath)
-    $header=[Text.Encoding]::ASCII.GetBytes(('blob {0}' -f $bytes.Length)+[char]0)
-    $all=[byte[]]::new($header.Length+$bytes.Length)
-    [Array]::Copy($header,0,$all,0,$header.Length)
-    [Array]::Copy($bytes,0,$all,$header.Length,$bytes.Length)
-    $sha=[Security.Cryptography.SHA1]::Create()
-    try {return ([BitConverter]::ToString($sha.ComputeHash($all))).Replace('-','').ToLowerInvariant()}
-    finally {$sha.Dispose()}
+function Get-AscGitCanonicalBlobShaFromFile {
+    param(
+        [Parameter(Mandatory)][string]$Root,
+        [Parameter(Mandatory)][string]$RelativePath,
+        [Parameter(Mandatory)][string]$LiteralPath
+    )
+
+    if(-not(Test-Path -LiteralPath $LiteralPath -PathType Leaf)){
+        throw ('ASC_CANONICAL_BLOB_SOURCE_MISSING:{0}' -f $RelativePath)
+    }
+
+    $git=Get-Command git.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    if($null -eq $git){
+        $git=Get-Command git -ErrorAction SilentlyContinue | Select-Object -First 1
+    }
+    if($null -eq $git){throw 'ASC_GIT_NOT_FOUND_FOR_CANONICAL_BLOB'}
+
+    $stdoutFile=[IO.Path]::GetTempFileName()
+    $stderrFile=[IO.Path]::GetTempFileName()
+    $previous=$ErrorActionPreference
+    $exitCode=$null
+
+    try {
+        $ErrorActionPreference='Continue'
+        Push-Location $Root
+        try {
+            $normalized=$RelativePath.Replace('\','/')
+            & ([string]$git.Source) -C $Root hash-object ('--path={0}' -f $normalized) -- $LiteralPath 1> $stdoutFile 2> $stderrFile
+            $exitCode=$LASTEXITCODE
+        }
+        finally {
+            Pop-Location
+        }
+    }
+    finally {
+        $ErrorActionPreference=$previous
+    }
+
+    try {
+        $stdout=[IO.File]::ReadAllText($stdoutFile).Trim().ToLowerInvariant()
+        $stderr=[IO.File]::ReadAllText($stderrFile).Trim()
+    }
+    finally {
+        Remove-Item -LiteralPath $stdoutFile,$stderrFile -Force -ErrorAction SilentlyContinue
+    }
+
+    if($exitCode -ne 0){
+        throw ('ASC_CANONICAL_BLOB_HASH_FAILED:{0}:{1}:{2}' -f $RelativePath,$exitCode,$stderr)
+    }
+    if([string]::IsNullOrWhiteSpace($stdout)){
+        throw ('ASC_CANONICAL_BLOB_HASH_EMPTY:{0}' -f $RelativePath)
+    }
+    return $stdout
 }
 
 function Invoke-CerebroActiveSourceClosure {
@@ -141,7 +184,7 @@ function Invoke-CerebroActiveSourceClosure {
                 if(-not(Test-Path -LiteralPath $historyFull -PathType Leaf)){
                     $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_HISTORY_FILE_MISSING' -Path $history -Message 'Historical byte-preserving copy is missing.')
                 }
-                elseif((Get-AscGitBlobShaFromFile -LiteralPath $historyFull) -ne [string]$entry.git_blob_sha){
+                elseif((Get-AscGitCanonicalBlobShaFromFile -Root $rootPath -RelativePath $history -LiteralPath $historyFull) -ne ([string]$entry.git_blob_sha).ToLowerInvariant()){
                     $findings += (New-AscFinding -Code 'ASC_DUALITYARC_WAVE01_HISTORY_BLOB_MISMATCH' -Path $history -Message 'Historical copy does not equal the recorded retired baseline blob.')
                 }
             }

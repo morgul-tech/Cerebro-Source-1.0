@@ -1,0 +1,91 @@
+schema: cerebro-governance-decision-record/v1
+decision:
+  id: C02-P002-ASC-GIT-REPRESENTATION-FIX-001
+  date: '2026-08-13'
+  status: VERIFIED_CANDIDATE
+  decision_owner: ADMIN
+  source_basis_commit: c77825d1ea26636e6e4c01d7b88efafd595131ee
+  human_name: Active Source Closure Git representation-boundary correction
+  problem:
+    trigger: C02-P002-CLOSEOUT-STANDARD-R3
+    stage: CANDIDATE_VALIDATION
+    finding_count: 4
+    finding_code: ASC_DUALITYARC_WAVE01_HISTORY_BLOB_MISMATCH
+    closeout_source_mutation: false
+    closeout_commit_created: false
+  root_cause:
+    family: GIT_REPRESENTATION_BOUNDARY
+    validator_defect: ASC_HASHED_PHYSICAL_WORKTREE_BYTES_AS_IF_THEY_WERE_GIT_OBJECT_BYTES
+    correct_identity: GIT_HASH_OBJECT_PATH_UNDER_ACTIVE_REPOSITORY_FILTERS
+    existing_wisdom_ref: CTX-WISDOM-GIT-WORKTREE-OBJECT-REPRESENTATION-20260813-001
+  authoritative_proof:
+    retirement_evidence: history/DUALITYARC_WAVE_01_RETIREMENT.json
+    recorded_and_current_git_tree_blobs:
+      history/mcp/source-mapping.yaml: dd5747eba13b0bb88ca6db371acfdd0cef9aee06
+      history/mcp/physical-target-resolution.yaml: 7a99eee04bff73301112d8225ba65c08963e89aa
+      history/FILE_INVENTORY_v1.0.json: 9609fc6437e50b9f19b354fbb8e468515bddd2dd
+      history/SOURCE_AUDIT_v1.0.json: 222228338ef60d1431b397674881bcd3cd583414
+    repository_history_blobs_match_recorded_retired_baselines: true
+  correction:
+    validator: tooling/validator/cerebro_active_source_closure.ps1
+    standard: standards/active-source-closure.yaml
+    history_blob_identity_representation: GIT_CANONICAL_OBJECT
+    regression: RAW_VS_CANONICAL_FILTER_BOUNDARY_PLUS_FULL_ASC_PASS
+  delivery_attempts:
+    R1:
+      result: FAILED_PRE_MUTATION
+      family: POWERSHELL_AUTOMATIC_ARGS_COLLISION
+      source_mutation: false
+      commit_created: false
+      rollback: NOT_REQUIRED
+      signal: git usage output / See 'git help git'
+    R1F1:
+      status: CORRECTIVE_CANDIDATE
+      correction:
+      - RENAME_NATIVE_WRAPPER_ARGS_PARAMETER_TO_ARGUMENTLIST
+      - RENAME_GIT_WRAPPER_ARGS_PARAMETER_TO_ARGUMENTLIST
+      - ADD_NATIVE_ARGUMENT_FORWARDING_CANARY
+      - ADD_GIT_WRAPPER_FORWARDING_CANARY
+      - ADD_PYTHON_ARGV_FORWARDING_CANARY
+  rejected_delivery_implementation_family:
+    identity: ASC-GIT-REPRESENTATION-FIX-R1
+    attempts:
+    - id: R1
+      result: FAILED_PRE_MUTATION
+      family: POWERSHELL_AUTOMATIC_ARGS_COLLISION
+      source_mutation: false
+      commit_created: false
+    - id: R1F1
+      result: FAILED_PRE_MUTATION
+      family: WINDOWS_POWERSHELL_NATIVE_INLINE_CODE_QUOTING
+      source_mutation: false
+      commit_created: false
+      signal: python -c code lost embedded double quotes
+    disposition: REJECTED_AFTER_REPEATED_FAILURE_THRESHOLD
+    incremental_r1f2: PROHIBITED
+  r2_rebuild:
+    identity: ASC-GIT-REPRESENTATION-FIX-R2
+    source_basis: c77825d1ea26636e6e4c01d7b88efafd595131ee
+    native_transport:
+      parameter_name: ArgumentList
+      inline_python_code_arguments: PROHIBITED
+      python_canary: TEMP_SCRIPT_FILE
+      space_argument_canary: true
+      git_wrapper_canary: true
+    asc_representation_fix: UNCHANGED_CANONICAL_GIT_HASH_OBJECT_PATH
+  r2_attempt:
+    id: ASC-GIT-REPRESENTATION-FIX-R2
+    result: FAILED_PRE_MUTATION
+    stage: TRANSACTION_FIXTURE
+    family: GIT_PUSH_DESTINATION_REF_NOT_FULLY_QUALIFIED
+    source_mutation: false
+    commit_created: false
+    rollback: NOT_REQUIRED
+  r2f1_correction:
+    identity: ASC-GIT-REPRESENTATION-FIX-R2F1
+    correction:
+    - QUALIFY_FIXTURE_PUSH_DESTINATION_AS_REFS_HEADS_MAIN
+    - QUALIFY_LIVE_PUSH_DESTINATION_AS_REFS_HEADS_MAIN
+    - REQUIRE_ALL_PUSH_DESTINATIONS_FULLY_QUALIFIED
+    - DETACHED_HEAD_TRANSACTION_FIXTURE_PRESERVED
+    - REMOTE_EQUALITY_AFTER_FIXTURE_PUSH_REQUIRED

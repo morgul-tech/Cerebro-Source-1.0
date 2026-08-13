@@ -2,7 +2,7 @@ schema: cerebro-active-source-closure/v0.3
 
 active_source_closure:
   id: CEREBRO-ACTIVE-SOURCE-CLOSURE-001
-  version: "0.3"
+  version: "0.4"
   status: ACTIVE
   introduced_by: PATCH-005
   kind: STANDARD
@@ -110,6 +110,9 @@ active_source_closure:
       - history/FILE_INVENTORY_v1.0.json
       - history/SOURCE_AUDIT_v1.0.json
     history_blob_identity_must_equal_retired_baseline: true
+    history_blob_identity_representation: GIT_CANONICAL_OBJECT
+    working_tree_filter_boundary: GIT_HASH_OBJECT_PATH
+    raw_worktree_bytes_are_not_git_blob_identity: true
     stored_duplicate_component_topology: PROHIBITED
     failure_effect: BLOCK_BEFORE_CANONICAL_SYNC
 
@@ -122,3 +125,4 @@ active_source_closure:
     - deterministic-checks-do-not-claim-semantic-fuzzy-coherence
     - semantic-coherence-remains-Quality-and-Decision-Assurance-responsibility
     - retired-active-paths-are-physically-absent-not-hidden-by-compatibility-stubs
+    - history-blob-proof-respects-git-clean-filter-representation-boundary
