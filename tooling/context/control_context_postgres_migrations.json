@@ -1,0 +1,13 @@
+{
+  "schema": "cerebro-control-context-postgres-migrations/v1",
+  "backend": "POSTGRESQL",
+  "runtime_role_may_apply_migrations": false,
+  "migrations": [
+    {
+      "migration_id": "0001-control-context-state-service",
+      "schema_version": "1.0.0-candidate",
+      "path": "control_context_state_postgres.sql",
+      "checksum_sha256": "6312ab6d5fae58cfa52bfb1d13b1d361ebe73e3a4b37bb34f4875e480afc420d"
+    }
+  ]
+}

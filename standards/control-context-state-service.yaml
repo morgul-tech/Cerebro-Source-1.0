@@ -1,0 +1,399 @@
+schema: cerebro-control-context-state-service/v1
+
+control_context_state_service:
+  id: CEREBRO-CONTROL-CONTEXT-STATE-SERVICE-001
+  version: "1.5.0"
+  status: CANDIDATE_IMPLEMENTATION
+  kind: CONTRACT
+  definitional_authority: Cerebro Source 1.0
+  control_authority: MCP
+  semantic_state_owner: context
+  operational_steward: tooling.context
+
+  purpose: >
+    Provide one private, durable and transactional state port for project control
+    across Cerebro-enabled conversations and local runtimes without using Git,
+    conversation memory or a local disk as the universal live-state authority.
+
+  authority_classification:
+    live_state_scope: RUNTIME_DERIVED
+    live_state_role: GOVERNING_CURRENT_STATE
+    live_state_is_source_authority: false
+    service_is_control_owner: false
+    service_may_define_project_semantics: false
+    source_contracts_define_semantics: true
+
+  universal_scope:
+    meaning: SAME_AUTHENTICATED_STATE_PORT_FOR_ALL_CEREBRO_ENABLED_CONSUMERS
+    does_not_mean: SOURCE_CAN_INTERCEPT_AN_UNBOUND_HOST_CONVERSATION
+    supported_consumers:
+      - CHATGPT_REMOTE_MCP
+      - LOCAL_CEREBRO_RUNTIME
+      - FUTURE_APPROVED_MCP_CONSUMER
+    host_binding_required_for_enforcement_claim: true
+
+  storage:
+    class: PRIVATE_TRANSACTIONAL_NON_GIT_STORE
+    reference_data_model: tooling/context/control_context_state_postgres.sql
+    production_directed_adapter_ref: tooling/context/control_context_state_postgres.py
+    migration_manifest_ref: tooling/context/control_context_postgres_migrations.json
+    state_commit_receipt_schema_ref: mcp/state-service-commit-receipt.schema.json
+    owner_state_commit_receipt_schema_ref: mcp/owner-state-commit-receipt.schema.json
+    required_semantics:
+      - atomic-multi-record-transaction
+      - optimistic-compare-and-swap
+      - append-only-transition-ledger
+      - idempotent-event-completion
+      - monotonic-aggregate-revision
+      - schema-versioned-migrations
+      - compensating-transition-instead-of-history-rewrite
+      - immutable-revision-and-receipt-ledgers
+      - exact-bootstrap-idempotency-replay
+    provider_neutral: true
+    provider_selection_is_deployment_decision: true
+
+  authorization:
+    authentication_required: true
+    tenant_and_workspace_isolation_required: true
+    minimum_scopes:
+      read: project_state:read
+      transition: project_state:transition
+    repository_scope:
+      default: PROHIBITED
+      included_in_service_credentials: false
+      exposed_by_service_tools: false
+      fresh_admin_authorization_required_for_separate_source_write: true
+      authorization_carries_between_conversations: false
+    destructive_delete:
+      normal_transition: PROHIBITED
+      lifecycle_model: TOMBSTONE_OR_COMPENSATING_TRANSITION
+
+  state_port:
+    implementation_ref: tooling/context/control_context_state_port.py
+    PostgreSQL_implementation_ref: tooling/context/control_context_state_postgres.py
+    domain_ref: tooling/context/control_context_registry.py
+    aggregate_schema_ref: engines/context/control-context-state.schema.json
+    transport_neutral_MCP_adapter_ref: mcp/control_context_tools.py
+    production_backend_deployed: false
+    live_PostgreSQL_migration_rehearsed: false
+    local_contract_validation_ref: tooling/validator/control_context_postgres_validation.py
+    local_contract_evidence_is_live_database_proof: false
+    direct_external_consumer_access: PROHIBITED
+    authorized_callers:
+      - authenticated-MCP-tool-adapter
+      - explicitly-bound-local-Cerebro-runtime-adapter
+    operations:
+      read_project_control_state:
+        mutation: false
+        required_scope: project_state:read
+      begin_project_control_event:
+        mutation: EVENT_LEASE_ONLY
+        required_scope: project_state:transition
+        output: CONTROL_SESSION_BINDING_AND_PROJECT_SNAPSHOT
+      complete_project_control_event:
+        mutation: ATOMIC_CANDIDATE_COMMIT
+        required_scope: project_state:transition
+        precondition: EXPECTED_PROJECT_AND_SESSION_REVISIONS_AND_FINGERPRINTS
+        output: TRANSITION_RECEIPT_AND_COMMITTED_SNAPSHOT
+      create_project_control_instance:
+        mutation: ATOMIC_PROJECT_AND_ROOT_CREATION
+        required_scope: project_state:transition
+        normal_repository_permission: NONE
+      set_default_project_control_instance:
+        mutation: PRINCIPAL_WORKSPACE_BINDING_ONLY
+        required_scope: project_state:transition
+
+  context_owner_effect_persistence:
+    semantic_consumer_ref: tooling/context/control_owner_effect.py
+    semantic_output_before_commit: CANDIDATE_NOT_CURRENT
+    durable_commit_operation: complete_project_control_event
+    durable_evidence_source: STATE_SERVICE_COMMIT_RECEIPT
+    commit_receipt_schema_ref: mcp/state-service-commit-receipt.schema.json
+    adapter_ref: tooling/context/control_context_owner_persistence.py
+    validator_ref: tooling/validator/control_context_owner_persistence_validation.py
+    owner_receipt_schema_ref: mcp/owner-effect-receipt.schema.json
+    persistence_verification_schema_ref: mcp/owner-state-persistence-verification.schema.json
+    current_PASS_requires:
+      - exact-owner-effect-receipt-binding
+      - exact-output-state-fingerprint-binding
+      - successful-State-Service-commit
+      - exact-transition-directive-fingerprint-binding
+      - exact-precommit-owner-effect-candidate-binding
+      - trusted-injected-verifier-PASS
+    domain-transition-receipt-without-State-Service-commit-is-durable-proof: false
+
+  project_quality_convergence_owner_persistence:
+    infrastructure_ref: tooling/owner_state/owner_state_persistence.py
+    commit_receipt_schema_ref: mcp/owner-state-commit-receipt.schema.json
+    semantic_authority_remains_each_owner: true
+    supported_owners: [project, quality, convergence]
+    context_uses_this_generic_port: false
+    mechanics:
+      - owner-specific-complete-state-validation
+      - monotonic-owner-revision
+      - compare-and-swap-against-current-head
+      - exact-idempotency-replay
+      - immutable-revision-ledger
+      - immutable-commit-receipt-ledger
+      - return-only-after-database-commit
+    automatic_cross_owner_atomic_merge: PROHIBITED
+    normal_order: [project, quality, convergence, context]
+    local_contract_validator_ref: tooling/validator/owner_state_persistence_validation.py
+    live_backend_proven: false
+
+  normal_host_binding:
+    implementation_ref: mcp/control_resolution_host.py
+    validator_ref: tooling/validator/control_resolution_host_validation.py
+    canonical_resolver_injection_ref: mcp/control_resolution.py
+    trusted_dependencies_are_constructor_bound:
+      - owner-persistence-verifier
+      - runtime-capability-resolver
+      - owner-executors
+    event_payload_may_inject_trusted_dependencies: false
+    re_resolve_after_each_owner_commit: true
+    local_harness_contract_proven: true
+    remote_host_activation_proven: false
+
+  MCP_tool_boundary:
+    identity_source: VERIFIED_OAUTH_CONTEXT_NOT_TOOL_ARGUMENTS
+    host_session_source: REQUEST_META_OPENAI_SESSION_OR_APPROVED_LOCAL_EQUIVALENT
+    subject_metadata_role: CORRELATION_ONLY_NOT_AUTHORIZATION
+    automatic_session_binding_on_begin: true
+    identity_override_arguments: PROHIBITED
+    mutating_semantic_tools_require_control_resolution_attestation: true
+    attestation:
+      schema: cerebro-mcp-control-resolution-attestation/v1
+      schema_ref: mcp/control-resolution-attestation.schema.json
+      binds:
+        - verified-tenant-workspace-principal-consumer
+        - stable-control-session
+        - operation
+        - exact-payload
+      self_asserted_authority_field_is_proof: false
+      production_key_storage: EXTERNAL_SECRET_MANAGER_OR_HSM
+      hardcoded_source_key: PROHIBITED
+      reference_test_algorithm: HMAC-SHA256
+    semantic_mutations_requiring_attestation:
+      - create_project_control_instance
+      - complete_project_control_event
+      - set_default_project_control_instance
+    context_owner_effect_candidate:
+      input_role: PRECOMMIT_NONCURRENT_BINDING
+      exact_candidate_ref_and_fingerprint_bound_into_State_Service_commit: true
+      candidate_alone_is_durable_proof: false
+    exposed_repository_tools: NONE
+    annotations:
+      hard_delete_destructive_hint: false
+      state_tools_open_world_hint: false
+    adapter_selftest_ref: tooling/validator/control_context_tools_validation.py
+
+  remote_MCP_service_boundary:
+    implementation_ref: mcp/control_context_remote_service.py
+    official_MCP_SDK_binding_ref: mcp/control_context_mcp_sdk.py
+    official_MCP_SDK_requirements_ref: mcp/control-context-mcp-sdk-requirements.txt
+    configuration_schema_ref: mcp/control-context-remote-service-config.schema.json
+    provider_neutral_runtime_implementation_ref: mcp/control_context_remote_runtime.py
+    provider_neutral_runtime_configuration_schema_ref: mcp/control-context-remote-runtime-config.schema.json
+    validator_ref: tooling/validator/control_context_remote_service_validation.py
+    official_MCP_SDK_validator_ref: tooling/validator/control_context_mcp_sdk_validation.py
+    provider_neutral_runtime_validator_ref: tooling/validator/control_context_remote_runtime_validation.py
+    transport: STREAMABLE_HTTP
+    stable_path: /mcp
+    protected_resource_metadata_path: /.well-known/oauth-protected-resource
+    health_path: /healthz
+    official_MCP_SDK_transport_required_for_deployment: true
+    official_MCP_SDK_binding_implemented: true
+    official_MCP_SDK_validated_version: 2.0.0
+    official_MCP_SDK_transport_bound: true
+    local_official_MCP_SDK_protocol_proven: true
+    provider_neutral_runtime_assembly_implemented: true
+    local_runtime_assembly_proven: true
+    provider_neutral_runtime_assembly:
+      state_backend: POSTGRESQL
+      state_port_and_transport_composed: true
+      external_token_verifier_required: true
+      external_attestation_verifier_required: true
+      public_configuration_contains_secrets: false
+      runtime_applies_migrations: false
+      readiness_requires_exact_schema_relations: true
+      readiness_requires_exact_migration_ledger: true
+      readiness_is_read_only_and_fail_closed: true
+      opens_listener_or_deploys_itself: false
+    transport_session_mode: STATELESS_HTTP
+    durable_continuity_owner: STATE_SERVICE_NOT_TRANSPORT_PROCESS
+    SDK_global_auth_middleware: NOT_USED_BECAUSE_TOOL_SURFACE_USES_MIXED_AUTHENTICATION
+    private_tool_authentication_owner: PROVIDER_NEUTRAL_REMOTE_SERVICE_BOUNDARY
+    OpenAI_securitySchemes_wire_adapter: EXACT_TOP_LEVEL_MIRROR_OF_META
+    DNS_rebinding_protection: REQUIRED_EXACT_HOST_ALLOWLIST
+    default_max_request_body_bytes: 1048576
+    provider_neutral_authentication_contract: true
+    identity_provider_selected: false
+    deployment_provider_selected: false
+    deployed: false
+    local_authentication_and_service_contract_proven: true
+    local_contract_evidence_is_remote_activation: false
+    authentication:
+      protocol: OAuth-2.1
+      authorization_code_with_PKCE_S256: AUTHORIZATION_SERVER_REQUIREMENT
+      protected_resource_metadata: REQUIRED
+      authorization_server_discovery: REQUIRED
+      resource_parameter_preserved: REQUIRED
+      access_token_transport: BEARER_HEADER
+      signature_verifier: CONSTRUCTOR_BOUND_PROVIDER_ADAPTER
+      verifier_from_tool_payload: PROHIBITED
+      per_request_resource_server_checks:
+        - signature
+        - issuer
+        - audience
+        - expiration
+        - not-before-when-present
+        - required-scope
+        - tenant-workspace-principal-claims
+      tool_level_linking_challenge:
+        metadata_key: mcp/www_authenticate
+        requires_securitySchemes_and_runtime_challenge: true
+    public_without_token:
+      - initialize-and-server-descriptor-through-SDK-binding
+      - tools-list-with-explicit-per-tool-security-schemes
+      - protected-resource-metadata
+      - minimal-readiness
+    private_tools: ALL_PROJECT_CONTROL_STATE_TOOLS
+    secrets_in_Source: PROHIBITED
+    repository_credentials: NONE
+    local_validation_scope:
+      - metadata-and-canonical-HTTPS-configuration
+      - per-tool-security-schemes
+      - token-verifier-constructor-binding
+      - issuer-audience-time-scope-and-identity-claim-enforcement
+      - OAuth-linking-challenge
+      - request-metadata-authority-filtering
+      - nonleaking-readiness-and-authentication-errors
+      - official-SDK-streamable-HTTP-initialize-list-and-call
+      - exact-top-level-and-meta-security-scheme-parity
+      - transport-header-and-openai-request-meta-propagation
+      - duplicate-authorization-header-rejection
+      - stateless-transport-with-durable-control-session-correlation
+      - DNS-rebinding-and-request-body-limit-canaries
+      - provider-neutral-PostgreSQL-runtime-composition
+      - exact-schema-and-migration-ledger-readiness
+      - full-create-begin-complete-idempotency-and-reconnect-protocol-lifecycle
+    not_proven_locally:
+      - remote-network-and-ChatGPT-host-interoperability
+      - live-authorization-server-discovery-and-PKCE
+      - live-JWKS-signature-verification
+      - live-PostgreSQL-connectivity
+      - remote-ChatGPT-plugin-binding
+
+  consumer_identity:
+    authenticated_principal_source: VERIFIED_OAUTH_TOKEN
+    ChatGPT_session_correlation: _meta[openai/session]
+    ChatGPT_subject_correlation: _meta[openai/subject]
+    correlation_metadata_is_authorization: false
+    missing_stable_session_ref_effect: BLOCK_SESSION_BOUND_OPERATION_OR_REQUIRE_EXPLICIT_BINDING
+    local_consumer_requirement: STABLE_LOCALLY_GENERATED_SESSION_REF
+    database_defense_in_depth:
+      row_level_security: REQUIRED
+      transaction_local_identity_from_verified_token: REQUIRED
+      service_role_owns_tables_or_has_BYPASSRLS: PROHIBITED
+
+  focus_scope:
+    project_tree: SHARED_PROJECT_STATE
+    principal_default_project: PRINCIPAL_WORKSPACE_SCOPED
+    active_project_and_context: CONTROL_SESSION_SCOPED
+    continuation_binding: CONTROL_SESSION_SCOPED
+    one_global_active_context_for_all_conversations: PROHIBITED
+    new_session_default:
+      source: project_instance.default_context_ref
+      role: EXPLICIT_BOOTSTRAP_DEFAULT_NOT_GLOBAL_ACTIVE_FOCUS
+
+  event_protocol:
+    ordered:
+      - AUTHENTICATE_CONSUMER
+      - RESOLVE_ACTIVE_PROJECT
+      - RESOLVE_CONTROL_SESSION_BINDING
+      - BEGIN_EVENT
+      - LOAD_AND_VALIDATE_BINDING
+      - INTERPRET_CURRENT_EVENT
+      - CANONICAL_MCP_CONTROL_RESOLUTION
+      - EXECUTE_AUTHORIZED_MACHINE_WORK
+      - COMPLETE_EVENT_ATOMICALLY
+      - VERIFY_COMMITTED_STATE_EXACTLY_MATCHES_BOUND_PREDICTION
+      - ACTIVATE_OR_DERIVE_HUMAN_SURFACE_FROM_COMMITTED_STATE
+      - VALIDATE_RESPONSE_HANDOFF_WHEN_HOST_SUPPORTS_GATE
+    substantive_project_answer_before_valid_binding: PROHIBITED_IN_BOUND_CONSUMER
+    generic_fallback_while_claiming_project_control: PROHIBITED
+    precomputed_human_navigation_projection:
+      candidate_schema_ref: mcp/context-navigation-options-candidate.schema.json
+      renderable_before_successful_completion: false
+      exact_commit_match_required:
+        - transition-receipt-id
+        - transition-receipt-fingerprint
+        - project-revision
+        - project-fingerprint
+        - session-revision
+        - session-fingerprint
+      mismatch_effect: DISCARD_RELOAD_AND_RERESOLVE
+      mismatch_does_not_rollback_valid_state_commit: true
+    retries:
+      exact_project_bootstrap_retry_returns_original_result: true
+      project_bootstrap_same_event_with_different_request: CONFLICT
+      same_idempotency_key_returns_original_receipt: true
+      same_key_with_different_begin_request: CONFLICT
+      completed_event_with_different_directive: CONFLICT
+      last_write_wins: PROHIBITED
+      concurrent_revision_conflict_effect: RELOAD_AND_RERESOLVE
+      focus_only_change_in_other_session_creates_project_conflict: false
+
+  availability_and_recovery:
+    state_change_during_service_outage: FAIL_CLOSED
+    offline_multi_writer: PROHIBITED_V1
+    local_mirror:
+      target: D:\Cerebro\Run\State
+      role: SIGNED_READ_CACHE_DIAGNOSTIC_AND_RECOVERY_INPUT
+      canonical_writer: false
+      may_override_newer_remote_revision: false
+    incomplete_event_lease:
+      prior_committed_continuation_survives: true
+      recovery: EXPIRE_OR_RESUME_WITHOUT_ERASING_COMMITTED_STATE
+
+  activation_states:
+    - PROJECT_CONTROL_STATE_AVAILABLE
+    - PROJECT_CONTROL_CONSUMER_BOUND
+    - PROJECT_CONTROL_ENFORCED
+  activation_rules:
+    PROJECT_CONTROL_STATE_AVAILABLE_requires:
+      - authenticated-service-probe
+      - compatible-schema
+      - valid-current-snapshot
+    PROJECT_CONTROL_CONSUMER_BOUND_requires:
+      - normal-begin-event-consumer-proof
+      - normal-complete-event-consumer-proof
+    PROJECT_CONTROL_ENFORCED_requires:
+      - PROJECT_CONTROL_STATE_AVAILABLE
+      - PROJECT_CONTROL_CONSUMER_BOUND
+      - final-handoff-gate-proof
+    source-declaration-alone-proves-operational-activation: false
+    transport-neutral-tool-adapter-alone-proves-host-binding: false
+    local-remote-service-contract-alone-proves-deployment: false
+
+  invariants:
+    - LIVE_STATE_IS_NOT_SOURCE_AUTHORITY
+    - NORMAL_PROJECT_CONTROL_REQUIRES_NO_REPOSITORY_WRITE
+    - STATE_SERVICE_HAS_NO_REPOSITORY_CREDENTIAL
+    - CONTEXT_REMAINS_SEMANTIC_STATE_OWNER
+    - MCP_REMAINS_SINGLE_FINAL_CONTROL_OWNER
+    - CONCURRENT_WRITERS_CANNOT_SILENTLY_OVERWRITE
+    - ONE_SESSION_CANNOT_SILENTLY_MOVE_ANOTHER_SESSIONS_ACTIVE_CONTEXT
+    - DUPLICATE_EVENTS_CANNOT_DUPLICATE_TRANSITIONS
+    - PRECOMPUTED_HNS_CANNOT_RENDER_BEFORE_EXACT_COMMIT_MATCH
+    - TOOL_ARGUMENT_CANNOT_SELF_ASSERT_MCP_CONTROL_AUTHORITY
+    - UNBOUND_HOST_CANNOT_CLAIM_PROJECT_CONTROL_ENFORCED
+    - OUTAGE_CANNOT_FALL_BACK_TO_GENERIC_PROJECT_OPERATION
+    - DIRECT_STATE_PORT_ACCESS_CANNOT_BYPASS_MCP_AUTHORIZATION
+    - DOMAIN_TRANSITION_CALCULATION_ALONE_CANNOT_CLAIM_DURABLE_CONTEXT_STATE
+    - STATE_SERVICE_COMMIT_RECEIPT_BINDS_EXACT_DIRECTIVE_AND_OWNER_CANDIDATE
+    - OWNER_STATE_PASS_REQUIRES_DURABLE_COMMIT_AND_TRUSTED_VERIFIER
+    - RUNTIME_CAPABILITY_AND_VERIFIER_CANNOT_COME_FROM_EVENT_PAYLOAD
+    - OAUTH_TOKEN_VERIFIER_CANNOT_COME_FROM_TOOL_OR_REQUEST_PAYLOAD
+    - EVERY_PRIVATE_REMOTE_TOOL_DECLARES_AND_ENFORCES_ITS_MINIMUM_SCOPE
+    - LOCAL_AUTH_SERVICE_PROOF_CANNOT_CLAIM_REMOTE_MCP_ACTIVATION

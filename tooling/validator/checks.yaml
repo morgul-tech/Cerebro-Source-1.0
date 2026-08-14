@@ -1665,3 +1665,308 @@ c02_p001_canonical_foundation:
     - availability-does-not-create-authorization
     - profile-drop-is-blocked-before-mutation
     - completion-without-source-equality-is-blocked
+
+total_mcp_revision_control_context_domain:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/control-context-hierarchy.yaml
+    - standards/control-context-state-service.yaml
+  validator: tooling/validator/control_context_validation.py
+  required_files:
+    - engines/context/control-context-state.schema.json
+    - mcp/context-navigation-options.schema.json
+    - mcp/context-navigation-options-candidate.schema.json
+    - engines/presentation/human-navigation-surface-candidate.schema.json
+    - tooling/context/control_context_registry.py
+    - tooling/context/control_context_state_port.py
+    - tooling/context/control_context_state_postgres.sql
+    - tooling/validator/control_context_scenarios.json
+  invariants:
+    - exactly-one-root-and-acyclic-parent-links
+    - shared-project-tree-with-session-scoped-focus-and-continuation
+    - no-branch-loss-or-silent-parent-redefinition
+    - return-requires-current-child-basis-completion-proof-and-clean-descendants
+    - join-disposition-requires-current-dependent-owner-state
+    - complete-candidate-CAS-before-atomic-commit
+    - transition-receipt-is-effect-and-fingerprint-bound
+    - repository-permission-is-not-required-for-normal-state-transition
+  required_canaries:
+    - deep-nesting-uses-one-parent-link-algorithm
+    - equivalent-fork-without-material-delta-is-rejected-atomically
+    - active-session-context-cannot-point-to-returned-context
+    - one-session-focus-change-does-not-move-another-session
+    - concurrent-project-writer-conflicts-and-reloads
+    - idempotency-replay-cannot-hide-different-request
+    - state-service-outage-fails-closed
+  prohibited:
+    - live-state-registry-in-Source
+    - one-global-active-context-across-conversations
+    - Git-or-local-D-drive-as-universal-live-state-authority
+
+total_mcp_revision_control_context_MCP_tools:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/control-context-state-service.yaml
+  implementation: mcp/control_context_tools.py
+  validator: tooling/validator/control_context_tools_validation.py
+  attestation_schema_ref: mcp/control-resolution-attestation.schema.json
+  invariants:
+    - identity-is-derived-from-verified-OAuth-context-not-tool-arguments
+    - openai-session-is-correlation-for-session-scope
+    - openai-subject-is-not-authorization
+    - exposed-state-tools-have-no-repository-mutation-capability
+    - begin-event-binds-session-and-returns-valid-control-envelope
+    - complete-event-revalidates-and-CAS-commits-one-directive
+    - semantic-state-mutation-requires-identity-and-payload-bound-MCP-attestation
+    - self-asserted-MCP-authority-field-is-not-proof
+    - local-tool-adapter-does-not-prove-remote-host-activation
+  required_canaries:
+    - identity-override-arguments-are-rejected
+    - missing-session-metadata-is-rejected
+    - unverified-token-context-is-rejected
+    - unsigned-or-tampered-state-mutation-is-rejected-before-commit
+    - tenant-boundary-does-not-leak-state
+    - repository-scope-is-ignored-by-state-tool-surface
+    - unbound-host-cannot-claim-PROJECT_CONTROL_ENFORCED
+
+total_mcp_revision_remote_MCP_service_boundary:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/control-context-state-service.yaml
+  implementation: mcp/control_context_remote_service.py
+  configuration_schema_ref: mcp/control-context-remote-service-config.schema.json
+  validator: tooling/validator/control_context_remote_service_validation.py
+  invariants:
+    - stable-HTTPS-resource-and-streamable-HTTP-MCP-path
+    - OAuth-protected-resource-metadata-advertises-exact-resource-issuer-and-scopes
+    - every-private-tool-declares-and-enforces-its-minimum-OAuth-scope
+    - access-token-signature-verifier-is-constructor-bound
+    - issuer-audience-expiry-not-before-scope-and-identity-claims-are-enforced
+    - tenant-workspace-principal-derive-only-from-verified-token-claims
+    - tool-authentication-failure-emits-mcp-www-authenticate-without-secret-leakage
+    - request-metadata-is-correlation-only-and-authority-fields-are-filtered
+    - readiness-does-not-disclose-credentials-or-claim-live-state-before-probe
+    - local-authentication-service-proof-is-not-remote-activation-proof
+  required_canaries:
+    - non-HTTPS-or-path-scoped-resource-is-rejected
+    - missing-or-unverified-token-is-rejected-before-dispatch
+    - wrong-issuer-or-audience-is-rejected
+    - expired-or-not-yet-valid-token-is-rejected
+    - read-scope-cannot-cross-transition-boundary
+    - tool-input-cannot-override-OAuth-identity
+    - verifier-error-and-token-never-appear-in-client-result
+    - unknown-or-repository-tool-is-rejected
+  prohibited:
+    - identity-provider-or-token-verifier-selected-by-tool-payload
+    - secrets-or-repository-credentials-in-remote-service-config
+    - custom-transport-claiming-official-MCP-SDK-interoperability-without-proof
+    - local-contract-test-claiming-live-OAuth-PostgreSQL-or-ChatGPT-binding
+
+total_mcp_revision_official_MCP_SDK_binding:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/control-context-state-service.yaml
+  implementation: mcp/control_context_mcp_sdk.py
+  requirements_ref: mcp/control-context-mcp-sdk-requirements.txt
+  service_boundary_ref: mcp/control_context_remote_service.py
+  validator: tooling/validator/control_context_mcp_sdk_validation.py
+  invariants:
+    - official-Python-MCP-SDK-owns-streamable-HTTP-protocol-transport
+    - transport-is-stateless-while-control-session-continuity-is-durable-state-service-owned
+    - initialize-and-tools-list-remain-public-while-every-project-control-call-enforces-its-scope
+    - bearer-headers-and-approved-openai-request-meta-reach-the-provider-neutral-service-boundary
+    - OpenAI-top-level-securitySchemes-exactly-mirror-backcompat-meta-securitySchemes
+    - OAuth-linking-challenge-survives-official-SDK-call-result-serialization
+    - DNS-rebinding-protection-exact-host-allowlist-and-bounded-request-body-are-enforced
+    - local-official-SDK-protocol-proof-is-not-live-network-OAuth-database-or-ChatGPT-activation
+  required_canaries:
+    - exact-validated-SDK-version-is-locked
+    - initialize-list-and-call-pass-through-the-real-official-SDK-ASGI-stack
+    - duplicate-authorization-headers-fail-closed-after-transport
+    - read-scope-cannot-call-transition-tool-through-SDK
+    - stateless-transport-does-not-create-process-local-project-continuity-authority
+    - conflicting-security-scheme-metadata-fails-closed
+    - oversized-request-is-rejected-before-dispatch
+    - unknown-repository-like-tool-is-a-bounded-error-and-never-a-capability
+  prohibited:
+    - home-grown-MCP-protocol-transport
+    - wildcard-production-host-allowlist
+    - transport-process-session-as-universal-project-state-authority
+    - SDK-local-test-claiming-live-remote-activation
+
+total_mcp_revision_provider_neutral_remote_runtime:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/control-context-state-service.yaml
+  implementation: mcp/control_context_remote_runtime.py
+  configuration_schema_ref: mcp/control-context-remote-runtime-config.schema.json
+  validator: tooling/validator/control_context_remote_runtime_validation.py
+  invariants:
+    - runtime-composes-PostgreSQL-state-port-OAuth-boundary-and-official-SDK-ASGI-app
+    - public-runtime-config-contains-no-DSN-token-key-or-repository-credential
+    - token-and-control-resolution-verifiers-are-constructor-bound
+    - runtime-role-never-applies-migrations
+    - readiness-requires-every-required-relation-and-the-exact-checksum-locked-migration-ledger
+    - readiness-is-read-only-fail-closed-and-nonleaking
+    - assembled-runtime-does-not-open-a-listener-deploy-itself-or-select-a-provider
+    - local-runtime-assembly-proof-is-not-live-PostgreSQL-OAuth-network-or-ChatGPT-proof
+  required_canaries:
+    - unknown-runtime-config-fields-are-rejected
+    - secret-bearing-runtime-config-is-rejected
+    - missing-schema-relation-fails-readiness
+    - migration-ledger-drift-fails-readiness
+    - readiness-always-rolls-back-and-closes-the-probe-connection
+    - complete-runtime-descriptor-is-secret-free-repository-free-and-not-deployed
+    - create-begin-complete-idempotency-and-fresh-transport-reconnect-preserve-state
+  prohibited:
+    - runtime-role-applies-migrations
+    - credentials-or-provider-selection-in-public-runtime-config
+    - repository-authority-through-state-service-runtime
+    - local-composition-test-claimed-as-operational-activation
+
+total_mcp_revision_human_navigation_surface:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/human-navigation-surface.yaml
+  validator: tooling/validator/human_navigation_surface_validation.py
+  required_files:
+    - mcp/context-navigation-options.schema.json
+    - mcp/context-navigation-options-candidate.schema.json
+    - engines/presentation/human-navigation-surface-candidate.schema.json
+  invariants:
+    - human-carries-intent-not-machine-state
+    - presentation-cannot-invent-or-self-approve-navigation-actions
+    - rendered-actions-exactly-match-separate-fingerprinted-MCP-projection
+    - nonmaterial-detour-preserves-and-rerenders-same-session-next-step
+    - HCS-and-exact-shell-precedence-is-preserved
+    - machine-owned-current-event-work-precedes-HNS
+  required_canaries:
+    - primary-trigger-is-2-to-5-words-and-absolute-response-end
+    - optional-actions-are-0-to-3-and-render-before-primary
+    - stale-state-or-stale-MCP-options-are-rejected
+    - precommit-option-candidate-cannot-render-without-matching-actual-receipt
+    - presentation-self-approval-is-rejected
+    - boot-without-project-needs-no-second-command
+  prohibited:
+    - next-step-disappears-after-ordinary-detour
+    - HNS-without-human-action-next
+    - optional-HNS-at-exact-shell-handoff
+
+total_mcp_revision_interaction_consolidation_owner_routing:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  validators:
+    - engines/interaction/control_context_intent.py
+    - engines/interaction/context_consolidation.py
+    - mcp/control_owner_routing.py
+    - engines/project/project_owner_effect.py
+    - engines/quality/quality_owner_effect.py
+    - engines/convergence/convergence_owner_effect.py
+    - tooling/context/control_owner_effect.py
+  required_files:
+    - engines/interaction/control-context-intent-assessment.schema.json
+    - engines/interaction/context-consolidation-result.schema.json
+    - mcp/control-owner-effect-plan.schema.json
+    - mcp/control_owner_effect_receipt.py
+    - mcp/owner-effect-receipt.schema.json
+    - mcp/owner-state-persistence-verification.schema.json
+    - engines/project/project-basis-state.schema.json
+    - engines/convergence/convergence-owner-state.schema.json
+  invariants:
+    - project-CONTINUE-requires-state-bound-fingerprinted-Interaction-assessment
+    - speech-to-text-or-nonmaterial-detour-does-not-imply-objective-change
+    - Interaction-assessment-has-no-mutation-authority
+    - plain-CONSOLIDATE-preserves-existing-semantic-pipeline
+    - context-consolidation-result-is-derived-assessment-not-control-decision
+    - same-project-structural-join-defaults-to-LCA
+    - cross-project-structural-join-is-blocked-by-default
+    - cross-project-semantic-synthesis-does-not-authorize-structural-mutation
+    - partial-join-preserves-unresolved-branches
+    - owner-effects-remain-subordinate-to-one-canonical-MCP-decision
+    - branch-disposition-waits-for-current-dependent-owner-receipts
+    - semantic-owner-output-without-durable-commit-is-candidate-not-current
+    - self-asserted-persistence-PASS-does-not-satisfy-owner-receipt-gate
+    - current-owner-PASS-is-bound-to-exact-receipt-output-and-injected-verifier
+    - internally-executable-owner-action-requires-injected-runtime-capability-resolver
+    - required-machine-next-action-blocks-event-closure-and-suppresses-HNS
+  prohibited:
+    - Interaction-authorizes-context-mutation
+    - consolidation-result-is-automatic-decision
+    - automatic-cross-owner-atomic-merge
+    - Context-mutates-Project-Basis-or-Quality-state
+    - owner-routing-selftest-claimed-as-normal-owner-consumer-proof
+    - semantic-candidate-claimed-as-persisted-current-owner-state
+    - persistence-evidence-ref-trusted-without-verifier
+    - owner-payload-self-asserts-runtime-capability
+
+total_mcp_revision_PostgreSQL_state_and_owner_persistence:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/control-context-state-service.yaml
+  validators:
+    - tooling/validator/control_context_postgres_validation.py
+    - tooling/validator/control_context_owner_persistence_validation.py
+    - tooling/validator/owner_state_persistence_validation.py
+  required_files:
+    - tooling/context/control_context_state_postgres.py
+    - tooling/context/control_context_state_postgres.sql
+    - tooling/context/control_context_postgres_migrations.json
+    - tooling/context/control_context_owner_persistence.py
+    - tooling/owner_state/owner_state_persistence.py
+    - tooling/owner_state/component.yaml
+    - mcp/state-service-commit-receipt.schema.json
+    - mcp/owner-state-commit-receipt.schema.json
+  invariants:
+    - bootstrap-receipts-use-a-separate-ledger-with-exact-idempotency
+    - normal-transition-receipts-remain-distinct-from-database-commit-proof
+    - State-Service-commit-binds-exact-directive-owner-candidate-and-after-state
+    - transaction-local-identity-precedes-row-access
+    - project-and-session-writes-use-CAS
+    - receipt-and-owner-revision-ledgers-are-immutable
+    - migration-manifest-is-checksum-locked-and-drift-fails-closed
+    - Project-Quality-Convergence-use-owner-specific-state-validators
+    - Context-uses-the-hierarchical-state-port-not-the-generic-owner-head
+    - owner-PASS-is-promoted-only-after-commit-and-independently-verified
+    - historical-output-cannot-claim-current-after-head-advances
+    - local-scripted-DBAPI-evidence-is-not-live-PostgreSQL-proof
+  prohibited:
+    - runtime-service-role-applies-schema-migrations
+    - source-or-repository-credentials-in-state-service
+    - domain-transition-receipt-claimed-as-durable-database-proof
+    - automatic-cross-owner-atomic-merge
+    - live-PostgreSQL-activation-claim-from-scripted-DBAPI-tests
+
+total_mcp_revision_normal_control_host_binding:
+  introduced_by: TOTAL_MCP_REVISION
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - mcp/control-resolution.yaml
+    - standards/control-context-hierarchy.yaml
+    - standards/control-context-state-service.yaml
+  implementation: mcp/control_resolution_host.py
+  validator: tooling/validator/control_resolution_host_validation.py
+  invariants:
+    - canonical-resolver-receives-verifier-and-capability-through-host-construction
+    - event-payload-cannot-inject-verifier-capability-or-executor
+    - required-owner-order-is-Project-Quality-Convergence-Context
+    - owner-plan-is-re-resolved-after-every-separate-commit
+    - downstream-receipt-carries-prerequisite-receipt-evidence
+    - missing-capability-stops-before-owner-call
+    - final-disposition-waits-for-four-independently-verified-receipts-when-required
+    - default-unbound-canonical-resolver-remains-fail-closed
+    - local-host-harness-proof-is-not-remote-host-activation
+  prohibited:
+    - payload-provided-persistence-verifier
+    - payload-provided-runtime-capability-resolver
+    - downstream-owner-execution-before-prerequisite-PASS
+    - local-harness-selftest-claimed-as-ChatGPT-or-remote-MCP-activation

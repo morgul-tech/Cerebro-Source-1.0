@@ -3,7 +3,7 @@ component:
   id: interaction
   name: Interaction Engine
   type: engine
-  version: 1.3.0
+  version: 1.5.0
   status: active-source
 responsibility:
   primary: >
@@ -20,6 +20,12 @@ boundaries:
   - identify-user-decision-boundary
   - maintain-role-and-responsibility-clarity
   - steward-user-operating-profile-signals
+  - interpret-project-event-only-against-valid-control-session-binding
+  - distinguish-inline-detour-fork-and-control-transition
+  - resolve-short-navigation-trigger-against-committed-state
+  - emit-fingerprinted-control-context-intent-assessment
+  - preserve-plain-consolidate-backward-compatibility
+  - emit-derived-context-consolidation-result-without-control-authority
   must_not:
   - make-final-control-decision
   - own-working-mode-resolution
@@ -28,6 +34,9 @@ boundaries:
   - own-project-state
   - own-active-context
   - create-source-authority
+  - mutate-control-context-state
+  - treat-visible-navigation-phrase-as-machine-state
+  - authorize-consolidation-owner-effects
 dependencies:
   build:
   - terminology
@@ -42,6 +51,8 @@ interfaces:
   - effective-user-configuration
   - user-profile-write-request
   - user-profile-revoke-request
+  - control-context-event-binding
+  - committed-control-session-state
   output:
   - interaction-assessment
   - current-intent
@@ -60,6 +71,21 @@ interfaces:
   - presentation-request
   - consolidation-request
   - conversation-evolution-analysis-request
+  - context-route-assessment
+  - context-transition-candidate
+  - navigation-trigger-resolution
+  - control-context-intent-assessment
+  - context-consolidation-result
+contracts:
+  control_context_intent:
+    implementation_ref: control_context_intent.py
+    schema_ref: control-context-intent-assessment.schema.json
+    lifecycle: CANDIDATE
+  context_consolidation:
+    implementation_ref: context_consolidation.py
+    result_schema_ref: context-consolidation-result.schema.json
+    extends: standards/development/consolidate.yaml
+    lifecycle: CANDIDATE
 rules:
   path: rules.yaml
 documentation:
@@ -70,5 +96,5 @@ migration:
   - dialog
   - collaboration
 version:
-  component: 1.3.0
+  component: 1.5.0
   schema: 1

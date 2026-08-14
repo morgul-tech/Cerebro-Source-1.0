@@ -3,7 +3,7 @@ component:
   id: validator
   name: Validator
   type: tooling
-  version: 1.5.0
+  version: 1.11.0
   status: active-source
 responsibility:
   primary: Kontrollere struktur, konsistens, regler og release-integritet.
@@ -20,11 +20,25 @@ boundaries:
   - prove-boundary-scoped-machine-contract-composition
   - generate-and-validate-hash-bound-human-execution-handoffs
   - validate-change-campaign-closeout-without-owning-transition-policy
+  - validate-control-context-tree-session-and-transition-receipts
+  - validate-MCP-control-context-tool-identity-boundary
+  - validate-human-navigation-against-separate-MCP-options-projection
+  - keep-candidate-selftest-proof-distinct-from-remote-service-and-host-activation-proof
+  - validate-state-bound-Interaction-intent-assessment
+  - validate-CONSOLIDATE-context-extension-and-owner-routing
+  - validate-PostgreSQL-state-port-migrations-CAS-idempotency-and-commit-proof
+  - validate-Context-owner-commit-promotion-and-trusted-verification
+  - validate-Project-Quality-Convergence-owner-state-persistence
+  - validate-constructor-bound-normal-host-verifier-and-capability-resolution
+  - validate-remote-MCP-OAuth-resource-server-and-service-boundary
+  - validate-official-MCP-SDK-streamable-HTTP-protocol-binding
+  - validate-provider-neutral-production-runtime-composition-and-readiness
   must_not:
   - modify-source
   - silently-ignore-errors
   - authorize-candidate-source-through-runtime-host
   - publish-or-mutate-authoritative-source
+  - claim-project-control-enforced-from-local-test-adapter
 dependencies:
   build: []
   runtime: []
@@ -44,8 +58,19 @@ interfaces:
   - machine-contract-composition-boundary-proof
   - human-execution-handoff-activation-proof
   - change-campaign-closeout-receipt
+  - control-context-domain-validation-report
+  - control-context-tool-adapter-validation-report
+  - human-navigation-surface-validation-report
+  - control-context-intent-validation-report
+  - context-consolidation-and-owner-routing-validation-report
+  - PostgreSQL-state-service-contract-validation-report
+  - owner-state-persistence-validation-report
+  - normal-control-host-binding-validation-report
+  - remote-MCP-service-boundary-validation-report
+  - official-MCP-SDK-protocol-validation-report
+  - provider-neutral-MCP-runtime-assembly-validation-report
 documentation:
   path: README.md
 version:
-  component: 1.5.0
+  component: 1.11.0
   schema: 1

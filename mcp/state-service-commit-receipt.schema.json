@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/state-service-commit-receipt/v1",
+  "title": "Cerebro State Service Commit Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "message_kind", "backend", "commit_protocol", "durability",
+    "tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref",
+    "project_ref", "event_id", "transition_receipt_ref",
+    "transition_receipt_fingerprint", "transition_directive_fingerprint",
+    "owner_effect_candidate_ref", "owner_effect_candidate_fingerprint",
+    "project_revision_after", "session_revision_after",
+    "project_fingerprint_after", "session_fingerprint_after", "commit_fingerprint", "commit_ref"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-state-service-commit-receipt/v1"},
+    "message_kind": {"const": "STATE_SERVICE_COMMIT_RECEIPT"},
+    "backend": {"const": "POSTGRESQL"},
+    "commit_protocol": {"const": "RETURN_ONLY_AFTER_DATABASE_COMMIT"},
+    "durability": {"const": "DATABASE_COMMIT_ACKNOWLEDGED_ON_RETURN"},
+    "tenant_ref": {"type": "string", "minLength": 1},
+    "workspace_ref": {"type": "string", "minLength": 1},
+    "principal_ref": {"type": "string", "minLength": 1},
+    "consumer_ref": {"type": "string", "minLength": 1},
+    "session_ref": {"type": "string", "minLength": 1},
+    "project_ref": {"type": "string", "minLength": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "transition_receipt_ref": {"type": "string", "pattern": "^CTR-[0-9A-F]{24}$"},
+    "transition_receipt_fingerprint": {"$ref": "#/$defs/sha256"},
+    "transition_directive_fingerprint": {"$ref": "#/$defs/sha256"},
+    "owner_effect_candidate_ref": {"type": ["string", "null"], "minLength": 1},
+    "owner_effect_candidate_fingerprint": {
+      "oneOf": [
+        {"$ref": "#/$defs/sha256"},
+        {"type": "null"}
+      ]
+    },
+    "project_revision_after": {"type": "integer", "minimum": 1},
+    "session_revision_after": {"type": "integer", "minimum": 1},
+    "project_fingerprint_after": {"$ref": "#/$defs/sha256"},
+    "session_fingerprint_after": {"$ref": "#/$defs/sha256"},
+    "commit_fingerprint": {"$ref": "#/$defs/sha256"},
+    "commit_ref": {"type": "string", "pattern": "^SSC-[0-9A-F]{24}$"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "owner_effect_candidate_ref": {"type": "null"},
+        "owner_effect_candidate_fingerprint": {"type": "null"}
+      }
+    },
+    {
+      "properties": {
+        "owner_effect_candidate_ref": {"type": "string", "pattern": "^OER-[0-9A-F]{24}$"},
+        "owner_effect_candidate_fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

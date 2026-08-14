@@ -34,6 +34,11 @@ continuation_surface_system_policy:
     binding_fingerprint_required: true
     full_payload_reference_required: true
     reconstructing-state-from-visible-trigger: PROHIBITED
+    candidate_universal_state_binding:
+      contract_ref: standards/control-context-state-service.yaml
+      scope: CONTROL_SESSION
+      session_focus_is_not_global_project_focus: true
+      migration_status: CANDIDATE_NOT_OPERATIONALLY_ACTIVATED
 
   continuation_continuity:
     principle: ACTIVE_CONTINUATION_SURVIVES_CONVERSATIONAL_DETOURS
@@ -47,6 +52,7 @@ continuation_surface_system_policy:
         - preserve-active-control-state
         - preserve-active-continuation
         - re-render-current-next-action-surface-at-absolute-response-end-when-human-action-remains-next
+        state_scope: SAME_CONTROL_SESSION
       material_critique_learning_or_correction:
         effect:
         - process-human-insight

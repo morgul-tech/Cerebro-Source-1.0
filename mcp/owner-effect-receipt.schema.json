@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/owner-effect-receipt/v1",
+  "title": "Cerebro Owner Effect Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "message_kind", "producer_ref", "owner", "control_decision_ref",
+    "consolidation_result_ref", "effect", "result", "current", "input_state_ref",
+    "input_state_fingerprint", "output_state_ref", "output_state_fingerprint",
+    "affected_refs", "evidence_refs", "persistence_evidence_ref", "unaffected_state_preserved", "state_mutated",
+    "receipt_fingerprint", "receipt_ref"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-owner-effect-receipt/v1"},
+    "message_kind": {"const": "OWNER_EFFECT_RECEIPT"},
+    "producer_ref": {"enum": ["project", "quality", "convergence", "context"]},
+    "owner": {"enum": ["project", "quality", "convergence", "context"]},
+    "control_decision_ref": {"type": "string", "minLength": 1},
+    "consolidation_result_ref": {"type": "string", "pattern": "^CCR-[0-9A-F]{24}$"},
+    "effect": {"enum": ["REVISION_REQUIRED", "INVALIDATE_AFFECTED", "REVALIDATE_AFFECTED", "REFRESH_GOVERNING_REFS"]},
+    "result": {"enum": ["CANDIDATE", "PASS"]},
+    "current": {"type": "boolean"},
+    "input_state_ref": {"type": "string", "minLength": 1},
+    "input_state_fingerprint": {"$ref": "#/$defs/sha256"},
+    "output_state_ref": {"type": "string", "minLength": 1},
+    "output_state_fingerprint": {"$ref": "#/$defs/sha256"},
+    "affected_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "persistence_evidence_ref": {"type": ["string", "null"], "minLength": 1},
+    "unaffected_state_preserved": {"type": "boolean"},
+    "state_mutated": {"type": "boolean"},
+    "receipt_fingerprint": {"$ref": "#/$defs/sha256"},
+    "receipt_ref": {"type": "string", "pattern": "^OER-[0-9A-F]{24}$"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"result": {"const": "PASS"}}, "required": ["result"]},
+      "then": {
+        "properties": {
+          "current": {"const": true},
+          "persistence_evidence_ref": {"type": "string", "minLength": 1},
+          "unaffected_state_preserved": {"const": true},
+          "state_mutated": {"const": true}
+        }
+      },
+      "else": {
+        "properties": {
+          "current": {"const": false},
+          "persistence_evidence_ref": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"owner": {"const": "project"}}, "required": ["owner"]},
+      "then": {"properties": {"producer_ref": {"const": "project"}, "effect": {"const": "REVISION_REQUIRED"}}}
+    },
+    {
+      "if": {"properties": {"owner": {"const": "quality"}}, "required": ["owner"]},
+      "then": {"properties": {"producer_ref": {"const": "quality"}, "effect": {"const": "INVALIDATE_AFFECTED"}}}
+    },
+    {
+      "if": {"properties": {"owner": {"const": "convergence"}}, "required": ["owner"]},
+      "then": {"properties": {"producer_ref": {"const": "convergence"}, "effect": {"const": "REVALIDATE_AFFECTED"}}}
+    },
+    {
+      "if": {"properties": {"owner": {"const": "context"}}, "required": ["owner"]},
+      "then": {"properties": {"producer_ref": {"const": "context"}, "effect": {"const": "REFRESH_GOVERNING_REFS"}}}
+    }
+  ],
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

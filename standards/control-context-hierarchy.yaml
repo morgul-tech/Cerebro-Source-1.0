@@ -1,0 +1,220 @@
+schema: cerebro-control-context-hierarchy/v1
+
+control_context_hierarchy:
+  id: CEREBRO-CONTROL-CONTEXT-HIERARCHY-001
+  version: "1.2.0"
+  status: CANDIDATE_IMPLEMENTATION
+  kind: STANDARD
+  definitional_authority: Cerebro Source 1.0
+  control_authority: MCP
+  state_owner: context
+  project_basis_owner: project
+  quality_state_owner: quality
+  dependency_graph_owner: convergence
+
+  purpose: >
+    Preserve one governed project-control path while allowing bounded parent,
+    child and deeper work contexts to fork, switch, return and consolidate
+    without branch loss, silent parent redefinition or chat-memory authority.
+
+  state_binding:
+    service_contract_ref: standards/control-context-state-service.yaml
+    aggregate_schema_ref: engines/context/control-context-state.schema.json
+    implementation_ref: tooling/context/control_context_registry.py
+    PostgreSQL_adapter_ref: tooling/context/control_context_state_postgres.py
+    migration_manifest_ref: tooling/context/control_context_postgres_migrations.json
+    live_registry_in_source_repository: PROHIBITED
+    local_disk_as_universal_authority: PROHIBITED
+    conversation_memory_authority: NONE
+
+  interaction_contract:
+    implementation_ref: engines/interaction/control_context_intent.py
+    schema_ref: engines/interaction/control-context-intent-assessment.schema.json
+    producer: interaction
+    authority: DERIVED_ASSESSMENT
+    required_before_project_CONTINUE: true
+    speech_to_text_or_nonmaterial_detour_default: PRESERVE_OBJECTIVE_AND_SESSION_FOCUS
+    state_mutation_authorized: false
+
+  consolidation_extension:
+    existing_contract_ref: standards/development/consolidate.yaml
+    implementation_ref: engines/interaction/context_consolidation.py
+    result_schema_ref: engines/interaction/context-consolidation-result.schema.json
+    plain_consolidate_route: EXISTING_SEMANTIC_PIPELINE
+    context_result_authority: DERIVED_ASSESSMENT
+    automatic_control_decision: false
+    same_project_default_structural_target: LOWEST_COMMON_ANCESTOR
+    cross_project_semantic_synthesis: ALLOWED_WITH_VALIDATED_INPUTS
+    cross_project_structural_join: PROHIBITED_BY_DEFAULT
+    partial_join: ALLOWED_WITH_UNRESOLVED_BRANCH_PRESERVED
+
+  owner_routing:
+    implementation_ref: mcp/control_owner_routing.py
+    schema_ref: mcp/control-owner-effect-plan.schema.json
+    owner_receipt_implementation_ref: mcp/control_owner_effect_receipt.py
+    owner_receipt_schema_ref: mcp/owner-effect-receipt.schema.json
+    persistence_verification_schema_ref: mcp/owner-state-persistence-verification.schema.json
+    owner_state_persistence_ref: tooling/owner_state/owner_state_persistence.py
+    context_owner_persistence_ref: tooling/context/control_context_owner_persistence.py
+    normal_host_ref: mcp/control_resolution_host.py
+    authority: SUBORDINATE_TO_CANONICAL_MCP_CONTROL_DECISION
+    sequence: [project, quality, convergence, context]
+    automatic_cross_owner_atomic_merge: PROHIBITED
+    final_disposition_requires_current_owner_receipts: true
+    routing_plan_alone_proves_owner_consumption: false
+    semantic_consumer_output_without_durable_commit: CANDIDATE_NOT_CURRENT
+    persistence_evidence_ref_without_injected_verifier: INSUFFICIENT
+    capability_availability_source: INJECTED_TRUSTED_RUNTIME_CAPABILITY_RESOLVER
+    current_PASS_requires:
+      - owner-owned-durable-commit
+      - receipt-bound-persistence-evidence
+      - injected-trusted-persistence-verifier-PASS
+      - output-state-still-current-at-verification
+    self_asserted_current_or_persistence: PROHIBITED
+    self_asserted_capability_available: IGNORED
+    local_normal_host_harness:
+      sequence_re_resolved_after_every_commit: true
+      automatic_cross_owner_transaction: false
+      event_payload_dependency_injection: PROHIBITED
+      contract_tested: true
+      remote_activation_proven: false
+
+  tree_model:
+    root:
+      parent_context_ref: null
+      exactly_one_per_project_instance: true
+    non_root:
+      exactly_one_parent: true
+      parent_must_share_project_ref: true
+    active_focus:
+      scope: CONTROL_SESSION
+      global_project_wide_active_context: PROHIBITED
+      session_binding_contract_ref: standards/control-context-state-service.yaml
+      new_session_default_ref_is_not_global_focus: true
+    derived_fields:
+      - children
+      - depth
+      - ancestor-chain
+      - root
+      - lowest-common-ancestor
+    prohibited_stored_duplicates:
+      - children-list
+      - depth
+      - grandparent-ref
+      - dependency-graph
+      - duplicated-project-basis
+      - duplicated-quality-state
+      - conversation-history
+
+  lifecycle:
+    values: [OPEN, RETURNED, CLOSED, CANCELLED]
+    control_conditions: [READY, PAUSED_BY_USER, WAITING_HUMAN, STALLED, SAFE_HOLD, null]
+    dispositions: [NONE, PENDING_JOIN, INCORPORATED, PRESERVED, SUPERSEDED, null]
+    compatibility:
+      OPEN:
+        disposition: NONE
+        control_condition_may_be_non_null: true
+      RETURNED:
+        disposition: PENDING_JOIN
+        control_condition: null
+      CLOSED:
+        disposition: [INCORPORATED, PRESERVED, SUPERSEDED]
+        control_condition: null
+      CANCELLED:
+        disposition: null
+        control_condition: null
+
+  transition_semantics:
+    CREATE_ROOT:
+      allowed_when: PROJECT_INSTANCE_HAS_NO_CONTEXTS
+    CREATE_CHILD:
+      parent_must_be_open: true
+      same_material_objective_basis_without_delta: REJECT
+    SET_ACTIVE:
+      state_scope: CONTROL_SESSION_BINDING
+      target_lifecycle_required: OPEN
+      changes_other_session_focus: false
+      changes_project_tree_revision: false
+      changes_other_context_lifecycle: false
+    SET_CONTROL_CONDITION:
+      target_lifecycle_required: OPEN
+    RETURN_CONTEXT:
+      unresolved_descendants: BLOCK
+      required_return_payload:
+        - result-ref
+        - evidence-refs
+        - unresolved-refs
+        - completion-proof-ref
+        - completion-criteria-satisfied
+        - child-basis-fingerprint
+      stale_child_basis_fingerprint: BLOCK
+      unresolved_refs_without_disposition_ref: BLOCK
+      effect:
+        lifecycle: RETURNED
+        disposition: PENDING_JOIN
+      may_directly_rewrite_parent: false
+    APPLY_JOIN_DISPOSITION:
+      target_lifecycle_required: RETURNED
+      target_disposition_required: PENDING_JOIN
+      required_before_canonical_close:
+        - dependent-owner-state-current
+        - owner-effect-receipt-ref
+      allowed_dispositions: [INCORPORATED, PRESERVED, SUPERSEDED]
+    CLOSE_CONTEXT:
+      historical_reopen: PROHIBITED
+      canonical_precondition: FINAL_JOIN_DISPOSITION_APPLIED
+      direct_disposition_without-APPLY_JOIN_DISPOSITION: COMPATIBILITY_ONLY_EXPLICIT
+    CREATE_DERIVED_CONTEXT:
+      required_for_historical_reactivation: true
+    REFRESH_GOVERNING_REFS:
+      required_after_material_project_quality_or_basis_revision: true
+
+  hard_invariants:
+    - EXACTLY_ONE_ROOT_PER_PROJECT_INSTANCE
+    - CONTEXT_IDS_ARE_UNIQUE
+    - TREE_IS_ACYCLIC
+    - PARENT_LINKS_NEVER_CROSS_PROJECTS
+    - EVERY_SESSION_ACTIVE_CONTEXT_IS_OPEN
+    - ACTIVE_CONTEXT_IS_SESSION_SCOPED_NOT_GLOBAL
+    - RETURN_REQUIRES_NO_OPEN_OR_PENDING_JOIN_DESCENDANT
+    - SWITCH_IS_NOT_RETURN_CLOSE_CANCEL_OR_CONSOLIDATE
+    - CLOSED_CONTEXT_IS_NEVER_REOPENED_IN_PLACE
+    - NO_BRANCH_DISAPPEARS_WITHOUT_DISPOSITION
+    - NO_CHILD_RESULT_SILENTLY_REDEFINES_PARENT
+    - RETURN_PAYLOAD_CANNOT_ASSERT_STALE_CHILD_BASIS
+    - FINAL_JOIN_DISPOSITION_REQUIRES_CURRENT_DEPENDENT_OWNER_STATE
+    - CONTEXT_TREE_DOES_NOT_OWN_DEPENDENCY_GRAPH
+    - ALL_MUTATIONS_ARE_ATOMIC_AND_FINGERPRINTED
+    - INTERACTION_ASSESSMENT_CANNOT_AUTHORIZE_MUTATION
+    - CONSOLIDATION_IS_NOT_AUTOMATIC_CONTROL_DECISION
+    - CROSS_PROJECT_STRUCTURAL_JOIN_IS_PROHIBITED_BY_DEFAULT
+    - PARTIAL_JOIN_CANNOT_SILENTLY_DROP_UNRESOLVED_BRANCH
+    - OWNER_EFFECT_ROUTER_DOES_NOT_MUTATE_OWNER_STATE
+    - SEMANTIC_OWNER_OUTPUT_IS_NOT_CURRENT_UNTIL_DURABLY_COMMITTED
+    - SELF_ASSERTED_PERSISTENCE_PASS_CANNOT_OPEN_BRANCH_DISPOSITION
+    - OWNER_PAYLOAD_CANNOT_SELF_ASSERT_RUNTIME_CAPABILITY
+    - OWNER_COMMIT_EVIDENCE_BINDS_EXACT_PRECOMMIT_CANDIDATE
+    - HISTORICAL_OWNER_RECEIPT_CANNOT_CLAIM_CURRENT_AFTER_HEAD_ADVANCES
+
+  event_gate:
+    bound_consumer_order:
+      - begin-project-control-event
+      - validate-control-context-binding
+      - interaction-interpretation
+      - validate-fingerprinted-interaction-assessment
+      - canonical-MCP-resolution
+      - authorized-effects-and-machine-work
+      - atomic-complete-event
+      - human-surface-from-committed-state
+    invalid_binding_effect: BLOCK_SUBSTANTIVE_PROJECT_RESPONSE_OR_ACTION
+    recovery: REHYDRATE_VALIDATE_AND_RERESOLVE
+    generic_project_fallback: PROHIBITED
+    host_boundary_ref: standards/control-context-state-service.yaml
+
+  deep_assurance:
+    governing_depth: DEEP
+    material_child_may_silently_downgrade: false
+    material_transition_minimum_passes: [REFINE, CRITIQUE, COMPARE_CONVERGE]
+    full_deep_at_major_phase_boundary: true
+    full_deep_recursion_for_trivial_operation: false
+    primary_lens: HUMAN_ALIGNMENT

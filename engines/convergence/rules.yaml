@@ -36,3 +36,6 @@ convergence_rules:
     - id: CONV-010
       statement: Convergence SHALL stop and return control when a real safety, authority, material human-decision, novel unresolved failure, or capability boundary is reached.
       priority: critical
+    - id: CONV-HPC-001
+      statement: An MCP-routed REVALIDATE_AFFECTED effect SHALL use the existing Convergence dependency graph, emit only a non-current candidate until owner persistence is independently verified, and SHALL NOT create a second dependency graph inside Context or MCP.
+      priority: critical

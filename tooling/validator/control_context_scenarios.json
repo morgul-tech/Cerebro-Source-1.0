@@ -1,0 +1,167 @@
+{
+  "schema": "cerebro-control-context-scenario-manifest/v1",
+  "suite_id": "TOTAL-MCP-REVISION-CONTROL-CONTEXT-V1",
+  "source_baseline": "b49110d16f363f58d1cd79432acb236ab3ac3014",
+  "claim_rule": "A listed scenario is not operationally proven until its normal consumer and required runtime evidence pass.",
+  "required_scenario_ids": [
+    "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10",
+    "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20",
+    "R21", "R22", "R23", "R24", "R25", "R26", "R27", "R28", "R29", "R30",
+    "R31", "R32", "R33", "R34", "R35", "R36", "R37", "R38", "R39", "R40",
+    "R41", "R42", "R43", "R44", "R45", "R46", "R47", "R48", "R49", "R50",
+    "R51", "R52", "R53", "R54", "R54A", "R55", "R56", "R57", "R58", "R59",
+    "R60"
+  ],
+  "implemented_selftest_bindings": {
+    "R02": ["control_context_validation.py#R02-new-project-has-exactly-one-root"],
+    "R03": [
+      "control_context_tools_validation.py#R03-bound-tool-begins-project-event-before-reasoning",
+      "control_resolution.py#valid-project-context-binding-precedes-adaptive"
+    ],
+    "R05": ["control_resolution.py#stale-project-context-binding-blocks-zero-adaptive"],
+    "R06": [
+      "control_context_validation.py#R06-ordinary-question-keeps-context",
+      "control_context_intent.py#R06-ordinary-question-is-nonmutating-detour"
+    ],
+    "R07": [
+      "control_context_validation.py#R07-transient-detour-does-not-mutate-tree",
+      "control_context_intent.py#R07-speech-to-text-does-not-imply-objective-change"
+    ],
+    "R08": [
+      "control_context_validation.py#R08-material-fork-creates-one-child",
+      "control_context_intent.py#R08-material-fork-is-only-an-assessment"
+    ],
+    "R09": ["control_context_validation.py#R09-grandchild-parent-chain"],
+    "R10": ["control_context_validation.py#R10-deep-nesting-uses-one-parent-link-algorithm"],
+    "R11": ["control_context_validation.py#R11-cycle-is-rejected"],
+    "R12": [
+      "control_context_validation.py#R12-equivalent-fork-without-material-delta-is-rejected",
+      "control_context_validation.py#R12-equivalent-fork-rejection-is-atomic",
+      "control_context_validation.py#R12-equivalent-ancestor-recursion-is-rejected"
+    ],
+    "R13": ["control_context_validation.py#R13-switch-is-session-scoped"],
+    "R14": ["control_context_validation.py#R14-paused-by-user-preserves-open-context"],
+    "R15": ["control_context_validation.py#R15-waiting-human-remains-active-session-focus"],
+    "R18": ["control_context_validation.py#R18-return-with-open-descendant-blocks"],
+    "R19": ["control_context_validation.py#R19-return-with-pending-descendant-blocks"],
+    "R20": [
+      "control_context_validation.py#R20-valid-return-is-pending-join",
+      "control_context_validation.py#R20-valid-parent-return-after-clean-descendants"
+    ],
+    "R21": ["control_context_validation.py#R21-active-context-cannot-point-to-returned"],
+    "R22": ["control_context_validation.py#R22-historical-reopen-creates-derived-context"],
+    "R23": ["context_consolidation.py#R23-plain-consolidate-preserves-existing-semantic-pipeline"],
+    "R24": ["context_consolidation.py#R24-context-selection-produces-structural-result"],
+    "R25": ["context_consolidation.py#R25-result-is-derived-assessment-not-decision"],
+    "R26": [
+      "control_context_validation.py#R26-lca-is-deterministic",
+      "context_consolidation.py#R26-lowest-common-ancestor-is-deterministic"
+    ],
+    "R27": ["context_consolidation.py#R27-cross-project-structural-join-blocked"],
+    "R28": ["context_consolidation.py#R28-cross-project-semantic-synthesis-allowed"],
+    "R29": [
+      "context_consolidation.py#R29-partial-join-keeps-unresolved-branch-visible",
+      "control_owner_routing.py#R29-unresolved-sibling-remains-pending"
+    ],
+    "R35": [
+      "control_context_validation.py#R35-invalid-directive-blocks",
+      "control_context_validation.py#R35-invalid-directive-is-atomic"
+    ],
+    "R36": ["control_context_validation.py#R36-transition-receipt-is-valid-and-effect-bound"],
+    "R39": ["human_navigation_surface_validation.py#R39-one-primary-when-human-action-is-next"],
+    "R40": ["human_navigation_surface_validation.py#R40-optional-maximum-three"],
+    "R41": ["human_navigation_surface_validation.py#R41-presentation-invented-action-rejected"],
+    "R42": ["human_navigation_surface_validation.py#R42-stale-trigger-state-rejected"],
+    "R43": ["human_navigation_surface_validation.py#R43-machine-work-suppresses-hns"],
+    "R44": ["human_navigation_surface_validation.py#R44-hcs-precedes-hns"],
+    "R45": ["human_navigation_surface_validation.py#R45-shell-handoff-suppresses-hns"],
+    "R46": ["human_navigation_surface_validation.py#R46-boot-no-project-needs-no-second-command"],
+    "R47": [
+      "control_resolution.py#promotion-identity-uses-git-object-not-worktree-representation",
+      "control_resolution.py#direct-resolver-remains-non-live"
+    ],
+    "R48": ["control_resolution.py#fixed-MCP-control-outcome-vocabulary-unchanged"],
+    "R49": ["control_resolution.py#runtime-control-policy-absent"],
+    "R50": ["control_context_validation.py#R50-no-created-branch-disappears-without-lifecycle-and-disposition"],
+    "R51": ["control_context_validation.py#R51-child-return-does-not-silently-redefine-parent"],
+    "R52": [
+      "control_context_validation.py#R52-detour-preserves-binding",
+      "human_navigation_surface_validation.py#R52-detour-preserves-and-rerenders"
+    ],
+    "R53": ["control_context_validation.py#R53-material-correction-replaces-binding-atomically"],
+    "R54": ["control_context_validation.py#R54-concurrent-project-write-conflicts"],
+    "R54A": ["control_context_validation.py#R54A-other-session-focus-unchanged"],
+    "R55": ["control_context_validation.py#R55-transition-needs-no-repository-permission"],
+    "R56": ["control_context_tools_validation.py#R56-unbound-host-cannot-claim-project-control-enforced"],
+    "R57": ["control_context_validation.py#R57-outage-fails-closed"],
+    "R58": ["control_context_validation.py#R58-duplicate-event-is-idempotent"],
+    "R60": ["control_context_validation.py#R60-new-project-keeps-distinct-identity"]
+  },
+  "partial_selftest_bindings_not_normal_consumer_proof": {
+    "R30": [
+      "control_owner_routing.py#R30-project-revision-is-routed-to-project-owner",
+      "project_owner_effect.py#R30-project-consumer-increments-basis-revision",
+      "project_owner_effect.py#R30-project-consumer-emits-candidate-until-persisted"
+    ],
+    "R31": [
+      "control_owner_routing.py#R31-quality-invalidation-is-routed-to-quality-owner",
+      "quality_owner_effect.py#R31-affected-quality-PASS-becomes-STALE"
+    ],
+    "R32": [
+      "control_owner_routing.py#R32-unaffected-quality-remains-NONE",
+      "quality_owner_effect.py#R32-unaffected-quality-PASS-is-preserved"
+    ],
+    "R33": [
+      "control_owner_routing.py#R33-convergence-revalidation-is-routed-not-duplicated",
+      "convergence_owner_effect.py#R33-existing-graph-invalidates-dependent-PASS"
+    ],
+    "R34": [
+      "control_owner_routing.py#R34-owner-candidates-without-persistence-do-not-open-gate",
+      "control_owner_effect.py#R34-context-consumer-refreshes-governing-refs"
+    ]
+  },
+  "local_persistence_and_normal_host_harness_bindings_not_remote_activation": {
+    "R30": [
+      "owner_state_persistence_validation.py#all-three-owner-ports-return-current-PASS-only-after-commit",
+      "control_resolution_host_validation.py#normal-host-executes-canonical-owner-order-and-reresolves-each-step"
+    ],
+    "R31": [
+      "owner_state_persistence_validation.py#all-three-owner-ports-return-current-PASS-only-after-commit",
+      "control_resolution_host_validation.py#each-downstream-receipt-carries-all-prerequisite-receipt-evidence"
+    ],
+    "R32": [
+      "quality_owner_effect.py#R32-unaffected-quality-PASS-is-preserved",
+      "owner_state_persistence_validation.py#trusted-verifier-binds-all-three-current-owner-receipts"
+    ],
+    "R33": [
+      "owner_state_persistence_validation.py#ordered-owner-evidence-chain-is-explicit-project-quality-convergence",
+      "control_resolution_host_validation.py#normal-host-never-creates-cross-owner-atomic-merge"
+    ],
+    "R34": [
+      "control_context_owner_persistence_validation.py#exact-durable-commit-promotes-context-receipt-to-current-PASS",
+      "control_resolution_host_validation.py#final-disposition-gate-requires-all-four-independently-verified-receipts"
+    ],
+    "R38": [
+      "control_context_postgres_validation.py#adapter-sets-transaction-local-verified-identity",
+      "control_context_postgres_validation.py#completion-returns-only-after-scripted-database-commit"
+    ],
+    "R59": [
+      "control_context_postgres_validation.py#migration-runner-applies-under-lock-and-commits",
+      "control_context_postgres_validation.py#migration-runner-fails-closed-on-applied-drift"
+    ]
+  },
+  "pending_integration_or_owner_scenarios": {
+    "R01": "boot normal-consumer regression",
+    "R04": "missing-binding host recovery attempt and re-resolve path",
+    "R16": "stalled retry-cycle integration",
+    "R17": "safe-hold integration",
+    "R30": "live PostgreSQL plus deployed normal-consumer activation evidence for Project owner",
+    "R31": "live PostgreSQL plus deployed normal-consumer activation evidence for Quality owner",
+    "R32": "unaffected Quality preservation through a deployed durable normal consumer",
+    "R33": "live PostgreSQL plus deployed normal-consumer activation evidence for Convergence owner",
+    "R34": "deployed Context State Service plus governing-ref refresh normal-consumer evidence",
+    "R37": "twenty-plus mixed host events",
+    "R38": "remote durable session rehydration against a live service",
+    "R59": "live PostgreSQL migration rehearsal with separate migration and runtime roles"
+  }
+}

@@ -3,7 +3,7 @@ component:
   id: presentation
   name: Presentation Engine
   type: engine
-  version: 1.1.0
+  version: 1.2.0
   status: active-source
 responsibility:
   primary: Velge presentasjonsform, informasjonsstruktur, detaljnivå, output-budsjett, Styringsstatus og visuelle virkemidler.
@@ -24,6 +24,9 @@ interfaces:
   - runtime-state
   - consolidation-result
   - output-budget
+  - committed-control-session-state
+  - MCP-context-navigation-options
+  - matching-state-service-completion-receipt
   output:
   - presentation-model
   - format
@@ -32,6 +35,11 @@ interfaces:
   - visual-elements
   - information-order
   - consolidation-report
+  - human-navigation-surface-candidate
+schemas:
+  human_navigation_surface_candidate: human-navigation-surface-candidate.schema.json
+  MCP_navigation_options: ../../mcp/context-navigation-options.schema.json
+  MCP_navigation_options_precommit_candidate: ../../mcp/context-navigation-options-candidate.schema.json
 rules:
   path: rules.yaml
 documentation:
@@ -51,7 +59,12 @@ migration:
 boundaries:
   must:
   - compress-without-changing-semantics
-  must_not: []
+  - render-only-MCP-approved-state-bound-navigation-actions
+  - preserve-same-session-next-step-across-nonmaterial-detours
+  must_not:
+  - invent-or-self-approve-navigation-action
+  - let-HNS-override-HCS-or-exact-shell-handoff
+  - hide-internally-executable-work-behind-human-trigger
 version:
-  component: 1.1.0
+  component: 1.2.0
   schema: 1

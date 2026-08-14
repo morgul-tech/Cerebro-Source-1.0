@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/human-navigation-surface-candidate/v1",
+  "title": "Cerebro Human Navigation Surface Candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "boundary",
+    "human_action_is_next",
+    "machine_action_pending",
+    "primary",
+    "optional",
+    "mcp_approved_action_refs",
+    "response_text"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-human-navigation-surface-candidate/v1"},
+    "boundary": {
+      "enum": [
+        "HNS", "HCS", "EXACT_SHELL", "BOOT_NO_PROJECT", "TERMINAL", "FAIL_CLOSED", "MACHINE_CONTINUES"
+      ]
+    },
+    "human_action_is_next": {"type": "boolean"},
+    "machine_action_pending": {"type": "boolean"},
+    "project_ref": {"type": "string", "minLength": 1},
+    "session_ref": {"type": "string", "minLength": 1},
+    "project_revision": {"type": "integer", "minimum": 1},
+    "session_revision": {"type": "integer", "minimum": 1},
+    "project_fingerprint": {"$ref": "#/$defs/sha256"},
+    "session_fingerprint": {"$ref": "#/$defs/sha256"},
+    "primary": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/action"}]},
+    "optional": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/action"}},
+    "mcp_approved_action_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "response_text": {"type": "string"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"boundary": {"const": "HNS"}}},
+      "then": {
+        "required": [
+          "project_ref", "session_ref", "project_revision", "session_revision",
+          "project_fingerprint", "session_fingerprint"
+        ],
+        "properties": {
+          "human_action_is_next": {"const": true},
+          "machine_action_pending": {"const": false},
+          "primary": {"$ref": "#/$defs/action"}
+        }
+      },
+      "else": {
+        "properties": {
+          "primary": {"type": "null"},
+          "optional": {"maxItems": 0},
+          "mcp_approved_action_refs": {"maxItems": 0}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_id", "surface_kind", "alias", "operation", "target_ref", "approved_by_mcp"
+      ],
+      "properties": {
+        "action_id": {"type": "string", "minLength": 1},
+        "surface_kind": {"const": "HNS"},
+        "binding_id": {"type": "string", "minLength": 1},
+        "alias": {"type": "string", "minLength": 3},
+        "operation": {
+          "enum": [
+            "CONTINUE_CURRENT", "RETURN_PARENT", "RETURN_ROOT",
+            "CONSOLIDATE_WITH_ROOT", "SWITCH_CONTEXT", "PAUSE"
+          ]
+        },
+        "target_ref": {"type": "string", "minLength": 1},
+        "approved_by_mcp": {"const": true}
+      }
+    }
+  }
+}

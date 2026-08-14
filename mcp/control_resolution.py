@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import importlib.util
 import json
@@ -26,6 +27,8 @@ EXPECTED_CANDIDATE_CONTRACT_BLOB = "a8a2b9d55a9f4af2f7439ded5c66425818b384be"
 EXPECTED_SHADOW_ORACLE_BLOB = "831f7edb0545c66e92a6cfe10d376af3e2fb278e"
 MATERIAL_STAGES = {"DECIDE", "LOCK", "MATERIAL_EXECUTE", "MATERIAL_AUTHORIZE", "GOVERNING_PUBLISH"}
 CONTROL_OUTCOMES = {"CONTINUE", "REMEDIATE", "RETRY", "REORIENT", "USER_DECISION_REQUIRED", "BLOCK"}
+CONTROL_CONTEXT_BINDING_SCHEMA = "cerebro-control-context-event-binding/v1"
+HNS_CANDIDATE_ACTIVATION_PRECONDITION = "ACTUAL_TRANSITION_RECEIPT_AND_COMMITTED_STATE_EXACTLY_MATCH_PREDICTION"
 EVIDENCE_BASIS_FILES = [
     "mcp/control-resolution.yaml",
     "mcp/control_resolution.py",
@@ -50,6 +53,44 @@ EVIDENCE_BASIS_FILES = [
     "engines/project/roadmap.yaml",
     "tooling/runtime-host/component.yaml",
     "tooling/runtime-host/cerebro_runtime.ps1",
+    "standards/control-context-state-service.yaml",
+    "standards/control-context-hierarchy.yaml",
+    "standards/human-navigation-surface.yaml",
+    "standards/development/consolidate.yaml",
+    "engines/context/control-context-state.schema.json",
+    "engines/interaction/control-context-intent-assessment.schema.json",
+    "engines/interaction/control_context_intent.py",
+    "engines/interaction/context-consolidation-result.schema.json",
+    "engines/interaction/context_consolidation.py",
+    "mcp/context-navigation-options.schema.json",
+    "mcp/context-navigation-options-candidate.schema.json",
+    "mcp/control-resolution-attestation.schema.json",
+    "mcp/control-owner-effect-plan.schema.json",
+    "mcp/owner-effect-receipt.schema.json",
+    "mcp/owner-state-persistence-verification.schema.json",
+    "mcp/state-service-commit-receipt.schema.json",
+    "mcp/owner-state-commit-receipt.schema.json",
+    "mcp/control_owner_effect_receipt.py",
+    "mcp/control_owner_routing.py",
+    "mcp/control_resolution_host.py",
+    "engines/project/project-basis-state.schema.json",
+    "engines/project/project_owner_effect.py",
+    "engines/quality/quality_owner_effect.py",
+    "engines/convergence/convergence-owner-state.schema.json",
+    "engines/convergence/convergence_owner_effect.py",
+    "tooling/context/control_context_registry.py",
+    "tooling/context/control_context_state_postgres.py",
+    "tooling/context/control_context_state_postgres.sql",
+    "tooling/context/control_context_postgres_migrations.json",
+    "tooling/context/control_owner_effect.py",
+    "tooling/context/control_context_owner_persistence.py",
+    "tooling/owner_state/owner_state_persistence.py",
+    "tooling/owner_state/component.yaml",
+    "tooling/validator/control_context_postgres_validation.py",
+    "tooling/validator/control_context_owner_persistence_validation.py",
+    "tooling/validator/owner_state_persistence_validation.py",
+    "tooling/validator/control_resolution_host_validation.py",
+    "tooling/validator/human_navigation_surface_validation.py",
 ]
 
 DELIVERY_PROFILES = {"LIMITED", "STANDARD", "FULL"}
@@ -534,6 +575,486 @@ def verify_promotion_basis(root: Path, require_git_ancestry: bool = True) -> dic
     return checks
 
 
+class ControlContextBindingError(ValueError):
+    def __init__(self, family: str, detail: str):
+        super().__init__(detail)
+        self.family = family
+        self.detail = detail
+
+
+def validate_control_context_binding(request: dict[str, Any], root: Path) -> dict[str, Any] | None:
+    """Validate a State Service begin-event envelope before project reasoning."""
+
+    project_bound = request.get("project_bound") is True or isinstance(request.get("control_context_binding"), dict)
+    if not project_bound:
+        return None
+    binding = request.get("control_context_binding")
+    if not isinstance(binding, dict):
+        raise ControlContextBindingError("CONTROL_CONTEXT_BINDING_MISSING", "project-bound-event-requires-control-context-binding")
+    if binding.get("schema") != CONTROL_CONTEXT_BINDING_SCHEMA:
+        raise ControlContextBindingError("CONTROL_CONTEXT_REGISTRY_INVALID", "control-context-binding-schema-mismatch")
+    if binding.get("repository_permission_required") is not False:
+        raise ControlContextBindingError("CONTROL_CONTEXT_REGISTRY_INVALID", "project-control-binding-must-not-require-repository-permission")
+    project = binding.get("project")
+    session = binding.get("session")
+    if not isinstance(project, dict) or not isinstance(session, dict):
+        raise ControlContextBindingError("CONTROL_CONTEXT_BINDING_MISSING", "project-and-session-state-required")
+    try:
+        domain = load_module(root / "tooling/context/control_context_registry.py", "cerebro_control_context_domain")
+        domain.validate_session_state(session, project)
+    except Exception as exc:
+        detail = str(exc)
+        family = "CONTROL_CONTEXT_BINDING_STALE" if "stale" in detail or "revision" in detail or "fingerprint" in detail else "CONTROL_CONTEXT_REGISTRY_INVALID"
+        raise ControlContextBindingError(family, detail) from exc
+
+    expected = {
+        "expected_project_revision": project.get("revision"),
+        "expected_project_fingerprint": project.get("fingerprint"),
+        "expected_session_revision": session.get("session_revision"),
+        "expected_session_fingerprint": session.get("fingerprint"),
+    }
+    for field, value in expected.items():
+        if binding.get(field) != value:
+            raise ControlContextBindingError("CONTROL_CONTEXT_BINDING_STALE", f"{field}-mismatch")
+    request_project = request.get("project_ref")
+    if request_project is not None and str(request_project) != str(project.get("project_ref")):
+        raise ControlContextBindingError("CONTROL_CONTEXT_BINDING_STALE", "request-project-ref-mismatch")
+    request_session = request.get("session_ref")
+    if request_session is not None and str(request_session) != str(session.get("session_ref")):
+        raise ControlContextBindingError("CONTROL_CONTEXT_BINDING_STALE", "request-session-ref-mismatch")
+    source_commit = str(request.get("authoritative_source_commit") or "")
+    if source_commit and str(project.get("source_revision")) != source_commit:
+        raise ControlContextBindingError("CONTROL_CONTEXT_BINDING_STALE", "project-source-revision-mismatch")
+
+    summary_subject = {
+        "event_id": binding.get("event_id"),
+        "project_ref": project.get("project_ref"),
+        "project_revision": project.get("revision"),
+        "project_fingerprint": project.get("fingerprint"),
+        "session_ref": session.get("session_ref"),
+        "session_revision": session.get("session_revision"),
+        "session_fingerprint": session.get("fingerprint"),
+        "active_context_ref": session.get("active_context_ref"),
+    }
+    return {
+        "schema": "cerebro-mcp-control-context-binding-validation/v1",
+        "result": "PASS",
+        **summary_subject,
+        "binding_fingerprint": sha256_bytes(
+            json.dumps(summary_subject, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ),
+        "repository_permission_required": False,
+        "session_scoped_focus": True,
+    }
+
+
+def _block_due_to_context_binding(
+    request: dict[str, Any],
+    basis: dict[str, Any],
+    error: ControlContextBindingError,
+) -> dict[str, Any]:
+    objective = str(request.get("objective_ref") or request.get("current_objective") or "UNSPECIFIED")
+    digest = sha256_bytes(
+        json.dumps(
+            {"objective": objective, "family": error.family, "detail": error.detail},
+            sort_keys=True,
+        ).encode("utf-8")
+    )
+    decision = {
+        "schema": DECISION_SCHEMA,
+        "control_decision_id": "MCPD-CONTEXT-BLOCK-" + digest[:12].upper(),
+        "control_state_ref": "CTRL-CONTEXT-BINDING",
+        "objective_ref": objective,
+        "basis_refs": ["CEREBRO-CONTROL-CONTEXT-HIERARCHY-001", CONTROL_SURFACE_ID],
+        "basis_fingerprint": digest,
+        "effective_user_config_ref": str(request.get("effective_user_configuration") or "CURRENT_EFFECTIVE_CONFIGURATION"),
+        "execution_profile_ref": "NONE",
+        "applicable_control_refs": ["CEREBRO-CONTROL-CONTEXT-HIERARCHY-001", CONTROL_SURFACE_ID],
+        "outcome": "BLOCK",
+        "invalidates": [error.family],
+        "verification_requirement": "REHYDRATE_VALIDATE_AND_RERESOLVE_CONTROL_CONTEXT_BINDING",
+        "human_boundary": "NONE",
+        "evidence_scope": "CONTROL_CONTEXT_BINDING_GATE",
+        "authority": "MCP",
+        "control_resolution_surface": CONTROL_SURFACE_ID,
+        "resolved_at": utc_now(),
+    }
+    result = {
+        "schema": SCHEMA,
+        "result": "PASS",
+        "authority": "DERIVED_MCP_CONTROL_DECISION",
+        "live_control_authority": True,
+        "direct_resolver_live_authority": False,
+        "normal_control_path_exercised": True,
+        "promotion_basis_verified": True,
+        "promotion_basis": basis,
+        "control_context_binding_required": True,
+        "control_context_binding_validated": False,
+        "control_context_binding_error": {"family": error.family, "detail": error.detail},
+        "material_preflight_exercised": False,
+        "material_preflight_passed": None,
+        "material_preflight_precedes_adaptive": True,
+        "adaptive_invoked": False,
+        "mcp_control_decision": decision,
+        "execution_profile": None,
+        "continuation_effect": "PRESERVE_OR_REHYDRATE",
+    }
+    return result
+
+
+def _block_due_to_context_transition(
+    result: dict[str, Any],
+    request: dict[str, Any],
+    detail: str,
+) -> dict[str, Any]:
+    objective = str(request.get("objective_ref") or request.get("current_objective") or "UNSPECIFIED")
+    candidate_decision = result.get("mcp_control_decision") if isinstance(result.get("mcp_control_decision"), dict) else {}
+    digest = sha256_bytes(
+        json.dumps(
+            {"objective": objective, "detail": detail, "candidate_decision": candidate_decision},
+            sort_keys=True,
+            default=str,
+        ).encode("utf-8")
+    )
+    blocked = dict(result)
+    blocked["candidate_mcp_control_decision"] = candidate_decision
+    blocked["mcp_control_decision"] = {
+        "schema": DECISION_SCHEMA,
+        "control_decision_id": "MCPD-CONTEXT-TRANSITION-BLOCK-" + digest[:12].upper(),
+        "control_state_ref": "CTRL-CONTEXT-TRANSITION",
+        "objective_ref": objective,
+        "basis_refs": ["CEREBRO-CONTROL-CONTEXT-HIERARCHY-001", CONTROL_SURFACE_ID],
+        "basis_fingerprint": digest,
+        "effective_user_config_ref": str(request.get("effective_user_configuration") or "CURRENT_EFFECTIVE_CONFIGURATION"),
+        "execution_profile_ref": "NONE",
+        "applicable_control_refs": ["CEREBRO-CONTROL-CONTEXT-HIERARCHY-001", CONTROL_SURFACE_ID],
+        "outcome": "BLOCK",
+        "invalidates": ["CONTROL_CONTEXT_TRANSITION_INVALID"],
+        "verification_requirement": "RE_RESOLVE_CONTEXT_TRANSITION_FROM_CURRENT_BINDING",
+        "human_boundary": "NONE",
+        "evidence_scope": "CONTROL_CONTEXT_TRANSITION_VALIDATION",
+        "authority": "MCP",
+        "control_resolution_surface": CONTROL_SURFACE_ID,
+        "resolved_at": utc_now(),
+    }
+    blocked["execution_profile"] = None
+    blocked["context_transition"] = None
+    blocked["context_transition_error"] = detail
+    blocked["continuation_effect"] = "PRESERVE"
+    return blocked
+
+
+def build_context_navigation_options(
+    project: dict[str, Any],
+    session: dict[str, Any],
+    decision: dict[str, Any],
+    proposal: Any,
+    predicted_receipt: dict[str, Any],
+    root: Path,
+) -> dict[str, Any] | None:
+    """Create a non-renderable precommit candidate bound to the predicted receipt."""
+
+    if proposal is None:
+        return None
+    if not isinstance(proposal, dict):
+        raise ValueError("context-navigation-candidate-object-required")
+    if proposal.get("human_action_is_next") is not True or proposal.get("machine_action_pending") is True:
+        return None
+    if decision.get("outcome") != "CONTINUE" or decision.get("human_boundary", "NONE") != "NONE":
+        return None
+    binding = session.get("active_continuation_binding")
+    if not isinstance(binding, dict) or binding.get("surface_kind") != "HNS":
+        raise ValueError("HNS-navigation-requires-committed-HNS-continuation-binding")
+    optional_proposals = proposal.get("optional", [])
+    if not isinstance(optional_proposals, list) or not all(isinstance(item, dict) for item in optional_proposals):
+        raise ValueError("context-navigation-optional-array-required")
+    if len(optional_proposals) > 3:
+        raise ValueError("context-navigation-optional-maximum-three")
+
+    def action_id(operation: str, target_ref: str, alias: str) -> str:
+        subject = {
+            "decision_ref": decision.get("control_decision_id"),
+            "operation": operation,
+            "target_ref": target_ref,
+            "alias": alias,
+            "project_fingerprint": project.get("fingerprint"),
+            "session_fingerprint": session.get("fingerprint"),
+        }
+        return "HNSA-" + sha256_bytes(
+            json.dumps(subject, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        )[:20].upper()
+
+    primary = {
+        "action_id": action_id(binding["operation"], binding["target_ref"], binding["alias"]),
+        "surface_kind": "HNS",
+        "binding_id": binding["binding_id"],
+        "alias": binding["alias"],
+        "operation": binding["operation"],
+        "target_ref": binding["target_ref"],
+        "approved_by_mcp": True,
+    }
+    optional: list[dict[str, Any]] = []
+    for item in optional_proposals:
+        alias = item.get("alias")
+        operation = item.get("operation")
+        target_ref = item.get("target_ref")
+        if not all(isinstance(value, str) and bool(value.strip()) for value in (alias, operation, target_ref)):
+            raise ValueError("context-navigation-optional-action-fields-required")
+        optional.append(
+            {
+                "action_id": action_id(operation, target_ref, alias),
+                "surface_kind": "HNS",
+                "alias": alias,
+                "operation": operation,
+                "target_ref": target_ref,
+                "approved_by_mcp": True,
+            }
+        )
+    options = {
+        "schema": "cerebro-mcp-context-navigation-options-candidate/v1",
+        "authority": "MCP",
+        "state_basis": "PREDICTED_POST_COMMIT_STATE",
+        "render_authorized": False,
+        "activation_precondition": HNS_CANDIDATE_ACTIVATION_PRECONDITION,
+        "expected_transition_receipt_ref": predicted_receipt["receipt_id"],
+        "expected_transition_receipt_fingerprint": predicted_receipt["receipt_fingerprint"],
+        "control_decision_ref": decision.get("control_decision_id"),
+        "project_ref": project["project_ref"],
+        "session_ref": session["session_ref"],
+        "source_context_ref": session["active_context_ref"],
+        "project_revision": project["revision"],
+        "session_revision": session["session_revision"],
+        "project_fingerprint": project["fingerprint"],
+        "session_fingerprint": session["fingerprint"],
+        "primary": primary,
+        "optional": optional,
+        "candidate_fingerprint": "",
+    }
+    fingerprint_subject = dict(options)
+    fingerprint_subject.pop("candidate_fingerprint", None)
+    options["candidate_fingerprint"] = sha256_bytes(
+        json.dumps(fingerprint_subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    )
+    validator = load_module(
+        root / "tooling/validator/human_navigation_surface_validation.py",
+        "cerebro_hns_options_validator",
+    )
+    validator.validate_navigation_options_candidate(options, project, session, predicted_receipt)
+    return options
+
+
+def _none_owner_effects() -> dict[str, dict[str, Any]]:
+    return {
+        owner: {"owner": owner, "effect": "NONE", "candidate_ref": None, "state_mutation_by_MCP": False}
+        for owner in ("project", "quality", "convergence", "context", "human")
+    }
+
+
+def _default_next_action(decision: dict[str, Any], navigation_options: dict[str, Any] | None) -> dict[str, Any]:
+    if navigation_options is not None:
+        return {
+            "action_ref": navigation_options["primary"]["action_id"],
+            "action_class": "CONTROL",
+            "owner": "HUMAN",
+            "internally_executable": False,
+            "required_before_event_closure": False,
+            "basis_fingerprint": str(
+                navigation_options.get("options_fingerprint") or navigation_options.get("candidate_fingerprint") or ""
+            ),
+        }
+    if decision.get("outcome") == "USER_DECISION_REQUIRED":
+        return {
+            "action_ref": str(decision.get("human_boundary") or "HUMAN_DECISION_REQUIRED"),
+            "action_class": "HUMAN_DECISION",
+            "owner": "HUMAN",
+            "internally_executable": False,
+            "required_before_event_closure": False,
+            "basis_fingerprint": str(decision.get("basis_fingerprint") or ""),
+        }
+    return {
+        "action_ref": "NONE",
+        "action_class": "CONTROL",
+        "owner": "NONE",
+        "internally_executable": False,
+        "required_before_event_closure": False,
+        "basis_fingerprint": str(decision.get("basis_fingerprint") or ""),
+    }
+
+
+def _validate_consolidation_against_bound_project(
+    consolidation: dict[str, Any], project: dict[str, Any]
+) -> None:
+    selected = consolidation.get("selected_contexts")
+    if not isinstance(selected, list) or not selected:
+        raise ValueError("context-consolidation-selected-contexts-required")
+    mapping = {item["context_id"]: item for item in project["contexts"]}
+    for snapshot in selected:
+        if not isinstance(snapshot, dict):
+            raise ValueError("context-consolidation-selected-snapshot-object-required")
+        if snapshot.get("project_ref") != project["project_ref"]:
+            raise ValueError("cross-project-owner-routing-requires-separately-validated-project-bindings")
+        if snapshot.get("project_revision") != project["revision"] or snapshot.get("project_fingerprint") != project["fingerprint"]:
+            raise ValueError("context-consolidation-project-snapshot-stale")
+        context_ref = snapshot.get("context_ref")
+        if context_ref not in mapping or snapshot.get("context_fingerprint") != mapping[context_ref]["context_fingerprint"]:
+            raise ValueError("context-consolidation-context-snapshot-stale")
+
+
+def attach_context_transition(
+    result: dict[str, Any],
+    request: dict[str, Any],
+    context_binding: dict[str, Any] | None,
+    root: Path,
+    owner_persistence_verifier: Any | None = None,
+    runtime_capability_resolver: Any | None = None,
+) -> dict[str, Any]:
+    """Bind an Interaction proposal to the final MCP decision without persisting it."""
+
+    if context_binding is None:
+        return result
+    envelope = request.get("control_context_binding")
+    if not isinstance(envelope, dict):
+        return _block_due_to_context_transition(result, request, "validated-binding-envelope-missing")
+    decision = result.get("mcp_control_decision")
+    if not isinstance(decision, dict):
+        return _block_due_to_context_transition(result, request, "mcp-control-decision-required")
+    outcome = decision.get("outcome")
+    proposal = request.get("context_transition_candidate")
+    if proposal is None:
+        proposal = {}
+    if not isinstance(proposal, dict):
+        return _block_due_to_context_transition(result, request, "context-transition-candidate-object-required")
+    project_operations = proposal.get("project_operations", [])
+    session_operations = proposal.get("session_operations", [])
+    if not isinstance(project_operations, list) or not isinstance(session_operations, list):
+        return _block_due_to_context_transition(result, request, "context-transition-operation-arrays-required")
+    if outcome != "CONTINUE" and (project_operations or session_operations):
+        return _block_due_to_context_transition(result, request, "state-mutation-prohibited-for-non-CONTINUE-outcome")
+    if outcome != "CONTINUE":
+        project_operations = []
+        session_operations = []
+    intent_validation: dict[str, Any] | None = None
+    if outcome == "CONTINUE":
+        assessment = request.get("control_context_intent_assessment")
+        if not isinstance(assessment, dict):
+            return _block_due_to_context_transition(result, request, "project-CONTINUE-requires-Interaction-intent-assessment")
+        try:
+            interaction = load_module(
+                root / "engines/interaction/control_context_intent.py",
+                "cerebro_control_context_intent_validation",
+            )
+            intent_validation = interaction.validate_control_context_intent_assessment(
+                assessment, envelope["project"], envelope["session"], envelope.get("event_id")
+            )
+            operation_names = {
+                item.get("operation") for item in [*project_operations, *session_operations] if isinstance(item, dict)
+            }
+            if operation_names:
+                expected_route = "CREATE_CHILD" if "CREATE_CHILD" in operation_names else "CONTROL_TRANSITION"
+                if assessment.get("route_candidate") != expected_route:
+                    raise ValueError("context-transition-does-not-match-Interaction-route-candidate")
+        except Exception as exc:
+            return _block_due_to_context_transition(result, request, str(exc))
+    directive = {
+        "schema": "cerebro-control-context-transition-directive/v1",
+        "event_id": envelope.get("event_id"),
+        "decision_ref": decision.get("control_decision_id") or "MCPD-UNIDENTIFIED",
+        "expected_project_revision": envelope.get("expected_project_revision"),
+        "expected_project_fingerprint": envelope.get("expected_project_fingerprint"),
+        "expected_session_revision": envelope.get("expected_session_revision"),
+        "expected_session_fingerprint": envelope.get("expected_session_fingerprint"),
+        "project_operations": project_operations,
+        "session_operations": session_operations,
+    }
+    try:
+        domain = load_module(root / "tooling/context/control_context_registry.py", "cerebro_control_context_transition_domain")
+        project_after, session_after, receipt = domain.apply_transition(
+            envelope["project"], envelope["session"], directive
+        )
+        owner_effect_plan = None
+        consolidation = request.get("context_consolidation_result_candidate")
+        if consolidation is not None:
+            if not isinstance(consolidation, dict):
+                raise ValueError("context-consolidation-result-candidate-object-required")
+            _validate_consolidation_against_bound_project(consolidation, envelope["project"])
+            router = load_module(root / "mcp/control_owner_routing.py", "cerebro_control_owner_effect_routing")
+            owner_effect_plan = router.build_owner_effect_plan(
+                decision,
+                consolidation,
+                request.get("owner_effect_state") if isinstance(request.get("owner_effect_state"), dict) else None,
+                persistence_evidence_verifier=owner_persistence_verifier,
+                capability_resolver=runtime_capability_resolver,
+            )
+        navigation_candidate = request.get("context_navigation_candidate")
+        if (
+            isinstance(owner_effect_plan, dict)
+            and owner_effect_plan.get("next_action", {}).get("owner") == "MACHINE"
+            and owner_effect_plan.get("next_action", {}).get("required_before_event_closure") is True
+        ):
+            navigation_candidate = {"human_action_is_next": False, "machine_action_pending": True, "optional": []}
+        navigation_options = build_context_navigation_options(
+            project_after,
+            session_after,
+            decision,
+            navigation_candidate,
+            receipt,
+            root,
+        )
+    except Exception as exc:
+        return _block_due_to_context_transition(result, request, str(exc))
+    transition_subject = {
+        "event_id": directive["event_id"],
+        "decision_ref": directive["decision_ref"],
+        "project_revision_after": project_after["revision"],
+        "project_fingerprint_after": project_after["fingerprint"],
+        "session_revision_after": session_after["session_revision"],
+        "session_fingerprint_after": session_after["fingerprint"],
+        "receipt_id": receipt["receipt_id"],
+    }
+    attached = dict(result)
+    attached["context_transition"] = {
+        "schema": "cerebro-mcp-control-context-transition/v1",
+        "transition_id": "MCPT-" + sha256_bytes(
+            json.dumps(transition_subject, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        )[:20].upper(),
+        "directive": directive,
+        "predicted_receipt": receipt,
+        "predicted_project_revision_after": project_after["revision"],
+        "predicted_project_fingerprint_after": project_after["fingerprint"],
+        "predicted_session_revision_after": session_after["session_revision"],
+        "predicted_session_fingerprint_after": session_after["fingerprint"],
+        "state_service_must_revalidate_and_compare_and_swap": True,
+        "state_service_mutation_attestation_required": True,
+        "navigation_options_activation_precondition": HNS_CANDIDATE_ACTIVATION_PRECONDITION,
+        "repository_permission_required": False,
+    }
+    attached["mcp_context_navigation_options_candidate"] = navigation_options
+    attached["mcp_context_navigation_options"] = None
+    attached["human_navigation_surface_required"] = False
+    attached["human_navigation_surface_render_authorized_before_commit"] = False
+    attached["human_navigation_surface_required_after_committed_state_match"] = navigation_options is not None
+    attached["control_context_intent_assessment_validation"] = intent_validation
+    attached["owner_effect_plan"] = owner_effect_plan
+    attached_decision = dict(decision)
+    attached_decision["context_transition_ref"] = attached["context_transition"]["transition_id"]
+    attached_decision["context_directive"] = copy.deepcopy(directive)
+    attached_decision["owner_effects"] = (
+        copy.deepcopy(owner_effect_plan["owner_effects"]) if isinstance(owner_effect_plan, dict) else _none_owner_effects()
+    )
+    attached_decision["next_action"] = (
+        copy.deepcopy(owner_effect_plan["next_action"])
+        if isinstance(owner_effect_plan, dict)
+        else _default_next_action(attached_decision, navigation_options)
+    )
+    attached["mcp_control_decision"] = attached_decision
+    next_action = attached_decision["next_action"]
+    attached["current_event_machine_action_required"] = (
+        next_action.get("owner") == "MACHINE" and next_action.get("required_before_event_closure") is True
+    )
+    attached["event_closure_allowed_before_required_machine_action"] = not attached["current_event_machine_action_required"]
+    return attached
+
+
 def _block_due_to_basis(request: dict[str, Any], basis: dict[str, Any]) -> dict[str, Any]:
     objective = str(request.get("objective_ref") or "UNSPECIFIED")
     digest = sha256_bytes(json.dumps({"objective": objective, "basis": basis}, sort_keys=True, default=str).encode("utf-8"))
@@ -679,18 +1200,45 @@ def _block_due_to_delivery_profile(
 
 
 
-def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dict[str, Any]:
+def resolve(
+    request: dict[str, Any],
+    root: Path = SOURCE_ROOT,
+    require_git_ancestry: bool = True,
+    owner_persistence_verifier: Any | None = None,
+    runtime_capability_resolver: Any | None = None,
+) -> dict[str, Any]:
     if not isinstance(request, dict):
         raise ValueError("request-must-be-object")
     basis = verify_promotion_basis(root, require_git_ancestry=require_git_ancestry)
     if not basis.get("promotion_basis_verified"):
         return _block_due_to_basis(request, basis)
 
+    try:
+        context_binding = validate_control_context_binding(request, root)
+    except ControlContextBindingError as exc:
+        return _block_due_to_context_binding(request, basis, exc)
+
+    def finalize(bound_result: dict[str, Any]) -> dict[str, Any]:
+        """Close every valid project-bound event through one transition directive.
+
+        A BLOCK or human-boundary decision still needs a no-op completion receipt so
+        that an event lease cannot make the previously committed continuation vanish.
+        """
+
+        return attach_context_transition(
+            bound_result,
+            request,
+            context_binding,
+            root,
+            owner_persistence_verifier=owner_persistence_verifier,
+            runtime_capability_resolver=runtime_capability_resolver,
+        )
+
     constitutional = evaluate_constitutional_compliance(request)
     if constitutional["state"] == "VERIFIED_MATERIAL_BREACH":
         objective = str(request.get("objective_ref") or "UNSPECIFIED")
         digest = sha256_bytes(json.dumps({"objective": objective, "constitutional": constitutional}, sort_keys=True).encode("utf-8"))
-        return {
+        return finalize({
             "schema": SCHEMA,
             "result": "PASS",
             "authority": "DERIVED_MCP_CONTROL_DECISION",
@@ -724,20 +1272,28 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
             },
             "execution_profile": None,
             "continuation_effect": "NONE",
-        }
+        })
 
     adaptive = load_module(root / "mcp/adaptive_control_resolver.py", "cerebro_adaptive_control_validated_logic")
     stage = str(request.get("stage") or "UNDERSTAND_FRAME").upper()
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
     preflight_result = None
     adaptive_request = dict(request)
+    if context_binding is not None:
+        adaptive_request["governing_basis_refs"] = sorted(set(
+            [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
+            + [
+                "CONTROL-CONTEXT:" + str(context_binding["active_context_ref"]),
+                "CONTROL-CONTEXT-BINDING:" + str(context_binding["binding_fingerprint"]),
+            ]
+        ))
     delivery_resolution = None
     phase_transition = None
 
     if bool(request.get("phase_transition_requested")):
         phase_transition = resolve_phase_transition(request)
         if phase_transition.get("outcome") != "CONTINUE":
-            return {
+            return finalize({
                 "schema": SCHEMA,
                 "result": "PASS",
                 "authority": "DERIVED_MCP_CONTROL_DECISION",
@@ -760,7 +1316,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
                 "execution_profile": None,
                 "campaign_phase_transition": phase_transition,
                 "continuation_effect": "BLOCK_DEPENDENT_PHASE",
-            }
+            })
         adaptive_request["governing_basis_refs"] = sorted(set(
             [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
             + ["CAMPAIGN-CLOSEOUT:" + str(phase_transition.get("closeout_contract_fingerprint") or "")]
@@ -769,7 +1325,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
     if "requested_delivery_profile" in request:
         delivery_resolution = resolve_delivery_profile(request)
         if delivery_resolution.get("result") != "PASS":
-            return _block_due_to_delivery_profile(request, basis, delivery_resolution)
+            return finalize(_block_due_to_delivery_profile(request, basis, delivery_resolution))
         adaptive_request["delivery_mode"] = delivery_resolution["resolved_profile"]
         adaptive_request["governing_basis_refs"] = sorted(set(
             [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
@@ -784,13 +1340,13 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
         try:
             preflight_result = preflight.resolve(request, root)
         except Exception as exc:
-            return _block_due_to_preflight_error(request, basis, exc)
+            return finalize(_block_due_to_preflight_error(request, basis, exc))
         preflight_decision = preflight_result.get("mcp_control_decision", {}) if isinstance(preflight_result, dict) else {}
         if preflight_result.get("result") != "PASS" or preflight_decision.get("outcome") != "CONTINUE":
             decision = dict(preflight_decision) if isinstance(preflight_decision, dict) else {}
             decision["authority"] = "MCP"
             decision["control_resolution_surface"] = CONTROL_SURFACE_ID
-            return {
+            return finalize({
                 "schema": SCHEMA,
                 "result": "PASS",
                 "authority": "DERIVED_MCP_CONTROL_DECISION",
@@ -806,7 +1362,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
                 "execution_profile": None,
                 "continuation_effect": "NONE",
                 "preflight_result": preflight_result,
-            }
+            })
         control_state = preflight_result.get("control_state", {}) if isinstance(preflight_result, dict) else {}
         receipt = preflight_result.get("receipt", {}) if isinstance(preflight_result, dict) else {}
         adaptive_request["governing_basis_refs"] = sorted(set(
@@ -838,7 +1394,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
         profile["authority"] = "MCP"
         if delivery_resolution is not None:
             profile["mcp_delivery_profile_resolution"] = delivery_resolution
-    return {
+    result = {
         "schema": SCHEMA,
         "result": "PASS",
         "authority": "DERIVED_MCP_CONTROL_DECISION",
@@ -856,10 +1412,14 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, require_git_ances
         "execution_profile": profile,
         "mcp_delivery_profile_resolution": delivery_resolution,
         "campaign_phase_transition": phase_transition,
+        "control_context_binding_required": context_binding is not None,
+        "control_context_binding_validated": context_binding is not None,
+        "control_context_binding": context_binding,
         "continuation_effect": candidate.get("continuation_effect"),
         "capability_resolution": candidate.get("capability_resolution", {}),
         "preflight_result": preflight_result,
     }
+    return finalize(result)
 
 
 def runtime_control_policy_absent(root: Path) -> bool:
@@ -874,10 +1434,88 @@ def runtime_control_policy_absent(root: Path) -> bool:
     return True
 
 
+def _fixture_control_context_binding(root: Path) -> dict[str, Any]:
+    domain = load_module(root / "tooling/context/control_context_registry.py", "cerebro_control_context_fixture_domain")
+    source_revision = git_head(root) or "fixture-source"
+    project, _ = domain.bootstrap_project_state(
+        aggregate_id="AGG-MCP-CONTEXT-SELFTEST",
+        tenant_ref="TENANT-SELFTEST",
+        workspace_ref="WORKSPACE-SELFTEST",
+        project_ref="PROJECT-SELFTEST",
+        source_revision=source_revision,
+        event_id="EVENT-BOOTSTRAP",
+        decision_ref="DECISION-BOOTSTRAP",
+        root={
+            "context_id": "CTX-ROOT",
+            "human_label": "Hovedspor",
+            "objective_ref": "OBJECTIVE-ROOT",
+            "scope_ref": "SCOPE-ROOT",
+            "basis_refs": ["BASIS-ROOT"],
+            "project_basis_ref": "PROJECT-BASIS-SELFTEST",
+            "quality_trace_ref": "QUALITY-TRACE-SELFTEST",
+            "completion_criteria_refs": ["ROOT-COMPLETE"],
+        },
+    )
+    session = domain.bind_control_session(
+        project,
+        session_binding_id="SESSION-BINDING-SELFTEST",
+        principal_ref="PRINCIPAL-SELFTEST",
+        consumer_ref="CHATGPT",
+        session_ref="SESSION-SELFTEST",
+    )
+    return {
+        "schema": CONTROL_CONTEXT_BINDING_SCHEMA,
+        "event_id": "EVENT-PROJECT-BOUND",
+        "idempotency_key": "IDEMPOTENCY-PROJECT-BOUND",
+        "project": project,
+        "session": session,
+        "expected_project_revision": project["revision"],
+        "expected_project_fingerprint": project["fingerprint"],
+        "expected_session_revision": session["session_revision"],
+        "expected_session_fingerprint": session["fingerprint"],
+        "repository_permission_required": False,
+        "rehydration_receipt": None,
+    }
+
+
+def _fixture_intent_assessment(
+    root: Path,
+    binding: dict[str, Any],
+    *,
+    intent_candidate: str = "CONTINUE_CURRENT",
+    materiality_hint: str = "NONMATERIAL",
+    explicitness: str = "INFERRED",
+    fork_justifications: list[str] | None = None,
+) -> dict[str, Any]:
+    interaction = load_module(
+        root / "engines/interaction/control_context_intent.py",
+        "cerebro_control_context_intent_selftest_fixture",
+    )
+    return interaction.assess_control_context_intent(
+        {
+            "event_ref": binding["event_id"],
+            "project_relation": "ACTIVE_PROJECT",
+            "intent_candidate": intent_candidate,
+            "target_selectors": [],
+            "materiality_hint": materiality_hint,
+            "explicitness": explicitness,
+            "fork_justifications": fork_justifications or [],
+            "human_meaning": {"speech_to_text_observed": False, "material_objective_delta": False},
+        },
+        binding["project"],
+        binding["session"],
+    )
+
+
 def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dict[str, Any]:
     tests: list[dict[str, Any]] = []
     def check(name: str, ok: bool, detail: str = "") -> None:
         tests.append({"name": name, "result": "PASS" if ok else "FAIL", "detail": detail})
+
+    check(
+        "fixed-MCP-control-outcome-vocabulary-unchanged",
+        CONTROL_OUTCOMES == {"CONTINUE", "REMEDIATE", "RETRY", "REORIENT", "USER_DECISION_REQUIRED", "BLOCK"},
+    )
 
     basis = verify_promotion_basis(root, require_git_ancestry=require_git_ancestry)
     check("promotion-basis-exact", bool(basis.get("promotion_basis_verified")), json.dumps(basis, sort_keys=True))
@@ -898,6 +1536,252 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
     check("canonical-nonmaterial-path-live", simple.get("live_control_authority") is True and simple.get("adaptive_invoked") is True and simple.get("mcp_control_decision", {}).get("outcome") == "CONTINUE")
     check("constitutional-normal-consumer-clear", simple.get("constitutional_compliance", {}).get("state") == "CLEAR")
 
+    missing_context = resolve(
+        {"objective_ref": "PROJECT-MISSING-CONTEXT", "project_bound": True},
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "project-bound-event-missing-context-binding-blocks-before-adaptive",
+        missing_context.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
+        and "CONTROL_CONTEXT_BINDING_MISSING" in missing_context.get("mcp_control_decision", {}).get("invalidates", [])
+        and missing_context.get("adaptive_invoked") is False,
+    )
+
+    context_binding = _fixture_control_context_binding(root)
+    continue_intent = _fixture_intent_assessment(root, context_binding)
+    valid_context = resolve(
+        {
+            "objective_ref": "PROJECT-VALID-CONTEXT",
+            "project_bound": True,
+            "project_ref": "PROJECT-SELFTEST",
+            "session_ref": "SESSION-SELFTEST",
+            "authoritative_source_commit": git_head(root) or "fixture-source",
+            "control_context_binding": context_binding,
+            "control_context_intent_assessment": continue_intent,
+            "consequence": "LOW",
+            "uncertainty": "LOW",
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "valid-project-context-binding-precedes-adaptive",
+        valid_context.get("control_context_binding_validated") is True
+        and valid_context.get("control_context_binding", {}).get("session_scoped_focus") is True
+        and valid_context.get("adaptive_invoked") is True
+        and valid_context.get("mcp_control_decision", {}).get("outcome") == "CONTINUE"
+        and valid_context.get("context_transition", {}).get("predicted_receipt", {}).get("mutated") is False
+        and valid_context.get("control_context_intent_assessment_validation", {}).get("result") == "PASS"
+        and valid_context.get("mcp_control_decision", {}).get("context_directive", {}).get("event_id") == context_binding["event_id"],
+    )
+    missing_intent = resolve(
+        {
+            "objective_ref": "PROJECT-MISSING-INTERACTION-ASSESSMENT",
+            "project_bound": True,
+            "control_context_binding": context_binding,
+            "consequence": "LOW",
+            "uncertainty": "LOW",
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "project-CONTINUE-requires-state-bound-Interaction-assessment",
+        missing_intent.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
+        and "CONTROL_CONTEXT_TRANSITION_INVALID" in missing_intent.get("mcp_control_decision", {}).get("invalidates", []),
+    )
+    transition_context = resolve(
+        {
+            "objective_ref": "PROJECT-CONTEXT-TRANSITION",
+            "project_bound": True,
+            "control_context_binding": context_binding,
+            "control_context_intent_assessment": _fixture_intent_assessment(
+                root,
+                context_binding,
+                intent_candidate="FORK_CANDIDATE",
+                materiality_hint="MATERIAL",
+                explicitness="EXPLICIT",
+                fork_justifications=["MULTISTEP_CONTINUITY_USEFUL"],
+            ),
+            "context_transition_candidate": {
+                "project_operations": [
+                    {
+                        "operation": "CREATE_CHILD",
+                        "parent_context_ref": "CTX-ROOT",
+                        "context_id": "CTX-CHILD",
+                        "human_label": "State service",
+                        "objective_ref": "OBJECTIVE-CHILD",
+                        "scope_ref": "SCOPE-CHILD",
+                        "basis_refs": ["BASIS-CHILD"],
+                        "project_basis_ref": "PROJECT-BASIS-SELFTEST",
+                        "quality_trace_ref": "QUALITY-TRACE-SELFTEST",
+                        "completion_criteria_refs": ["CHILD-COMPLETE"],
+                    }
+                ],
+                "session_operations": [
+                    {"operation": "SET_ACTIVE", "context_ref": "CTX-CHILD"},
+                    {
+                        "operation": "SET_CONTINUATION_BINDING",
+                        "binding": {
+                            "binding_id": "BIND-CTX-CHILD",
+                            "surface_kind": "HNS",
+                            "alias": "Fortsett denne grenen",
+                            "operation": "CONTINUE_CURRENT",
+                            "target_ref": "CTX-CHILD",
+                            "context_ref": "CTX-CHILD",
+                        },
+                    },
+                ],
+            },
+            "context_navigation_candidate": {
+                "human_action_is_next": True,
+                "machine_action_pending": False,
+                "optional": [
+                    {
+                        "alias": "Tilbake til hovedsporet",
+                        "operation": "RETURN_ROOT",
+                        "target_ref": "CTX-ROOT",
+                    }
+                ],
+            },
+            "consequence": "LOW",
+            "uncertainty": "LOW",
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "mcp-binds-and-validates-context-transition-without-repository-permission",
+        transition_context.get("mcp_control_decision", {}).get("outcome") == "CONTINUE"
+        and transition_context.get("context_transition", {}).get("predicted_receipt", {}).get("mutated") is True
+        and transition_context.get("context_transition", {}).get("repository_permission_required") is False
+        and transition_context.get("context_transition", {}).get("state_service_mutation_attestation_required") is True
+        and transition_context.get("mcp_context_navigation_options_candidate", {}).get("authority") == "MCP"
+        and len(transition_context.get("mcp_context_navigation_options_candidate", {}).get("optional", [])) == 1
+        and transition_context.get("mcp_context_navigation_options_candidate", {}).get("activation_precondition") == HNS_CANDIDATE_ACTIVATION_PRECONDITION
+        and transition_context.get("mcp_context_navigation_options_candidate", {}).get("render_authorized") is False
+        and transition_context.get("mcp_context_navigation_options") is None
+        and transition_context.get("human_navigation_surface_required") is False
+        and transition_context.get("human_navigation_surface_render_authorized_before_commit") is False
+        and transition_context.get("human_navigation_surface_required_after_committed_state_match") is True
+        and transition_context.get("mcp_control_decision", {}).get("owner_effects", {}).get("project", {}).get("effect") == "NONE"
+        and transition_context.get("mcp_control_decision", {}).get("next_action", {}).get("owner") == "HUMAN",
+    )
+    consolidation_module = load_module(
+        root / "engines/interaction/context_consolidation.py",
+        "cerebro_context_consolidation_mcp_fixture",
+    )
+    consolidation_result = consolidation_module.build_context_consolidation_result(
+        {
+            "schema": consolidation_module.REQUEST_SCHEMA,
+            "event_ref": context_binding["event_id"],
+            "target_kind": "CONTROL_CONTEXTS",
+            "selectors": [{"kind": "CONTEXT_REF", "project_ref": "PROJECT-SELFTEST", "value": "CTX-ROOT"}],
+            "structural_join_requested": False,
+        },
+        [context_binding["project"]],
+        {
+            "synthesis_ref": "SYNTH-MCP-OWNER-ROUTING",
+            "evidence_refs": ["EVIDENCE-MCP-OWNER-ROUTING"],
+            "material_conflicts": [],
+            "branch_disposition_candidates": [],
+            "effect_candidates": ["PROJECT_REVISION_REQUIRED"],
+        },
+    )
+    owner_routed = resolve(
+        {
+            "objective_ref": "PROJECT-OWNER-ROUTING",
+            "project_bound": True,
+            "control_context_binding": context_binding,
+            "control_context_intent_assessment": continue_intent,
+            "context_consolidation_result_candidate": consolidation_result,
+            "context_navigation_candidate": {
+                "human_action_is_next": True,
+                "machine_action_pending": False,
+                "optional": [],
+            },
+            "consequence": "LOW",
+            "uncertainty": "LOW",
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "canonical-MCP-decision-contains-owner-effects-and-machine-next-action",
+        owner_routed.get("mcp_control_decision", {}).get("outcome") == "CONTINUE"
+        and owner_routed.get("mcp_control_decision", {}).get("owner_effects", {}).get("project", {}).get("effect") == "REVISION_REQUIRED"
+        and owner_routed.get("mcp_control_decision", {}).get("next_action", {}).get("owner") == "MACHINE"
+        and owner_routed.get("current_event_machine_action_required") is True
+        and owner_routed.get("event_closure_allowed_before_required_machine_action") is False
+        and owner_routed.get("human_navigation_surface_required") is False,
+    )
+    bound_human_boundary = resolve(
+        {
+            "objective_ref": "PROJECT-HCS-PRECEDENCE",
+            "project_bound": True,
+            "control_context_binding": context_binding,
+            "authorization_required": True,
+            "context_navigation_candidate": {
+                "human_action_is_next": True,
+                "machine_action_pending": False,
+                "optional": [],
+            },
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "project-human-boundary-suppresses-HNS-and-closes-event-noop",
+        bound_human_boundary.get("mcp_control_decision", {}).get("outcome") == "USER_DECISION_REQUIRED"
+        and bound_human_boundary.get("mcp_context_navigation_options") is None
+        and bound_human_boundary.get("human_navigation_surface_required") is False
+        and bound_human_boundary.get("context_transition", {}).get("predicted_receipt", {}).get("mutated") is False,
+    )
+    invalid_transition_context = resolve(
+        {
+            "objective_ref": "PROJECT-CONTEXT-TRANSITION-INVALID",
+            "project_bound": True,
+            "control_context_binding": context_binding,
+            "control_context_intent_assessment": _fixture_intent_assessment(
+                root,
+                context_binding,
+                intent_candidate="PAUSE_REQUEST",
+                materiality_hint="MATERIAL",
+                explicitness="EXPLICIT",
+            ),
+            "context_transition_candidate": {
+                "project_operations": [{"operation": "UNKNOWN"}],
+                "session_operations": [],
+            },
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "invalid-context-transition-becomes-canonical-MCP-BLOCK",
+        invalid_transition_context.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
+        and "CONTROL_CONTEXT_TRANSITION_INVALID" in invalid_transition_context.get("mcp_control_decision", {}).get("invalidates", [])
+        and invalid_transition_context.get("context_transition") is None,
+    )
+    stale_context_binding = copy.deepcopy(context_binding)
+    stale_context_binding["expected_session_revision"] += 1
+    stale_context = resolve(
+        {
+            "objective_ref": "PROJECT-STALE-CONTEXT",
+            "project_bound": True,
+            "control_context_binding": stale_context_binding,
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "stale-project-context-binding-blocks-zero-adaptive",
+        stale_context.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
+        and "CONTROL_CONTEXT_BINDING_STALE" in stale_context.get("mcp_control_decision", {}).get("invalidates", [])
+        and stale_context.get("adaptive_invoked") is False,
+    )
+
     suspected_constitutional = resolve({
         "objective_ref": "CONSTITUTION-SUSPECTED",
         "constitutional_breach_candidates": [{"candidate_id": "CBR-S", "article_id": "C-03", "state": "SUSPECTED", "material": True}],
@@ -917,6 +1801,30 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
         verified_constitutional.get("constitutional_compliance", {}).get("state") == "VERIFIED_MATERIAL_BREACH"
         and verified_constitutional.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
         and verified_constitutional.get("adaptive_invoked") is False,
+    )
+    bound_verified_constitutional = resolve({
+        "objective_ref": "CONSTITUTION-VERIFIED-PROJECT-BOUND",
+        "project_bound": True,
+        "project_ref": "PROJECT-SELFTEST",
+        "session_ref": "SESSION-SELFTEST",
+        "authoritative_source_commit": git_head(root) or "fixture-source",
+        "control_context_binding": context_binding,
+        "constitutional_breach_candidates": [
+            {
+                "candidate_id": "CBR-V-BOUND",
+                "article_id": "C-05",
+                "state": "VERIFIED",
+                "material": True,
+                "evidence_ref": "EVIDENCE-BOUND",
+            }
+        ],
+    }, root, require_git_ancestry=require_git_ancestry)
+    check(
+        "project-bound-block-still-produces-noop-event-completion-directive",
+        bound_verified_constitutional.get("mcp_control_decision", {}).get("outcome") == "BLOCK"
+        and bound_verified_constitutional.get("context_transition", {}).get("predicted_receipt", {}).get("mutated") is False
+        and bound_verified_constitutional.get("context_transition", {}).get("predicted_session_fingerprint_after")
+        == context_binding["session"]["fingerprint"],
     )
 
     delivery_cases = [

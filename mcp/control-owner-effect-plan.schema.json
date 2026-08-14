@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/mcp-owner-effect-plan/v1",
+  "title": "Cerebro MCP Owner Effect Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "authority", "control_decision_ref", "control_outcome",
+    "consolidation_result_ref", "consolidation_basis_fingerprint", "owner_effects",
+    "ordered_owner_steps", "requires_canonical_reresolution_after_project_revision",
+    "automatic_cross_owner_transaction", "parallel_control_decision",
+    "branch_disposition_gate", "next_action", "plan_fingerprint", "plan_ref"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-mcp-owner-effect-plan/v1"},
+    "authority": {"const": "MCP"},
+    "control_decision_ref": {"type": "string", "minLength": 1},
+    "control_outcome": {"enum": ["CONTINUE", "REMEDIATE", "RETRY", "REORIENT", "USER_DECISION_REQUIRED", "BLOCK"]},
+    "consolidation_result_ref": {"type": "string", "pattern": "^CCR-[0-9A-F]{24}$"},
+    "consolidation_basis_fingerprint": {"$ref": "#/$defs/sha256"},
+    "owner_effects": {
+      "type": "object", "additionalProperties": false,
+      "required": ["project", "quality", "convergence", "context", "human"],
+      "properties": {
+        "project": {"$ref": "#/$defs/effect"},
+        "quality": {"$ref": "#/$defs/effect"},
+        "convergence": {"$ref": "#/$defs/effect"},
+        "context": {"$ref": "#/$defs/effect"},
+        "human": {"$ref": "#/$defs/effect"}
+      }
+    },
+    "ordered_owner_steps": {"type": "array", "items": {"$ref": "#/$defs/step"}},
+    "requires_canonical_reresolution_after_project_revision": {"type": "boolean"},
+    "automatic_cross_owner_transaction": {"const": false},
+    "parallel_control_decision": {"const": false},
+    "branch_disposition_gate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ready", "missing_owner_receipt_refs", "verified_owner_receipt_refs", "disposition_candidates", "unresolved_branches_remain_pending"],
+      "properties": {
+        "ready": {"type": "boolean"},
+        "missing_owner_receipt_refs": {"type": "array", "uniqueItems": true, "items": {"enum": ["project", "quality", "convergence", "context"]}},
+        "verified_owner_receipt_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "disposition_candidates": {"type": "array", "items": {"$ref": "#/$defs/disposition"}},
+        "unresolved_branches_remain_pending": {"type": "boolean"}
+      }
+    },
+    "next_action": {"$ref": "#/$defs/next_action"},
+    "plan_fingerprint": {"$ref": "#/$defs/sha256"},
+    "plan_ref": {"type": "string", "pattern": "^OEP-[0-9A-F]{24}$"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "effect": {
+      "type": "object", "additionalProperties": false,
+      "required": ["owner", "effect", "candidate_ref", "state_mutation_by_MCP"],
+      "properties": {
+        "owner": {"enum": ["project", "quality", "convergence", "context", "human"]},
+        "effect": {"type": "string", "minLength": 1},
+        "candidate_ref": {"type": ["string", "null"]},
+        "state_mutation_by_MCP": {"const": false}
+      }
+    },
+    "step": {
+      "type": "object", "additionalProperties": false,
+      "required": ["step_ref", "owner", "effect", "status", "depends_on_owner_receipts", "receipt_ref", "capability_available", "persistence_evidence_verified"],
+      "properties": {
+        "step_ref": {"type": "string", "minLength": 1},
+        "owner": {"enum": ["project", "quality", "convergence", "context"]},
+        "effect": {"type": "string", "minLength": 1},
+        "status": {"enum": ["PENDING", "SATISFIED", "BLOCKED_BY_PREREQUISITE"]},
+        "depends_on_owner_receipts": {"type": "array", "uniqueItems": true, "items": {"enum": ["project", "quality", "convergence", "context"]}},
+        "receipt_ref": {"type": ["string", "null"]},
+        "capability_available": {"type": ["boolean", "null"]},
+        "persistence_evidence_verified": {"type": "boolean"}
+      }
+    },
+    "disposition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["project_ref", "context_ref", "candidate", "application_ready", "requires_new_canonical_context_event"],
+      "properties": {
+        "project_ref": {"type": "string", "minLength": 1},
+        "context_ref": {"type": "string", "minLength": 1},
+        "candidate": {"enum": ["INCORPORATED", "PRESERVED", "SUPERSEDED"]},
+        "application_ready": {"type": "boolean"},
+        "requires_new_canonical_context_event": {"const": true}
+      }
+    },
+    "next_action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["action_ref", "action_class", "owner", "internally_executable", "required_before_event_closure", "basis_fingerprint"],
+      "properties": {
+        "action_ref": {"type": "string", "minLength": 1},
+        "action_class": {"enum": ["CONTROL", "ANALYSIS", "EXECUTION", "VERIFICATION", "HUMAN_DECISION", "HUMAN_EXECUTION"]},
+        "owner": {"enum": ["MACHINE", "HUMAN", "NONE"]},
+        "internally_executable": {"type": "boolean"},
+        "required_before_event_closure": {"type": "boolean"},
+        "basis_fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

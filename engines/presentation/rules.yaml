@@ -720,3 +720,49 @@ rules:
   validation: error
   provenance: {type: admin-corrected-standard-delivery-gap, source: C02-P001}
 # END C02-P001-QUALITY-CONFORMANCE-TRACE
+
+# BEGIN TOTAL-MCP-REVISION HUMAN NAVIGATION SURFACE
+- id: PRE-HNS-001
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {human_navigation_surface_candidate: true}
+  action:
+    require_separate_fingerprinted_MCP_navigation_options: true
+    render_exact_primary_and_optional_action_set: true
+    self_asserted_action_approval: prohibited
+    invented_action: prohibited
+  statement: Presentation Engine SKAL rendre nøyaktig den separate, fingerprint-bundne MCP-projeksjonen og kan verken finne på eller selv godkjenne en navigasjonshandling.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: human-alignment-refinement, source: TOTAL_MCP_REVISION}
+- id: PRE-HNS-002
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {nonmaterial_detour_completed_and_human_action_still_next: true}
+  action:
+    render_preserved_same_session_trigger_again: true
+    position: absolute-response-end
+    content_after_primary: prohibited
+  statement: Etter et ikke-materielt sidespor SKAL det bevarte neste steget i samme Control Session vises igjen som absolutt siste brukerflate når menneskelig handling fortsatt er neste.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: observed-user-regression, source: R52_INTERPOSED_DETOUR}
+- id: PRE-HNS-003
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {HNS_and_other_handoff_surface_compete: true}
+  action:
+    precedence: [EXACT_SHELL_HCS, HCS, HNS]
+    suppress_optional_HNS_at_shell_or_real_human_boundary: true
+    execute_pending_machine_work_before_any_HNS: true
+  statement: Exact shell-HCS og ordinær HCS har forrang foran HNS, og maskineid arbeid SKAL fullføres før en navigasjonsflate kan avslutte responsen.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+# END TOTAL-MCP-REVISION HUMAN NAVIGATION SURFACE

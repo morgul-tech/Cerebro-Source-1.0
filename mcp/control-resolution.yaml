@@ -1,7 +1,7 @@
 schema: cerebro-mcp-control-resolution-contract/v1
 control_resolution:
   id: CEREBRO-MCP-CONTROL-RESOLUTION-001
-  version: "1.1.0"
+  version: "1.3.0"
   status: ACTIVE
   owner: MCP
   implementation_ref: mcp/control_resolution.py
@@ -72,6 +72,81 @@ control_resolution:
     Runtime_is_control_owner: false
     runtime_resident_adaptive_policy: PROHIBITED
     Runtime_remains_bounded_executor: true
+  project_control_context:
+    status: CANDIDATE_DURABLE_ADAPTER_AND_LOCAL_HOST_HARNESS_NOT_REMOTE_BOUND
+    hierarchy_contract_ref: standards/control-context-hierarchy.yaml
+    state_service_contract_ref: standards/control-context-state-service.yaml
+    domain_implementation_ref: tooling/context/control_context_registry.py
+    state_port_ref: tooling/context/control_context_state_port.py
+    PostgreSQL_state_port_ref: tooling/context/control_context_state_postgres.py
+    PostgreSQL_migration_manifest_ref: tooling/context/control_context_postgres_migrations.json
+    State_Service_commit_receipt_schema_ref: mcp/state-service-commit-receipt.schema.json
+    owner_state_persistence_ref: tooling/owner_state/owner_state_persistence.py
+    owner_state_commit_receipt_schema_ref: mcp/owner-state-commit-receipt.schema.json
+    context_owner_persistence_ref: tooling/context/control_context_owner_persistence.py
+    normal_host_ref: mcp/control_resolution_host.py
+    MCP_tool_adapter_ref: mcp/control_context_tools.py
+    validation_ref: tooling/validator/control_context_validation.py
+    Interaction_intent_ref: engines/interaction/control_context_intent.py
+    Interaction_intent_schema_ref: engines/interaction/control-context-intent-assessment.schema.json
+    context_consolidation_ref: engines/interaction/context_consolidation.py
+    context_consolidation_result_schema_ref: engines/interaction/context-consolidation-result.schema.json
+    owner_effect_router_ref: mcp/control_owner_routing.py
+    owner_effect_plan_schema_ref: mcp/control-owner-effect-plan.schema.json
+    owner_effect_receipt_schema_ref: mcp/owner-effect-receipt.schema.json
+    owner_persistence_verification_schema_ref: mcp/owner-state-persistence-verification.schema.json
+    invocation: EVERY_EXPLICITLY_PROJECT_BOUND_EVENT_IN_A_BOUND_CONSUMER
+    binding_order:
+      - verify-current-Source-and-protected-promotion-basis
+      - validate-project-and-session-binding
+      - add-context-binding-to-governing-basis
+      - validate-fingerprinted-Interaction-intent-assessment-for-CONTINUE
+      - run-existing-constitutional-material-and-adaptive-resolution
+      - bind-Interaction-transition-candidate-to-final-MCP-decision
+      - route-derived-consolidation-effects-to-existing-owners-as-subordinate-fields
+      - require-State-Service-revalidation-and-compare-and-swap
+      - execute-required-owner-effects-serially-through-constructor-bound-runtime-capabilities
+      - re-resolve-owner-plan-after-every-durable-owner-commit
+      - complete-valid-bound-event-with-noop-receipt-even-when-final-outcome-blocks-mutation
+    session_focus_scope: PER_CONTROL_SESSION
+    project_tree_scope: SHARED_PROJECT_INSTANCE
+    missing_or_stale_binding_effect: BLOCK_BEFORE_ADAPTIVE_REASONING
+    invalid_transition_effect: CANONICAL_BLOCK
+    fixed_control_outcome_vocabulary_preserved: true
+    normal_transition_requires_repository_permission: false
+    host_consumption_proven: false
+    local_normal_host_harness_contract_proven: true
+    local_PostgreSQL_adapter_contract_proven: true
+    local_contract_proof_is_remote_or_live_activation: false
+    remote_durable_state_service_proven: false
+    operational_activation_claim: PROHIBITED_UNTIL_HOST_AND_REMOTE_SERVICE_PROOF
+    canonical_decision_subobjects:
+      context_directive:
+        authority: MCP
+        state_owner: context
+      owner_effects:
+        authority: MCP
+        mutation_owner_remains_each_existing-owner: true
+        router_alone_is_consumer_proof: false
+        semantic_output_without_owner_commit: CANDIDATE_NOT_CURRENT
+        current_PASS_requires_injected_persistence_verifier: true
+        event_payload_self_asserted_current_or_capability: INSUFFICIENT
+        exact_precommit_candidate_bound_into_commit_receipt: true
+      next_action:
+        exactly_one: true
+        alone_is_HNS_render_authority: false
+        pending_required_machine_action_blocks_event_closure: true
+        internally_executable_requires_injected_runtime_capability_resolver: true
+    HNS_precommit_candidate:
+      schema_ref: mcp/context-navigation-options-candidate.schema.json
+      render_authorized: false
+      State_Service_completion_activates_only_on_exact_receipt_and_state_match: true
+    State_Service_mutation_attestation:
+      schema: cerebro-mcp-control-resolution-attestation/v1
+      binds_identity_operation_and_exact_payload: true
+      self_asserted_authority_is_sufficient: false
+    plain_CONSOLIDATE_backward_compatibility: REQUIRED
+    cross_project_structural_join_default: PROHIBITED
   activation:
     binding_id: ADAPTIVE_MCP_CONTROL_RESOLUTION
     evidence_path: D:\Cerebro\Run\Evidence\Audits\CEREBRO_AA004_MCP_CONTROL_ACTIVATION_PROOF.json
@@ -94,6 +169,21 @@ control_resolution:
     - RUNTIME_RESIDENT_ADAPTIVE_CONTROL_IS_PROHIBITED
     - STATIC_ADAPTIVE_WORK_MODE_IS_PROHIBITED
     - AUTOMATION_REMAINS_SEPARATE_FROM_AUTONOMY
+    - PROJECT_BOUND_EVENT_REQUIRES_VALID_PROJECT_AND_SESSION_BINDING
+    - ACTIVE_CONTEXT_FOCUS_IS_SESSION_SCOPED
+    - CONTEXT_TRANSITION_IS_BOUND_TO_FINAL_MCP_DECISION
+    - STATE_SERVICE_REVALIDATES_MCP_DIRECTIVE_BEFORE_ATOMIC_COMMIT
+    - NORMAL_PROJECT_CONTROL_REQUIRES_NO_REPOSITORY_PERMISSION
+    - INTERACTION_ASSESSES_BUT_DOES_NOT_AUTHORIZE_CONTEXT_MUTATION
+    - CONSOLIDATION_RESULT_IS_DERIVED_ASSESSMENT_NOT_CONTROL_DECISION
+    - OWNER_EFFECTS_ARE_SUBORDINATE_TO_ONE_CANONICAL_MCP_DECISION
+    - DEPENDENT_OWNER_RECEIPTS_PRECEDE_FINAL_BRANCH_DISPOSITION
+    - REQUIRED_MACHINE_NEXT_ACTION_PRECEDES_EVENT_CLOSURE
+    - NEXT_ACTION_FIELD_ALONE_IS_NOT_HNS_RENDER_AUTHORITY
+    - NOOP_STATE_EQUALITY_WITHOUT_MATCHING_COMMIT_RECEIPT_CANNOT_ACTIVATE_HNS
+    - TRUSTED_VERIFIER_AND_CAPABILITY_RESOLVER_ARE_HOST_CONSTRUCTOR_BOUND
+    - OWNER_SEQUENCE_RE_RESOLVES_AFTER_EVERY_SEPARATE_COMMIT
+    - LOCAL_SCRIPTED_DATABASE_PROOF_IS_NOT_LIVE_POSTGRESQL_ACTIVATION
   acceptance:
     - exact_AA003_promotion_basis_is_verified
     - promotion_identity_uses_canonical_Git_object_identity_not_worktree_text_representation
@@ -111,3 +201,14 @@ control_resolution:
     - delivery_adapter_is_non_deciding_and_fails_closed
     - sealed_delivery_binding_is_reproduced_by_the_normal_MCP_consumer
     - campaign_closeout_allows_ready_and_blocks_unproven_phase_transition
+    - project-bound-missing-or-stale-binding-blocks-before-adaptive-reasoning
+    - valid-session-scoped-context-binding-reaches-existing-adaptive-path
+    - valid-context-transition-is-bound-to-one-final-MCP-decision
+    - invalid-context-transition-produces-existing-canonical-BLOCK-outcome
+    - protected-adaptive-resolver-identity-remains-unchanged
+    - project-CONTINUE-requires-fingerprinted-state-bound-Interaction-assessment
+    - canonical-decision-exposes-context-directive-owner-effects-and-next-action
+    - plain-consolidate-remains-compatible-with-existing-semantic-pipeline
+    - cross-project-structural-join-is-blocked-without-separate-project-control
+    - owner-effect-routing-does-not-claim-normal-owner-consumption
+    - self-asserted-owner-persistence-or-capability-does-not-open-control-gates

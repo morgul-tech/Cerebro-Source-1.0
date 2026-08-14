@@ -3,7 +3,7 @@ component:
   id: context
   name: Context Engine
   type: engine
-  version: 1.5.0
+  version: 1.7.0
   status: active-source
 responsibility:
   primary: Forvalte aktiv kontekst, gjeldende grunnlag, vurderinger, beslutninger, historikk, samtalelokale markører, avgrenset konsolideringskontekst og lettvekts evidens rundt Wisdom.
@@ -25,6 +25,11 @@ interfaces:
   - change-failure-observation
   - consolidation-request
   - marker-create
+  - control-context-event-binding
+  - MCP-control-context-transition-directive
+  - MCP-context-navigation-options
+  - MCP-context-navigation-options-precommit-candidate
+  - MCP-context-owner-effect
   output:
   - active-context
   - current-basis
@@ -46,6 +51,10 @@ interfaces:
   - consolidation-context
   - conversation-marker
   - active-human-continuation-binding
+  - control-context-project-snapshot
+  - control-session-snapshot
+  - control-context-transition-receipt
+  - context-owner-effect-candidate-receipt
 rules:
   path: rules.yaml
 state:
@@ -67,6 +76,34 @@ state:
     schema: cerebro-human-continuation-binding-registry/v1
     authority: governing-current-state
     lifecycle: ACTIVE
+    universal_state_migration:
+      target_contract: standards/control-context-state-service.yaml
+      target_scope: CONTROL_SESSION
+      status: CANDIDATE_NOT_ACTIVATED
+  control_context_contract:
+    schema: engines/context/control-context-state.schema.json
+    hierarchy_contract: standards/control-context-hierarchy.yaml
+    state_service_contract: standards/control-context-state-service.yaml
+    authority: SOURCE_CONTRACT_NOT_LIVE_STATE
+    lifecycle: CANDIDATE
+  control_context_live_state:
+    location: EXTERNAL_PRIVATE_STATE_SERVICE
+    repository_registry: PROHIBITED
+    local_disk_as_universal_authority: PROHIBITED
+    activation: NOT_YET_PROVEN
+  owner_effect_binding:
+    implementation_ref: tooling/context/control_owner_effect.py
+    persistence_ref: tooling/context/control_context_owner_persistence.py
+    State_Service_commit_schema_ref: mcp/state-service-commit-receipt.schema.json
+    persistence_validator_ref: tooling/validator/control_context_owner_persistence_validation.py
+    normal_host_ref: mcp/control_resolution_host.py
+    receipt_schema_ref: mcp/owner-effect-receipt.schema.json
+    lifecycle: CANDIDATE_SEMANTIC_CONSUMER_AND_PERSISTENCE_ADAPTER_NOT_LIVE_DEPLOYED
+    effect: REFRESH_GOVERNING_REFS
+    output_without_state_port_commit: CANDIDATE_NOT_CURRENT
+    normal_consumer_proven: false
+    local_normal_host_harness_contract_proven: true
+    live_PostgreSQL_and_remote_host_proven: false
 documentation:
   path: specification.md
 migration:
@@ -93,6 +130,10 @@ boundaries:
   - keep-micro-signal-storage-bounded
   - keep-conversation-markers-non-authoritative-and-conversation-local
   - keep-complete-human-continuation-state-machine-owned-and-fingerprinted
+  - own-control-context-tree-semantics-with-session-scoped-active-focus
+  - validate-complete-candidate-before-atomic-context-transition
+  - emit-fingerprinted-transition-receipt
+  - apply-branch-disposition-only-after-dependent-owner-receipts-are-current
   must_not:
   - create-parallel-learning-engine
   - auto-promote-wisdom-from-signal-count
@@ -104,6 +145,9 @@ boundaries:
   - let-producers-write-history-directly
   - auto-admit-effect-feedback-as-knowledge
   - create-parallel-learning-research-or-decision-engine
+  - store-live-control-context-registry-in-Source
+  - use-one-global-active-context-across-conversations
+  - authorize-repository-write-from-project-state-transition
 version:
-  component: 1.5.0
+  component: 1.7.0
   schema: 1

@@ -1,0 +1,139 @@
+schema: cerebro-human-navigation-surface/v1
+
+human_navigation_surface:
+  id: CEREBRO-HUMAN-NAVIGATION-SURFACE-001
+  version: "1.0.0"
+  status: CANDIDATE_IMPLEMENTATION
+  kind: STANDARD
+  definitional_authority: Cerebro Source 1.0
+  control_owner: MCP
+  state_owner: context
+  interpretation_consumer: interaction
+  presentation_owner: presentation
+
+  purpose: >
+    Expose the smallest truthful human control surface for an active hierarchical
+    project without making the human transport machine state or allowing
+    Presentation to invent actions.
+
+  action_source:
+    render_authority_requires_committed_state: true
+    precommit_projection:
+      allowed: true
+      schema: cerebro-mcp-context-navigation-options-candidate/v1
+      schema_ref: mcp/context-navigation-options-candidate.schema.json
+      state_basis: PREDICTED_POST_COMMIT_STATE
+      render_authorized: false
+      activation_precondition: ACTUAL_TRANSITION_RECEIPT_AND_COMMITTED_STATE_EXACTLY_MATCH_PREDICTION
+      mismatch_effect: DISCARD_RELOAD_AND_RERESOLVE
+    mcp_approval_required: true
+    state_fingerprint_required: true
+    MCP_projection_schema: cerebro-mcp-context-navigation-options/v1
+    MCP_projection_schema_ref: mcp/context-navigation-options.schema.json
+    MCP_projection_is_separate_from_presentation_candidate: true
+    MCP_projection_fields:
+      - authority
+      - state-basis
+      - render-precondition
+      - commit-verified
+      - commit-receipt-ref
+      - commit-receipt-fingerprint
+      - control_decision_ref
+      - project-and-session-identity
+      - source-context-ref
+      - project-and-session-revisions
+      - project-and-session-fingerprints
+      - primary
+      - optional
+      - options-fingerprint
+    revalidate_on_use: true
+    presentation_may_invent_action: false
+    presentation_may_self_assert_approval: false
+    visible_alias_is_authority: false
+    binding_scope: CONTROL_SESSION
+
+  human_surface:
+    normal_alias_word_budget:
+      min: 2
+      max: 5
+    prohibited_visible_payload:
+      - context-id
+      - commit
+      - fingerprint
+      - constraint-payload
+      - evidence-payload
+      - resume-recipe
+    optional_context_actions_max: 3
+    optional_actions_only_when_materially_useful: true
+    optional_actions_render_before_primary: true
+    rendered_actions_must_exactly_equal_MCP_projection: true
+    approved_action_refs_are_checked_against_separate_MCP_projection: true
+
+  primary_cardinality:
+    unique_open_project_human_transition: EXACTLY_ONE
+    genuinely_different_human_decision_paths: ONE_PER_PATH
+    terminal_project: ZERO
+    no_active_project: ZERO
+    fail_closed_error: ZERO
+    internally_executable_machine_action_pending: ZERO_UNTIL_MACHINE_CLOSURE
+
+  detour_continuity:
+    nonmaterial_question_or_observation:
+      - answer-or-process-current-event
+      - preserve-project-and-active-context
+      - preserve-active-continuation-binding
+      - rerender-same-trigger-at-absolute-response-end-when-human-action-remains-next
+    material_correction:
+      - critique-and-reresolve
+      - atomically-replace-binding-when-basis-changes
+      - never-render-stale-trigger
+    explicit_objective_change:
+      - establish-new-control-state
+      - replace-or-fork-only-from-resolved-intent
+    ordinary-side-question-implies-objective-change: false
+
+  precedence:
+    internally_executable_work:
+      effect: EXECUTE_BEFORE_HUMAN_HANDOFF
+      HNS_as_early_stop: PROHIBITED
+    genuine_human_boundary:
+      primary_surface: HCS
+      optional_HNS: SUPPRESSED_UNLESS_NONCOMPETING_AND_EXPLICITLY_ALLOWED
+    exact_shell_handoff:
+      primary_surface: EXACT_HCS_SHELL_SURFACE
+      optional_HNS: SUPPRESSED
+      shell_surface_remains_absolute_response_end: true
+    boot_without_project:
+      context_requirement: NONE
+      second_command_to_complete_boot: PROHIBITED
+
+  validation:
+    implementation_ref: tooling/validator/human_navigation_surface_validation.py
+    presentation_candidate_schema_ref: engines/presentation/human-navigation-surface-candidate.schema.json
+    required_inputs_for_HNS:
+      - committed-project-state
+      - committed-control-session-state
+      - separate-fingerprinted-MCP-navigation-options
+      - matching-state-service-completion-receipt
+      - presentation-response-candidate
+    failure_effect: BLOCK_OR_RERENDER_IN_BOUND_CONSUMER
+    observed_regression:
+      id: R52_INTERPOSED_DETOUR_RENDERS_PRESERVED_NEXT_STEP
+      requirement: >
+        A non-material detour preserves the committed binding and renders the same
+        short trigger again when that human action remains next.
+
+  invariants:
+    - HUMAN_CARRIES_INTENT_NOT_MACHINE_STATE
+    - HNS_DOES_NOT_CREATE_AUTHORITY
+    - PRESENTATION_CANNOT_INVENT_ACTION
+    - PRESENTATION_CANNOT_APPROVE_ITS_OWN_ACTION
+    - RENDERED_ACTION_SET_EXACTLY_MATCHES_FINGERPRINTED_MCP_PROJECTION
+    - ACTIVE_BINDING_IS_COMMITTED_BEFORE_HANDOFF
+    - PRECOMPUTED_NAVIGATION_IS_NOT_RENDER_AUTHORITY_BEFORE_EXACT_COMMIT_MATCH
+    - NONMATERIAL_DETOUR_CANNOT_DROP_NEXT_STEP
+    - ONE_SESSION_CANNOT_REPLACE_ANOTHER_SESSIONS_NEXT_STEP
+    - MATERIAL_CORRECTION_CANNOT_RENDER_STALE_NEXT_STEP
+    - HCS_PRECEDES_GENERAL_HNS_AT_REAL_HUMAN_BOUNDARY
+    - EXACT_SHELL_HCS_REMAINS_TERMINAL
+    - MACHINE_WORK_IS_NOT_RETURNED_AS_A_HUMAN_TRIGGER

@@ -1,0 +1,40 @@
+schema: cerebro-component/v1
+component:
+  id: owner-state-persistence
+  name: Owner State Persistence
+  type: tooling
+  version: 0.1.0
+  status: candidate-source-not-live-deployed
+responsibility:
+  primary: >
+    Provide shared PostgreSQL persistence mechanics for Project, Quality and
+    Convergence owner states without acquiring their semantic authority.
+boundaries:
+  must:
+    - invoke-the-existing-owner-specific-complete-state-validator
+    - compare-and-swap-the-current-owner-head
+    - append-an-immutable-owner-revision
+    - append-an-immutable-commit-receipt
+    - return-PASS-only-after-database-commit
+    - preserve-exact-idempotency
+    - verify-that-output-is-still-current-before-current-PASS
+  must_not:
+    - define-Project-Quality-or-Convergence-semantics
+    - persist-Context-hierarchy-state
+    - perform-cross-owner-atomic-merge
+    - accept-verifier-or-capability-authority-from-event-payload
+    - hold-source-or-repository-credentials
+dependencies:
+  semantic_validators:
+    - engines/project/project_owner_effect.py
+    - engines/quality/quality_owner_effect.py
+    - engines/convergence/convergence_owner_effect.py
+  storage_contract: tooling/context/control_context_state_postgres.sql
+interfaces:
+  implementation: tooling/owner_state/owner_state_persistence.py
+  commit_receipt_schema: mcp/owner-state-commit-receipt.schema.json
+  validator: tooling/validator/owner_state_persistence_validation.py
+activation:
+  local_scripted_contract_proven: true
+  live_PostgreSQL_proven: false
+  deployed_normal_consumer_proven: false

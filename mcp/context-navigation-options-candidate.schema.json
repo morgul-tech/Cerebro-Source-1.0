@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/mcp-context-navigation-options-candidate/v1",
+  "title": "Cerebro MCP Context Navigation Options Candidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "authority", "state_basis", "render_authorized", "activation_precondition",
+    "expected_transition_receipt_ref", "expected_transition_receipt_fingerprint",
+    "control_decision_ref", "project_ref", "session_ref", "source_context_ref",
+    "project_revision", "session_revision", "project_fingerprint", "session_fingerprint",
+    "primary", "optional", "candidate_fingerprint"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-mcp-context-navigation-options-candidate/v1"},
+    "authority": {"const": "MCP"},
+    "state_basis": {"const": "PREDICTED_POST_COMMIT_STATE"},
+    "render_authorized": {"const": false},
+    "activation_precondition": {"const": "ACTUAL_TRANSITION_RECEIPT_AND_COMMITTED_STATE_EXACTLY_MATCH_PREDICTION"},
+    "expected_transition_receipt_ref": {"type": "string", "pattern": "^CTR-[0-9A-F]{24}$"},
+    "expected_transition_receipt_fingerprint": {"$ref": "#/$defs/sha256"},
+    "control_decision_ref": {"type": "string", "minLength": 1},
+    "project_ref": {"type": "string", "minLength": 1},
+    "session_ref": {"type": "string", "minLength": 1},
+    "source_context_ref": {"type": "string", "minLength": 1},
+    "project_revision": {"type": "integer", "minimum": 1},
+    "session_revision": {"type": "integer", "minimum": 1},
+    "project_fingerprint": {"$ref": "#/$defs/sha256"},
+    "session_fingerprint": {"$ref": "#/$defs/sha256"},
+    "primary": {"$ref": "#/$defs/primary_action"},
+    "optional": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/action"}},
+    "candidate_fingerprint": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["action_id", "surface_kind", "alias", "operation", "target_ref", "approved_by_mcp"],
+      "properties": {
+        "action_id": {"type": "string", "minLength": 1},
+        "surface_kind": {"const": "HNS"},
+        "binding_id": {"type": "string", "minLength": 1},
+        "alias": {"type": "string", "minLength": 3},
+        "operation": {"enum": ["CONTINUE_CURRENT", "RETURN_PARENT", "RETURN_ROOT", "CONSOLIDATE_WITH_ROOT", "SWITCH_CONTEXT", "PAUSE"]},
+        "target_ref": {"type": "string", "minLength": 1},
+        "approved_by_mcp": {"const": true}
+      }
+    },
+    "primary_action": {"allOf": [{"$ref": "#/$defs/action"}, {"required": ["binding_id"]}]}
+  }
+}

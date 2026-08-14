@@ -1247,3 +1247,80 @@ rules:
   validation: error
   provenance: {type: explicit-user-correction, source: TASK-CEREBRO-REFINE-OPERATIONAL-STATUS-SEMANTICS-2026-08-13}
 # END OPERATIONAL-STATUS-SEMANTICS-001
+
+# BEGIN TOTAL-MCP-REVISION PROJECT INTENT BINDING
+- id: INT-HPC-001
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition: {project_bound_user_event: true}
+  action:
+    require_valid_control_context_binding_before_interpretation: true
+    classify_route_as: [HANDLE_INLINE, TRANSIENT_DETOUR, CREATE_CHILD, CONTROL_TRANSITION]
+    propose_context_effects_to_MCP: true
+    direct_state_mutation: prohibited
+  statement: Interaction Engine SKAL tolke prosjektintensjon mot den validerte sessionkonteksten og kan foreslå effekter, men eier verken aktiv kontekst, tilstandsmutasjon eller endelig kontrollbeslutning.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+- id: INT-HPC-002
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition: {short_navigation_trigger_received: true}
+  action:
+    resolve_against_committed_control_session_binding: true
+    revalidate_current_state: true
+    reconstruct_machine_state_from_visible_phrase: prohibited
+  statement: En kort menneskelig navigasjonsfrase er bare en trigger og SKAL løses mot committed sessionbinding og fersk state; frasen kan aldri brukes som maskintilstand.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: human-alignment-refinement, source: TOTAL_MCP_REVISION}
+- id: INT-HPC-003
+  owner: interaction
+  authority: normative
+  priority: high
+  condition: {interposed_question_or_observation: true}
+  action:
+    explicit_material_objective_delta_required_before_objective_change: true
+    default_route: TRANSIENT_DETOUR_OR_HANDLE_INLINE
+  statement: Et innskutt spørsmål, tale-til-tekst-avvik eller en observasjon SKAL behandles som sidespor eller inline-hendelse med mindre en materiell målendring faktisk er løst.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: observed-user-regression, source: R52_INTERPOSED_DETOUR}
+# END TOTAL-MCP-REVISION PROJECT INTENT BINDING
+
+# BEGIN TOTAL-MCP-REVISION CONSOLIDATION EXTENSION
+- id: INT-HPC-004
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition: {project_CONTINUE_candidate: true}
+  action:
+    emit_fingerprinted_state_bound_intent_assessment: true
+    mutation_authority: prohibited
+    canonical_control_owner: MCP
+  statement: En prosjektbundet CONTINUE-kandidat SKAL bygge på en fingerprintet Interaction-vurdering mot den validerte project/session-bindingen; vurderingen foreslår routing, men autoriserer aldri state-mutasjon.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+- id: INT-HPC-005
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition: {consolidate_intent_detected: true}
+  action:
+    preserve_plain_consolidate_semantic_pipeline: true
+    resolve_explicit_context_selectors_against_validated_snapshots: true
+    emit_context_consolidation_as: DERIVED_ASSESSMENT
+    automatic_control_decision: prohibited
+  statement: Vanlig CONSOLIDATE SKAL beholde eksisterende semantisk pipeline; bare eksplisitte eller entydig løste context-selectors bruker context-utvidelsen, og resultatet er aldri en automatisk kontrollbeslutning.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+# END TOTAL-MCP-REVISION CONSOLIDATION EXTENSION

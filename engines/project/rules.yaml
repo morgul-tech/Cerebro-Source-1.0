@@ -356,3 +356,21 @@ rules:
     type: master-migration
     source: MASTER_v1.1
     sections: *id001
+
+# BEGIN TOTAL-MCP-REVISION OWNER EFFECT
+- id: PRO-HPC-001
+  owner: project
+  authority: normative
+  priority: critical
+  condition: {MCP_project_owner_effect_REVISION_REQUIRED: true}
+  action:
+    evaluate_and_apply_project_revision_under_existing_Project_rules: true
+    emit_project_owner_effect_candidate_receipt: true
+    current_PASS_requires_owner_persistence_and_verification: true
+    mutate_active_context_directly: prohibited
+  statement: En MCP-rutet REVISION_REQUIRED-effekt SKAL behandles av Project Engine etter eksisterende revisjonsregler; ren semantisk beregning gir bare en ikke-gjeldende kandidat, og current PASS krever Project-eid persistens og uavhengig verifikasjon. MCP eller Context kan ikke skrive Project Basis direkte.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+# END TOTAL-MCP-REVISION OWNER EFFECT

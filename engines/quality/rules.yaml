@@ -173,3 +173,21 @@ rules:
     type: master-migration
     source: MASTER_v1.1
     sections: *id001
+
+# BEGIN TOTAL-MCP-REVISION OWNER EFFECT
+- id: QUA-HPC-001
+  owner: quality
+  authority: normative
+  priority: critical
+  condition: {MCP_quality_owner_effect_INVALIDATE_AFFECTED: true}
+  action:
+    invalidate_only_affected_quality_state: true
+    preserve_unaffected_quality_state: true
+    emit_quality_owner_effect_candidate_receipt: true
+    current_PASS_requires_owner_persistence_and_verification: true
+  statement: Quality Engine SKAL invalidere den dokumentert berørte delen og bevare upåvirket Quality-state; ren semantisk beregning er bare kandidat, og avhengig branch-disposition krever persistensverifisert current PASS.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+# END TOTAL-MCP-REVISION OWNER EFFECT

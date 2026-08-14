@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/owner-state-persistence-verification/v1",
+  "title": "Cerebro Owner State Persistence Verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "result", "verifier_ref", "owner",
+    "owner_effect_receipt_ref", "owner_effect_receipt_fingerprint",
+    "persistence_evidence_ref", "output_state_ref", "output_state_fingerprint"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-owner-state-persistence-verification/v1"},
+    "result": {"const": "PASS"},
+    "verifier_ref": {"type": "string", "minLength": 1},
+    "owner": {"enum": ["project", "quality", "convergence", "context"]},
+    "owner_effect_receipt_ref": {"type": "string", "pattern": "^OER-[0-9A-F]{24}$"},
+    "owner_effect_receipt_fingerprint": {"$ref": "#/$defs/sha256"},
+    "persistence_evidence_ref": {"type": "string", "minLength": 1},
+    "output_state_ref": {"type": "string", "minLength": 1},
+    "output_state_fingerprint": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

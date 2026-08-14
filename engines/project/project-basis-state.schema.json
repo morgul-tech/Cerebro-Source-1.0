@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/project-basis-state/v1",
+  "title": "Cerebro Project Basis State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "project_ref", "basis_revision", "basis_ref",
+    "basis_payload", "basis_fingerprint"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-project-basis-state/v1"},
+    "project_ref": {"type": "string", "minLength": 1},
+    "basis_revision": {"type": "integer", "minimum": 1},
+    "basis_ref": {"type": "string", "minLength": 1},
+    "basis_payload": {"type": "object", "minProperties": 1},
+    "basis_fingerprint": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

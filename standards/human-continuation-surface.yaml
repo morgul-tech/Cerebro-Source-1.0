@@ -74,6 +74,13 @@ human_continuation_surface:
     schema: cerebro-human-continuation-binding/v1
     active_registry: engines/context/continuation-bindings.json
     validator: tooling/validator/continuation_surface_validation.py
+    universal_state_candidate:
+      service_contract_ref: standards/control-context-state-service.yaml
+      aggregate_schema_ref: engines/context/control-context-state.schema.json
+      binding_scope: CONTROL_SESSION
+      one_global_binding_across_conversations: PROHIBITED
+      migration_status: CANDIDATE_NOT_HOST_OR_REMOTE_SERVICE_ACTIVATED
+      current_active_registry_remains_governing_until_activation_proof: true
     required_fields:
       - alias
       - target_ref
@@ -141,6 +148,10 @@ human_continuation_surface:
       - resolve-bound-continuation
       - continue
     chat_memory_authority: NONE
+    candidate_focus_semantics:
+      shared_project_tree: true
+      active_context_and_continuation_are_per_control_session: true
+      one_chat_may_move_another_chats_continuation: false
 
   standard_delivery_binding:
     contract_ref: standards/change-delivery.yaml

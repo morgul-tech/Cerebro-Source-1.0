@@ -54,6 +54,9 @@ standards:
   control_architecture: standards/control-architecture.yaml
   human_continuation_surface: standards/human-continuation-surface.yaml
   continuation_surface_system_policy: standards/continuation-surface-system-policy.yaml
+  control_context_hierarchy: standards/control-context-hierarchy.yaml
+  control_context_state_service: standards/control-context-state-service.yaml
+  human_navigation_surface: standards/human-navigation-surface.yaml
   boot_critical_path: standards/boot-critical-path-architecture.yaml
   delivery_kernel: standards/delivery-kernel.yaml
   change_delivery_convergence: standards/change-delivery-convergence.yaml
@@ -98,6 +101,7 @@ tooling:
   standard_diagnostic_bridge: tooling/delivery/Cerebro.StandardDiagnosticBridge.ps1
   closure: tooling/closure/
   context: tooling/context/
+  owner_state: tooling/owner_state/
 governance:
   single_source_of_truth: true
   definitional_authority: Cerebro Source 1.0

@@ -400,3 +400,80 @@ rules:
   validation: error
   provenance: {type: conversation-approved-development, source: PATCH-007.PRE-005}
 # END PATCH-007.PRE-005 DEVELOPMENT HISTORY + FAILURE LEARNING
+
+# BEGIN TOTAL-MCP-REVISION HIERARCHICAL PROJECT CONTROL
+- id: CTX-HPC-001
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {project_bound_control_event: true}
+  action:
+    load_project_tree_and_control_session_from: CEREBRO_STATE_SERVICE
+    validate_before_interaction_interpretation: true
+    missing_stale_or_invalid_binding_effect: BLOCK_AND_REHYDRATE
+    generic_project_fallback: prohibited
+  statement: Context Engine SKAL levere en gyldig prosjekt- og sessionbundet Control Context-binding før substansiell prosjekttolkning; manglende, stale eller ugyldig binding kan ikke omgås med generisk samtaleruting.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+- id: CTX-HPC-002
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {control_context_state_transition: true}
+  action:
+    validate_complete_candidate: true
+    compare_project_and_session_revisions_and_fingerprints: true
+    persist_atomically: true
+    emit_fingerprinted_transition_receipt: true
+    repository_permission_required: false
+  statement: Alle Control Context-overganger SKAL valideres som én komplett kandidat og committes atomisk med CAS og kvittering; normal prosjektkontinuitet bruker aldri repository-skriving.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
+- id: CTX-HPC-003
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {multiple_control_sessions_share_project: true}
+  action:
+    share_project_tree: true
+    scope_active_context_and_continuation_to_each_control_session: true
+    global_active_context_pointer: prohibited
+  statement: Prosjekttreet er delt, men aktiv kontekst og continuation SKAL være per Control Session, slik at én samtale ikke flytter eller overskriver en annens neste steg.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: human-alignment-refinement, source: TOTAL_MCP_REVISION}
+- id: CTX-HPC-004
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {nonmaterial_conversational_detour: true}
+  action:
+    preserve_project_tree: true
+    preserve_session_focus: true
+    preserve_committed_continuation_binding: true
+    objective_change_inference: prohibited
+  statement: Et ordinært sidespørsmål eller en observasjon SKAL ikke i seg selv endre prosjektmål, sessionfokus eller committed neste steg.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: observed-user-regression, source: R52_INTERPOSED_DETOUR}
+- id: CTX-HPC-005
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {MCP_context_owner_effect_REFRESH_GOVERNING_REFS: true}
+  action:
+    derive_through_existing_atomic_transition_domain: true
+    emit_noncurrent_candidate_before_state_port_commit: true
+    current_PASS_requires_state_port_persistence_verification: true
+  statement: En Context-eiereffekt kan beregnes gjennom eksisterende overgangsdomene, men resultatet er ikke current før State Service har committet det og en betrodd persistensverifikator har bundet beviset til nøyaktig eierkvittering og output-fingerprint.
+  scope: runtime
+  lifecycle: candidate
+  validation: error
+  provenance: {type: human-alignment-refinement, source: TOTAL_MCP_REVISION}
+# END TOTAL-MCP-REVISION HIERARCHICAL PROJECT CONTROL

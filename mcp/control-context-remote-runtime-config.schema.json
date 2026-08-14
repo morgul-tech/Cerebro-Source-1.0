@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/control-context-remote-runtime-config/v1",
+  "title": "Cerebro control-context remote runtime configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "service", "transport_security", "state_backend", "postgres"],
+  "properties": {
+    "schema": {"const": "cerebro-control-context-remote-runtime-config/v1"},
+    "service": {"$ref": "control-context-remote-service-config.schema.json"},
+    "transport_security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_hosts", "allowed_origins", "max_request_body_size"],
+      "properties": {
+        "allowed_hosts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "pattern": "^[^*/\\s]+$"}
+        },
+        "allowed_origins": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "format": "uri", "pattern": "^https://"}
+        },
+        "max_request_body_size": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 4194304
+        }
+      }
+    },
+    "state_backend": {"const": "POSTGRESQL"},
+    "postgres": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["connect_timeout_seconds", "application_name", "runtime_applies_migrations"],
+      "properties": {
+        "connect_timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 60},
+        "application_name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$"
+        },
+        "runtime_applies_migrations": {"const": false}
+      }
+    }
+  }
+}

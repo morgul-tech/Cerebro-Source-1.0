@@ -158,7 +158,7 @@ consolidate:
     maximize_exhaustive_coverage: false
     maximize_useful_convergence: true
 
-  authority:
+  authority_constraints:
     conversation_history_is_source_authority: false
     consolidate_result_is_automatic_decision: false
     consolidate_result_is_automatic_wisdom: false
@@ -173,3 +173,26 @@ consolidate:
 
   adaptive_quality_workform_ref: "standards/development/adaptive-quality-workform.yaml"
   role_in_deep_workform: "evidence-consolidation-and-convergence-support"
+
+  control_context_extension_v1:
+    introduced_by: TOTAL_MCP_REVISION
+    lifecycle: CANDIDATE
+    implementation_ref: engines/interaction/context_consolidation.py
+    result_schema_ref: engines/interaction/context-consolidation-result.schema.json
+    compatibility:
+      plain_consolidate: EXISTING_SEMANTIC_PIPELINE
+      topic_marker_window_budget_output_lens_semantics: UNCHANGED
+      explicit_loops_or_branches_target_kind: CONTROL_CONTEXTS
+      clarify_only_on_material_ambiguity: true
+    structural_join:
+      same_project_default_target: LOWEST_COMMON_ANCESTOR
+      explicit_target_must_be_common_open_ancestor: true
+      cross_project_default: PROHIBITED
+    semantic_cross_project_synthesis: ALLOWED_WITH_VALIDATED_INPUTS
+    result_authority: DERIVED_ASSESSMENT
+    automatic_decision: false
+    automatic_state_mutation: false
+    partial_join:
+      allowed: true
+      unresolved_branch_effect: REMAINS_PENDING_OR_PRESERVED
+      false_closure: PROHIBITED

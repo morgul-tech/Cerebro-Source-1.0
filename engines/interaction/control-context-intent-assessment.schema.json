@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/control-context-intent-assessment/v1",
+  "title": "Cerebro Control Context Intent Assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "message_kind", "producer_ref", "authority", "subject_ref", "correlation_ref",
+    "project_relation", "intent_candidate", "target_selectors", "materiality_hint", "explicitness",
+    "route_candidate", "operation_candidates", "clarification_required", "clarification_reason",
+    "human_meaning", "state_mutation_authorized", "requires_canonical_mcp_resolution",
+    "project_ref", "session_ref", "active_context_ref", "project_fingerprint", "session_fingerprint",
+    "assessment_fingerprint"
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-control-context-intent-assessment/v1"},
+    "message_kind": {"const": "CONTROL_CONTEXT_INTENT_ASSESSMENT"},
+    "producer_ref": {"const": "interaction"},
+    "authority": {"const": "DERIVED_ASSESSMENT"},
+    "subject_ref": {"const": "control-event"},
+    "correlation_ref": {"type": "string", "minLength": 1},
+    "project_relation": {"enum": ["ACTIVE_PROJECT", "NEW_PROJECT", "NONPROJECT", "CROSS_PROJECT", "UNRESOLVED"]},
+    "intent_candidate": {
+      "enum": [
+        "CONTINUE_CURRENT", "QUESTION_OR_OBSERVATION", "FORK_CANDIDATE", "SWITCH_REQUEST",
+        "PAUSE_REQUEST", "RESUME_REQUEST", "RETURN_REQUEST", "CONSOLIDATE_REQUEST",
+        "CANCEL_REQUEST", "OBJECTIVE_CHANGE"
+      ]
+    },
+    "target_selectors": {"type": "array", "items": {"type": "object"}},
+    "materiality_hint": {"enum": ["MATERIAL", "NONMATERIAL", "UNKNOWN"]},
+    "explicitness": {"enum": ["EXPLICIT", "INFERRED"]},
+    "route_candidate": {"enum": ["HANDLE_INLINE", "TRANSIENT_DETOUR", "CREATE_CHILD", "CONTROL_TRANSITION"]},
+    "operation_candidates": {"type": "array", "items": {"type": "object"}},
+    "clarification_required": {"type": "boolean"},
+    "clarification_reason": {"type": ["string", "null"]},
+    "human_meaning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["speech_to_text_observed", "material_objective_delta", "objective_preserved"],
+      "properties": {
+        "speech_to_text_observed": {"type": "boolean"},
+        "material_objective_delta": {"type": "boolean"},
+        "objective_preserved": {"type": "boolean"}
+      }
+    },
+    "state_mutation_authorized": {"const": false},
+    "requires_canonical_mcp_resolution": {"type": "boolean"},
+    "project_ref": {"type": ["string", "null"]},
+    "session_ref": {"type": ["string", "null"]},
+    "active_context_ref": {"type": ["string", "null"]},
+    "project_fingerprint": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "session_fingerprint": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+    "assessment_fingerprint": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

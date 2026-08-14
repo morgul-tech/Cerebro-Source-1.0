@@ -3,14 +3,14 @@ component:
   id: convergence
   name: Convergence Engine
   type: engine
-  version: 0.1.0
+  version: 0.2.0
   status: LOCKED_DEFINITION
 
 architecture:
   path: architecture.yaml
   state: LOCKED
   lock_id: C02-P002-CONVERGENCE-ARCH-LOCK-001
-implementation_state: DEFINED
+implementation_state: CANDIDATE_SEMANTIC_CONSUMER
 operational_state: PENDING_EXECUTABLE_BINDING
 
 responsibility:
@@ -56,6 +56,7 @@ interfaces:
     - quality-requirements
     - candidate-environment-state
     - execution-evidence
+    - MCP-convergence-owner-effect
   output:
     - convergence-plan
     - work-family-graph
@@ -64,12 +65,27 @@ interfaces:
     - revalidation-plan
     - convergence-state
     - human-boundary-request
+    - convergence-owner-effect-candidate-receipt
 control_integration:
   governing_control_owner: MCP
   candidate_environment: Temporaris
   quality_owner: quality
-  execution_binding: PENDING_EXECUTABLE_BINDING
+  execution_binding: LOCAL_HOST_HARNESS_CONTRACT_IMPLEMENTED_NOT_LIVE_BOUND
   architecture_lock_is_operational_execution_proof: false
+  owner_effect_binding:
+    implementation_ref: engines/convergence/convergence_owner_effect.py
+    persistence_ref: tooling/owner_state/owner_state_persistence.py
+    commit_receipt_schema_ref: mcp/owner-state-commit-receipt.schema.json
+    persistence_validator_ref: tooling/validator/owner_state_persistence_validation.py
+    normal_host_ref: mcp/control_resolution_host.py
+    state_schema_ref: engines/convergence/convergence-owner-state.schema.json
+    receipt_schema_ref: mcp/owner-effect-receipt.schema.json
+    lifecycle: CANDIDATE_SEMANTIC_CONSUMER_AND_PERSISTENCE_ADAPTER_NOT_LIVE_DEPLOYED
+    effect: REVALIDATE_AFFECTED
+    output_without_owner_commit: CANDIDATE_NOT_CURRENT
+    normal_consumer_proven: false
+    local_normal_host_harness_contract_proven: true
+    live_PostgreSQL_and_remote_host_proven: false
 model:
   path: model.yaml
 rules:

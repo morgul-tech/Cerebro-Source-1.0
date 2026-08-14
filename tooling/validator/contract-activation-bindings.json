@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.7",
+  "classification_version": "2.13",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -53,6 +53,38 @@
       "strict_contract_refs": [
         "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
         "HUMAN_EXECUTION_HANDOFF_TRANSPORT"
+      ]
+    },
+    {
+      "standard_id": "STD-CONTROL-CONTEXT-HIERARCHY",
+      "path": "standards/control-context-hierarchy.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The deterministic tree/session domain, owner semantic consumers, commit-bound persistence adapters, trusted verifiers and ordered local normal-host harness are implemented and regression-tested. Semantic outputs remain non-current until exact durable evidence is independently verified. Live PostgreSQL and deployed remote/normal-consumer activation are not evidenced.",
+      "known_gaps": [
+        "no deployed durable State Service normal consumer",
+        "local persistence adapters and trusted verifiers are not live-deployed or live-database-proven",
+        "constructor-bound verifier and capability injection is locally harnessed but not bound in a deployed host",
+        "host final-handoff path is not runtime-activation-proven"
+      ]
+    },
+    {
+      "standard_id": "STD-CONTROL-CONTEXT-STATE-SERVICE",
+      "path": "standards/control-context-state-service.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The provider-neutral port, checksum-locked PostgreSQL adapter and migrations, immutable commit ledgers, owner persistence ports, OAuth resource-server boundary, official MCP Python SDK streamable-HTTP binding and explicit production-runtime composition pass deterministic, scripted and real in-process protocol tests. The local runtime proves exact schema/migration readiness and a full create-begin-complete-reconnect lifecycle without embedding secrets or migration authority. It cannot prove live PostgreSQL/OAuth availability, remote deployment, ChatGPT connection or normal-host activation.",
+      "known_gaps": [
+        "live PostgreSQL migration rehearsal with separate migration and runtime roles is not complete",
+        "identity-provider binding, remote deployment, ChatGPT connection and host begin/complete consumption evidence are absent"
+      ]
+    },
+    {
+      "standard_id": "STD-HUMAN-NAVIGATION-SURFACE",
+      "path": "standards/human-navigation-surface.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The canonical MCP wrapper produces commit-gated state-bound navigation options and a deterministic validator proves cardinality, detour continuity, exact projection and HCS/shell precedence; no normal host response pipeline consumes the completion result and HNS validator end to end.",
+      "known_gaps": [
+        "State Service completion-to-Presentation projection handoff is not wired to a normal remote consumer",
+        "Presentation response handoff and cross-session runtime evidence are not activation-proven"
       ]
     },
     {
@@ -1142,7 +1174,45 @@
           "tooling/validator/contract-activation-bindings.json",
           "engines/project/roadmap.yaml",
           "tooling/runtime-host/component.yaml",
-          "tooling/runtime-host/cerebro_runtime.ps1"
+          "tooling/runtime-host/cerebro_runtime.ps1",
+          "standards/control-context-state-service.yaml",
+          "standards/control-context-hierarchy.yaml",
+          "standards/human-navigation-surface.yaml",
+          "standards/development/consolidate.yaml",
+          "engines/context/control-context-state.schema.json",
+          "engines/interaction/control-context-intent-assessment.schema.json",
+          "engines/interaction/control_context_intent.py",
+          "engines/interaction/context-consolidation-result.schema.json",
+          "engines/interaction/context_consolidation.py",
+          "mcp/context-navigation-options.schema.json",
+          "mcp/context-navigation-options-candidate.schema.json",
+          "mcp/control-resolution-attestation.schema.json",
+          "mcp/control-owner-effect-plan.schema.json",
+          "mcp/owner-effect-receipt.schema.json",
+          "mcp/owner-state-persistence-verification.schema.json",
+          "mcp/state-service-commit-receipt.schema.json",
+          "mcp/owner-state-commit-receipt.schema.json",
+          "mcp/control_owner_effect_receipt.py",
+          "mcp/control_owner_routing.py",
+          "mcp/control_resolution_host.py",
+          "engines/project/project-basis-state.schema.json",
+          "engines/project/project_owner_effect.py",
+          "engines/quality/quality_owner_effect.py",
+          "engines/convergence/convergence-owner-state.schema.json",
+          "engines/convergence/convergence_owner_effect.py",
+          "tooling/context/control_context_registry.py",
+          "tooling/context/control_context_state_postgres.py",
+          "tooling/context/control_context_state_postgres.sql",
+          "tooling/context/control_context_postgres_migrations.json",
+          "tooling/context/control_owner_effect.py",
+          "tooling/context/control_context_owner_persistence.py",
+          "tooling/owner_state/owner_state_persistence.py",
+          "tooling/owner_state/component.yaml",
+          "tooling/validator/control_context_postgres_validation.py",
+          "tooling/validator/control_context_owner_persistence_validation.py",
+          "tooling/validator/owner_state_persistence_validation.py",
+          "tooling/validator/control_resolution_host_validation.py",
+          "tooling/validator/human_navigation_surface_validation.py"
         ],
         "required_true_fields": [
           "promotion_basis_verified",
@@ -1474,7 +1544,32 @@
       ]
     }
   ],
-  "known_activation_debt": [],
+  "known_activation_debt": [
+    {
+      "id": "TOTAL_MCP_REVISION_REMOTE_STATE_SERVICE",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "blocking": false,
+      "rationale": "A checksum-locked production-directed PostgreSQL adapter, migrations, CAS/idempotency logic, commit ledgers and provider-neutral OAuth resource-server boundary now pass local contract tests. A live PostgreSQL rehearsal, deployment and identity providers, separate migration/runtime roles, official SDK transport binding, live OAuth/JWKS flow and remote MCP availability proof remain open; local contract tests cannot satisfy them."
+    },
+    {
+      "id": "TOTAL_MCP_REVISION_HOST_CONSUMER_BINDING",
+      "classification": "ACTIVATION_GAP",
+      "blocking": false,
+      "rationale": "A local normal-host harness now constructor-binds trusted persistence verification and runtime capability resolution, executes the ordered owner sequence and re-resolves after every commit. No deployed ChatGPT or local production host has yet produced normal begin-event, live completion-consumption and final-handoff evidence."
+    },
+    {
+      "id": "TOTAL_MCP_REVISION_HNS_NORMAL_CONSUMER",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "blocking": false,
+      "rationale": "HNS state and presentation candidates are deterministically validated, but the normal Presentation handoff path is not yet wired or runtime-evidenced."
+    },
+    {
+      "id": "TOTAL_MCP_REVISION_OWNER_EFFECT_CONSUMERS",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "blocking": false,
+      "rationale": "Project, Quality, Convergence and Context now have local persistence adapters, commit-bound PASS promotion, trusted verification and an ordered local normal-host harness. R30-R34 remain open for live PostgreSQL and deployed normal-consumer evidence; scripted and local harness tests are not remote activation proof."
+    }
+  ],
   "resolved_activation_debt": [
     {
       "id": "STANDARD_DIAGNOSTIC_CANONICAL_CONVERGENCE",

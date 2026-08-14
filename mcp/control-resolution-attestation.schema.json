@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro://schemas/mcp-control-resolution-attestation/v1",
+  "title": "Cerebro MCP Control Resolution Attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "algorithm", "key_id", "subject_fingerprint", "signature"],
+  "properties": {
+    "schema": {"const": "cerebro-mcp-control-resolution-attestation/v1"},
+    "algorithm": {"enum": ["HMAC-SHA256", "ED25519", "OPAQUE-SERVICE-SEAL"]},
+    "key_id": {"type": "string", "minLength": 1},
+    "subject_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "signature": {"type": "string", "minLength": 32}
+  }
+}

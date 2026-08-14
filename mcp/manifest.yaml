@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.8.0
+  version: 1.13.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -21,6 +21,9 @@ mcp:
   - mcp/control-resolution.yaml
   - standards/human-continuation-surface.yaml
   - standards/continuation-surface-system-policy.yaml
+  - standards/control-context-hierarchy.yaml
+  - standards/control-context-state-service.yaml
+  - standards/human-navigation-surface.yaml
   - mcp/assurance-continuity.yaml
 position:
   within: Cerebro
@@ -40,12 +43,14 @@ position:
   - mode_selection
   - tool_selection
   - execution_surface_resolution
+  - hierarchical_project_control
   does_not_own:
   - source_specification
   - persistent_definition_authority
   - release_definition
   - domain_rules
   - generated_implementation
+  - persistent_project_state
 control_adapters:
   constitutional_control:
     contract_ref: mcp/constitution.yaml
@@ -85,6 +90,97 @@ control_adapters:
     material_preflight_precedence: REQUIRED
     activation_evidence_required: true
     activation_binding_ref: ADAPTIVE_MCP_CONTROL_RESOLUTION
+  project_control_context:
+    hierarchy_contract_ref: standards/control-context-hierarchy.yaml
+    state_service_contract_ref: standards/control-context-state-service.yaml
+    domain_implementation_ref: tooling/context/control_context_registry.py
+    state_port_ref: tooling/context/control_context_state_port.py
+    PostgreSQL_state_port_ref: tooling/context/control_context_state_postgres.py
+    PostgreSQL_migration_manifest_ref: tooling/context/control_context_postgres_migrations.json
+    State_Service_commit_receipt_schema_ref: mcp/state-service-commit-receipt.schema.json
+    generic_owner_state_persistence_ref: tooling/owner_state/owner_state_persistence.py
+    generic_owner_state_commit_receipt_schema_ref: mcp/owner-state-commit-receipt.schema.json
+    context_owner_persistence_ref: tooling/context/control_context_owner_persistence.py
+    normal_host_binding_ref: mcp/control_resolution_host.py
+    MCP_tool_adapter_ref: mcp/control_context_tools.py
+    remote_MCP_service_boundary_ref: mcp/control_context_remote_service.py
+    official_MCP_SDK_binding_ref: mcp/control_context_mcp_sdk.py
+    official_MCP_SDK_requirements_ref: mcp/control-context-mcp-sdk-requirements.txt
+    remote_MCP_service_config_schema_ref: mcp/control-context-remote-service-config.schema.json
+    provider_neutral_runtime_ref: mcp/control_context_remote_runtime.py
+    provider_neutral_runtime_config_schema_ref: mcp/control-context-remote-runtime-config.schema.json
+    Interaction_intent_implementation_ref: engines/interaction/control_context_intent.py
+    Interaction_intent_schema_ref: engines/interaction/control-context-intent-assessment.schema.json
+    context_consolidation_implementation_ref: engines/interaction/context_consolidation.py
+    context_consolidation_result_schema_ref: engines/interaction/context-consolidation-result.schema.json
+    owner_effect_router_ref: mcp/control_owner_routing.py
+    owner_effect_plan_schema_ref: mcp/control-owner-effect-plan.schema.json
+    owner_effect_receipt_ref: mcp/control_owner_effect_receipt.py
+    owner_effect_receipt_schema_ref: mcp/owner-effect-receipt.schema.json
+    owner_state_persistence_verification_schema_ref: mcp/owner-state-persistence-verification.schema.json
+    validator_ref: tooling/validator/control_context_validation.py
+    MCP_tool_adapter_validator_ref: tooling/validator/control_context_tools_validation.py
+    remote_MCP_service_validator_ref: tooling/validator/control_context_remote_service_validation.py
+    official_MCP_SDK_validator_ref: tooling/validator/control_context_mcp_sdk_validation.py
+    provider_neutral_runtime_validator_ref: tooling/validator/control_context_remote_runtime_validation.py
+    PostgreSQL_contract_validator_ref: tooling/validator/control_context_postgres_validation.py
+    context_owner_persistence_validator_ref: tooling/validator/control_context_owner_persistence_validation.py
+    owner_state_persistence_validator_ref: tooling/validator/owner_state_persistence_validation.py
+    normal_host_binding_validator_ref: tooling/validator/control_resolution_host_validation.py
+    hns_validator_ref: tooling/validator/human_navigation_surface_validation.py
+    status: CANDIDATE_DURABLE_ADAPTER_LOCAL_RUNTIME_ASSEMBLED_NOT_DEPLOYED
+    decision_owner: MCP
+    semantic_state_owner: context
+    active_focus_scope: CONTROL_SESSION
+    shared_tree_scope: PROJECT_INSTANCE
+    fixed_outcome_vocabulary: true
+    repository_permission_required_for_normal_transition: false
+    remote_state_service_activation_evidence_required: true
+    host_consumer_activation_evidence_required: true
+    remote_transport_and_durable_backend_deployed: false
+    local_remote_authentication_and_service_contract_proven: true
+    official_MCP_SDK_binding_implemented: true
+    official_MCP_SDK_transport_bound: true
+    local_official_MCP_SDK_protocol_proven: true
+    official_MCP_SDK_validated_version: 2.0.0
+    provider_neutral_runtime_assembly_implemented: true
+    local_runtime_assembly_proven: true
+    identity_provider_selected: false
+    deployment_provider_selected: false
+    local_PostgreSQL_contract_adapter_implemented: true
+    local_normal_host_harness_contract_proven: true
+    local_contract_evidence_is_remote_activation: false
+    activation_claim_before_both_proofs: PROHIBITED
+    canonical_decision_extensions:
+      - context_directive
+      - owner_effects
+      - next_action
+    Interaction_assessment_required_for_project_CONTINUE: true
+    cross_project_owner_routing_requires_separately_validated_bindings: true
+    owner_effect_router_is_normal_owner_consumer_proof: false
+    semantic_owner_candidate_is_current_state: false
+    self_asserted_persistence_evidence_satisfies_owner_gate: false
+    injected_owner_persistence_verifier_required_for_current_PASS: true
+    injected_runtime_capability_resolver_required_for_executable_claim: true
+    owner_payload_capability_available_is_authority: false
+    mutation_attestation:
+      schema: cerebro-mcp-control-resolution-attestation/v1
+      schema_ref: mcp/control-resolution-attestation.schema.json
+      verifier_ref: mcp/control_context_tools.py
+      required_for_semantic_state_mutation: true
+      production_key_material_in_Source: prohibited
+    HNS_projection:
+      precommit_candidate_schema: cerebro-mcp-context-navigation-options-candidate/v1
+      precommit_candidate_schema_ref: mcp/context-navigation-options-candidate.schema.json
+      precommit_render_authorized: false
+      schema: cerebro-mcp-context-navigation-options/v1
+      schema_ref: mcp/context-navigation-options.schema.json
+      authority: MCP
+      state_basis: COMMITTED_STATE
+      render_precondition: COMMIT_RECEIPT_AND_STATE_MATCH_VERIFIED
+      render_authorized_before_state_service_commit: false
+      presentation_self_approval: PROHIBITED
+      rendered_actions_must_exactly_match_projection: true
   adaptive_control_resolver:
     contract_ref: mcp/adaptive-control-resolver.yaml
     implementation_ref: mcp/adaptive_control_resolver.py
@@ -100,6 +196,9 @@ control_adapters:
     system_policy_ref: standards/continuation-surface-system-policy.yaml
     validator_ref: tooling/validator/continuation_surface_validation.py
     active_binding_registry_ref: engines/context/continuation-bindings.json
+    candidate_state_service_ref: standards/control-context-state-service.yaml
+    candidate_binding_scope: CONTROL_SESSION
+    live_registry_migration_status: NOT_YET_ACTIVATED
     status: ACTIVE
     decision_owner: MCP
     state_owner: context

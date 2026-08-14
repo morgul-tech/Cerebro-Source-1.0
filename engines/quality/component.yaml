@@ -3,7 +3,7 @@ component:
   id: quality
   name: Quality Engine
   type: engine
-  version: 1.0.0
+  version: 1.2.0
   status: active-source
 responsibility:
   primary: Kontrollere arbeidskvalitet, konsistens, kontroll og sporbarhet.
@@ -14,6 +14,9 @@ boundaries:
   - sikre-sporbarhet
   - assess-solution-quality-profile
   - assess-decision-assurance-evidence
+  - consume-MCP-routed-affected-quality-invalidation
+  - preserve-unaffected-quality-state
+  - emit-quality-owner-effect-candidate-receipt-before-persistence
   must_not:
   - forvalte-systemversjonering
   - publisere-releases
@@ -32,6 +35,7 @@ interfaces:
   - current-basis
   - decision-history
   - active-release
+  - MCP-quality-owner-effect
   output:
   - quality-status
   - consistency-conflict
@@ -40,6 +44,21 @@ interfaces:
   - solution-quality-profile
   - decision-assurance-assessment
   - readiness-object
+  - quality-owner-effect-candidate-receipt
+owner_effect_binding:
+  implementation_ref: engines/quality/quality_owner_effect.py
+  persistence_ref: tooling/owner_state/owner_state_persistence.py
+  commit_receipt_schema_ref: mcp/owner-state-commit-receipt.schema.json
+  persistence_validator_ref: tooling/validator/owner_state_persistence_validation.py
+  normal_host_ref: mcp/control_resolution_host.py
+  state_schema_ref: engines/quality/quality-trace.schema.json
+  receipt_schema_ref: mcp/owner-effect-receipt.schema.json
+  lifecycle: CANDIDATE_SEMANTIC_CONSUMER_AND_PERSISTENCE_ADAPTER_NOT_LIVE_DEPLOYED
+  effect: INVALIDATE_AFFECTED
+  output_without_owner_commit: CANDIDATE_NOT_CURRENT
+  normal_consumer_proven: false
+  local_normal_host_harness_contract_proven: true
+  live_PostgreSQL_and_remote_host_proven: false
 rules:
   path: rules.yaml
 documentation:
@@ -52,5 +71,5 @@ migration:
   - '6.3'
   - '6.4'
 version:
-  component: 1.0.0
+  component: 1.2.0
   schema: 1
