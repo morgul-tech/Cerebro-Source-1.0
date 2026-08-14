@@ -3,17 +3,21 @@ component:
   id: visual-language
   name: Visual Language Module
   type: module
-  version: 1.0.0
+  version: 1.1.0
   status: active-source
 responsibility:
-  primary: Definere semantisk betydning av visuelle virkemidler.
+  primary: Definere semantisk betydning av visuelle virkemidler og Cerebros construction-proxy identitet uten å overta presentasjonsformat.
 boundaries:
   must:
   - definere-visuell-semantikk
   - sikre-konsistent-betydning
+  - skille-semantisk-glyph-fra-state
+  - holde-prototype-glyphs-ikke-autoritativ-brand-identitet
   must_not:
   - velge-presentasjonsformat
   - endre-informasjonsinnhold
+  - bruke-farge-som-eneste-informasjonsbaerer
+  - la-semantisk-glyph-endre-betydning-med-state
 dependencies:
   build:
   - terminology
@@ -21,6 +25,10 @@ dependencies:
 interfaces:
   exports:
   - visual-semantics
+  - construction-proxy-semantics
+  - state-color-semantics
+contracts:
+  semantics: semantics.yaml
 documentation:
   path: specification.md
 migration:
@@ -28,5 +36,5 @@ migration:
   sections:
   - 3.8.4
 version:
-  component: 1.0.0
+  component: 1.1.0
   schema: 1

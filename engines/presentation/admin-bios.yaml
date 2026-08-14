@@ -1,0 +1,170 @@
+schema: cerebro-presentation-profile/v1
+profile:
+  id: CEREBRO-ADMIN-BIOS-001
+  version: 1.0.0
+  status: ACTIVE
+  owner: presentation
+  semantic_dependency: modules/visual-language/semantics.yaml
+  applies_to:
+  - CEREBRO-BOOT-COMPLETION-SURFACE-001
+
+identity:
+  stable_anchor: MASTER_GLYPH_PLUS_CEREBRO_WORDMARK
+  header_pattern: '[MASTER] CEREBRO / [SURFACE]'
+  surface_name: ADMIN BIOS
+  secondary_descriptor: SOURCE CONTROL · SYSTEM BOOT
+  master_proxy:
+    preferred_size: COMPACT
+    lines:
+    - '◜━●━╮'
+    - '╰━━━╯'
+    fallback_text: CEREBRO
+  display_proxy:
+    lines:
+    - '◜━━●━━╮'
+    - '┃     ╯'
+    - '╰━━━━'
+  proxy_policy:
+    lifecycle: PROTOTYPE
+    final_brand_mark: NOT_LOCKED
+    preserve_construction_dna: true
+
+character:
+  blend: CLASSIC_POST_X_CEREBRO_CONTROL
+  properties:
+  - fixed-semantic-geography
+  - compact-monospace-status-rows
+  - strong-and-weak-boundary-families
+  - sparse-semantic-glyphs
+  - sparse-state-color-instrumentation
+  - hard-ready-completion
+  - real-data-only
+
+semantic_geography:
+  order:
+  - IDENTITY
+  - SOURCE
+  - CONTROL
+  - CONSTITUTION
+  - EVIDENCE
+  - TASK_ROUTING
+  - READY
+  mappings:
+    SOURCE:
+      glyph_role: source
+      includes:
+      - authoritative-repository
+      - branch
+      - exact-commit
+      - source-activation
+      - conversation-source-alignment
+    CONTROL:
+      glyph_role: control
+      includes:
+      - source-authority
+      - MCP-control
+      - canonical-control-flow
+      - architecture-authority-chain
+    CONSTITUTION:
+      glyph_role: control
+      includes:
+      - constitution-identity
+      - constitution-version
+      - constitution-status
+      - all-current-articles-human-summary
+    EVIDENCE:
+      glyph_role: evidence
+      includes:
+      - working-source-target
+      - local-machine-proof
+      - strict-sync-proof
+      - evidence-scope
+    TASK_ROUTING:
+      glyph_role: null
+      includes:
+      - task-relevant-semantics-autoload-readiness
+    READY:
+      glyph_role: control
+      includes:
+      - final-ready-state
+
+status_rows:
+  text_region: MONOSPACE_DETERMINISTIC
+  rule: LABEL_PLUS_LEADER_PLUS_STATE_PADDED_TO_BLOCK_MAX_PLUS_FIXED_GAP_PLUS_OPTIONAL_LAMP
+  label_value_start_column: FIXED_WITHIN_BLOCK
+  state_width: MAX_STATE_TEXT_WIDTH_WITHIN_BLOCK
+  lamp_anchor: AFTER_PADDED_STATE_PLUS_FIXED_GAP
+  right_side_vertical_rail: PROHIBITED
+  variable_client_glyph_width_effect: OUTSIDE_TEXT_REGION
+  leader: '.'
+  lamp_gap_spaces: 3
+
+boundaries:
+  strong:
+    prototype: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
+    use_for: [identity-transition, final-ready]
+  weak:
+    prototype: '──────────────────────────────────────────────────'
+    use_for: [major-internal-section-transition]
+  box-heavy-layout: PROHIBITED
+
+state_instrumentation:
+  mode: SPARSE
+  text_is_authoritative: true
+  lamp_is_reinforcement: true
+  recommended_high_value_states:
+  - source-activation
+  - conversation-source-alignment
+  - MCP-active-control
+  - local-working-source-verification
+  - canonical-sync-verification
+  - blocked-or-failed-critical-state
+  - final-ready
+  colors:
+    GREEN: [VERIFIED, OPERATIONAL, ALIGNED, READY, SUCCESS]
+    RED: [FAILED, BLOCKED, CRITICAL]
+    AMBER: [UNRESOLVED, ATTENTION, NOT_VERIFIED]
+    BLUE: [ACTIVE, EXECUTING, CURRENT]
+    NEUTRAL: [INFORMATIONAL, N_A, DORMANT]
+  no_lamp_needed_examples:
+  - repository
+  - branch
+  - version
+  - authority-name
+  - immutable-fact
+
+truth_boundary:
+  real_data_only: true
+  fabricated_telemetry: PROHIBITED
+  rules:
+  - UNKNOWN_DOES_NOT_MEAN_FAILED
+  - NOT_VERIFIED_DOES_NOT_MEAN_FALSE
+  - ABSENCE_OF_LOCAL_CAPABILITY_DOES_NOT_MEAN_SYSTEM_FAILURE
+  - CEREBRO_SYNC_VERIFIED_REQUIRES_FRESH_CANONICAL_SYNC_AND_INDEPENDENT_EQUALITY_EVIDENCE
+  - CLAIM_STRENGTH_MUST_NOT_EXCEED_EVIDENCE
+
+boot_semantic_preservation:
+  preserve_required_source_sections: true
+  required_from_boot_contract:
+  - overall-status
+  - complete-current-constitution
+  - architecture-and-structure
+  - task-routing-readiness
+  presentation_may_regroup_but_not_omit: true
+  final_state: READY_FOR_USER_WORK
+
+responsive_behavior:
+  normal_chat: COMPACT_MASTER
+  spacious_or-display_surface: DISPLAY_MASTER
+  narrow_client:
+    preserve_text_meaning: true
+    allow-glyph-fallback: true
+    preserve-state-text: true
+    color_optional: true
+
+non_goals:
+- final-custom-brand-glyph
+- large-glyph-library
+- dashboard-component-system
+- decorative-color-system
+- fabricated-bios-telemetry

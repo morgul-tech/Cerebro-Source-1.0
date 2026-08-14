@@ -1,12 +1,153 @@
 schema: cerebro-visual-language/v1
-status: frozen-for-source-v1.0
+version: 1.1.0
+status: active-source
+authority: Cerebro Source 1.0
+
+lifecycle:
+  previous_state: frozen-for-source-v1.0
+  previous_freeze_date: '2026-08-03'
+  transition: REVISED_BY_CONTROLLED_SOURCE_CHANGE
+  current_state: active
+  note: >-
+    Source v1.0 visual semantics were deliberately revised after the Visual
+    Upgrade design convergence. This does not make prototype glyph geometry a
+    final brand asset.
+
 constraints:
   color_only_prohibited: true
   semantics_must_be_consistent: true
-  icon_must_have_textual_meaning: true
-  assessment_and_decision_must_be_distinct: true
-freeze_date: '2026-08-03'
-usage:
-  left_status_icon: Statusikonet skal plasseres til venstre og bruke definert statusfarge der grensesnittet støtter farge.
   text_required: true
+  assessment_and_decision_must_be_distinct: true
+  semantic_glyph_encodes_state: false
+  semantic_glyph_changes_with_state: false
+  final_brand_glyph_locked: false
+
+semantic_model:
+  what:
+    carrier: SEMANTIC_GLYPH
+    meaning: object-or-domain-identity
+  text:
+    carrier: TEXT
+    meaning: exact-human-readable-meaning
+    authority: EXPLICIT
+  state:
+    carrier: STATE_TEXT_PLUS_OPTIONAL_LAMP
+    meaning: current-state-class
+  structure:
+    carrier: PRESENTATION_STRUCTURE
+    meaning: relation-priority-and-geography
+  invariant: WHAT_TEXT_STATE_AND_STRUCTURE_REMAIN_DISTINCT
+
+construction_proxy:
+  id: APERTURE_CORE
+  lifecycle: PROTOTYPE
+  purpose: >-
+    Demonstrate Cerebro identity DNA before a final custom glyph family exists.
+    A construction proxy is not a random placeholder and is not a final logo.
+  dna:
+    core:
+      meaning: Cerebro-system-center
+      prototype_primitive: '●'
+      state_encoding: PROHIBITED
+    shell:
+      meaning: controlled-system-boundary
+      prototype_primitives: ['╭', '╮', '╰', '╯', '━', '┃', '◜']
+    aperture:
+      meaning: controlled-opening-to-human-world-information
+      rule: exactly-one-deliberate-discontinuity
+    asymmetry:
+      meaning: recognizable-controlled-signature
+      rule: minimum-sufficient-imbalance
+    complexity:
+      rule: remove-strokes-not-contributing-to-core-shell-aperture-or-recognition
+  responsive_identity:
+    display_proxy:
+      lines:
+      - '◜━━●━━╮'
+      - '┃     ╯'
+      - '╰━━━━'
+    compact_proxy:
+      lines:
+      - '◜━●━╮'
+      - '╰━━━╯'
+  final_mark_constraints:
+  - monochrome-capable
+  - small-size-capable
+  - related-family-capable
+  - not-generic-ai-sparkle-brain-robot-eye-power
+  - must-not-encode-ready-failed-or-other-state
+  fallback:
+    unicode_is_prototype_only: true
+    textual_identity: CEREBRO
+
+semantic_family:
+  permanent_role_budget: SMALL
+  master:
+    meaning: CEREBRO_SYSTEM_IDENTITY
+    construction_proxy_ref: APERTURE_CORE
+  source:
+    meaning: AUTHORITATIVE_SOURCE_DOMAIN
+    prototype:
+    - '◜━━●━╮'
+    - '╰━━━━╯'
+    maturity: STRONG_PROTOTYPE
+  control:
+    meaning: CONTROL_DOMAIN
+    prototype:
+    - '╭━━●━╮'
+    - '┃   ╯'
+    - '╰━━━'
+    maturity: STRONG_PROTOTYPE
+  evidence:
+    meaning: EVIDENCE_OR_VALIDATION_DOMAIN
+    prototype:
+    - '◜━━╮'
+    - '┃ ●┃'
+    - '╰━╯'
+    maturity: PROMISING_PROTOTYPE
+  project_context:
+    meaning: PROJECT_OR_CONTEXT_DOMAIN
+    prototype: null
+    maturity: UNRESOLVED_DO_NOT_LOCK
+
+state_colors:
+  GREEN:
+    meanings: [verified, operational, ready, success]
+  RED:
+    meanings: [failed, blocked, critical]
+  AMBER:
+    meanings: [unresolved, attention, not_verified]
+  BLUE:
+    meanings: [active, executing, current]
+  NEUTRAL:
+    meanings: [informational, not_applicable, dormant]
+  rules:
+  - color-is-not-decoration
+  - color-is-never-the-sole-information-carrier
+  - reserve-color-for-high-value-state
+  - text-state-remains-explicit
+  - absence-of-color-does-not-imply-state
+
+truth_semantics:
+  unknown_is_failed: false
+  no_data_is_failed: false
+  not_verified_is_false: false
+  local_capability_absence_is_system_failure: false
+
+presentation_ownership:
+  owner: presentation
+  renderer_mapping_ref: engines/presentation/admin-bios.yaml
+  visual_language_does_not_own:
+  - glyph-placement
+  - column-width
+  - leader-format
+  - boundary-placement
+  - lamp-anchor
+  - header-layout
+
+compatibility:
+  superseded_usage_rule:
+    field: left_status_icon
+    disposition: SUPERSEDED_BY_PRESENTATION_PROFILE
+    reason: placement-is-renderer-mapping-not-core-semantic
   duplicate_status_icon_prohibited: true

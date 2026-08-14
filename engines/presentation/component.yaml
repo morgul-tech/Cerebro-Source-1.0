@@ -3,7 +3,7 @@ component:
   id: presentation
   name: Presentation Engine
   type: engine
-  version: 1.2.0
+  version: 1.3.0
   status: active-source
 responsibility:
   primary: Velge presentasjonsform, informasjonsstruktur, detaljnivå, output-budsjett, Styringsstatus og visuelle virkemidler.
@@ -42,6 +42,11 @@ schemas:
   MCP_navigation_options_precommit_candidate: ../../mcp/context-navigation-options-candidate.schema.json
 rules:
   path: rules.yaml
+profiles:
+  admin_bios:
+    path: admin-bios.yaml
+    surface_id: CEREBRO-BOOT-COMPLETION-SURFACE-001
+    status: ACTIVE
 documentation:
   path: specification.md
 migration:
@@ -61,10 +66,14 @@ boundaries:
   - compress-without-changing-semantics
   - render-only-MCP-approved-state-bound-navigation-actions
   - preserve-same-session-next-step-across-nonmaterial-detours
+  - preserve-truth-strength-in-status-rendering
+  - keep-semantic-glyph-and-state-instrumentation-separate
   must_not:
   - invent-or-self-approve-navigation-action
   - let-HNS-override-HCS-or-exact-shell-handoff
   - hide-internally-executable-work-behind-human-trigger
+  - fabricate-telemetry-or-verification-state
+  - use-right-side-status-rail-in-admin-bios
 version:
-  component: 1.2.0
+  component: 1.3.0
   schema: 1

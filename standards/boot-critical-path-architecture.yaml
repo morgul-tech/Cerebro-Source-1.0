@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.1"
+  version: "1.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -99,17 +99,25 @@ boot_critical_path:
 
     presentation:
       mode: PROGRESSIVE_CONCISE
+      profile:
+        id: CEREBRO-ADMIN-BIOS-001
+        source_ref: engines/presentation/admin-bios.yaml
+        owner: presentation
+        semantic_dependency: modules/visual-language/semantics.yaml
+        required_for_final_surface: true
       source_contact_update:
         timing: AFTER_EXACT_COMMIT_PIN_WHEN_RESPONSE_IS_STILL_IN_PROGRESS
         content: repository-branch-exact-commit
         duplicate_status_detail: PROHIBITED
       final_surface:
         timing: AFTER_BOOT_COMPLETION_ASSERTIONS
-        sections_in_order:
+        semantic_sections_required:
         - OVERALL_STATUS
         - CONSTITUTION
         - ARCHITECTURE_AND_STRUCTURE
         - TASK_ROUTING_READINESS
+        renderer_geography_ref: engines/presentation/admin-bios.yaml#semantic_geography
+        presentation_may_regroup_but_not_omit: true
         final_state: READY_FOR_USER_WORK
 
     overall_status:
@@ -196,6 +204,8 @@ boot_critical_path:
     - CEREBRO_SYNC_VERIFIED-remains-separately-evidenced
     - Constitution-summary-is-current-commit-bound
     - architecture-summary-is-current-commit-bound
+    - Admin-BIOS-profile-does-not-reduce-required-semantic-coverage
+    - state-lamps-never-create-stronger-claims-than-text-and-evidence
     - task-specific-semantics-remain-demand-driven
     - boot-does-not-require-project-refine-or-patch-rules-to-be-eagerly-loaded
     - no-second-user-command-is-required-to-complete-normal-boot
