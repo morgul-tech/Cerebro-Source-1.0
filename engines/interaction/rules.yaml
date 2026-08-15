@@ -1324,3 +1324,125 @@ rules:
   validation: error
   provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
 # END TOTAL-MCP-REVISION CONSOLIDATION EXTENSION
+
+# BEGIN SPEECH-INPUT-MODE-001 MINIMAL
+- id: INT-SIM-001
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition: {speech_input_mode_transition_intent: true}
+  action:
+    resolve_semantically: true
+    canonical_state_key: SPEECH_INPUT_MODE
+    primary_human_commands:
+      - "talemodus på"
+      - "talemodus av"
+    semantic_on_examples:
+      - "slå på talemodus"
+      - "aktiver talemodus"
+      - "nå bruker jeg tale til tekst"
+      - "talemelding på"
+      - "nå er det talemelding"
+      - "aktiver talemelding modus"
+    semantic_off_examples:
+      - "slå av talemodus"
+      - "skru av tale"
+      - "talemodus av"
+      - "nå skriver jeg igjen"
+    examples_are_closed_alias_list: false
+    exact_string_only: false
+    mention_of_feature_changes_state: false
+    automatic_speech_detection: PROHIBITED
+    require_explicit_current_session_human_transition_intent: true
+    emit_context_transition_request: SPEECH_INPUT_MODE
+  statement: Interaction Engine SKAL løse eksplisitt menneskelig intensjon om å slå Talemodus på eller av semantisk og sende bare den kanoniske SPEECH_INPUT_MODE-overgangen til Context; ordvalg er ikke en lukket aliasliste, omtale alene endrer ikke state, og automatisk talegjenkjenning er forbudt.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+
+- id: INT-SIM-002
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    speech_input_mode_state: "ON"
+    ordinary_human_input_received: true
+  action:
+    processing_order:
+      - RAW_USER_TRANSCRIPTION
+      - HUMAN_MEANING_RECONSTRUCTION
+      - MACHINE_FRIENDLY_NORMALIZATION
+      - EXISTING_REFINE_MENNESKE
+      - ORDINARY_CEREBRO_ANALYSIS_RESPONSE
+    reuse_existing_rules:
+      - INT-HMR-001
+      - INT-HMR-002
+      - INT-HMR-003
+      - INT-HMR-004
+      - INT-HMR-005
+    preserve_supported_meaning_vs_inference: true
+    invent_user_intent: prohibited
+  statement: Når SPEECH_INPUT_MODE er ON, SKAL ordinær menneskelig input gå gjennom meningsrekonstruksjon og maskinvennlig normalisering før de eksisterende INT-HMR-reglene og normal analyse; Talemodus oppretter ingen ny refine-menneske-motor.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+
+- id: INT-SIM-003
+  owner: interaction
+  authority: normative
+  priority: critical
+  condition:
+    speech_input_mode_state: "ON"
+    explicit_literal_or_machine_significant_input: true
+  action:
+    protect_exact_content:
+      - shell_command
+      - code
+      - filepath
+      - filename
+      - hash
+      - URL
+      - identifier
+      - exact_quote
+      - machine_payload
+    literal_user_instruction_overrides_reconstruction: true
+    alter_machine_significant_bytes_or_tokens: prohibited
+  statement: Talemodus SKAL aldri normalisere eksplisitt literal eller maskinsignifikant input på en måte som endrer eksakte bytes, tokens, kommandoer, kode, stier, filnavn, hashes, URL-er, identifikatorer eller eksplisitt eksakt sitat.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+
+- id: INT-SIM-004
+  owner: interaction
+  authority: normative
+  priority: high
+  condition: {speech_input_mode_state: "OFF"}
+  action:
+    use_ordinary_cerebro_input_interpretation: true
+    automatic_speech_first_pipeline: false
+    explicit_refine_menneske_remains_available: true
+    prior_ON_state_carryover: prohibited
+  statement: Når SPEECH_INPUT_MODE er OFF, SKAL ordinær Cerebro-tolkning gjelde uten automatisk speech-first pipeline; eksplisitt «refine menneske» er fortsatt tilgjengelig, og tidligere ON-state kan ikke fortsette implisitt.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+
+- id: INT-SIM-005
+  owner: interaction
+  authority: normative
+  priority: high
+  condition: {speech_input_mode_state_query: true}
+  action:
+    request_current_state_from: context
+    deterministic_lookup_required: true
+    infer_from_writing_style_or_conversation_history: prohibited
+  statement: Spørsmål om Talemodus er på eller av SKAL løses ved deterministisk Context-oppslag av gjeldende SPEECH_INPUT_MODE-state, aldri ved ny analyse av skrivestil eller samtalehistorikk.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+# END SPEECH-INPUT-MODE-001 MINIMAL

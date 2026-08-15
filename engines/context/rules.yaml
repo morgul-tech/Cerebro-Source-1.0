@@ -477,3 +477,104 @@ rules:
   validation: error
   provenance: {type: human-alignment-refinement, source: TOTAL_MCP_REVISION}
 # END TOTAL-MCP-REVISION HIERARCHICAL PROJECT CONTROL
+
+# BEGIN SPEECH-INPUT-MODE-001 MINIMAL
+- id: CTX-SIM-001
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {new_cerebro_boot: true}
+  action:
+    initialize_boot_session_state:
+      key: SPEECH_INPUT_MODE
+      state: "OFF"
+      active: false
+      scope: BOOT_SESSION
+      default: "OFF"
+      persistence: NONE
+    runtime_value_authority: CURRENT_BOOT_SESSION_ONLY
+    prohibit_restore_from:
+      - USER_PROFILE_STORAGE
+      - SOURCE_RUNTIME_VALUE_STORAGE
+      - PATCH_STATE_CAPTURE
+      - CEREBRO_SYNC_STATE_CAPTURE
+      - SESSION_HANDOFF_RESTORE
+      - CROSS_SESSION_AUTO_RESTORE
+      - CONVERSATION_HISTORY
+      - MODEL_MEMORY
+      - RUNTIME_RECEIPT
+  statement: Context Engine SKAL initialisere SPEECH_INPUT_MODE som ekte BOOT_SESSION-state med OFF som hard boot-default og persistence NONE; tidligere ON-state kan aldri gjenopprettes fra profil, Source, patch, sync, handoff, historikk, minne eller receipt.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+
+- id: CTX-SIM-002
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {speech_input_mode_transition_request: true}
+  action:
+    require_explicit_current_session_human_transition_intent: true
+    accepted_target_states: ["ON", "OFF"]
+    mutate_only: CURRENT_BOOT_SESSION_STATE
+    persistent_source_write: prohibited
+    profile_write: prohibited
+    handoff_restore_write: prohibited
+    emit_current_state_after_transition: true
+  statement: Context Engine eier den gjeldende Talemodus-verdien og SKAL bare utføre ON/OFF-overgang etter eksplisitt menneskelig transition-intent i nåværende boot-session; overgangen kan aldri bli persistent konfigurasjon eller Source-state.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+
+- id: CTX-SIM-003
+  owner: context
+  authority: normative
+  priority: high
+  condition: {speech_input_mode_state_lookup: true}
+  action:
+    read_from: CURRENT_BOOT_SESSION_STATE
+    emit_read_only_projection:
+      canonical_key: SPEECH_INPUT_MODE
+      state: CURRENT
+      active: DERIVE_TRUE_IFF_STATE_ON
+      scope: BOOT_SESSION
+      default: "OFF"
+      persistence: NONE
+    allowed_read_only_consumers:
+      - MCP
+      - interaction
+      - presentation
+      - operational_status
+      - admin_status
+      - diagnostics
+    consumer_mutation_authority: NONE
+  statement: Context Engine SKAL eksponere SPEECH_INPUT_MODE deterministisk og read-only til relevante consumers; lesetilgang gir aldri ownership eller mutasjonsmyndighet.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+
+- id: CTX-SIM-004
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {speech_input_mode_state_exists: true}
+  action:
+    source_may_persist_definition_only: true
+    persist_current_position_of_switch: prohibited
+    prohibit_persistence_to:
+      - USER_PROFILE_STORAGE
+      - SOURCE_RUNTIME_VALUE_STORAGE
+      - PATCH_STATE_CAPTURE
+      - CEREBRO_SYNC_STATE_CAPTURE
+      - SESSION_HANDOFF_RESTORE
+      - CROSS_SESSION_AUTO_RESTORE
+    invariant: CEREBRO_PERSISTS_THE_SWITCH_DEFINITION_NEVER_THE_CURRENT_POSITION
+  statement: Cerebro SKAL persistere definisjonen av Talemodus, aldri den aktive ON/OFF-posisjonen; patch, sync, profil og session handoff kan derfor ikke transportere gjeldende state til neste boot.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
+# END SPEECH-INPUT-MODE-001 MINIMAL

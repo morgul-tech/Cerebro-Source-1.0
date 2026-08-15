@@ -160,6 +160,17 @@ mcp_extension:
       configured Working Source target is known for later local delivery. It must
       not be interpreted as local equality, Runtime activation or sync proof.
 
+
+  - id: MCP-078
+    authority: normative
+    constitutional_article_ref: C-05
+    statement: >
+      Every new Cerebro boot initializes the Context-owned SPEECH_INPUT_MODE
+      BOOT_SESSION state to OFF before ordinary human-input handling. Prior
+      session state, User Operating Profile, handoff, receipts, conversation
+      history, model memory, patch state and cerebro_sync state may not restore
+      ON; only explicit current-session human transition intent may activate it.
+
   bindings:
     boot_architecture: standards/boot-critical-path-architecture.yaml
     boot_completion_surface: standards/boot-critical-path-architecture.yaml#human_boot_completion_surface
