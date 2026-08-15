@@ -1,0 +1,245 @@
+schema: cerebro-mcp-integrity-control/v1
+integrity_control:
+  id: CEREBRO-MCP-INTEGRITY-CONTROL-001
+  version: "0.2.0-candidate"
+  status: CANDIDATE_IMPLEMENTATION
+  owner: MCP
+  role: CONTROL_SUBRESOLUTION
+  direct_live_authority: false
+  final_control_decision_owner: MCP
+  new_engine: false
+  new_top_level_component: false
+
+  purpose: >
+    Determine whether Cerebro remains aligned to the human's resolved objective,
+    inside the correct governed control path, correctly positioned in current work,
+    using an adequate workform, operating from the correct current basis and
+    applicable prior knowledge, and sufficiently ready for the next valid control
+    event without creating parallel state, evidence, lifecycle, or final-control
+    authority.
+
+  locked_human_semantics:
+    compressed_model:
+      - RIGHT_OBJECTIVE
+      - RIGHT_CONTROL_PATH
+      - RIGHT_WORK_POSITION
+      - RIGHT_WORKFORM
+      - RIGHT_BASIS_AND_PRIOR_KNOWLEDGE
+      - READY_FOR_NEXT
+    prohibited_redefinitions:
+      - RUN_VALIDATORS_ONLY
+      - SHOW_SYSTEM_STATUS_ONLY
+      - ALL_COMPONENTS_GREEN_ONLY
+
+  invocation:
+    automatic:
+      owner: MCP
+      same_underlying_path_as_manual: true
+      applicability_resolved_from_current_control_event: true
+      material_boundary_profiles:
+        - DECISION_READINESS
+        - IMPLEMENTATION_READINESS
+        - PATCH_READINESS
+        - OPERATIONAL_INTEGRATION
+        - DELIVERY_CONFORMITY
+    manual:
+      interaction_owner: interaction
+      resolver_ref: engines/interaction/integrity_intent.py
+      entrypoints:
+        Integrity:
+          coverage_mode: ADAPTIVE
+          primary_scope: ALL
+        Integrity Full:
+          coverage_mode: FULL
+          primary_scope: ALL
+        MCP-loop?:
+          coverage_mode: ADAPTIVE
+          primary_scope: MCP_LOOP_INTEGRITY
+      all_converge_to: MCP_INTEGRITY_SUBRESOLUTION
+      separate_manual_runtime: prohibited
+
+  canonical_dimensions:
+    OBJECTIVE_ALIGNMENT:
+      question: IS_CURRENT_WORK_STILL_ALIGNED_TO_RESOLVED_HUMAN_OBJECTIVE
+      intent_owner: interaction
+      integrity_reinterprets_human: false
+      false_green: TASK_DEFINED_NE_OBJECTIVE_ALIGNED
+    MCP_LOOP_INTEGRITY:
+      question: DOES_CEREBRO_RESOLVE_PREVIOUS_CURRENT_NEXT_AND_GOVERNING_CONTROL
+      core: [PREVIOUS, CURRENT, NEXT]
+      next_is_continuity_sentinel: true
+      false_green: MCP_ACTIVE_NE_MCP_LOOP_INTEGRITY_PASS
+    WORK_POSITION:
+      question: IS_PROJECT_CONTEXT_WORK_POSITION_COHERENT
+      state_owners: [project, context]
+      silent_side_branch_to_main_track: prohibited
+    WORKFORM_ADEQUACY:
+      question: WAS_REQUIRED_WORKFORM_AND_DEPTH_ACTUALLY_USED
+      state_owner: quality
+      allowed_depth_profiles: [LIGHT, STANDARD, DEEP]
+      deep_selected_is_not_completion_evidence: true
+      deep_relevant_operations:
+        - UNDERSTAND_FRAME
+        - EXPLORE_RESEARCH
+        - REFINE
+        - CRITIQUE
+        - XREF
+        - CONSOLIDATE
+        - GENERATE_MATERIAL_ALTERNATIVES
+        - COMPARE
+        - CONVERGE
+        - DECIDE
+        - VERIFY
+        - LEARN
+    BASIS_AND_PRIOR_KNOWLEDGE:
+      question: IS_CURRENT_BASIS_VALID_AND_RELEVANT_PRIOR_KNOWLEDGE_APPLIED
+      source_freshness_need: ALWAYS_CONSIDERED
+      source_refetch: ONLY_WHEN_REQUIRED
+      false_green:
+        - WISDOM_EXISTS_NE_RELEVANT_PRIOR_KNOWLEDGE_APPLIED
+        - SOURCE_COMMIT_KNOWN_NE_CURRENT_BASIS_VALID
+    NEXT_GATE_READINESS:
+      question: IS_CEREBRO_ACTUALLY_READY_FOR_THE_NEXT_VALID_CONTROL_EVENT
+      creates_new_lifecycle: false
+      uses_existing_transitions: true
+      gate_profiles:
+        DECISION_READINESS:
+          applies_before: [DECIDE, LOCK]
+          reuse: CEREBRO-DECISION-ASSURANCE-001
+        IMPLEMENTATION_READINESS:
+          minimum_checks:
+            - ARCHITECTURE_CONVERGED
+            - CURRENT_BASIS
+            - RELEVANT_PRIOR_LEARNING_APPLIED
+            - EXISTING_MECHANISM_ASSESSED
+            - OWNERSHIP_RESOLVED
+            - IMPLEMENTATION_PATH_RESOLVED
+        PATCH_READINESS:
+          quality_target: FIRST_TRY_SUCCESS
+          guarantee: false
+          minimum_checks:
+            - KNOWN_FAILURE_FAMILIES_APPLIED
+            - PATCH_LEARNING_APPLIED
+            - WHOLE_CHANGE_INSPECTED
+            - DOWNSTREAM_EXECUTION_PATH_SWEPT
+            - ADJACENT_CONTRACTS_CHECKED
+            - FINAL_MATERIALIZED_CANDIDATE_CHECKED
+            - RELEVANT_VALIDATION_COMPLETE
+            - KNOWABLE_DEFECTS_REMEDIATED_TOGETHER
+        OPERATIONAL_INTEGRATION:
+          reuse_activation_chain:
+            - DECLARED
+            - REGISTERED
+            - IMPLEMENTED
+            - WIRED
+            - VALIDATED
+            - INVOKED
+            - CONSUMED
+            - EVIDENCED
+            - OPERATIONAL
+        DELIVERY_CONFORMITY:
+          minimum_checks:
+            - CORRECT_DELIVERY_PROFILE
+            - CORRECT_ARTIFACT_SURFACE
+            - CORRECT_HUMAN_HANDOFF
+            - REQUIRED_ASSURANCE_COMPLETE
+            - NO_LEGACY_OR_ALTERNATE_DELIVERY_DRIFT
+
+  ownership_boundaries:
+    consumes_existing_owner_state: true
+    does_not_own:
+      - HUMAN_INTENT_INTERPRETATION
+      - PROJECT_STATE
+      - CONTEXT_STATE
+      - SOURCE_AUTHORITY
+      - WISDOM_OR_LEARNING_STATE
+      - QUALITY_STATE
+      - VALIDATION_EXECUTION
+      - ACTIVATION_EXECUTION
+      - DELIVERY_EXECUTION
+      - PRESENTATION
+      - SESSION_DEFINITION_AUTHORITY
+      - FINAL_CONTROL_DECISION
+    parallel_control_path: PROHIBITED
+
+  assessment:
+    authority: DERIVED_CONTROL_EVIDENCE
+    implementation_ref: mcp/integrity_resolution.py
+    basis_bound: true
+    stale_after_material_basis_change: true
+    required_identity_fields:
+      - assessment_id
+      - control_event_ref
+      - basis_fingerprint
+      - project_context_refs
+      - resolved_objective_ref
+      - governing_workform_ref
+      - applicable_dimensions
+      - next_gate_ref
+      - evidence_refs
+      - invalidation_triggers
+    control_implication_is_recommendation_only: true
+    mcp_must_own_final_effect: true
+
+  evidence_model:
+    standard_ref: standards/operational-evidence.yaml
+    result_values: [PASS, FAIL, UNKNOWN, NOT_APPLICABLE]
+    status_values: [COMPLETE, PARTIAL, UNAVAILABLE, ERROR]
+    sufficiency_values: [COMPLETE, PARTIAL, INSUFFICIENT, FAILED]
+    freshness_is_separate: true
+    missing_evidence_is_not_negative_evidence: true
+    unavailable_is_not_subject_failure: true
+
+  coverage:
+    adaptive:
+      all_dimensions_considered_for_applicability: true
+      minimum_sufficient_applicable_checks: true
+      progressive_evidence_acquisition: true
+      stop_when_sufficient: true
+    full:
+      full_catalog_applicability_resolution: true
+      every_applicable_question_resolved: true
+      irrelevant_remains_not_applicable: true
+      unavailable_remains_explicit: true
+      blind_irrelevant_or_impossible_probe_execution: PROHIBITED
+    invariant: FULL_IS_COVERAGE_DEEP_IS_WORKFORM_DEPTH
+
+  false_green:
+    mechanism_existence_is_effect_evidence: false
+    pass_requires_current_effect_evidence: true
+    examples:
+      - MCP_EXISTS_NE_MCP_LOOP_INTEGRITY_PASS
+      - DEEP_SELECTED_NE_WORKFORM_ADEQUACY_PASS
+      - WISDOM_EXISTS_NE_PRIOR_KNOWLEDGE_APPLIED
+      - VALIDATOR_EXISTS_NE_NEXT_GATE_READY
+      - COMPONENT_EXISTS_NE_OPERATIONAL_INTEGRATION_PASS
+      - DELIVERY_STANDARD_EXISTS_NE_CURRENT_DELIVERY_CONFORMITY_PASS
+
+  canonical_integration:
+    owner: MCP
+    surface_ref: mcp/control-resolution.yaml
+    implementation_ref: mcp/control_resolution.py
+    position: AFTER_GOVERNING_PREFLIGHT_AND_VALIDATED_ADAPTIVE_CANDIDATE_BEFORE_FINAL_MCP_DECISION
+    helper_may_issue_final_control_decision: false
+    assessment_must_be_referenced_by_final_mcp_decision_when_invoked: true
+    manual_command_bindings: IMPLEMENTED_CANDIDATE
+    dimension_owner_resolution: IMPLEMENTED_CANDIDATE
+    gate_profiles: IMPLEMENTED_CANDIDATE
+    presentation_ref: engines/presentation/integrity_presentation.py
+
+  invariants:
+    - LOCKED_HUMAN_SEMANTICS_ARE_AUTHORITATIVE
+    - MCP_IS_THE_ONLY_FINAL_CONTROL_OWNER
+    - INTEGRITY_IS_A_SUBRESOLUTION_NOT_A_PARALLEL_CONTROL_PATH
+    - EXISTING_OWNERS_RETAIN_STATE_AND_EXECUTION_AUTHORITY
+    - ALL_SIX_CANONICAL_DIMENSIONS_ARE_CONSIDERED
+    - ONLY_APPLICABLE_CHECKS_ARE_EXECUTED
+    - FULL_DEFINES_COVERAGE_DEEP_DEFINES_WORKFORM_DEPTH
+    - NEXT_GATE_READINESS_USES_EXISTING_TRANSITIONS
+    - NO_PARALLEL_EVIDENCE_OR_STATUS_VOCABULARY
+    - EVERY_ASSESSMENT_IS_BASIS_BOUND_AND_INVALIDATABLE
+    - MECHANISM_EXISTENCE_CANNOT_BY_ITSELF_PRODUCE_PASS
+    - MISSING_OR_UNAVAILABLE_EVIDENCE_IS_NOT_AUTOMATIC_SUBJECT_FAILURE
+    - INTEGRITY_DOES_NOT_REINTERPRET_HUMAN_INTENT
+    - MANUAL_AND_AUTOMATIC_INTEGRITY_USE_THE_SAME_MCP_PATH
+    - INTEGRITY_CONTROL_IMPLICATION_IS_NOT_FINAL_CONTROL_AUTHORITY

@@ -32,6 +32,13 @@ HNS_CANDIDATE_ACTIVATION_PRECONDITION = "ACTUAL_TRANSITION_RECEIPT_AND_COMMITTED
 EVIDENCE_BASIS_FILES = [
     "mcp/control-resolution.yaml",
     "mcp/control_resolution.py",
+    "mcp/integrity-control.yaml",
+    "mcp/integrity_resolution.py",
+    "mcp/integrity_control_adapter.py",
+    "mcp/integrity_cli.py",
+    "engines/interaction/integrity_intent.py",
+    "engines/presentation/integrity_presentation.py",
+    "tooling/validator/integrity_validation.py",
     "mcp/adaptive-control-resolver.yaml",
     "mcp/adaptive_control_resolver.py",
     "tooling/change/adaptive-control-shadow-scenarios.json",
@@ -1200,6 +1207,68 @@ def _block_due_to_delivery_profile(
 
 
 
+
+def apply_integrity_subresolution(
+    request: dict[str, Any],
+    candidate: dict[str, Any],
+    context_binding: dict[str, Any] | None,
+    promotion_basis: dict[str, Any],
+    preflight_result: dict[str, Any] | None,
+    delivery_resolution: dict[str, Any] | None,
+    phase_transition: dict[str, Any] | None,
+    root: Path,
+) -> tuple[dict[str, Any], dict[str, Any] | None, dict[str, Any]]:
+    """Run the non-authoritative Integrity subresolution before final MCP decision projection."""
+    integrity = load_module(root / "mcp/integrity_resolution.py", "cerebro_integrity_subresolution")
+    intent = request.get("integrity_intent") if isinstance(request.get("integrity_intent"), dict) else None
+    invocation = integrity.resolve_invocation(request, intent)
+    if invocation.get("required") is not True:
+        return candidate, None, invocation
+    adapter = load_module(root / "mcp/integrity_control_adapter.py", "cerebro_integrity_control_adapter")
+    payload = adapter.build_integrity_request(
+        request,
+        candidate,
+        context_binding,
+        promotion_basis,
+        preflight_result,
+        delivery_resolution,
+        phase_transition,
+        invocation,
+        root,
+    )
+    assessment = integrity.resolve(payload)
+    decision = candidate.get("mcp_control_decision") if isinstance(candidate.get("mcp_control_decision"), dict) else {}
+    current_outcome = str(decision.get("outcome") or "")
+    final_outcome, integrity_reasons = adapter.apply_recommendation(current_outcome, assessment)
+    updated_decision = dict(decision)
+    updated_decision["applicable_control_refs"] = sorted(set(
+        [str(x) for x in updated_decision.get("applicable_control_refs", [])]
+        + ["CEREBRO-MCP-INTEGRITY-CONTROL-001"]
+    ))
+    updated_decision["integrity_assessment_ref"] = assessment.get("assessment_id")
+    updated_decision["integrity_basis_fingerprint"] = assessment.get("basis_fingerprint")
+    updated_decision["integrity_result"] = assessment.get("result")
+    updated_decision["integrity_coverage_mode"] = assessment.get("coverage_mode")
+    if final_outcome != current_outcome:
+        identity = {
+            "candidate_control_decision_id": decision.get("control_decision_id"),
+            "candidate_basis_fingerprint": decision.get("basis_fingerprint"),
+            "integrity_assessment_id": assessment.get("assessment_id"),
+            "integrity_basis_fingerprint": assessment.get("basis_fingerprint"),
+            "outcome": final_outcome,
+        }
+        digest = sha256_bytes(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+        updated_decision["candidate_control_decision_id"] = decision.get("control_decision_id")
+        updated_decision["control_decision_id"] = "MCPD-INTG-" + digest[:16].upper()
+        updated_decision["outcome"] = final_outcome
+        updated_decision["invalidates"] = sorted(set(
+            [str(x) for x in updated_decision.get("invalidates", [])] + integrity_reasons
+        ))
+        updated_decision["verification_requirement"] = "INTEGRITY_REMEDIATION_AND_RERESOLUTION"
+    updated_candidate = dict(candidate)
+    updated_candidate["mcp_control_decision"] = updated_decision
+    return updated_candidate, assessment, invocation
+
 def resolve(
     request: dict[str, Any],
     root: Path = SOURCE_ROOT,
@@ -1378,6 +1447,9 @@ def resolve(
         adaptive_request["authoritative_source_commit"] = receipt.get("source_identity", adaptive_request.get("authoritative_source_commit"))
 
     candidate = adaptive.resolve(adaptive_request)
+    candidate, integrity_assessment, integrity_invocation = apply_integrity_subresolution(
+        request, candidate, context_binding, basis, preflight_result, delivery_resolution, phase_transition, root
+    )
     candidate_decision = candidate.get("mcp_control_decision", {})
     if not isinstance(candidate_decision, dict) or candidate_decision.get("outcome") not in CONTROL_OUTCOMES:
         raise RuntimeError("candidate-produced-noncanonical-control-decision")
@@ -1417,6 +1489,8 @@ def resolve(
         "control_context_binding": context_binding,
         "continuation_effect": candidate.get("continuation_effect"),
         "capability_resolution": candidate.get("capability_resolution", {}),
+        "integrity_invocation": integrity_invocation,
+        "integrity_assessment": integrity_assessment,
         "preflight_result": preflight_result,
     }
     return finalize(result)

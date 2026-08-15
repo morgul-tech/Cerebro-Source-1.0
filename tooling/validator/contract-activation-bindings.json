@@ -11,7 +11,8 @@
         "MATERIAL_COMMITMENT_PREFLIGHT",
         "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH",
         "ADAPTIVE_MCP_CONTROL_RESOLUTION",
-        "ASSURANCE_CONTINUITY"
+        "ASSURANCE_CONTINUITY",
+        "MCP_INTEGRITY_CONTROL"
       ]
     },
     {
@@ -1154,6 +1155,13 @@
         "basis_files": [
           "mcp/control-resolution.yaml",
           "mcp/control_resolution.py",
+          "mcp/integrity-control.yaml",
+          "mcp/integrity_resolution.py",
+          "mcp/integrity_control_adapter.py",
+          "mcp/integrity_cli.py",
+          "engines/interaction/integrity_intent.py",
+          "engines/presentation/integrity_presentation.py",
+          "tooling/validator/integrity_validation.py",
           "mcp/adaptive-control-resolver.yaml",
           "mcp/adaptive_control_resolver.py",
           "tooling/change/adaptive-control-shadow-scenarios.json",
@@ -1313,6 +1321,82 @@
         "c02_p001_canonical_foundation:"
       ],
       "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
+    },
+    {
+      "id": "MCP_INTEGRITY_CONTROL",
+      "standard_id": "STD-MCP",
+      "classification": "OPERATIONAL",
+      "declaration": "mcp/integrity-control.yaml",
+      "declaration_tokens": [
+        "CEREBRO-MCP-INTEGRITY-CONTROL-001",
+        "CONTROL_SUBRESOLUTION",
+        "MECHANISM_EXISTENCE_CANNOT_BY_ITSELF_PRODUCE_PASS"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "integrity_control:",
+      "implementation": "mcp/integrity_resolution.py",
+      "implementation_tokens": [
+        "DERIVED_CONTROL_EVIDENCE",
+        "def resolve_invocation(",
+        "mechanism_existence_is_not_effect_evidence"
+      ],
+      "wiring": "mcp/control_resolution.py",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "apply_integrity_subresolution",
+        "integrity_assessment",
+        "CEREBRO-MCP-INTEGRITY-CONTROL-001"
+      ],
+      "validation": "tooling/validator/integrity_validation.py",
+      "validation_tokens": [
+        "manual-and-automatic-use-same-subresolution",
+        "false-green-mcp-existence-rejected",
+        "basis-change-invalidates-old-pass",
+        "source_state_fingerprint",
+        "basis_files",
+        "_activation_evidence_basis"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_INTEGRITY_MCP_ACTIVATION_PROOF.json",
+        "schema": "cerebro-mcp-integrity-activation-proof/v1",
+        "accepted_binding_ids": [
+          "MCP_INTEGRITY_CONTROL"
+        ],
+        "basis_files": [
+          "mcp/integrity-control.yaml",
+          "mcp/integrity_resolution.py",
+          "mcp/integrity_control_adapter.py",
+          "mcp/integrity_cli.py",
+          "mcp/control-resolution.yaml",
+          "mcp/control_resolution.py",
+          "mcp/manifest.yaml",
+          "engines/interaction/integrity_intent.py",
+          "engines/interaction/rules.yaml",
+          "engines/presentation/integrity_presentation.py",
+          "engines/presentation/rules.yaml",
+          "tooling/validator/integrity_validation.py",
+          "tooling/validator/checks.yaml",
+          "tooling/validator/contract-activation-bindings.json",
+          "standards/operational-evidence.yaml",
+          "standards/control-architecture.yaml"
+        ],
+        "required_true_fields": [
+          "canonical_mcp_path_exercised",
+          "manual_entrypoints_converged",
+          "automatic_path_converged",
+          "six_dimensions_exercised",
+          "false_green_canaries_passed",
+          "basis_invalidation_passed",
+          "full_deep_separation_passed",
+          "owner_boundary_preserved",
+          "five_gate_profiles_exercised",
+          "final_decision_consumption_verified",
+          "presentation_truth_owner_false",
+          "negative_canaries_passed"
+        ],
+        "required_proves_binding": "MCP_INTEGRITY_CONTROL"
+      }
     }
   ],
   "canonical_responsibilities": [

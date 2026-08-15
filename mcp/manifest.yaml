@@ -19,6 +19,7 @@ mcp:
   - standards/development/adaptive-analysis-model.yaml
   - mcp/adaptive-control-resolver.yaml
   - mcp/control-resolution.yaml
+  - mcp/integrity-control.yaml
   - standards/human-continuation-surface.yaml
   - standards/continuation-surface-system-policy.yaml
   - standards/control-context-hierarchy.yaml
@@ -32,6 +33,7 @@ position:
   - working_method
   - control_resolution
   - final_control_resolution
+  - integrity_subresolution
   - execution_profile_resolution
   - decision_freshness_resolution
   - material_commitment_preflight
@@ -181,6 +183,24 @@ control_adapters:
       render_authorized_before_state_service_commit: false
       presentation_self_approval: PROHIBITED
       rendered_actions_must_exactly_match_projection: true
+
+  integrity_control:
+    contract_ref: mcp/integrity-control.yaml
+    implementation_ref: mcp/integrity_resolution.py
+    adapter_ref: mcp/integrity_control_adapter.py
+    manual_entrypoint_ref: mcp/integrity_cli.py
+    Interaction_intent_ref: engines/interaction/integrity_intent.py
+    Presentation_ref: engines/presentation/integrity_presentation.py
+    validator_ref: tooling/validator/integrity_validation.py
+    status: ACTIVE_CANDIDATE_REQUIRES_ACTIVATION_EVIDENCE
+    component_kind: CONTROL_SUBRESOLUTION
+    control_owner: MCP
+    direct_live_authority: false
+    final_control_decision_owner: MCP
+    manual_entrypoints: [Integrity, Integrity Full, "MCP-loop?"]
+    automatic_invocation: EXISTING_CONTROL_BOUNDARY_CONDITIONED
+    activation_evidence_required: true
+    activation_binding_ref: MCP_INTEGRITY_CONTROL
   adaptive_control_resolver:
     contract_ref: mcp/adaptive-control-resolver.yaml
     implementation_ref: mcp/adaptive_control_resolver.py

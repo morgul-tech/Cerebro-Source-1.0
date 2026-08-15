@@ -1446,3 +1446,22 @@ rules:
   validation: error
   provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
 # END SPEECH-INPUT-MODE-001 MINIMAL
+
+# BEGIN INTEGRITY-CONTROL-001 INTERACTION
+- id: INT-INTEGRITY-001
+  owner: interaction
+  authority: normative
+  priority: high
+  condition: {integrity_manual_entrypoint_candidate: true}
+  action:
+    canonical_entrypoints: [Integrity, Integrity Full, "MCP-loop?"]
+    resolver_ref: engines/interaction/integrity_intent.py
+    route_to: MCP_INTEGRITY_SUBRESOLUTION
+    reinterpret_human_objective: prohibited
+    state_mutation_authority: NONE
+  statement: Interaction SKAL mappe de tre manuelle Integrity-inngangene til samme MCP-eide Integrity-subresolution uten å tolke menneskets mål på nytt.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: locked-integrity-handoff, source: CEREBRO_INTEGRITY_IMPLEMENTATION_HANDOFF_LOCKED_2026-08-15}
+# END INTEGRITY-CONTROL-001 INTERACTION

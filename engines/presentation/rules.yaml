@@ -766,3 +766,22 @@ rules:
   validation: error
   provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
 # END TOTAL-MCP-REVISION HUMAN NAVIGATION SURFACE
+
+# BEGIN INTEGRITY-CONTROL-001 PRESENTATION
+- id: PRE-INTEGRITY-001
+  owner: presentation
+  authority: normative
+  priority: high
+  condition: {integrity_assessment_present: true}
+  action:
+    renderer_ref: engines/presentation/integrity_presentation.py
+    consume_only: cerebro-mcp-integrity-assessment/v1
+    truth_owner: false
+    status_promotion_authority: NONE
+    preserve_unknown_unavailable_not_applicable_distinctions: true
+  statement: Presentation kan rendre Integrity-assessment, men kan aldri skape, oppgradere eller avgjøre Integrity-sannhet.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: locked-integrity-handoff, source: CEREBRO_INTEGRITY_IMPLEMENTATION_HANDOFF_LOCKED_2026-08-15}
+# END INTEGRITY-CONTROL-001 PRESENTATION

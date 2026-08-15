@@ -1970,3 +1970,38 @@ total_mcp_revision_normal_control_host_binding:
     - payload-provided-runtime-capability-resolver
     - downstream-owner-execution-before-prerequisite-PASS
     - local-harness-selftest-claimed-as-ChatGPT-or-remote-MCP-activation
+
+integrity_control_validation:
+  introduced_by: CEREBRO-INTEGRITY-CONTROL-001
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - mcp/integrity-control.yaml
+    - mcp/control-resolution.yaml
+    - standards/operational-evidence.yaml
+  required_files:
+    - mcp/integrity_resolution.py
+    - mcp/integrity_control_adapter.py
+    - engines/interaction/integrity_intent.py
+    - engines/presentation/integrity_presentation.py
+    - tooling/validator/integrity_validation.py
+  required_contracts:
+    - six-canonical-integrity-dimensions
+    - manual-and-automatic-same-MCP-path
+    - FULL-is-coverage-DEEP-is-workform-depth
+    - mechanism-existence-is-not-effect-evidence
+    - basis-bound-derived-control-evidence
+    - final-control-decision-owner-remains-MCP
+  required_canaries:
+    - all-six-positive-dimensions-pass
+    - false-green-family-rejected
+    - basis-change-invalidates-old-pass
+    - unavailable-is-not-subject-failure
+    - manual-automatic-path-convergence
+    - five-existing-gate-profiles-resolve
+    - integrity-can-strengthen-but-not-weaken-final-MCP-outcome
+  prohibited:
+    - new-Integrity-Engine
+    - parallel-final-control-owner
+    - separate-manual-Integrity-runtime
+    - Integrity-owned-project-or-context-state

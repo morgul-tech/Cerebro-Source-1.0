@@ -212,3 +212,25 @@ control_resolution:
     - cross-project-structural-join-is-blocked-without-separate-project-control
     - owner-effect-routing-does-not-claim-normal-owner-consumption
     - self-asserted-owner-persistence-or-capability-does-not-open-control-gates
+
+# BEGIN INTEGRITY-CONTROL-001
+integrity_subresolution:
+  id: CEREBRO-MCP-INTEGRITY-CONTROL-001
+  status: ACTIVE_CANDIDATE_REQUIRES_ACTIVATION_EVIDENCE
+  owner: MCP
+  component_kind: CONTROL_SUBRESOLUTION
+  contract_ref: mcp/integrity-control.yaml
+  implementation_ref: mcp/integrity_resolution.py
+  adapter_ref: mcp/integrity_control_adapter.py
+  direct_live_authority: false
+  final_control_decision_owner: MCP
+  invocation:
+    manual_entrypoints: [Integrity, Integrity Full, "MCP-loop?"]
+    automatic_existing_boundaries: [DECISION_READINESS, IMPLEMENTATION_READINESS, PATCH_READINESS, OPERATIONAL_INTEGRATION, DELIVERY_CONFORMITY]
+    manual_and_automatic_same_path: true
+  invariants:
+    - MECHANISM_EXISTENCE_CANNOT_BY_ITSELF_PRODUCE_PASS
+    - FULL_IS_COVERAGE_DEEP_IS_WORKFORM_DEPTH
+    - MISSING_OR_UNAVAILABLE_EVIDENCE_IS_NOT_AUTOMATIC_SUBJECT_FAILURE
+    - ASSESSMENT_IS_BASIS_BOUND_DERIVED_CONTROL_EVIDENCE
+# END INTEGRITY-CONTROL-001
