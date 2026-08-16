@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import sys
@@ -16,6 +17,8 @@ RESPONSE_SCHEMA = "cerebro-human-continuation-response/v1"
 ACTIVATION_SCHEMA = "cerebro-human-continuation-activation-proof/v1"
 REGISTRY_SCHEMA = "cerebro-human-continuation-binding-registry/v1"
 BINDING_ID = "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
+ROADMAP_RECEIPT_SCHEMA = "cerebro-project-terminal-roadmap-projection-receipt/v1"
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ACTIVE_BINDING_REGISTRY = "engines/context/continuation-bindings.json"
 REQUIRED_BINDING_FIELDS = (
     "alias",
@@ -42,6 +45,9 @@ EVIDENCE_BASIS_FILES = (
     "tooling/validator/continuation_surface_validation.py",
     "tooling/validator/checks.yaml",
     "tooling/validator/contract-activation-bindings.json",
+    "standards/project-terminal-roadmap-projection.yaml",
+    "engines/presentation/roadmap-official.yaml",
+    "engines/presentation/roadmap_official.py",
 )
 MACHINE_PAYLOAD_PATTERNS = (
     re.compile(r"[;=]"),
@@ -141,6 +147,35 @@ def validate_registry(registry: dict[str, Any]) -> dict[str, Any]:
     return {"result": "PASS", "active_binding_id": active_id, "binding": matches[0], "validation": validation}
 
 
+
+def validate_terminal_roadmap_projection_receipt(receipt: Any, binding: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(receipt, dict):
+        raise ContinuationSurfaceError("terminal-roadmap-projection-receipt-required")
+    if receipt.get("schema") != ROADMAP_RECEIPT_SCHEMA:
+        raise ContinuationSurfaceError("terminal-roadmap-projection-receipt-schema-mismatch")
+    if receipt.get("result") != "PASS":
+        raise ContinuationSurfaceError("terminal-roadmap-projection-receipt-not-pass")
+    if receipt.get("authority") != "DERIVED_NON_AUTHORITATIVE_PROJECTION_EVIDENCE":
+        raise ContinuationSurfaceError("terminal-roadmap-projection-authority-invalid")
+    project_ref = str(candidate.get("terminal_project_ref") or "")
+    if not project_ref or receipt.get("terminal_project_ref") != project_ref:
+        raise ContinuationSurfaceError("terminal-roadmap-project-ref-mismatch")
+    if receipt.get("projection_basis_ref") != binding.get("current_basis_ref"):
+        raise ContinuationSurfaceError("terminal-roadmap-projection-basis-mismatch")
+    if receipt.get("source_revision") != binding.get("source_revision"):
+        raise ContinuationSurfaceError("terminal-roadmap-source-revision-mismatch")
+    for field in ("projection_fingerprint", "pdf_sha256"):
+        value = str(receipt.get(field) or "").lower()
+        if not SHA256_RE.fullmatch(value):
+            raise ContinuationSurfaceError("terminal-roadmap-" + field.replace("_", "-") + "-invalid")
+    if receipt.get("provider_readback_verified") is not True:
+        raise ContinuationSurfaceError("terminal-roadmap-provider-readback-not-verified")
+    if receipt.get("stable_identity_verified") is not True:
+        raise ContinuationSurfaceError("terminal-roadmap-stable-identity-not-verified")
+    if not str(receipt.get("stable_drive_file_id") or "").strip():
+        raise ContinuationSurfaceError("terminal-roadmap-stable-drive-file-id-missing")
+    return {"result":"PASS","terminal_project_ref":project_ref,"projection_fingerprint":receipt["projection_fingerprint"],"stable_drive_file_id":receipt["stable_drive_file_id"],"pdf_authority":"NONE"}
+
 def _terminal_code_block(text: str) -> tuple[str, str]:
     stripped = text.rstrip()
     match = re.search(r"(?s)(?:^|\n)```(?:text)?\s*\n([^`\r\n]+)\r?\n```$", stripped)
@@ -158,6 +193,9 @@ def validate_response(candidate: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(binding, dict):
         raise ContinuationSurfaceError("response-binding-required")
     binding_result = validate_binding(binding)
+    roadmap_validation = None
+    if candidate.get("project_terminal_boundary") is True:
+        roadmap_validation = validate_terminal_roadmap_projection_receipt(candidate.get("roadmap_projection_receipt"), binding, candidate)
     response_text = candidate.get("response_text")
     if not isinstance(response_text, str) or not response_text.strip():
         raise ContinuationSurfaceError("response-text-required")
@@ -174,6 +212,8 @@ def validate_response(candidate: dict[str, Any]) -> dict[str, Any]:
         "absolute_response_end": True,
         "machine_payload_separated": True,
         "binding_fingerprint": binding_result["binding_fingerprint"],
+        "terminal_roadmap_projection_validated": roadmap_validation is not None,
+        "terminal_roadmap_projection": roadmap_validation,
     }
 
 
@@ -227,6 +267,22 @@ def selftest() -> dict[str, Any]:
     nonterminal["response_text"] = response["response_text"] + "\nMer tekst"
     mismatched = dict(response)
     mismatched["response_text"] = "```text\nFortsett noe annet\n```"
+    terminal = dict(response)
+    terminal["project_terminal_boundary"] = True
+    terminal["terminal_project_ref"] = "PROJECT-TERMINAL-1"
+    terminal["roadmap_projection_receipt"] = {
+        "schema": ROADMAP_RECEIPT_SCHEMA, "result": "PASS",
+        "authority": "DERIVED_NON_AUTHORITATIVE_PROJECTION_EVIDENCE",
+        "terminal_project_ref": "PROJECT-TERMINAL-1",
+        "projection_basis_ref": binding["current_basis_ref"],
+        "source_revision": binding["source_revision"],
+        "projection_fingerprint": "1" * 64, "pdf_sha256": "2" * 64,
+        "provider_readback_verified": True, "stable_identity_verified": True,
+        "stable_drive_file_id": "DRIVE-STABLE-ROADMAP-ID",
+    }
+    terminal_result = validate_response(terminal)
+    missing_terminal_receipt = dict(terminal); missing_terminal_receipt.pop("roadmap_projection_receipt")
+    stale_terminal_receipt = dict(terminal); stale_terminal_receipt["roadmap_projection_receipt"] = dict(terminal["roadmap_projection_receipt"]); stale_terminal_receipt["roadmap_projection_receipt"]["projection_basis_ref"] = "STALE"
 
     return {
         "result": "PASS",
@@ -236,6 +292,9 @@ def selftest() -> dict[str, Any]:
         "machine_payload_rejected": _must_reject("machine-payload", validate_binding, payload),
         "nonterminal_surface_rejected": _must_reject("nonterminal", validate_response, nonterminal),
         "mismatched_binding_rejected": _must_reject("mismatched-binding", validate_response, mismatched),
+        "terminal_roadmap_projection_accepted": terminal_result.get("terminal_roadmap_projection_validated") is True,
+        "terminal_missing_projection_rejected": _must_reject("terminal-missing-roadmap-projection", validate_response, missing_terminal_receipt),
+        "terminal_stale_projection_rejected": _must_reject("terminal-stale-roadmap-projection", validate_response, stale_terminal_receipt),
     }
 
 
@@ -252,6 +311,20 @@ def _source_fingerprint(root: Path) -> str:
 def activation_probe(root: Path) -> dict[str, Any]:
     checks = selftest()
     registry_result = validate_registry(_read_json(root / ACTIVE_BINDING_REGISTRY))
+    renderer_path = root / "engines/presentation/roadmap_official.py"
+    spec = importlib.util.spec_from_file_location("cerebro_roadmap_official_activation", renderer_path)
+    if spec is None or spec.loader is None:
+        raise ContinuationSurfaceError("roadmap-renderer-load-failed")
+    renderer = importlib.util.module_from_spec(spec)
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        spec.loader.exec_module(renderer)
+        renderer_checks = renderer.selftest()
+    finally:
+        sys.dont_write_bytecode = previous
+    if renderer_checks.get("result") != "PASS":
+        raise ContinuationSurfaceError("roadmap-renderer-selftest-failed")
     return {
         "schema": ACTIVATION_SCHEMA,
         "result": "PASS",
@@ -269,6 +342,10 @@ def activation_probe(root: Path) -> dict[str, Any]:
         "absolute_response_end_enforced": True,
         "full_state_reference_required": True,
         "visible_alias_is_trigger_not_state": True,
+        "terminal_roadmap_projection_gate_exercised": checks.get("terminal_roadmap_projection_accepted") is True,
+        "terminal_missing_projection_blocked": checks.get("terminal_missing_projection_rejected") is True,
+        "terminal_stale_projection_blocked": checks.get("terminal_stale_projection_rejected") is True,
+        "roadmap_renderer_selftest_passed": renderer_checks.get("result") == "PASS",
         "negative_canaries_passed": all(value is True for key, value in checks.items() if key.endswith(("_rejected", "_accepted"))),
         "checks": checks,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),

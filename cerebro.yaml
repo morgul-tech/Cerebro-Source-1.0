@@ -88,6 +88,7 @@ standards:
   implementation_learning_loop: standards/development/implementation-learning-loop.yaml
   delivery_failure_regression: standards/development/delivery-failure-regression.yaml
   active_source_closure: standards/active-source-closure.yaml
+  project_terminal_roadmap_projection: standards/project-terminal-roadmap-projection.yaml
 tooling:
   builder: tooling/builder/
   validator: tooling/validator/

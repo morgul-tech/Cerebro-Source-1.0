@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.13",
+  "classification_version": "2.14",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -266,6 +266,15 @@
       "rationale": "Project status is a presentation/state contract derived from project state and does not require a parallel runtime owner."
     },
     {
+      "standard_id": "STD-PROJECT-TERMINAL-ROADMAP-PROJECTION",
+      "path": "standards/project-terminal-roadmap-projection.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "The terminal Roadmap contract, deterministic renderer, and fail-closed HCS receipt consumer are Source-implemented and activation-proven. The actual stable Drive replacement/readback is an execution-environment provider effect and cannot be promoted to universal Source-runtime proof.",
+      "known_gaps": [
+        "stable Drive replacement/readback requires a live environment provider capability and remains outside Source authority"
+      ]
+    },
+    {
       "standard_id": "STD-CONSOLIDATE",
       "path": "standards/development/consolidate.yaml",
       "classification": "POLICY_ONLY",
@@ -510,7 +519,9 @@
         "def validate_binding(",
         "def validate_response(",
         "alias-word-budget-2-to-5-required",
-        "alias-machine-payload-prohibited"
+        "alias-machine-payload-prohibited",
+        "def validate_terminal_roadmap_projection_receipt(",
+        "terminal-roadmap-projection-receipt-required"
       ],
       "wiring": "engines/presentation/rules.yaml",
       "wiring_proof_kind": "RUNTIME_EVIDENCE",
@@ -541,7 +552,10 @@
           "mcp/manifest.yaml",
           "tooling/validator/continuation_surface_validation.py",
           "tooling/validator/checks.yaml",
-          "tooling/validator/contract-activation-bindings.json"
+          "tooling/validator/contract-activation-bindings.json",
+          "standards/project-terminal-roadmap-projection.yaml",
+          "engines/presentation/roadmap-official.yaml",
+          "engines/presentation/roadmap_official.py"
         ],
         "required_true_fields": [
           "binding_validation_executed",
@@ -552,7 +566,11 @@
           "absolute_response_end_enforced",
           "full_state_reference_required",
           "visible_alias_is_trigger_not_state",
-          "negative_canaries_passed"
+          "negative_canaries_passed",
+          "terminal_roadmap_projection_gate_exercised",
+          "terminal_missing_projection_blocked",
+          "terminal_stale_projection_blocked",
+          "roadmap_renderer_selftest_passed"
         ],
         "required_proves_binding": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
       }

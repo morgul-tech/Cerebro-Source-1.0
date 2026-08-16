@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.13.0
+  version: 1.14.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -21,6 +21,7 @@ mcp:
   - mcp/control-resolution.yaml
   - mcp/integrity-control.yaml
   - standards/human-continuation-surface.yaml
+  - standards/project-terminal-roadmap-projection.yaml
   - standards/continuation-surface-system-policy.yaml
   - standards/control-context-hierarchy.yaml
   - standards/control-context-state-service.yaml
@@ -248,6 +249,20 @@ control_adapters:
     - BEFORE_COMPLETION_CLAIM
     failure_effect: BLOCK_BOUNDARY_OR_COMPLETION_CLAIM
     new_component: false
+  terminal_roadmap_projection:
+    contract_ref: standards/project-terminal-roadmap-projection.yaml
+    presentation_profile_ref: engines/presentation/roadmap-official.yaml
+    renderer_ref: engines/presentation/roadmap_official.py
+    receipt_validator_ref: tooling/validator/continuation_surface_validation.py
+    normal_consumer: HUMAN_CONTINUATION_SURFACE_ENFORCEMENT
+    status: ACTIVE_SOURCE_CONTRACT_PROVIDER_EFFECT_CAPABILITY_CONDITIONED
+    control_owner: MCP
+    semantic_state_owner: project
+    presentation_owner: presentation
+    provider_publication_owner: EXECUTION_ENVIRONMENT
+    background_daemon_required: false
+    pdf_authority: NONE
+    failure_effect: BLOCK_TERMINAL_HANDOFF_AND_COMPLETION_CLAIM
 principles:
 - id: MCP-P001
   statement: Analyze the task before selecting or producing a solution.

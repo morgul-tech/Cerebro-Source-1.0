@@ -2,7 +2,7 @@ schema: cerebro-human-continuation-surface/v0.1
 
 human_continuation_surface:
   id: CEREBRO-HUMAN-CONTINUATION-SURFACE-001
-  version: "0.4"
+  version: "0.5"
   status: ACTIVE
   authority: Cerebro Source 1.0
   introduced_by: GUARDRAILS-001
@@ -178,3 +178,23 @@ human_continuation_surface:
     - response-handoff-blocks-until-the-active-binding-and-visible-trigger-match
     - exact-shell-handoff-is-generated-hash-bound-and-runtime-consumed
     - rendered-intent-alone-is-not-proof-of-delivered-copy-surface
+  terminal_project_roadmap_projection_gate:
+    contract_ref: standards/project-terminal-roadmap-projection.yaml
+    applies_when: PROJECT_ENGINEERING_TERMINAL_BOUNDARY
+    normal_consumer: tooling/validator/continuation_surface_validation.py
+    required_before:
+      - CONTINUATION_HANDOFF
+      - TERMINAL_COMPLETION_CLAIM
+    required_candidate_fields:
+      - terminal_project_ref
+      - roadmap_projection_receipt
+    receipt_schema: cerebro-project-terminal-roadmap-projection-receipt/v1
+    fail_closed_if:
+      - receipt_missing
+      - receipt_not_PASS
+      - project_ref_mismatch
+      - projection_basis_mismatch
+      - source_revision_mismatch
+      - provider_readback_not_verified
+      - stable_identity_not_verified
+    pdf_authority: NONE

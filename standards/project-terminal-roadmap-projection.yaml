@@ -1,0 +1,71 @@
+schema: cerebro-standard/v1
+standard:
+  id: STD-PROJECT-TERMINAL-ROADMAP-PROJECTION
+  name: Project Terminal Roadmap Projection
+  version: 1.0.0
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  scope: SYSTEM_WIDE_PROJECT_ENGINEERING_TERMINAL_BOUNDARIES
+purpose: >-
+  Keep the structured Cerebro roadmap current at every Project Engineering terminal boundary
+  and require a verified, stable-identity human PDF projection before terminal continuation or
+  completion is presented.
+authority_boundary:
+  source_authority: Cerebro Source 1.0
+  structured_project_state_owner: project
+  final_control_owner: MCP
+  visual_format_owner: presentation
+  pdf_authority: NONE
+  shared_drive_projection_authority: NONE
+  generated_pdf_is_state_source: false
+  color_or_glyph_may_create_status: false
+trigger:
+  when: PROJECT_ENGINEERING_TERMINAL_BOUNDARY
+  automatic: true
+  background_daemon_required: false
+  active_control_loop_consumer_required: true
+terminal_sequence:
+  - RESOLVE_TERMINAL_PROJECT_STATE
+  - CONVERGE_STRUCTURED_ROADMAP_PROJECT_READY_QUEUE
+  - DERIVE_PROJECTION_FINGERPRINT
+  - RENDER_OFFICIAL_PDF
+  - REPLACE_STABLE_DRIVE_ARTIFACT_IN_PLACE
+  - VERIFY_PROVIDER_READBACK_AND_STABLE_IDENTITY
+  - VALIDATE_TERMINAL_PROJECTION_RECEIPT
+  - ALLOW_CONTINUATION_HANDOFF
+  - ALLOW_TERMINAL_COMPLETION_CLAIM
+projection:
+  canonical_human_title: Cerebro Roadmap - Official
+  presentation_profile_ref: engines/presentation/roadmap-official.yaml
+  renderer_ref: engines/presentation/roadmap_official.py
+  stable_provider_object_required: true
+  replace_in_place: true
+  exact_provider_file_id_is_runtime_configuration_not_source_definition: true
+  derived_from_fresh_structured_state_only: true
+receipt:
+  schema: cerebro-project-terminal-roadmap-projection-receipt/v1
+  validator_ref: tooling/validator/continuation_surface_validation.py
+  normal_consumer: HUMAN_CONTINUATION_SURFACE_ENFORCEMENT
+  pass_requires:
+    - terminal_project_ref_exact_match
+    - projection_basis_ref_exact_match
+    - source_revision_exact_match
+    - projection_fingerprint_present
+    - pdf_sha256_present
+    - provider_readback_verified
+    - stable_identity_verified
+    - stable_drive_file_id_present
+failure_semantics:
+  stale_or_missing_projection: BLOCK_TERMINAL_HANDOFF_AND_COMPLETION_CLAIM
+  provider_readback_failure: BLOCK_TERMINAL_HANDOFF_AND_COMPLETION_CLAIM
+  stable_identity_change: BLOCK_TERMINAL_HANDOFF_AND_COMPLETION_CLAIM
+  semantic_project_result_may_remain_resolved: true
+  do_not_reclassify_semantic_result_as_failed_only_because_projection_publication_failed: true
+invariants:
+  - PDF_IS_NON_AUTHORITATIVE_HUMAN_PROJECTION
+  - STRUCTURED_STATE_PRECEDES_RENDER
+  - TERMINAL_PROJECTION_PRECEDES_CONTINUATION_HANDOFF
+  - TERMINAL_PROJECTION_PRECEDES_COMPLETION_CLAIM
+  - ACTIVE_PROJECT_CONTROL_LOOP_PERFORMS_HOOK_WITHOUT_BACKGROUND_DAEMON_ASSUMPTION
+  - PROVIDER_IDENTITY_AND_READBACK_ARE_VERIFIED_NOT_ASSUMED
+  - FAILURE_IS_FAIL_CLOSED_NOT_SILENTLY_SKIPPED

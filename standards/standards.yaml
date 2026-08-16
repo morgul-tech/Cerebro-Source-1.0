@@ -1,7 +1,7 @@
 schema: cerebro-standards-manifest/v0.1
 standards_engine:
   id: standards
-  version: 0.8.0
+  version: 0.9.0
   role: authoritative-policy-registry
   runtime_engine: false
   policy_owner: Cerebro Source 1.0
@@ -96,6 +96,9 @@ documents:
   required: true
 - id: STD-PROJECT-STATUS
   path: standards/project-status.yaml
+  required: true
+- id: STD-PROJECT-TERMINAL-ROADMAP-PROJECTION
+  path: standards/project-terminal-roadmap-projection.yaml
   required: true
 - id: STD-CONSOLIDATE
   path: standards/development/consolidate.yaml

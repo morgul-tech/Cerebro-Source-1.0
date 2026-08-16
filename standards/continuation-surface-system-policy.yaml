@@ -1,7 +1,7 @@
 schema: cerebro-continuation-surface-system-policy/v1
 continuation_surface_system_policy:
   id: CEREBRO-CONTINUATION-SURFACE-SYSTEM-001
-  version: "1.3"
+  version: "1.4"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: SYSTEM_WIDE
@@ -112,3 +112,14 @@ continuation_surface_system_policy:
   - human-continuation-surface-requires-a-real-human-boundary
   - a-long-machine-instruction-is-not-a-valid-normal-human-continuation-surface
   - response-handoff-requires-machine-validation-of-the-final-visible-trigger
+  terminal_project_boundary:
+    contract_ref: standards/project-terminal-roadmap-projection.yaml
+    order:
+      - resolve-terminal-project-state
+      - converge-structured-roadmap-project-ready-queue
+      - render-and-publish-official-roadmap-projection
+      - verify-projection-receipt
+      - render-continuation-handoff
+      - allow-terminal-completion-claim
+    projection_failure_effect: BLOCK_HANDOFF_AND_COMPLETION_CLAIM
+    new_project_auto_start_after_close: PROHIBITED

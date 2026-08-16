@@ -785,3 +785,43 @@ rules:
   validation: error
   provenance: {type: locked-integrity-handoff, source: CEREBRO_INTEGRITY_IMPLEMENTATION_HANDOFF_LOCKED_2026-08-15}
 # END INTEGRITY-CONTROL-001 PRESENTATION
+# BEGIN ADMIN-ROADMAP-AUTOUPDATE-001
+- id: PRE-ROADMAP-OFFICIAL-001
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {terminal_roadmap_projection_request: true}
+  action:
+    profile_ref: engines/presentation/roadmap-official.yaml
+    renderer_ref: engines/presentation/roadmap_official.py
+    require_fresh_structured_snapshot: true
+    selected_layout: F
+    real_data_only: true
+    color_only_status: prohibited
+    semantic_glyph_state_separation: true
+    emit_pdf_and_draft_receipt: true
+    provider_publication: prohibited
+  statement: Presentation Engine SKAL rendre Cerebro Roadmap - Official fra fersk strukturert roadmap-snapshot med låst layout F og uten å oppgradere visning til sannhetskilde; provider-publisering forblir en separat miljøeffekt.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: user-selected-visual-and-operational-contract, source: ADMIN-ROADMAP-AUTOUPDATE-001}
+- id: PRE-ROADMAP-OFFICIAL-002
+  owner: presentation
+  authority: normative
+  priority: high
+  condition: {profile: CEREBRO-ROADMAP-OFFICIAL-001}
+  action:
+    primary_layout: F
+    secondary_inspiration: B
+    A_role: SECONDARY_LINEAR_PROGRESS_ONLY
+    A_progress_branches: prohibited
+    A_progress_must_use_less_space_than_main_roadmap: true
+    minimal_text: true
+    preserve_cerebro_visual_language: true
+  statement: Official Roadmap SKAL bruke F som hovedlayout; B kan inspirere raffinering, mens A bare kan brukes som en liten rett fremdriftslinje uten grener og aldri som hoved-roadmap.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: explicit-user-design-selection, source: ADMIN-ROADMAP-AUTOUPDATE-001}
+# END ADMIN-ROADMAP-AUTOUPDATE-001

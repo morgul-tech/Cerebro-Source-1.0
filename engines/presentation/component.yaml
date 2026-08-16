@@ -3,7 +3,7 @@ component:
   id: presentation
   name: Presentation Engine
   type: engine
-  version: 1.3.0
+  version: 1.4.0
   status: active-source
 responsibility:
   primary: Velge presentasjonsform, informasjonsstruktur, detaljnivå, output-budsjett, Styringsstatus og visuelle virkemidler.
@@ -27,6 +27,8 @@ interfaces:
   - committed-control-session-state
   - MCP-context-navigation-options
   - matching-state-service-completion-receipt
+  - terminal-roadmap-projection-request
+  - fresh-structured-roadmap-snapshot
   output:
   - presentation-model
   - format
@@ -36,6 +38,8 @@ interfaces:
   - information-order
   - consolidation-report
   - human-navigation-surface-candidate
+  - official-roadmap-pdf
+  - roadmap-projection-draft-receipt
 schemas:
   human_navigation_surface_candidate: human-navigation-surface-candidate.schema.json
   MCP_navigation_options: ../../mcp/context-navigation-options.schema.json
@@ -46,6 +50,10 @@ profiles:
   admin_bios:
     path: admin-bios.yaml
     surface_id: CEREBRO-BOOT-COMPLETION-SURFACE-001
+    status: ACTIVE
+  roadmap_official:
+    path: roadmap-official.yaml
+    surface_id: CEREBRO-ROADMAP-OFFICIAL-001
     status: ACTIVE
 documentation:
   path: specification.md
@@ -68,12 +76,18 @@ boundaries:
   - preserve-same-session-next-step-across-nonmaterial-detours
   - preserve-truth-strength-in-status-rendering
   - keep-semantic-glyph-and-state-instrumentation-separate
+  - render-official-roadmap-from-fresh-structured-state
+  - preserve-layout-F-roadmap-grammar
+  - keep-A-linear-progress-strip-secondary-only
   must_not:
   - invent-or-self-approve-navigation-action
   - let-HNS-override-HCS-or-exact-shell-handoff
   - hide-internally-executable-work-behind-human-trigger
   - fabricate-telemetry-or-verification-state
   - use-right-side-status-rail-in-admin-bios
+  - treat-roadmap-pdf-as-state-authority
+  - publish-or-verify-provider-artifact
+  - invent-roadmap-status
 version:
-  component: 1.3.0
+  component: 1.4.0
   schema: 1

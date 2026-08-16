@@ -374,3 +374,23 @@ rules:
   validation: error
   provenance: {type: user-authorized-project-development, source: TOTAL_MCP_REVISION}
 # END TOTAL-MCP-REVISION OWNER EFFECT
+# BEGIN ADMIN-ROADMAP-AUTOUPDATE-001
+- id: PRO-TERMINAL-ROADMAP-001
+  owner: project
+  authority: normative
+  priority: critical
+  condition: {project_engineering_terminal_boundary: true}
+  action:
+    resolve_terminal_project_state_first: true
+    converge_structured_project_and_roadmap_state_first: true
+    emit_terminal_roadmap_projection_request: true
+    request_contains_committed_state_refs_only: true
+    render_pdf: prohibited
+    publish_provider_artifact: prohibited
+    approve_continuation: prohibited
+  statement: Ved hver Project Engineering-terminalgrense SKAL Project Engine etter fersk terminal state-resolution og strukturert konvergens emitte en state-bound roadmap-projection request; Project Engine skal ikke rendre PDF, publisere provider-artefakten eller godkjenne continuation.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: user-authorized-systemic-project-correction, source: ADMIN-ROADMAP-AUTOUPDATE-001}
+# END ADMIN-ROADMAP-AUTOUPDATE-001

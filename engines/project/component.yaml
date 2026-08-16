@@ -3,7 +3,7 @@ component:
   id: project
   name: Project Engine
   type: engine
-  version: 1.3.0
+  version: 1.4.0
   status: active-source
 responsibility:
   primary: Styre prosjektoppstart, mål, rammer, faser, leveranser og prosjektendringer.
@@ -16,11 +16,16 @@ boundaries:
   - forvalte-distinkte-prosjektinstanser-og-default-binding
   - consume-MCP-routed-project-revision-effect
   - emit-project-owner-effect-candidate-receipt-before-persistence
+  - emit-terminal-project-boundary-candidate-after-terminal-state-resolution
+  - emit-terminal-roadmap-projection-request-from-committed-project-state
   must_not:
   - velge-arbeidsmodus
   - ta-brukerbeslutninger
   - forvalte-aktiv-kontekst
   - utføre-kvalitetskontroll
+  - render-official-roadmap-pdf
+  - publish-provider-roadmap-artifact
+  - approve-terminal-continuation
 dependencies:
   build:
   - terminology
@@ -46,6 +51,8 @@ interfaces:
   - project-instance-bootstrap-candidate
   - project-basis-revision-candidate
   - project-owner-effect-candidate-receipt
+  - project-terminal-boundary-candidate
+  - terminal-roadmap-projection-request
 owner_effect_binding:
   implementation_ref: engines/project/project_owner_effect.py
   persistence_ref: tooling/owner_state/owner_state_persistence.py
@@ -75,5 +82,5 @@ migration:
   - '5.6'
   - '5.7'
 version:
-  component: 1.3.0
+  component: 1.4.0
   schema: 1

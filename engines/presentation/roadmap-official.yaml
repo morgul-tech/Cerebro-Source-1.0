@@ -1,0 +1,57 @@
+schema: cerebro-presentation-profile/v1
+profile:
+  id: CEREBRO-ROADMAP-OFFICIAL-001
+  name: Cerebro Roadmap - Official
+  version: 1.0.0
+  status: ACTIVE
+  surface: PROJECT_TERMINAL_ROADMAP_PDF
+  authority: PRESENTATION_ONLY_NON_AUTHORITATIVE
+basis:
+  standard_ref: standards/project-terminal-roadmap-projection.yaml
+  visual_language_ref: modules/visual-language/semantics.yaml
+  selected_layout: F
+  primary_reference: F
+  secondary_inspiration: B
+  excluded_as_primary_layout: A
+layout:
+  page: A4_PORTRAIT
+  composition: ASYMMETRIC_MODULAR_EDITORIAL
+  domains:
+  - FUNDAMENT
+  - KJERNE
+  - BRUKER_ADMIN
+  final_destination: CEREBRO_2
+  linear_progress_strip:
+    source_inspiration: A
+    role: SECONDARY_OVERALL_PROGRESS_ONLY
+    placement_preference: BOTTOM_OR_CORNER
+    may_expand_into_main_roadmap: false
+    branches_allowed: false
+  overflow_policy: BLOCK_AND_REQUIRE_REVISED_LAYOUT_NO_SILENT_OMISSION
+visual_semantics:
+  dark_default: true
+  minimal_text: true
+  high_scanability: true
+  strong_weak_dividers: true
+  semantic_glyphs_sparse: true
+  glyph_state_separation_required: true
+  color_as_only_information_carrier: prohibited
+  real_data_only: true
+state_labels:
+  completed: FULLFORT
+  active: AKTIV
+  ready: KLAR
+  later: SENERE
+rendering:
+  implementation_ref: engines/presentation/roadmap_official.py
+  input: FRESH_STRUCTURED_ROADMAP_SNAPSHOT
+  output: PDF_PLUS_DRAFT_PROJECTION_RECEIPT
+  presentation_may_infer_missing_status: false
+  presentation_may_publish_provider_artifact: false
+  provider_publication_is_environment_effect: true
+non_goals:
+- dashboard_component_system
+- large_glyph_library
+- PDF_as_project_state
+- PDF_as_Source_authority
+- background_daemon
