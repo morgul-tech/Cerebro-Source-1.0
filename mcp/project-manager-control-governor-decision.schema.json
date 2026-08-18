@@ -1,0 +1,69 @@
+{
+  "$id": "cerebro://schemas/project-manager-control-governor-decision/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "authority": {
+      "const": "MCP"
+    },
+    "decision_fingerprint": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "decision_ref": {
+      "pattern": "^PMCG-[0-9A-F]{24}$",
+      "type": "string"
+    },
+    "direct_live_authority": {
+      "const": false
+    },
+    "event_ref": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "human_continuation_allowed": {
+      "type": "boolean"
+    },
+    "pm_internal_action_must_run_before_human_boundary": {
+      "type": "boolean"
+    },
+    "result": {
+      "const": "PASS"
+    },
+    "schema": {
+      "const": "cerebro-project-manager-control-governor-decision/v1"
+    },
+    "session_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "state_mutation_by_governor": {
+      "const": false
+    }
+  },
+  "required": [
+    "schema",
+    "authority",
+    "direct_live_authority",
+    "state_mutation_by_governor",
+    "profile_verification",
+    "event_ref",
+    "session_ref",
+    "frontier",
+    "next_action",
+    "shared_write_gate",
+    "worker_terminal_gate",
+    "interrupt_gate",
+    "terminal_gate",
+    "progress_observability_gate",
+    "human_continuation_allowed",
+    "pm_internal_action_must_run_before_human_boundary",
+    "decision_fingerprint",
+    "decision_ref",
+    "result"
+  ],
+  "title": "Cerebro Project Manager Control Governor Decision",
+  "type": "object"
+}

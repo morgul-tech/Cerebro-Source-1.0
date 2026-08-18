@@ -1,0 +1,146 @@
+schema: cerebro-project-manager-control-governor/v1
+project_manager_control_governor:
+  id: CEREBRO-PROJECT-MANAGER-CONTROL-GOVERNOR-001
+  version: "0.1.0"
+  status: SOURCE_IMPLEMENTED_ACTIVATION_PENDING_TRUSTED_PROFILE_BINDING
+  kind: MCP_SUBRESOLUTION
+  definitional_authority: Cerebro Source 1.0
+  control_authority: MCP
+  direct_live_authority: false
+  state_owner: NONE
+  source_mutation_authority: NONE
+  new_AI_role: false
+
+  purpose: >
+    Deterministically govern Project Manager orchestration at the continuation and
+    terminal frontier without creating a parallel control engine, state service,
+    role authority or Source authority.
+
+  canonical_owners:
+    control_decision: MCP
+    project_state: context
+    continuation_surface: MCP/HCS/HNS
+    worker_role_identity: TRUSTED_BOOT_AND_ADMISSION_PATH
+    source_mutation: IMPLEMENTER_UNDER_DOCTOR
+
+  activation:
+    invoked_by: mcp/control_resolution.py
+    applies_when: PROJECT_MANAGER_GOVERNANCE_CANDIDATE_PRESENT
+    trusted_profile_binding_required: true
+    profile_verifier_injection: CONSTRUCTOR_BOUND
+    AI_supplied_profile_binding_is_authority: false
+    missing_trusted_profile_verifier_effect: BLOCK
+    current_host_binding_status: NOT_YET_PROVEN
+    activation_claim_before_host_binding_proof: PROHIBITED
+
+  responsibilities:
+    - derive-first-uncompleted-current-session-frontier-action
+    - remove-completed-human-work-from-continuation-frontier
+    - require-PM-owned-internally-executable-work-before-human-continuation
+    - enforce-single-semantic-Shared-writer-and-readback-barrier
+    - require-independent-PM-admission-of-Worker-terminal-envelopes
+    - keep-Integrator-closed-until-all-terminal-envelopes-and-frozen-input-manifest
+    - enforce-PAUSE-STOP-TERMINATE-distinct-inheritance-semantics
+    - require-COMPLETE-continuation-and-learning-dispositions
+    - require-progress-observability-for-long-running-PM-work
+
+  non_responsibilities:
+    - define-project-semantics
+    - persist-project-state
+    - authenticate-PM-role-by-self-assertion
+    - mutate-Shared-or-Source
+    - assign-Worker-authority
+    - create-new-AI-persona
+    - bypass-Doctor-assurance
+
+  next_action:
+    actor_vocabulary:
+      - PROJECT_MANAGER
+      - HUMAN
+    PM_owned_internal_effect:
+      canonical_owner: MACHINE
+      required_before_event_closure: true
+      human_continuation_allowed: false
+    human_effect:
+      canonical_owner: HUMAN
+      required_before_event_closure: false
+      internally_executable: false
+    canonical_MCP_next_action_mismatch_effect: BLOCK
+
+  shared_single_writer:
+    active_semantic_writer_count: EXACTLY_1
+    overlapping_same_intent_attempts: PROHIBITED
+    retry_without_fresh_read: PROHIBITED
+    provider_write_acceptance_without_readback:
+      next_transaction_allowed: false
+    duplicate_same_intent_generation: CONTROL_DEFECT
+
+  worker_terminal:
+    worker_self_admission: PROHIBITED
+    independent_PM_admission_required: true
+    admitted_terminal_must_be_expected: true
+    integrator_open_requires:
+      - all_expected_worker_terminals_admitted
+      - frozen_integration_input_manifest
+
+  interrupt_semantics:
+    PAUSE:
+      claim: RESERVED
+      continuation: PRESERVED
+      resume_requires_fresh_revalidation: true
+    STOP:
+      claim: RELEASED
+      partial_work: QUARANTINED
+      direct_continuation: PROHIBITED
+      recovery_review: REQUIRED
+    TERMINATE:
+      claim: RELEASED
+      substantive_inheritance: PROHIBITED
+      continuation: NON_PROPAGATING
+      minimal_tombstone: REQUIRED
+
+  terminal:
+    COMPLETE_requires:
+      continuation_disposition:
+        - HANDOFF
+        - NONE_REQUIRED
+      learning_disposition:
+        - GENERALIZABLE_LEARNING_CANDIDATE
+        - NO_GENERALIZABLE_LEARNING
+    STOP_requires:
+      continuation_disposition: RECOVERY_REVIEW
+      learning_disposition: RECOVERY_REVIEW_ONLY
+    TERMINATE_requires:
+      continuation_disposition: NON_PROPAGATING
+      learning_disposition: NON_PROPAGATING
+
+  progress_observability:
+    applies_when: LONG_RUNNING_PM_EXECUTION
+    required:
+      - heartbeat_enabled
+      - phase_updates_enabled
+      - silent_stall_surface_prohibited
+    timer_policy_owner: PRESENTATION_OR_HOST_NOT_THIS_GOVERNOR
+
+  learning_basis:
+    - DEC-PM-CONTINUATION-OWNER-001
+    - DEC-PM-CONTINUOUS-LEARNING-001
+    - DEC-PM-WORKER-PIPELINE-HARDENING-001
+    - DEC-PM-ADMIN-WORKER-INTERRUPT-001
+    - DEC-PM-SINGLE-WRITER-SHARED-001
+    - DEC-PM-NEXT-STEP-ACTOR-OWNERSHIP-001
+    - standards/development/implementation-learning-loop.yaml
+    - standards/human-continuation-surface.yaml
+    - standards/control-context-state-service.yaml
+
+  invariants:
+    - governor-is-subordinate-to-one-canonical-MCP-control-decision
+    - governor-does-not-own-state
+    - self-asserted-PM-profile-never-activates-governor
+    - human-frontier-cannot-create-a-human-boundary-without-canonical-MCP-HCS-HNS-basis
+    - completed-human-action-never-remains-current-session-next
+    - PM-internal-action-precedes-human-continuation
+    - Shared-write-retry-requires-fresh-read-and-readback-barrier
+    - Worker-cannot-admit-own-terminal-envelope
+    - terminal-completion-without-learning-disposition-blocks
+    - long-running-PM-work-without-progress-observability-blocks

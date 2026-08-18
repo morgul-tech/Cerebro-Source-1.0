@@ -45,6 +45,39 @@ doctor_assurance_validation:
     - successor-self-approval
     - source-promotion-without-certified-current-trust-object
 
+project_manager_control_governor_validation:
+  severity: error
+  owner: tooling.validator
+  contract_ref: mcp/project-manager-control-governor.yaml
+  implementation_ref: mcp/project_manager_control_governor.py
+  decision_schema_ref: mcp/project-manager-control-governor-decision.schema.json
+  validator: tooling/validator/project_manager_control_governor_validation.py
+  required_contracts:
+    - governor-is-subordinate-to-one-canonical-MCP-control-decision
+    - self-asserted-PM-profile-never-activates-governor
+    - completed-human-action-never-remains-current-session-next
+    - PM-internal-action-precedes-human-continuation
+    - Shared-write-retry-requires-fresh-read-and-readback-barrier
+    - Worker-cannot-admit-own-terminal-envelope
+    - terminal-completion-without-learning-disposition-blocks
+    - long-running-PM-work-without-progress-observability-blocks
+  required_canaries:
+    - trusted-profile-binding-required
+    - actor-owned-frontier-enforced
+    - repeated-completed-human-action-removed
+    - single-semantic-Shared-writer-enforced
+    - Worker-self-admission-denied
+    - Integrator-gated-by-admitted-terminals
+    - PAUSE-STOP-TERMINATE-distinct
+    - terminal-learning-disposition-required
+    - heartbeat-required-for-long-running-PM-work
+  prohibited:
+    - AI-self-asserted-PM-role-authority
+    - repeated-completed-human-action-as-next
+    - duplicate-same-intent-Shared-semantic-writer
+    - Worker-self-admission
+    - live-PM-enforcement-claim-before-trusted-host-profile-binding
+
 command_execution_surface_validation:
   introduced_by: STANDARD-DELIVERY-INCREMENTAL-REVISION-001
   severity: error

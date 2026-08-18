@@ -79,6 +79,10 @@ EVIDENCE_BASIS_FILES = [
     "mcp/owner-state-commit-receipt.schema.json",
     "mcp/control_owner_effect_receipt.py",
     "mcp/control_owner_routing.py",
+    "mcp/project-manager-control-governor.yaml",
+    "mcp/project-manager-control-governor-decision.schema.json",
+    "mcp/project_manager_control_governor.py",
+    "tooling/validator/project_manager_control_governor_validation.py",
     "mcp/control_resolution_host.py",
     "engines/project/project-basis-state.schema.json",
     "engines/project/project_owner_effect.py",
@@ -914,6 +918,7 @@ def attach_context_transition(
     root: Path,
     owner_persistence_verifier: Any | None = None,
     runtime_capability_resolver: Any | None = None,
+    pm_profile_verifier: Any | None = None,
 ) -> dict[str, Any]:
     """Bind an Interaction proposal to the final MCP decision without persisting it."""
 
@@ -1053,6 +1058,32 @@ def attach_context_transition(
         if isinstance(owner_effect_plan, dict)
         else _default_next_action(attached_decision, navigation_options)
     )
+    governance_candidate = request.get("project_manager_governance_candidate")
+    if governance_candidate is not None:
+        try:
+            governor = load_module(
+                root / "mcp/project_manager_control_governor.py",
+                "cerebro_project_manager_control_governor_live",
+            )
+            governance = governor.govern_project_manager_event(
+                candidate=governance_candidate,
+                canonical_next_action=attached_decision["next_action"],
+                session=envelope["session"],
+                profile_binding=request.get("project_manager_profile_binding"),
+                profile_verifier=pm_profile_verifier,
+            )
+        except Exception as exc:
+            return _block_due_to_context_transition(result, request, "project-manager-control-governor:" + str(exc))
+        attached_decision["next_action"] = copy.deepcopy(governance["next_action"])
+        attached["project_manager_control_governance"] = governance
+        if attached_decision["next_action"].get("owner") == "MACHINE":
+            attached["mcp_context_navigation_options_candidate"] = None
+            attached["mcp_context_navigation_options"] = None
+            attached["human_navigation_surface_required"] = False
+            attached["human_navigation_surface_render_authorized_before_commit"] = False
+            attached["human_navigation_surface_required_after_committed_state_match"] = False
+    else:
+        attached["project_manager_control_governance"] = None
     attached["mcp_control_decision"] = attached_decision
     next_action = attached_decision["next_action"]
     attached["current_event_machine_action_required"] = (
@@ -1275,6 +1306,7 @@ def resolve(
     require_git_ancestry: bool = True,
     owner_persistence_verifier: Any | None = None,
     runtime_capability_resolver: Any | None = None,
+    pm_profile_verifier: Any | None = None,
 ) -> dict[str, Any]:
     if not isinstance(request, dict):
         raise ValueError("request-must-be-object")
@@ -1301,6 +1333,7 @@ def resolve(
             root,
             owner_persistence_verifier=owner_persistence_verifier,
             runtime_capability_resolver=runtime_capability_resolver,
+            pm_profile_verifier=pm_profile_verifier,
         )
 
     constitutional = evaluate_constitutional_compliance(request)

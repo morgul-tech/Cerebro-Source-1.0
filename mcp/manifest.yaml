@@ -2,7 +2,7 @@ schema: cerebro-mcp/v1
 mcp:
   name: Master Control Program
   id: mcp
-  version: 1.14.0
+  version: 1.15.0
   component_kind: CONTROL
   default_state: active
   scope: domain-independent-control
@@ -29,6 +29,7 @@ mcp:
   - mcp/assurance-continuity.yaml
   - standards/assurance-kernel.yaml
   - standards/doctor-assurance.yaml
+  - mcp/project-manager-control-governor.yaml
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0
@@ -49,6 +50,7 @@ position:
   - tool_selection
   - execution_surface_resolution
   - hierarchical_project_control
+  - project_manager_orchestration_subresolution
   does_not_own:
   - source_specification
   - persistent_definition_authority
@@ -95,6 +97,23 @@ control_adapters:
     material_preflight_precedence: REQUIRED
     activation_evidence_required: true
     activation_binding_ref: ADAPTIVE_MCP_CONTROL_RESOLUTION
+  project_manager_control_governor:
+    contract_ref: mcp/project-manager-control-governor.yaml
+    implementation_ref: mcp/project_manager_control_governor.py
+    decision_schema_ref: mcp/project-manager-control-governor-decision.schema.json
+    validator_ref: tooling/validator/project_manager_control_governor_validation.py
+    status: SOURCE_IMPLEMENTED_ACTIVATION_PENDING_TRUSTED_PROFILE_BINDING
+    component_kind: CONTROL_SUBRESOLUTION
+    control_owner: MCP
+    direct_live_authority: false
+    state_owner: NONE
+    source_mutation_authority: NONE
+    new_AI_role: false
+    invoked_by: mcp/control_resolution.py
+    trusted_profile_binding_required: true
+    profile_verifier_injection: CONSTRUCTOR_BOUND
+    AI_supplied_profile_binding_is_authority: false
+    activation_claim_before_host_binding_proof: PROHIBITED
   project_control_context:
     hierarchy_contract_ref: standards/control-context-hierarchy.yaml
     state_service_contract_ref: standards/control-context-state-service.yaml
