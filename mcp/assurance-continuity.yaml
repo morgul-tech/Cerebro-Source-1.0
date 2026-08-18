@@ -6,6 +6,17 @@ assurance_continuity:
   new_component: false
   control_owner: MCP
   execution_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+  assurance_kernel_contract: standards/assurance-kernel.yaml
+  assurance_kernel_implementation: tooling/assurance/assurance_kernel.py
+  assurance_kernel_permit_schema: mcp/assurance-kernel-permit.schema.json
+  assurance_kernel_receipt_schema: mcp/assurance-kernel-receipt.schema.json
+  material_edge_permit_required: true
+  doctor_assurance_contract: standards/doctor-assurance.yaml
+  doctor_gate_implementation: tooling/doctor/doctor_gate.py
+  doctor_trust_implementation: tooling/doctor/doctor_trust.py
+  system_doctor_implementation: tooling/doctor/system_doctor.py
+  doctor_trust_object_schema: mcp/doctor-trust-object.schema.json
+  doctor_enforced_material_edge: true
   presentation_consumer: engines/presentation/rules.yaml
   principles:
     - governing-contract-follows-control-state-not-conversation-memory

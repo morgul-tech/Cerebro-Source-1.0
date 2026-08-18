@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"cerebro-system-doctor-receipt/v1",
+  "type":"object",
+  "required":["schema","result","required_dimensions","dimensions","complete","active_path_proof_sha256"],
+  "properties":{
+    "schema":{"const":"cerebro-system-doctor-receipt/v1"},
+    "result":{"enum":["SYSTEM_DOCTOR_PASS","SYSTEM_DOCTOR_FAIL"]},
+    "required_dimensions":{"type":"array","minItems":12,"maxItems":12},
+    "dimensions":{"type":"array"},
+    "complete":{"type":"boolean"},
+    "active_path_proof_sha256":{"type":["string","null"],"pattern":"^[0-9a-f]{64}$"}
+  }
+}

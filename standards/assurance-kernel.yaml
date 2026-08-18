@@ -1,0 +1,51 @@
+schema: cerebro-assurance-kernel/v1
+assurance_kernel:
+  id: CEREBRO-ASSURANCE-KERNEL-001
+  status: DOCTOR_BOOTSTRAP_SUCCESSOR_CANDIDATE
+  kind: NON_AI_ENFORCEMENT_SUBSTRATE
+  definitional_authority: Cerebro Source 1.0
+  control_policy_owner: MCP
+  semantic_authority: NONE
+  purpose: >
+    Enforce exact current assurance consumption at the canonical Source material edge.
+    Candidate producers, Doctor prose, raw PASS labels and Shared projections have no authority.
+  states: [UNINITIALIZED, BOOTSTRAP_ONLY, DOCTOR_ENFORCED, FAILED_RECOVERY]
+  bootstrap_only:
+    allowed_package_class: DOCTOR_BOOTSTRAP_PACKAGE
+    max_successful_consumptions: 1
+    ordinary_source_packages: DENY
+    self_asserted_pass_is_proof: false
+    shared_state_is_trust_root: false
+  doctor_enforced:
+    doctor_receipt_required: true
+    certified_current_trust_object_required: true
+    independent_attestation_algorithm: HMAC-SHA256
+    trust_key_material_in_source: PROHIBITED
+    trust_key_path_bound_at_transition: true
+    doctor_verifier_identity_bound_at_transition: true
+    required_claim_scope: SOURCE_PROMOTION
+    raw_receipt_or_pass_label: DENY
+    stale_or_tampered_trust_object: DENY
+    verifier_or_key_drift: DENY
+  permit_binding:
+    required: [permit_id, campaign_id, package_class, source_pre_head, package_sha256, touched_paths_sha256, nonce, authority_epoch]
+    doctor_enforced_additional_required: [doctor_receipt_sha256, doctor_trust_object_path]
+    one_shot: true
+    cross_process_consume_serialization: REQUIRED
+    stale_source_head: DENY
+    wrong_package: DENY
+    wrong_paths: DENY
+    replay: DENY
+  material_edge:
+    normal_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    mutation_without_current_permit: DENY
+    check_and_consume_before_first_mutation: true
+    package_sha256_definition: SHA256_OF_SEALED_STANDARD_MANIFEST_BYTES_WHICH_BIND_PAYLOAD_HASHES
+  doctor_binding:
+    contract: standards/doctor-assurance.yaml
+    doctor_gate: tooling/doctor/doctor_gate.py
+    independent_trust_verifier: tooling/doctor/doctor_trust.py
+    system_doctor: tooling/doctor/system_doctor.py
+    trust_object_schema: mcp/doctor-trust-object.schema.json
+  boundaries:
+    excludes: [Boot_V2_3_logic, Worker_admission, Assignment_admission, project_semantics, general_host_tool_gateway, Repair_Runner, publication_policy_redesign]

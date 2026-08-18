@@ -1461,6 +1461,38 @@ function Invoke-Apply {
             }
         }
 
+        $State.ReachedStage = 'ASSURANCE_KERNEL_PERMIT'
+        $assuranceKernel = Join-Path $WorkingSourcePath 'tooling\assurance\assurance_kernel.py'
+        $assuranceState = 'D:\Cerebro\Run\State\Assurance\kernel-state.json'
+        $assurancePermit = 'D:\Cerebro\Run\State\Assurance\current-permit.json'
+        if(-not(Test-Path -LiteralPath $assuranceKernel -PathType Leaf)){
+            $State.FailureFamily='ASSURANCE_KERNEL_MISSING'
+            throw 'ASSURANCE_KERNEL_IMPLEMENTATION_NOT_FOUND'
+        }
+        if(-not(Test-Path -LiteralPath $assuranceState -PathType Leaf)){
+            $State.FailureFamily='ASSURANCE_KERNEL_STATE_MISSING'
+            throw 'ASSURANCE_KERNEL_STATE_NOT_FOUND'
+        }
+        if(-not(Test-Path -LiteralPath $assurancePermit -PathType Leaf)){
+            $State.FailureFamily='ASSURANCE_KERNEL_PERMIT_MISSING'
+            throw 'ASSURANCE_KERNEL_PERMIT_NOT_FOUND'
+        }
+        $assurancePython=Resolve-PythonRunner
+        $assuranceManifest=Join-Path $BundleRoot 'manifest.json'
+        $assuranceArgs=@($assurancePython.PrefixArgs)+@(
+            $assuranceKernel,'--state',$assuranceState,'consume-manifest-permit',
+            '--permit',$assurancePermit,'--manifest',$assuranceManifest,'--source-head',$localHead
+        )
+        $assuranceNative=Invoke-NativeCommand -Executable $assurancePython.Executable -ArgumentList $assuranceArgs -AllowedExitCodes @(0,3)
+        try{$assuranceReceipt=$assuranceNative.Stdout|ConvertFrom-Json}catch{
+            $State.FailureFamily='ASSURANCE_KERNEL_RECEIPT_INVALID'
+            throw 'ASSURANCE_KERNEL_RECEIPT_INVALID'
+        }
+        if($assuranceNative.ExitCode -ne 0 -or [string]$assuranceReceipt.result -ne 'ALLOW'){
+            $State.FailureFamily='ASSURANCE_KERNEL_DENY'
+            throw ('ASSURANCE_KERNEL_DENY:{0}' -f [string]$assuranceReceipt.reason)
+        }
+
         $State.ReachedStage = 'EXACT_BYTE_INSTALL'
         foreach ($fileEntry in @($State.Manifest.files)) {
             $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')

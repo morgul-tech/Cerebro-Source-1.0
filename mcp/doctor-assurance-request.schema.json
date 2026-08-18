@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"cerebro-doctor-gate-request/v1",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["schema","subject","basis","gate_instances"],
+  "properties":{
+    "schema":{"const":"cerebro-doctor-gate-request/v1"},
+    "subject":{"type":"object"},
+    "basis":{"type":"object"},
+    "gate_instances":{"type":"array","minItems":19}
+  }
+}

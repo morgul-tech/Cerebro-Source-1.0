@@ -1,0 +1,29 @@
+schema: cerebro-component/v1
+component:
+  id: assurance-kernel
+  name: Assurance Kernel
+  type: tooling
+  version: 0.1.0-bootstrap
+  status: candidate
+responsibility:
+  primary: Enforce one-shot current assurance permits at governed material edges.
+authority:
+  source_definition: Cerebro Source 1.0
+  policy_owner: MCP
+  implementation_authority: NONE
+interfaces:
+  inputs:
+    - assurance-kernel-permit
+    - exact-material-intent
+    - current-source-head
+    - current-kernel-state
+  outputs:
+    - assurance-kernel-receipt
+    - allow-or-deny
+boundaries:
+  must_not:
+    - infer authority from AI prose
+    - define Doctor semantics
+    - become a parallel MCP owner
+    - accept Shared as trust root
+    - issue its own bootstrap permit

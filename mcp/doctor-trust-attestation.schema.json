@@ -1,0 +1,9 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"cerebro-doctor-trust-attestation/v1",
+  "type":"object","additionalProperties":false,
+  "required":["schema","verifier_id","implementation_sha256","key_sha256","algorithm","validation_result","receipt_fingerprint","signature"],
+  "properties":{
+    "schema":{"const":"cerebro-doctor-trust-attestation/v1"},"verifier_id":{"type":"string","minLength":1},"implementation_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"key_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"algorithm":{"const":"HMAC-SHA256"},"validation_result":{"const":"PASS"},"receipt_fingerprint":{"type":"string","pattern":"^[0-9a-f]{64}$"},"signature":{"type":"string","pattern":"^[0-9a-f]{64}$"}
+  }
+}

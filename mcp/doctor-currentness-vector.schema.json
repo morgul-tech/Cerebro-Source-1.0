@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"cerebro-doctor-currentness-vector/v1",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["source_pre_head","package_sha256","touched_paths_sha256","manifest_sha256","doctor_implementation_sha256"],
+  "properties":{
+    "source_pre_head":{"type":"string","pattern":"^[0-9a-f]{40}$"},
+    "package_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "touched_paths_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "manifest_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "doctor_implementation_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}
+  }
+}

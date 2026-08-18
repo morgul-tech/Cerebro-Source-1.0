@@ -31,6 +31,12 @@ documents:
 - id: STD-CONTROL-CONTEXT-STATE-SERVICE
   path: standards/control-context-state-service.yaml
   required: true
+- id: STD-ASSURANCE-KERNEL
+  path: standards/assurance-kernel.yaml
+  required: true
+- id: STD-DOCTOR-ASSURANCE
+  path: standards/doctor-assurance.yaml
+  required: true
 - id: STD-HUMAN-NAVIGATION-SURFACE
   path: standards/human-navigation-surface.yaml
   required: true

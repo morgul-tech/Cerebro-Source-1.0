@@ -1,0 +1,21 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"cerebro-doctor-assurance-receipt/v1",
+  "type":"object",
+  "additionalProperties":false,
+  "required":["schema","result","subject","basis","gate_family_cardinality","gate_instance_cardinality","gate_instances","findings","unresolved_required_count","completion_semantics","authority","receipt_fingerprint"],
+  "properties":{
+    "schema":{"const":"cerebro-doctor-assurance-receipt/v1"},
+    "result":{"enum":["PASS","BLOCK"]},
+    "subject":{"type":"object"},
+    "basis":{"type":"object"},
+    "gate_family_cardinality":{"const":19},
+    "gate_instance_cardinality":{"type":"integer","minimum":19},
+    "gate_instances":{"type":"array","minItems":19},
+    "findings":{"type":"array"},
+    "unresolved_required_count":{"type":"integer","minimum":0},
+    "completion_semantics":{"const":"FINITE_MANIFEST_CARDINALITY"},
+    "authority":{"const":"ASSURANCE_EVIDENCE_ONLY"},
+    "receipt_fingerprint":{"type":"string","pattern":"^[0-9a-f]{64}$"}
+  }
+}

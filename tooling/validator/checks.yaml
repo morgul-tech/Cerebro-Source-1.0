@@ -1,5 +1,50 @@
 schema: cerebro-validator-checks/v1
 
+assurance_kernel_seed_validation:
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/assurance-kernel.yaml
+  required_files:
+    - tooling/assurance/assurance_kernel.py
+    - tooling/validator/assurance_kernel_validation.py
+    - mcp/assurance-kernel-permit.schema.json
+    - mcp/assurance-kernel-receipt.schema.json
+  required_canaries:
+    - no-kernel-state-denies
+    - stale-head-denies
+    - wrong-package-denies
+    - wrong-path-set-denies
+    - permit-replay-denies
+    - second-bootstrap-package-denies
+    - doctor-transition-requires-active-path-proof
+    - stale-authority-epoch-denies
+    - manifest-binding-is-byte-and-path-sensitive
+    - standard-delivery-mutation-edge-consumes-permit
+  prohibited:
+    - material-mutation-without-current-one-shot-assurance-permit
+    - bootstrap-permit-replay
+    - bootstrap-package-class-expansion
+
+doctor_assurance_validation:
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/doctor-assurance.yaml
+  validator: tooling/validator/doctor_validation.py
+  system_doctor: tooling/doctor/system_doctor.py
+  required_canaries:
+    - finite-19-family-pass
+    - missing-family-blocks
+    - gate-nonpass-blocks
+    - receipt-tamper-denies
+    - independent-trust-sign-verify
+    - trust-tamper-denies
+    - stale-source-denies
+    - claim-scope-denies
+  prohibited:
+    - raw-receipt-authority
+    - successor-self-approval
+    - source-promotion-without-certified-current-trust-object
+
 command_execution_surface_validation:
   introduced_by: STANDARD-DELIVERY-INCREMENTAL-REVISION-001
   severity: error

@@ -1,0 +1,66 @@
+schema: cerebro-doctor-assurance/v1
+doctor_assurance:
+  id: CEREBRO-DOCTOR-ASSURANCE-001
+  status: DOCTOR_BOOTSTRAP_CANDIDATE
+  control_owner: MCP
+  assurance_owner: Doctor
+  trust_evidence_owner: independent T4 verifier
+  semantic_authority: NONE
+  objective: >
+    Make assurance a finite, exact, fail-closed machine path from subject binding through
+    Doctor receipt, independent current trust evidence and canonical material-edge consumption.
+  gate:
+    request_schema: mcp/doctor-assurance-request.schema.json
+    receipt_schema: mcp/doctor-assurance-receipt.schema.json
+    implementation: tooling/doctor/doctor_gate.py
+    completion_authority: FINITE_MANIFEST_CARDINALITY
+    canonical_gate_families: 19
+    whole_forest_required: true
+    A1_is_certification: false
+    internal_pass_is_certification: false
+  trust:
+    verifier: tooling/doctor/doctor_trust.py
+    trust_object_schema: mcp/doctor-trust-object.schema.json
+    attestation_schema: mcp/doctor-trust-attestation.schema.json
+    currentness_vector_schema: mcp/doctor-currentness-vector.schema.json
+    raw_receipt_authority: NONE
+    certified_current_required: true
+    algorithm: HMAC-SHA256
+    key_material_in_source: PROHIBITED
+    verifier_identity_binding: REQUIRED
+  material_consumption:
+    assurance_kernel: tooling/assurance/assurance_kernel.py
+    normal_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    doctor_enforced_requires: [doctor_receipt_sha256, doctor_trust_object_path]
+    required_claim_scope: SOURCE_PROMOTION
+    doctor_pass_equals_mcp_continue: false
+  system_doctor:
+    implementation: tooling/doctor/system_doctor.py
+    proof_dimensions:
+      - PRESENT
+      - REGISTERED
+      - OWNED
+      - BOUND
+      - ACTIVATED
+      - CONSUMED
+      - PROPAGATED
+      - EFFECT_OBSERVED
+      - OBSERVABILITY
+      - FAIL_CLOSED
+      - CURRENTNESS
+      - EXCLUSIVITY_NO_SHADOW_PATH
+    all_required_for_operational_claim: true
+  invariants:
+    - NO_SUCCESSOR_SELF_APPROVAL
+    - REPAIR_CANNOT_MODIFY_JUDGE
+    - RAW_PASS_LABEL_ZERO_AUTHORITY
+    - DOCTOR_CERTIFIED_IS_EVIDENCE_NOT_CONTROL
+    - MATERIAL_MUTATION_REQUIRES_CURRENT_KERNEL_PERMIT
+    - VERIFIER_OR_KEY_DRIFT_FAILS_CLOSED
+    - SHADOW_CONSUMER_PATH_PROHIBITED
+  excluded_scope:
+    - Repair_Runner
+    - Boot_V2_3
+    - Worker_or_Assignment_admission
+    - Project_Manager_governor
+    - generic_AI_authority

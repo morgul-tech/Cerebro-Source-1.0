@@ -56,6 +56,8 @@ standards:
   continuation_surface_system_policy: standards/continuation-surface-system-policy.yaml
   control_context_hierarchy: standards/control-context-hierarchy.yaml
   control_context_state_service: standards/control-context-state-service.yaml
+  assurance_kernel: standards/assurance-kernel.yaml
+  doctor_assurance: standards/doctor-assurance.yaml
   human_navigation_surface: standards/human-navigation-surface.yaml
   boot_critical_path: standards/boot-critical-path-architecture.yaml
   delivery_kernel: standards/delivery-kernel.yaml
@@ -91,6 +93,8 @@ standards:
   project_terminal_roadmap_projection: standards/project-terminal-roadmap-projection.yaml
 tooling:
   builder: tooling/builder/
+  assurance: tooling/assurance/
+  doctor: tooling/doctor/
   validator: tooling/validator/
   active_source_integrity_closure: tooling/validator/Cerebro.ActiveSourceIntegrityClosure.ps1
   runtime_host: tooling/runtime-host/

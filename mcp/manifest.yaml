@@ -27,6 +27,8 @@ mcp:
   - standards/control-context-state-service.yaml
   - standards/human-navigation-surface.yaml
   - mcp/assurance-continuity.yaml
+  - standards/assurance-kernel.yaml
+  - standards/doctor-assurance.yaml
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0
@@ -239,6 +241,17 @@ control_adapters:
   assurance_continuity:
     contract_ref: mcp/assurance-continuity.yaml
     implementation_ref: tooling/validator/assurance_continuity.py
+    doctor_contract_ref: standards/doctor-assurance.yaml
+    doctor_gate_ref: tooling/doctor/doctor_gate.py
+    doctor_trust_ref: tooling/doctor/doctor_trust.py
+    system_doctor_ref: tooling/doctor/system_doctor.py
+    doctor_validator_ref: tooling/validator/doctor_validation.py
+    doctor_request_schema_ref: mcp/doctor-assurance-request.schema.json
+    doctor_receipt_schema_ref: mcp/doctor-assurance-receipt.schema.json
+    doctor_trust_object_schema_ref: mcp/doctor-trust-object.schema.json
+    doctor_trust_attestation_schema_ref: mcp/doctor-trust-attestation.schema.json
+    doctor_currentness_vector_schema_ref: mcp/doctor-currentness-vector.schema.json
+    system_doctor_receipt_schema_ref: mcp/system-doctor-receipt.schema.json
     status: ACTIVE
     control_owner: MCP
     normal_machine_consumers:

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-assurance-kernel-receipt/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "result",
+    "reason"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-assurance-kernel-receipt/v1"
+    },
+    "result": {
+      "enum": [
+        "ALLOW",
+        "DENY"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "permit_id": {
+      "type": "string"
+    },
+    "campaign_id": {
+      "type": "string"
+    },
+    "package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "authority_epoch": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "consumption_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "kernel_state": {
+      "enum": [
+        "UNINITIALIZED",
+        "BOOTSTRAP_ONLY",
+        "DOCTOR_ENFORCED",
+        "FAILED_RECOVERY"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "ALLOW"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "permit_id",
+          "campaign_id",
+          "package_sha256",
+          "authority_epoch",
+          "consumption_id",
+          "kernel_state"
+        ]
+      }
+    }
+  ]
+}

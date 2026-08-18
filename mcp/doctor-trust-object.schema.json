@@ -1,0 +1,9 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "$id":"cerebro-doctor-trust-object/v1",
+  "type":"object","additionalProperties":false,
+  "required":["schema","state","receipt_fingerprint","subject","currentness","authority_epoch","claim_scope","authority","attestation","trust_object_fingerprint"],
+  "properties":{
+    "schema":{"const":"cerebro-doctor-trust-object/v1"},"state":{"const":"CERTIFIED_CURRENT"},"receipt_fingerprint":{"type":"string","pattern":"^[0-9a-f]{64}$"},"subject":{"type":"object"},"currentness":{"type":"object"},"authority_epoch":{"type":"integer","minimum":1},"claim_scope":{"type":"array","contains":{"const":"SOURCE_PROMOTION"}},"authority":{"const":"TRUST_EVIDENCE_ONLY_MCP_CONTROL_REQUIRED"},"attestation":{"type":"object"},"trust_object_fingerprint":{"type":"string","pattern":"^[0-9a-f]{64}$"}
+  }
+}

@@ -1,0 +1,17 @@
+schema: cerebro-component/v1
+component:
+  id: doctor
+  kind: ASSURANCE
+  status: DOCTOR_BOOTSTRAP_CANDIDATE
+  control_owner: MCP
+  semantic_authority: NONE
+  contract: standards/doctor-assurance.yaml
+  implementations:
+    gate: tooling/doctor/doctor_gate.py
+    trust: tooling/doctor/doctor_trust.py
+    system_doctor: tooling/doctor/system_doctor.py
+  validator: tooling/validator/doctor_validation.py
+  boundaries:
+    source_mutation_authority: NONE
+    control_authority: NONE
+    repair_authority: NONE
