@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import importlib.util
 import json
 import sys
@@ -87,10 +88,64 @@ def integration_test(root: Path) -> dict[str, Any]:
         bad.get("mcp_control_decision",{}).get("outcome")=="BLOCK"
         and "CONTROL_CONTEXT_TRANSITION_INVALID" in bad.get("mcp_control_decision",{}).get("invalidates",[])
     )
+    shared_request=copy.deepcopy(request)
+    shared_request["actor_generation"]="IMPLEMENTER-1"
+    shared_request["shared_control_transition"]={
+        "transition_kind":"START",
+        "canonical_consumer":"PROJECT_MANAGER",
+        "start_receipt_id":"START-1",
+        "packet_id":"PACKET-1",
+        "target_generation":"IMPLEMENTER-1",
+    }
+    shared_request["shared_provider_readback"]={
+        "evidence_class":"PROVIDER_READBACK",
+        "append_frontier":1142,
+        "current_state_frontier":1139,
+        "exact_owned_rows_readback_verified":True,
+    }
+    shared_request["project_manager_governance_candidate"]["shared_write_transaction"]={
+        "semantic_intent_id":"START-1:PACKET-1:IMPLEMENTER-1",
+        "idempotency_key":"START-KEY-1",
+        "active_semantic_writer_count":1,
+        "overlapping_attempt_count":0,
+        "retry_without_fresh_read":False,
+        "transition_kind":"START",
+        "h3_safe_publication":True,
+        "expected_append_frontier":1142,
+        "current_state_used_as_authority":False,
+        "duplicate_replay":True,
+        "existing_canonical_disposition":{"claim_id":"CLAIM-1"},
+        "semantic_deltas":{"authority":0,"claim":0,"assignment":0,"work_start":0,"semantic_start_event":0},
+        "provider_write_attempted":False,
+        "provider_write_outcome":"NOT_ATTEMPTED",
+        "provider_readback_verified":False,
+    }
+    shared=control.resolve(
+        shared_request,root,require_git_ancestry=False,pm_profile_verifier=FixturePMProfileVerifier()
+    )
+    shared_ok=(
+        shared.get("mcp_control_decision",{}).get("outcome")=="CONTINUE"
+        and shared.get("shared_control_disposition")=="RETURN_EXISTING_BINDING_NOOP"
+        and shared.get("project_manager_control_governance",{}).get("shared_write_gate",{}).get("append_frontier")==1142
+    )
+
+    injected=copy.deepcopy(shared_request)
+    injected["project_manager_governance_candidate"]["shared_write_transaction"]["provider_state"]={
+        "evidence_class":"PROVIDER_READBACK","append_frontier":999,
+    }
+    injection=control.resolve(
+        injected,root,require_git_ancestry=False,pm_profile_verifier=FixturePMProfileVerifier()
+    )
+    injection_blocked=(
+        injection.get("mcp_control_decision",{}).get("outcome")=="BLOCK"
+        and "CONTROL_CONTEXT_TRANSITION_INVALID" in injection.get("mcp_control_decision",{}).get("invalidates",[])
+    )
     return {
-        "result":"PASS" if good_ok and bad_ok else "FAIL",
+        "result":"PASS" if good_ok and bad_ok and shared_ok and injection_blocked else "FAIL",
         "verified_profile_integration":good_ok,
         "missing_verifier_fail_closed":bad_ok,
+        "provider_frontier_and_exact_transition_binding":shared_ok,
+        "candidate_provider_state_injection_blocked":injection_blocked,
     }
 
 def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> dict:
@@ -108,7 +163,11 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "state_owner: NONE",
         "AI_supplied_profile_binding_is_authority: false",
         "profile_verifier_injection: CONSTRUCTOR_BOUND",
+        "current_host_binding_status: SOURCE_CONTRACT_PROVEN",
         "retry_without_fresh_read: PROHIBITED",
+        "authoritative_currentness_basis: PROVIDER_EVENTS_APPEND_FRONTIER",
+        "canonical_consumer: PROJECT_MANAGER",
+        "provider_readback_before_retry: REQUIRED",
         "worker_self_admission: PROHIBITED",
         "silent_stall_surface_prohibited",
         "terminal-completion-without-learning-disposition-blocks",
@@ -123,21 +182,28 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
     decision_schema=json.loads(schema.read_text(encoding="utf-8"))
     if decision_schema.get("$id")!="cerebro://schemas/project-manager-control-governor-decision/v1":
         return {"schema":"cerebro-project-manager-control-governor-validation/v1","result":"FAIL","error":"schema-id-mismatch"}
+    schema_gate=(decision_schema.get("properties") or {}).get("shared_write_gate") or {}
+    if not {"applicable","result","next_transaction_allowed"}.issubset(set(schema_gate.get("required") or [])):
+        return {"schema":"cerebro-project-manager-control-governor-validation/v1","result":"FAIL","error":"shared-write-gate-schema-incomplete"}
 
     control_text=(root/"mcp/control_resolution.py").read_text(encoding="utf-8")
+    host_text=(root/"mcp/control_resolution_host.py").read_text(encoding="utf-8")
     manifest_text=(root/"mcp/manifest.yaml").read_text(encoding="utf-8")
     checks_text=(root/"tooling/validator/checks.yaml").read_text(encoding="utf-8")
     registration_tokens=[
         "pm_profile_verifier",
         "project_manager_governance_candidate",
         "project_manager_control_governance",
+        "_bind_shared_pm_governance_candidate",
+        "shared_control_disposition",
+        "self._pm_profile_verifier",
         "mcp/project-manager-control-governor.yaml",
         "implementation_ref: mcp/project_manager_control_governor.py",
         "status: SOURCE_IMPLEMENTED_ACTIVATION_PENDING_TRUSTED_PROFILE_BINDING",
         "project_manager_control_governor_validation:",
         "validator: tooling/validator/project_manager_control_governor_validation.py",
     ]
-    registration_subject="\n".join([control_text,manifest_text,checks_text])
+    registration_subject="\n".join([control_text,host_text,manifest_text,checks_text])
     missing_registration=[x for x in registration_tokens if x not in registration_subject]
     if missing_registration:
         return {
@@ -147,7 +213,7 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
 
     mod=load(implementation,"cerebro_project_manager_control_governor_validation_subject")
     selftest=mod.selftest()
-    if selftest.get("result")!="PASS" or int(selftest.get("passed") or 0)!=17:
+    if selftest.get("result")!="PASS" or int(selftest.get("passed") or 0)!=25:
         return {"schema":"cerebro-project-manager-control-governor-validation/v1","result":"FAIL","selftest":selftest}
 
     integration=integration_test(root)
@@ -160,11 +226,11 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
     return {
         "schema":"cerebro-project-manager-control-governor-validation/v1",
         "result":"PASS",
-        "governor_canaries":17,
+        "governor_canaries":25,
         "trusted_profile_binding_required":True,
         "direct_live_authority":False,
         "state_mutation_by_governor":False,
-        "current_host_binding_proven":False,
+        "current_host_binding_proven":True,
         "activation_claim_allowed":False,
         "integration":integration,
         "selftest":selftest,

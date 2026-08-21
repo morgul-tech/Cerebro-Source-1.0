@@ -39,6 +39,98 @@
         "null"
       ]
     },
+    "shared_write_gate": {
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "applicable": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "semantic_intent_id",
+              "idempotency_key",
+              "provider_write_outcome",
+              "provider_readback_verified",
+              "transition_kind",
+              "transition_disposition"
+            ]
+          }
+        }
+      ],
+      "properties": {
+        "applicable": {
+          "type": "boolean"
+        },
+        "append_frontier": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "canonical_consumer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "current_state_cache_disposition": {
+          "enum": [
+            "NOT_APPLICABLE",
+            "USE_CACHE_PROJECTION",
+            "IGNORE_STALE_CACHE_FALLBACK_EVENTS_AND_EXACT_OWNED_ROWS"
+          ]
+        },
+        "next_transaction_allowed": {
+          "type": "boolean"
+        },
+        "provider_readback_verified": {
+          "type": "boolean"
+        },
+        "provider_write_outcome": {
+          "enum": [
+            "NOT_ATTEMPTED",
+            "ACCEPTED",
+            "REJECTED",
+            "UNKNOWN"
+          ]
+        },
+        "result": {
+          "const": "PASS"
+        },
+        "transition_disposition": {
+          "type": "string"
+        },
+        "transition_key": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "transition_kind": {
+          "enum": [
+            "GENERIC",
+            "START",
+            "PROCESS"
+          ]
+        }
+      },
+      "required": [
+        "applicable",
+        "result",
+        "next_transaction_allowed"
+      ],
+      "type": "object"
+    },
     "state_mutation_by_governor": {
       "const": false
     }

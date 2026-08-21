@@ -22,6 +22,8 @@ LEARNING_DISPOSITIONS = {
     "PENDING", "GENERALIZABLE_LEARNING_CANDIDATE", "NO_GENERALIZABLE_LEARNING",
     "RECOVERY_REVIEW_ONLY", "NON_PROPAGATING"
 }
+SHARED_TRANSITIONS = {"GENERIC", "START", "PROCESS"}
+SHARED_WRITE_OUTCOMES = {"NOT_ATTEMPTED", "ACCEPTED", "REJECTED", "UNKNOWN"}
 
 
 class ProjectManagerGovernorError(ValueError):
@@ -180,12 +182,132 @@ def _shared_write_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     _require(overlapping == 0, "shared-overlapping-same-intent-attempt-prohibited")
     _require(raw.get("retry_without_fresh_read") is not True, "shared-retry-without-fresh-read-prohibited")
 
+    transition = str(raw.get("transition_kind") or "GENERIC").upper()
+    _require(transition in SHARED_TRANSITIONS, f"shared-transition-kind-invalid:{transition}")
+    controlled = (
+        transition in {"START", "PROCESS"}
+        or raw.get("global_scalar_projection_intent") is True
+        or raw.get("h3_safe_publication") is True
+    )
+
+    cache_disposition = "NOT_APPLICABLE"
+    transition_key: list[str] | None = None
+    transition_disposition = "GENERIC_WRITE"
+    bound_frontier: int | None = None
+    if controlled:
+        provider = raw.get("provider_state")
+        _require(isinstance(provider, dict), "shared-provider-state-readback-required")
+        _require(provider.get("evidence_class") == "PROVIDER_READBACK", "shared-provider-evidence-class-invalid")
+        expected_frontier = raw.get("expected_append_frontier")
+        provider_frontier = provider.get("append_frontier")
+        _require(
+            isinstance(expected_frontier, int) and not isinstance(expected_frontier, bool) and expected_frontier >= 0,
+            "shared-expected-append-frontier-required",
+        )
+        _require(
+            isinstance(provider_frontier, int) and not isinstance(provider_frontier, bool) and provider_frontier >= 0,
+            "shared-provider-append-frontier-required",
+        )
+        _require(expected_frontier == provider_frontier, "shared-stale-append-frontier-rejected")
+        _require(
+            provider.get("exact_owned_rows_readback_verified") is True,
+            "shared-exact-owned-row-readback-required",
+        )
+        _require(raw.get("current_state_used_as_authority") is not True, "shared-CURRENT_STATE-authority-prohibited")
+        current_state_frontier = provider.get("current_state_frontier")
+        _require(
+            current_state_frontier is None
+            or (
+                isinstance(current_state_frontier, int)
+                and not isinstance(current_state_frontier, bool)
+                and current_state_frontier >= 0
+            ),
+            "shared-CURRENT_STATE-frontier-invalid",
+        )
+        cache_disposition = (
+            "USE_CACHE_PROJECTION"
+            if current_state_frontier == provider_frontier
+            else "IGNORE_STALE_CACHE_FALLBACK_EVENTS_AND_EXACT_OWNED_ROWS"
+        )
+        if raw.get("global_scalar_projection_intent") is True:
+            _require(
+                raw.get("sibling_projection_from_bound_frontier") is True,
+                "shared-sibling-projection-must-use-bound-frontier",
+            )
+        bound_frontier = provider_frontier
+
+        deltas = raw.get("semantic_deltas")
+        _require(isinstance(deltas, dict), "shared-semantic-deltas-required")
+        normalized_deltas: dict[str, int] = {}
+        for field in ("authority", "claim", "assignment", "work_start", "semantic_start_event"):
+            value = deltas.get(field, 0)
+            _require(
+                isinstance(value, int) and not isinstance(value, bool) and value >= 0,
+                f"shared-semantic-delta-invalid:{field}",
+            )
+            normalized_deltas[field] = value
+
+        if transition in {"START", "PROCESS"}:
+            _require(raw.get("canonical_consumer") == "PROJECT_MANAGER", "shared-canonical-PM-consumer-required")
+            start_receipt = str(raw.get("start_receipt_id") or "").strip()
+            target_generation = str(raw.get("target_generation") or "").strip()
+            _require(start_receipt, "shared-start-receipt-id-required")
+            _require(target_generation, "shared-target-generation-required")
+            if transition == "START":
+                packet_id = str(raw.get("packet_id") or "").strip()
+                _require(packet_id, "shared-start-packet-id-required")
+                transition_key = [start_receipt, packet_id, target_generation]
+                duplicate = raw.get("duplicate_replay") is True
+                if duplicate:
+                    _require(
+                        isinstance(raw.get("existing_canonical_disposition"), dict),
+                        "shared-duplicate-START-existing-disposition-required",
+                    )
+                    _require(not any(normalized_deltas.values()), "shared-duplicate-START-must-create-zero-deltas")
+                    transition_disposition = "RETURN_EXISTING_BINDING_NOOP"
+                else:
+                    _require(normalized_deltas["authority"] == 0, "shared-START-cannot-create-authority")
+                    _require(normalized_deltas["claim"] <= 1, "shared-START-at-most-one-canonical-claim")
+                    _require(normalized_deltas["work_start"] == 0, "shared-START-cannot-start-work")
+                    transition_disposition = "FIRST_VALID_PM_START_CONSUMPTION"
+            else:
+                canonical_claim = str(raw.get("canonical_claim_id") or "").strip()
+                claim_status = str(provider.get("canonical_claim_status") or "").upper()
+                _require(canonical_claim, "shared-PROCESS-canonical-claim-required")
+                _require(
+                    claim_status in {"ACTIVE_BOUND_WAITING_PROCESS", "ACTIVE_RUNNING"},
+                    "shared-PROCESS-provider-claim-status-invalid",
+                )
+                transition_key = [canonical_claim, target_generation, start_receipt]
+                if claim_status == "ACTIVE_RUNNING":
+                    _require(not any(normalized_deltas.values()), "shared-duplicate-PROCESS-must-create-zero-deltas")
+                    transition_disposition = "ACTIVE_RUNNING_STATUS_ONLY_NOOP"
+                else:
+                    _require(normalized_deltas["authority"] == 0, "shared-PROCESS-cannot-create-authority")
+                    _require(normalized_deltas["claim"] == 0, "shared-PROCESS-cannot-create-second-claim")
+                    _require(normalized_deltas["assignment"] == 0, "shared-PROCESS-cannot-create-second-assignment")
+                    _require(normalized_deltas["work_start"] <= 1, "shared-PROCESS-at-most-one-work-start")
+                    _require(
+                        normalized_deltas["semantic_start_event"] <= 1,
+                        "shared-PROCESS-at-most-one-semantic-start-event",
+                    )
+                    transition_disposition = "FIRST_VALID_PROCESS_TRANSITION"
+
     attempted = raw.get("provider_write_attempted") is True
-    accepted = raw.get("provider_write_accepted") is True
     readback = raw.get("provider_readback_verified") is True
+    outcome = str(
+        raw.get("provider_write_outcome")
+        or ("ACCEPTED" if raw.get("provider_write_accepted") is True else "NOT_ATTEMPTED")
+    ).upper()
+    _require(outcome in SHARED_WRITE_OUTCOMES, f"shared-provider-write-outcome-invalid:{outcome}")
+    accepted = outcome == "ACCEPTED"
+    if outcome != "NOT_ATTEMPTED":
+        _require(attempted, "shared-provider-outcome-without-write-attempt-invalid")
     if accepted:
         _require(attempted, "shared-provider-accept-without-write-attempt-invalid")
-    next_allowed = not attempted or (accepted and readback)
+    if outcome == "UNKNOWN":
+        _require(raw.get("provider_readback_performed") is True, "shared-unknown-outcome-readback-before-retry-required")
+    next_allowed = not attempted or (outcome in {"ACCEPTED", "REJECTED"} and readback)
     if raw.get("next_transaction_requested") is True:
         _require(next_allowed, "shared-next-transaction-before-provider-readback-prohibited")
 
@@ -196,7 +318,14 @@ def _shared_write_gate(candidate: dict[str, Any]) -> dict[str, Any]:
         "idempotency_key": idempotency_key,
         "provider_write_attempted": attempted,
         "provider_write_accepted": accepted,
+        "provider_write_outcome": outcome,
         "provider_readback_verified": readback,
+        "append_frontier": bound_frontier,
+        "current_state_cache_disposition": cache_disposition,
+        "transition_kind": transition,
+        "transition_key": transition_key,
+        "transition_disposition": transition_disposition,
+        "canonical_consumer": "PROJECT_MANAGER" if transition in {"START", "PROCESS"} else None,
         "next_transaction_allowed": next_allowed,
     }
 
@@ -495,6 +624,116 @@ def selftest() -> dict[str, Any]:
         lambda c: c.update({"shared_write_transaction":{
             "semantic_intent_id":"SAME","idempotency_key":"ID-1","active_semantic_writer_count":1,
             "overlapping_attempt_count":0,"retry_without_fresh_read":True
+        }})
+    ))
+
+    def h3_transaction(kind: str = "START") -> dict[str, Any]:
+        transaction: dict[str, Any] = {
+            "semantic_intent_id": f"H3-{kind}-1",
+            "idempotency_key": f"H3-{kind}-KEY-1",
+            "active_semantic_writer_count": 1,
+            "overlapping_attempt_count": 0,
+            "retry_without_fresh_read": False,
+            "transition_kind": kind,
+            "h3_safe_publication": True,
+            "expected_append_frontier": 1142,
+            "provider_state": {
+                "evidence_class": "PROVIDER_READBACK",
+                "append_frontier": 1142,
+                "current_state_frontier": 1139,
+                "exact_owned_rows_readback_verified": True,
+                "canonical_claim_status": "ACTIVE_BOUND_WAITING_PROCESS",
+            },
+            "current_state_used_as_authority": False,
+            "canonical_consumer": "PROJECT_MANAGER",
+            "start_receipt_id": "START-1",
+            "target_generation": "IMPLEMENTER-1",
+            "packet_id": "PACKET-1",
+            "canonical_claim_id": "CLAIM-1",
+            "semantic_deltas": {
+                "authority": 0,
+                "claim": 1 if kind == "START" else 0,
+                "assignment": 0,
+                "work_start": 1 if kind == "PROCESS" else 0,
+                "semantic_start_event": 1 if kind == "PROCESS" else 0,
+            },
+            "provider_write_attempted": False,
+            "provider_write_outcome": "NOT_ATTEMPTED",
+            "provider_readback_verified": False,
+        }
+        return transaction
+
+    def governed_shared(transaction: dict[str, Any]) -> dict[str, Any]:
+        c = valid_candidate()
+        c["shared_write_transaction"] = transaction
+        return govern_project_manager_event(
+            candidate=c,
+            canonical_next_action=canonical_machine,
+            session=session,
+            profile_binding=binding,
+            profile_verifier=verifier,
+        )["shared_write_gate"]
+
+    check("append-frontier-authority-and-stale-CURRENT_STATE-fallback-pass", lambda: (
+        governed_shared(h3_transaction())["current_state_cache_disposition"]
+        == "IGNORE_STALE_CACHE_FALLBACK_EVENTS_AND_EXACT_OWNED_ROWS"
+    ))
+    check("stale-append-frontier-rejected", lambda: expect_block(
+        lambda c: c.update({"shared_write_transaction": {
+            **h3_transaction(), "expected_append_frontier": 1141,
+        }})
+    ))
+
+    def duplicate_start() -> dict[str, Any]:
+        transaction = h3_transaction()
+        transaction["duplicate_replay"] = True
+        transaction["existing_canonical_disposition"] = {"claim_id": "CLAIM-1"}
+        transaction["semantic_deltas"] = {key: 0 for key in transaction["semantic_deltas"]}
+        return transaction
+
+    check("duplicate-START-returns-existing-binding-with-zero-deltas", lambda: (
+        governed_shared(duplicate_start())["transition_disposition"]
+        == "RETURN_EXISTING_BINDING_NOOP"
+    ))
+    check("duplicate-START-with-claim-delta-blocks", lambda: expect_block(
+        lambda c: c.update({"shared_write_transaction": {
+            **duplicate_start(),
+            "semantic_deltas": {**duplicate_start()["semantic_deltas"], "claim": 1},
+        }})
+    ))
+
+    def repeated_process() -> dict[str, Any]:
+        transaction = h3_transaction("PROCESS")
+        transaction["provider_state"] = {
+            **transaction["provider_state"], "canonical_claim_status": "ACTIVE_RUNNING",
+        }
+        transaction["semantic_deltas"] = {key: 0 for key in transaction["semantic_deltas"]}
+        return transaction
+
+    check("PROCESS-on-ACTIVE_RUNNING-is-status-only-noop", lambda: (
+        governed_shared(repeated_process())["transition_disposition"]
+        == "ACTIVE_RUNNING_STATUS_ONLY_NOOP"
+    ))
+    check("duplicate-PROCESS-work-start-delta-blocks", lambda: expect_block(
+        lambda c: c.update({"shared_write_transaction": {
+            **repeated_process(),
+            "semantic_deltas": {**repeated_process()["semantic_deltas"], "work_start": 1},
+        }})
+    ))
+    check("unknown-write-outcome-without-provider-readback-blocks", lambda: expect_block(
+        lambda c: c.update({"shared_write_transaction": {
+            **h3_transaction(),
+            "provider_write_attempted": True,
+            "provider_write_outcome": "UNKNOWN",
+        }})
+    ))
+    check("accepted-write-cannot-open-next-transaction-before-readback", lambda: expect_block(
+        lambda c: c.update({"shared_write_transaction": {
+            **h3_transaction(),
+            "provider_write_attempted": True,
+            "provider_write_outcome": "ACCEPTED",
+            "provider_readback_verified": False,
+            "next_transaction_requested": True,
         }})
     ))
     check("worker-self-admission-blocks", lambda: expect_block(

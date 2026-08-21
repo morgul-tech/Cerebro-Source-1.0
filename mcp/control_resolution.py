@@ -911,6 +911,77 @@ def _validate_consolidation_against_bound_project(
             raise ValueError("context-consolidation-context-snapshot-stale")
 
 
+def _bind_shared_pm_governance_candidate(
+    request: dict[str, Any],
+    candidate: Any,
+) -> dict[str, Any]:
+    """Bind provider readback and one PM-owned transition into the governor input.
+
+    The governance candidate may describe intent, but it may not smuggle a second
+    provider snapshot or control consumer.  START and PROCESS identities are
+    supplied once by the canonical control request and consumed once by the PM
+    governor decision.
+    """
+
+    if not isinstance(candidate, dict):
+        raise ValueError("project-manager-governance-candidate-object-required")
+    bound = copy.deepcopy(candidate)
+    transaction = bound.get("shared_write_transaction")
+    transition_binding = request.get("shared_control_transition")
+    provider_readback = request.get("shared_provider_readback")
+    if transaction is None:
+        if transition_binding is not None or provider_readback is not None:
+            raise ValueError("shared-provider-or-transition-evidence-requires-governed-transaction")
+        return bound
+    if not isinstance(transaction, dict):
+        raise ValueError("shared-write-transaction-object-required")
+
+    normalized = copy.deepcopy(transaction)
+    transition_kind = str(normalized.get("transition_kind") or "GENERIC").upper()
+    controlled = (
+        transition_kind in {"START", "PROCESS"}
+        or normalized.get("global_scalar_projection_intent") is True
+        or normalized.get("h3_safe_publication") is True
+    )
+    if controlled:
+        if not isinstance(provider_readback, dict):
+            raise ValueError("shared-provider-readback-binding-required")
+        supplied_provider = normalized.get("provider_state")
+        if supplied_provider is not None and supplied_provider != provider_readback:
+            raise ValueError("shared-candidate-provider-state-injection-prohibited")
+        normalized["provider_state"] = copy.deepcopy(provider_readback)
+
+    if transition_kind in {"START", "PROCESS"}:
+        if not isinstance(transition_binding, dict):
+            raise ValueError("shared-control-transition-binding-required")
+        if str(transition_binding.get("transition_kind") or "").upper() != transition_kind:
+            raise ValueError("shared-control-transition-kind-mismatch")
+        if transition_binding.get("canonical_consumer") != "PROJECT_MANAGER":
+            raise ValueError("shared-control-transition-must-use-canonical-PM-consumer")
+        identity_fields = ["start_receipt_id", "target_generation"]
+        if transition_kind == "START":
+            identity_fields.append("packet_id")
+        else:
+            identity_fields.append("canonical_claim_id")
+        for field in identity_fields:
+            value = str(transition_binding.get(field) or "").strip()
+            if not value:
+                raise ValueError(f"shared-control-transition-{field}-required")
+            supplied = normalized.get(field)
+            if supplied is not None and str(supplied) != value:
+                raise ValueError(f"shared-control-transition-{field}-mismatch")
+            normalized[field] = value
+        actor_generation = request.get("actor_generation")
+        if actor_generation is not None and str(actor_generation) != normalized["target_generation"]:
+            raise ValueError("shared-control-transition-actor-generation-mismatch")
+        normalized["canonical_consumer"] = "PROJECT_MANAGER"
+    elif transition_binding is not None:
+        raise ValueError("shared-control-transition-without-START-or-PROCESS-prohibited")
+
+    bound["shared_write_transaction"] = normalized
+    return bound
+
+
 def attach_context_transition(
     result: dict[str, Any],
     request: dict[str, Any],
@@ -1059,8 +1130,18 @@ def attach_context_transition(
         else _default_next_action(attached_decision, navigation_options)
     )
     governance_candidate = request.get("project_manager_governance_candidate")
+    if governance_candidate is None and (
+        request.get("shared_control_transition") is not None
+        or request.get("shared_provider_readback") is not None
+    ):
+        return _block_due_to_context_transition(
+            result,
+            request,
+            "shared-provider-or-transition-evidence-requires-project-manager-governance",
+        )
     if governance_candidate is not None:
         try:
+            governance_candidate = _bind_shared_pm_governance_candidate(request, governance_candidate)
             governor = load_module(
                 root / "mcp/project_manager_control_governor.py",
                 "cerebro_project_manager_control_governor_live",
@@ -1075,7 +1156,11 @@ def attach_context_transition(
         except Exception as exc:
             return _block_due_to_context_transition(result, request, "project-manager-control-governor:" + str(exc))
         attached_decision["next_action"] = copy.deepcopy(governance["next_action"])
+        attached_decision["shared_control_disposition"] = copy.deepcopy(
+            governance.get("shared_write_gate", {}).get("transition_disposition")
+        )
         attached["project_manager_control_governance"] = governance
+        attached["shared_control_disposition"] = attached_decision["shared_control_disposition"]
         if attached_decision["next_action"].get("owner") == "MACHINE":
             attached["mcp_context_navigation_options_candidate"] = None
             attached["mcp_context_navigation_options"] = None
@@ -1084,6 +1169,7 @@ def attach_context_transition(
             attached["human_navigation_surface_required_after_committed_state_match"] = False
     else:
         attached["project_manager_control_governance"] = None
+        attached["shared_control_disposition"] = None
     attached["mcp_control_decision"] = attached_decision
     next_action = attached_decision["next_action"]
     attached["current_event_machine_action_required"] = (

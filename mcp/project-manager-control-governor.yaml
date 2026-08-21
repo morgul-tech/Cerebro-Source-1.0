@@ -1,8 +1,8 @@
 schema: cerebro-project-manager-control-governor/v1
 project_manager_control_governor:
   id: CEREBRO-PROJECT-MANAGER-CONTROL-GOVERNOR-001
-  version: "0.1.0"
-  status: SOURCE_IMPLEMENTED_ACTIVATION_PENDING_TRUSTED_PROFILE_BINDING
+  version: "0.2.0"
+  status: SOURCE_IMPLEMENTED_HOST_BINDING_PROVEN_PENDING_RUNTIME_ASSURANCE
   kind: MCP_SUBRESOLUTION
   definitional_authority: Cerebro Source 1.0
   control_authority: MCP
@@ -30,7 +30,7 @@ project_manager_control_governor:
     profile_verifier_injection: CONSTRUCTOR_BOUND
     AI_supplied_profile_binding_is_authority: false
     missing_trusted_profile_verifier_effect: BLOCK
-    current_host_binding_status: NOT_YET_PROVEN
+    current_host_binding_status: SOURCE_CONTRACT_PROVEN
     activation_claim_before_host_binding_proof: PROHIBITED
 
   responsibilities:
@@ -38,6 +38,11 @@ project_manager_control_governor:
     - remove-completed-human-work-from-continuation-frontier
     - require-PM-owned-internally-executable-work-before-human-continuation
     - enforce-single-semantic-Shared-writer-and-readback-barrier
+    - bind-every-controlled-Shared-write-to-provider-append-frontier
+    - treat-CURRENT_STATE-as-cache-and-fallback-to-EVENTS-plus-exact-owned-rows
+    - enforce-exact-START-and-PROCESS-idempotence-keys
+    - make-Project-Manager-the-one-canonical-START-and-PROCESS-consumer
+    - require-provider-readback-before-retry-after-unknown-write-outcome
     - require-independent-PM-admission-of-Worker-terminal-envelopes
     - keep-Integrator-closed-until-all-terminal-envelopes-and-frozen-input-manifest
     - enforce-PAUSE-STOP-TERMINATE-distinct-inheritance-semantics
@@ -74,6 +79,33 @@ project_manager_control_governor:
     provider_write_acceptance_without_readback:
       next_transaction_allowed: false
     duplicate_same_intent_generation: CONTROL_DEFECT
+    authoritative_currentness_basis: PROVIDER_EVENTS_APPEND_FRONTIER
+    event_id_suffix_is_global_revision: false
+    prewrite_requires:
+      - expected_append_frontier_equals_provider_append_frontier
+      - exact_owned_rows_provider_readback_verified
+    stale_frontier_effect: REJECT_AND_RECOMPUTE_FROM_FRESH_PROVIDER_STATE
+    CURRENT_STATE:
+      role: CACHE_HINT_PROJECTION_ONLY
+      frontier_match_effect: USE_CACHE_PROJECTION
+      frontier_mismatch_effect: IGNORE_STALE_CACHE_AND_FALLBACK_TO_EVENTS_PLUS_EXACT_OWNED_ROWS
+      use_as_authority: PROHIBITED
+    global_scalar_projection:
+      bind_exact_consumed_append_frontier: REQUIRED
+      sibling_projection_source: PROVIDER_STATE_AT_BOUND_FRONTIER
+    START:
+      identity: [START_RECEIPT_ID, PACKET_ID, TARGET_GENERATION]
+      canonical_consumer: PROJECT_MANAGER
+      first_valid_consumption: ONE_CANONICAL_CLAIM_NO_NEW_AUTHORITY
+      duplicate_replay: RETURN_EXISTING_BINDING_ZERO_DELTAS
+    PROCESS:
+      identity: [CANONICAL_CLAIM_ID, TARGET_GENERATION, START_RECEIPT_ID]
+      canonical_consumer: PROJECT_MANAGER
+      first_valid_consumption: ONE_WORK_START_AND_ONE_SEMANTIC_START_EVENT
+      ACTIVE_RUNNING_replay: STATUS_ONLY_ZERO_DELTAS
+    unknown_write_outcome:
+      provider_readback_before_retry: REQUIRED
+      next_transaction_until_resolved: PROHIBITED
 
   worker_terminal:
     worker_self_admission: PROHIBITED
@@ -141,6 +173,12 @@ project_manager_control_governor:
     - completed-human-action-never-remains-current-session-next
     - PM-internal-action-precedes-human-continuation
     - Shared-write-retry-requires-fresh-read-and-readback-barrier
+    - Shared-append-order-is-the-authoritative-currentness-frontier
+    - stale-Shared-basis-cannot-commit-global-scalar-projection
+    - CURRENT_STATE-cache-mismatch-falls-back-to-EVENTS-and-exact-owned-rows
+    - duplicate-START-creates-zero-additional-claims-or-authority
+    - duplicate-PROCESS-after-ACTIVE_RUNNING-creates-zero-additional-work-starts
+    - only-the-constructor-bound-PM-control-path-consumes-START-and-PROCESS
     - Worker-cannot-admit-own-terminal-envelope
     - terminal-completion-without-learning-disposition-blocks
     - long-running-PM-work-without-progress-observability-blocks
