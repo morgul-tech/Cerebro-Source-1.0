@@ -85,6 +85,10 @@ control_resolution:
     owner_state_commit_receipt_schema_ref: mcp/owner-state-commit-receipt.schema.json
     context_owner_persistence_ref: tooling/context/control_context_owner_persistence.py
     normal_host_ref: mcp/control_resolution_host.py
+    project_manager_profile_verifier_binding:
+      injection: CONSTRUCTOR_BOUND_BY_NORMAL_HOST
+      request_payload_injection: PROHIBITED
+      normal_host_proof: tooling/validator/control_resolution_host_validation.py
     MCP_tool_adapter_ref: mcp/control_context_tools.py
     validation_ref: tooling/validator/control_context_validation.py
     Interaction_intent_ref: engines/interaction/control_context_intent.py
@@ -137,6 +141,28 @@ control_resolution:
         alone_is_HNS_render_authority: false
         pending_required_machine_action_blocks_event_closure: true
         internally_executable_requires_injected_runtime_capability_resolver: true
+      shared_control_disposition:
+        authority: MCP
+        source: project_manager_control_governor.shared_write_gate
+        exactly_one_canonical_consumer: PROJECT_MANAGER
+        generic_parallel_START_or_PROCESS_consumer: PROHIBITED
+    shared_coordination_currentness:
+      authoritative_frontier: PROVIDER_EVENTS_APPEND_ORDER
+      event_id_suffix_is_revision_authority: false
+      controlled_prewrite_requires:
+        - provider_append_frontier_readback
+        - expected_frontier_exact_match
+        - exact_owned_rows_readback
+      stale_frontier_effect: BLOCK_AND_RECOMPUTE_FROM_FRESH_PROVIDER_STATE
+      CURRENT_STATE:
+        role: CACHE_HINT_ONLY
+        mismatch_effect: FALLBACK_TO_EVENTS_PLUS_EXACT_WORKSPACES_CLAIMS_PACKETS
+        blind_rewrite: PROHIBITED
+      START_identity: [START_RECEIPT_ID, PACKET_ID, TARGET_GENERATION]
+      PROCESS_identity: [CANONICAL_CLAIM_ID, TARGET_GENERATION, START_RECEIPT_ID]
+      duplicate_START_effect: EXISTING_BINDING_NOOP_ZERO_DELTAS
+      PROCESS_when_ACTIVE_RUNNING_effect: STATUS_ONLY_NOOP_ZERO_DELTAS
+      unknown_write_outcome_effect: PROVIDER_READBACK_BEFORE_RETRY
     HNS_precommit_candidate:
       schema_ref: mcp/context-navigation-options-candidate.schema.json
       render_authorized: false
@@ -182,6 +208,11 @@ control_resolution:
     - NEXT_ACTION_FIELD_ALONE_IS_NOT_HNS_RENDER_AUTHORITY
     - NOOP_STATE_EQUALITY_WITHOUT_MATCHING_COMMIT_RECEIPT_CANNOT_ACTIVATE_HNS
     - TRUSTED_VERIFIER_AND_CAPABILITY_RESOLVER_ARE_HOST_CONSTRUCTOR_BOUND
+    - TRUSTED_PM_PROFILE_VERIFIER_IS_HOST_CONSTRUCTOR_BOUND_AND_NOT_EVENT_INJECTABLE
+    - SHARED_CONTROL_TRANSITION_HAS_ONE_CANONICAL_PM_CONSUMER
+    - SHARED_GLOBAL_PROJECTION_BINDS_EXACT_PROVIDER_APPEND_FRONTIER
+    - CURRENT_STATE_IS_CACHE_NOT_SHARED_CURRENTNESS_AUTHORITY
+    - START_AND_PROCESS_REPLAYS_CREATE_NO_DUPLICATE_SEMANTIC_EFFECTS
     - OWNER_SEQUENCE_RE_RESOLVES_AFTER_EVERY_SEPARATE_COMMIT
     - LOCAL_SCRIPTED_DATABASE_PROOF_IS_NOT_LIVE_POSTGRESQL_ACTIVATION
   acceptance:

@@ -103,6 +103,18 @@ class FixtureExecutor:
         }
 
 
+class FixturePMProfileVerifier:
+    def verify(self, *, binding: dict[str, Any], session: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "schema": "cerebro-project-manager-profile-verification/v1",
+            "result": "PASS",
+            "profile": "PROJECT_MANAGER",
+            "session_ref": session.get("session_ref"),
+            "binding_fingerprint": "c" * 64,
+            "verifier_ref": "FIXTURE-CONSTRUCTOR-BOUND-PM-PROFILE",
+        }
+
+
 def _runtime(enabled: set[str] | None = None) -> tuple[
     BoundRuntimeCapabilityResolver,
     CompositeOwnerPersistenceVerifier,
@@ -143,15 +155,19 @@ def selftest() -> dict[str, Any]:
         ]
     )
     capability, composite, executors, order = _runtime()
+    pm_profile_verifier = FixturePMProfileVerifier()
     injected: dict[str, Any] = {}
+    canonical_calls: list[dict[str, Any]] = []
 
     def canonical_stub(request: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+        canonical_calls.append(copy.deepcopy(request))
         injected.update(kwargs)
         return {"schema": "fixture-canonical-resolution/v1", "request": copy.deepcopy(request)}
 
     host = BoundControlResolutionHost(
         persistence_verifier=composite,
         capability_resolver=capability,
+        pm_profile_verifier=pm_profile_verifier,
         canonical_resolver=canonical_stub,
     )
     resolved = host.resolve({"objective_ref": "OBJ"}, root=SOURCE_ROOT, require_git_ancestry=False)
@@ -159,13 +175,26 @@ def selftest() -> dict[str, Any]:
         "normal-host-injects-trusted-dependencies-outside-event-payload",
         resolved["schema"] == "fixture-canonical-resolution/v1"
         and injected["owner_persistence_verifier"] is composite
-        and injected["runtime_capability_resolver"] is capability,
+        and injected["runtime_capability_resolver"] is capability
+        and injected["pm_profile_verifier"] is pm_profile_verifier,
     )
+    check("normal-host-invokes-one-canonical-control-path", len(canonical_calls) == 1)
     check(
         "event-payload-cannot-inject-runtime-verifier-or-capability",
         _expect_error(
             lambda: host.resolve(
                 {"nested": {"capability_resolver": "SELF_ASSERTED"}},
+                root=SOURCE_ROOT,
+                require_git_ancestry=False,
+            ),
+            ControlResolutionHostError,
+        ),
+    )
+    check(
+        "event-payload-cannot-inject-PM-profile-verifier",
+        _expect_error(
+            lambda: host.resolve(
+                {"nested": {"pm_profile_verifier": "SELF_ASSERTED"}},
                 root=SOURCE_ROOT,
                 require_git_ancestry=False,
             ),
@@ -211,6 +240,7 @@ def selftest() -> dict[str, Any]:
     limited_host = BoundControlResolutionHost(
         persistence_verifier=limited_composite,
         capability_resolver=limited_capability,
+        pm_profile_verifier=pm_profile_verifier,
         canonical_resolver=canonical_stub,
     )
     pending = limited_host.execute_owner_sequence(
@@ -248,6 +278,7 @@ def selftest() -> dict[str, Any]:
     strict_host = BoundControlResolutionHost(
         persistence_verifier=IncompleteVerificationProxy(),
         capability_resolver=strict_capability,
+        pm_profile_verifier=pm_profile_verifier,
         canonical_resolver=canonical_stub,
     )
     check(
