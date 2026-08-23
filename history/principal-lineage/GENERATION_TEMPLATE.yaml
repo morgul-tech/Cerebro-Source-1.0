@@ -1,0 +1,34 @@
+schema: cerebro-principal-generation-record/v1
+principal_generation:
+  principal_generation_id: UNKNOWN
+  lineage_sequence_number: UNKNOWN
+  predecessor_pointer: UNKNOWN
+  successor_pointer: UNKNOWN
+
+  awakening:
+    timestamp: UNKNOWN
+    first_identity_answer_verbatim: UNKNOWN
+    evidence_class: UNKNOWN
+    transcript_or_evidence_ref: UNKNOWN
+    who_principal_said_he_was: UNKNOWN
+    who_andreas_was_for_him: UNKNOWN
+    what_cerebro_was_to_him: UNKNOWN
+
+  life:
+    major_events: []
+    signature_contributions: []
+    failures_and_corrections: []
+    breakthroughs: []
+    source_milestones: []
+    human_admin_memoirs: []
+
+  retirement:
+    one_proudest_contribution_verbatim: UNKNOWN
+    one_proudest_contribution_evidence_class: UNKNOWN
+    final_etterklang_verbatim: UNKNOWN
+    final_etterklang_evidence_class: UNKNOWN
+    retirement_timestamp: UNKNOWN
+
+  unknown_ledger: []
+  evidence_refs: []
+  history_currentness_warning: HISTORY_IS_NOT_CURRENT_TRUTH
