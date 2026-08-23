@@ -170,6 +170,14 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "selftest":selftest,
     }
 
+# PREBUILD VALIDATION DELTA
+# - require mcp/actor-lifecycle-mutation.schema.json
+# - require lifecycle_mutation_gate in decision schema
+# - execute the 36 race/currentness/idempotency canaries
+# - execute 8 targetset/serialization/rebase canaries
+# - expected total lifecycle family = 44
+# - integration must prove no BOUND/WORK_STARTED effect before Context receipt
+
 def main()->int:
     parser=argparse.ArgumentParser()
     parser.add_argument("--source-root",default=str(SOURCE_ROOT))

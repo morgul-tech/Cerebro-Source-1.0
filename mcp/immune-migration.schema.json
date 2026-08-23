@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-immune-migration/v1",
+  "title": "Cerebro Immune migration entry and authenticated post-crash recovery envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "cerebro-immune-migration/v1"
+    },
+    "migration_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "operation": {
+      "enum": [
+        "IMMUNE_MIGRATION",
+        "IMMUNE_MIGRATION_RECOVERY"
+      ]
+    },
+    "source_state": {
+      "enum": [
+        "DOCTOR_ENFORCED",
+        "FAILED_RECOVERY"
+      ]
+    },
+    "target_state": {
+      "const": "IMMUNE_MIGRATING"
+    },
+    "source_repository": {
+      "const": "morgul-tech/Cerebro-Source-1.0"
+    },
+    "source_branch": {
+      "const": "main"
+    },
+    "source_head": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "source_tree": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "authority_epoch": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "consumed_ledger_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "campaign_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "touched_paths_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "mcp_decision_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "mcp_recovery_decision_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "current_host_proof_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "quarantine_scope_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "risk_profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "prestate_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "rollback_plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "installation_plan_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "installation_plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "installation_observation_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "installation_observation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "producer_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "external_anchor_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "external_anchor_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "external_anchor_preexisting": {
+      "const": true
+    },
+    "external_anchor_outside_targetset": {
+      "const": true
+    },
+    "external_anchor_verifier_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "external_anchor_verifier_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "external_anchor_attestation_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "external_anchor_recovery_attestation_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "immune_attestor_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "immune_attestor_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "immune_attestor_key_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "immune_attestor_key_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "recovery_attestation_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claim_scope": {
+      "type": "array",
+      "contains": {
+        "const": "SOURCE_PROMOTION"
+      },
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 16,
+      "not": {
+        "pattern": "^RECOVERY:"
+      }
+    },
+    "requested_recovery_action": {
+      "enum": [
+        "RESUME_EXACT",
+        "ROLLBACK_EXACT_PREPUBLICATION",
+        "QUARANTINE"
+      ]
+    },
+    "recovery_nonce": {
+      "type": "string",
+      "minLength": 25,
+      "pattern": "^RECOVERY:"
+    },
+    "migration_subject_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "entry_authorization_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "publication_state": {
+      "enum": [
+        "NOT_PUBLISHED",
+        "PUBLISHED",
+        "UNKNOWN"
+      ]
+    },
+    "rollback_completion_proof_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "reason_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "migration_receipt_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "operation": {
+          "const": "IMMUNE_MIGRATION"
+        }
+      },
+      "required": [
+        "schema",
+        "migration_id",
+        "operation",
+        "source_state",
+        "target_state",
+        "source_repository",
+        "source_branch",
+        "source_head",
+        "source_tree",
+        "authority_epoch",
+        "consumed_ledger_sha256",
+        "campaign_id",
+        "package_sha256",
+        "touched_paths_sha256",
+        "mcp_decision_fingerprint",
+        "current_host_proof_sha256",
+        "quarantine_scope_sha256",
+        "risk_profile",
+        "prestate_manifest_sha256",
+        "rollback_plan_sha256",
+        "installation_plan_path",
+        "installation_plan_sha256",
+        "producer_identity",
+        "external_anchor_id",
+        "external_anchor_fingerprint",
+        "external_anchor_preexisting",
+        "external_anchor_outside_targetset",
+        "external_anchor_verifier_path",
+        "external_anchor_verifier_sha256",
+        "external_anchor_attestation_path",
+        "immune_attestor_path",
+        "immune_attestor_sha256",
+        "immune_attestor_key_path",
+        "immune_attestor_key_fingerprint",
+        "claim_scope",
+        "nonce"
+      ]
+    },
+    {
+      "properties": {
+        "operation": {
+          "const": "IMMUNE_MIGRATION_RECOVERY"
+        }
+      },
+      "required": [
+        "schema",
+        "migration_id",
+        "operation",
+        "requested_recovery_action",
+        "authority_epoch",
+        "migration_subject_sha256",
+        "entry_authorization_fingerprint",
+        "mcp_recovery_decision_sha256",
+        "current_host_proof_sha256",
+        "external_anchor_recovery_attestation_path",
+        "recovery_attestation_path",
+        "recovery_nonce",
+        "installation_plan_path",
+        "installation_plan_sha256",
+        "installation_observation_path",
+        "installation_observation_sha256",
+        "publication_state",
+        "quarantine_scope_sha256",
+        "producer_identity"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "requested_recovery_action": {
+                "const": "ROLLBACK_EXACT_PREPUBLICATION"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "rollback_completion_proof_sha256",
+              "prestate_manifest_sha256",
+              "rollback_plan_sha256"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "requested_recovery_action": {
+                "const": "QUARANTINE"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "reason_sha256"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

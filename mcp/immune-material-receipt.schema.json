@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-immune-material-receipt/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "result",
+    "reason"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-immune-material-receipt/v1"
+    },
+    "result": {
+      "enum": [
+        "ALLOW",
+        "DENY",
+        "RECOVERY"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "permit_id": {
+      "type": "string"
+    },
+    "campaign_id": {
+      "type": "string"
+    },
+    "package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "authority_epoch": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "consumption_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "kernel_state": {
+      "enum": [
+        "IMMUNE_MIGRATING",
+        "IMMUNE_ENFORCED",
+        "IMMUNE_QUARANTINED"
+      ]
+    },
+    "assurance_profile": {
+      "const": "IMMUNE"
+    },
+    "material_consumer_identity": {
+      "const": "STANDARD_DELIVERY"
+    },
+    "attestation_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "quarantine_scope_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "risk_profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intended_consequence_class": {
+      "enum": [
+        "SOURCE_EFFECT",
+        "RUNTIME_EFFECT",
+        "SHARED_EFFECT",
+        "KNOWLEDGE_ONLY"
+      ]
+    },
+    "migration_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recovery_action": {
+      "enum": [
+        "RESUME_EXACT",
+        "ROLLBACK_EXACT_PREPUBLICATION",
+        "QUARANTINE"
+      ]
+    },
+    "recovery_consumption_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "migration_subject_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "entry_authorization_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "recovery_authorization_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "recovery_attestation_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "mcp_recovery_decision_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "current_host_proof_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "installation_plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "installation_observation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "installation_progress": {
+      "enum": [
+        "PRESTATE_EXACT",
+        "DETERMINISTIC_PREFIX",
+        "FULLY_INSTALLED",
+        "DRIFT"
+      ]
+    },
+    "publication_state": {
+      "enum": [
+        "NOT_PUBLISHED",
+        "PUBLISHED",
+        "UNKNOWN"
+      ]
+    },
+    "authority_epoch_before": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "authority_epoch_after": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "consumed_ledger_sha256_before": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "consumed_ledger_sha256_after": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "consumed_ledger_preserved": {
+      "const": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "ALLOW"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "permit_id",
+          "campaign_id",
+          "package_sha256",
+          "authority_epoch",
+          "consumption_id",
+          "kernel_state",
+          "assurance_profile",
+          "material_consumer_identity",
+          "attestation_fingerprint",
+          "quarantine_scope_sha256",
+          "risk_profile",
+          "intended_consequence_class"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "RECOVERY"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "migration_id",
+          "recovery_action",
+          "recovery_consumption_id",
+          "migration_subject_sha256",
+          "entry_authorization_fingerprint",
+          "recovery_authorization_fingerprint",
+          "recovery_attestation_fingerprint",
+          "mcp_recovery_decision_sha256",
+          "current_host_proof_sha256",
+          "installation_plan_sha256",
+          "installation_observation_sha256",
+          "installation_progress",
+          "publication_state",
+          "authority_epoch_before",
+          "authority_epoch_after",
+          "consumed_ledger_sha256_before",
+          "consumed_ledger_sha256_after",
+          "consumed_ledger_preserved",
+          "kernel_state",
+          "quarantine_scope_sha256"
+        ]
+      }
+    }
+  ]
+}

@@ -227,6 +227,31 @@ def _worker_terminal_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# PREBUILD FRAGMENT — insert before _interrupt_gate.
+def _lifecycle_mutation_gate(candidate: dict[str, Any]) -> dict[str, Any]:
+    raw = candidate.get("lifecycle_mutation")
+    if raw is None:
+        return {"applicable": False, "result": "PASS"}
+    required = {
+        "mutation_id", "idempotency_key", "operation", "actor_generation_id",
+        "slot_pointer_ref", "expected_slot_pointer",
+        "expected_lifecycle_revision", "expected_lifecycle_state",
+        "expected_claim_revision", "authority_source",
+        "observed_event_frontier", "candidate_fingerprint",
+    }
+    _require(isinstance(raw, dict), "lifecycle-mutation-object-required")
+    _require(required.issubset(raw), "lifecycle-mutation-required-fields-missing")
+    return {
+        "applicable": True,
+        "result": "PASS",
+        "candidate": copy.deepcopy(raw),
+        "state_owner": "CONTEXT",
+        "control_owner": "MCP",
+        "governor_direct_authority": False,
+        "effect_pending_context_commit_receipt": True,
+    }
+
+
 def _interrupt_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     raw = candidate.get("interrupt")
     if raw is None:
@@ -327,6 +352,7 @@ def govern_project_manager_event(
     )
     frontier, next_action = _validate_frontier(candidate, canonical_next_action)
     shared = _shared_write_gate(candidate)
+    lifecycle = _lifecycle_mutation_gate(candidate)
     worker = _worker_terminal_gate(candidate)
     interrupt = _interrupt_gate(candidate)
     terminal = _terminal_gate(candidate)
@@ -348,7 +374,8 @@ def govern_project_manager_event(
         "frontier": frontier,
         "next_action": next_action,
         "shared_write_gate": shared,
-        "worker_terminal_gate": worker,
+        "worker_terminal_gate": worker,        "lifecycle_mutation_gate": lifecycle,
+
         "interrupt_gate": interrupt,
         "terminal_gate": terminal,
         "progress_observability_gate": progress,

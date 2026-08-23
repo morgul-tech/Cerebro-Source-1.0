@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-immune-attestation/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "algorithm",
+    "validation_result",
+    "attestor_identity",
+    "implementation_sha256",
+    "key_fingerprint",
+    "subject",
+    "signature",
+    "attestation_fingerprint"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-immune-attestation/v1"
+    },
+    "algorithm": {
+      "const": "HMAC-SHA256"
+    },
+    "validation_result": {
+      "const": "PASS"
+    },
+    "attestor_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "implementation_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "key_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "attestation_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "subject": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "permit_id",
+            "campaign_id",
+            "source_pre_head",
+            "package_sha256",
+            "touched_paths_sha256",
+            "quarantine_scope_sha256",
+            "risk_profile",
+            "intended_consequence_class",
+            "authority_epoch",
+            "producer_identity"
+          ],
+          "properties": {
+            "permit_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "campaign_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source_pre_head": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "package_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "touched_paths_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "quarantine_scope_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "risk_profile": {
+              "type": "string",
+              "minLength": 1
+            },
+            "intended_consequence_class": {
+              "enum": [
+                "SOURCE_EFFECT",
+                "RUNTIME_EFFECT",
+                "SHARED_EFFECT",
+                "KNOWLEDGE_ONLY"
+              ]
+            },
+            "authority_epoch": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "producer_identity": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "subject_type",
+            "migration_id",
+            "migration_subject_sha256",
+            "entry_authorization_fingerprint",
+            "requested_recovery_action",
+            "authority_epoch",
+            "mcp_recovery_decision_sha256",
+            "current_host_proof_sha256",
+            "installation_plan_sha256",
+            "installation_observation_sha256",
+            "publication_state",
+            "quarantine_scope_sha256",
+            "producer_identity",
+            "recovery_nonce"
+          ],
+          "properties": {
+            "subject_type": {
+              "const": "MIGRATION_RECOVERY"
+            },
+            "migration_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "migration_subject_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "entry_authorization_fingerprint": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "requested_recovery_action": {
+              "enum": [
+                "RESUME_EXACT",
+                "ROLLBACK_EXACT_PREPUBLICATION",
+                "QUARANTINE"
+              ]
+            },
+            "authority_epoch": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "mcp_recovery_decision_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "current_host_proof_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "installation_plan_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "installation_observation_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "publication_state": {
+              "enum": [
+                "NOT_PUBLISHED",
+                "PUBLISHED",
+                "UNKNOWN"
+              ]
+            },
+            "quarantine_scope_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "producer_identity": {
+              "type": "string",
+              "minLength": 1
+            },
+            "recovery_nonce": {
+              "type": "string",
+              "minLength": 25,
+              "pattern": "^RECOVERY:"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

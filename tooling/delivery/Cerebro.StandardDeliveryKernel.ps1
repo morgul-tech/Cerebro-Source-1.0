@@ -1,14 +1,15 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('SelfTest','Apply')]
+    [ValidateSet('SelfTest','Apply','RecoveryCheck','RecoveryConsume')]
     [string]$Mode,
     [Parameter(Mandatory=$true)]
     [string]$BundleRoot,
     [string]$WorkingSourcePath = 'D:\Cerebro\Source\Cerebro_Source_v1.0',
     [string]$LauncherPath = '',
     [string]$AttemptId = '',
-    [string]$TargetRuntimeValidationReceipt = ''
+    [string]$TargetRuntimeValidationReceipt = '',
+    [string]$RecoveryRequestPath = ''
 )
 
 Set-StrictMode -Version 2.0
@@ -1277,6 +1278,81 @@ function Invoke-RequiredTargetRuntimeValidation {
     return $receiptPath
 }
 
+function Invoke-ImmuneMigrationRecoveryControl {
+    param([Parameter(Mandatory=$true)][bool]$Consume)
+    $State.ReachedStage = if($Consume){'IMMUNE_RECOVERY_CONSUME'}else{'IMMUNE_RECOVERY_CHECK'}
+    if([string]::IsNullOrWhiteSpace($RecoveryRequestPath) -or
+       -not(Test-Path -LiteralPath $RecoveryRequestPath -PathType Leaf)){
+        $State.FailureFamily='IMMUNE_RECOVERY_REQUEST_MISSING'
+        throw 'IMMUNE_RECOVERY_REQUEST_NOT_FOUND'
+    }
+    try{$recovery=Get-Content -LiteralPath $RecoveryRequestPath -Raw | ConvertFrom-Json}catch{
+        $State.FailureFamily='IMMUNE_RECOVERY_REQUEST_INVALID'
+        throw 'IMMUNE_RECOVERY_REQUEST_INVALID'
+    }
+    if([string]$recovery.schema -ne 'cerebro-immune-migration/v1' -or
+       [string]$recovery.operation -ne 'IMMUNE_MIGRATION_RECOVERY'){
+        $State.FailureFamily='IMMUNE_RECOVERY_REQUEST_INVALID'
+        throw 'IMMUNE_RECOVERY_REQUEST_CONTRACT_INVALID'
+    }
+    if(-not([string]$recovery.recovery_nonce).StartsWith('RECOVERY:')){
+        $State.FailureFamily='IMMUNE_RECOVERY_NONCE_NAMESPACE'
+        throw 'IMMUNE_RECOVERY_NONCE_NAMESPACE_INVALID'
+    }
+    $forbiddenNames=@('secret','secret_path','anchor_secret','credential','credential_path')
+    foreach($name in $forbiddenNames){
+        if($null -ne $recovery.PSObject.Properties[$name]){
+            $State.FailureFamily='IMMUNE_RECOVERY_SECRET_TRANSPORT'
+            throw ('IMMUNE_RECOVERY_FORBIDDEN_FIELD:{0}' -f $name)
+        }
+    }
+    $assuranceKernel = Join-Path $WorkingSourcePath 'tooling\assurance\assurance_kernel.py'
+    $assuranceState = 'D:\Cerebro\Run\State\Assurance\kernel-state.json'
+    if(-not(Test-Path -LiteralPath $assuranceKernel -PathType Leaf)){
+        $State.FailureFamily='ASSURANCE_KERNEL_MISSING'; throw 'ASSURANCE_KERNEL_IMPLEMENTATION_NOT_FOUND'
+    }
+    if(-not(Test-Path -LiteralPath $assuranceState -PathType Leaf)){
+        $State.FailureFamily='ASSURANCE_KERNEL_STATE_MISSING'; throw 'ASSURANCE_KERNEL_STATE_NOT_FOUND'
+    }
+    $expectedEpoch=[int]$recovery.authority_epoch
+    if($expectedEpoch -lt 1){
+        $State.FailureFamily='IMMUNE_RECOVERY_EPOCH_INVALID'; throw 'IMMUNE_RECOVERY_EPOCH_INVALID'
+    }
+    $runner=Resolve-PythonRunner
+    $command=if($Consume){'recover-immune-migration'}else{'check-immune-migration-recovery'}
+    $args=@($runner.PrefixArgs)+@(
+        $assuranceKernel,'--state',$assuranceState,$command,
+        '--recovery',$RecoveryRequestPath,'--expected-epoch',[string]$expectedEpoch
+    )
+    $native=Invoke-NativeCommand -Executable $runner.Executable -ArgumentList $args -AllowedExitCodes @(0,3)
+    try{$receipt=$native.Stdout|ConvertFrom-Json}catch{
+        $State.FailureFamily='IMMUNE_RECOVERY_RECEIPT_INVALID'; throw 'IMMUNE_RECOVERY_RECEIPT_INVALID'
+    }
+    if($native.ExitCode -ne 0){
+        $State.FailureFamily='IMMUNE_RECOVERY_DENY'
+        throw ('IMMUNE_RECOVERY_DENY:{0}' -f [string]$receipt.reason)
+    }
+    if($Consume){
+        if([string]$receipt.schema -ne 'cerebro-immune-material-receipt/v1' -or
+           [string]$receipt.result -ne 'RECOVERY' -or
+           [string]::IsNullOrWhiteSpace([string]$receipt.recovery_consumption_id) -or
+           [bool]$receipt.consumed_ledger_preserved -ne $true){
+            $State.FailureFamily='IMMUNE_RECOVERY_RECEIPT_INCOMPLETE'
+            throw 'IMMUNE_RECOVERY_RECEIPT_INCOMPLETE'
+        }
+    }
+    elseif([string]$receipt.result -ne 'PASS' -or [string]$receipt.state_effect -ne 'NONE'){
+        $State.FailureFamily='IMMUNE_RECOVERY_CHECK_INVALID'
+        throw 'IMMUNE_RECOVERY_CHECK_INVALID'
+    }
+    $controlResult=if($Consume){'CONSUMED'}else{'CHECK_PASS'}
+    Write-Host ('CEREBRO_IMMUNE_RECOVERY_CONTROL={0}' -f $controlResult)
+    Write-Host ('RECOVERY_ACTION={0}' -f [string]$receipt.recovery_action)
+    Write-Host ('KERNEL_STATE={0}' -f [string]$receipt.kernel_state)
+    if($Consume){ Write-Host ('RECOVERY_CONSUMPTION_ID={0}' -f [string]$receipt.recovery_consumption_id) }
+    return $receipt
+}
+
 function Invoke-Apply {
     $State.Manifest = Read-Manifest
     Assert-PayloadIntegrity $State.Manifest
@@ -1493,6 +1569,35 @@ function Invoke-Apply {
             throw ('ASSURANCE_KERNEL_DENY:{0}' -f [string]$assuranceReceipt.reason)
         }
 
+        $kernelState = [string]$assuranceReceipt.kernel_state
+        if($kernelState -eq 'IMMUNE_MIGRATING'){
+            $State.FailureFamily='IMMUNE_MIGRATION_NOT_FINALIZED'
+            throw 'IMMUNE_MIGRATION_NOT_FINALIZED'
+        }
+        if($kernelState -eq 'IMMUNE_QUARANTINED'){
+            $State.FailureFamily='IMMUNE_QUARANTINED'
+            throw 'IMMUNE_QUARANTINED'
+        }
+        if($kernelState -eq 'IMMUNE_ENFORCED'){
+            if([string]$assuranceReceipt.schema -ne 'cerebro-immune-material-receipt/v1' -or
+               [string]$assuranceReceipt.assurance_profile -ne 'IMMUNE' -or
+               [string]$assuranceReceipt.material_consumer_identity -ne 'STANDARD_DELIVERY' -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.attestation_fingerprint) -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.quarantine_scope_sha256) -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.risk_profile) -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.intended_consequence_class)){
+                $State.FailureFamily='IMMUNE_ASSURANCE_RECEIPT_INCOMPLETE'
+                throw 'IMMUNE_ASSURANCE_RECEIPT_INCOMPLETE'
+            }
+        }
+        elseif(@('BOOTSTRAP_ONLY','DOCTOR_ENFORCED') -notcontains $kernelState){
+            $State.FailureFamily='ASSURANCE_KERNEL_STATE_NOT_MATERIAL_CAPABLE'
+            throw ('ASSURANCE_KERNEL_STATE_NOT_MATERIAL_CAPABLE:{0}' -f $kernelState)
+        }
+        $State.AssuranceProfile = if($kernelState -eq 'IMMUNE_ENFORCED'){'IMMUNE'}else{'LEGACY'}
+        $State.AssuranceReceiptSchema = [string]$assuranceReceipt.schema
+        $State.AssuranceConsumptionId = [string]$assuranceReceipt.consumption_id
+
         $State.ReachedStage = 'EXACT_BYTE_INSTALL'
         foreach ($fileEntry in @($State.Manifest.files)) {
             $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
@@ -1659,7 +1764,10 @@ function Invoke-Apply {
 }
 
 try {
-    if ($Mode -eq 'SelfTest') { Invoke-SelfTest } else { Invoke-Apply }
+    if ($Mode -eq 'SelfTest') { Invoke-SelfTest }
+    elseif ($Mode -eq 'RecoveryCheck') { [void](Invoke-ImmuneMigrationRecoveryControl -Consume $false) }
+    elseif ($Mode -eq 'RecoveryConsume') { [void](Invoke-ImmuneMigrationRecoveryControl -Consume $true) }
+    else { Invoke-Apply }
 }
 catch {
     $errorText = $_.Exception.Message

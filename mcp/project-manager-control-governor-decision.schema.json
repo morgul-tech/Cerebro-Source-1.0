@@ -41,6 +41,21 @@
     },
     "state_mutation_by_governor": {
       "const": false
+    },
+    "lifecycle_mutation_gate": {
+      "type": "object",
+      "required": [
+        "applicable",
+        "result"
+      ],
+      "properties": {
+        "applicable": {
+          "type": "boolean"
+        },
+        "result": {
+          "const": "PASS"
+        }
+      }
     }
   },
   "required": [
@@ -62,7 +77,8 @@
     "pm_internal_action_must_run_before_human_boundary",
     "decision_fingerprint",
     "decision_ref",
-    "result"
+    "result",
+    "lifecycle_mutation_gate"
   ],
   "title": "Cerebro Project Manager Control Governor Decision",
   "type": "object"

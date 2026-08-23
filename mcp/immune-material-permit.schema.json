@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-immune-material-permit/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "permit_id",
+    "campaign_id",
+    "package_class",
+    "source_pre_head",
+    "package_sha256",
+    "touched_paths_sha256",
+    "quarantine_scope_sha256",
+    "risk_profile",
+    "intended_consequence_class",
+    "nonce",
+    "authority_epoch",
+    "producer_identity",
+    "attestation_path"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-immune-material-permit/v1"
+    },
+    "permit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "campaign_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "package_class": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_pre_head": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "package_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "touched_paths_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "quarantine_scope_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "risk_profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intended_consequence_class": {
+      "enum": [
+        "SOURCE_EFFECT",
+        "RUNTIME_EFFECT",
+        "SHARED_EFFECT",
+        "KNOWLEDGE_ONLY"
+      ]
+    },
+    "nonce": {
+      "type": "string",
+      "minLength": 16
+    },
+    "authority_epoch": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "producer_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attestation_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "material_consumer_identity": {
+      "const": "STANDARD_DELIVERY"
+    }
+  }
+}

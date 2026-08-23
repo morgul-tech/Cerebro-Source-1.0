@@ -75,6 +75,23 @@ project_manager_control_governor:
       next_transaction_allowed: false
     duplicate_same_intent_generation: CONTROL_DEFECT
 
+  lifecycle_mutation_arbitration:
+    subordinate_to: MCP
+    state_owner: CONTEXT
+    governor_direct_live_authority: false
+    candidate_schema: mcp/actor-lifecycle-mutation.schema.json
+    operations: [RETIRE, BIND, START]
+    exact_generation_identity_required: true
+    expected_lifecycle_revision_required: true
+    expected_claim_revision_required_when_applicable: true
+    idempotency_key_required: true
+    candidate_fingerprint_required: true
+    stale_precondition_effect: INVALIDATED_STALE_PRECONDITION
+    unknown_provider_outcome_effect: RECEIPT_READBACK_REQUIRED_BEFORE_RETRY
+    bind_start_effective_only_after:
+      - durable-context-commit-receipt
+      - exact-post-state-readback
+
   worker_terminal:
     worker_self_admission: PROHIBITED
     independent_PM_admission_required: true

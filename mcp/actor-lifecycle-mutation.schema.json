@@ -1,0 +1,99 @@
+{
+  "$id": "cerebro://schemas/actor-lifecycle-mutation/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_generation_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "authority_source": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "candidate_fingerprint": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "claim_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "expected_claim_revision": {
+      "oneOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "const": "NOT_APPLICABLE"
+        }
+      ]
+    },
+    "expected_lifecycle_revision": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "expected_lifecycle_state": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "expected_slot_pointer": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "idempotency_key": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "mutation_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "observed_event_frontier": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "operation": {
+      "enum": [
+        "RETIRE",
+        "BIND",
+        "START"
+      ]
+    },
+    "packet_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema": {
+      "const": "cerebro-actor-lifecycle-mutation/v1"
+    },
+    "slot_pointer_ref": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "mutation_id",
+    "idempotency_key",
+    "operation",
+    "actor_generation_id",
+    "slot_pointer_ref",
+    "expected_slot_pointer",
+    "expected_lifecycle_revision",
+    "expected_lifecycle_state",
+    "expected_claim_revision",
+    "packet_ref",
+    "claim_ref",
+    "authority_source",
+    "observed_event_frontier",
+    "candidate_fingerprint"
+  ],
+  "title": "Cerebro Actor Lifecycle Mutation Candidate",
+  "type": "object"
+}

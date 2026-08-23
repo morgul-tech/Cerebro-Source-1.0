@@ -1,22 +1,34 @@
 schema: cerebro-assurance-kernel/v1
 assurance_kernel:
   id: CEREBRO-ASSURANCE-KERNEL-001
-  status: DOCTOR_BOOTSTRAP_SUCCESSOR_CANDIDATE
+  status: IMMUNE_FIRST_ACTIVATION_INGRESS785_CONDITIONALLY_AUTHORIZED
   kind: NON_AI_ENFORCEMENT_SUBSTRATE
   definitional_authority: Cerebro Source 1.0
   control_policy_owner: MCP
   semantic_authority: NONE
   purpose: >
     Enforce exact current assurance consumption at the canonical Source material edge.
-    Candidate producers, Doctor prose, raw PASS labels and Shared projections have no authority.
-  states: [UNINITIALIZED, BOOTSTRAP_ONLY, DOCTOR_ENFORCED, FAILED_RECOVERY]
+    Candidate producers, Doctor prose, raw PASS labels, Shared projections and
+    self-attested Immune claims have no authority.
+
+  states:
+    - UNINITIALIZED
+    - BOOTSTRAP_ONLY
+    - DOCTOR_ENFORCED
+    - FAILED_RECOVERY
+    - IMMUNE_MIGRATING
+    - IMMUNE_ENFORCED
+    - IMMUNE_QUARANTINED
+
   bootstrap_only:
     allowed_package_class: DOCTOR_BOOTSTRAP_PACKAGE
     max_successful_consumptions: 1
     ordinary_source_packages: DENY
     self_asserted_pass_is_proof: false
     shared_state_is_trust_root: false
+
   doctor_enforced:
+    lifecycle: LEGACY_ENTRY_UNTIL_AUTHENTICATED_IMMUNE_MIGRATION
     doctor_receipt_required: true
     certified_current_trust_object_required: true
     independent_attestation_algorithm: HMAC-SHA256
@@ -27,25 +39,145 @@ assurance_kernel:
     raw_receipt_or_pass_label: DENY
     stale_or_tampered_trust_object: DENY
     verifier_or_key_drift: DENY
+    persistent_Doctor_runtime_role_required_after_IMMUNE_ENFORCED: false
+    one_time_human_admin_first_activation:
+      authorization_type: ONE_TIME_HUMAN_ADMIN_FIRST_ACTIVATION
+      directive: AN-ADMIN-IMMUNFORSVAR-FIRST-ACTIVATION-HUMAN-BOOTSTRAP-AUTHORITY-001
+      exact_candidate_source_host_and_delivery_consumption_binding: REQUIRED
+      source_state: DOCTOR_ENFORCED
+      existing_doctor_trust_key_reused_as_immune_attestor_key: true
+      creates_secret_or_trust_root: false
+      legacy_doctor_binding_fields_removed_at_transition: true
+      persistent_bypass: false
+      transition: DOCTOR_ENFORCED_TO_IMMUNE_ENFORCED_ATOMIC
+      replay: DENY
+
+  immune_migrating:
+    material_packages: DENY
+    ordinary_permit_consumption: DENY
+    one_time_transition: true
+    migration_schema: mcp/immune-migration.schema.json
+    source_states: [DOCTOR_ENFORCED, FAILED_RECOVERY]
+    authority_epoch_increment: EXACTLY_ONE_PER_TRANSITION
+    consumed_ledger_preservation: REQUIRED
+    current_external_anchor_authority_required: true
+    authenticated_external_verifier_interface_required: true
+    matching_anchor_preimage_alone_is_authority: false
+    self_asserted_currentness: false
+    postcrash_recovery:
+      request_schema: mcp/immune-migration.schema.json#IMMUNE_MIGRATION_RECOVERY
+      recovery_record: PERSISTENT_STATE_BOUND
+      entry_nonce_as_recovery_authority: PROHIBITED
+      recovery_nonce_namespace: RECOVERY_COLON
+      renewed_authorization_conjunction:
+        - CURRENT_EXTERNAL_ANCHOR_PROOF_OF_POSSESSION
+        - CURRENT_MCP_RECOVERY_DECISION
+        - CURRENT_HOST_PROOF
+        - INDEPENDENT_ATTESTOR_IDENTITY
+      allowed_outcomes: [RESUME_EXACT, ROLLBACK_EXACT_PREPUBLICATION, QUARANTINE]
+      install_progress_classifier: [PRESTATE_EXACT, DETERMINISTIC_PREFIX, FULLY_INSTALLED, DRIFT]
+      uncertain_publication_or_drift: QUARANTINE_REQUIRED
+      recovery_consume_lock: SAME_ASSURANCE_KERNEL_STATE_LOCK
+      exactly_one_recovery_effect: REQUIRED
+      authority_epoch: MONOTONIC_INCREMENT_ONLY
+      consumed_ledger: BYTE_SEMANTICALLY_PRESERVED
+    current_candidate_status: POSTCRASH_RETURN_SEMANTICS_IMPLEMENTED_NONMATERIAL_EXTERNAL_AUTHORITY_STILL_UNPROVEN
+
+  immune_enforced:
+    permit_schema: mcp/immune-material-permit.schema.json
+    receipt_schema: mcp/immune-material-receipt.schema.json
+    attestation_schema: mcp/immune-attestation.schema.json
+    attestation_implementation: tooling/assurance/immune_attestation.py
+    independent_attestation_algorithm: HMAC-SHA256
+    attestor_key_material_in_source: PROHIBITED
+    attestor_identity_must_differ_from_producer: true
+    attestor_implementation_and_key_fingerprints_state_bound: true
+    quarantine_scope_fingerprint_required: true
+    intended_consequence_class_required: true
+    required_claim_scope: SOURCE_PROMOTION
+    Doctor_receipt_required: false
+    Doctor_trust_object_required: false
+    raw_receipt_or_pass_label: DENY
+    stale_or_tampered_attestation: DENY
+    attestor_or_key_drift: DENY
+    material_consumer_identity: STANDARD_DELIVERY
+
+  immune_quarantined:
+    ordinary_material_packages: DENY
+    automatic_reset_or_reinitialize: PROHIBITED
+    affected_scope_and_reason_fingerprint_required: true
+    recovery: FAIL_FORWARD_OR_SEPARATELY_AUTHORIZED_RECOVERY
+
   permit_binding:
-    required: [permit_id, campaign_id, package_class, source_pre_head, package_sha256, touched_paths_sha256, nonce, authority_epoch]
-    doctor_enforced_additional_required: [doctor_receipt_sha256, doctor_trust_object_path]
+    legacy_required:
+      - permit_id
+      - campaign_id
+      - package_class
+      - source_pre_head
+      - package_sha256
+      - touched_paths_sha256
+      - nonce
+      - authority_epoch
+    doctor_enforced_additional_required:
+      - doctor_receipt_sha256
+      - doctor_trust_object_path
+    immune_enforced_additional_required:
+      - quarantine_scope_sha256
+      - risk_profile
+      - intended_consequence_class
+      - producer_identity
+      - attestation_path
     one_shot: true
     cross_process_consume_serialization: REQUIRED
     stale_source_head: DENY
     wrong_package: DENY
     wrong_paths: DENY
+    wrong_quarantine_scope: DENY
     replay: DENY
+
   material_edge:
     normal_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
     mutation_without_current_permit: DENY
+    mutation_during_IMMUNE_MIGRATING: DENY
+    mutation_during_IMMUNE_QUARANTINED: DENY
     check_and_consume_before_first_mutation: true
     package_sha256_definition: SHA256_OF_SEALED_STANDARD_MANIFEST_BYTES_WHICH_BIND_PAYLOAD_HASHES
+    shadow_material_consumer: PROHIBITED
+
   doctor_binding:
+    lifecycle: LEGACY_COMPATIBILITY_ENTRY_ONLY
     contract: standards/doctor-assurance.yaml
     doctor_gate: tooling/doctor/doctor_gate.py
     independent_trust_verifier: tooling/doctor/doctor_trust.py
     system_doctor: tooling/doctor/system_doctor.py
     trust_object_schema: mcp/doctor-trust-object.schema.json
+
+  immune_binding:
+    contract: standards/immune-system.yaml
+    permit_schema: mcp/immune-material-permit.schema.json
+    receipt_schema: mcp/immune-material-receipt.schema.json
+    attestation_schema: mcp/immune-attestation.schema.json
+    migration_schema: mcp/immune-migration.schema.json
+    attestation_implementation: tooling/assurance/immune_attestation.py
+    external_anchor_verifier: EXTERNAL_HOST_BOUND_NOT_SOURCE_OWNED
+
+  candidate_boundary:
+    source_head: 4469eddccc8db213bb923c403c26c36e30309575
+    exact_targetset_count: 15
+    nonmaterial_build: ALLOWED
+    migration_or_cutover: CONDITIONALLY_AUTHORIZED_BY_INGRESS785_HUMAN_BOOTSTRAP
+    exact_blocker: CURRENT_DOCTOR_KEY_BINDING_AND_LIVE_SOURCE_EQUALITY_REQUIRED
+    Source_mutation: STANDARD_DELIVERY_ONLY
+    Runtime_mutation: ONE_TIME_ATOMIC_ASSURANCE_STATE_TRANSITION_ONLY
+    H3_clearance: REQUIRED_AT_POST_EFFECT_READBACK
+
   boundaries:
-    excludes: [Boot_V2_3_logic, Worker_admission, Assignment_admission, project_semantics, general_host_tool_gateway, Repair_Runner, publication_policy_redesign]
+    excludes:
+      - Boot_V2_3_logic
+      - Worker_admission
+      - Assignment_admission
+      - project_semantics
+      - general_host_tool_gateway
+      - Repair_Runner
+      - publication_policy_redesign
+      - H3_lifecycle_CAS_implementation

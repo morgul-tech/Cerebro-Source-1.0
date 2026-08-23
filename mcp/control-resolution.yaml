@@ -213,6 +213,17 @@ control_resolution:
     - owner-effect-routing-does-not-claim-normal-owner-consumption
     - self-asserted-owner-persistence-or-capability-does-not-open-control-gates
 
+lifecycle_mutation_resolution:
+  final_transition_validity_owner: MCP
+  durable_state_owner: context
+  work_claim_is_authority: false
+  exact_actor_generation_required: true
+  context_commit_receipt_required_before_effect: true
+  exact_poststate_readback_required_before_effect: true
+  CAS_conflict_effect: RELOAD_AND_RERESOLVE
+  last_write_wins_fallback: PROHIBITED
+  unknown_provider_outcome_effect: IDEMPOTENCY_RECEIPT_READBACK_REQUIRED
+
 # BEGIN INTEGRITY-CONTROL-001
 integrity_subresolution:
   id: CEREBRO-MCP-INTEGRITY-CONTROL-001

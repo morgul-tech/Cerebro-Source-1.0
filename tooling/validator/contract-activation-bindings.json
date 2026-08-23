@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.14",
+  "classification_version": "2.16-first-activation-r6",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -12,6 +12,7 @@
         "STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH",
         "ADAPTIVE_MCP_CONTROL_RESOLUTION",
         "ASSURANCE_CONTINUITY",
+        "IMMUNE_ASSURANCE",
         "MCP_INTEGRITY_CONTROL"
       ]
     },
@@ -98,11 +99,51 @@
       "standard_id": "STD-DELIVERY-KERNEL",
       "path": "standards/delivery-kernel.yaml",
       "classification": "OPERATIONAL",
-      "rationale": "Canonical STANDARD delivery path is explicitly bound and regression-controlled.",
+      "rationale": "Canonical STANDARD delivery path is explicitly bound and regression-controlled. The candidate Immune consumer path is registered but is not activated until migration and independent proof.",
       "strict_contract_refs": [
         "DELIVERY_KERNEL",
         "FAILURE_HANDOFF",
-        "SUCCESS_RECEIPT_TRANSPORT"
+        "SUCCESS_RECEIPT_TRANSPORT",
+        "IMMUNE_ASSURANCE"
+      ],
+      "known_gaps": [
+        "IMMUNE_MIGRATING and IMMUNE_ENFORCED have no current external-anchor migration proof",
+        "candidate registration is not Runtime activation"
+      ]
+    },
+    {
+      "standard_id": "STD-ASSURANCE-KERNEL",
+      "path": "standards/assurance-kernel.yaml",
+      "classification": "OPERATIONAL",
+      "rationale": "The assurance kernel is the single material-edge enforcement substrate for both the current Doctor profile and the activated Immune profile, and Standard Delivery consumes its one-shot decision before exact-byte installation.",
+      "strict_contract_refs": [
+        "IMMUNE_ASSURANCE"
+      ]
+    },
+    {
+      "standard_id": "STD-DOCTOR-ASSURANCE",
+      "path": "standards/doctor-assurance.yaml",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "rationale": "Doctor assurance is the authenticated legacy entry used to authorize the one-time Immune transition; it is intentionally not the normal material route after IMMUNE_ENFORCED.",
+      "known_gaps": [
+        "Doctor remains a legacy transition and recovery compatibility surface and is not the normal post-activation material assurance owner"
+      ]
+    },
+    {
+      "standard_id": "STD-IMMUNE-SYSTEM",
+      "path": "standards/immune-system.yaml",
+      "classification": "CANDIDATE_NOT_OPERATIONAL",
+      "rationale": "The actorless Immune assurance contract now candidate-implements authenticated post-crash IMMUNE_MIGRATING return semantics (persistent recovery record, RECOVERY_NONCE separation, renewed conjunctive recovery authorization, deterministic install-prefix classification, exactly-one recovery consume, and RESUME_EXACT/ROLLBACK_EXACT_PREPUBLICATION/QUARANTINE). It remains CANDIDATE_NOT_OPERATIONAL because live external-anchor custody/currentness, Windows material execution, cutover and post-effect proof are not provider-proven.",
+      "strict_contract_refs": [
+        "ASSURANCE_CONTINUITY",
+        "IMMUNE_ASSURANCE"
+      ],
+      "known_gaps": [
+        "current external anchor authority and custody are not provider-proven",
+        "live external verify_recovery interface and host recovery proof are not target-runtime proven",
+        "no Windows material or post-effect proof",
+        "no H3 lifecycle-CAS material implementation or proof",
+        "no Source publication or Runtime activation"
       ]
     },
     {
@@ -1220,6 +1261,10 @@
           "mcp/owner-state-commit-receipt.schema.json",
           "mcp/control_owner_effect_receipt.py",
           "mcp/control_owner_routing.py",
+          "mcp/project-manager-control-governor.yaml",
+          "mcp/project-manager-control-governor-decision.schema.json",
+          "mcp/project_manager_control_governor.py",
+          "tooling/validator/project_manager_control_governor_validation.py",
           "mcp/control_resolution_host.py",
           "engines/project/project-basis-state.schema.json",
           "engines/project/project_owner_effect.py",
@@ -1307,6 +1352,39 @@
         "declared-nonblocking-debt-accepted"
       ],
       "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_STANDARD_PATCH_OBSERVATION"
+    },
+    {
+      "id": "IMMUNE_ASSURANCE",
+      "standard_id": "STD-ASSURANCE-KERNEL",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/assurance-kernel.yaml",
+      "declaration_tokens": [
+        "CEREBRO-ASSURANCE-KERNEL-001",
+        "IMMUNE_ENFORCED",
+        "check_and_consume_before_first_mutation: true"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "assurance_continuity:",
+      "implementation": "tooling/assurance/assurance_kernel.py",
+      "implementation_tokens": [
+        "_verify_immune_attestation",
+        "transition_one_time_human_admin_first_activation",
+        "consume-manifest-permit"
+      ],
+      "wiring": "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+      "wiring_proof_kind": "STATIC_CALLSITE",
+      "wiring_tokens": [
+        "consume-manifest-permit",
+        "IMMUNE_ASSURANCE_RECEIPT_INCOMPLETE",
+        "EXACT_BYTE_INSTALL"
+      ],
+      "validation": "tooling/validator/assurance_kernel_validation.py",
+      "validation_tokens": [
+        "run_immune()",
+        "run_first_activation()",
+        "immune-independent-attestation-allows"
+      ],
+      "runtime_evidence_state": "SEPARATE_REQUIRES_SUCCESSFUL_FIRST_ACTIVATION_AND_POST_EFFECT_READBACK"
     },
     {
       "id": "ASSURANCE_CONTINUITY",

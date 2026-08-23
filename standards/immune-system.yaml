@@ -1,0 +1,217 @@
+schema: cerebro-immune-system/v1
+immune_system:
+  id: CEREBRO-IMMUNE-SYSTEM-001
+  version: "0.1-candidate"
+  status: FIRST_ACTIVATION_INGRESS785_CONDITIONALLY_AUTHORIZED
+  kind: ACTORLESS_ASSURANCE_CONTROL
+  definitional_authority: Cerebro Source 1.0
+  control_policy_owner: MCP
+  state_owner: assurance_kernel
+  normal_material_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+  persistent_AI_or_person_actor_required: false
+  external_trust_custody_required: true
+
+  purpose: >
+    Replace persistent Doctor runtime dependence with an actorless, state-bound,
+    independently attested material assurance path while preserving exact Source
+    currentness, affected-scope quarantine, rollback/fail-forward, one lawful
+    material consumer and post-effect readback.
+
+  current_candidate_boundary:
+    source_head: 4469eddccc8db213bb923c403c26c36e30309575
+    targetset_count: 15
+    candidate_build: LAWFUL_NONMATERIAL
+    migration_or_cutover: CONDITIONALLY_AUTHORIZED_BY_INGRESS785_HUMAN_BOOTSTRAP
+    exact_blocker: CURRENT_DOCTOR_KEY_BINDING_AND_LIVE_SOURCE_EQUALITY_REQUIRED
+    no_secret_edge_opened: true
+    no_new_trust_root: true
+    no_Doctor_reactivation: true
+    no_Source_or_Runtime_effect: true
+
+  states:
+    legacy_entry:
+      - DOCTOR_ENFORCED
+      - FAILED_RECOVERY
+    immune:
+      - IMMUNE_MIGRATING
+      - IMMUNE_ENFORCED
+      - IMMUNE_QUARANTINED
+
+  state_semantics:
+    IMMUNE_MIGRATING:
+      material_effect: DENY
+      purpose: one-time authenticated state transfer with exact epoch and ledger preservation
+      normal_packages: DENY
+      finalization_requires:
+        - current external anchor authority
+        - authenticated external verifier interface
+        - exact migration receipt
+        - unchanged consumed-ledger fingerprint
+        - bound independent attestor implementation and key fingerprint
+      postcrash_return:
+        record: persistent migration_recovery_record bound to exact in-flight subject
+        entry_nonce_reuse: DENY
+        recovery_nonce_namespace: "RECOVERY:"
+        authorization: EXTERNAL_ANCHOR_POP_AND_MCP_RECOVERY_DECISION_AND_CURRENT_HOST_PROOF_AND_INDEPENDENT_ATTESTATION
+        outcomes: [RESUME_EXACT, ROLLBACK_EXACT_PREPUBLICATION, QUARANTINE]
+        deterministic_progress: [PRESTATE_EXACT, DETERMINISTIC_PREFIX, FULLY_INSTALLED, DRIFT]
+        uncertain_publication_or_drift: QUARANTINE_REQUIRED
+        consume_serialization: SAME_KERNEL_STATE_LOCK
+        exactly_one_return_effect: REQUIRED
+        epoch_decrement: PROHIBITED
+        consumed_ledger_mutation: PROHIBITED
+    IMMUNE_ENFORCED:
+      material_effect: PERMIT_ONLY
+      Doctor_receipt_required: false
+      Doctor_trust_object_required: false
+      immune_permit_required: true
+      independent_attestation_required: true
+      exact_quarantine_scope_required: true
+      standard_delivery_only: true
+    IMMUNE_QUARANTINED:
+      material_effect: DENY
+      recovery_policy: FAIL_FORWARD_OR_SEPARATELY_AUTHORIZED_RECOVERY
+      automatic_reset_or_reinitialize: PROHIBITED
+
+  migration:
+    schema_ref: mcp/immune-migration.schema.json
+    source_states: [DOCTOR_ENFORCED, FAILED_RECOVERY]
+    target_state: IMMUNE_MIGRATING
+    one_time: true
+    monotonic_authority_epoch: true
+    consumed_ledger_preserved: true
+    Source_identity_exact: true
+    external_anchor_preexisting: REQUIRED
+    external_anchor_outside_changed_set: REQUIRED
+    matching_preimage_alone_is_authority: false
+    self_attested_anchor_currentness: false
+    verifier_interface_ref: EXTERNAL_HOST_BOUND_NOT_SOURCE_OWNED
+    current_interface_status: ENTRY_AND_POSTCRASH_CONTRACT_CANDIDATE_IMPLEMENTED_LIVE_AUTHORITY_UNPROVEN
+    recovery_request_operation: IMMUNE_MIGRATION_RECOVERY
+    recovery_record_schema: cerebro-immune-migration-recovery-record/v1
+    installation_plan_schema: cerebro-immune-installation-plan/v1
+    installation_observation_schema: cerebro-immune-installation-observation/v1
+    first_activation_exception:
+      authorization_type: ONE_TIME_HUMAN_ADMIN_FIRST_ACTIVATION
+      directive: AN-ADMIN-IMMUNFORSVAR-FIRST-ACTIVATION-HUMAN-BOOTSTRAP-AUTHORITY-001
+      source_state: DOCTOR_ENFORCED
+      target_state: IMMUNE_ENFORCED
+      transition_write: ATOMIC
+      exact_candidate_source_host_migration_nonce_binding: REQUIRED
+      existing_doctor_trust_key_reused_as_attestor_key: true
+      key_or_secret_creation: PROHIBITED
+      legacy_doctor_binding_fields_removed: REQUIRED
+      persistent_bypass: PROHIBITED
+      replay: DENY
+
+  permit:
+    schema_ref: mcp/immune-material-permit.schema.json
+    receipt_schema_ref: mcp/immune-material-receipt.schema.json
+    required_bindings:
+      - permit_id
+      - campaign_id
+      - package_class
+      - source_pre_head
+      - package_sha256
+      - touched_paths_sha256
+      - quarantine_scope_sha256
+      - risk_profile
+      - intended_consequence_class
+      - nonce
+      - authority_epoch
+      - producer_identity
+      - attestation_path
+    one_shot: true
+    exact_generation_and_epoch: REQUIRED
+    stale_source_head: DENY
+    wrong_package: DENY
+    wrong_paths: DENY
+    wrong_quarantine_scope: DENY
+    replay: DENY
+
+  independent_attestation:
+    schema_ref: mcp/immune-attestation.schema.json
+    implementation_ref: tooling/assurance/immune_attestation.py
+    algorithm: HMAC-SHA256
+    production_key_material_in_Source: PROHIBITED
+    producer_self_attestation: PROHIBITED
+    attestor_identity_must_differ_from_producer: true
+    implementation_and_key_fingerprints_state_bound: true
+    subject_exactly_binds:
+      - permit_id
+      - campaign_id
+      - source_pre_head
+      - package_sha256
+      - touched_paths_sha256
+      - quarantine_scope_sha256
+      - risk_profile
+      - intended_consequence_class
+      - authority_epoch
+      - producer_identity
+
+  quarantine:
+    scope: AFFECTED_SCOPE_ONLY
+    systemwide_freeze_default: false
+    exact_scope_fingerprint_required: true
+    uncertain_scope_effect: DENY
+    concurrent_unrelated_scope_may_continue_only_if_independently_proven_nonoverlapping: true
+
+  transaction:
+    prestate_identity_required: true
+    rollback_required: true
+    fail_forward_boundary_required: true
+    post_effect_readback_required: true
+    single_lawful_material_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    shadow_material_consumer: PROHIBITED
+    candidate_self_certification: PROHIBITED
+
+  effect_closure:
+    intended_consequence_class: SOURCE_EFFECT
+    producer_scope_state_values: [SCOPE_CLOSED, SCOPE_BLOCKED, INVALID_RESULT]
+    consequence_state_values: [NOT_APPLICABLE, PENDING, PROVEN, BLOCKED, FAILED]
+    producer_candidate_may_close_while_consequence_blocked: true
+    current_candidate_consequence_state: BLOCKED
+    current_candidate_blocker: EXTERNAL_ANCHOR_AUTHORITY_AND_VERIFIER_INTERFACE_UNPROVEN
+
+  targetset:
+    create:
+      - standards/immune-system.yaml
+      - mcp/immune-material-permit.schema.json
+      - mcp/immune-material-receipt.schema.json
+      - mcp/immune-attestation.schema.json
+      - mcp/immune-migration.schema.json
+      - tooling/assurance/immune_attestation.py
+    modify:
+      - standards/assurance-kernel.yaml
+      - tooling/assurance/assurance_kernel.py
+      - tooling/validator/assurance_kernel_validation.py
+      - mcp/assurance-continuity.yaml
+      - mcp/manifest.yaml
+      - standards/delivery-kernel.yaml
+      - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+      - tooling/validator/checks.yaml
+      - tooling/validator/contract-activation-bindings.json
+    dropped_from_prior_baseline:
+      - standards/change-delivery.yaml
+
+  serialization:
+    - ingress722_nonmaterial_candidate
+    - separate_H3_lifecycle_CAS_material_and_proof
+    - ingress728_combined_independent_proof
+    - SAFE_MATURED_BACKLOG_if_all_pass
+
+  invariants:
+    - NO_PERSISTENT_DOCTOR_ACTOR_DEPENDENCY
+    - EXTERNAL_TRUST_CUSTODY_REMAINS_IRREDUCIBLE
+    - CURRENT_EXTERNAL_ANCHOR_AUTHORITY_MUST_BE_PROVEN_NOT_INFERRED
+    - IMMUNE_MIGRATING_DENIES_NORMAL_MATERIAL_EFFECT
+    - IMMUNE_ENFORCED_REQUIRES_EXACT_ONE_SHOT_PERMIT_AND_INDEPENDENT_ATTESTATION
+    - STANDARD_DELIVERY_IS_THE_ONLY_NORMAL_MATERIAL_CONSUMER
+    - AFFECTED_SCOPE_QUARANTINE_NOT_SYSTEMWIDE_FREEZE
+    - PRODUCER_CANNOT_SELF_CERTIFY
+    - SOURCE_AND_RUNTIME_EFFECT_REQUIRE_POST_EFFECT_READBACK
+    - AUTHENTICATED_POSTCRASH_RETURN_IS_REQUIRED_FOR_EVERY_IMMUNE_MIGRATING_CRASH_POINT
+    - ENTRY_NONCE_CANNOT_AUTHORIZE_RECOVERY
+    - RECOVERY_EFFECT_IS_EXACTLY_ONCE_AND_EPOCH_MONOTONIC
+    - UNCERTAIN_PUBLICATION_OR_INSTALL_DRIFT_REQUIRES_QUARANTINE
+    - FIRST_ACTIVATION_REQUIRES_EXACT_INGRESS785_AUTHORITY_HOST_KEY_AND_SOURCE_BINDING

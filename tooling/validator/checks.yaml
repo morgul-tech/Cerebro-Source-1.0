@@ -4,11 +4,17 @@ assurance_kernel_seed_validation:
   severity: error
   owner: tooling.validator
   contract_ref: standards/assurance-kernel.yaml
+  immune_contract_ref: standards/immune-system.yaml
   required_files:
     - tooling/assurance/assurance_kernel.py
+    - tooling/assurance/immune_attestation.py
     - tooling/validator/assurance_kernel_validation.py
     - mcp/assurance-kernel-permit.schema.json
     - mcp/assurance-kernel-receipt.schema.json
+    - mcp/immune-material-permit.schema.json
+    - mcp/immune-material-receipt.schema.json
+    - mcp/immune-attestation.schema.json
+    - mcp/immune-migration.schema.json
   required_canaries:
     - no-kernel-state-denies
     - stale-head-denies
@@ -20,10 +26,48 @@ assurance_kernel_seed_validation:
     - stale-authority-epoch-denies
     - manifest-binding-is-byte-and-path-sensitive
     - standard-delivery-mutation-edge-consumes-permit
+    - immune-state-vocabulary-bound
+    - immune-contract-targetset-present
+    - authenticated-migration-enters-immune-migrating
+    - immune-migrating-denies-material
+    - finalize-preserves-ledger-and-increments-epoch
+    - immune-independent-attestation-allows
+    - immune-permit-replay-denies
+    - stale-immune-epoch-denies
+    - wrong-quarantine-scope-attestation-denies
+    - producer-self-attestation-denies
+    - immune-attestor-key-drift-denies
+    - immune-quarantined-denies-material
+    - StandardDelivery-is-only-normal-immune-material-consumer
+    - external-anchor-verifier-interface-required
+    - migration-cutover-blocked-when-current-anchor-authority-unproven
+    - F26-post-entry-crash-authenticated-resume
+    - F27-post-lock-release-preinstall-return
+    - F28-prefix-classifier-fail-closed
+    - F29-full-local-prepublication-resume
+    - F30-uncertain-publication-quarantines
+    - F31-entry-nonce-replay-denies
+    - F32-new-nonce-subject-break-denies
+    - F33-observation-cannot-self-authorize
+    - F34-concurrent-recovery-exactly-one-effect
+    - F35-rollback-preserves-monotonic-epoch
+    - F36-recovered-completion-still-proof-gated
   prohibited:
     - material-mutation-without-current-one-shot-assurance-permit
     - bootstrap-permit-replay
     - bootstrap-package-class-expansion
+    - material-mutation-during-IMMUNE_MIGRATING
+    - material-mutation-during-IMMUNE_QUARANTINED
+    - producer-self-attestation
+    - immune-key-material-in-Source
+    - Doctor-trust-substitution-after-IMMUNE_ENFORCED
+    - shadow-material-consumer
+    - migration-or-cutover-without-current-external-anchor-authority
+    - reuse-entry-nonce-as-recovery-authority
+    - recovery-without-current-MCP-host-anchor-and-independent-attestation-conjunction
+    - recovery-resume-or-rollback-on-install-drift-or-uncertain-publication
+    - recovery-epoch-decrement
+    - concurrent-double-recovery-effect
 
 doctor_assurance_validation:
   severity: error
@@ -61,6 +105,10 @@ project_manager_control_governor_validation:
     - Worker-cannot-admit-own-terminal-envelope
     - terminal-completion-without-learning-disposition-blocks
     - long-running-PM-work-without-progress-observability-blocks
+    - actor-generation-lifecycle-mutation-is-exact-generation-bound
+    - lifecycle-CAS-conflict-reloads-and-reresolves
+    - bind-start-effect-requires-context-commit-receipt-and-poststate-readback
+    - unknown-provider-outcome-requires-idempotency-receipt-readback
   required_canaries:
     - trusted-profile-binding-required
     - actor-owned-frontier-enforced
@@ -71,6 +119,10 @@ project_manager_control_governor_validation:
     - PAUSE-STOP-TERMINATE-distinct
     - terminal-learning-disposition-required
     - heartbeat-required-for-long-running-PM-work
+    - lifecycle-targetset-exactly-eight
+    - lifecycle-race-family-36-pass
+    - lifecycle-preflight-family-8-pass
+    - immune-checks-registration-preserved-after-semantic-merge
   prohibited:
     - AI-self-asserted-PM-role-authority
     - repeated-completed-human-action-as-next
@@ -78,6 +130,9 @@ project_manager_control_governor_validation:
     - Worker-self-admission
     - live-PM-enforcement-claim-before-trusted-host-profile-binding
 
+    - lifecycle-last-write-wins
+    - claim-as-lifecycle-authority
+    - final-H3-patch-freeze-before-post722-rebase
 command_execution_surface_validation:
   introduced_by: STANDARD-DELIVERY-INCREMENTAL-REVISION-001
   severity: error

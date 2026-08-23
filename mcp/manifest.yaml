@@ -28,6 +28,7 @@ mcp:
   - standards/human-navigation-surface.yaml
   - mcp/assurance-continuity.yaml
   - standards/assurance-kernel.yaml
+  - standards/immune-system.yaml
   - standards/doctor-assurance.yaml
   - mcp/project-manager-control-governor.yaml
 position:
@@ -260,6 +261,8 @@ control_adapters:
   assurance_continuity:
     contract_ref: mcp/assurance-continuity.yaml
     implementation_ref: tooling/validator/assurance_continuity.py
+    assurance_kernel_contract_ref: standards/assurance-kernel.yaml
+    assurance_kernel_implementation_ref: tooling/assurance/assurance_kernel.py
     doctor_contract_ref: standards/doctor-assurance.yaml
     doctor_gate_ref: tooling/doctor/doctor_gate.py
     doctor_trust_ref: tooling/doctor/doctor_trust.py
@@ -271,14 +274,39 @@ control_adapters:
     doctor_trust_attestation_schema_ref: mcp/doctor-trust-attestation.schema.json
     doctor_currentness_vector_schema_ref: mcp/doctor-currentness-vector.schema.json
     system_doctor_receipt_schema_ref: mcp/system-doctor-receipt.schema.json
-    status: ACTIVE
+    immune_contract_ref: standards/immune-system.yaml
+    immune_permit_schema_ref: mcp/immune-material-permit.schema.json
+    immune_receipt_schema_ref: mcp/immune-material-receipt.schema.json
+    immune_attestation_schema_ref: mcp/immune-attestation.schema.json
+    immune_migration_schema_ref: mcp/immune-migration.schema.json
+    immune_attestation_implementation_ref: tooling/assurance/immune_attestation.py
+    status: ACTIVE_WITH_IMMUNE_FIRST_ACTIVATION_INGRESS785_CONDITIONALLY_AUTHORIZED
     control_owner: MCP
+    state_owner: assurance_kernel
     normal_machine_consumers:
     - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
     required_boundaries:
     - BEFORE_MUTATION
     - BEFORE_PUBLICATION
     - BEFORE_COMPLETION_CLAIM
+    state_profiles:
+      BOOTSTRAP_ONLY: BOOTSTRAP_LEGACY
+      DOCTOR_ENFORCED: DOCTOR_LEGACY
+      FAILED_RECOVERY: DENY
+      IMMUNE_MIGRATING: DENY_NORMAL_MATERIAL_AUTHENTICATED_RECOVERY_ONLY
+      IMMUNE_ENFORCED: IMMUNE
+      IMMUNE_QUARANTINED: DENY
+    immune_current_candidate:
+      nonmaterial_build: ALLOWED
+      postcrash_return_semantics: IMPLEMENTED_NONMATERIAL
+      recovery_operation: IMMUNE_MIGRATION_RECOVERY
+      recovery_outcomes: [RESUME_EXACT, ROLLBACK_EXACT_PREPUBLICATION, QUARANTINE]
+      migration_or_cutover: CONDITIONALLY_AUTHORIZED_ONE_TIME_HUMAN_ADMIN_FIRST_ACTIVATION
+      first_activation_directive: AN-ADMIN-IMMUNFORSVAR-FIRST-ACTIVATION-HUMAN-BOOTSTRAP-AUTHORITY-001
+      first_activation_preconditions: EXACT_CANDIDATE_SOURCE_HOST_DOCTOR_PERMIT_AND_EXISTING_DOCTOR_KEY
+      first_activation_key_migration: REUSE_EXISTING_DOCTOR_KEY_WITHOUT_NEW_SECRET
+      production_key_material_in_Source: prohibited
+      producer_self_certification: prohibited
     failure_effect: BLOCK_BOUNDARY_OR_COMPLETION_CLAIM
     new_component: false
   terminal_roadmap_projection:

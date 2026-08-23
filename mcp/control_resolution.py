@@ -1076,6 +1076,16 @@ def attach_context_transition(
             return _block_due_to_context_transition(result, request, "project-manager-control-governor:" + str(exc))
         attached_decision["next_action"] = copy.deepcopy(governance["next_action"])
         attached["project_manager_control_governance"] = governance
+        # PREBUILD FRAGMENT — after project_manager_control_governance is attached.
+        lifecycle_gate = governance.get("lifecycle_mutation_gate") or {}
+        if lifecycle_gate.get("applicable") is True:
+            candidate = lifecycle_gate.get("candidate")
+            if not isinstance(candidate, dict):
+                return _block_due_to_context_transition(
+                    result, request, "lifecycle-mutation-candidate-missing"
+                )
+            attached["actor_lifecycle_mutation_candidate"] = copy.deepcopy(candidate)
+            attached["actor_lifecycle_effect_pending_context_receipt"] = True
         if attached_decision["next_action"].get("owner") == "MACHINE":
             attached["mcp_context_navigation_options_candidate"] = None
             attached["mcp_context_navigation_options"] = None

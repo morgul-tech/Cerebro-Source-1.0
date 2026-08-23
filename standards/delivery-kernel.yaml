@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "2.5"
+  version: "2.6-candidate"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -46,6 +46,54 @@ delivery_kernel:
       allowed_only_when_package_creates_canonical_preflight_implementation: true
       governing_publish_gate_after_install_required: true
     activation_probe_substitutes_for_normal_call_path: false
+
+  immune_assurance:
+    contract_ref: standards/immune-system.yaml
+    continuity_ref: mcp/assurance-continuity.yaml
+    kernel_implementation_ref: tooling/assurance/assurance_kernel.py
+    permit_schema_ref: mcp/immune-material-permit.schema.json
+    receipt_schema_ref: mcp/immune-material-receipt.schema.json
+    attestation_schema_ref: mcp/immune-attestation.schema.json
+    migration_schema_ref: mcp/immune-migration.schema.json
+    normal_material_consumer_identity: STANDARD_DELIVERY
+    state_resolution:
+      BOOTSTRAP_ONLY: LEGACY_BOOTSTRAP_PERMIT
+      DOCTOR_ENFORCED: LEGACY_DOCTOR_PERMIT
+      FAILED_RECOVERY: DENY
+      IMMUNE_MIGRATING: DENY_NORMAL_MATERIAL_RECOVERY_MODE_ONLY
+      IMMUNE_ENFORCED: IMMUNE_PERMIT_AND_INDEPENDENT_ATTESTATION
+      IMMUNE_QUARANTINED: DENY
+      unknown: DENY
+    authenticated_postcrash_recovery:
+      executor: STANDARD_DELIVERY
+      normal_apply_path_during_IMMUNE_MIGRATING: DENY
+      recovery_mode: EXPLICIT_ONLY
+      check_before_resume_or_rollback: REQUIRED_NO_EFFECT
+      consume_after_exact_recovery_boundary: REQUIRED
+      recovery_nonce_namespace: "RECOVERY:"
+      rollback_requires_restored_prestate_before_kernel_return: true
+      resume_requires_deterministic_install_prefix: true
+      uncertain_publication_or_drift: QUARANTINE_REQUIRED
+      secrets_or_secret_paths_in_receipt: PROHIBITED
+    required_before_first_mutation:
+      - exact current kernel state
+      - exact one-shot permit
+      - exact package and touched-path fingerprints
+      - exact affected-scope quarantine fingerprint
+      - immutable intended consequence class
+      - independent attestation
+      - StandardDelivery consumer identity
+    prohibited:
+      - material mutation during IMMUNE_MIGRATING
+      - material mutation during IMMUNE_QUARANTINED
+      - producer self certification
+      - Doctor trust substitution after IMMUNE_ENFORCED
+      - shadow material consumer
+      - key material in Source
+    candidate_boundary:
+      status: NONMATERIAL_NOT_ACTIVATED
+      migration_or_cutover: BLOCKED
+      exact_blocker: CURRENT_EXTERNAL_ANCHOR_AUTHORITY_AND_LIVE_HOST_RECOVERY_PROOF_UNPROVEN
 
   source_hygiene:
     python_validation_execution:

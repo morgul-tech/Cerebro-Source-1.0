@@ -1,42 +1,124 @@
-schema: cerebro-assurance-continuity/v0.2
+schema: cerebro-assurance-continuity/v0.3
 assurance_continuity:
   id: CEREBRO-ASSURANCE-CONTINUITY-001
-  status: ACTIVE
+  status: ACTIVE_WITH_IMMUNE_SUCCESSOR_CANDIDATE_NOT_ACTIVATED
   introduced_by: C02-P001
   new_component: false
   control_owner: MCP
   execution_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+
   assurance_kernel_contract: standards/assurance-kernel.yaml
   assurance_kernel_implementation: tooling/assurance/assurance_kernel.py
   assurance_kernel_permit_schema: mcp/assurance-kernel-permit.schema.json
   assurance_kernel_receipt_schema: mcp/assurance-kernel-receipt.schema.json
   material_edge_permit_required: true
-  doctor_assurance_contract: standards/doctor-assurance.yaml
-  doctor_gate_implementation: tooling/doctor/doctor_gate.py
-  doctor_trust_implementation: tooling/doctor/doctor_trust.py
-  system_doctor_implementation: tooling/doctor/system_doctor.py
-  doctor_trust_object_schema: mcp/doctor-trust-object.schema.json
-  doctor_enforced_material_edge: true
+
+  doctor_assurance:
+    lifecycle: LEGACY_ENTRY_UNTIL_AUTHENTICATED_IMMUNE_MIGRATION
+    contract: standards/doctor-assurance.yaml
+    gate_implementation: tooling/doctor/doctor_gate.py
+    trust_implementation: tooling/doctor/doctor_trust.py
+    system_doctor_implementation: tooling/doctor/system_doctor.py
+    trust_object_schema: mcp/doctor-trust-object.schema.json
+    material_edge_state: DOCTOR_ENFORCED
+    persistent_runtime_role_required_after_IMMUNE_ENFORCED: false
+
+  immune_assurance:
+    status: CANDIDATE_NONMATERIAL_NOT_ACTIVATED
+    contract: standards/immune-system.yaml
+    permit_schema: mcp/immune-material-permit.schema.json
+    receipt_schema: mcp/immune-material-receipt.schema.json
+    attestation_schema: mcp/immune-attestation.schema.json
+    migration_schema: mcp/immune-migration.schema.json
+    attestation_implementation: tooling/assurance/immune_attestation.py
+    material_edge_state: IMMUNE_ENFORCED
+    migration_state: IMMUNE_MIGRATING
+    quarantine_state: IMMUNE_QUARANTINED
+    external_anchor_verifier: EXTERNAL_HOST_BOUND_NOT_SOURCE_OWNED
+    current_external_anchor_authority: UNPROVEN_BLOCK
+    normal_material_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    producer_self_certification: PROHIBITED
+    production_key_material_in_Source: PROHIBITED
+    affected_scope_quarantine_required: true
+    post_effect_readback_required: true
+    postcrash_return_semantics: CANDIDATE_IMPLEMENTED_NOT_ACTIVATED
+    recovery_request_operation: IMMUNE_MIGRATION_RECOVERY
+    recovery_outcomes: [RESUME_EXACT, ROLLBACK_EXACT_PREPUBLICATION, QUARANTINE]
+    entry_nonce_recovery_reuse: DENY
+    uncertain_publication_or_install_drift: QUARANTINE_REQUIRED
+
+  state_resolved_assurance_profile:
+    BOOTSTRAP_ONLY: BOOTSTRAP_LEGACY
+    DOCTOR_ENFORCED: DOCTOR_LEGACY
+    FAILED_RECOVERY: DENY
+    IMMUNE_MIGRATING: DENY_NORMAL_MATERIAL_AUTHENTICATED_RECOVERY_ONLY
+    IMMUNE_ENFORCED: IMMUNE
+    IMMUNE_QUARANTINED: DENY
+    unknown_state: DENY
+
   presentation_consumer: engines/presentation/rules.yaml
+
   principles:
     - governing-contract-follows-control-state-not-conversation-memory
     - conversation-length-session-boundary-and-context-compaction-cannot-weaken-governing-contract
     - claim-strength-must-not-exceed-verified-persistence-state
+    - persistent-Doctor-runtime-role-is-not-irreducible
+    - external-trust-custody-remains-irreducible
+    - state-and-currentness-not-actor-prose-control-the-material-edge
+    - producer-cannot-self-certify
+    - migration-and-quarantine-deny-normal-material-effect
+
   execution_contract_continuity:
-    remains_governing_until: [OPERATION_COMPLETE, BASIS_STALE, MCP_EXPLICIT_RERESOLUTION]
-    boundary_revalidation_required: [BEFORE_ARTIFACT_DESIGN, BEFORE_HUMAN_HANDOFF, BEFORE_MUTATION, BEFORE_PUBLICATION, BEFORE_COMPLETION_CLAIM]
+    remains_governing_until:
+      - OPERATION_COMPLETE
+      - BASIS_STALE
+      - MCP_EXPLICIT_RERESOLUTION
+    boundary_revalidation_required:
+      - BEFORE_ARTIFACT_DESIGN
+      - BEFORE_HUMAN_HANDOFF
+      - BEFORE_MUTATION
+      - BEFORE_PUBLICATION
+      - BEFORE_COMPLETION_CLAIM
+
   persistence_effect_binding:
     model: EFFECT_CLASS_NOT_LITERAL_COMMAND_WORD
     persistent_effect_class: PERSISTENT_CEREBRO_STATE
-    required_sequence: [RESOLVE_GOVERNING_PERSISTENCE_AND_DELIVERY_CONTRACT, EXECUTE_REQUIRED_PERSISTENCE_PATH, VERIFY_DURABLE_RESULT, ALLOW_PERSISTENT_COMPLETION_CLAIM]
+    required_sequence:
+      - RESOLVE_GOVERNING_PERSISTENCE_AND_DELIVERY_CONTRACT
+      - RESOLVE_ASSURANCE_PROFILE_FROM_CURRENT_KERNEL_STATE
+      - CONSUME_EXACT_CURRENT_PERMIT_AND_INDEPENDENT_ATTESTATION
+      - EXECUTE_REQUIRED_PERSISTENCE_PATH
+      - VERIFY_DURABLE_RESULT_AND_POST_EFFECT_READBACK
+      - ALLOW_PERSISTENT_COMPLETION_CLAIM
     chat_state_satisfies_persistence: false
     loose_user_artifact_satisfies_source_persistence: false
+
   standard_handoff:
     delivery_profile: STANDARD
-    exact_surface: {bundle_zip: 1, launcher_powershell: 1, generated_copyable_command: 1}
+    exact_surface:
+      bundle_zip: 1
+      launcher_powershell: 1
+      generated_copyable_command: 1
     alternate_handoff: PROHIBITED
     direct_remote_mutation_substitute: PROHIBITED
     handoff_assurance_required: true
+
   completion_claim_integrity:
     presentation_may_infer_completion_without_evidence: false
-    persistent_completion_requires: [SOURCE_EQUALITY_VERIFIED, CLEAN_WORKING_TREE, CEREBRO_SYNC_VERIFIED]
+    producer_scope_may_close_while_consequence_blocked: true
+    persistent_completion_requires:
+      - SOURCE_EQUALITY_VERIFIED
+      - CLEAN_WORKING_TREE
+      - CEREBRO_SYNC_VERIFIED
+      - POST_EFFECT_READBACK_VERIFIED
+
+  ingress722_candidate_boundary:
+    source_head: 4469eddccc8db213bb923c403c26c36e30309575
+    targetset: 15
+    producer_scope_target: SCOPE_CLOSED
+    intended_consequence_class: SOURCE_EFFECT
+    consequence_state: BLOCKED
+    exact_blocker: CURRENT_EXTERNAL_ANCHOR_AUTHORITY_AND_LIVE_HOST_RECOVERY_PROOF_UNPROVEN
+    migration_or_cutover: PROHIBITED
+    Source_mutation: NO
+    Runtime_mutation: NO
