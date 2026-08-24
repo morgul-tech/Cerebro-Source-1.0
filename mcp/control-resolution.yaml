@@ -1,7 +1,7 @@
 schema: cerebro-mcp-control-resolution-contract/v1
 control_resolution:
   id: CEREBRO-MCP-CONTROL-RESOLUTION-001
-  version: "1.3.0"
+  version: "1.4.0"
   status: ACTIVE
   owner: MCP
   implementation_ref: mcp/control_resolution.py
@@ -53,6 +53,27 @@ control_resolution:
     non_material_control:
       path: canonical_wrapper_to_validated_adaptive_logic
     final_decision_owner: MCP
+  immune_material_permit_projection:
+    status: ACTIVE
+    owner: MCP
+    implementation_ref: mcp/control_resolution.py#project_immune_material_permit
+    validation_ref: mcp/control_resolution.py#validate_projected_immune_material_permit
+    authority_model: DETERMINISTIC_SUBORDINATE_PROJECTION_OF_CONSUMED_MATERIAL_EXECUTE_DECISION
+    normal_consumer: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
+    material_consumer_identity: STANDARD_DELIVERY
+    independent_attestation_for_ordinary_material: NOT_REQUIRED
+    source_of_authority:
+      - fresh_PASS_MATERIAL_EXECUTE_preflight_receipt
+      - fresh_consumed_material_preflight_evidence
+      - exact_current_Source_head
+      - sealed_STANDARD_delivery_control_binding
+      - exact_manifest_package_path_scope_and_producer_binding
+      - current_assurance_authority_epoch
+    deterministic_one_shot: true
+    manual_or_prepositioned_permit: DENY
+    non_MATERIAL_EXECUTE_projection: DENY
+    projection_may_recompute_or_override_MCP_decision: false
+    migration_and_recovery_attestation_paths: PRESERVED
   delivery_profile_resolution:
     owner: MCP
     input_namespace: delivery_profile
@@ -159,6 +180,10 @@ control_resolution:
     - WORKTREE_REPRESENTATION_DOES_NOT_REDEFINE_GIT_BLOB_IDENTITY
     - MATERIAL_PREFLIGHT_BLOCK_IS_FINAL
     - MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED
+    - IMMUNE_PERMIT_IS_AN_EXACT_SUBORDINATE_PROJECTION_OF_FRESH_CONSUMED_MATERIAL_EXECUTE
+    - IMMUNE_PERMIT_PROJECTION_CANNOT_CREATE_OR_RECOMPUTE_CONTROL_AUTHORITY
+    - ORDINARY_IMMUNE_MATERIAL_DOES_NOT_REQUIRE_INDEPENDENT_ATTESTATION
+    - STANDARD_DELIVERY_IS_THE_ONLY_ORDINARY_IMMUNE_PERMIT_CONSUMER
     - DIRECT_VALIDATED_LOGIC_REMAINS_NON_LIVE
     - ONE_CANONICAL_MCP_CONTROL_RESOLUTION_SURFACE
     - MCP_IS_THE_ONLY_DELIVERY_PROFILE_DECISION_OWNER
@@ -192,6 +217,10 @@ control_resolution:
     - material_preflight_precedes_adaptive_resolution
     - preflight_BLOCK_cannot_be_overridden
     - incomplete_or_failed_material_preflight_fails_closed_to_canonical_BLOCK
+    - fresh_consumed_MATERIAL_EXECUTE_projects_one_exact_current_Immune_permit
+    - stale_or_mismatched_preflight_evidence_cannot_project_or_validate_a_permit
+    - manually_dropped_or_non_MCP_projected_permit_is_rejected
+    - exact_producer_delivery_binding_package_paths_scope_epoch_and_replay_are_enforced
     - non_material_path_is_exercised
     - high_value_human_boundary_is_preserved
     - bounded_reorientation_remediation_is_preserved

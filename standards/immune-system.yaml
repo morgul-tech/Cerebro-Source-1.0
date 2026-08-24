@@ -1,8 +1,8 @@
 schema: cerebro-immune-system/v1
 immune_system:
   id: CEREBRO-IMMUNE-SYSTEM-001
-  version: "0.1-candidate"
-  status: FIRST_ACTIVATION_INGRESS785_CONDITIONALLY_AUTHORIZED
+  version: "0.2"
+  status: ACTIVE_MCP_BOUND_ONE_SHOT_PERMIT
   kind: ACTORLESS_ASSURANCE_CONTROL
   definitional_authority: Cerebro Source 1.0
   control_policy_owner: MCP
@@ -12,17 +12,17 @@ immune_system:
   external_trust_custody_required: true
 
   purpose: >
-    Replace persistent Doctor runtime dependence with an actorless, state-bound,
-    independently attested material assurance path while preserving exact Source
-    currentness, affected-scope quarantine, rollback/fail-forward, one lawful
-    material consumer and post-effect readback.
+    Provide actorless, state-bound material assurance by consuming one exact
+    deterministic permit projected from the fresh consumed MCP MATERIAL_EXECUTE
+    decision, while preserving exact Source currentness, affected-scope quarantine,
+    rollback/fail-forward, one lawful material consumer and post-effect readback.
 
   current_candidate_boundary:
-    source_head: 4469eddccc8db213bb923c403c26c36e30309575
-    targetset_count: 15
-    candidate_build: LAWFUL_NONMATERIAL
-    migration_or_cutover: CONDITIONALLY_AUTHORIZED_BY_INGRESS785_HUMAN_BOOTSTRAP
-    exact_blocker: CURRENT_DOCTOR_KEY_BINDING_AND_LIVE_SOURCE_EQUALITY_REQUIRED
+    exact11_base_source_head: ceff87e29fd2295534ce3eeb8e9ec32180bb0b5b
+    targetset_count: 11
+    ordinary_material_profile: MCP_BOUND_ONE_SHOT_IMMUNE_PERMIT
+    migration_or_cutover: UNCHANGED
+    exact11_authority: PM-IMMUNFORSVAR-EXACT11-HUMAN-APPROVED-IMPLEMENTATION-PACKET-20260824-001
     no_secret_edge_opened: true
     no_new_trust_root: true
     no_Doctor_reactivation: true
@@ -65,7 +65,9 @@ immune_system:
       Doctor_receipt_required: false
       Doctor_trust_object_required: false
       immune_permit_required: true
-      independent_attestation_required: true
+      exact_fresh_consumed_MCP_material_preflight_binding_required: true
+      independent_attestation_required_for_ordinary_material: false
+      migration_and_recovery_attestation_compatibility: PRESERVED
       exact_quarantine_scope_required: true
       standard_delivery_only: true
     IMMUNE_QUARANTINED:
@@ -120,16 +122,30 @@ immune_system:
       - nonce
       - authority_epoch
       - producer_identity
-      - attestation_path
+      - material_consumer_identity
+      - mcp_control_resolution_surface
+      - mcp_control_decision_id
+      - mcp_control_decision_basis_fingerprint
+      - material_preflight_receipt_sha256
+      - material_preflight_consumption_sha256
+      - material_preflight_basis_fingerprint
+      - sealed_delivery_control_binding_sha256
+      - projection_fingerprint
+    projection_owner: MCP
+    projection_implementation_ref: mcp/control_resolution.py#project_immune_material_permit
+    revalidation_implementation_ref: mcp/control_resolution.py#validate_projected_immune_material_permit
+    projection_authority: SUBORDINATE_TO_EXACT_CONSUMED_MATERIAL_EXECUTE_DECISION
+    manually_prepositioned_permit: DENY
     one_shot: true
     exact_generation_and_epoch: REQUIRED
+    sealed_epoch_selector: CURRENT_RESOLVES_ONCE_TO_EXACT_KERNEL_EPOCH_DURING_PROJECTION
     stale_source_head: DENY
     wrong_package: DENY
     wrong_paths: DENY
     wrong_quarantine_scope: DENY
     replay: DENY
 
-  independent_attestation:
+  migration_and_recovery_independent_attestation:
     schema_ref: mcp/immune-attestation.schema.json
     implementation_ref: tooling/assurance/immune_attestation.py
     algorithm: HMAC-SHA256
@@ -137,15 +153,14 @@ immune_system:
     producer_self_attestation: PROHIBITED
     attestor_identity_must_differ_from_producer: true
     implementation_and_key_fingerprints_state_bound: true
+    ordinary_material_permit_authority: NONE
     subject_exactly_binds:
-      - permit_id
-      - campaign_id
-      - source_pre_head
-      - package_sha256
-      - touched_paths_sha256
+      - migration_id
+      - migration_subject_sha256
+      - entry_authorization_fingerprint
+      - mcp_recovery_decision_sha256
+      - current_host_proof_sha256
       - quarantine_scope_sha256
-      - risk_profile
-      - intended_consequence_class
       - authority_epoch
       - producer_identity
 
@@ -174,25 +189,29 @@ immune_system:
     current_candidate_blocker: EXTERNAL_ANCHOR_AUTHORITY_AND_VERIFIER_INTERFACE_UNPROVEN
 
   targetset:
-    create:
+    create: []
+    modify:
+      - mcp/control-resolution.yaml
+      - mcp/control_resolution.py
+      - standards/assurance-kernel.yaml
       - standards/immune-system.yaml
+      - mcp/assurance-continuity.yaml
       - mcp/immune-material-permit.schema.json
       - mcp/immune-material-receipt.schema.json
-      - mcp/immune-attestation.schema.json
-      - mcp/immune-migration.schema.json
-      - tooling/assurance/immune_attestation.py
-    modify:
-      - standards/assurance-kernel.yaml
       - tooling/assurance/assurance_kernel.py
       - tooling/validator/assurance_kernel_validation.py
-      - mcp/assurance-continuity.yaml
-      - mcp/manifest.yaml
       - standards/delivery-kernel.yaml
       - tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
-      - tooling/validator/checks.yaml
-      - tooling/validator/contract-activation-bindings.json
-    dropped_from_prior_baseline:
-      - standards/change-delivery.yaml
+    delete: []
+    explicitly_unchanged:
+      - mcp/material_commitment_preflight.py
+      - mcp/manifest.yaml
+      - standards/mcp.yaml
+      - tooling/assurance/component.yaml
+      - tooling/delivery/component.yaml
+      - tooling/validator/assurance_continuity.py
+      - tooling/assurance/immune_attestation.py
+      - mcp/immune-attestation.schema.json
 
   serialization:
     - ingress722_nonmaterial_candidate
@@ -205,7 +224,9 @@ immune_system:
     - EXTERNAL_TRUST_CUSTODY_REMAINS_IRREDUCIBLE
     - CURRENT_EXTERNAL_ANCHOR_AUTHORITY_MUST_BE_PROVEN_NOT_INFERRED
     - IMMUNE_MIGRATING_DENIES_NORMAL_MATERIAL_EFFECT
-    - IMMUNE_ENFORCED_REQUIRES_EXACT_ONE_SHOT_PERMIT_AND_INDEPENDENT_ATTESTATION
+    - IMMUNE_ENFORCED_REQUIRES_EXACT_ONE_SHOT_MCP_BOUND_PERMIT
+    - ORDINARY_IMMUNE_MATERIAL_DOES_NOT_REQUIRE_INDEPENDENT_ATTESTATION
+    - MIGRATION_AND_RECOVERY_ATTESTATION_COMPATIBILITY_IS_PRESERVED
     - STANDARD_DELIVERY_IS_THE_ONLY_NORMAL_MATERIAL_CONSUMER
     - AFFECTED_SCOPE_QUARANTINE_NOT_SYSTEMWIDE_FREEZE
     - PRODUCER_CANNOT_SELF_CERTIFY

@@ -343,10 +343,10 @@ function New-VerifiedFullRecoverySnapshot {
         foreach($item in $inventory){
             $sourcePath=Join-Path $sourceFull (([string]$item.path)-replace '/','\')
             $entry=$archive.CreateEntry([string]$item.path,[IO.Compression.CompressionLevel]::Optimal)
-            $input=[IO.File]::OpenRead($sourcePath)
+            $sourceStream=[IO.File]::OpenRead($sourcePath)
             $output=$entry.Open()
-            try {$input.CopyTo($output)}
-            finally {$output.Dispose();$input.Dispose()}
+            try {$sourceStream.CopyTo($output)}
+            finally {$output.Dispose();$sourceStream.Dispose()}
         }
     }
     finally {$archive.Dispose()}
@@ -664,6 +664,8 @@ function Invoke-MaterialCommitmentPreflightGate {
     $resolvePath=[IO.Path]::GetTempFileName()
     $receiptPath=[IO.Path]::GetTempFileName()
     $consumePath=[IO.Path]::GetTempFileName()
+    $requestEvidence=''
+    $receiptEvidence=''
     try {
         [IO.File]::WriteAllText($requestPath,(($request | ConvertTo-Json -Depth 32)+"`r`n"),[Text.UTF8Encoding]::new($false))
         $resolveArgs=@($python.PrefixArgs)+@($implementation,'resolve','--request',$requestPath,'--source-root',$WorkingSourcePath,'--output',$resolvePath)
@@ -692,9 +694,21 @@ function Invoke-MaterialCommitmentPreflightGate {
         if(-not[string]::IsNullOrWhiteSpace($EvidencePath)){
             $parent=Split-Path -Parent $EvidencePath
             if(-not[string]::IsNullOrWhiteSpace($parent)){[IO.Directory]::CreateDirectory($parent) | Out-Null}
+            $requestEvidence=[IO.Path]::ChangeExtension($EvidencePath,'.request.json')
+            $receiptEvidence=[IO.Path]::ChangeExtension($EvidencePath,'.receipt.json')
+            [IO.File]::Copy($requestPath,$requestEvidence,$true)
+            [IO.File]::Copy($receiptPath,$receiptEvidence,$true)
             [IO.File]::Copy($consumePath,$EvidencePath,$true)
         }
-        return [pscustomobject]@{state='PASS';stage=$Stage;receipt_id=[string]$resolved.receipt.control_decision_ref;evidence_path=$EvidencePath}
+        return [pscustomobject]@{
+            state='PASS'
+            stage=$Stage
+            receipt_id=[string]$resolved.receipt.control_decision_ref
+            basis_fingerprint=[string]$resolved.receipt.basis_fingerprint
+            request_path=$requestEvidence
+            receipt_path=$receiptEvidence
+            consumption_path=$EvidencePath
+        }
     }
     finally {
         Remove-Item -LiteralPath $requestPath,$resolvePath,$receiptPath,$consumePath -Force -ErrorAction SilentlyContinue
@@ -718,13 +732,13 @@ function Invoke-AssuranceContinuityGate {
     $manifestPath=Join-Path $BundleRoot 'manifest.json'
     $evidencePath=''
     try{
-        $args=@($python.PrefixArgs)+@($validator,'validate','--manifest',$manifestPath,'--stage',$Stage)
+        $preflightArguments=@($python.PrefixArgs)+@($validator,'validate','--manifest',$manifestPath,'--stage',$Stage)
         if($Evidence.Count -gt 0){
             $evidencePath=[IO.Path]::GetTempFileName()
             [IO.File]::WriteAllText($evidencePath,(($Evidence|ConvertTo-Json -Depth 8)+"`r`n"),[Text.UTF8Encoding]::new($false))
-            $args += @('--evidence',$evidencePath)
+            $preflightArguments += @('--evidence',$evidencePath)
         }
-        $native=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $args -AllowedExitCodes @(0,1)
+        $native=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $preflightArguments -AllowedExitCodes @(0,1)
         try{$result=$native.Stdout|ConvertFrom-Json}catch{throw ('ASSURANCE_CONTINUITY_OUTPUT_INVALID:{0}' -f $Stage)}
         if($native.ExitCode -ne 0 -or [string]$result.result -ne 'PASS'){
             $State.FailureFamily='ASSURANCE_CONTINUITY'
@@ -733,6 +747,32 @@ function Invoke-AssuranceContinuityGate {
         return $result
     }
     finally{if(-not[string]::IsNullOrWhiteSpace($evidencePath)){Remove-Item -LiteralPath $evidencePath -Force -ErrorAction SilentlyContinue}}
+}
+
+function Resolve-SealedCandidateImplementation {
+    param(
+        [Parameter(Mandatory=$true)]$PatchManifest,
+        [Parameter(Mandatory=$true)][string]$RelativePath,
+        [Parameter(Mandatory=$true)][string]$InstalledPath
+    )
+    $normalized=$RelativePath.Replace('\','/')
+    $candidateMatches=@($PatchManifest.files | Where-Object { ([string]$_.path).Replace('\','/') -eq $normalized })
+    if($candidateMatches.Count -eq 0){return $InstalledPath}
+    if($candidateMatches.Count -ne 1){
+        $State.FailureFamily='SEALED_CANDIDATE_IMPLEMENTATION'
+        throw ('SEALED_CANDIDATE_IMPLEMENTATION_CARDINALITY:{0}' -f $normalized)
+    }
+    $entry=$candidateMatches[0]
+    if(@('create','replace') -notcontains [string]$entry.operation){
+        $State.FailureFamily='SEALED_CANDIDATE_IMPLEMENTATION'
+        throw ('SEALED_CANDIDATE_IMPLEMENTATION_OPERATION_INVALID:{0}' -f $normalized)
+    }
+    $candidate=Join-Path $BundleRoot ([string]$entry.payload_path)
+    if(-not(Test-Path -LiteralPath $candidate -PathType Leaf) -or (Get-Sha256 $candidate) -ne [string]$entry.sha256){
+        $State.FailureFamily='SEALED_CANDIDATE_IMPLEMENTATION'
+        throw ('SEALED_CANDIDATE_IMPLEMENTATION_HASH_INVALID:{0}' -f $normalized)
+    }
+    return $candidate
 }
 
 function Get-DeclaredActivationProbes {
@@ -946,8 +986,8 @@ function Invoke-DeclaredActivationProbes {
         $evidenceParent=Split-Path -Parent $evidencePath
         if(-not[string]::IsNullOrWhiteSpace($evidenceParent)){[IO.Directory]::CreateDirectory($evidenceParent) | Out-Null}
         Remove-Item -LiteralPath $evidencePath -Force -ErrorAction SilentlyContinue
-        $args=@($python.PrefixArgs)+@($implementation,'activation-probe','--source-root',$WorkingSourcePath,'--output',$evidencePath)
-        try {$probeResult=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $args}
+        $activationArguments=@($python.PrefixArgs)+@($implementation,'activation-probe','--source-root',$WorkingSourcePath,'--output',$evidencePath)
+        try {$probeResult=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $activationArguments}
         catch {
             $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
             throw
@@ -1039,10 +1079,10 @@ function Invoke-SelfTest {
             'delivery_profile_resolution_is_mcp_owned',
             'delivery_profile_namespaces_remain_distinct'
         )) {
-            $matches=@($adapterEvidence.tests|Where-Object{
+            $adapterMatches=@($adapterEvidence.tests|Where-Object{
                 [string]$_.name -eq $requiredTest -and [string]$_.result -eq 'PASS'
             })
-            if($matches.Count -ne 1){
+            if($adapterMatches.Count -ne 1){
                 throw ('MCP_DELIVERY_PROFILE_ADAPTER_CANARY_FAILED:{0}' -f $requiredTest)
             }
         }
@@ -1185,9 +1225,9 @@ function Get-KernelCandidateIdentity {
     [string[]]$orderedPaths=Get-KernelOrdinalStrings -Values @($PatchManifest.files | ForEach-Object {[string]$_.path})
     $rows=@(
         foreach($path in $orderedPaths){
-            $matches=@($PatchManifest.files | Where-Object {[string]$_.path -eq $path})
-            if($matches.Count -ne 1){throw ('KERNEL_CANDIDATE_PATH_CARDINALITY_INVALID:{0}:{1}' -f $path,$matches.Count)}
-            $item=$matches[0]
+            $manifestMatches=@($PatchManifest.files | Where-Object {[string]$_.path -eq $path})
+            if($manifestMatches.Count -ne 1){throw ('KERNEL_CANDIDATE_PATH_CARDINALITY_INVALID:{0}:{1}' -f $path,$manifestMatches.Count)}
+            $item=$manifestMatches[0]
             ('{0}|{1}|{2}|{3}|{4}' -f
                 [string]$item.path,
                 [string](Get-KernelOptionalProperty $item 'operation' ''),
@@ -1239,6 +1279,106 @@ function Assert-TargetRuntimeValidationReceipt {
     }
 }
 
+function Invoke-CandidateActivationProducerSweep {
+    param(
+        [Parameter(Mandatory=$true)][string]$CandidateRoot,
+        [Parameter(Mandatory=$true)]$PatchManifest
+    )
+
+    $python=Resolve-PythonRunner
+    $sweepRoot=Join-Path ([IO.Path]::GetTempPath()) ('CerebroForwardSweep-'+[guid]::NewGuid().ToString('N'))
+    [IO.Directory]::CreateDirectory($sweepRoot)|Out-Null
+    $results=@()
+    $proved=@{}
+    try {
+        foreach($probe in @(Get-DeclaredActivationProbes -PatchManifest $PatchManifest)){
+            $probeId=[string]$probe.id
+            $implementation=Join-Path $CandidateRoot (([string]$probe.implementation_path)-replace '/','\')
+            $output=Join-Path $sweepRoot ($probeId+'.json')
+            $row=[ordered]@{id=$probeId;result='FAIL';failure_family='';detail='';proves_bindings=@()}
+            try {
+                if(-not(Test-Path -LiteralPath $implementation -PathType Leaf)){
+                    throw ('ACTIVATION_PRODUCER_MISSING:{0}' -f [string]$probe.implementation_path)
+                }
+                $probeArguments=@($python.PrefixArgs)+@($implementation,'activation-probe','--source-root',$CandidateRoot,'--output',$output)
+                $native=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $probeArguments
+                if($native.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $output -PathType Leaf)){
+                    throw ('ACTIVATION_PRODUCER_EXECUTION_FAILED:{0}' -f $probeId)
+                }
+                $evidence=Get-Content -LiteralPath $output -Raw|ConvertFrom-Json
+                if([string]$evidence.result -ne 'PASS'){
+                    throw ('ACTIVATION_PRODUCER_RESULT_NOT_PASS:{0}' -f $probeId)
+                }
+                if([string]$evidence.schema -ne [string]$probe.required_schema){
+                    throw ('ACTIVATION_PRODUCER_SCHEMA_MISMATCH:{0}:expected={1}:actual={2}' -f $probeId,[string]$probe.required_schema,[string]$evidence.schema)
+                }
+                $bindings=@()
+                if($evidence.PSObject.Properties.Name -contains 'proves_bindings'){$bindings+=@($evidence.proves_bindings)}
+                if($evidence.PSObject.Properties.Name -contains 'binding_id' -and -not[string]::IsNullOrWhiteSpace([string]$evidence.binding_id)){$bindings+=@([string]$evidence.binding_id)}
+                foreach($bindingId in @($bindings|Select-Object -Unique)){$proved[[string]$bindingId]=$probeId}
+                $row.result='PASS'
+                $row.proves_bindings=@($bindings|Select-Object -Unique)
+            }
+            catch {
+                $row.failure_family='ACTIVATION_PRODUCER_FAILURE'
+                $row.detail=$_.Exception.Message
+            }
+            $results += [pscustomobject]$row
+        }
+
+        # Continue past producer failures and inventory every impacted runtime binding.
+        $registryPath=Join-Path $CandidateRoot 'tooling\validator\contract-activation-bindings.json'
+        $registry=Get-Content -LiteralPath $registryPath -Raw|ConvertFrom-Json
+        $changed=@{}
+        foreach($entry in @($PatchManifest.files)){$changed[[string]$entry.path]=$true}
+        foreach($binding in @($registry.bindings)){
+            if([string]$binding.wiring_proof_kind -ne 'RUNTIME_EVIDENCE'){continue}
+            $bindingId=[string]$binding.id
+            $basis=@($binding.runtime_evidence.basis_files|ForEach-Object{[string]$_})
+            $impacted=@($basis|Where-Object{$changed.ContainsKey($_)})
+            if($impacted.Count -eq 0){continue}
+            if($bindingId -eq 'STANDARD_DELIVERY_MATERIAL_PREFLIGHT_CALL_PATH'){continue}
+            if(-not$proved.ContainsKey($bindingId)){
+                $results += [pscustomobject][ordered]@{
+                    id=$bindingId
+                    result='FAIL'
+                    failure_family='DEPENDENCY_IMPACT_CLOSURE_INCOMPLETE_BEFORE_HANDOFF'
+                    detail=('No successful declared producer covers impacted binding; changed_basis={0}' -f ($impacted -join ','))
+                    proves_bindings=@()
+                }
+            }
+        }
+
+        $failures=@($results|Where-Object{[string]$_.result -ne 'PASS'})
+        $report=[ordered]@{
+            schema='cerebro-forward-failure-sweep/v1'
+            result=if($failures.Count -eq 0){'PASS'}else{'FAIL'}
+            attempt_id=$AttemptId
+            patch_id=[string]$PatchManifest.patch_id
+            candidate_identity=(Get-KernelCandidateIdentity -PatchManifest $PatchManifest)
+            producer_results=@($results)
+            failure_families=@($failures|ForEach-Object{[string]$_.failure_family}|Select-Object -Unique)
+            failures=@($failures)
+            completed_at_utc=[DateTime]::UtcNow.ToString('o')
+        }
+        $reportRoot='D:\Cerebro\Run\Evidence\ForwardSweeps'
+        [IO.Directory]::CreateDirectory($reportRoot)|Out-Null
+        $reportPath=Join-Path $reportRoot ('CEREBRO_FORWARD_SWEEP_'+$AttemptId+'.json')
+        [IO.File]::WriteAllText($reportPath,(($report|ConvertTo-Json -Depth 64)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        Write-Host ('FORWARD_SWEEP_REPORT={0}' -f $reportPath)
+        Write-Host ('FORWARD_SWEEP_FAILURE_COUNT={0}' -f $failures.Count)
+        if($failures.Count -gt 0){
+            $State.FailureFamily='FORWARD_FAILURE_SWEEP'
+            $summary=@($failures|ForEach-Object{('{0}|{1}|{2}' -f [string]$_.failure_family,[string]$_.id,[string]$_.detail)}) -join '; '
+            throw ('FORWARD_FAILURE_SWEEP_FAILED count={0}; findings={1}' -f $failures.Count,$summary)
+        }
+        return $reportPath
+    }
+    finally {
+        if(Test-Path -LiteralPath $sweepRoot){Remove-Item -LiteralPath $sweepRoot -Recurse -Force -ErrorAction SilentlyContinue}
+    }
+}
+
 function Invoke-RequiredTargetRuntimeValidation {
     param($PatchManifest)
     $spec=Get-KernelOptionalProperty -Object $PatchManifest -Name 'target_runtime_validation' -Default $null
@@ -1249,11 +1389,6 @@ function Invoke-RequiredTargetRuntimeValidation {
         return $TargetRuntimeValidationReceipt
     }
 
-    $validator=Join-Path $WorkingSourcePath 'tooling\validator\target-runtime\Invoke-CerebroWindowsPowerShellValidation.ps1'
-    if(-not(Test-Path -LiteralPath $validator -PathType Leaf)){
-        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
-        throw 'TARGET_RUNTIME_VALIDATOR_NOT_FOUND'
-    }
     $capsuleRoot=Join-Path $BundleRoot 'capsule'
     if(-not(Test-Path -LiteralPath (Join-Path $capsuleRoot 'capsule.json') -PathType Leaf)){
         $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
@@ -1264,14 +1399,27 @@ function Invoke-RequiredTargetRuntimeValidation {
     $receiptPath=Join-Path $receiptRoot ('CEREBRO_TARGET_RUNTIME_'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.json')
     $manifestPath=Join-Path $BundleRoot 'manifest.json'
     $State.ReachedStage='TARGET_RUNTIME_VALIDATION_EXECUTE'
+    $candidateRoot=''
     try {
-        $trvOutput=& $validator -CandidateRoot $WorkingSourcePath -ManifestPath $manifestPath `
+        $candidateRoot=New-SealedCandidateSourceView -PatchManifest $PatchManifest
+        [void](Invoke-CandidateActivationProducerSweep -CandidateRoot $candidateRoot -PatchManifest $PatchManifest)
+        $validator=Join-Path $candidateRoot 'tooling\validator\target-runtime\Invoke-CerebroWindowsPowerShellValidation.ps1'
+        if(-not(Test-Path -LiteralPath $validator -PathType Leaf)){
+            $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+            throw 'TARGET_RUNTIME_VALIDATOR_NOT_FOUND_IN_EXACT_CANDIDATE'
+        }
+        $trvOutput=& $validator -CandidateRoot $candidateRoot -ManifestPath $manifestPath `
             -CapsuleRoot $capsuleRoot -RepositoryRoot $WorkingSourcePath `
             -OutputPath $receiptPath -ProfileId ([string]$spec.profile)
     }
     catch {
         $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
         throw
+    }
+    finally {
+        if(-not[string]::IsNullOrWhiteSpace($candidateRoot) -and (Test-Path -LiteralPath $candidateRoot)){
+            Remove-Item -LiteralPath $candidateRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
     Assert-TargetRuntimeValidationReceipt -PatchManifest $PatchManifest -ReceiptPath $receiptPath
     $State.TargetRuntimeValidationReceipt=$receiptPath
@@ -1320,11 +1468,11 @@ function Invoke-ImmuneMigrationRecoveryControl {
     }
     $runner=Resolve-PythonRunner
     $command=if($Consume){'recover-immune-migration'}else{'check-immune-migration-recovery'}
-    $args=@($runner.PrefixArgs)+@(
+    $recoveryArguments=@($runner.PrefixArgs)+@(
         $assuranceKernel,'--state',$assuranceState,$command,
         '--recovery',$RecoveryRequestPath,'--expected-epoch',[string]$expectedEpoch
     )
-    $native=Invoke-NativeCommand -Executable $runner.Executable -ArgumentList $args -AllowedExitCodes @(0,3)
+    $native=Invoke-NativeCommand -Executable $runner.Executable -ArgumentList $recoveryArguments -AllowedExitCodes @(0,3)
     try{$receipt=$native.Stdout|ConvertFrom-Json}catch{
         $State.FailureFamily='IMMUNE_RECOVERY_RECEIPT_INVALID'; throw 'IMMUNE_RECOVERY_RECEIPT_INVALID'
     }
@@ -1501,9 +1649,14 @@ function Invoke-Apply {
         $dryRunLease=('--force-with-lease=refs/heads/{0}:{1}' -f [string]$State.Manifest.branch,$remoteHead)
         [void](Invoke-Git -GitPath $gitPath -ArgumentList @('push','--dry-run',$dryRunLease,'origin',('HEAD:refs/heads/{0}' -f [string]$State.Manifest.branch)))
 
+        # The exact candidate is validated in the required Windows runtime before
+        # authoritative Source mutation. This sweep executes every declared
+        # activation producer, the actual CAC consumer, and three DEEP campaigns.
+        [void](Invoke-RequiredTargetRuntimeValidation -PatchManifest $State.Manifest)
+
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_EXECUTE'
         $executeEvidence=Join-Path 'D:\Cerebro\Run\Evidence\Audits' 'CEREBRO_STANDARD_MATERIAL_EXECUTE_PREFLIGHT.json'
-        [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'MATERIAL_EXECUTE' -SourceIdentity $localHead -EvidencePath $executeEvidence -AllowBootstrapDefer)
+        $materialExecutePreflight=Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'MATERIAL_EXECUTE' -SourceIdentity $localHead -EvidencePath $executeEvidence -AllowBootstrapDefer
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'MATERIAL_EXECUTE'
         [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_MUTATION')
 
@@ -1538,10 +1691,9 @@ function Invoke-Apply {
         }
 
         $State.ReachedStage = 'ASSURANCE_KERNEL_PERMIT'
-        $assuranceKernel = Join-Path $WorkingSourcePath 'tooling\assurance\assurance_kernel.py'
+        $installedAssuranceKernel = Join-Path $WorkingSourcePath 'tooling\assurance\assurance_kernel.py'
         $assuranceState = 'D:\Cerebro\Run\State\Assurance\kernel-state.json'
-        $assurancePermit = 'D:\Cerebro\Run\State\Assurance\current-permit.json'
-        if(-not(Test-Path -LiteralPath $assuranceKernel -PathType Leaf)){
+        if(-not(Test-Path -LiteralPath $installedAssuranceKernel -PathType Leaf)){
             $State.FailureFamily='ASSURANCE_KERNEL_MISSING'
             throw 'ASSURANCE_KERNEL_IMPLEMENTATION_NOT_FOUND'
         }
@@ -1549,16 +1701,88 @@ function Invoke-Apply {
             $State.FailureFamily='ASSURANCE_KERNEL_STATE_MISSING'
             throw 'ASSURANCE_KERNEL_STATE_NOT_FOUND'
         }
-        if(-not(Test-Path -LiteralPath $assurancePermit -PathType Leaf)){
-            $State.FailureFamily='ASSURANCE_KERNEL_PERMIT_MISSING'
-            throw 'ASSURANCE_KERNEL_PERMIT_NOT_FOUND'
+        try{$assuranceStateValue=Get-Content -LiteralPath $assuranceState -Raw | ConvertFrom-Json}catch{
+            $State.FailureFamily='ASSURANCE_KERNEL_STATE_INVALID'
+            throw 'ASSURANCE_KERNEL_STATE_INVALID'
+        }
+        $kernelStateBefore=[string]$assuranceStateValue.state
+        if($kernelStateBefore -eq 'IMMUNE_MIGRATING'){
+            $State.FailureFamily='IMMUNE_MIGRATION_NOT_FINALIZED'
+            throw 'IMMUNE_MIGRATION_NOT_FINALIZED'
+        }
+        if($kernelStateBefore -eq 'IMMUNE_QUARANTINED'){
+            $State.FailureFamily='IMMUNE_QUARANTINED'
+            throw 'IMMUNE_QUARANTINED'
         }
         $assurancePython=Resolve-PythonRunner
         $assuranceManifest=Join-Path $BundleRoot 'manifest.json'
-        $assuranceArgs=@($assurancePython.PrefixArgs)+@(
-            $assuranceKernel,'--state',$assuranceState,'consume-manifest-permit',
-            '--permit',$assurancePermit,'--manifest',$assuranceManifest,'--source-head',$localHead
-        )
+        $assuranceKernel=Resolve-SealedCandidateImplementation -PatchManifest $State.Manifest `
+            -RelativePath 'tooling/assurance/assurance_kernel.py' -InstalledPath $installedAssuranceKernel
+
+        if($kernelStateBefore -eq 'IMMUNE_ENFORCED'){
+            if([string]$materialExecutePreflight.state -ne 'PASS' -or
+               -not(Test-Path -LiteralPath ([string]$materialExecutePreflight.request_path) -PathType Leaf) -or
+               -not(Test-Path -LiteralPath ([string]$materialExecutePreflight.receipt_path) -PathType Leaf) -or
+               -not(Test-Path -LiteralPath ([string]$materialExecutePreflight.consumption_path) -PathType Leaf)){
+                $State.FailureFamily='IMMUNE_MCP_PREFLIGHT_EVIDENCE'
+                throw 'IMMUNE_MCP_PREFLIGHT_EVIDENCE_INCOMPLETE'
+            }
+            $installedControlResolution=Join-Path $WorkingSourcePath 'mcp\control_resolution.py'
+            if(-not(Test-Path -LiteralPath $installedControlResolution -PathType Leaf)){
+                $State.FailureFamily='IMMUNE_MCP_CONTROL_RESOLUTION_MISSING'
+                throw 'IMMUNE_MCP_CONTROL_RESOLUTION_MISSING'
+            }
+            $controlResolution=Resolve-SealedCandidateImplementation -PatchManifest $State.Manifest `
+                -RelativePath 'mcp/control_resolution.py' -InstalledPath $installedControlResolution
+            $assurancePermit=Join-Path 'D:\Cerebro\Run\Evidence\Audits' 'CEREBRO_STANDARD_IMMUNE_MATERIAL_PERMIT.json'
+            $permitParent=Split-Path -Parent $assurancePermit
+            [IO.Directory]::CreateDirectory($permitParent) | Out-Null
+            $projectionArgs=@($assurancePython.PrefixArgs)+@(
+                $controlResolution,'project-immune-permit',
+                '--manifest',$assuranceManifest,
+                '--request',[string]$materialExecutePreflight.request_path,
+                '--preflight-receipt',[string]$materialExecutePreflight.receipt_path,
+                '--preflight-consumption',[string]$materialExecutePreflight.consumption_path,
+                '--source-head',$localHead,
+                '--authority-epoch',[string]$assuranceStateValue.authority_epoch,
+                '--source-root',$WorkingSourcePath,
+                '--output',$assurancePermit
+            )
+            $projectionNative=Invoke-NativeCommand -Executable $assurancePython.Executable -ArgumentList $projectionArgs -AllowedExitCodes @(0,1)
+            if($projectionNative.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $assurancePermit -PathType Leaf)){
+                $State.FailureFamily='IMMUNE_MCP_PERMIT_PROJECTION'
+                throw 'IMMUNE_MCP_PERMIT_PROJECTION_FAILED'
+            }
+            try{$projectedPermit=Get-Content -LiteralPath $assurancePermit -Raw | ConvertFrom-Json}catch{
+                $State.FailureFamily='IMMUNE_MCP_PERMIT_PROJECTION'
+                throw 'IMMUNE_MCP_PERMIT_PROJECTION_INVALID'
+            }
+            if([string]$projectedPermit.schema -ne 'cerebro-immune-material-permit/v1' -or
+               [string]$projectedPermit.material_consumer_identity -ne 'STANDARD_DELIVERY' -or
+               [string]$projectedPermit.producer_identity -eq 'STANDARD_DELIVERY'){
+                $State.FailureFamily='IMMUNE_MCP_PERMIT_PROJECTION'
+                throw 'IMMUNE_MCP_PERMIT_PROJECTION_INCOMPLETE'
+            }
+            $assuranceArgs=@($assurancePython.PrefixArgs)+@(
+                $assuranceKernel,'--state',$assuranceState,'consume-manifest-permit',
+                '--permit',$assurancePermit,'--manifest',$assuranceManifest,'--source-head',$localHead,
+                '--source-root',$WorkingSourcePath,'--control-resolution',$controlResolution,
+                '--preflight-request',[string]$materialExecutePreflight.request_path,
+                '--preflight-receipt',[string]$materialExecutePreflight.receipt_path,
+                '--preflight-consumption',[string]$materialExecutePreflight.consumption_path
+            )
+        }
+        else{
+            $assurancePermit = 'D:\Cerebro\Run\State\Assurance\current-permit.json'
+            if(-not(Test-Path -LiteralPath $assurancePermit -PathType Leaf)){
+                $State.FailureFamily='ASSURANCE_KERNEL_PERMIT_MISSING'
+                throw 'ASSURANCE_KERNEL_PERMIT_NOT_FOUND'
+            }
+            $assuranceArgs=@($assurancePython.PrefixArgs)+@(
+                $assuranceKernel,'--state',$assuranceState,'consume-manifest-permit',
+                '--permit',$assurancePermit,'--manifest',$assuranceManifest,'--source-head',$localHead
+            )
+        }
         $assuranceNative=Invoke-NativeCommand -Executable $assurancePython.Executable -ArgumentList $assuranceArgs -AllowedExitCodes @(0,3)
         try{$assuranceReceipt=$assuranceNative.Stdout|ConvertFrom-Json}catch{
             $State.FailureFamily='ASSURANCE_KERNEL_RECEIPT_INVALID'
@@ -1582,7 +1806,12 @@ function Invoke-Apply {
             if([string]$assuranceReceipt.schema -ne 'cerebro-immune-material-receipt/v1' -or
                [string]$assuranceReceipt.assurance_profile -ne 'IMMUNE' -or
                [string]$assuranceReceipt.material_consumer_identity -ne 'STANDARD_DELIVERY' -or
-               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.attestation_fingerprint) -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.producer_identity) -or
+               [string]$assuranceReceipt.mcp_control_resolution_surface -ne 'CEREBRO-MCP-CONTROL-RESOLUTION-001' -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.mcp_control_decision_id) -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.material_preflight_receipt_sha256) -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.material_preflight_consumption_sha256) -or
+               [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.projection_fingerprint) -or
                [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.quarantine_scope_sha256) -or
                [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.risk_profile) -or
                [string]::IsNullOrWhiteSpace([string]$assuranceReceipt.intended_consequence_class)){
@@ -1654,8 +1883,6 @@ function Invoke-Apply {
             $State.FailureFamily = 'ACTIVE_SOURCE_CLOSURE_FAILURE'
             throw ('ACTIVE_SOURCE_INTEGRITY_CLOSURE_FAILED:{0}' -f @($ascResult.findings).Count)
         }
-
-        [void](Invoke-RequiredTargetRuntimeValidation -PatchManifest $State.Manifest)
 
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_PUBLISH'
         $publishEvidence=Join-Path 'D:\Cerebro\Run\Evidence\Audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'

@@ -263,6 +263,19 @@ class MaterialIntent:
     package_class: str
     campaign_id: str
     authority_epoch: int
+    producer_identity: str = ""
+    quarantine_scope_sha256: str = ""
+    risk_profile: str = ""
+    intended_consequence_class: str = ""
+    material_consumer_identity: str = ""
+    mcp_control_resolution_surface: str = ""
+    mcp_control_decision_id: str = ""
+    mcp_control_decision_basis_fingerprint: str = ""
+    material_preflight_receipt_sha256: str = ""
+    material_preflight_consumption_sha256: str = ""
+    material_preflight_basis_fingerprint: str = ""
+    sealed_delivery_control_binding_sha256: str = ""
+    projection_fingerprint: str = ""
 
 
 def _load_module(name: str, path: Path) -> Any:
@@ -491,7 +504,15 @@ class AssuranceKernel:
             "nonce",
             "authority_epoch",
             "producer_identity",
-            "attestation_path",
+            "material_consumer_identity",
+            "mcp_control_resolution_surface",
+            "mcp_control_decision_id",
+            "mcp_control_decision_basis_fingerprint",
+            "material_preflight_receipt_sha256",
+            "material_preflight_consumption_sha256",
+            "material_preflight_basis_fingerprint",
+            "sealed_delivery_control_binding_sha256",
+            "projection_fingerprint",
         )
         if permit.get("schema") != IMMUNE_PERMIT_SCHEMA:
             raise AssuranceDenied("IMMUNE_PERMIT_SCHEMA_INVALID")
@@ -516,13 +537,28 @@ class AssuranceKernel:
             raise AssuranceDenied(
                 "IMMUNE_PERMIT_CONSEQUENCE_CLASS_INVALID"
             )
-        if (
-            permit.get("material_consumer_identity")
-            not in (None, "STANDARD_DELIVERY")
-        ):
+        if permit.get("material_consumer_identity") != "STANDARD_DELIVERY":
             raise AssuranceDenied(
                 "IMMUNE_MATERIAL_CONSUMER_IDENTITY_INVALID"
             )
+        if permit.get("mcp_control_resolution_surface") != "CEREBRO-MCP-CONTROL-RESOLUTION-001":
+            raise AssuranceDenied("IMMUNE_MCP_CONTROL_SURFACE_INVALID")
+        if not str(permit.get("mcp_control_decision_id") or "").startswith("MCPD-"):
+            raise AssuranceDenied("IMMUNE_MCP_CONTROL_DECISION_INVALID")
+        for field in (
+            "mcp_control_decision_basis_fingerprint",
+            "material_preflight_receipt_sha256",
+            "material_preflight_consumption_sha256",
+            "material_preflight_basis_fingerprint",
+            "sealed_delivery_control_binding_sha256",
+            "projection_fingerprint",
+        ):
+            if not HEX64_RE.fullmatch(str(permit.get(field) or "")):
+                raise AssuranceDenied("IMMUNE_MCP_BINDING_INVALID:" + field)
+        if permit["mcp_control_decision_basis_fingerprint"] != permit["material_preflight_basis_fingerprint"]:
+            raise AssuranceDenied("IMMUNE_MCP_PREFLIGHT_BASIS_MISMATCH")
+        if str(permit.get("nonce") or "") != "MCP:" + str(permit["projection_fingerprint"]):
+            raise AssuranceDenied("IMMUNE_MCP_NONCE_INVALID")
 
     @staticmethod
     def _validate_common_permit_fields(permit: dict[str, Any]) -> None:
@@ -903,9 +939,26 @@ class AssuranceKernel:
             raise AssuranceDenied("KERNEL_NOT_ENFORCING")
 
         self._validate_immune_permit(permit)
-        attestation = self._verify_immune_attestation(
-            state, permit, intent
-        )
+        immune_pairs = {
+            "producer_identity": intent.producer_identity,
+            "quarantine_scope_sha256": intent.quarantine_scope_sha256,
+            "risk_profile": intent.risk_profile,
+            "intended_consequence_class": intent.intended_consequence_class,
+            "material_consumer_identity": intent.material_consumer_identity,
+            "mcp_control_resolution_surface": intent.mcp_control_resolution_surface,
+            "mcp_control_decision_id": intent.mcp_control_decision_id,
+            "mcp_control_decision_basis_fingerprint": intent.mcp_control_decision_basis_fingerprint,
+            "material_preflight_receipt_sha256": intent.material_preflight_receipt_sha256,
+            "material_preflight_consumption_sha256": intent.material_preflight_consumption_sha256,
+            "material_preflight_basis_fingerprint": intent.material_preflight_basis_fingerprint,
+            "sealed_delivery_control_binding_sha256": intent.sealed_delivery_control_binding_sha256,
+            "projection_fingerprint": intent.projection_fingerprint,
+        }
+        for key, actual in immune_pairs.items():
+            if actual in (None, ""):
+                raise AssuranceDenied("IMMUNE_INTENT_BINDING_MISSING:" + key)
+            if str(permit.get(key) or "") != str(actual):
+                raise AssuranceDenied("IMMUNE_BINDING_MISMATCH:" + key)
         return {
             "schema": IMMUNE_RECEIPT_SCHEMA,
             "result": "ALLOW",
@@ -918,9 +971,31 @@ class AssuranceKernel:
             "kernel_state": state["state"],
             "assurance_profile": "IMMUNE",
             "material_consumer_identity": "STANDARD_DELIVERY",
-            "attestation_fingerprint": attestation[
-                "attestation_fingerprint"
-            ],
+            "producer_identity": str(permit["producer_identity"]),
+            "mcp_control_resolution_surface": str(
+                permit["mcp_control_resolution_surface"]
+            ),
+            "mcp_control_decision_id": str(
+                permit["mcp_control_decision_id"]
+            ),
+            "mcp_control_decision_basis_fingerprint": str(
+                permit["mcp_control_decision_basis_fingerprint"]
+            ),
+            "material_preflight_receipt_sha256": str(
+                permit["material_preflight_receipt_sha256"]
+            ),
+            "material_preflight_consumption_sha256": str(
+                permit["material_preflight_consumption_sha256"]
+            ),
+            "material_preflight_basis_fingerprint": str(
+                permit["material_preflight_basis_fingerprint"]
+            ),
+            "sealed_delivery_control_binding_sha256": str(
+                permit["sealed_delivery_control_binding_sha256"]
+            ),
+            "projection_fingerprint": str(
+                permit["projection_fingerprint"]
+            ),
             "quarantine_scope_sha256": str(
                 permit["quarantine_scope_sha256"]
             ),
@@ -2028,7 +2103,9 @@ def _load(path: str) -> dict[str, Any]:
 
 
 def intent_from_manifest(
-    manifest_path: str, source_head: str
+    manifest_path: str,
+    source_head: str,
+    projected_permit: dict[str, Any] | None = None,
 ) -> MaterialIntent:
     path = Path(manifest_path)
     raw = path.read_bytes()
@@ -2052,11 +2129,19 @@ def intent_from_manifest(
             )
         paths.append(str(entry["path"]))
     try:
-        epoch = int(binding["authority_epoch"])
+        epoch = (
+            int(projected_permit["authority_epoch"])
+            if projected_permit is not None and binding.get("authority_epoch") == "CURRENT"
+            else int(binding["authority_epoch"])
+        )
     except Exception as exc:
         raise AssuranceDenied(
             "MANIFEST_AUTHORITY_EPOCH_INVALID"
         ) from exc
+    producer_identity = str(binding.get("producer_identity") or "")
+    projected = projected_permit or {}
+    if projected_permit is not None and str(projected.get("producer_identity") or "") != producer_identity:
+        raise AssuranceDenied("MANIFEST_PRODUCER_IDENTITY_MISMATCH")
     return MaterialIntent(
         source_head=source_head,
         package_sha256=sha256_hex(raw),
@@ -2064,6 +2149,19 @@ def intent_from_manifest(
         package_class=str(binding.get("package_class") or ""),
         campaign_id=str(binding.get("campaign_id") or ""),
         authority_epoch=epoch,
+        producer_identity=producer_identity,
+        quarantine_scope_sha256=str(projected.get("quarantine_scope_sha256") or ""),
+        risk_profile=str(projected.get("risk_profile") or ""),
+        intended_consequence_class=str(projected.get("intended_consequence_class") or ""),
+        material_consumer_identity=str(projected.get("material_consumer_identity") or ""),
+        mcp_control_resolution_surface=str(projected.get("mcp_control_resolution_surface") or ""),
+        mcp_control_decision_id=str(projected.get("mcp_control_decision_id") or ""),
+        mcp_control_decision_basis_fingerprint=str(projected.get("mcp_control_decision_basis_fingerprint") or ""),
+        material_preflight_receipt_sha256=str(projected.get("material_preflight_receipt_sha256") or ""),
+        material_preflight_consumption_sha256=str(projected.get("material_preflight_consumption_sha256") or ""),
+        material_preflight_basis_fingerprint=str(projected.get("material_preflight_basis_fingerprint") or ""),
+        sealed_delivery_control_binding_sha256=str(projected.get("sealed_delivery_control_binding_sha256") or ""),
+        projection_fingerprint=str(projected.get("projection_fingerprint") or ""),
     )
 
 
@@ -2075,6 +2173,19 @@ def _intent(args: argparse.Namespace) -> MaterialIntent:
         args.package_class,
         args.campaign_id,
         args.authority_epoch,
+        args.producer_identity or "",
+        args.quarantine_scope_sha256 or "",
+        args.risk_profile or "",
+        args.intended_consequence_class or "",
+        args.material_consumer_identity or "",
+        args.mcp_control_resolution_surface or "",
+        args.mcp_control_decision_id or "",
+        args.mcp_control_decision_basis_fingerprint or "",
+        args.material_preflight_receipt_sha256 or "",
+        args.material_preflight_consumption_sha256 or "",
+        args.material_preflight_basis_fingerprint or "",
+        args.sealed_delivery_control_binding_sha256 or "",
+        args.projection_fingerprint or "",
     )
 
 
@@ -2102,6 +2213,22 @@ def main() -> int:
         command.add_argument(
             "--authority-epoch", type=int, required=True
         )
+        for option in (
+            "producer-identity",
+            "quarantine-scope-sha256",
+            "risk-profile",
+            "intended-consequence-class",
+            "material-consumer-identity",
+            "mcp-control-resolution-surface",
+            "mcp-control-decision-id",
+            "mcp-control-decision-basis-fingerprint",
+            "material-preflight-receipt-sha256",
+            "material-preflight-consumption-sha256",
+            "material-preflight-basis-fingerprint",
+            "sealed-delivery-control-binding-sha256",
+            "projection-fingerprint",
+        ):
+            command.add_argument("--" + option)
 
     for name in (
         "check-manifest-permit",
@@ -2111,6 +2238,11 @@ def main() -> int:
         command.add_argument("--permit", required=True)
         command.add_argument("--manifest", required=True)
         command.add_argument("--source-head", required=True)
+        command.add_argument("--source-root")
+        command.add_argument("--control-resolution")
+        command.add_argument("--preflight-request")
+        command.add_argument("--preflight-receipt")
+        command.add_argument("--preflight-consumption")
 
     doctor = sub.add_parser("doctor-enforced")
     doctor.add_argument(
@@ -2172,6 +2304,44 @@ def main() -> int:
 
     args = parser.parse_args()
     kernel = AssuranceKernel(Path(args.state))
+
+    def manifest_intent() -> tuple[dict[str, Any], MaterialIntent]:
+        permit = _load(args.permit)
+        if permit.get("schema") != IMMUNE_PERMIT_SCHEMA:
+            return permit, intent_from_manifest(args.manifest, args.source_head)
+        required = {
+            "source-root": args.source_root,
+            "control-resolution": args.control_resolution,
+            "preflight-request": args.preflight_request,
+            "preflight-receipt": args.preflight_receipt,
+            "preflight-consumption": args.preflight_consumption,
+        }
+        missing = [name for name, value in required.items() if not value]
+        if missing:
+            raise AssuranceDenied(
+                "IMMUNE_MCP_PROJECTION_EVIDENCE_MISSING:" + ",".join(missing)
+            )
+        state = kernel._read()
+        resolver = _load_module(
+            "cerebro_mcp_control_resolution_immune_validation",
+            Path(args.control_resolution),
+        )
+        validation = resolver.validate_projected_immune_material_permit(
+            permit,
+            manifest_path=args.manifest,
+            request_path=args.preflight_request,
+            preflight_receipt_path=args.preflight_receipt,
+            preflight_consumption_path=args.preflight_consumption,
+            source_head=args.source_head,
+            authority_epoch=int(state["authority_epoch"]),
+            source_root=Path(args.source_root).resolve(),
+        )
+        if validation.get("result") != "PASS":
+            raise AssuranceDenied("IMMUNE_MCP_PROJECTION_VALIDATION_FAILED")
+        return permit, intent_from_manifest(
+            args.manifest, args.source_head, projected_permit=permit
+        )
+
     try:
         if args.cmd == "initialize-bootstrap":
             output = kernel.initialize_bootstrap(
@@ -2187,19 +2357,11 @@ def main() -> int:
                 _load(args.permit), _intent(args)
             )
         elif args.cmd == "check-manifest-permit":
-            output = kernel.check(
-                _load(args.permit),
-                intent_from_manifest(
-                    args.manifest, args.source_head
-                ),
-            )
+            projected_permit, projected_intent = manifest_intent()
+            output = kernel.check(projected_permit, projected_intent)
         elif args.cmd == "consume-manifest-permit":
-            output = kernel.consume(
-                _load(args.permit),
-                intent_from_manifest(
-                    args.manifest, args.source_head
-                ),
-            )
+            projected_permit, projected_intent = manifest_intent()
+            output = kernel.consume(projected_permit, projected_intent)
         elif args.cmd == "doctor-enforced":
             output = kernel.transition_doctor_enforced(
                 active_path_proof_sha256=(

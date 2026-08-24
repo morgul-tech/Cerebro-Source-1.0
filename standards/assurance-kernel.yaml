@@ -1,15 +1,15 @@
 schema: cerebro-assurance-kernel/v1
 assurance_kernel:
   id: CEREBRO-ASSURANCE-KERNEL-001
-  status: IMMUNE_FIRST_ACTIVATION_INGRESS785_CONDITIONALLY_AUTHORIZED
+  status: IMMUNE_ENFORCED_WITH_MCP_BOUND_ONE_SHOT_PERMIT
   kind: NON_AI_ENFORCEMENT_SUBSTRATE
   definitional_authority: Cerebro Source 1.0
   control_policy_owner: MCP
   semantic_authority: NONE
   purpose: >
     Enforce exact current assurance consumption at the canonical Source material edge.
-    Candidate producers, Doctor prose, raw PASS labels, Shared projections and
-    self-attested Immune claims have no authority.
+    Candidate producers, Doctor prose, raw PASS labels, manually dropped permits
+    and producer-created Immune projections have no authority.
 
   states:
     - UNINITIALIZED
@@ -86,20 +86,19 @@ assurance_kernel:
   immune_enforced:
     permit_schema: mcp/immune-material-permit.schema.json
     receipt_schema: mcp/immune-material-receipt.schema.json
-    attestation_schema: mcp/immune-attestation.schema.json
-    attestation_implementation: tooling/assurance/immune_attestation.py
-    independent_attestation_algorithm: HMAC-SHA256
-    attestor_key_material_in_source: PROHIBITED
-    attestor_identity_must_differ_from_producer: true
-    attestor_implementation_and_key_fingerprints_state_bound: true
+    permit_projection_owner: MCP
+    permit_projection_implementation: mcp/control_resolution.py#project_immune_material_permit
+    permit_revalidation_implementation: mcp/control_resolution.py#validate_projected_immune_material_permit
+    ordinary_independent_attestation_required: false
+    migration_and_recovery_attestation_compatibility: PRESERVED
     quarantine_scope_fingerprint_required: true
     intended_consequence_class_required: true
     required_claim_scope: SOURCE_PROMOTION
     Doctor_receipt_required: false
     Doctor_trust_object_required: false
     raw_receipt_or_pass_label: DENY
-    stale_or_tampered_attestation: DENY
-    attestor_or_key_drift: DENY
+    stale_or_tampered_MCP_preflight_binding: DENY
+    manually_dropped_or_rewritten_permit: DENY
     material_consumer_identity: STANDARD_DELIVERY
 
   immune_quarantined:
@@ -126,13 +125,24 @@ assurance_kernel:
       - risk_profile
       - intended_consequence_class
       - producer_identity
-      - attestation_path
+      - material_consumer_identity
+      - mcp_control_resolution_surface
+      - mcp_control_decision_id
+      - mcp_control_decision_basis_fingerprint
+      - material_preflight_receipt_sha256
+      - material_preflight_consumption_sha256
+      - material_preflight_basis_fingerprint
+      - sealed_delivery_control_binding_sha256
+      - projection_fingerprint
     one_shot: true
+    authority_epoch_resolution: EXACT_CURRENT_KERNEL_STATE_AT_MCP_PROJECTION
     cross_process_consume_serialization: REQUIRED
     stale_source_head: DENY
     wrong_package: DENY
     wrong_paths: DENY
     wrong_quarantine_scope: DENY
+    wrong_producer_or_consumer: DENY
+    wrong_MCP_or_preflight_binding: DENY
     replay: DENY
 
   material_edge:
@@ -159,14 +169,16 @@ assurance_kernel:
     attestation_schema: mcp/immune-attestation.schema.json
     migration_schema: mcp/immune-migration.schema.json
     attestation_implementation: tooling/assurance/immune_attestation.py
+    attestation_scope: MIGRATION_AND_AUTHENTICATED_RECOVERY_ONLY
+    ordinary_material_authority: NONE
     external_anchor_verifier: EXTERNAL_HOST_BOUND_NOT_SOURCE_OWNED
 
   candidate_boundary:
-    source_head: 4469eddccc8db213bb923c403c26c36e30309575
-    exact_targetset_count: 15
-    nonmaterial_build: ALLOWED
-    migration_or_cutover: CONDITIONALLY_AUTHORIZED_BY_INGRESS785_HUMAN_BOOTSTRAP
-    exact_blocker: CURRENT_DOCTOR_KEY_BINDING_AND_LIVE_SOURCE_EQUALITY_REQUIRED
+    exact11_base_source_head: ceff87e29fd2295534ce3eeb8e9ec32180bb0b5b
+    exact_targetset_count: 11
+    ordinary_material_profile: MCP_BOUND_ONE_SHOT_IMMUNE_PERMIT
+    migration_or_cutover: UNCHANGED
+    exact11_authority: PM-IMMUNFORSVAR-EXACT11-HUMAN-APPROVED-IMPLEMENTATION-PACKET-20260824-001
     Source_mutation: STANDARD_DELIVERY_ONLY
     Runtime_mutation: ONE_TIME_ATOMIC_ASSURANCE_STATE_TRANSITION_ONLY
     H3_clearance: REQUIRED_AT_POST_EFFECT_READBACK

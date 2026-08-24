@@ -29,6 +29,9 @@ MATERIAL_STAGES = {"DECIDE", "LOCK", "MATERIAL_EXECUTE", "MATERIAL_AUTHORIZE", "
 CONTROL_OUTCOMES = {"CONTINUE", "REMEDIATE", "RETRY", "REORIENT", "USER_DECISION_REQUIRED", "BLOCK"}
 CONTROL_CONTEXT_BINDING_SCHEMA = "cerebro-control-context-event-binding/v1"
 HNS_CANDIDATE_ACTIVATION_PRECONDITION = "ACTUAL_TRANSITION_RECEIPT_AND_COMMITTED_STATE_EXACTLY_MATCH_PREDICTION"
+IMMUNE_MATERIAL_PERMIT_SCHEMA = "cerebro-immune-material-permit/v1"
+IMMUNE_MATERIAL_PROJECTION_SCHEMA = "cerebro-mcp-immune-material-permit-projection/v1"
+IMMUNE_MATERIAL_VALIDATION_SCHEMA = "cerebro-mcp-immune-material-permit-validation/v1"
 EVIDENCE_BASIS_FILES = [
     "mcp/control-resolution.yaml",
     "mcp/control_resolution.py",
@@ -444,6 +447,257 @@ def validate_delivery_control_binding(manifest: dict[str, Any], root: Path) -> d
         "binding_fingerprint": binding.get("binding_fingerprint"),
         "control_decision_id": binding.get("control_decision_id"),
         "execution_profile_id": binding.get("execution_profile_id"),
+        "errors": reasons,
+    }
+
+
+def _read_json_object(path: str | Path, *, label: str) -> tuple[dict[str, Any], bytes]:
+    source = Path(path)
+    try:
+        raw = source.read_bytes()
+        value = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise ValueError(f"{label}-invalid-json") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{label}-object-required")
+    return value, raw
+
+
+def _normalized_touched_paths(manifest: dict[str, Any]) -> list[str]:
+    entries = manifest.get("files")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("immune-projection-manifest-files-required")
+    paths: list[str] = []
+    seen: set[str] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("immune-projection-manifest-entry-invalid")
+        path = str(entry.get("path") or "").replace("\\", "/").strip("/")
+        operation = str(entry.get("operation") or "").lower()
+        if not path or path in seen:
+            raise ValueError("immune-projection-manifest-path-invalid")
+        if operation not in DELIVERY_OPERATIONS:
+            raise ValueError("immune-projection-manifest-operation-invalid")
+        seen.add(path)
+        paths.append(path)
+    return sorted(paths)
+
+
+def _touched_paths_sha256(paths: list[str]) -> str:
+    return sha256_bytes(
+        json.dumps(paths, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    )
+
+
+def _validated_sealed_delivery_binding(manifest: dict[str, Any], source_head: str) -> str:
+    binding = manifest.get("delivery_control_binding")
+    if not isinstance(binding, dict):
+        raise ValueError("immune-projection-delivery-control-binding-required")
+    fingerprint = str(binding.get("binding_fingerprint") or "")
+    unsigned = dict(binding)
+    unsigned.pop("binding_fingerprint", None)
+    expected = sha256_bytes(
+        json.dumps(unsigned, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    )
+    if fingerprint != expected:
+        raise ValueError("immune-projection-delivery-control-binding-fingerprint-mismatch")
+    if binding.get("decision_owner") != "MCP" or binding.get("control_resolution_surface") != CONTROL_SURFACE_ID:
+        raise ValueError("immune-projection-delivery-control-owner-mismatch")
+    if binding.get("resolved_profile") != "STANDARD" or manifest.get("delivery_profile") != "STANDARD":
+        raise ValueError("immune-projection-standard-delivery-required")
+    if binding.get("source_commit") != source_head or manifest.get("expected_base_commit") != source_head:
+        raise ValueError("immune-projection-delivery-source-mismatch")
+    declared = sorted(str(item.get("operation") or "").lower() for item in manifest.get("files", []))
+    if sorted(str(item).lower() for item in binding.get("operations", [])) != declared:
+        raise ValueError("immune-projection-delivery-operation-mismatch")
+    if not str(binding.get("control_decision_id") or "").startswith("MCPD-"):
+        raise ValueError("immune-projection-delivery-decision-invalid")
+    return fingerprint
+
+
+def _immune_projection_subject(
+    *,
+    manifest: dict[str, Any],
+    manifest_raw: bytes,
+    request: dict[str, Any],
+    preflight_receipt: dict[str, Any],
+    preflight_receipt_raw: bytes,
+    preflight_consumption: dict[str, Any],
+    preflight_consumption_raw: bytes,
+    source_head: str,
+    authority_epoch: int,
+    source_root: Path,
+) -> dict[str, Any]:
+    if not isinstance(authority_epoch, int) or authority_epoch < 1:
+        raise ValueError("immune-projection-authority-epoch-invalid")
+    if manifest.get("delivery_execution_contract") != "CEREBRO-STANDARD-DELIVERY-KERNEL-001":
+        raise ValueError("immune-projection-delivery-contract-mismatch")
+    assurance = manifest.get("assurance_kernel")
+    if not isinstance(assurance, dict):
+        raise ValueError("immune-projection-assurance-binding-required")
+    required_assurance = (
+        "campaign_id",
+        "package_class",
+        "authority_epoch",
+        "producer_identity",
+        "risk_profile",
+        "intended_consequence_class",
+    )
+    for field in required_assurance:
+        if assurance.get(field) in (None, ""):
+            raise ValueError("immune-projection-assurance-field-missing:" + field)
+    sealed_epoch = assurance["authority_epoch"]
+    if sealed_epoch != "CURRENT" and int(sealed_epoch) != authority_epoch:
+        raise ValueError("immune-projection-authority-epoch-mismatch")
+    if assurance["intended_consequence_class"] != "SOURCE_EFFECT":
+        raise ValueError("immune-projection-consequence-class-mismatch")
+    producer_identity = str(assurance["producer_identity"])
+    if producer_identity == "STANDARD_DELIVERY":
+        raise ValueError("immune-projection-producer-consumer-collision")
+
+    patch_id = str(manifest.get("patch_id") or "")
+    if not patch_id:
+        raise ValueError("immune-projection-patch-id-required")
+    if request.get("stage") != "MATERIAL_EXECUTE" or request.get("material") is not True:
+        raise ValueError("immune-projection-material-execute-required")
+    if request.get("commitment_target") != patch_id:
+        raise ValueError("immune-projection-commitment-target-mismatch")
+    if request.get("authoritative_source_commit") != source_head:
+        raise ValueError("immune-projection-request-source-mismatch")
+
+    if preflight_receipt.get("schema") != "cerebro-material-commitment-preflight-receipt/v1":
+        raise ValueError("immune-projection-preflight-receipt-schema-invalid")
+    receipt_pairs = {
+        "result": "PASS",
+        "material": True,
+        "stage": "MATERIAL_EXECUTE",
+        "commitment_target": patch_id,
+        "source_identity": source_head,
+        "semantic_resolution_state": "RESOLVED",
+        "coverage_state": "COMPLETE",
+        "conflict_state": "NONE_FOUND",
+    }
+    for field, expected in receipt_pairs.items():
+        if preflight_receipt.get(field) != expected:
+            raise ValueError("immune-projection-preflight-receipt-mismatch:" + field)
+    decision_id = str(preflight_receipt.get("control_decision_ref") or "")
+    basis_fingerprint = str(preflight_receipt.get("basis_fingerprint") or "")
+    if not decision_id.startswith("MCPD-") or len(basis_fingerprint) != 64:
+        raise ValueError("immune-projection-preflight-decision-binding-invalid")
+
+    if preflight_consumption.get("schema") != "cerebro-material-commitment-consumption/v1":
+        raise ValueError("immune-projection-preflight-consumption-schema-invalid")
+    if (
+        preflight_consumption.get("result") != "PASS"
+        or preflight_consumption.get("receipt_consumed") is not True
+        or preflight_consumption.get("freshness_verified") is not True
+        or preflight_consumption.get("mcp_consumed") is not True
+        or preflight_consumption.get("normal_call_path_exercised") is not True
+    ):
+        raise ValueError("immune-projection-preflight-consumption-not-pass")
+    if preflight_consumption.get("control_decision_ref") != decision_id:
+        raise ValueError("immune-projection-preflight-consumption-decision-mismatch")
+    if (
+        preflight_consumption.get("current_basis_fingerprint") != basis_fingerprint
+        or preflight_consumption.get("receipt_basis_fingerprint") != basis_fingerprint
+    ):
+        raise ValueError("immune-projection-preflight-consumption-basis-mismatch")
+
+    preflight = load_module(
+        source_root / "mcp/material_commitment_preflight.py",
+        "cerebro_material_commitment_preflight_immune_projection",
+    )
+    current = preflight.consume(request, preflight_receipt, source_root)
+    if (
+        current.get("result") != "PASS"
+        or current.get("receipt_consumed") is not True
+        or current.get("freshness_verified") is not True
+        or current.get("control_decision_ref") != decision_id
+    ):
+        raise ValueError("immune-projection-preflight-currentness-failed")
+
+    paths = _normalized_touched_paths(manifest)
+    paths_sha256 = _touched_paths_sha256(paths)
+    delivery_fingerprint = _validated_sealed_delivery_binding(manifest, source_head)
+    return {
+        "schema": IMMUNE_MATERIAL_PROJECTION_SCHEMA,
+        "campaign_id": str(assurance["campaign_id"]),
+        "package_class": str(assurance["package_class"]),
+        "source_pre_head": source_head,
+        "package_sha256": sha256_bytes(manifest_raw),
+        "touched_paths_sha256": paths_sha256,
+        "quarantine_scope_sha256": paths_sha256,
+        "risk_profile": str(assurance["risk_profile"]),
+        "intended_consequence_class": "SOURCE_EFFECT",
+        "authority_epoch": authority_epoch,
+        "producer_identity": producer_identity,
+        "material_consumer_identity": "STANDARD_DELIVERY",
+        "mcp_control_resolution_surface": CONTROL_SURFACE_ID,
+        "mcp_control_decision_id": decision_id,
+        "mcp_control_decision_basis_fingerprint": basis_fingerprint,
+        "material_preflight_receipt_sha256": sha256_bytes(preflight_receipt_raw),
+        "material_preflight_consumption_sha256": sha256_bytes(preflight_consumption_raw),
+        "material_preflight_basis_fingerprint": basis_fingerprint,
+        "sealed_delivery_control_binding_sha256": delivery_fingerprint,
+    }
+
+
+def project_immune_material_permit(
+    *,
+    manifest_path: str | Path,
+    request_path: str | Path,
+    preflight_receipt_path: str | Path,
+    preflight_consumption_path: str | Path,
+    source_head: str,
+    authority_epoch: int,
+    source_root: Path,
+) -> dict[str, Any]:
+    manifest, manifest_raw = _read_json_object(manifest_path, label="manifest")
+    request, _ = _read_json_object(request_path, label="preflight-request")
+    receipt, receipt_raw = _read_json_object(preflight_receipt_path, label="preflight-receipt")
+    consumption, consumption_raw = _read_json_object(preflight_consumption_path, label="preflight-consumption")
+    subject = _immune_projection_subject(
+        manifest=manifest,
+        manifest_raw=manifest_raw,
+        request=request,
+        preflight_receipt=receipt,
+        preflight_receipt_raw=receipt_raw,
+        preflight_consumption=consumption,
+        preflight_consumption_raw=consumption_raw,
+        source_head=source_head,
+        authority_epoch=authority_epoch,
+        source_root=source_root,
+    )
+    projection_fingerprint = sha256_bytes(
+        json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    )
+    permit = {
+        "schema": IMMUNE_MATERIAL_PERMIT_SCHEMA,
+        "permit_id": "IMMP-" + projection_fingerprint[:24].upper(),
+        **{key: value for key, value in subject.items() if key != "schema"},
+        "nonce": "MCP:" + projection_fingerprint,
+        "projection_fingerprint": projection_fingerprint,
+    }
+    return permit
+
+
+def validate_projected_immune_material_permit(
+    permit: dict[str, Any],
+    **projection_args: Any,
+) -> dict[str, Any]:
+    expected = project_immune_material_permit(**projection_args)
+    reasons: list[str] = []
+    if permit != expected:
+        reasons.append("IMMUNE_MATERIAL_PERMIT_NOT_EXACT_MCP_PROJECTION")
+    return {
+        "schema": IMMUNE_MATERIAL_VALIDATION_SCHEMA,
+        "result": "PASS" if not reasons else "BLOCK",
+        "authority": "MCP",
+        "state_effect": "NONE",
+        "permit_id": expected["permit_id"],
+        "projection_fingerprint": expected["projection_fingerprint"],
+        "producer_identity": expected["producer_identity"],
+        "material_consumer_identity": expected["material_consumer_identity"],
         "errors": reasons,
     }
 
@@ -2202,16 +2456,61 @@ def activation_probe(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Cerebro canonical MCP control resolution surface")
-    parser.add_argument("command", nargs="?", choices=["resolve", "validate-delivery-binding", "activation-probe", "selftest"], default="resolve")
+    parser.add_argument(
+        "command",
+        nargs="?",
+        choices=[
+            "resolve",
+            "validate-delivery-binding",
+            "project-immune-permit",
+            "validate-immune-permit",
+            "activation-probe",
+            "selftest",
+        ],
+        default="resolve",
+    )
     parser.add_argument("--request")
     parser.add_argument("--manifest")
+    parser.add_argument("--permit")
+    parser.add_argument("--preflight-receipt")
+    parser.add_argument("--preflight-consumption")
+    parser.add_argument("--source-head")
+    parser.add_argument("--authority-epoch", type=int)
     parser.add_argument("--output")
     parser.add_argument("--source-root", default=str(SOURCE_ROOT))
     parser.add_argument("--allow-no-git-ancestry", action="store_true")
     args = parser.parse_args()
     root = Path(args.source_root).resolve()
     require_git = not args.allow_no_git_ancestry
-    if args.command == "activation-probe":
+    if args.command in {"project-immune-permit", "validate-immune-permit"}:
+        required = {
+            "manifest": args.manifest,
+            "request": args.request,
+            "preflight-receipt": args.preflight_receipt,
+            "preflight-consumption": args.preflight_consumption,
+            "source-head": args.source_head,
+            "authority-epoch": args.authority_epoch,
+        }
+        missing = [name for name, value in required.items() if value in (None, "")]
+        if missing:
+            parser.error(args.command + " requires --" + ", --".join(missing))
+        projection_args = {
+            "manifest_path": args.manifest,
+            "request_path": args.request,
+            "preflight_receipt_path": args.preflight_receipt,
+            "preflight_consumption_path": args.preflight_consumption,
+            "source_head": args.source_head,
+            "authority_epoch": args.authority_epoch,
+            "source_root": root,
+        }
+        if args.command == "project-immune-permit":
+            result = project_immune_material_permit(**projection_args)
+        else:
+            if not args.permit:
+                parser.error("validate-immune-permit requires --permit")
+            permit, _ = _read_json_object(args.permit, label="immune-permit")
+            result = validate_projected_immune_material_permit(permit, **projection_args)
+    elif args.command == "activation-probe":
         result = activation_probe(root, require_git_ancestry=require_git)
     elif args.command == "selftest":
         result = selftest(root, require_git_ancestry=require_git)
@@ -2231,7 +2530,10 @@ def main() -> int:
         out = Path(args.output); out.parent.mkdir(parents=True, exist_ok=True); out.write_text(text, encoding="utf-8")
     else:
         print(text, end="")
-    return 0 if result.get("result") == "PASS" else 1
+    successful = result.get("result") in {"PASS", None} and (
+        args.command != "project-immune-permit" or result.get("schema") == IMMUNE_MATERIAL_PERMIT_SCHEMA
+    )
+    return 0 if successful else 1
 
 
 if __name__ == "__main__":

@@ -54,7 +54,38 @@
     "material_consumer_identity": {
       "const": "STANDARD_DELIVERY"
     },
-    "attestation_fingerprint": {
+    "producer_identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mcp_control_resolution_surface": {
+      "const": "CEREBRO-MCP-CONTROL-RESOLUTION-001"
+    },
+    "mcp_control_decision_id": {
+      "type": "string",
+      "pattern": "^MCPD-[0-9A-F]+$"
+    },
+    "mcp_control_decision_basis_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "material_preflight_receipt_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "material_preflight_consumption_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "material_preflight_basis_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sealed_delivery_control_binding_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "projection_fingerprint": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
     },
@@ -175,7 +206,15 @@
           "kernel_state",
           "assurance_profile",
           "material_consumer_identity",
-          "attestation_fingerprint",
+          "producer_identity",
+          "mcp_control_resolution_surface",
+          "mcp_control_decision_id",
+          "mcp_control_decision_basis_fingerprint",
+          "material_preflight_receipt_sha256",
+          "material_preflight_consumption_sha256",
+          "material_preflight_basis_fingerprint",
+          "sealed_delivery_control_binding_sha256",
+          "projection_fingerprint",
           "quarantine_scope_sha256",
           "risk_profile",
           "intended_consequence_class"

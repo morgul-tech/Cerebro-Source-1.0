@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "2.6-candidate"
+  version: "2.8"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -33,6 +33,17 @@ delivery_kernel:
     stale_or_failed_evidence: BLOCK
     unrelated_standard_patch_latency: ZERO_WHEN_NO_PROBE_DECLARED
     evidence_is_derived_not_Source_authority: true
+    forward_failure_sweep:
+      stop_after_first_producer_failure: false
+      all_declared_producers_executed: true
+      all_impacted_runtime_bindings_inventoried: true
+      failure_families_collected_before_block: true
+      report_schema: cerebro-forward-failure-sweep/v1
+    exact_candidate_target_runtime_gate:
+      required_before_authoritative_source_mutation: true
+      actual_CAC_consumer_required: true
+      producer_consumer_compatibility_required: true
+      DEEP_clean_campaigns_required: 3
 
   material_commitment_preflight:
     contract: standards/development/material-commitment-preflight.yaml
@@ -54,6 +65,7 @@ delivery_kernel:
     permit_schema_ref: mcp/immune-material-permit.schema.json
     receipt_schema_ref: mcp/immune-material-receipt.schema.json
     attestation_schema_ref: mcp/immune-attestation.schema.json
+    attestation_scope: MIGRATION_AND_AUTHENTICATED_RECOVERY_ONLY
     migration_schema_ref: mcp/immune-migration.schema.json
     normal_material_consumer_identity: STANDARD_DELIVERY
     state_resolution:
@@ -61,7 +73,7 @@ delivery_kernel:
       DOCTOR_ENFORCED: LEGACY_DOCTOR_PERMIT
       FAILED_RECOVERY: DENY
       IMMUNE_MIGRATING: DENY_NORMAL_MATERIAL_RECOVERY_MODE_ONLY
-      IMMUNE_ENFORCED: IMMUNE_PERMIT_AND_INDEPENDENT_ATTESTATION
+      IMMUNE_ENFORCED: MCP_BOUND_ONE_SHOT_IMMUNE_PERMIT
       IMMUNE_QUARANTINED: DENY
       unknown: DENY
     authenticated_postcrash_recovery:
@@ -79,21 +91,26 @@ delivery_kernel:
       - exact current kernel state
       - exact one-shot permit
       - exact package and touched-path fingerprints
+      - exact current assurance authority epoch resolved once during MCP projection
       - exact affected-scope quarantine fingerprint
       - immutable intended consequence class
-      - independent attestation
+      - exact producer identity distinct from StandardDelivery
+      - fresh consumed MATERIAL_EXECUTE preflight receipt and consumption fingerprints
+      - exact MCP control decision and sealed delivery control binding
       - StandardDelivery consumer identity
     prohibited:
       - material mutation during IMMUNE_MIGRATING
       - material mutation during IMMUNE_QUARANTINED
-      - producer self certification
+      - producer self certification or permit projection
+      - manually dropped or prepositioned ordinary Immune permit
       - Doctor trust substitution after IMMUNE_ENFORCED
       - shadow material consumer
       - key material in Source
     candidate_boundary:
-      status: NONMATERIAL_NOT_ACTIVATED
-      migration_or_cutover: BLOCKED
-      exact_blocker: CURRENT_EXTERNAL_ANCHOR_AUTHORITY_AND_LIVE_HOST_RECOVERY_PROOF_UNPROVEN
+      status: ACTIVE_INGRESS853_EXACT11
+      base_source_head: ceff87e29fd2295534ce3eeb8e9ec32180bb0b5b
+      targetset: {modify: 11, create: 0, delete: 0}
+      migration_or_cutover: UNCHANGED
 
   source_hygiene:
     python_validation_execution:
@@ -164,12 +181,32 @@ delivery_kernel:
     - invoke-kernel-apply
     - validate-success-receipt
     - publish-bounded-success-transport-view
+    - emit-output-independent-heartbeat
+    - live-forward-child-stdout-and-stderr
+    - validate-safe-continuation-from-clean-base
     prohibited_launcher_roles:
     - Source-content-generation
     - Git-policy-reimplementation
     - semantic-patch-transformation
     - rollback-design
     - architecture-decision
+    heartbeat:
+      schema: cerebro-patch-heartbeat/v1
+      interval_seconds_default: 5
+      independent_of_child_output: true
+      live_stdout_stderr_forwarding: true
+      stalled_suspected_is_observation_not_termination: true
+      unknown_exit_status_preserved_as_UNKNOWN: true
+      atomic_latest_state_file: heartbeat.json
+      append_only_event_journal: events.jsonl
+    continuation:
+      schema: cerebro-delivery-continuation/v1
+      allowed_mode: SAFE_RESTART_FROM_VERIFIED_BASE
+      partial_transaction_resume: PROHIBITED
+      exact_clean_base_required: true
+      prior_attempt_and_capsule_identity_required: true
+      resolved_failure_family_set_required: true
+      new_attempt_identity_required: true
 
   work_mode_policy:
     scope: SYSTEM_WIDE
@@ -190,12 +227,13 @@ delivery_kernel:
     - sealed-candidate-MCP-delivery-profile-adapter-selftest
     - bundle-and-payload-hash-verification
     - exact-Source-baseline-verification
+    - exact-candidate-forward-failure-sweep
+    - exact-candidate-Windows-target-runtime-CAC-and-DEEP-validation-before-mutation
     - verified-full-recovery-snapshot
     - bounded-physical-backup
     - exact-byte-installation
     - installed-byte-verification
     - Source-diff-validation
-    - user-initiated-automated-target-runtime-validation
     - canonical-cerebro-sync
     - fresh-remote-fetch
     - local-remote-commit-equality-proof

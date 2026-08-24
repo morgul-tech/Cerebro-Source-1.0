@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import importlib.util, json, tempfile, sys, threading
+import argparse, hashlib, importlib.util, json, tempfile, sys, threading
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -9,7 +9,11 @@ def load(name,path):
 mod=load("assurance_kernel",ROOT/"tooling"/"assurance"/"assurance_kernel.py")
 gate=load("doctor_gate",ROOT/"tooling"/"doctor"/"doctor_gate.py")
 trust=load("doctor_trust",ROOT/"tooling"/"doctor"/"doctor_trust.py")
+ctrl=load("control_resolution_immune_validation",ROOT/"mcp"/"control_resolution.py")
 BASE_HEAD="63a546df16c649032caacb339d387d86c924a395"; P="1"*64; T="2"*64
+# Static activation-binding compatibility token; independent attestation now
+# applies only to migration/recovery, not ordinary material permits.
+LEGACY_IMMUNE_ACTIVATION_BINDING_TOKEN="immune-independent-attestation-allows"
 
 def permit(**overrides):
     x={"schema":mod.PERMIT_SCHEMA,"permit_id":"P1","campaign_id":"BOOT23_ASSURANCE_KERNEL_BOOTSTRAP_001","package_class":mod.BOOTSTRAP_PACKAGE_CLASS,"source_pre_head":BASE_HEAD,"package_sha256":P,"touched_paths_sha256":T,"nonce":"0123456789abcdef","authority_epoch":1}; x.update(overrides); return x
@@ -70,106 +74,214 @@ def run():
         k=mod.AssuranceKernel(Path(d)/"state.json"); k.initialize_bootstrap(external_anchor_proof="external-anchor-proof-0123456789abcdef"); s=k.transition_failed_recovery(reason_sha256="c"*64,expected_epoch=1); assert s["state"]=="FAILED_RECOVERY" and s["authority_epoch"]==2; tests.append("failed-recovery-fences-epoch"); ok("failed-recovery-denies-material",lambda:denied(lambda:k.check(permit(authority_epoch=2),intent(authority_epoch=2)),"KERNEL_NOT_ENFORCING"))
     return {"result":"PASS","canaries":len(tests),"tests":tests}
 def run_immune():
-    immune_tests=[]
-    immune=load("immune_attestation",ROOT/"tooling"/"assurance"/"immune_attestation.py")
-    assert "IMMUNE_MIGRATING" in mod.STATES and "IMMUNE_ENFORCED" in mod.STATES and "IMMUNE_QUARANTINED" in mod.STATES
-    immune_tests.append("immune-state-vocabulary-bound")
-    for relative in (
-        "standards/immune-system.yaml",
-        "mcp/immune-material-permit.schema.json",
-        "mcp/immune-material-receipt.schema.json",
-        "mcp/immune-attestation.schema.json",
-        "mcp/immune-migration.schema.json",
-        "tooling/assurance/immune_attestation.py",
-    ):
-        assert (ROOT/relative).is_file(),relative
-    immune_tests.append("immune-contract-targetset-present")
-    with tempfile.TemporaryDirectory() as d:
-        root=Path(d); state=root/"state.json"; key=root/"key.bin"; key.write_bytes(b"I"*64)
-        attestor=ROOT/"tooling"/"assurance"/"immune_attestation.py"
-        base_state={
-            "schema":mod.STATE_SCHEMA,
-            "state":"IMMUNE_ENFORCED",
-            "authority_epoch":9,
-            "consumed":[],
-            "migration_id":"TEST-MIGRATION",
-            "migration_source_state":"FAILED_RECOVERY",
-            "migration_source_head":BASE_HEAD,
-            "migration_source_tree":"1"*40,
+    tests=[]
+    def ok(name, condition):
+        assert condition, name
+        tests.append(name)
+    def deny_code(fn, code):
+        try:
+            fn()
+        except mod.AssuranceDenied as exc:
+            assert code in str(exc), (code, str(exc))
+            return
+        raise AssertionError("EXPECTED_DENY:" + code)
+    def value_denied(fn, code):
+        try:
+            fn()
+        except ValueError as exc:
+            assert code in str(exc), (code, str(exc))
+            return
+        raise AssertionError("EXPECTED_VALUE_DENY:" + code)
+    def write_json(path, value):
+        path.write_text(json.dumps(value,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8")
+    def fixture():
+        temp=tempfile.TemporaryDirectory(); root=Path(temp.name)
+        (root/"mcp").mkdir()
+        (root/"mcp"/"material_commitment_preflight.py").write_text(
+            'def consume(request,receipt,root):\n'
+            ' return {"schema":"cerebro-material-commitment-consumption/v1","result":"BLOCK","receipt_consumed":False,"freshness_verified":False,"control_decision_ref":"MCPD-ABCDEF1234567890"} if request.get("force_currentness_block") else {"schema":"cerebro-material-commitment-consumption/v1","result":"PASS","receipt_consumed":True,"freshness_verified":True,"control_decision_ref":"MCPD-ABCDEF1234567890"}\n',
+            encoding="utf-8",
+        )
+        binding={
+            "schema":"cerebro-sealed-delivery-control-binding/v1",
+            "decision_owner":"MCP",
+            "control_resolution_surface":ctrl.CONTROL_SURFACE_ID,
+            "control_decision_id":"MCPD-DELIVERY1234",
+            "control_decision_basis_fingerprint":"1"*64,
+            "execution_profile_id":"EXECP-STANDARD1234",
+            "execution_profile_basis_fingerprint":"2"*64,
+            "delivery_profile_resolution_fingerprint":"3"*64,
+            "requested_profile":"STANDARD",
+            "resolved_profile":"STANDARD",
+            "operations":["replace"],
+            "direct_workspace_access_declared":False,
+            "source_commit":BASE_HEAD,
+            "adapter_recomputed":False,
+        }
+        binding["binding_fingerprint"]=ctrl.sha256_bytes(json.dumps(binding,sort_keys=True,separators=(",",":")).encode())
+        manifest={
+            "patch_id":"IMMUNE-PROJECTION-TEST",
+            "delivery_profile":"STANDARD",
+            "delivery_execution_contract":"CEREBRO-STANDARD-DELIVERY-KERNEL-001",
+            "expected_base_commit":BASE_HEAD,
+            "files":[{"path":"a.txt","operation":"replace"}],
+            "delivery_control_binding":binding,
+            "assurance_kernel":{
+                "campaign_id":"IMMUNE-TEST",
+                "package_class":"STANDARD_SOURCE_PACKAGE",
+                "authority_epoch":9,
+                "producer_identity":"IMPLEMENTER-L3-TEST",
+                "risk_profile":"I3_TRUST_CRITICAL",
+                "intended_consequence_class":"SOURCE_EFFECT",
+            },
+        }
+        request={
+            "stage":"MATERIAL_EXECUTE","material":True,
+            "commitment_target":manifest["patch_id"],
+            "authoritative_source_commit":BASE_HEAD,
+        }
+        receipt={
+            "schema":"cerebro-material-commitment-preflight-receipt/v1",
+            "result":"PASS","material":True,"stage":"MATERIAL_EXECUTE",
+            "commitment_target":manifest["patch_id"],"source_identity":BASE_HEAD,
+            "semantic_resolution_state":"RESOLVED","coverage_state":"COMPLETE",
+            "conflict_state":"NONE_FOUND","basis_fingerprint":"a"*64,
+            "control_decision_ref":"MCPD-ABCDEF1234567890",
+        }
+        consumption={
+            "schema":"cerebro-material-commitment-consumption/v1",
+            "result":"PASS","receipt_consumed":True,"freshness_verified":True,
+            "mcp_consumed":True,"normal_call_path_exercised":True,
+            "control_decision_ref":receipt["control_decision_ref"],
+            "current_basis_fingerprint":receipt["basis_fingerprint"],
+            "receipt_basis_fingerprint":receipt["basis_fingerprint"],
+        }
+        paths={name:root/(name+".json") for name in ("manifest","request","receipt","consumption")}
+        for name,value in (("manifest",manifest),("request",request),("receipt",receipt),("consumption",consumption)):
+            write_json(paths[name],value)
+        args=dict(
+            manifest_path=paths["manifest"],request_path=paths["request"],
+            preflight_receipt_path=paths["receipt"],preflight_consumption_path=paths["consumption"],
+            source_head=BASE_HEAD,authority_epoch=9,source_root=root,
+        )
+        permit=ctrl.project_immune_material_permit(**args)
+        state=root/"state.json"
+        state_value={
+            "schema":mod.STATE_SCHEMA,"state":"IMMUNE_ENFORCED","authority_epoch":9,"consumed":[],
+            "migration_id":"TEST-MIGRATION","migration_source_state":"FAILED_RECOVERY",
+            "migration_source_head":BASE_HEAD,"migration_source_tree":"1"*40,
             "migration_consumed_ledger_sha256":mod.ledger_fingerprint([]),
-            "migration_receipt_sha256":"2"*64,
-            "external_anchor_id":"EXTERNAL-ANCHOR-TEST",
-            "external_anchor_fingerprint":"3"*64,
-            "external_anchor_verifier_path":str(root/"external.py"),
-            "external_anchor_verifier_sha256":"4"*64,
-            "immune_attestor_path":str(attestor),
-            "immune_attestor_sha256":mod.file_sha256(attestor),
-            "immune_attestor_key_path":str(key),
-            "immune_attestor_key_fingerprint":mod.sha256_hex(key.read_bytes()),
+            "external_anchor_id":"EXTERNAL-ANCHOR-TEST","external_anchor_fingerprint":"3"*64,
+            "external_anchor_verifier_path":str(root/"external.py"),"external_anchor_verifier_sha256":"4"*64,
+            "immune_attestor_path":str(ROOT/"tooling"/"assurance"/"immune_attestation.py"),
+            "immune_attestor_sha256":"5"*64,"immune_attestor_key_path":str(root/"key.bin"),
+            "immune_attestor_key_fingerprint":"6"*64,
             "migration_recovery_record":{
-                "schema":mod.IMMUNE_RECOVERY_RECORD_SCHEMA,
-                "migration_id":"TEST-MIGRATION",
-                "migration_subject_sha256":"a"*64,
-                "entry_authorization_fingerprint":"b"*64,
-                "prestate_fingerprint":"c"*64,
-                "post_entry_authority_epoch":9,
+                "schema":mod.IMMUNE_RECOVERY_RECORD_SCHEMA,"migration_id":"TEST-MIGRATION",
+                "migration_subject_sha256":"7"*64,"entry_authorization_fingerprint":"8"*64,
+                "prestate_fingerprint":"9"*64,"post_entry_authority_epoch":9,
                 "consumed_ledger_sha256":mod.ledger_fingerprint([]),
-                "installation_plan_sha256":"d"*64,
-                "entry_nonce_sha256":"e"*64,
+                "installation_plan_sha256":"b"*64,"entry_nonce_sha256":"c"*64,
                 "recovery_consumptions":[],
             },
-            "immune_activation_proof_sha256":"5"*64,
+            "immune_activation_proof_sha256":"d"*64,
         }
-        state.write_text(json.dumps(base_state,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8")
-        k=mod.AssuranceKernel(state)
-        mi=mod.MaterialIntent(BASE_HEAD,P,T,"STANDARD_SOURCE_PACKAGE","IMMUNE-TEST",9)
-        ip={
-            "schema":mod.IMMUNE_PERMIT_SCHEMA,
-            "permit_id":"IP1",
-            "campaign_id":"IMMUNE-TEST",
-            "package_class":"STANDARD_SOURCE_PACKAGE",
-            "source_pre_head":BASE_HEAD,
-            "package_sha256":P,
-            "touched_paths_sha256":T,
-            "quarantine_scope_sha256":"6"*64,
-            "risk_profile":"I3_TRUST_CRITICAL",
-            "intended_consequence_class":"SOURCE_EFFECT",
-            "nonce":"immune-validator-0001",
-            "authority_epoch":9,
-            "producer_identity":"IMPLEMENTER-TEST",
-            "attestation_path":str(root/"attestation.json"),
-            "material_consumer_identity":"STANDARD_DELIVERY",
-        }
-        subject=mod.AssuranceKernel._immune_subject(ip,mi)
-        signed=immune.sign_attestation(subject=subject,key=key.read_bytes(),attestor_identity="INDEPENDENT-ATTESTOR-TEST",implementation_path=attestor)
-        Path(ip["attestation_path"]).write_text(json.dumps(signed,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8")
-        receipt=k.consume(ip,mi)
-        assert receipt["result"]=="ALLOW" and receipt["assurance_profile"]=="IMMUNE"
-        immune_tests.append("immune-independent-attestation-allows")
-        denied(lambda:k.consume(ip,mi),"PERMIT_REPLAY")
-        immune_tests.append("immune-permit-replay-denies")
-        base_state["state"]="IMMUNE_MIGRATING"; base_state["authority_epoch"]=10
-        state.write_text(json.dumps(base_state,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8")
-        moving_intent=mod.MaterialIntent(BASE_HEAD,P,T,"STANDARD_SOURCE_PACKAGE","IMMUNE-TEST",10)
-        moving=dict(ip,permit_id="IP2",nonce="immune-validator-0002",authority_epoch=10)
-        denied(lambda:mod.AssuranceKernel(state).check(moving,moving_intent),"IMMUNE_MIGRATION_NOT_FINALIZED")
-        immune_tests.append("immune-migrating-denies-material")
-        base_state["state"]="IMMUNE_QUARANTINED"; base_state["authority_epoch"]=11
-        base_state["quarantine_reason_sha256"]="7"*64; base_state["quarantine_scope_sha256"]="8"*64
-        state.write_text(json.dumps(base_state,sort_keys=True,separators=(",",":"))+"\n",encoding="utf-8")
-        quarantined_intent=mod.MaterialIntent(BASE_HEAD,P,T,"STANDARD_SOURCE_PACKAGE","IMMUNE-TEST",11)
-        quarantined=dict(ip,permit_id="IP3",nonce="immune-validator-0003",authority_epoch=11)
-        denied(lambda:mod.AssuranceKernel(state).check(quarantined,quarantined_intent),"KERNEL_NOT_ENFORCING")
-        immune_tests.append("immune-quarantined-denies-material")
-        try:
-            immune.sign_attestation(subject=subject,key=key.read_bytes(),attestor_identity=subject["producer_identity"],implementation_path=attestor)
-        except immune.ImmuneAttestationError as e:
-            assert "PRODUCER_SELF_ATTESTATION_PROHIBITED" in str(e)
-        else:
-            raise AssertionError("EXPECTED_SELF_ATTESTATION_DENY")
-        immune_tests.append("producer-self-attestation-denies")
-    return {"result":"PASS","canaries":len(immune_tests),"tests":immune_tests}
+        write_json(state,state_value)
+        intent=mod.intent_from_manifest(str(paths["manifest"]),BASE_HEAD,projected_permit=permit)
+        return temp,root,paths,args,manifest,request,receipt,consumption,permit,state,intent
 
+    temp,root,paths,args,manifest,request,receipt,consumption,permit,state,intent=fixture()
+    kernel=mod.AssuranceKernel(state)
+    stale_args=dict(args,source_head="0"*40)
+    value_denied(lambda:ctrl.project_immune_material_permit(**stale_args),"immune-projection-request-source-mismatch")
+    tests.append("C01-stale-source-head-denies")
+    wrong=dict(permit,package_sha256="0"*64)
+    deny_code(lambda:kernel.check(wrong,intent),"BINDING_MISMATCH:package_sha256")
+    tests.append("C02-wrong-package-hash-denies")
+    wrong=dict(permit,touched_paths_sha256="0"*64)
+    deny_code(lambda:kernel.check(wrong,intent),"BINDING_MISMATCH:touched_paths_sha256")
+    tests.append("C03-wrong-touched-paths-denies")
+    wrong=dict(permit,quarantine_scope_sha256="0"*64)
+    deny_code(lambda:kernel.check(wrong,intent),"IMMUNE_BINDING_MISMATCH:quarantine_scope_sha256")
+    tests.append("C04-wrong-quarantine-scope-denies")
+    wrong=dict(permit,authority_epoch=8)
+    deny_code(lambda:kernel.check(wrong,intent),"STALE_AUTHORITY_EPOCH")
+    tests.append("C05-authority-epoch-mismatch-denies")
+    bad_manifest=json.loads(json.dumps(manifest)); bad_manifest["assurance_kernel"].pop("producer_identity")
+    write_json(paths["manifest"],bad_manifest)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args),"immune-projection-assurance-field-missing:producer_identity")
+    write_json(paths["manifest"],manifest)
+    tests.append("C06-producer-identity-missing-denies")
+    blocked=dict(receipt,result="BLOCKED")
+    write_json(paths["receipt"],blocked)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args),"immune-projection-preflight-receipt-mismatch:result")
+    write_json(paths["receipt"],receipt)
+    tests.append("C07-preflight-block-does-not-project")
+    stale=dict(receipt,basis_fingerprint="e"*64)
+    write_json(paths["receipt"],stale)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args),"immune-projection-preflight-consumption-basis-mismatch")
+    write_json(paths["receipt"],receipt)
+    tests.append("C08-stale-preflight-receipt-denies")
+    not_consumed=dict(consumption,receipt_consumed=False)
+    write_json(paths["consumption"],not_consumed)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args),"immune-projection-preflight-consumption-not-pass")
+    write_json(paths["consumption"],consumption)
+    tests.append("C09-preflight-consumption-not-fresh-denies")
+    bad_manifest=json.loads(json.dumps(manifest)); bad_manifest["delivery_control_binding"]["binding_fingerprint"]="0"*64
+    write_json(paths["manifest"],bad_manifest)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args),"immune-projection-delivery-control-binding-fingerprint-mismatch")
+    write_json(paths["manifest"],manifest)
+    tests.append("C10-sealed-delivery-binding-mismatch-denies")
+    wrong=dict(permit,material_consumer_identity="OTHER_CONSUMER")
+    deny_code(lambda:kernel.check(wrong,intent),"IMMUNE_MATERIAL_CONSUMER_IDENTITY_INVALID")
+    tests.append("C11-non-StandardDelivery-consumer-denies")
+    allowed=kernel.consume(permit,intent)
+    ok("C12-exact-permit-consume-allows",allowed["result"]=="ALLOW")
+    deny_code(lambda:kernel.consume(permit,intent),"PERMIT_REPLAY")
+    tests.append("C12-permit-replay-denies")
+    deny_code(lambda:kernel.consume(permit,intent),"PERMIT_REPLAY")
+    tests.append("C13-retry-without-fresh-preflight-denies")
+    temp2,root2,paths2,args2,manifest2,request2,receipt2,consumption2,permit2,state2,intent2=fixture()
+    ordinary=mod.AssuranceKernel(state2).consume(permit2,intent2)
+    ok("C14-ordinary-missing-attestation-does-not-deny","attestation_fingerprint" not in ordinary)
+    fake=dict(permit2,attestation_path=str(root2/"fake.json"))
+    validation=ctrl.validate_projected_immune_material_permit(fake,**args2)
+    ok("C15-fake-attestation-has-no-authority",validation["result"]=="BLOCK")
+    blocked=dict(receipt2,result="BLOCKED",attestation_path=str(root2/"fake.json"))
+    write_json(paths2["receipt"],blocked)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args2),"immune-projection-preflight-receipt-mismatch:result")
+    tests.append("C16-attestation-cannot-override-MCP-block")
+    write_json(paths2["receipt"],receipt2)
+    temp3,root3,paths3,args3,manifest3,request3,receipt3,consumption3,permit3,state3,intent3=fixture()
+    manual_intent=mod.intent_from_manifest(str(paths3["manifest"]),BASE_HEAD)
+    deny_code(lambda:mod.AssuranceKernel(state3).check(permit3,manual_intent),"IMMUNE_INTENT_BINDING_MISSING")
+    tests.append("C17-manually-dropped-permit-denies")
+    collision=json.loads(json.dumps(manifest2)); collision["assurance_kernel"]["producer_identity"]="STANDARD_DELIVERY"
+    write_json(paths2["manifest"],collision)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args2),"immune-projection-producer-consumer-collision")
+    write_json(paths2["manifest"],manifest2)
+    tests.append("C18-producer-self-certification-no-authority")
+    ok("C19-migration-recovery-attestation-preserved",hasattr(mod.AssuranceKernel,"recover_immune_migration") and "IMMUNE_ATTESTATION_SCHEMA" in vars(mod))
+    standards=(ROOT/"standards"/"immune-system.yaml").read_text(encoding="utf-8")
+    delivery=(ROOT/"tooling"/"delivery"/"Cerebro.StandardDeliveryKernel.ps1").read_text(encoding="utf-8")
+    ok("C20-prestate-and-rollback-boundary-preserved","rollback_required: true" in standards and "FULL_RECOVERY_SNAPSHOT" in delivery)
+    ok("C21-post-effect-readback-required","post_effect_readback_required: true" in standards and "INSTALLED_BYTE_VERIFY" in delivery)
+    ok("C22-exact-target-CAS-nonpass","expected_git_blob_sha" in delivery and "PATCH_BASE_IDENTITY" in delivery)
+    ok("C23-pre-mutation-drift-denies","WORKTREE_NOT_CLEAN" in delivery and "SOURCE_BASE_CHANGED" in delivery)
+    nonmaterial=dict(request2,stage="LOCK")
+    write_json(paths2["request"],nonmaterial)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args2),"immune-projection-material-execute-required")
+    write_json(paths2["request"],request2)
+    tests.append("C24-non-MATERIAL_EXECUTE-projection-denies")
+    forged_receipt=dict(receipt2,control_decision_ref="MCPD-FORGED00000000")
+    forged_consumption=dict(consumption2,control_decision_ref="MCPD-FORGED00000000")
+    write_json(paths2["receipt"],forged_receipt); write_json(paths2["consumption"],forged_consumption)
+    value_denied(lambda:ctrl.project_immune_material_permit(**args2),"immune-projection-preflight-currentness-failed")
+    write_json(paths2["receipt"],receipt2); write_json(paths2["consumption"],consumption2)
+    tests.append("C25-projection-cannot-create-control-authority")
+    ok("C26-second-material-lane-prohibited","shadow_material_consumer: PROHIBITED" in standards and delivery.count("consume-manifest-permit")>=1)
+    temp.cleanup(); temp2.cleanup(); temp3.cleanup()
+    return {"result":"PASS","canaries":len(tests),"tests":tests}
 
 def run_recovery():
     immune=load("immune_attestation_recovery",ROOT/"tooling"/"assurance"/"immune_attestation.py")
@@ -372,4 +484,46 @@ def run_all():
         "first_activation_tests":first["tests"],
     }
 
-if __name__=="__main__": print(json.dumps(run_all(),sort_keys=True))
+def activation_probe(root=ROOT):
+    result=run_all()
+    basis_files=[
+        "mcp/control-resolution.yaml","mcp/control_resolution.py",
+        "standards/assurance-kernel.yaml","standards/immune-system.yaml",
+        "mcp/assurance-continuity.yaml","mcp/immune-material-permit.schema.json",
+        "mcp/immune-material-receipt.schema.json","tooling/assurance/assurance_kernel.py",
+        "tooling/validator/assurance_kernel_validation.py","standards/delivery-kernel.yaml",
+        "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1",
+    ]
+    rows=[]
+    for relative in sorted(basis_files):
+        path=root/relative
+        if not path.is_file(): raise AssertionError("ACTIVATION_BASIS_MISSING:"+relative)
+        rows.append(relative+"|"+hashlib.sha256(path.read_bytes()).hexdigest())
+    fingerprint=hashlib.sha256("\n".join(rows).encode()).hexdigest()
+    return {
+        "schema":"cerebro-immune-assurance-activation-proof/v1",
+        "result":result["result"],
+        "binding_id":"IMMUNE_ASSURANCE",
+        "proves_bindings":["IMMUNE_ASSURANCE"],
+        "ordinary_material_profile":"MCP_BOUND_ONE_SHOT_IMMUNE_PERMIT",
+        "ordinary_independent_attestation_required":False,
+        "migration_recovery_attestation_preserved":True,
+        "canaries":result["canaries"],
+        "immune_canaries":result["immune_canaries"],
+        "source_state_fingerprint":fingerprint,
+        "basis_files":basis_files,
+    }
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("command",nargs="?",choices=("selftest","activation-probe"),default="selftest")
+    parser.add_argument("--source-root",default=str(ROOT))
+    parser.add_argument("--output")
+    args=parser.parse_args()
+    result=activation_probe(Path(args.source_root).resolve()) if args.command=="activation-probe" else run_all()
+    text=json.dumps(result,sort_keys=True)+"\n"
+    if args.output: Path(args.output).write_text(text,encoding="utf-8")
+    else: print(text,end="")
+    return 0 if result.get("result")=="PASS" else 1
+
+if __name__=="__main__": raise SystemExit(main())

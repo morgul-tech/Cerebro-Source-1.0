@@ -1,7 +1,7 @@
-schema: cerebro-assurance-continuity/v0.3
+schema: cerebro-assurance-continuity/v0.4
 assurance_continuity:
   id: CEREBRO-ASSURANCE-CONTINUITY-001
-  status: ACTIVE_WITH_IMMUNE_SUCCESSOR_CANDIDATE_NOT_ACTIVATED
+  status: ACTIVE_WITH_MCP_BOUND_IMMUNE_MATERIAL_PERMIT
   introduced_by: C02-P001
   new_component: false
   control_owner: MCP
@@ -24,13 +24,18 @@ assurance_continuity:
     persistent_runtime_role_required_after_IMMUNE_ENFORCED: false
 
   immune_assurance:
-    status: CANDIDATE_NONMATERIAL_NOT_ACTIVATED
+    status: ACTIVE
     contract: standards/immune-system.yaml
     permit_schema: mcp/immune-material-permit.schema.json
     receipt_schema: mcp/immune-material-receipt.schema.json
     attestation_schema: mcp/immune-attestation.schema.json
     migration_schema: mcp/immune-migration.schema.json
     attestation_implementation: tooling/assurance/immune_attestation.py
+    attestation_scope: MIGRATION_AND_AUTHENTICATED_RECOVERY_ONLY
+    ordinary_material_independent_attestation_required: false
+    ordinary_material_permit_projection_owner: MCP
+    ordinary_material_permit_projection_ref: mcp/control_resolution.py#project_immune_material_permit
+    ordinary_material_permit_revalidation_ref: mcp/control_resolution.py#validate_projected_immune_material_permit
     material_edge_state: IMMUNE_ENFORCED
     migration_state: IMMUNE_MIGRATING
     quarantine_state: IMMUNE_QUARANTINED
@@ -86,7 +91,8 @@ assurance_continuity:
     required_sequence:
       - RESOLVE_GOVERNING_PERSISTENCE_AND_DELIVERY_CONTRACT
       - RESOLVE_ASSURANCE_PROFILE_FROM_CURRENT_KERNEL_STATE
-      - CONSUME_EXACT_CURRENT_PERMIT_AND_INDEPENDENT_ATTESTATION
+      - CONSUME_FRESH_MATERIAL_EXECUTE_PREFLIGHT_DECISION
+      - PROJECT_AND_REVALIDATE_EXACT_MCP_BOUND_ONE_SHOT_IMMUNE_PERMIT
       - EXECUTE_REQUIRED_PERSISTENCE_PATH
       - VERIFY_DURABLE_RESULT_AND_POST_EFFECT_READBACK
       - ALLOW_PERSISTENT_COMPLETION_CLAIM
@@ -112,13 +118,11 @@ assurance_continuity:
       - CEREBRO_SYNC_VERIFIED
       - POST_EFFECT_READBACK_VERIFIED
 
-  ingress722_candidate_boundary:
-    source_head: 4469eddccc8db213bb923c403c26c36e30309575
-    targetset: 15
-    producer_scope_target: SCOPE_CLOSED
+  ingress853_exact11_boundary:
+    base_source_head: ceff87e29fd2295534ce3eeb8e9ec32180bb0b5b
+    targetset: 11
+    operations: {modify: 11, create: 0, delete: 0}
     intended_consequence_class: SOURCE_EFFECT
-    consequence_state: BLOCKED
-    exact_blocker: CURRENT_EXTERNAL_ANCHOR_AUTHORITY_AND_LIVE_HOST_RECOVERY_PROOF_UNPROVEN
-    migration_or_cutover: PROHIBITED
-    Source_mutation: NO
-    Runtime_mutation: NO
+    ordinary_material_profile: MCP_BOUND_ONE_SHOT_IMMUNE_PERMIT
+    migration_or_recovery_contract_change: false
+    authority_ref: PM-IMMUNFORSVAR-EXACT11-HUMAN-APPROVED-IMPLEMENTATION-PACKET-20260824-001
