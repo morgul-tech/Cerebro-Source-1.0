@@ -3,7 +3,7 @@ component:
   id: runtime-host
   name: Runtime Host
   type: tooling
-  version: 1.1.0
+  version: 1.2.0
   status: active-source
 responsibility:
   primary: >
@@ -20,6 +20,10 @@ boundaries:
   - resolve-declared-capability-binding
   - verify-runtime-result-before-success
   - write-runtime-receipt-for-success-and-failure
+  - host-first-light-on-demand-one-event
+  - require-first-light-module-in-exact-snapshot
+  - share-first-light-temporalis-reducer
+  - enforce-temporalis-side-effects-deny
   - canonicalize-natural-language-boot
   - resolve-source-before-derived-state
   - reject-stale-derived-input
@@ -33,17 +37,23 @@ boundaries:
   - infer-authority-from-library-filename
   - infer-authority-from-conversation-memory
   - treat-stale-receipt-or-handoff-as-current-gate
+  - grant-first-light-material-authority
+  - allow-temporalis-external-side-effects
 interfaces:
   consumes:
   - validated-release
   - runtime-profile
   - bootstrap-state
   - runtime-event
+  - first-light-event
+  - temporalis-scenario
   produces:
   - runtime-state
   - runtime-receipt
   - runtime-failure-ledger
   - control-transfer-evidence
+  - first-light-receipt
+  - temporalis-trace
 documentation:
   path: README.md
 migration:

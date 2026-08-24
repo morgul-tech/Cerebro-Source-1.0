@@ -1,0 +1,85 @@
+schema: cerebro-first-light-contract/v0.1
+id: CEREBRO-FIRST-LIGHT-TEMPORALIS-V0
+status: candidate
+authority: NONE
+source_authority: NONE
+runtime_authority: NONE
+control_authority: NONE
+scheduler_authority: NONE
+material_effect_authority: NONE
+
+first_light:
+  mode: REAL_FIRST_LIGHT
+  residence: ON_DEMAND
+  events_per_invocation: 1
+  persistence: SQLITE_STANDARD_LIBRARY
+  store_authority: DERIVED_EVIDENCE_ONLY
+  external_material_capability_v0: NONE
+  allowed_model_adapters:
+    - STUB
+    - RECORDED
+  live_model_adapter: DEFERRED
+  semantic_order_source: EXPLICIT_EVENT_IDENTITY_AND_CURRENTNESS
+  wall_clock_semantic_authority: NONE
+  receipt_required: true
+  blind_retry: PROHIBITED
+
+temporalis:
+  mode: SIM_TEMPORALIS
+  reducer: SAME_AS_FIRST_LIGHT
+  logical_clock: true
+  isolated_namespace: REQUIRED
+  side_effects: DENY
+  denied:
+    - FILESYSTEM_OUTSIDE_SIM_ROOT
+    - PROCESS_SPAWN
+    - NETWORK
+    - SOURCE_MUTATION
+    - SHARED_MUTATION
+    - MATERIAL_EFFECT
+  deterministic_order:
+    - logical_time
+    - scenario_sequence
+    - event_id
+
+event:
+  required:
+    - event_id
+    - event_type
+    - subject_ref
+    - intended_consequence_class
+    - payload
+  identity: SHA256_CANONICAL_JSON_EXCLUDING_OBSERVATION_METADATA
+  same_id_same_fingerprint: IDEMPOTENT_NO_EXECUTION
+  same_id_different_fingerprint: BLOCK
+
+truth_separation:
+  execution_truth: SEPARATE
+  verification_truth: SEPARATE
+  process_observation: SEPARATE
+  material_poststate_truth: SEPARATE
+  provider_readback_proves_effect: false
+  pm_admission_proves_effect: false
+  exit_zero_proves_semantic_success: false
+  heartbeat_proves_progress_or_success: false
+
+closure:
+  producer_scope_state: EXPLICIT
+  consequence_state: EXPLICIT
+  effect_proven_requires:
+    - exact_prestate
+    - authorized_action
+    - execution_attempt
+    - independent_post_effect_observation
+    - required_provider_readback
+    - final_currentness_recheck
+
+invariants:
+  - ONE_SHARED_REDUCER_FOR_REAL_AND_SIMULATION
+  - NO_PERSISTENT_DOCTOR_ACTOR_DEPENDENCY
+  - NO_NEW_SCHEDULER_SERVICE_LISTENER_OR_WORKER_POOL
+  - FIRST_LIGHT_CANNOT_SELF_ATTEST
+  - IMMUNE_ASSURANCE_IS_EXTERNAL_INPUT_WHEN_SEPARATELY_AUTHORIZED
+  - TEMPORALIS_SIDE_EFFECTS_DENY
+  - LOCAL_STORE_IS_EVIDENCE_ONLY
+  - INTENDED_CONSEQUENCE_CLASS_IMMUTABLE_IN_RECEIPT_LINEAGE

@@ -15,7 +15,7 @@ from typing import Iterable
 
 from diagnostic_capsule import latest_unresolved_context
 
-HOST_VERSION = "0.5.0"
+HOST_VERSION = "0.6.0"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -95,6 +95,7 @@ def snapshot_is_valid(snapshot: Path, commit: str) -> bool:
         snapshot / "tooling" / "delivery" / "delivery_controller.py",
         snapshot / "tooling" / "closure" / "closure_engine.py",
         snapshot / "tooling" / "host" / "diagnostic_capsule.py",
+        snapshot / "tooling" / "runtime-host" / "first_light_runtime.py",
     ]
     if not marker.is_file() or not all(engine.is_file() for engine in engines):
         return False
@@ -120,6 +121,7 @@ def create_snapshot(source: Path, commit: str) -> Path:
         target / "tooling" / "delivery" / "delivery_controller.py",
         target / "tooling" / "closure" / "closure_engine.py",
         target / "tooling" / "host" / "diagnostic_capsule.py",
+        target / "tooling" / "runtime-host" / "first_light_runtime.py",
     ]
     if not all(engine.is_file() for engine in required_engines):
         try:
@@ -242,6 +244,7 @@ def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
         "delivery": snapshot / "tooling" / "delivery" / "delivery_controller.py",
         "closure": snapshot / "tooling" / "closure" / "closure_engine.py",
         "diagnostics": snapshot / "tooling" / "host" / "diagnostic_capsule.py",
+        "runtime-first-light": snapshot / "tooling" / "runtime-host" / "first_light_runtime.py",
     }
     engine = engines[component]
     cmd = [sys.executable, str(engine), *arguments]
@@ -300,6 +303,8 @@ def main() -> int:
     closure.add_argument("closure_args", nargs=argparse.REMAINDER)
     diagnostics = sub.add_parser("diagnostics")
     diagnostics.add_argument("diagnostic_args", nargs=argparse.REMAINDER)
+    first_light = sub.add_parser("runtime-first-light")
+    first_light.add_argument("first_light_args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     try:
@@ -314,6 +319,7 @@ def main() -> int:
             "delivery": getattr(args, "delivery_args", None),
             "closure": getattr(args, "closure_args", None),
             "diagnostics": getattr(args, "diagnostic_args", None),
+            "runtime-first-light": getattr(args, "first_light_args", None),
         }[args.command]
         if not component_args:
             raise HostError("MISSING_DELEGATE_COMMAND", f"pass engine arguments after '{args.command}'")
