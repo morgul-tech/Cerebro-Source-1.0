@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 import shutil
@@ -15,7 +16,7 @@ from typing import Iterable
 
 from diagnostic_capsule import latest_unresolved_context
 
-HOST_VERSION = "0.6.0"
+HOST_VERSION = "0.7.0"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -112,7 +113,6 @@ def create_snapshot(source: Path, commit: str) -> Path:
     if snapshot_is_valid(target, commit):
         return target
     if target.exists():
-        # Only host-owned snapshot paths are removed; Working Source is never touched.
         shutil.rmtree(target)
     capture(source, "worktree", "prune")
     capture(source, "worktree", "add", "--detach", "--force", str(target), commit)
@@ -153,16 +153,21 @@ def write_operation_journal(path: Path, payload: dict) -> None:
     os.replace(temporary, path)
 
 
+def new_operation_id(component: str, cwd: Path) -> str:
+    return hashlib.sha256(
+        f"{component}|{cwd}|{utc_now()}|{os.getpid()}".encode("utf-8")
+    ).hexdigest()[:16]
+
+
 def supervise_native_process(
     cmd: list[str],
     cwd: Path,
     component: str,
     heartbeat_seconds: float = 2.0,
     env: dict[str, str] | None = None,
+    operation_id: str | None = None,
 ) -> dict:
-    operation_id = hashlib.sha256(
-        f"{component}|{cwd}|{utc_now()}|{os.getpid()}".encode("utf-8")
-    ).hexdigest()[:16]
+    operation_id = operation_id or new_operation_id(component, cwd)
     journal_path = operation_root() / f"{operation_id}.json"
     journal = {
         "schema": "cerebro-operation-journal/v0.1",
@@ -238,7 +243,111 @@ def supervise_native_process(
     }
 
 
-def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
+def _load_snapshot_module(path: Path, name: str):
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise HostError("FIRST_LIGHT_MODULE_LOAD_FAILURE", str(path))
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _argument_value(arguments: list[str], flag: str) -> str | None:
+    try:
+        index = arguments.index(flag)
+    except ValueError:
+        return None
+    if index + 1 >= len(arguments):
+        raise HostError("FIRST_LIGHT_ARGUMENT_INVALID", flag)
+    return arguments[index + 1]
+
+
+def _replace_argument(arguments: list[str], flag: str, value: str) -> list[str]:
+    output = list(arguments)
+    try:
+        index = output.index(flag)
+    except ValueError:
+        output.extend([flag, value])
+        return output
+    if index + 1 >= len(output):
+        raise HostError("FIRST_LIGHT_ARGUMENT_INVALID", flag)
+    output[index + 1] = value
+    return output
+
+
+def prepare_first_light_precommit(
+    snapshot: Path,
+    arguments: list[str],
+    *,
+    source_commit: str,
+    operation_id: str,
+) -> tuple[list[str], dict[str, str]]:
+    if "--invocation-envelope" in arguments:
+        raise HostError("FIRST_LIGHT_PRECOMMIT_ENVELOPE_EXTERNAL_OVERRIDE_PROHIBITED", "--invocation-envelope")
+    event_value = _argument_value(arguments, "--event-file")
+    db_value = _argument_value(arguments, "--db")
+    mode = _argument_value(arguments, "--mode") or "REAL_FIRST_LIGHT"
+    if not event_value:
+        raise HostError("FIRST_LIGHT_PRECOMMIT_EVENT_FILE_REQUIRED", "host dispatch requires --event-file")
+    if not db_value:
+        raise HostError("FIRST_LIGHT_PRECOMMIT_DB_REQUIRED", "host dispatch requires --db")
+
+    event_path = Path(event_value)
+    if not event_path.is_absolute():
+        event_path = snapshot / event_path
+    event_path = event_path.resolve()
+    db_path = Path(db_value)
+    if not db_path.is_absolute():
+        db_path = snapshot / db_path
+    db_path = db_path.resolve()
+
+    try:
+        raw_event = event_path.read_bytes()
+        event = json.loads(raw_event.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HostError("FIRST_LIGHT_PRECOMMIT_EVENT_READ_FAILURE", str(exc)) from exc
+    if not isinstance(event, dict):
+        raise HostError("FIRST_LIGHT_PRECOMMIT_EVENT_INVALID", "event must be object")
+
+    runtime_path = snapshot / "tooling" / "runtime-host" / "first_light_runtime.py"
+    try:
+        runtime = _load_snapshot_module(runtime_path, f"cerebro_first_light_precommit_{operation_id}")
+        envelope = runtime.build_precommit_identity(
+            event=event,
+            event_source_bytes=raw_event,
+            event_source_path=event_path,
+            db_path=db_path,
+            mode=mode,
+            source_commit=source_commit,
+            host_operation_id=operation_id,
+        )
+        frozen_event_bytes = runtime.canonical_event_bytes(event)
+    except Exception as exc:
+        classification = getattr(exc, "classification", "FIRST_LIGHT_PRECOMMIT_BUILD_FAILURE")
+        detail = getattr(exc, "detail", repr(exc))
+        raise HostError(str(classification), str(detail)) from exc
+
+    precommit_root = operation_root() / "first-light-precommit"
+    precommit_root.mkdir(parents=True, exist_ok=True)
+    frozen_event_path = precommit_root / f"{operation_id}.event.json"
+    envelope_path = precommit_root / f"{operation_id}.envelope.json"
+    frozen_temp = frozen_event_path.with_suffix(".event.json.tmp")
+    frozen_temp.write_bytes(frozen_event_bytes)
+    os.replace(frozen_temp, frozen_event_path)
+    write_operation_journal(envelope_path, envelope)
+
+    rewritten = _replace_argument(arguments, "--event-file", str(frozen_event_path))
+    rewritten.extend(["--invocation-envelope", str(envelope_path)])
+    return rewritten, {
+        "CEREBRO_SOURCE_COMMIT": source_commit,
+        "CEREBRO_HOST_OPERATION_ID": operation_id,
+        "CEREBRO_FIRST_LIGHT_CORRELATION_ID": str(envelope["correlation_id"]),
+        "CEREBRO_FIRST_LIGHT_PRECOMMIT_FINGERPRINT": str(envelope["precommit_fingerprint"]),
+    }
+
+
+def delegate(snapshot: Path, component: str, arguments: list[str], source_commit: str) -> int:
     engines = {
         "change": snapshot / "tooling" / "change" / "change_engine.py",
         "delivery": snapshot / "tooling" / "delivery" / "delivery_controller.py",
@@ -247,7 +356,8 @@ def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
         "runtime-first-light": snapshot / "tooling" / "runtime-host" / "first_light_runtime.py",
     }
     engine = engines[component]
-    cmd = [sys.executable, str(engine), *arguments]
+    operation_id = new_operation_id(component, snapshot)
+    component_arguments = list(arguments)
 
     env = os.environ.copy()
     diagnostic = latest_unresolved_context()
@@ -262,7 +372,23 @@ def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
     else:
         env["CEREBRO_DIAGNOSTIC_CONTEXT_STATUS"] = "NONE"
 
-    observation = supervise_native_process(cmd, snapshot, component, env=env)
+    if component == "runtime-first-light":
+        component_arguments, precommit_env = prepare_first_light_precommit(
+            snapshot,
+            component_arguments,
+            source_commit=source_commit,
+            operation_id=operation_id,
+        )
+        env.update(precommit_env)
+
+    cmd = [sys.executable, str(engine), *component_arguments]
+    observation = supervise_native_process(
+        cmd,
+        snapshot,
+        component,
+        env=env,
+        operation_id=operation_id,
+    )
     if observation["exit_status"] == "UNKNOWN":
         print(json.dumps({
             "result": "UNKNOWN",
@@ -275,15 +401,13 @@ def delegate(snapshot: Path, component: str, arguments: list[str]) -> int:
 
 
 def selftest() -> dict:
-    # Host selftest is intentionally narrow: it proves parsing/dispatch shape,
-    # not repository semantics that require a real Cerebro Source checkout.
     material = f"{HOST_VERSION}|{SOURCE_REPOSITORY}|{SNAPSHOT_ROOT}"
     digest = hashlib.sha256(material.encode("utf-8")).hexdigest()
     return {
         "schema": "cerebro-host-selftest/v0.1",
         "result": "PASS",
         "host_version": HOST_VERSION,
-        "dispatch_contract": "snapshot_rehydrate_diagnostics_then_delegate",
+        "dispatch_contract": "snapshot_rehydrate_diagnostics_precommit_first_light_then_delegate",
         "source_mutation": False,
         "fingerprint": digest,
     }
@@ -323,7 +447,7 @@ def main() -> int:
         }[args.command]
         if not component_args:
             raise HostError("MISSING_DELEGATE_COMMAND", f"pass engine arguments after '{args.command}'")
-        return delegate(snapshot, args.command, component_args)
+        return delegate(snapshot, args.command, component_args, commit)
     except HostError as exc:
         print(json.dumps({"result": "FAIL", "classification": exc.classification, "detail": exc.detail}, indent=2))
         return 1

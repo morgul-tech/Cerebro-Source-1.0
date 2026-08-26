@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -66,6 +67,23 @@ def _sim_blocks(temporalis: Any, runtime: Any, scenario: dict[str, Any], root: P
     except runtime.FirstLightError as exc:
         return exc.classification == classification
     return False
+
+
+def _precommit(runtime: Any, base: Path, event: dict[str, Any], name: str = "pc") -> tuple[Path, Path, dict[str, Any]]:
+    event_path = base / f"{name}.event.json"
+    raw = json.dumps(event, sort_keys=False, ensure_ascii=False).encode("utf-8")
+    event_path.write_bytes(raw)
+    db_path = base / f"{name}.sqlite3"
+    envelope = runtime.build_precommit_identity(
+        event=event,
+        event_source_bytes=raw,
+        event_source_path=event_path,
+        db_path=db_path,
+        mode=runtime.MODE_REAL,
+        source_commit="a" * 40,
+        host_operation_id=f"HOST-{name}",
+    )
+    return event_path, db_path, envelope
 
 
 def run_canaries(root: Path) -> dict[str, Any]:
@@ -242,11 +260,103 @@ def run_canaries(root: Path) -> dict[str, Any]:
         check(47, "receipt exposes currentness, consequence and next owner", all(receipt.get(name) for name in ("currentness_cursor", "consequence_state", "next_owner")))
         check(48, "personal-capsule domain is absent from First Light/Temporalis", "capsule" not in runtime_text.lower() and "capsule" not in temporalis_text.lower())
 
+        # ingress962 bounded precommit/recovery canaries; old 1-48 remain unchanged above.
+        identity_file = base / "identity.sqlite3"
+        store_id = runtime.stable_store_identity(identity_file, create=True)
+        alias_file = base / "identity-alias.sqlite3"
+        alias_ok = False
+        try:
+            os.link(identity_file, alias_file)
+            alias_ok = runtime.stable_store_identity(alias_file) == store_id
+        except OSError:
+            alias_ok = True
+        check(49, "store identity is underlying-file based, not path based", alias_ok and store_id.startswith("FILEID-SHA256-"))
+        copied = base / "identity-copy.sqlite3"
+        shutil.copy2(identity_file, copied)
+        check(50, "copied store does not inherit store identity", runtime.stable_store_identity(copied) != store_id)
+
+        pc_event = _event("PC51", subject_ref="precommit")
+        pc_path, pc_db, pc = _precommit(runtime, base, pc_event, "pc51")
+        absent = runtime.run_event(pc_event, pc_db, runtime.MODE_REAL, invocation_envelope=pc, source_commit="a" * 40)
+        check(51, "ABSENT completion is bound to frozen precommit tuple", absent.get("recovery_state") == "ABSENT" and absent.get("precommit_fingerprint") == pc["precommit_fingerprint"])
+        found = runtime.run_event(pc_event, pc_db, runtime.MODE_REAL, invocation_envelope=pc, source_commit="a" * 40)
+        con = sqlite3.connect(pc_db)
+        attempt_count = con.execute("select count(*) from attempts where event_id='PC51'").fetchone()[0]
+        attempt_meta = con.execute("select host_operation_id,correlation_id,store_identity,precommit_fingerprint from attempts where event_id='PC51'").fetchone()
+        con.close()
+        check(52, "FOUND returns existing receipt with zero second execution", found.get("recovery_state") == "FOUND" and found.get("replay") == "IDEMPOTENT_NO_EXECUTION" and attempt_count == 1)
+        check(53, "host correlation and store identity persist in attempt evidence", tuple(attempt_meta) == (pc["host_operation_id"], pc["correlation_id"], pc["store_identity"], pc["precommit_fingerprint"]))
+
+        changed_event = _event("PC54", subject_ref="changed")
+        changed_path, changed_db, changed_pc = _precommit(runtime, base, changed_event, "pc54")
+        changed_path.write_text(json.dumps({**changed_event, "payload": {"key": "x", "value": 9}}), encoding="utf-8")
+        def changed_blocks() -> bool:
+            try:
+                runtime.run_event(changed_event, changed_db, runtime.MODE_REAL, invocation_envelope=changed_pc, source_commit="a" * 40)
+            except runtime.FirstLightError as exc:
+                return exc.classification == "PRECOMMIT_EVENT_SOURCE_CHANGED"
+            return False
+        check(54, "event-file replacement after precommit is detected before execution", changed_blocks)
+
+        source_event = _event("PC55")
+        _, source_db, source_pc = _precommit(runtime, base, source_event, "pc55")
+        def source_blocks() -> bool:
+            try:
+                runtime.run_event(source_event, source_db, runtime.MODE_REAL, invocation_envelope=source_pc, source_commit="b" * 40)
+            except runtime.FirstLightError as exc:
+                return exc.classification == "PRECOMMIT_SOURCE_MISMATCH"
+            return False
+        check(55, "source commit mismatch blocks", source_blocks)
+
+        mode_event = _event("PC56")
+        _, mode_db, mode_pc = _precommit(runtime, base, mode_event, "pc56")
+        def mode_blocks() -> bool:
+            try:
+                runtime.run_event(mode_event, mode_db, runtime.MODE_SIM, invocation_envelope=mode_pc, source_commit="a" * 40)
+            except runtime.FirstLightError as exc:
+                return exc.classification == "PRECOMMIT_MODE_MISMATCH"
+            return False
+        check(56, "mode mismatch blocks", mode_blocks)
+
+        wrong_event = _event("PC57")
+        _, wrong_db, wrong_pc = _precommit(runtime, base, wrong_event, "pc57")
+        wrong_other = base / "wrong-other.sqlite3"
+        runtime.stable_store_identity(wrong_other, create=True)
+        def wrong_holds() -> bool:
+            try:
+                runtime.run_event(wrong_event, wrong_other, runtime.MODE_REAL, invocation_envelope=wrong_pc, source_commit="a" * 40)
+            except runtime.FirstLightError as exc:
+                return exc.classification == "STORE_IDENTITY_MISMATCH" and exc.classification in runtime.UNKNOWN_HOLD_CLASSIFICATIONS
+            return False
+        check(57, "wrong or copied store resolves to UNKNOWN/HOLD", wrong_holds)
+
+        unknown_event = _event("PC58")
+        _, unknown_db, unknown_pc = _precommit(runtime, base, unknown_event, "pc58")
+        runtime.run_event(unknown_event, unknown_db, runtime.MODE_REAL, invocation_envelope=unknown_pc, source_commit="a" * 40)
+        con = sqlite3.connect(unknown_db)
+        con.execute("delete from receipts where event_id='PC58'")
+        con.commit()
+        con.close()
+        def incomplete_holds() -> bool:
+            try:
+                runtime.run_event(unknown_event, unknown_db, runtime.MODE_REAL, invocation_envelope=unknown_pc, source_commit="a" * 40)
+            except runtime.FirstLightError as exc:
+                return exc.classification == "PRECOMMIT_RECOVERY_UNKNOWN" and exc.classification in runtime.UNKNOWN_HOLD_CLASSIFICATIONS
+            return False
+        check(58, "finalized event without receipt is UNKNOWN/HOLD under precommit recovery", incomplete_holds)
+
+        delegate_text = host_text[host_text.index("def delegate("):]
+        check(59, "host freezes precommit identity before child supervision", "prepare_first_light_precommit(" in delegate_text and delegate_text.index("prepare_first_light_precommit(") < delegate_text.index("supervise_native_process("))
+        check(60, "bounded contract freezes FOUND/ABSENT/UNKNOWN and STORE_IDENTITY_NE_PATH", all(token in contract_text for token in ("FOUND:", "ABSENT:", "UNKNOWN:", "STORE_IDENTITY_NE_PATH: true", "reconcile_service: NONE")))
+
     errors = [row for row in results if row["result"] != "PASS"]
     return {
-        "schema": "cerebro-first-light-validator/v0.2",
-        "result": "PASS" if not errors and len(results) == 48 else "NONPASS",
+        "schema": "cerebro-first-light-validator/v0.3",
+        "result": "PASS" if not errors and len(results) == 60 else "NONPASS",
         "canary_count": len(results),
+        "legacy_canary_count": 48,
+        "legacy_pass_count": sum(1 for row in results if row["id"] <= 48 and row["result"] == "PASS"),
+        "boundary_canary_count": 12,
         "pass_count": len(results) - len(errors),
         "nonpass_count": len(errors),
         "canaries": results,
@@ -271,7 +381,7 @@ def activation_probe(source_root: Path, output: Path) -> int:
         "canary_count": result["canary_count"],
         "pass_count": result["pass_count"],
         "nonpass_count": result["nonpass_count"],
-        "consumer_activation": "HOST_RUNTIME_FIRST_LIGHT_DISPATCH_AND_SNAPSHOT_CLOSURE",
+        "consumer_activation": "HOST_RUNTIME_FIRST_LIGHT_DISPATCH_PRECOMMIT_IDENTITY_AND_SNAPSHOT_CLOSURE",
         "source_mutation_by_probe": False,
         "runtime_material_effect": False,
         "details": result,

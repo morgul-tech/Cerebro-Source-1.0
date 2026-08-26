@@ -1,4 +1,4 @@
-schema: cerebro-first-light-contract/v0.1
+schema: cerebro-first-light-contract/v0.2
 id: CEREBRO-FIRST-LIGHT-TEMPORALIS-V0
 status: candidate
 authority: NONE
@@ -23,6 +23,50 @@ first_light:
   wall_clock_semantic_authority: NONE
   receipt_required: true
   blind_retry: PROHIBITED
+  exact_bound_replay: LAWFUL_NONBLIND_IDEMPOTENT_RECOVERY
+
+precommit_identity:
+  scope: HOST_TO_FIRST_LIGHT_SELECTED_SNAPSHOT_BOUNDARY_ONLY
+  required_before_child_spawn: true
+  event_identity_source: FIRST_LIGHT_RUNTIME_CANONICALIZATION
+  immutable_event_binding:
+    - event_id
+    - event_fingerprint
+    - canonical_event_sha256
+    - original_event_raw_sha256
+  execution_basis_binding:
+    - source_commit
+    - mode
+    - store_identity
+    - host_operation_id
+    - correlation_id
+    - precommit_fingerprint
+  store_identity_semantics: UNDERLYING_FILE_IDENTITY
+  STORE_IDENTITY_NE_PATH: true
+  alias_same_underlying_store: ALLOW
+  copied_replaced_wrong_store: UNKNOWN_HOLD
+  unresolved_store_identity: UNKNOWN_HOLD
+  event_source_changed_after_precommit: BLOCK
+  source_commit_mismatch: BLOCK
+  mode_mismatch: BLOCK
+  observer_may_synthesize_precommit: false
+
+recovery:
+  typed_states:
+    FOUND:
+      meaning: EXACT_EVENT_ALREADY_FINALIZED_ON_VERIFIED_SAME_STORE
+      execution: ZERO_NEW_EXECUTION
+      result: RETURN_EXISTING_RECEIPT_READBACK
+    ABSENT:
+      meaning: EXACT_EVENT_NOT_YET_PRESENT_ON_VERIFIED_SAME_STORE
+      execution: EXACT_COMPLETION_ALLOWED_ONLY_FROM_FROZEN_PRECOMMIT_TUPLE
+    UNKNOWN:
+      meaning: STORE_EVENT_OR_RECEIPT_IDENTITY_NOT_PROVEN
+      execution: PROHIBITED
+      disposition: HOLD
+  blind_retry: PROHIBITED
+  reconcile_service: NONE
+  doctor_recovery_owner: NONE
 
 temporalis:
   mode: SIM_TEMPORALIS
@@ -83,3 +127,6 @@ invariants:
   - TEMPORALIS_SIDE_EFFECTS_DENY
   - LOCAL_STORE_IS_EVIDENCE_ONLY
   - INTENDED_CONSEQUENCE_CLASS_IMMUTABLE_IN_RECEIPT_LINEAGE
+  - PRECOMMIT_IDENTITY_IS_BOUNDED_NOT_UNIVERSAL
+  - FOUND_NE_ABSENT_NE_UNKNOWN
+  - STORE_IDENTITY_NE_PATH

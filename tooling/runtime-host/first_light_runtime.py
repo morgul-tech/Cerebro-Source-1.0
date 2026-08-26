@@ -4,13 +4,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sqlite3
 import sys
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = "cerebro-first-light-runtime/v0.1"
-RECEIPT_SCHEMA = "cerebro-first-light-receipt/v0.1"
+SCHEMA_VERSION = "cerebro-first-light-runtime/v0.2"
+RECEIPT_SCHEMA = "cerebro-first-light-receipt/v0.2"
+PRECOMMIT_SCHEMA = "cerebro-first-light-precommit/v0.1"
 MODE_REAL = "REAL_FIRST_LIGHT"
 MODE_SIM = "SIM_TEMPORALIS"
 ALLOWED_MODES = {MODE_REAL, MODE_SIM}
@@ -21,6 +23,12 @@ DENIED_CAPABILITIES = {
     "SHARED_MUTATION", "MATERIAL_EFFECT", "PM_MUTATION", "SCHEDULER_MUTATION",
 }
 MAX_CANONICAL_EVENT_BYTES = 1024 * 1024
+UNKNOWN_HOLD_CLASSIFICATIONS = {
+    "STORE_IDENTITY_UNAVAILABLE",
+    "STORE_IDENTITY_MISMATCH",
+    "PRECOMMIT_EVENT_SOURCE_UNAVAILABLE",
+    "PRECOMMIT_RECOVERY_UNKNOWN",
+}
 
 
 class FirstLightError(RuntimeError):
@@ -44,6 +52,10 @@ def semantic_fingerprint(value: Any) -> str:
 
 def _event_for_fingerprint(event: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in event.items() if k not in {"event_fingerprint", "observation_metadata"}}
+
+
+def canonical_event_bytes(event: dict[str, Any]) -> bytes:
+    return canonical_bytes(event)
 
 
 def event_fingerprint(event: dict[str, Any]) -> str:
@@ -103,6 +115,115 @@ def validate_event(event: dict[str, Any], mode: str) -> dict[str, Any]:
     }
 
 
+def stable_store_identity(db_path: Path, *, create: bool = False) -> str:
+    path = db_path.resolve()
+    if create:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch(exist_ok=True)
+    try:
+        stat = path.stat()
+    except OSError as exc:
+        raise FirstLightError("STORE_IDENTITY_UNAVAILABLE", f"{path}:{exc}") from exc
+    device = int(getattr(stat, "st_dev", 0) or 0)
+    inode = int(getattr(stat, "st_ino", 0) or 0)
+    if inode <= 0:
+        raise FirstLightError("STORE_IDENTITY_UNAVAILABLE", f"no-stable-file-id:{path}")
+    return "FILEID-SHA256-" + sha256_hex(f"{device}:{inode}".encode("utf-8"))
+
+
+def build_precommit_identity(
+    *,
+    event: dict[str, Any],
+    event_source_bytes: bytes,
+    event_source_path: Path,
+    db_path: Path,
+    mode: str,
+    source_commit: str,
+    host_operation_id: str,
+) -> dict[str, Any]:
+    validated = validate_event(event, mode)
+    full_canonical = canonical_event_bytes(event)
+    if len(full_canonical) > MAX_CANONICAL_EVENT_BYTES:
+        raise FirstLightError("EVENT_TOO_LARGE", str(len(full_canonical)))
+    store_identity = stable_store_identity(db_path, create=True)
+    core = {
+        "schema": PRECOMMIT_SCHEMA,
+        "source_commit": str(source_commit).lower(),
+        "mode": mode,
+        "event_id": validated["event_id"],
+        "event_fingerprint": validated["event_fingerprint"],
+        "canonical_event_sha256": sha256_hex(full_canonical),
+        "original_event_raw_sha256": sha256_hex(event_source_bytes),
+        "original_event_path": str(event_source_path.resolve()),
+        "store_identity": store_identity,
+        "host_operation_id": host_operation_id,
+    }
+    core["correlation_id"] = semantic_fingerprint({
+        "host_operation_id": host_operation_id,
+        "event_id": core["event_id"],
+        "event_fingerprint": core["event_fingerprint"],
+        "store_identity": store_identity,
+        "source_commit": core["source_commit"],
+        "mode": mode,
+    })[:32]
+    core["precommit_fingerprint"] = semantic_fingerprint(core)
+    return core
+
+
+def _verify_precommit_envelope(
+    envelope: dict[str, Any],
+    *,
+    event: dict[str, Any],
+    db_path: Path,
+    mode: str,
+    source_commit: str | None,
+) -> dict[str, Any]:
+    if str(envelope.get("schema") or "") != PRECOMMIT_SCHEMA:
+        raise FirstLightError("PRECOMMIT_SCHEMA_INVALID")
+    expected_fingerprint = str(envelope.get("precommit_fingerprint") or "")
+    core = dict(envelope)
+    core.pop("precommit_fingerprint", None)
+    observed_fingerprint = semantic_fingerprint(core)
+    if not expected_fingerprint or expected_fingerprint != observed_fingerprint:
+        raise FirstLightError("PRECOMMIT_FINGERPRINT_MISMATCH")
+    if str(envelope.get("mode") or "") != mode:
+        raise FirstLightError("PRECOMMIT_MODE_MISMATCH", f"expected={envelope.get('mode')};observed={mode}")
+    envelope_commit = str(envelope.get("source_commit") or "").lower()
+    if source_commit is not None and envelope_commit != str(source_commit).lower():
+        raise FirstLightError("PRECOMMIT_SOURCE_MISMATCH", f"expected={envelope_commit};observed={source_commit}")
+    validated = validate_event(event, mode)
+    if str(envelope.get("event_id") or "") != validated["event_id"]:
+        raise FirstLightError("PRECOMMIT_EVENT_ID_MISMATCH")
+    if str(envelope.get("event_fingerprint") or "") != validated["event_fingerprint"]:
+        raise FirstLightError("PRECOMMIT_EVENT_FINGERPRINT_MISMATCH")
+    if str(envelope.get("canonical_event_sha256") or "") != sha256_hex(canonical_event_bytes(event)):
+        raise FirstLightError("PRECOMMIT_CANONICAL_EVENT_MISMATCH")
+    original_path_text = str(envelope.get("original_event_path") or "")
+    if not original_path_text:
+        raise FirstLightError("PRECOMMIT_EVENT_SOURCE_UNAVAILABLE", "missing-original-event-path")
+    original_path = Path(original_path_text)
+    try:
+        raw_now = original_path.read_bytes()
+    except OSError as exc:
+        raise FirstLightError("PRECOMMIT_EVENT_SOURCE_UNAVAILABLE", str(exc)) from exc
+    if sha256_hex(raw_now) != str(envelope.get("original_event_raw_sha256") or ""):
+        raise FirstLightError("PRECOMMIT_EVENT_SOURCE_CHANGED", str(original_path))
+    observed_store_identity = stable_store_identity(db_path, create=False)
+    expected_store_identity = str(envelope.get("store_identity") or "")
+    if observed_store_identity != expected_store_identity:
+        raise FirstLightError(
+            "STORE_IDENTITY_MISMATCH",
+            f"expected={expected_store_identity};observed={observed_store_identity}",
+        )
+    return {
+        "store_identity": observed_store_identity,
+        "host_operation_id": str(envelope.get("host_operation_id") or ""),
+        "correlation_id": str(envelope.get("correlation_id") or ""),
+        "precommit_fingerprint": expected_fingerprint,
+        "source_commit": envelope_commit,
+    }
+
+
 def _state_from_payload(event_type: str, payload: dict[str, Any], previous: dict[str, Any]) -> dict[str, Any]:
     current = json.loads(json.dumps(previous))
     if event_type == "NOOP":
@@ -158,6 +279,11 @@ class FirstLightStore:
     def close(self) -> None:
         self.connection.close()
 
+    def _ensure_column(self, table: str, name: str, declaration: str) -> None:
+        columns = {row[1] for row in self.connection.execute(f"PRAGMA table_info({table})")}
+        if name not in columns:
+            self.connection.execute(f"ALTER TABLE {table} ADD COLUMN {name} {declaration}")
+
     def _schema(self) -> None:
         self.connection.executescript(
             """
@@ -198,6 +324,10 @@ class FirstLightStore:
             );
             """
         )
+        self._ensure_column("attempts", "host_operation_id", "TEXT")
+        self._ensure_column("attempts", "correlation_id", "TEXT")
+        self._ensure_column("attempts", "store_identity", "TEXT")
+        self._ensure_column("attempts", "precommit_fingerprint", "TEXT")
         self.connection.commit()
 
     def _existing_receipt(self, event_id: str) -> dict[str, Any] | None:
@@ -213,6 +343,7 @@ class FirstLightStore:
         mode: str,
         currentness_cursor: str = "LOCAL_EVIDENCE_ONLY",
         fault_injection: str | None = None,
+        precommit: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         validated = validate_event(event, mode)
         event_id = validated["event_id"]
@@ -223,8 +354,6 @@ class FirstLightStore:
 
         try:
             self.connection.execute("BEGIN IMMEDIATE")
-            # The identity check and the state transition share one write lock.
-            # Concurrent invocations therefore cannot both execute an event.
             existing = self.connection.execute(
                 "SELECT event_fingerprint FROM events WHERE event_id=?", (event_id,)
             ).fetchone()
@@ -233,10 +362,18 @@ class FirstLightStore:
                     raise FirstLightError("EVENT_ID_FINGERPRINT_COLLISION", event_id)
                 receipt = self._existing_receipt(event_id)
                 if receipt is None:
+                    if precommit is not None:
+                        raise FirstLightError("PRECOMMIT_RECOVERY_UNKNOWN", "finalized event missing receipt")
                     raise FirstLightError("RECOVERY_REQUIRED", "finalized event missing receipt")
                 self.connection.commit()
                 replay = dict(receipt)
                 replay["replay"] = "IDEMPOTENT_NO_EXECUTION"
+                if precommit is not None:
+                    replay["recovery_state"] = "FOUND"
+                    replay["host_operation_id"] = precommit.get("host_operation_id")
+                    replay["correlation_id"] = precommit.get("correlation_id")
+                    replay["store_identity"] = precommit.get("store_identity")
+                    replay["precommit_fingerprint"] = precommit.get("precommit_fingerprint")
                 return replay
 
             invocation_id = semantic_fingerprint(
@@ -274,15 +411,35 @@ class FirstLightStore:
                 "next_owner": "EXTERNAL_GOVERNING_CONSUMER",
                 "material_effect": False,
             }
+            if precommit is not None:
+                receipt_core.update({
+                    "recovery_state": "ABSENT",
+                    "host_operation_id": precommit.get("host_operation_id"),
+                    "correlation_id": precommit.get("correlation_id"),
+                    "store_identity": precommit.get("store_identity"),
+                    "precommit_fingerprint": precommit.get("precommit_fingerprint"),
+                    "source_commit": precommit.get("source_commit"),
+                })
             receipt_fingerprint = semantic_fingerprint(receipt_core)
             receipt = dict(receipt_core)
             receipt["receipt_id"] = "FLR-" + receipt_fingerprint[:20].upper()
             receipt["receipt_fingerprint"] = receipt_fingerprint
 
             self.connection.execute(
-                "INSERT INTO attempts VALUES(?,?,?,?,?)",
-                (invocation_id, event_id, "EXECUTED_LOCAL_REDUCER",
-                 "DETERMINISTIC_LOCAL_COMMIT_VERIFIED", "LOCAL_DERIVED_STATE_ONLY"),
+                """
+                INSERT INTO attempts(
+                    invocation_id,event_id,execution_truth,verification_truth,poststate_truth,
+                    host_operation_id,correlation_id,store_identity,precommit_fingerprint
+                ) VALUES(?,?,?,?,?,?,?,?,?)
+                """,
+                (
+                    invocation_id, event_id, "EXECUTED_LOCAL_REDUCER",
+                    "DETERMINISTIC_LOCAL_COMMIT_VERIFIED", "LOCAL_DERIVED_STATE_ONLY",
+                    (precommit or {}).get("host_operation_id"),
+                    (precommit or {}).get("correlation_id"),
+                    (precommit or {}).get("store_identity"),
+                    (precommit or {}).get("precommit_fingerprint"),
+                ),
             )
             self.connection.execute(
                 "INSERT INTO events VALUES(?,?,?,?,?,?,?,?)",
@@ -328,10 +485,30 @@ class FirstLightStore:
         return receipt
 
 
-def run_event(event: dict[str, Any], db_path: Path, mode: str) -> dict[str, Any]:
+def run_event(
+    event: dict[str, Any],
+    db_path: Path,
+    mode: str,
+    *,
+    invocation_envelope: dict[str, Any] | None = None,
+    source_commit: str | None = None,
+) -> dict[str, Any]:
+    precommit = None
+    if invocation_envelope is not None:
+        precommit = _verify_precommit_envelope(
+            invocation_envelope,
+            event=event,
+            db_path=db_path,
+            mode=mode,
+            source_commit=source_commit,
+        )
     store = FirstLightStore(db_path)
     try:
-        return store.process(event, mode=mode)
+        if precommit is not None:
+            post_open_identity = stable_store_identity(db_path, create=False)
+            if post_open_identity != precommit["store_identity"]:
+                raise FirstLightError("STORE_IDENTITY_MISMATCH", "store changed during open")
+        return store.process(event, mode=mode, precommit=precommit)
     finally:
         store.close()
 
@@ -347,13 +524,33 @@ def main() -> int:
     parser.add_argument("--event-file")
     parser.add_argument("--db", required=True)
     parser.add_argument("--mode", choices=sorted(ALLOWED_MODES), default=MODE_REAL)
+    parser.add_argument("--invocation-envelope")
     args = parser.parse_args()
     try:
         event = _load_json(args.event_file)
-        result = run_event(event, Path(args.db), args.mode)
+        envelope = _load_json(args.invocation_envelope) if args.invocation_envelope else None
+        source_commit = os.environ.get("CEREBRO_SOURCE_COMMIT")
+        result = run_event(
+            event,
+            Path(args.db),
+            args.mode,
+            invocation_envelope=envelope,
+            source_commit=source_commit,
+        )
         print(json.dumps(result, sort_keys=True, indent=2, ensure_ascii=False))
         return 0
     except FirstLightError as exc:
+        if exc.classification in UNKNOWN_HOLD_CLASSIFICATIONS:
+            print(json.dumps({
+                "schema": RECEIPT_SCHEMA,
+                "result_class": "UNKNOWN",
+                "classification": exc.classification,
+                "detail": exc.detail,
+                "recovery_state": "UNKNOWN",
+                "disposition": "HOLD",
+                "material_effect": False,
+            }, sort_keys=True, indent=2))
+            return 3
         print(json.dumps({
             "schema": RECEIPT_SCHEMA,
             "result_class": "BLOCK",
