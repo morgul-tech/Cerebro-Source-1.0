@@ -16,7 +16,7 @@ from typing import Iterable
 
 from diagnostic_capsule import latest_unresolved_context
 
-HOST_VERSION = "0.7.0"
+HOST_VERSION = "0.8.0"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -413,23 +413,23 @@ def selftest() -> dict:
     }
 
 
-def main() -> int:
+DELEGATE_COMMANDS = ("change", "delivery", "closure", "diagnostics", "runtime-first-light")
+
+
+def parse_host_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Cerebro Host")
     parser.add_argument("--source-root")
     parser.add_argument("--source-commit")
-    sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("selftest")
-    change = sub.add_parser("change")
-    change.add_argument("change_args", nargs=argparse.REMAINDER)
-    delivery = sub.add_parser("delivery")
-    delivery.add_argument("delivery_args", nargs=argparse.REMAINDER)
-    closure = sub.add_parser("closure")
-    closure.add_argument("closure_args", nargs=argparse.REMAINDER)
-    diagnostics = sub.add_parser("diagnostics")
-    diagnostics.add_argument("diagnostic_args", nargs=argparse.REMAINDER)
-    first_light = sub.add_parser("runtime-first-light")
-    first_light.add_argument("first_light_args", nargs=argparse.REMAINDER)
-    args = parser.parse_args()
+    parser.add_argument("command", choices=("selftest", *DELEGATE_COMMANDS))
+    parser.add_argument("delegate_args", nargs=argparse.REMAINDER)
+    args = parser.parse_args(argv)
+    if args.command == "selftest" and args.delegate_args:
+        parser.error("selftest does not accept delegated arguments")
+    return args
+
+
+def main() -> int:
+    args = parse_host_arguments()
 
     try:
         if args.command == "selftest":
@@ -438,13 +438,7 @@ def main() -> int:
         source = locate_source(args.source_root)
         commit = verify_source(source, args.source_commit)
         snapshot = create_snapshot(source, commit)
-        component_args = {
-            "change": getattr(args, "change_args", None),
-            "delivery": getattr(args, "delivery_args", None),
-            "closure": getattr(args, "closure_args", None),
-            "diagnostics": getattr(args, "diagnostic_args", None),
-            "runtime-first-light": getattr(args, "first_light_args", None),
-        }[args.command]
+        component_args = list(args.delegate_args)
         if not component_args:
             raise HostError("MISSING_DELEGATE_COMMAND", f"pass engine arguments after '{args.command}'")
         return delegate(snapshot, args.command, component_args, commit)

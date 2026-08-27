@@ -12,6 +12,7 @@ boundaries:
     - verify-source-repository-binding
     - bind-to-exact-source-commit
     - dispatch-from-immutable-tooling-snapshot
+    - preserve-delegate-argv-verbatim-after-component-selector-including-option-prefixed-first-token
     - preserve-live-child-output
     - dispatch-change-delivery-closure-and-diagnostics-capabilities
     - rehydrate-latest-unresolved-diagnostic-context-before-delegation

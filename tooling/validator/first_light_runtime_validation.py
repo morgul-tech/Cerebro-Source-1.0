@@ -243,7 +243,71 @@ def run_canaries(root: Path) -> dict[str, Any]:
         relocated = runtime.run_event(relocated_event, base / "relocated" / "deep" / "db.sqlite3", runtime.MODE_REAL)
         check(34, "run-root relocation preserves semantic identity", relocated["event_fingerprint"] == runtime.event_fingerprint(relocated_event))
 
-        check(35, "host normal consumer dispatch and snapshot closure are wired", host_strings.count("runtime-first-light") >= 3 and host_strings.count("first_light_runtime.py") >= 2)
+        def host_cli_delegate_contract() -> bool:
+            host_dir = str(host_path.parent)
+            inserted = host_dir not in sys.path
+            if inserted:
+                sys.path.insert(0, host_dir)
+            try:
+                host = _load("cerebro_host_cli_contract", host_path)
+                delegated = ["--event-file", "EVENT.json", "--db", "STATE.sqlite3", "--mode", "REAL_FIRST_LIGHT"]
+                for component in host.DELEGATE_COMMANDS:
+                    parsed = host.parse_host_arguments([component, *delegated])
+                    if parsed.command != component or list(parsed.delegate_args) != delegated:
+                        return False
+                child_host_like = ["--source-root", "CHILD_SOURCE", *delegated]
+                parsed = host.parse_host_arguments([
+                    "--source-root", "HOST_SOURCE", "--source-commit", "a" * 40,
+                    "runtime-first-light", *child_host_like,
+                ])
+                if parsed.source_root != "HOST_SOURCE" or parsed.source_commit != "a" * 40:
+                    return False
+                if list(parsed.delegate_args) != child_host_like:
+                    return False
+                try:
+                    host.parse_host_arguments(["--not-a-host-option", "x", "runtime-first-light", *delegated])
+                except SystemExit as exc:
+                    if int(exc.code or 0) != 2:
+                        return False
+                else:
+                    return False
+
+                captured: dict[str, Any] = {}
+                originals = (host.locate_source, host.verify_source, host.create_snapshot, host.delegate)
+                original_argv = list(sys.argv)
+                try:
+                    host.locate_source = lambda explicit: Path("HOST_SOURCE")
+                    host.verify_source = lambda source, commit: "a" * 40
+                    host.create_snapshot = lambda source, commit: Path("SNAPSHOT")
+                    def fake_delegate(snapshot: Path, component: str, arguments: list[str], source_commit: str) -> int:
+                        captured.update({
+                            "snapshot": str(snapshot),
+                            "component": component,
+                            "arguments": list(arguments),
+                            "source_commit": source_commit,
+                        })
+                        return 0
+                    host.delegate = fake_delegate
+                    sys.argv = [
+                        str(host_path), "--source-root", "HOST_SOURCE", "--source-commit", "a" * 40,
+                        "runtime-first-light", *delegated,
+                    ]
+                    if host.main() != 0:
+                        return False
+                finally:
+                    host.locate_source, host.verify_source, host.create_snapshot, host.delegate = originals
+                    sys.argv = original_argv
+                return captured == {
+                    "snapshot": "SNAPSHOT",
+                    "component": "runtime-first-light",
+                    "arguments": delegated,
+                    "source_commit": "a" * 40,
+                }
+            finally:
+                if inserted and sys.path and sys.path[0] == host_dir:
+                    sys.path.pop(0)
+
+        check(35, "host CLI preserves option-first delegated argv through actual main dispatch", host_cli_delegate_contract)
         check(36, "intended consequence is immutable in receipt lineage", receipt["intended_consequence_class"] == event["intended_consequence_class"])
         check(37, "producer scope and consequence state are independently derived", receipt["producer_scope_state"] == "SCOPE_CLOSED" and receipt["consequence_state"] == "LOCAL_EVIDENCE_ONLY" and sim_a["side_effects"] == "DENY")
         check(38, "PM admission/provider readback never proves effect", "pm_admission_proves_effect: false" in contract_text and "provider_readback_proves_effect: false" in contract_text)
@@ -375,6 +439,8 @@ def activation_probe(source_root: Path, output: Path) -> int:
     ]
     proof = {
         "schema": PROOF_SCHEMA,
+        "binding_id": "",
+        "proves_bindings": [],
         "result": result["result"],
         "basis_files": paths,
         "source_state_fingerprint": _source_fingerprint(source_root, paths),
