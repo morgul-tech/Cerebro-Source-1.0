@@ -138,6 +138,66 @@ sufficiency:
     - MATERIAL_DECISION_REQUIRES_ITS_DECLARED_MINIMUM_EVIDENCE_SET
     - MORE_DATA_IS_NOT_BETTER_WHEN_SUFFICIENCY_IS_ALREADY_REACHED
 
+blind_claim_observation_closure_profile:
+  purpose: Bound strong blindness-dependent claims to exact current independent observation-closure evidence without changing the evidence envelope schema.
+  reuses_evidence_envelope_schema: cerebro-operational-evidence/v0.1
+  schema_bump_required: false
+  evidence_kind: VERIFICATION_RESULT
+  probe_ref: OBSERVATION_CLOSURE
+  required_status: COMPLETE
+  required_result: PASS
+  exact_subject_binding:
+    required_fields:
+      - claim_ref
+      - arm_ref
+      - generation_ref
+    wrong_subject_effect: INVALID_FOR_STRONG_BLIND_CLAIM
+  freshness:
+    required_kind: STATE_BOUND
+    exact_current_basis_fingerprint_required: true
+    stale_effect: HOLD
+  value_method_floor:
+    PREEXPOSURE_CONFIG_SEAL: PASS
+    INDEPENDENT_NEGATIVE_CANARIES: PASS
+    CONTENT_EXPOSURE_GATE: PASS
+    POSTRUN_CONFORMANCE_READBACK: PASS
+  producer_independence:
+    producer_ref_required: true
+    independent_of:
+      - evaluated_actor
+      - builder
+      - self_certifier
+    explicit_independence_verification_required: true
+    repeated_identical_observation_is_independent_confirmation: false
+  basis_refs_must_preserve:
+    - PREEXPOSURE_CONFIG_SEAL
+    - INDEPENDENT_NEGATIVE_CANARIES
+    - CONTENT_EXPOSURE_GATE
+    - POSTRUN_CONFORMANCE_READBACK
+  nonpass_handling:
+    statuses:
+      - PARTIAL
+      - UNAVAILABLE
+      - ERROR
+    results:
+      - UNKNOWN
+      - FAIL
+    effect:
+      - HOLD
+      - INVALID_FOR_STRONG_BLIND_CLAIM
+    blocker: required_observation_closure_evidence_absent_or_nonpass_for_blindness_dependent_claim
+    preserve_historical_observations: true
+  contamination:
+    preseal_material_exposure_effect: CONTAMINATED
+    in_place_repair_allowed: false
+    fresh_arm_or_generation_required: true
+  infrastructure_boundary:
+    airlock_infrastructure_is_policy_authority: false
+    absence_blocks_pass_when_required: true
+  claim_scope_boundary:
+    valid_observations_may_support_narrower_nonblind_conclusions: true
+    quality_gate_pass_may_substitute_for_observation_closure: false
+
 progressive_acquisition:
   default_mode: PROGRESSIVE
   stages:

@@ -388,6 +388,45 @@ operational_evidence_contract_validation:
     - collect-everything-by-default
     - probe-error-coerced-to-subject-failure
 
+blind_evaluation_claim_admissibility_validation:
+  introduced_by: CLAIM696
+  severity: error
+  owner: tooling.validator
+  contract_refs:
+    - standards/development/adaptive-quality-workform.yaml
+    - standards/operational-evidence.yaml
+  implementation: tooling/validator/quality_trace.py
+  required_contracts:
+    - blindness-or-isolation-causal-dependence-triggers-applicability-without-label-bypass
+    - strong-blind-claim-requires-current-exact-subject-observation-closure-verification
+    - observation-closure-producer-is-independent-of-evaluated-actor-builder-and-self-certifier
+    - preseal-material-exposure-is-terminal-for-current-arm-or-generation
+    - historical-observations-remain-available-for-narrower-nonblind-conclusions
+    - missing-airlock-infrastructure-blocks-pass-without-disabling-policy
+    - quality-gate-pass-cannot-override-decision-assurance-observation-closure-blocker
+  required_canaries:
+    - nonblind-claim-without-observation-closure-is-not-applicable
+    - current-exact-independent-observation-closure-admits-strong-blind-claim
+    - missing-observation-closure-holds-strong-blind-claim
+    - stale-observation-closure-holds-strong-blind-claim
+    - partial-unavailable-error-unknown-or-fail-observation-closure-denies-admissibility
+    - wrong-arm-or-generation-denies-admissibility
+    - observation-closure-basis-drift-denies-admissibility
+    - self-attested-observation-closure-denies-admissibility
+    - preseal-material-exposure-contaminates-current-arm-or-generation
+    - contamination-cannot-be-repaired-in-place
+    - legacy-strong-blind-claim-without-closure-downgrades-while-preserving-observations
+    - repeated-identical-observation-is-not-independent-confirmation
+    - missing-airlock-infrastructure-blocks-pass-not-policy
+    - quality-gate-pass-cannot-override-observation-closure-blocker
+    - legacy-nonblind-claim-remains-unaffected
+  prohibited:
+    - airlock-broker-or-session-infrastructure
+    - new-evaluation-engine
+    - evidence-envelope-schema-bump
+    - self-certification-of-observation-closure
+    - quality-gate-semantic-change
+
 phases:
   structure:
   - required-files

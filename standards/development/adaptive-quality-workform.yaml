@@ -122,7 +122,54 @@ adaptive_quality_workform:
     - critical_ownership_conflict
     - required_capability_impossible
     - required_evidence_absent
+    - required_observation_closure_evidence_absent_or_nonpass_for_blindness_dependent_claim
     - non_enforceable_mandatory_requirement
+    blind_evaluation_claim_admissibility:
+      applicability:
+        when_claim_causally_depends_on:
+        - BLINDNESS
+        - ISOLATION
+        explicit_blind_label_required_for_applicability: false
+        omission_of_label_may_bypass_control: false
+      strong_claim_minimum:
+        evidence_kind: VERIFICATION_RESULT
+        probe_ref: OBSERVATION_CLOSURE
+        exact_subject_binding_required:
+        - claim_ref
+        - arm_ref
+        - generation_ref
+        freshness_kind: STATE_BOUND
+        exact_basis_fingerprint_required: true
+        independent_producer_required: true
+        method_floor:
+        - PREEXPOSURE_CONFIG_SEAL
+        - INDEPENDENT_NEGATIVE_CANARIES
+        - CONTENT_EXPOSURE_GATE
+        - POSTRUN_CONFORMANCE_READBACK
+      states:
+      - VALID_FOR_STRONG_BLIND_CLAIM
+      - HOLD
+      - INVALID_FOR_STRONG_BLIND_CLAIM
+      - CONTAMINATED
+      - NOT_APPLICABLE
+      nonpass_effect:
+        decision_state: HOLD
+        strong_blind_claim_validity: INVALID_FOR_STRONG_BLIND_CLAIM
+        blocker: required_observation_closure_evidence_absent_or_nonpass_for_blindness_dependent_claim
+      contamination:
+        trigger: PRESEAL_MATERIAL_EXPOSURE
+        state: CONTAMINATED
+        repair_in_place: PROHIBITED
+        fresh_arm_or_generation_required: true
+      infrastructure_boundary:
+        missing_airlock_infrastructure_blocks_pass: true
+        missing_airlock_infrastructure_disables_policy: false
+      evidence_preservation:
+        historical_observations_retained: true
+        narrower_nonblind_conclusions_may_reuse_usable_observations: true
+      quality_gate_boundary:
+        quality_gate_pass_may_override_decision_assurance_blocker: false
+        quality_gate_semantics_changed: false
   solution_quality_profile:
     dimensions:
     - Outcome_Fit
