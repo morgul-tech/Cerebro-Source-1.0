@@ -1726,6 +1726,12 @@
   ],
   "known_activation_debt": [
     {
+      "id": "BLIND_CLAIM_OBSERVATION_CLOSURE_ADMISSIBILITY",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "blocking": false,
+      "rationale": "The Source policy, reused VERIFICATION_RESULT profile, deterministic assessor and fifteen negative/positive canaries are implemented. No normal Decision Assurance consumer or target-runtime observation-closure producer is activation-proven; static Source validation is not runtime enforcement."
+    },
+    {
       "id": "TOTAL_MCP_REVISION_REMOTE_STATE_SERVICE",
       "classification": "PARTIALLY_OPERATIONAL",
       "blocking": false,
