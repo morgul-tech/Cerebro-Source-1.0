@@ -551,7 +551,9 @@
       "declaration_tokens": [
         "USER_COMMAND_IS_A_TRIGGER_NOT_AN_INFORMATION_CONTAINER",
         "HARD_SYSTEM_INVARIANT",
-        "BLOCK_RESPONSE_HANDOFF_AND_RERENDER"
+        "BLOCK_RESPONSE_HANDOFF_AND_RERENDER",
+        "PM_BIND_ADMIT_ONLY_NOT_EXECUTION_UNIT_PRODUCER_OR_DELIVERY_ACTOR",
+        "WORKMODE_LOCAL_RECEIPT_SELF_CONSUMPTION_WHEN_OBSERVABLE"
       ],
       "registration": "mcp/manifest.yaml",
       "registration_token": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
@@ -561,6 +563,7 @@
         "def validate_response(",
         "alias-word-budget-2-to-5-required",
         "alias-machine-payload-prohibited",
+        "def validate_action_owner_resolution(",
         "def validate_terminal_roadmap_projection_receipt(",
         "terminal-roadmap-projection-receipt-required"
       ],
@@ -587,11 +590,14 @@
         "basis_files": [
           "standards/human-continuation-surface.yaml",
           "standards/continuation-surface-system-policy.yaml",
+          "standards/change-delivery.yaml",
           "engines/interaction/rules.yaml",
           "engines/presentation/rules.yaml",
           "engines/context/continuation-bindings.json",
           "mcp/manifest.yaml",
           "tooling/validator/continuation_surface_validation.py",
+          "tooling/validator/human_execution_handoff.py",
+          "tooling/builder/builder.yaml",
           "tooling/validator/checks.yaml",
           "tooling/validator/contract-activation-bindings.json",
           "standards/project-terminal-roadmap-projection.yaml",
@@ -607,6 +613,10 @@
           "absolute_response_end_enforced",
           "full_state_reference_required",
           "visible_alias_is_trigger_not_state",
+          "action_owner_resolution_exercised",
+          "workmode_machine_observable_self_consumption_enforced",
+          "exact_capability_invalidator_fallback_preserved",
+          "non_implementer_workmode_scope_preserved",
           "negative_canaries_passed",
           "terminal_roadmap_projection_gate_exercised",
           "terminal_missing_projection_blocked",
@@ -624,13 +634,18 @@
       "declaration_tokens": [
         "GENERATED_VISIBLE_COMMAND_AND_CONSUMED_ARTIFACT_IDENTITY_MUST_MATCH",
         "HASH_BOUND_POWERSHELL",
-        "BLOCK_HANDOFF_OR_FAIL_BEFORE_SOURCE_MUTATION"
+        "BLOCK_HANDOFF_OR_FAIL_BEFORE_SOURCE_MUTATION",
+        "BUILDER_GENERATES_IMPLEMENTER_OWNED_COMPLETE_HUMAN_EXECUTION_UNIT",
+        "PM_BIND_ADMIT_ONLY_NOT_EXECUTION_UNIT_PRODUCER_OR_DELIVERY_ACTOR"
       ],
       "registration": "mcp/manifest.yaml",
       "registration_token": "HUMAN_EXECUTION_HANDOFF_TRANSPORT",
       "implementation": "tooling/validator/human_execution_handoff.py",
       "implementation_tokens": [
         "def generate_command(",
+        "def generate_execution_unit(",
+        "def validate_execution_unit(",
+        "def validate_execution_response(",
         "def validate_response(",
         "EXACT_SHA256_AND_UNIQUE_CARDINALITY",
         "markdown-underscore-escape-surface-prohibited"
@@ -649,7 +664,46 @@
         "launcher-and-bundle-resolve-by-exact-sha256-and-unique-cardinality",
         "markdown-backslash-underscore-filename-escape-canary-is-rejected"
       ],
-      "runtime_evidence_state": "LAUNCHER_CONSUMPTION_REQUIRED_PER_STANDARD_ATTEMPT"
+      "runtime_evidence_state": "BOUND_MACHINE_PROOF_PLUS_LAUNCHER_CONSUMPTION_REQUIRED_PER_STANDARD_ATTEMPT",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_HUMAN_EXECUTION_HANDOFF_ACTIVATION_PROOF.json",
+        "schema": "cerebro-human-execution-handoff-activation-proof/v1",
+        "accepted_binding_ids": [
+          "HUMAN_EXECUTION_HANDOFF_TRANSPORT"
+        ],
+        "basis_files": [
+          "standards/human-continuation-surface.yaml",
+          "standards/continuation-surface-system-policy.yaml",
+          "standards/change-delivery.yaml",
+          "standards/development/delivery-failure-regression.yaml",
+          "mcp/manifest.yaml",
+          "engines/presentation/rules.yaml",
+          "tooling/builder/builder.yaml",
+          "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1",
+          "tooling/validator/human_execution_handoff.py",
+          "tooling/validator/checks.yaml",
+          "tooling/validator/contract-activation-bindings.json"
+        ],
+        "required_true_fields": [
+          "generator_executed",
+          "envelope_consumer_exercised",
+          "response_candidate_consumer_exercised",
+          "hash_bound_artifact_resolution_enforced",
+          "unique_artifact_cardinality_enforced",
+          "launcher_fingerprint_consumer_bound",
+          "builder_generated_execution_unit_enforced",
+          "pm_producer_qualifier_delivery_and_responder_blocked",
+          "complete_artifact_set_enforced",
+          "generated_command_required",
+          "work_mode_receipt_self_consumption_enforced",
+          "human_one_shot_boundary_preserved",
+          "principal_outcome_route_preserved",
+          "literal_filename_dependency_prohibited",
+          "known_markdown_escape_canary_rejected",
+          "negative_canaries_passed"
+        ],
+        "required_proves_binding": "HUMAN_EXECUTION_HANDOFF_TRANSPORT"
+      }
     },
     {
       "id": "PATCH_ATTEMPT_HISTORY",

@@ -1,7 +1,7 @@
 schema: cerebro-continuation-surface-system-policy/v1
 continuation_surface_system_policy:
   id: CEREBRO-CONTINUATION-SURFACE-SYSTEM-001
-  version: "1.4"
+  version: "1.5"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: SYSTEM_WIDE
@@ -101,6 +101,41 @@ continuation_surface_system_policy:
     - stop-at-recommendation-when-authorized-analysis-can-resolve-it
     - assert-new-abstraction-gap-before-bounded-Source-xref
 
+  local_execution_action_owner:
+    schema: cerebro-action-owner-resolution/v1
+    applies_when:
+    - bounded-local-PC-execution-or-receipt-step-exists
+    - action-is-authorized
+    classification_order:
+    - verify-bound-actor-role-and-capability
+    - verify-machine-observability-of-local-artifacts-receipts-and-logs
+    - resolve-action-owner
+    - render-Human-boundary-only-when-physical-action-is-genuinely-required
+    implementer_work_mode:
+      capability_must_be_proven: true
+      machine_observable_local_action_owner: CEREBRO
+      machine_observable_receipt_owner: BOUND_IMPLEMENTER
+      required_effect: EXECUTE_OR_SELF_CONSUME_BEFORE_RESPONSE_COMPLETION
+      human_courier_or_receipt_transport: PROHIBITED
+    human_fallback:
+      allowed_only_when: EXACT_CAPABILITY_OR_ACCESS_INVALIDATOR_PREVENTS_MACHINE_EXECUTION_OR_OBSERVATION
+      action_owner: HUMAN
+      surface_must_be_bounded_to: GENUINE_AUTHORIZED_PHYSICAL_ACTION
+      does_not_transfer_payload_production_or-qualification: true
+    role_scope:
+      Work_Mode_local_execution_owner_role: IMPLEMENTER
+      does_not_grant_Work_Mode_to:
+      - Worker
+      - Researcher
+    project_manager:
+      allowed:
+      - bind-Implementer
+      - admit-Implementer-result
+      prohibited:
+      - execution-unit-producer
+      - Human-delivery-endpoint
+      - local-receipt-courier
+
   invariants:
   - user-command-is-trigger-not-state-container
   - full-continuation-state-remains-Cerebro-owned
@@ -109,6 +144,8 @@ continuation_surface_system_policy:
   - active-continuation-must-be-preserved-reresolved-or-explicitly-replaced-never-silently-dropped
   - human-next-action-surface-remains-absolute-response-end-across-interposed-conversational-events
   - internally-executable-next-action-is-executed-not-handed-back-to-user
+  - machine-observable-Work-Mode-local-actions-and-receipts-remain-Cerebro-owned
+  - Human-fallback-requires-an-exact-capability-or-access-invalidator
   - human-continuation-surface-requires-a-real-human-boundary
   - a-long-machine-instruction-is-not-a-valid-normal-human-continuation-surface
   - response-handoff-requires-machine-validation-of-the-final-visible-trigger

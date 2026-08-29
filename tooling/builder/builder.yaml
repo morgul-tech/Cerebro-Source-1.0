@@ -113,6 +113,27 @@ standard_handoff_convergence:
       - exactly_one_launcher_powershell
       - exactly_one_copyable_command
     handoff_assurance_receipt: required
+    human_execution_unit:
+      schema: cerebro-human-execution-unit/v1
+      generator: tooling.builder
+      artifact_set_complete: required
+      identity_fields:
+        - exact_source_revision
+        - launcher_sha256
+        - bundle_sha256
+        - handoff_fingerprint
+        - bound_implementer_id
+      generated_fields:
+        - hash_bound_powershell_command
+      producer: BOUND_IMPLEMENTER
+      qualifier: BOUND_IMPLEMENTER
+      direct_delivery_actor: BOUND_IMPLEMENTER
+      responder: BOUND_IMPLEMENTER
+      Project_Manager_role: BIND_AND_ADMIT_ONLY
+      Project_Manager_producer_qualifier_delivery_or_responder_role: PROHIBITED
+      Human_role: AUTHORIZED_ONE_SHOT_PHYSICAL_EXECUTION_ONLY
+      Human_terminal_outcome_route: PRINCIPAL
+      Work_Mode_machine_observable_receipt_owner: BOUND_IMPLEMENTER
   assurance_before_handoff:
     - validate_standard_shape
     - validate_launcher_and_bundle_identity
@@ -127,6 +148,10 @@ standard_handoff_convergence:
     - validate_structural_placement_and_cardinality
     - validate_diagnostic_failure_capture_contract
     - validate_primary_failure_preservation_when_diagnostics_degrade
+    - validate_builder_generated_complete_execution_unit
+    - validate_bound_implementer_producer_qualifier_delivery_and_responder_identity
+    - reject_project_manager_as_producer_qualifier_delivery_actor_or_responder
+    - validate_work_mode_receipt_self_consumption_when_machine_observable
   failure_effect: BLOCK_HANDOFF
   execution_bridge:
     function: cpatch

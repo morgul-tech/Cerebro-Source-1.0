@@ -16,6 +16,7 @@ BINDING_SCHEMA = "cerebro-human-continuation-binding/v1"
 RESPONSE_SCHEMA = "cerebro-human-continuation-response/v1"
 ACTIVATION_SCHEMA = "cerebro-human-continuation-activation-proof/v1"
 REGISTRY_SCHEMA = "cerebro-human-continuation-binding-registry/v1"
+ACTION_OWNER_SCHEMA = "cerebro-action-owner-resolution/v1"
 BINDING_ID = "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
 ROADMAP_RECEIPT_SCHEMA = "cerebro-project-terminal-roadmap-projection-receipt/v1"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -38,11 +39,14 @@ REQUIRED_BINDING_FIELDS = (
 EVIDENCE_BASIS_FILES = (
     "standards/human-continuation-surface.yaml",
     "standards/continuation-surface-system-policy.yaml",
+    "standards/change-delivery.yaml",
     "engines/interaction/rules.yaml",
     "engines/presentation/rules.yaml",
     ACTIVE_BINDING_REGISTRY,
     "mcp/manifest.yaml",
     "tooling/validator/continuation_surface_validation.py",
+    "tooling/validator/human_execution_handoff.py",
+    "tooling/builder/builder.yaml",
     "tooling/validator/checks.yaml",
     "tooling/validator/contract-activation-bindings.json",
     "standards/project-terminal-roadmap-projection.yaml",
@@ -217,6 +221,72 @@ def validate_response(candidate: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def validate_action_owner_resolution(candidate: dict[str, Any]) -> dict[str, Any]:
+    if candidate.get("schema") != ACTION_OWNER_SCHEMA:
+        raise ContinuationSurfaceError("action-owner-schema-mismatch")
+    if candidate.get("next_step_bounded") is not True:
+        raise ContinuationSurfaceError("bounded-next-step-required")
+    if candidate.get("authorized") is not True:
+        raise ContinuationSurfaceError("authorized-next-step-required")
+
+    actor = candidate.get("actor")
+    if not isinstance(actor, dict):
+        raise ContinuationSurfaceError("action-actor-required")
+    actor_role = str(actor.get("role") or "").strip().upper()
+    actor_id = str(actor.get("actor_id") or "").strip()
+    if not actor_role or not actor_id:
+        raise ContinuationSurfaceError("action-actor-identity-required")
+    if actor_role == "PROJECT_MANAGER":
+        raise ContinuationSurfaceError("project-manager-bind-admit-only-not-action-owner")
+
+    work_mode = candidate.get("work_mode")
+    if not isinstance(work_mode, dict):
+        raise ContinuationSurfaceError("work-mode-classification-required")
+    work_mode_enabled = work_mode.get("enabled") is True
+    capability_proven = work_mode.get("capability_proven") is True
+    receipt_observable = work_mode.get("local_receipt_observable") is True
+    internally_executable = candidate.get("internally_executable") is True
+    owner = str(candidate.get("resolved_owner") or "").strip().upper()
+    human_transport = candidate.get("human_transport_requested") is True
+    physical_human_action = candidate.get("physical_human_action_required") is True
+    exact_invalidator = str(candidate.get("exact_capability_or_access_invalidator") or "").strip()
+
+    if work_mode_enabled and actor_role != "IMPLEMENTER":
+        raise ContinuationSurfaceError("work-mode-local-execution-role-must-be-implementer")
+
+    machine_owned = work_mode_enabled and capability_proven and receipt_observable
+    if machine_owned:
+        if owner != "CEREBRO":
+            raise ContinuationSurfaceError("machine-observable-work-mode-action-must-remain-cerebro-owned")
+        if human_transport:
+            raise ContinuationSurfaceError("human-receipt-transport-prohibited-when-machine-observable")
+        if physical_human_action and internally_executable:
+            raise ContinuationSurfaceError("internally-executable-step-cannot-require-human-action")
+    elif internally_executable and owner != "CEREBRO":
+        raise ContinuationSurfaceError("internally-executable-action-must-remain-cerebro-owned")
+
+    if owner == "HUMAN":
+        if exact_invalidator.upper() in {"", "NONE", "UNKNOWN", "UNRESOLVED", "N/A"}:
+            raise ContinuationSurfaceError("human-fallback-requires-exact-capability-or-access-invalidator")
+        if not physical_human_action:
+            raise ContinuationSurfaceError("human-owner-requires-genuine-physical-action")
+    elif owner != "CEREBRO":
+        raise ContinuationSurfaceError("resolved-owner-must-be-cerebro-or-human")
+
+    return {
+        "schema": "cerebro-action-owner-resolution-validation/v1",
+        "result": "PASS",
+        "resolved_owner": owner,
+        "actor_role": actor_role,
+        "actor_id": actor_id,
+        "work_mode_machine_observable": machine_owned,
+        "implementer_self_consumption_required": machine_owned,
+        "human_transport_prohibited": machine_owned,
+        "exact_capability_invalidator_fallback": owner == "HUMAN",
+        "genuine_human_physical_boundary_preserved": owner == "HUMAN" and physical_human_action,
+    }
+
+
 def _fixture_binding(alias: str = "Fortsett DualityArc Wave 02") -> dict[str, Any]:
     value: dict[str, Any] = {
         "schema": BINDING_SCHEMA,
@@ -284,6 +354,34 @@ def selftest() -> dict[str, Any]:
     missing_terminal_receipt = dict(terminal); missing_terminal_receipt.pop("roadmap_projection_receipt")
     stale_terminal_receipt = dict(terminal); stale_terminal_receipt["roadmap_projection_receipt"] = dict(terminal["roadmap_projection_receipt"]); stale_terminal_receipt["roadmap_projection_receipt"]["projection_basis_ref"] = "STALE"
 
+    machine_action = {
+        "schema": ACTION_OWNER_SCHEMA,
+        "next_step_bounded": True,
+        "authorized": True,
+        "internally_executable": True,
+        "resolved_owner": "CEREBRO",
+        "actor": {"role": "IMPLEMENTER", "actor_id": "IMPLEMENTER_GENERIC_TEST"},
+        "work_mode": {"enabled": True, "capability_proven": True, "local_receipt_observable": True},
+        "human_transport_requested": False,
+        "physical_human_action_required": False,
+    }
+    machine_result = validate_action_owner_resolution(machine_action)
+    human_courier = json.loads(json.dumps(machine_action))
+    human_courier["resolved_owner"] = "HUMAN"
+    human_courier["human_transport_requested"] = True
+    human_courier["physical_human_action_required"] = True
+    human_courier["exact_capability_or_access_invalidator"] = "NONE"
+    worker_work_mode = json.loads(json.dumps(machine_action))
+    worker_work_mode["actor"] = {"role": "WORKER", "actor_id": "WORKER_TEST"}
+    human_fallback = json.loads(json.dumps(machine_action))
+    human_fallback["internally_executable"] = False
+    human_fallback["resolved_owner"] = "HUMAN"
+    human_fallback["work_mode"]["capability_proven"] = False
+    human_fallback["work_mode"]["local_receipt_observable"] = False
+    human_fallback["physical_human_action_required"] = True
+    human_fallback["exact_capability_or_access_invalidator"] = "LOCAL_RECEIPT_NOT_MACHINE_OBSERVABLE"
+    fallback_result = validate_action_owner_resolution(human_fallback)
+
     return {
         "result": "PASS",
         "valid_short_trigger_accepted": True,
@@ -295,6 +393,10 @@ def selftest() -> dict[str, Any]:
         "terminal_roadmap_projection_accepted": terminal_result.get("terminal_roadmap_projection_validated") is True,
         "terminal_missing_projection_rejected": _must_reject("terminal-missing-roadmap-projection", validate_response, missing_terminal_receipt),
         "terminal_stale_projection_rejected": _must_reject("terminal-stale-roadmap-projection", validate_response, stale_terminal_receipt),
+        "workmode_machine_observable_action_accepted": machine_result.get("implementer_self_consumption_required") is True,
+        "workmode_human_courier_rejected": _must_reject("workmode-human-courier", validate_action_owner_resolution, human_courier),
+        "exact_capability_invalidator_fallback_accepted": fallback_result.get("genuine_human_physical_boundary_preserved") is True,
+        "non_implementer_workmode_rejected": _must_reject("non-implementer-workmode", validate_action_owner_resolution, worker_work_mode),
     }
 
 
@@ -342,6 +444,10 @@ def activation_probe(root: Path) -> dict[str, Any]:
         "absolute_response_end_enforced": True,
         "full_state_reference_required": True,
         "visible_alias_is_trigger_not_state": True,
+        "action_owner_resolution_exercised": checks.get("workmode_machine_observable_action_accepted") is True,
+        "workmode_machine_observable_self_consumption_enforced": checks.get("workmode_human_courier_rejected") is True,
+        "exact_capability_invalidator_fallback_preserved": checks.get("exact_capability_invalidator_fallback_accepted") is True,
+        "non_implementer_workmode_scope_preserved": checks.get("non_implementer_workmode_rejected") is True,
         "terminal_roadmap_projection_gate_exercised": checks.get("terminal_roadmap_projection_accepted") is True,
         "terminal_missing_projection_blocked": checks.get("terminal_missing_projection_rejected") is True,
         "terminal_stale_projection_blocked": checks.get("terminal_stale_projection_rejected") is True,
@@ -361,6 +467,9 @@ def main() -> int:
     p_response = sub.add_parser("validate-response")
     p_response.add_argument("--input", required=True)
     p_response.add_argument("--output")
+    p_action_owner = sub.add_parser("validate-action-owner")
+    p_action_owner.add_argument("--input", required=True)
+    p_action_owner.add_argument("--output")
     p_registry = sub.add_parser("validate-registry")
     p_registry.add_argument("--input", required=True)
     p_registry.add_argument("--output")
@@ -378,6 +487,8 @@ def main() -> int:
             result = validate_binding(_read_json(Path(args.input)))
         elif args.command == "validate-response":
             result = validate_response(_read_json(Path(args.input)))
+        elif args.command == "validate-action-owner":
+            result = validate_action_owner_resolution(_read_json(Path(args.input)))
         elif args.command == "validate-registry":
             result = validate_registry(_read_json(Path(args.input)))
         elif args.command == "resolve-active-binding":

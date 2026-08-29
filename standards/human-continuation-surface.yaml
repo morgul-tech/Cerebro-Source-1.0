@@ -2,7 +2,7 @@ schema: cerebro-human-continuation-surface/v0.1
 
 human_continuation_surface:
   id: CEREBRO-HUMAN-CONTINUATION-SURFACE-001
-  version: "0.5"
+  version: "0.6"
   status: ACTIVE
   authority: Cerebro Source 1.0
   introduced_by: GUARDRAILS-001
@@ -69,6 +69,44 @@ human_continuation_surface:
       Source cannot universally intercept every external chat renderer or clipboard.
       The canonical surface therefore avoids literal artifact filenames and binds
       the actual files at the runtime consumer by content identity.
+    local_execution_producer_ownership:
+      schema: cerebro-human-execution-unit/v1
+      generator: tooling.builder
+      producer: BOUND_IMPLEMENTER
+      qualifier: BOUND_IMPLEMENTER
+      delivery_actor: BOUND_IMPLEMENTER
+      response_actor: BOUND_IMPLEMENTER
+      project_manager_authority:
+        allowed:
+          - bind-Implementer
+          - admit-Implementer-result
+        prohibited:
+          - produce-execution-unit
+          - qualify-execution-unit
+          - deliver-execution-unit-to-Human
+          - answer-as-execution-unit-responder
+      required_unit:
+        - complete-launcher-and-bundle-artifact-set
+        - generated-hash-bound-PowerShell-command
+        - exact-source-revision
+        - bound-Implementer-producer-qualifier-delivery-and-responder-identity
+        - genuine-authorized-Human-one-shot-physical-execution-boundary
+        - Human-terminal-outcome-route-is-Principal
+      work_mode_receipt:
+        when:
+          - bound-Implementer-Work-Mode-capability-is-proven
+          - local-receipt-file-or-log-is-machine-observable
+        owner: BOUND_IMPLEMENTER
+        required_effect: IMPLEMENTER_SELF_CONSUMES_AND_REPORTS_RECEIPT
+        human_receipt_transport: PROHIBITED
+      fallback:
+        allowed_only_when: EXACT_CAPABILITY_OR_ACCESS_INVALIDATOR_PREVENTS_MACHINE_OBSERVATION
+        preserve_genuine_Human_physical_boundary: true
+        Human_terminal_outcome_route: PRINCIPAL
+      invariants:
+        - BUILDER_GENERATES_IMPLEMENTER_OWNED_COMPLETE_HUMAN_EXECUTION_UNIT
+        - PM_BIND_ADMIT_ONLY_NOT_EXECUTION_UNIT_PRODUCER_OR_DELIVERY_ACTOR
+        - WORKMODE_LOCAL_RECEIPT_SELF_CONSUMPTION_WHEN_OBSERVABLE
 
   binding_contract:
     schema: cerebro-human-continuation-binding/v1
@@ -177,6 +215,9 @@ human_continuation_surface:
     - normal-trigger-is-2-to-5-words-not-a-compressed-machine-command
     - response-handoff-blocks-until-the-active-binding-and-visible-trigger-match
     - exact-shell-handoff-is-generated-hash-bound-and-runtime-consumed
+    - bound-Implementer-produces-qualifies-and-directly-delivers-the-complete-Human-execution-unit
+    - Project-Manager-may-bind-and-admit-but-never-produces-qualifies-delivers-or-answers-as-the-execution-unit-owner
+    - Work-Mode-Implementer-self-consumes-machine-observable-local-receipts
     - rendered-intent-alone-is-not-proof-of-delivered-copy-surface
   terminal_project_roadmap_projection_gate:
     contract_ref: standards/project-terminal-roadmap-projection.yaml

@@ -1770,6 +1770,12 @@ human_execution_handoff_transport:
     - launcher-recomputes-and-consumes-fingerprint-before-Source-mutation
     - response-candidate-contains-one-exact-terminal-powershell-surface
     - intended-markdown-source-is-not-treated-as-rendered-copy-proof
+    - tooling-builder-generates-the-complete-human-execution-unit
+    - producer-qualifier-direct-delivery-actor-and-responder-are-the-same-bound-Implementer
+    - Project-Manager-may-bind-and-admit-but-never-produces-qualifies-delivers-or-answers-for-the-execution-unit
+    - proven-Work-Mode-Implementer-self-consumes-machine-observable-local-receipts
+    - Human-remains-the-authorized-one-shot-physical-actuator-not-a-machine-receipt-courier
+    - Human-terminal-outcome-route-remains-Principal
   required_canaries:
     - valid-generated-envelope-and-response-are-accepted
     - changed-artifact-hash-is-rejected
@@ -1778,10 +1784,40 @@ human_execution_handoff_transport:
     - duplicate-powershell-surface-is-rejected
     - markdown-backslash-underscore-injection-is-rejected
     - missing-or-mismatched-launcher-fingerprint-fails-before-Source-mutation
+    - builder-generated-Implementer-owned-complete-execution-unit-is-accepted
+    - Project-Manager-producer-qualifier-or-responder-is-rejected
+    - incomplete-launcher-bundle-or-generated-command-is-rejected
+    - Human-post-run-receipt-owner-is-rejected-when-Work-Mode-observation-is-proven
+    - unproven-Work-Mode-capability-is-rejected
+    - genuine-authorized-Human-one-shot-physical-boundary-is-accepted
+    - non-Principal-Human-terminal-outcome-route-is-rejected
   prohibited:
     - hand-authored-exact-shell-command-for-standard-delivery
     - artifact-selection-by-visible-filename
     - claim-that-source-policy-can-intercept-every-external-renderer-or-clipboard
+    - Project-Manager-as-execution-unit-producer-qualifier-delivery-endpoint-or-responder
+    - Human-receipt-transport-when-the-bound-Implementer-can-observe-the-local-result
+
+local_execution_action_owner_resolution:
+  introduced_by: P10-HUMAN-LOCAL-EXECUTION-PRODUCER-OWNERSHIP-SOURCE-PATCH-20260829-001
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/continuation-surface-system-policy.yaml#local_execution_action_owner
+  invariants:
+    - bounded-authorized-internally-executable-actions-remain-Cerebro-owned
+    - proven-Work-Mode-machine-observable-local-actions-and-receipts-remain-Cerebro-owned
+    - Work-Mode-local-execution-ownership-is-limited-to-bound-Implementers
+    - Human-fallback-requires-an-exact-capability-or-access-invalidator
+    - Project-Manager-remains-bind-and-admit-only
+  required_canaries:
+    - Work-Mode-Implementer-machine-observable-action-is-accepted-as-Cerebro-owned
+    - Work-Mode-Human-courier-substitution-is-rejected
+    - exact-capability-invalidator-Human-physical-fallback-is-accepted
+    - Worker-or-Researcher-Work-Mode-role-expansion-is-rejected
+  prohibited:
+    - internally-executable-step-handed-to-Human
+    - Human-receipt-courier-when-machine-observation-is-proven
+    - Work-Mode-grant-to-Worker-or-Researcher
 
 constitution_and_adaptive_analysis_lock:
   introduced_by: CEREBRO-CONSTITUTION-ADAPTIVE-ANALYSIS-LOCK-20260812

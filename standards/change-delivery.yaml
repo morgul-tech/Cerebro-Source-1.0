@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-CHANGE-DELIVERY
   name: Cerebro Source Change Delivery Standard
-  version: 0.11.0
+  version: 0.12.0
   status: approved
   authority: authoritative
   scope: Standard human delivery of final Source bytes into local Working Source with verified bounded backup and rollback.
@@ -266,6 +266,38 @@ standard_handoff_convergence:
     current_working_directory_dependency: PROHIBITED
     permanent_execution_policy_change: PROHIBITED
     process_scoped_execution_policy: Bypass
+  execution_unit_ownership:
+    schema: cerebro-human-execution-unit/v1
+    generator: tooling.builder
+    producer: BOUND_IMPLEMENTER
+    qualifier: BOUND_IMPLEMENTER
+    direct_delivery_actor: BOUND_IMPLEMENTER
+    response_actor: BOUND_IMPLEMENTER
+    Project_Manager:
+      may:
+        - bind-Implementer
+        - admit-Implementer-result
+      must_not:
+        - produce-execution-unit
+        - qualify-execution-unit
+        - deliver-execution-unit-to-Human
+        - answer-as-execution-unit-responder
+    required_content:
+      - exactly-one-launcher-PowerShell
+      - exactly-one-bundle-ZIP
+      - generated-hash-bound-PowerShell-command
+      - exact-source-revision
+      - bound-Implementer-identity
+    validator: tooling/validator/human_execution_handoff.py
+    Human_boundary:
+      role: AUTHORIZED_PHYSICAL_ACTUATOR
+      cardinality: ONE_SHOT
+      terminal_outcome_route: PRINCIPAL
+      payload-production-or-qualification: PROHIBITED
+    Work_Mode_post_run_receipt:
+      when_machine_observable: BOUND_IMPLEMENTER_SELF_CONSUMES_AND_REPORTS
+      Human_transport_when_machine_observable: PROHIBITED
+      bounded_fallback_requires: EXACT_CAPABILITY_OR_ACCESS_INVALIDATOR
   handoff_assurance:
     required_before_user_handoff: true
     receipt: HANDOFF_ASSURANCE_RECEIPT
@@ -305,6 +337,10 @@ standard_handoff_convergence:
     - STANDARD_DELIVERY_UNIT_IS_LAUNCHER_PLUS_BUNDLE_NOT_LAUNCHER_ALONE
     - CPATCH_STAGES_STANDARD_DELIVERY_UNIT_ATOMICALLY_BY_IDENTITY
     - HANDOFF_ASSURANCE_IS_EVIDENCE_NOT_SOURCE_AUTHORITY
+    - TOOLING_BUILDER_GENERATES_COMPLETE_IMPLEMENTER_OWNED_EXECUTION_UNIT
+    - PROJECT_MANAGER_BINDS_AND_ADMITS_ONLY
+    - BOUND_IMPLEMENTER_PRODUCES_QUALIFIES_AND_DIRECTLY_DELIVERS_TO_HUMAN
+    - WORK_MODE_IMPLEMENTER_SELF_CONSUMES_MACHINE_OBSERVABLE_POST_RUN_RECEIPT
 
 diagnostic_failure_protocol:
   introduced_by: PATCH-007.PRE-004
@@ -679,6 +715,12 @@ rules:
 - id: STD-CHANGE-DELIVERY-R029
   statement: When a verified candidate already exists, correction shall prefer minimum-delta revision with dependent identity recomputation and revalidation over regeneration of unchanged candidate content.
   priority: high
+- id: STD-CHANGE-DELIVERY-R030
+  statement: tooling.builder shall generate the complete STANDARD Human execution unit, the bound Implementer shall produce, qualify, directly deliver, and answer for it, and the Project Manager shall be limited to binding and admission rather than acting as producer, qualifier, delivery endpoint, or responder.
+  priority: critical
+- id: STD-CHANGE-DELIVERY-R031
+  statement: When a bound Implementer has proven Work Mode capability and the local receipt, file, or log is machine-observable, the Implementer shall consume and report it directly; Human receipt transport is permitted only after an exact capability or access invalidator while the genuine authorized Human physical execution boundary remains unchanged.
+  priority: critical
 target_language_preflight:
   powershell:
     applies_to:
