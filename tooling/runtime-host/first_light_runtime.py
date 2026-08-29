@@ -7,8 +7,9 @@ import json
 import os
 import sqlite3
 import sys
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, TypeVar
 
 SCHEMA_VERSION = "cerebro-first-light-runtime/v0.2"
 RECEIPT_SCHEMA = "cerebro-first-light-receipt/v0.2"
@@ -23,6 +24,9 @@ DENIED_CAPABILITIES = {
     "SHARED_MUTATION", "MATERIAL_EFFECT", "PM_MUTATION", "SCHEDULER_MUTATION",
 }
 MAX_CANONICAL_EVENT_BYTES = 1024 * 1024
+SQLITE_BUSY_TIMEOUT_MS = 30_000
+SQLITE_BOOTSTRAP_RETRY_SECONDS = 30.0
+_T = TypeVar("_T")
 UNKNOWN_HOLD_CLASSIFICATIONS = {
     "STORE_IDENTITY_UNAVAILABLE",
     "STORE_IDENTITY_MISMATCH",
@@ -36,6 +40,22 @@ class FirstLightError(RuntimeError):
         super().__init__(detail or classification)
         self.classification = classification
         self.detail = detail or classification
+
+
+def _sqlite_is_busy(exc: sqlite3.OperationalError) -> bool:
+    detail = str(exc).lower()
+    return "locked" in detail or "busy" in detail
+
+
+def _retry_sqlite_busy(operation: Callable[[], _T], *, stage: str) -> _T:
+    deadline = time.monotonic() + SQLITE_BOOTSTRAP_RETRY_SECONDS
+    while True:
+        try:
+            return operation()
+        except sqlite3.OperationalError as exc:
+            if not _sqlite_is_busy(exc) or time.monotonic() >= deadline:
+                raise
+            time.sleep(0.025)
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -270,11 +290,25 @@ class FirstLightStore:
     def __init__(self, db_path: Path):
         self.db_path = db_path
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.connection = sqlite3.connect(str(db_path))
-        self.connection.row_factory = sqlite3.Row
-        self.connection.execute("PRAGMA foreign_keys=ON")
-        self.connection.execute("PRAGMA journal_mode=WAL")
-        self._schema()
+        self.connection = sqlite3.connect(
+            str(db_path),
+            timeout=SQLITE_BUSY_TIMEOUT_MS / 1000.0,
+        )
+        try:
+            self.connection.row_factory = sqlite3.Row
+            self.connection.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            journal_row = _retry_sqlite_busy(
+                lambda: self.connection.execute("PRAGMA journal_mode=WAL").fetchone(),
+                stage="journal-mode",
+            )
+            journal_mode = str(journal_row[0] if journal_row else "").lower()
+            if journal_mode != "wal":
+                raise FirstLightError("SQLITE_WAL_MODE_UNAVAILABLE", journal_mode)
+            self.connection.execute("PRAGMA foreign_keys=ON")
+            self._schema()
+        except Exception:
+            self.connection.close()
+            raise
 
     def close(self) -> None:
         self.connection.close()
@@ -285,9 +319,8 @@ class FirstLightStore:
             self.connection.execute(f"ALTER TABLE {table} ADD COLUMN {name} {declaration}")
 
     def _schema(self) -> None:
-        self.connection.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS events(
+        statements = (
+            """CREATE TABLE IF NOT EXISTS events(
                 event_id TEXT PRIMARY KEY,
                 event_fingerprint TEXT NOT NULL,
                 event_type TEXT NOT NULL,
@@ -296,8 +329,8 @@ class FirstLightStore:
                 mode TEXT NOT NULL,
                 payload_canonical TEXT NOT NULL,
                 status TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS event_state(
+            )""",
+            """CREATE TABLE IF NOT EXISTS event_state(
                 subject_ref TEXT PRIMARY KEY,
                 event_id TEXT NOT NULL,
                 state_revision INTEGER NOT NULL,
@@ -305,15 +338,15 @@ class FirstLightStore:
                 state_canonical TEXT NOT NULL,
                 state_fingerprint TEXT NOT NULL,
                 terminal_state TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS attempts(
+            )""",
+            """CREATE TABLE IF NOT EXISTS attempts(
                 invocation_id TEXT PRIMARY KEY,
                 event_id TEXT NOT NULL,
                 execution_truth TEXT NOT NULL,
                 verification_truth TEXT NOT NULL,
                 poststate_truth TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS receipts(
+            )""",
+            """CREATE TABLE IF NOT EXISTS receipts(
                 receipt_id TEXT PRIMARY KEY,
                 event_id TEXT UNIQUE NOT NULL,
                 receipt_fingerprint TEXT NOT NULL,
@@ -321,14 +354,25 @@ class FirstLightStore:
                 producer_scope_state TEXT NOT NULL,
                 consequence_state TEXT NOT NULL,
                 receipt_canonical TEXT NOT NULL
-            );
-            """
+            )""",
         )
-        self._ensure_column("attempts", "host_operation_id", "TEXT")
-        self._ensure_column("attempts", "correlation_id", "TEXT")
-        self._ensure_column("attempts", "store_identity", "TEXT")
-        self._ensure_column("attempts", "precommit_fingerprint", "TEXT")
-        self.connection.commit()
+
+        def bootstrap() -> None:
+            try:
+                self.connection.execute("BEGIN IMMEDIATE")
+                for statement in statements:
+                    self.connection.execute(statement)
+                self._ensure_column("attempts", "host_operation_id", "TEXT")
+                self._ensure_column("attempts", "correlation_id", "TEXT")
+                self._ensure_column("attempts", "store_identity", "TEXT")
+                self._ensure_column("attempts", "precommit_fingerprint", "TEXT")
+                self.connection.commit()
+            except Exception:
+                if self.connection.in_transaction:
+                    self.connection.rollback()
+                raise
+
+        _retry_sqlite_busy(bootstrap, stage="schema-bootstrap")
 
     def _existing_receipt(self, event_id: str) -> dict[str, Any] | None:
         row = self.connection.execute(

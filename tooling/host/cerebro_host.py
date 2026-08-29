@@ -10,13 +10,14 @@ import shutil
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Iterable
+from typing import BinaryIO, Iterable, Iterator
 
 from diagnostic_capsule import latest_unresolved_context
 
-HOST_VERSION = "0.8.0"
+HOST_VERSION = "0.8.1"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -24,6 +25,7 @@ DEFAULT_SOURCE_CANDIDATES = [
 ]
 LOCALAPPDATA = Path(os.environ.get("LOCALAPPDATA", Path.home() / ".local" / "share"))
 SNAPSHOT_ROOT = LOCALAPPDATA / "Cerebro" / "tooling-snapshots"
+SNAPSHOT_LOCK_TIMEOUT_SECONDS = 60.0
 
 
 class HostError(RuntimeError):
@@ -89,6 +91,58 @@ def snapshot_path(commit: str) -> Path:
     return SNAPSHOT_ROOT / commit
 
 
+def _lock_file(handle: BinaryIO) -> None:
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+
+        msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        return
+    import fcntl
+
+    fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _unlock_file(handle: BinaryIO) -> None:
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        return
+    import fcntl
+
+    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+@contextmanager
+def snapshot_creation_lock(commit: str) -> Iterator[None]:
+    lock_path = SNAPSHOT_ROOT / ".locks" / f"{commit}.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    handle = lock_path.open("a+b")
+    locked = False
+    try:
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() == 0:
+            handle.write(b"0")
+            handle.flush()
+        deadline = time.monotonic() + SNAPSHOT_LOCK_TIMEOUT_SECONDS
+        while True:
+            try:
+                _lock_file(handle)
+                locked = True
+                break
+            except OSError as exc:
+                if time.monotonic() >= deadline:
+                    raise HostError("SNAPSHOT_LOCK_TIMEOUT", str(lock_path)) from exc
+                time.sleep(0.025)
+        yield
+    finally:
+        if locked:
+            _unlock_file(handle)
+        handle.close()
+
+
 def snapshot_is_valid(snapshot: Path, commit: str) -> bool:
     marker = snapshot / ".cerebro-tooling-snapshot.json"
     engines = [
@@ -112,28 +166,49 @@ def create_snapshot(source: Path, commit: str) -> Path:
     target = snapshot_path(commit)
     if snapshot_is_valid(target, commit):
         return target
-    if target.exists():
-        shutil.rmtree(target)
-    capture(source, "worktree", "prune")
-    capture(source, "worktree", "add", "--detach", "--force", str(target), commit)
-    required_engines = [
-        target / "tooling" / "change" / "change_engine.py",
-        target / "tooling" / "delivery" / "delivery_controller.py",
-        target / "tooling" / "closure" / "closure_engine.py",
-        target / "tooling" / "host" / "diagnostic_capsule.py",
-        target / "tooling" / "runtime-host" / "first_light_runtime.py",
-    ]
-    if not all(engine.is_file() for engine in required_engines):
+    with snapshot_creation_lock(commit):
+        if snapshot_is_valid(target, commit):
+            return target
+        if target.exists():
+            try:
+                capture(source, "worktree", "remove", "--force", str(target))
+            except HostError:
+                shutil.rmtree(target, ignore_errors=True)
+        capture(source, "worktree", "prune")
         try:
-            capture(source, "worktree", "remove", "--force", str(target))
-        finally:
-            raise HostError("TOOLING_ENGINE_MISSING", commit)
-    marker = {
-        "host_snapshot_schema": "cerebro-tooling-snapshot/v0.2",
-        "commit": commit,
-        "source_repository": SOURCE_REPOSITORY,
-    }
-    (target / ".cerebro-tooling-snapshot.json").write_text(json.dumps(marker, indent=2) + "\n", encoding="utf-8")
+            capture(source, "worktree", "add", "--detach", "--force", str(target), commit)
+            required_engines = [
+                target / "tooling" / "change" / "change_engine.py",
+                target / "tooling" / "delivery" / "delivery_controller.py",
+                target / "tooling" / "closure" / "closure_engine.py",
+                target / "tooling" / "host" / "diagnostic_capsule.py",
+                target / "tooling" / "runtime-host" / "first_light_runtime.py",
+            ]
+            if not all(engine.is_file() for engine in required_engines):
+                raise HostError("TOOLING_ENGINE_MISSING", commit)
+            marker = {
+                "host_snapshot_schema": "cerebro-tooling-snapshot/v0.2",
+                "commit": commit,
+                "source_repository": SOURCE_REPOSITORY,
+            }
+            marker_path = target / ".cerebro-tooling-snapshot.json"
+            marker_temp = marker_path.with_name(
+                f"{marker_path.name}.{os.getpid()}.tmp"
+            )
+            marker_temp.write_text(
+                json.dumps(marker, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            os.replace(marker_temp, marker_path)
+            if not snapshot_is_valid(target, commit):
+                raise HostError("TOOLING_SNAPSHOT_VALIDATION_FAILED", commit)
+        except Exception:
+            try:
+                capture(source, "worktree", "remove", "--force", str(target))
+            except HostError:
+                shutil.rmtree(target, ignore_errors=True)
+            capture(source, "worktree", "prune")
+            raise
     return target
 
 

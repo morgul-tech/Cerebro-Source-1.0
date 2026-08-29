@@ -86,6 +86,153 @@ def _precommit(runtime: Any, base: Path, event: dict[str, Any], name: str = "pc"
     return event_path, db_path, envelope
 
 
+def _parse_process_json(output: str) -> dict[str, Any]:
+    text = output.strip()
+    if not text:
+        raise AssertionError("child produced no JSON")
+    value = json.loads(text)
+    if not isinstance(value, dict):
+        raise AssertionError("child JSON is not an object")
+    return value
+
+
+def _run_gated_pair(
+    base: Path,
+    name: str,
+    command: list[str],
+    *,
+    env: dict[str, str],
+    timeout: float = 120.0,
+) -> list[subprocess.CompletedProcess[str]]:
+    runner = base / "gated-process-runner.py"
+    if not runner.exists():
+        runner.write_text(
+            """import os
+import sys
+import time
+from pathlib import Path
+
+gate = Path(sys.argv[1])
+deadline = time.monotonic() + 30.0
+while not gate.exists():
+    if time.monotonic() >= deadline:
+        raise SystemExit(124)
+    time.sleep(0.005)
+os.execv(sys.argv[2], sys.argv[2:])
+""",
+            encoding="utf-8",
+        )
+    gate = base / f"{name}.gate"
+    gate.unlink(missing_ok=True)
+    argv = [sys.executable, "-B", str(runner), str(gate), *command]
+    processes = [
+        subprocess.Popen(
+            argv,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+        )
+        for _ in range(2)
+    ]
+    gate.write_text("GO\n", encoding="ascii")
+    results: list[subprocess.CompletedProcess[str]] = []
+    try:
+        for process in processes:
+            stdout, stderr = process.communicate(timeout=timeout)
+            results.append(
+                subprocess.CompletedProcess(
+                    argv,
+                    int(process.returncode),
+                    stdout,
+                    stderr,
+                )
+            )
+    finally:
+        for process in processes:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+    return results
+
+
+def _assert_single_execution_pair(
+    processes: list[subprocess.CompletedProcess[str]],
+    db_path: Path,
+) -> dict[str, Any]:
+    if [item.returncode for item in processes] != [0, 0]:
+        detail = [
+            {"returncode": item.returncode, "stdout": item.stdout, "stderr": item.stderr}
+            for item in processes
+        ]
+        raise AssertionError("pair nonzero: " + json.dumps(detail, sort_keys=True))
+    bodies = [_parse_process_json(item.stdout) for item in processes]
+    if any(item.get("result_class") != "PASS" for item in bodies):
+        raise AssertionError("pair nonpass: " + json.dumps(bodies, sort_keys=True))
+    if sum(item.get("replay") == "IDEMPOTENT_NO_EXECUTION" for item in bodies) != 1:
+        raise AssertionError("pair did not serialize to one replay")
+    receipt_ids = {str(item.get("receipt_id") or "") for item in bodies}
+    if len(receipt_ids) != 1 or "" in receipt_ids:
+        raise AssertionError("pair receipt lineage mismatch")
+    connection = sqlite3.connect(db_path)
+    try:
+        counts = {
+            table: int(connection.execute(f"select count(*) from {table}").fetchone()[0])
+            for table in ("events", "event_state", "attempts", "receipts")
+        }
+    finally:
+        connection.close()
+    if counts != {"events": 1, "event_state": 1, "attempts": 1, "receipts": 1}:
+        raise AssertionError("pair poststate mismatch: " + json.dumps(counts, sort_keys=True))
+    return bodies[0]
+
+
+def _create_host_source_fixture(root: Path, base: Path) -> tuple[Path, str]:
+    fixture = base / "host-source-fixture"
+    required = (
+        "cerebro.yaml",
+        "tooling/change/change_engine.py",
+        "tooling/delivery/delivery_controller.py",
+        "tooling/closure/closure_engine.py",
+        "tooling/host/cerebro_host.py",
+        "tooling/host/diagnostic_capsule.py",
+        "tooling/runtime-host/first_light_runtime.py",
+    )
+    for relative in required:
+        source = root / relative
+        target = fixture / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    commands = (
+        ["git", "init"],
+        ["git", "config", "user.email", "first-light-validator@local.invalid"],
+        ["git", "config", "user.name", "First Light Validator"],
+        ["git", "remote", "add", "origin", "https://github.com/morgul-tech/Cerebro-Source-1.0.git"],
+        ["git", "add", "."],
+        ["git", "commit", "-m", "first-light host concurrency fixture"],
+    )
+    for command in commands:
+        result = subprocess.run(
+            command,
+            cwd=fixture,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise AssertionError(
+                f"fixture command failed: {command}: {result.stdout}\n{result.stderr}"
+            )
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=fixture,
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout.strip()
+    return fixture, commit
+
+
 def run_canaries(root: Path) -> dict[str, Any]:
     runtime_path = root / "tooling/runtime-host/first_light_runtime.py"
     temporalis_path = root / "tooling/runtime-host/temporalis.py"
@@ -413,14 +560,158 @@ def run_canaries(root: Path) -> dict[str, Any]:
         check(59, "host freezes precommit identity before child supervision", "prepare_first_light_precommit(" in delegate_text and delegate_text.index("prepare_first_light_precommit(") < delegate_text.index("supervise_native_process("))
         check(60, "bounded contract freezes FOUND/ABSENT/UNKNOWN and STORE_IDENTITY_NE_PATH", all(token in contract_text for token in ("FOUND:", "ABSENT:", "UNKNOWN:", "STORE_IDENTITY_NE_PATH: true", "reconcile_service: NONE")))
 
+        concurrency_env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+
+        def direct_process_stress(*, warm: bool) -> bool:
+            mode = "warm" if warm else "cold"
+            for trial in range(8):
+                pair_root = base / f"fl-{mode}-{trial}"
+                pair_root.mkdir(parents=True, exist_ok=True)
+                event_path = pair_root / "event.json"
+                db_path = pair_root / "state.sqlite3"
+                event_path.write_text(
+                    json.dumps(_event(f"FL-{mode.upper()}-{trial}", subject_ref="pair")),
+                    encoding="utf-8",
+                )
+                if warm:
+                    warm_store = runtime.FirstLightStore(db_path)
+                    warm_store.close()
+                command = [
+                    sys.executable,
+                    "-B",
+                    str(runtime_path),
+                    "--event-file",
+                    str(event_path),
+                    "--db",
+                    str(db_path),
+                    "--mode",
+                    runtime.MODE_REAL,
+                ]
+                pair = _run_gated_pair(
+                    pair_root,
+                    f"start-{mode}-{trial}",
+                    command,
+                    env=concurrency_env,
+                )
+                _assert_single_execution_pair(pair, db_path)
+            return True
+
+        check(61, "FL-COLD-DB-2PROC serializes eight cold bootstrap pairs", lambda: direct_process_stress(warm=False))
+        check(62, "FL-WARM-DB-2PROC serializes eight warm bootstrap pairs", lambda: direct_process_stress(warm=True))
+
+        host_fixture: tuple[Path, str] | None = None
+
+        def fixture() -> tuple[Path, str]:
+            nonlocal host_fixture
+            if host_fixture is None:
+                host_fixture = _create_host_source_fixture(root, base)
+            return host_fixture
+
+        def host_pair(
+            name: str,
+            *,
+            local_app_data: Path,
+            event: dict[str, Any],
+            warm_db: bool,
+        ) -> dict[str, Any]:
+            source_fixture, source_commit = fixture()
+            pair_root = base / name
+            pair_root.mkdir(parents=True, exist_ok=True)
+            event_path = pair_root / "event.json"
+            db_path = pair_root / "state.sqlite3"
+            event_path.write_text(json.dumps(event), encoding="utf-8")
+            if warm_db:
+                warm_store = runtime.FirstLightStore(db_path)
+                warm_store.close()
+            env = dict(
+                concurrency_env,
+                LOCALAPPDATA=str(local_app_data),
+            )
+            command = [
+                sys.executable,
+                "-B",
+                str(host_path),
+                "--source-root",
+                str(source_fixture),
+                "--source-commit",
+                source_commit,
+                "runtime-first-light",
+                "--event-file",
+                str(event_path),
+                "--db",
+                str(db_path),
+                "--mode",
+                runtime.MODE_REAL,
+            ]
+            pair = _run_gated_pair(
+                pair_root,
+                "start-host-pair",
+                command,
+                env=env,
+            )
+            result = _assert_single_execution_pair(pair, db_path)
+            snapshot = local_app_data / "Cerebro" / "tooling-snapshots" / source_commit
+            marker = snapshot / ".cerebro-tooling-snapshot.json"
+            if not marker.is_file():
+                raise AssertionError("host snapshot marker missing")
+            marker_value = json.loads(marker.read_text(encoding="utf-8"))
+            if marker_value.get("commit") != source_commit:
+                raise AssertionError("host snapshot commit mismatch")
+            return result
+
+        def host_snapshot_cold_pair() -> bool:
+            local_app_data = base / "host-snapshot-cold-local"
+            host_pair(
+                "host-snapshot-cold",
+                local_app_data=local_app_data,
+                event=_event("HOST-SNAPSHOT-COLD", subject_ref="host-snapshot"),
+                warm_db=False,
+            )
+            source_fixture, source_commit = fixture()
+            del source_fixture
+            snapshot_root = local_app_data / "Cerebro" / "tooling-snapshots"
+            snapshots = [
+                path.name
+                for path in snapshot_root.iterdir()
+                if path.is_dir() and path.name != ".locks"
+            ]
+            return snapshots == [source_commit]
+
+        check(63, "HOST-SNAPSHOT-COLD-2PROC publishes one validated snapshot producer", host_snapshot_cold_pair)
+
+        def host_parity_2x2() -> bool:
+            local_app_data = base / "host-parity-local"
+            cold = host_pair(
+                "host-parity-cold",
+                local_app_data=local_app_data,
+                event=_event("HOST-PARITY-COLD", subject_ref="host-parity"),
+                warm_db=False,
+            )
+            warm = host_pair(
+                "host-parity-warm",
+                local_app_data=local_app_data,
+                event=_event("HOST-PARITY-WARM", subject_ref="host-parity"),
+                warm_db=True,
+            )
+            return (
+                cold.get("result_class") == "PASS"
+                and warm.get("result_class") == "PASS"
+                and cold.get("state_revision") == 1
+                and warm.get("state_revision") == 1
+                and cold.get("state_fingerprint") == warm.get("state_fingerprint")
+            )
+
+        check(64, "HOST-PARITY-2X2 preserves cold/warm two-Host result parity", host_parity_2x2)
+
     errors = [row for row in results if row["result"] != "PASS"]
     return {
-        "schema": "cerebro-first-light-validator/v0.3",
-        "result": "PASS" if not errors and len(results) == 60 else "NONPASS",
+        "schema": "cerebro-first-light-validator/v0.4",
+        "result": "PASS" if not errors and len(results) == 64 else "NONPASS",
         "canary_count": len(results),
         "legacy_canary_count": 48,
         "legacy_pass_count": sum(1 for row in results if row["id"] <= 48 and row["result"] == "PASS"),
         "boundary_canary_count": 12,
+        "concurrency_canary_count": 4,
         "pass_count": len(results) - len(errors),
         "nonpass_count": len(errors),
         "canaries": results,
