@@ -884,6 +884,48 @@ handboot_validation:
     - conversational_activation_without_machine_receipt
 
 # END PATCH-002.PRE-003 HANDBOOT VALIDATION
+
+# BEGIN PM-P0-S1 WORKING SOURCE CURRENTIZATION VALIDATION
+
+working_source_currentization_validation:
+  introduced_by: PM-P0-S1-INBOUND-CURRENTIZATION-IMPLEMENTER-DEMAND-001
+  severity: error
+  owner: tooling.validator
+  validator: tooling/validator/working_source_currentization_validation.py
+  required_files:
+    - tooling/delivery/Cerebro.WorkingSourceCurrentization.ps1
+    - tooling/delivery/working-source-currentization-receipt.schema.json
+    - tooling/validator/working_source_currentization_validation.py
+  required_contracts:
+    - exact-frozen-remote-identity
+    - clean-attached-main-expected-origin
+    - equal-clean-noop
+    - local-behind-fast-forward-only
+    - local-ahead-hold
+    - divergent-history-hold
+    - dirty-worktree-hold-before-fetch
+    - wrong-branch-or-detached-hold-before-fetch
+    - wrong-remote-hold-before-network
+    - moved-frozen-remote-hold-requalify
+    - immutable-write-once-receipt
+    - zero-prohibited-operation-counters
+  prohibited_operations:
+    - pull
+    - reset
+    - checkout
+    - switch
+    - rebase
+    - non-fast-forward-merge
+    - push
+    - source-write
+    - runtime-write
+    - attempt-epoch
+    - host-dispatch
+    - physical-effect
+    - human-git-courier
+
+# END PM-P0-S1 WORKING SOURCE CURRENTIZATION VALIDATION
+
 # BEGIN PATCH-002.PRE-003.POST-001 MANIFEST CONTRACT CORRECTION
 
 handboot_manifest_contract_validation:

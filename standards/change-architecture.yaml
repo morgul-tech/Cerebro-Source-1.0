@@ -135,6 +135,9 @@ execution_ownership_convergence:
     full_working_source_transaction:
       canonical_owner: DELIVERY_CONTROLLER
       implementation: tooling/delivery/delivery_controller.py
+    remote_to_working_currentization:
+      canonical_owner: DELIVERY_CONTROLLER
+      implementation: tooling/delivery/Cerebro.WorkingSourceCurrentization.ps1
     sealed_standard_source_patch_execution:
       canonical_owner: STANDARD_DELIVERY_KERNEL
       implementation: tooling/delivery/Cerebro.StandardDeliveryKernel.ps1
@@ -146,6 +149,9 @@ execution_ownership_convergence:
     - Change-Engine-development-does-not-imply-publication-transport-ownership
     - FULL-and-STANDARD-transaction-paths-remain-distinct
     - Delivery-Controller-does-not-publish
+    - Host-does-not-own-Working-Source-currentization
+    - Remote-to-Working-currentization-does-not-invoke-cerebro_sync
+    - cerebro_sync-remains-outbound-publication-only
     - Standard-Delivery-Kernel-does-not-own-FULL-workspace-transactions
     - MCP-control-authority-remains-separate-from-execution-ownership
 

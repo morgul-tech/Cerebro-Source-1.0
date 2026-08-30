@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cerebro.local/schemas/working-source-currentization-receipt.schema.json",
+  "title": "Cerebro Working Source Currentization Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload", "payload_sha256"],
+  "properties": {
+    "payload": {
+      "type": "object",
+      "required": ["schema", "generation", "claim", "repository", "remote", "branch", "expected_remote", "before_oid", "frozen_remote_oid", "observed_remote_oid", "after_oid", "topology", "verdict", "actions", "clean_before", "clean_after", "counters", "timestamp_utc"],
+      "properties": {
+        "schema": {"const": "cerebro-working-source-currentization-receipt/v1"},
+        "generation": {"type": "string", "minLength": 1},
+        "claim": {"type": "string", "minLength": 1},
+        "before_oid": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "frozen_remote_oid": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "observed_remote_oid": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "after_oid": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "topology": {"enum": ["UNOBSERVED", "EQUAL_CLEAN", "LOCAL_BEHIND", "LOCAL_AHEAD", "DIVERGED", "DIRTY", "WRONG_BRANCH", "DETACHED", "WRONG_REMOTE", "FROZEN_REMOTE_MOVED"]},
+        "verdict": {"type": "string", "pattern": "^(PASS|HOLD)_"},
+        "actions": {"type": "array", "items": {"type": "string"}},
+        "clean_before": {"type": "boolean"},
+        "clean_after": {"type": "boolean"},
+        "counters": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+        "repository": {"type": "string"}, "remote": {"type": "string"}, "branch": {"type": "string"},
+        "expected_remote": {"type": "string"}, "actual_remote": {"type": ["string", "null"]},
+        "timestamp_utc": {"type": "string"}, "error": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "payload_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

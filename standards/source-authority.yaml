@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-SOURCE
   name: Cerebro Source Authority Standard
-  version: 0.3.0
+  version: 0.4.0
   status: approved
   authority: authoritative
   scope: Authority, derivation, reproducibility, and control-authority boundaries for Cerebro Source 1.0.
@@ -90,3 +90,10 @@ rules:
   verification:
   - mcp/boot-architecture-control.yaml separates local machine verification from universal Source boot.
   - standards/boot-critical-path-architecture.yaml requires local equality, Runtime control transfer and machine proof when those capabilities are available.
+- id: STD-SOURCE-R014
+  statement: Remote-to-Working-Source currentization is a separately authorized Delivery Controller operation that may perform only a clean attached-main fast-forward to an exact frozen authoritative commit; it shall fail closed for dirty, ahead, divergent, detached, wrong-branch, wrong-remote, or moved-remote state and shall never publish Source.
+  priority: critical
+  verification:
+  - tooling/delivery/Cerebro.WorkingSourceCurrentization.ps1 permits only equal-clean no-op or git merge --ff-only after fresh frozen-remote verification.
+  - tooling/delivery/working-source-currentization-receipt.schema.json defines immutable evidence with exact authority and topology identities.
+  - cerebro_sync remains the sole outbound publication path and is never used for inbound currentization.

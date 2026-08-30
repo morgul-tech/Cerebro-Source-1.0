@@ -1,6 +1,6 @@
 @{
     RootModule = 'Cerebro.Tools.psm1'
-    ModuleVersion = '1.4.0'
+    ModuleVersion = '1.5.0'
     GUID = '6e1252dc-8979-4c13-a2e0-0de3ce184f65'
     Author = 'Cerebro'
     CompanyName = 'Cerebro'
@@ -11,6 +11,7 @@
         'cerebro_receive',
         'cpatch',
         'cerebro_sync',
+        'cerebro_currentize',
         'cerebro_handoff',
         'cerebro_resume',
         'bootCerebro',

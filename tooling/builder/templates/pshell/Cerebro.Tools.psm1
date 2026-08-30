@@ -829,7 +829,7 @@ function cerebro_tools_status {
     $config = Get-CerebroToolsConfig
 
     [pscustomobject]@{
-        module_version = '1.4.0'
+        module_version = '1.5.0'
         module_path = $PSScriptRoot
         config_path = 'D:\Cerebro\Config\Cerebro.Tools.json'
         working_source_path = $config.working_source_path
@@ -842,6 +842,9 @@ function cerebro_tools_status {
         )
         cerebro_sync = [bool](
             Get-Command cerebro_sync -ErrorAction SilentlyContinue
+        )
+        cerebro_currentize = [bool](
+            Get-Command cerebro_currentize -ErrorAction SilentlyContinue
         )
         cerebro_handoff = [bool](
             Get-Command cerebro_handoff -ErrorAction SilentlyContinue
@@ -882,6 +885,26 @@ function cerebro_sync {
         throw "CEREBRO_SYNC_SCRIPT_NOT_FOUND:$scriptPath"
     }
 
+    & $scriptPath @PSBoundParameters
+}
+
+function cerebro_currentize {
+    [CmdletBinding()]
+    param(
+        [string]$RepoPath = 'D:\Cerebro\Source\Cerebro_Source_v1.0',
+        [string]$Remote = 'origin',
+        [string]$Branch = 'main',
+        [Parameter(Mandatory = $true)][string]$FrozenRemoteOid,
+        [string]$ExpectedRemote = 'https://github.com/morgul-tech/Cerebro-Source-1.0.git',
+        [string]$Generation = 'UNBOUND',
+        [string]$Claim = 'UNBOUND',
+        [string]$ReceiptPath
+    )
+
+    $scriptPath = Join-Path $RepoPath 'tooling\delivery\Cerebro.WorkingSourceCurrentization.ps1'
+    if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+        throw "CEREBRO_CURRENTIZATION_SCRIPT_NOT_FOUND:$scriptPath"
+    }
     & $scriptPath @PSBoundParameters
 }
 
@@ -1158,7 +1181,7 @@ function cerebro {
         -HistoryRoot $HistoryRoot
 }
 Export-ModuleMember `
-    -Function cerebro_receive, cpatch, cerebro_sync, cerebro_handoff, cerebro_resume, bootCerebro, cerebro_verify, bootini, cerebro_tools_status, cerebro
+    -Function cerebro_receive, cpatch, cerebro_sync, cerebro_currentize, cerebro_handoff, cerebro_resume, bootCerebro, cerebro_verify, bootini, cerebro_tools_status, cerebro
 
 function cerebro_profile {
     [CmdletBinding()]
