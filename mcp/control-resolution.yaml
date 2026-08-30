@@ -1,7 +1,7 @@
 schema: cerebro-mcp-control-resolution-contract/v1
 control_resolution:
   id: CEREBRO-MCP-CONTROL-RESOLUTION-001
-  version: "1.4.0"
+  version: "1.5.0"
   status: ACTIVE
   owner: MCP
   implementation_ref: mcp/control_resolution.py
@@ -53,6 +53,42 @@ control_resolution:
     non_material_control:
       path: canonical_wrapper_to_validated_adaptive_logic
     final_decision_owner: MCP
+  refined_airlock_v006:
+    status: ACTIVE
+    control_ref: CEREBRO-REFINED-AIRLOCK-V006
+    implementation_ref: mcp/control_resolution.py#resolve_refined_airlock
+    authority_model: DETERMINISTIC_SUBORDINATE_ASSESSMENT
+    direct_live_authority: false
+    final_decision_owner: MCP
+    execution_order:
+      - verify-protected-promotion-basis
+      - validate-project-context-binding-when-applicable
+      - resolve-refined-airlock-before-first-substantive-read
+      - stop-on-HOLD-PAUSED-or-CONTAMINATED
+      - continue-existing-material-preflight-and-adaptive-path-only-on-READY
+    seal_contract:
+      exact_bindings: [allowlist, denyset, generation_ref, basis_fingerprint, capsule_ref, capsule_fingerprint]
+      canonical_fingerprint_required: true
+      substantive_reads_before_seal: 0
+    exposure_contract:
+      CONTROL_NEUTRAL: CONTINUE_NO_CONTAMINATION
+      MATERIAL_SEMANTIC: CONTAMINATED_TERMINAL_NO_UNSEE
+      UNKNOWN_MATERIALITY: PAUSE_SAME_ACTOR_ZERO_NEW_READS_EXTERNAL_CLASSIFICATION
+      POSTSEAL: PRIMARY_FINGERPRINT_PRESERVED
+    retrieval_contract:
+      exact_allowlist_only: true
+      missing_allowlisted_input: HOLD_NO_BROAD_SEARCH
+    currentness_contract:
+      resolver_must_be_external_to_blind_actor: true
+      ADMINPULSE_is_blind_work_start: false
+    network_contract:
+      default_gate: false
+      proven_causal_threat_nonpass_effect: HOLD
+    prohibited:
+      - new-control-engine
+      - new-scheduler
+      - new-truth-store
+      - runtime-resident-airlock-policy
   immune_material_permit_projection:
     status: ACTIVE
     owner: MCP
@@ -209,6 +245,11 @@ control_resolution:
     - TRUSTED_VERIFIER_AND_CAPABILITY_RESOLVER_ARE_HOST_CONSTRUCTOR_BOUND
     - OWNER_SEQUENCE_RE_RESOLVES_AFTER_EVERY_SEPARATE_COMMIT
     - LOCAL_SCRIPTED_DATABASE_PROOF_IS_NOT_LIVE_POSTGRESQL_ACTIVATION
+    - REFINED_AIRLOCK_IS_SUBORDINATE_TO_ONE_CANONICAL_MCP_CONTROL_DECISION
+    - CONTROL_NEUTRAL_EXPOSURE_IS_NOT_CONTAMINATION
+    - MATERIAL_SEMANTIC_PRESEAL_EXPOSURE_IS_TERMINAL_CONTAMINATED
+    - UNKNOWN_MATERIALITY_PAUSES_WITH_ZERO_NEW_READS
+    - POSTSEAL_EXPOSURE_PRESERVES_FINGERPRINTED_PRIMARY
   acceptance:
     - exact_AA003_promotion_basis_is_verified
     - promotion_identity_uses_canonical_Git_object_identity_not_worktree_text_representation
@@ -241,6 +282,11 @@ control_resolution:
     - cross-project-structural-join-is-blocked-without-separate-project-control
     - owner-effect-routing-does-not-claim-normal-owner-consumption
     - self-asserted-owner-persistence-or-capability-does-not-open-control-gates
+    - refined-airlock-seal-is-exactly-bound-before-first-substantive-read
+    - refined-airlock-missing-allowlisted-input-holds-without-broad-search
+    - refined-airlock-ADMINPULSE-runs-external-currentness-before-blind-work
+    - refined-airlock-network-gates-only-on-proven-causal-threat
+    - refined-airlock-negative-canaries-pass-on-the-existing-control-resolution-selftest
 
 lifecycle_mutation_resolution:
   final_transition_validity_owner: MCP

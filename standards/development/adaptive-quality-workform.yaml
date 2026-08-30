@@ -1,7 +1,7 @@
 schema: cerebro-adaptive-quality-workform/v0.1
 adaptive_quality_workform:
   id: CEREBRO-ADAPTIVE-QUALITY-WORKFORM-001
-  version: '0.2'
+  version: '0.3'
   status: ACTIVE
   introduced_by: PATCH-005
   kind: STANDARD
@@ -170,6 +170,41 @@ adaptive_quality_workform:
       quality_gate_boundary:
         quality_gate_pass_may_override_decision_assurance_blocker: false
         quality_gate_semantics_changed: false
+    refined_airlock_v006_workform:
+      control_ref: CEREBRO-REFINED-AIRLOCK-V006
+      applies_before: FIRST_SUBSTANTIVE_READ
+      owner: MCP
+      new_component: false
+      preseal_sequence:
+      - EXTERNAL_CURRENTNESS
+      - EXACT_ALLOWLIST_DENYSET_GENERATION_BASIS_CAPSULE_SEAL
+      - ZERO_SUBSTANTIVE_READ_ASSERTION
+      - EXPOSURE_CLASSIFICATION
+      - EXACT_ALLOWLISTED_READS_ONLY
+      exposure_treatment:
+        CONTROL_NEUTRAL: CONTINUE_WITHOUT_CONTAMINATION
+        MATERIAL_SEMANTIC: TERMINAL_CONTAMINATED_NO_IN_PLACE_REPAIR
+        UNKNOWN_MATERIALITY: PAUSE_SAME_ACTOR_ZERO_NEW_READS_FOR_EXTERNAL_CLASSIFICATION
+        POSTSEAL: PRESERVE_FINGERPRINTED_PRIMARY
+      missing_allowlisted_input: HOLD_WITHOUT_BROAD_SEARCH
+      adminpulse_semantics: CURRENTNESS_TRIGGER_NOT_BLIND_WORK_START
+      network_semantics: GATE_ONLY_ON_PROVEN_CAUSAL_THREAT
+      overisolation_guard:
+        avoidable_generation_loss: NONPASS
+        unnecessary_treatment_change: NONPASS
+      human_cost_dimensions:
+      - pulses
+      - minutes_per_valid_seal
+      - false_holds
+      - contamination_events
+      - fresh_generations_lost
+      - retrieval_calls
+      - time_to_seal
+      architecture_constraints:
+      - no-new-control-engine
+      - no-new-scheduler
+      - no-new-truth-store
+      - no-runtime-policy-promotion
   solution_quality_profile:
     dimensions:
     - Outcome_Fit

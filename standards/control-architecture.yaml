@@ -2,7 +2,7 @@ schema: cerebro-control-architecture/v0.2
 
 control_architecture:
   id: CEREBRO-CONTROL-ARCHITECTURE-001
-  version: "0.6"
+  version: "0.7"
   status: ACTIVE
   introduced_by: GUARDRAILS-001
 
@@ -23,6 +23,7 @@ control_architecture:
     - CONTROL_EVENT
     - CONTROL_STATE
     - COMMAND_AND_CONTRACT_RESOLUTION
+    - REFINED_AIRLOCK_PRE_READ_CONTROL
     - RELEVANCE_AND_MATERIALITY_PREFLIGHT
     - CONTROL_RESOLUTION
     - MCP_CONTROL_DECISION
@@ -89,6 +90,43 @@ control_architecture:
     empty_retrieval_is_not_no_prior_learning_without_coverage: true
     receipt_required_before_material_commitment: true
     stale_receipt_effect: INVALIDATE_AND_RE_RESOLVE
+
+  refined_airlock_pre_read_control:
+    id: CEREBRO-REFINED-AIRLOCK-V006
+    owner: MCP
+    implementation_ref: mcp/control_resolution.py#resolve_refined_airlock
+    relationship: SUBORDINATE_ASSESSMENT_ON_THE_EXISTING_CANONICAL_CONTROL_PATH
+    invocation: BEFORE_FIRST_SUBSTANTIVE_READ_WHEN_BLINDNESS_OR_ISOLATION_IS_CAUSAL
+    required_preexposure_seal_bindings:
+      - exact_allowlist
+      - exact_denyset
+      - generation_ref
+      - basis_fingerprint
+      - capsule_ref
+      - capsule_fingerprint
+    currentness:
+      resolution_owner: EXTERNAL_TO_BLIND_ACTOR
+      ADMINPULSE_effect: CURRENTNESS_TRIGGER_NOT_BLIND_WORK_START
+    exposure_classes:
+      CONTROL_NEUTRAL: CONTINUE_WITHOUT_CONTAMINATION
+      MATERIAL_SEMANTIC: CONTAMINATED_TERMINAL_NO_UNSEE
+      UNKNOWN_MATERIALITY: PAUSE_SAME_ACTOR_ZERO_NEW_READS_EXTERNAL_CLASSIFICATION
+      POSTSEAL: PRESERVE_FINGERPRINTED_PRIMARY
+    retrieval:
+      mode: EXACT_ALLOWLIST_ONLY
+      missing_allowlisted_input_effect: HOLD_WITHOUT_BROAD_SEARCH
+      broad_result_bearing_discovery_preseal: PROHIBITED
+    network_boundary:
+      default_gate: false
+      gate_only_when_causal_threat_is_proven: true
+    architecture_boundary:
+      new_engine: PROHIBITED
+      new_scheduler: PROHIBITED
+      new_truth_store: PROHIBITED
+      runtime_policy: PROHIBITED
+    human_cost_observation:
+      fields: [pulses, minutes_per_valid_seal, false_holds, contamination_events, fresh_generations_lost, retrieval_calls, time_to_seal]
+      metrics_are_control_authority: false
 
   mcp_control_decision_contract:
     kind: CONTRACT

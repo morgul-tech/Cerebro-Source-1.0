@@ -27,6 +27,13 @@ EXPECTED_CANDIDATE_CONTRACT_BLOB = "a8a2b9d55a9f4af2f7439ded5c66425818b384be"
 EXPECTED_SHADOW_ORACLE_BLOB = "831f7edb0545c66e92a6cfe10d376af3e2fb278e"
 MATERIAL_STAGES = {"DECIDE", "LOCK", "MATERIAL_EXECUTE", "MATERIAL_AUTHORIZE", "GOVERNING_PUBLISH"}
 CONTROL_OUTCOMES = {"CONTINUE", "REMEDIATE", "RETRY", "REORIENT", "USER_DECISION_REQUIRED", "BLOCK"}
+REFINED_AIRLOCK_SCHEMA = "cerebro-refined-airlock-assessment/v1"
+REFINED_AIRLOCK_CONTROL_REF = "CEREBRO-REFINED-AIRLOCK-V006"
+AIRLOCK_MATERIALITY_CLASSES = {
+    "CONTROL_NEUTRAL",
+    "MATERIAL_SEMANTIC",
+    "UNKNOWN_MATERIALITY",
+}
 CONTROL_CONTEXT_BINDING_SCHEMA = "cerebro-control-context-event-binding/v1"
 HNS_CANDIDATE_ACTIVATION_PRECONDITION = "ACTUAL_TRANSITION_RECEIPT_AND_COMMITTED_STATE_EXACTLY_MATCH_PREDICTION"
 IMMUNE_MATERIAL_PERMIT_SCHEMA = "cerebro-immune-material-permit/v1"
@@ -113,6 +120,198 @@ DELIVERY_PROFILE_ALIASES = {
     "STANDARD_B": "STANDARD",
     "STANDARD_C": "FULL",
 }
+
+
+def _canonical_fingerprint(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _refined_airlock_assessment(
+    state: str,
+    reason_codes: list[str],
+    *,
+    seal_fingerprint: str | None = None,
+    exposure_classes: list[str] | None = None,
+    primary_fingerprint_preserved: bool = False,
+    fresh_generation_required: bool = False,
+    same_actor_preserved: bool = True,
+    human_cost_metrics: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    outcome = "CONTINUE" if state == "READY" else "BLOCK"
+    next_action = {
+        "READY": "CONTINUE_EXACT_ALLOWLISTED_READS",
+        "HOLD": "RESOLVE_AIRLOCK_INPUT_OR_CURRENTNESS_WITH_ZERO_NEW_READS",
+        "PAUSED_EXTERNAL_CLASSIFICATION": "EXTERNAL_MATERIALITY_CLASSIFICATION",
+        "CONTAMINATED": "STOP_CURRENT_ARM_OR_GENERATION_NO_IN_PLACE_REPAIR",
+    }[state]
+    assessment = {
+        "schema": REFINED_AIRLOCK_SCHEMA,
+        "control_ref": REFINED_AIRLOCK_CONTROL_REF,
+        "result": "PASS",
+        "state": state,
+        "outcome": outcome,
+        "reason_codes": sorted(set(reason_codes)),
+        "seal_fingerprint": seal_fingerprint,
+        "discovery_mode": "EXACT_ALLOWLIST_ONLY",
+        "broad_result_bearing_discovery": "PROHIBITED_PRESEAL",
+        "zero_new_reads_required": outcome != "CONTINUE",
+        "contaminated": state == "CONTAMINATED",
+        "fresh_generation_required": fresh_generation_required,
+        "same_actor_preserved": same_actor_preserved,
+        "primary_fingerprint_preserved": primary_fingerprint_preserved,
+        "exposure_classes": sorted(set(exposure_classes or [])),
+        "network_is_default_gate": False,
+        "next_action": next_action,
+        "human_cost_metrics": dict(human_cost_metrics or {}),
+        "new_control_engine_created": False,
+        "runtime_policy_created": False,
+    }
+    assessment["basis_fingerprint"] = _canonical_fingerprint(assessment)
+    return assessment
+
+
+def resolve_refined_airlock(config: dict[str, Any]) -> dict[str, Any]:
+    """Resolve the V006 pre-read airlock as a subordinate MCP control assessment.
+
+    The function performs no retrieval or mutation.  It only validates the sealed
+    allowlist/currentness/exposure facts supplied by the external control owner.
+    """
+    if not isinstance(config, dict):
+        raise ValueError("refined-airlock-config-must-be-object")
+
+    reasons: list[str] = []
+    generation_ref = str(config.get("generation_ref") or "")
+    basis_fingerprint = str(config.get("basis_fingerprint") or "")
+    capsule_ref = str(config.get("capsule_ref") or "")
+    seal = config.get("preexposure_config_seal")
+    if not isinstance(seal, dict):
+        return _refined_airlock_assessment("HOLD", ["PREEXPOSURE_CONFIG_SEAL_MISSING"])
+
+    allowlist = sorted({str(item) for item in seal.get("allowlist", []) if str(item)})
+    denyset = sorted({str(item) for item in seal.get("denyset", []) if str(item)})
+    capsule_fingerprint = str(seal.get("capsule_fingerprint") or "")
+    seal_subject = {
+        "allowlist": allowlist,
+        "denyset": denyset,
+        "generation_ref": str(seal.get("generation_ref") or ""),
+        "basis_fingerprint": str(seal.get("basis_fingerprint") or ""),
+        "capsule_ref": str(seal.get("capsule_ref") or ""),
+        "capsule_fingerprint": capsule_fingerprint,
+    }
+    expected_seal_fingerprint = _canonical_fingerprint(seal_subject)
+    seal_fingerprint = str(seal.get("seal_fingerprint") or "")
+    if str(seal.get("result") or "").upper() != "PASS":
+        reasons.append("PREEXPOSURE_CONFIG_SEAL_NONPASS")
+    if not allowlist:
+        reasons.append("EXACT_ALLOWLIST_MISSING")
+    if set(allowlist) & set(denyset):
+        reasons.append("ALLOWLIST_DENYSET_COLLISION")
+    if not generation_ref or seal_subject["generation_ref"] != generation_ref:
+        reasons.append("GENERATION_BINDING_MISMATCH")
+    if not basis_fingerprint or seal_subject["basis_fingerprint"] != basis_fingerprint:
+        reasons.append("BASIS_BINDING_MISMATCH")
+    if not capsule_ref or seal_subject["capsule_ref"] != capsule_ref:
+        reasons.append("CAPSULE_BINDING_MISMATCH")
+    if len(capsule_fingerprint) != 64:
+        reasons.append("CAPSULE_FINGERPRINT_INVALID")
+    if seal_fingerprint != expected_seal_fingerprint:
+        reasons.append("PREEXPOSURE_CONFIG_SEAL_FINGERPRINT_MISMATCH")
+    if int(config.get("substantive_read_count_before_seal") or 0) != 0:
+        reasons.append("SUBSTANTIVE_READ_OCCURRED_BEFORE_SEAL")
+    if reasons:
+        return _refined_airlock_assessment(
+            "HOLD", reasons, seal_fingerprint=seal_fingerprint or None
+        )
+
+    currentness = config.get("currentness")
+    currentness_ok = (
+        isinstance(currentness, dict)
+        and currentness.get("externalized") is True
+        and str(currentness.get("result") or "").upper() == "PASS"
+        and str(currentness.get("basis_fingerprint") or "") == basis_fingerprint
+        and str(currentness.get("resolver_ref") or "") not in {"", generation_ref}
+    )
+    if not currentness_ok:
+        reason = (
+            "ADMINPULSE_REQUIRES_EXTERNAL_CURRENTNESS_BEFORE_BLIND_WORK"
+            if str(config.get("trigger") or "").upper() == "ADMINPULSE"
+            else "EXTERNAL_CURRENTNESS_NONPASS"
+        )
+        return _refined_airlock_assessment(
+            "HOLD", [reason], seal_fingerprint=seal_fingerprint
+        )
+
+    requested = {str(item) for item in config.get("requested_input_refs", []) if str(item)}
+    available = {str(item) for item in config.get("available_input_refs", []) if str(item)}
+    if requested & set(denyset):
+        return _refined_airlock_assessment(
+            "HOLD", ["REQUESTED_INPUT_INTERSECTS_DENYSET"], seal_fingerprint=seal_fingerprint
+        )
+    if not requested.issubset(set(allowlist)):
+        return _refined_airlock_assessment(
+            "HOLD", ["REQUESTED_INPUT_OUTSIDE_SEALED_ALLOWLIST"], seal_fingerprint=seal_fingerprint
+        )
+    if not requested.issubset(available):
+        return _refined_airlock_assessment(
+            "HOLD", ["ALLOWLISTED_INPUT_MISSING_NO_BROAD_SEARCH"], seal_fingerprint=seal_fingerprint
+        )
+
+    network = config.get("network_dependency")
+    if isinstance(network, dict) and network.get("causal_threat_proven") is True:
+        if str(network.get("result") or "").upper() != "PASS":
+            return _refined_airlock_assessment(
+                "HOLD", ["PROVEN_CAUSAL_NETWORK_THREAT_NONPASS"], seal_fingerprint=seal_fingerprint
+            )
+
+    exposure_classes: list[str] = []
+    postseal_seen = False
+    for exposure in config.get("exposures", []):
+        if not isinstance(exposure, dict):
+            return _refined_airlock_assessment(
+                "PAUSED_EXTERNAL_CLASSIFICATION",
+                ["EXPOSURE_RECORD_INVALID_EXTERNAL_CLASSIFICATION_REQUIRED"],
+                seal_fingerprint=seal_fingerprint,
+            )
+        phase = str(exposure.get("phase") or "").upper()
+        materiality = str(exposure.get("materiality") or "").upper()
+        if phase == "POSTSEAL":
+            postseal_seen = True
+            exposure_classes.append("POSTSEAL")
+            continue
+        if materiality not in AIRLOCK_MATERIALITY_CLASSES:
+            materiality = "UNKNOWN_MATERIALITY"
+        exposure_classes.append(materiality)
+        if materiality == "MATERIAL_SEMANTIC":
+            return _refined_airlock_assessment(
+                "CONTAMINATED",
+                ["PRESEAL_MATERIAL_SEMANTIC_EXPOSURE_TERMINAL_NO_UNSEE"],
+                seal_fingerprint=seal_fingerprint,
+                exposure_classes=exposure_classes,
+                fresh_generation_required=True,
+                same_actor_preserved=False,
+            )
+        if materiality == "UNKNOWN_MATERIALITY":
+            return _refined_airlock_assessment(
+                "PAUSED_EXTERNAL_CLASSIFICATION",
+                ["UNKNOWN_MATERIALITY_ZERO_NEW_READS"],
+                seal_fingerprint=seal_fingerprint,
+                exposure_classes=exposure_classes,
+            )
+
+    return _refined_airlock_assessment(
+        "READY",
+        ["REFINED_AIRLOCK_V006_PASS"],
+        seal_fingerprint=seal_fingerprint,
+        exposure_classes=exposure_classes,
+        primary_fingerprint_preserved=postseal_seen,
+        human_cost_metrics=(
+            config.get("human_cost_metrics")
+            if isinstance(config.get("human_cost_metrics"), dict)
+            else None
+        ),
+    )
 DELIVERY_OPERATIONS = {"replace", "create", "delete"}
 CONSTITUTIONAL_STATES = {"CLEAR", "SUSPECTED", "VERIFIED_MATERIAL_BREACH", "VERIFIED_NONMATERIAL_BREACH"}
 
@@ -1600,6 +1799,54 @@ def resolve(
             pm_profile_verifier=pm_profile_verifier,
         )
 
+    airlock_assessment = None
+    if "refined_airlock" in request:
+        airlock_assessment = resolve_refined_airlock(request.get("refined_airlock"))
+        if airlock_assessment.get("outcome") != "CONTINUE":
+            objective = str(request.get("objective_ref") or "UNSPECIFIED")
+            digest = _canonical_fingerprint({
+                "objective_ref": objective,
+                "airlock_assessment": airlock_assessment,
+            })
+            return finalize({
+                "schema": SCHEMA,
+                "result": "PASS",
+                "authority": "DERIVED_MCP_CONTROL_DECISION",
+                "live_control_authority": True,
+                "normal_control_path_exercised": True,
+                "promotion_basis_verified": True,
+                "promotion_basis": basis,
+                "material_preflight_exercised": False,
+                "material_preflight_passed": None,
+                "material_preflight_precedes_adaptive": True,
+                "adaptive_invoked": False,
+                "refined_airlock_assessment": airlock_assessment,
+                "mcp_control_decision": {
+                    "schema": DECISION_SCHEMA,
+                    "control_decision_id": "MCPD-AIRLOCK-BLOCK-" + digest[:12].upper(),
+                    "control_state_ref": REFINED_AIRLOCK_CONTROL_REF,
+                    "objective_ref": objective,
+                    "basis_refs": [REFINED_AIRLOCK_CONTROL_REF],
+                    "basis_fingerprint": digest,
+                    "effective_user_config_ref": "CURRENT_EFFECTIVE_CONFIGURATION",
+                    "execution_profile_ref": "NONE",
+                    "applicable_control_refs": [REFINED_AIRLOCK_CONTROL_REF],
+                    "outcome": "BLOCK",
+                    "classification": str(airlock_assessment.get("state") or "HOLD"),
+                    "invalidates": list(airlock_assessment.get("reason_codes") or []),
+                    "verification_requirement": str(airlock_assessment.get("next_action") or "RERESOLVE_AIRLOCK"),
+                    "human_boundary": "EXTERNAL_MATERIALITY_CLASSIFICATION"
+                    if airlock_assessment.get("state") == "PAUSED_EXTERNAL_CLASSIFICATION"
+                    else "NONE",
+                    "evidence_scope": "REFINED_AIRLOCK_PRE_READ_CONTROL",
+                    "authority": "MCP",
+                    "control_resolution_surface": CONTROL_SURFACE_ID,
+                    "resolved_at": utc_now(),
+                },
+                "execution_profile": None,
+                "continuation_effect": str(airlock_assessment.get("next_action") or "NONE"),
+            })
+
     constitutional = evaluate_constitutional_compliance(request)
     if constitutional["state"] == "VERIFIED_MATERIAL_BREACH":
         objective = str(request.get("objective_ref") or "UNSPECIFIED")
@@ -1645,6 +1892,15 @@ def resolve(
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
     preflight_result = None
     adaptive_request = dict(request)
+    if airlock_assessment is not None:
+        adaptive_request["refined_airlock_assessment"] = airlock_assessment
+        adaptive_request["governing_basis_refs"] = sorted(set(
+            [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
+            + [
+                REFINED_AIRLOCK_CONTROL_REF,
+                "REFINED-AIRLOCK-SEAL:" + str(airlock_assessment.get("seal_fingerprint") or ""),
+            ]
+        ))
     if context_binding is not None:
         adaptive_request["governing_basis_refs"] = sorted(set(
             [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
@@ -1789,6 +2045,7 @@ def resolve(
         "integrity_invocation": integrity_invocation,
         "integrity_assessment": integrity_assessment,
         "preflight_result": preflight_result,
+        "refined_airlock_assessment": airlock_assessment,
     }
     return finalize(result)
 
@@ -1878,6 +2135,53 @@ def _fixture_intent_assessment(
     )
 
 
+def _fixture_refined_airlock() -> dict[str, Any]:
+    generation_ref = "AIRLOCK-GENERATION-SELFTEST"
+    basis_fingerprint = "a" * 64
+    capsule_ref = "AIRLOCK-CAPSULE-SELFTEST"
+    seal_subject = {
+        "allowlist": ["INPUT-A"],
+        "denyset": ["INPUT-DENIED"],
+        "generation_ref": generation_ref,
+        "basis_fingerprint": basis_fingerprint,
+        "capsule_ref": capsule_ref,
+        "capsule_fingerprint": "b" * 64,
+    }
+    return {
+        "version": "V006",
+        "trigger": "ADMINPULSE",
+        "generation_ref": generation_ref,
+        "basis_fingerprint": basis_fingerprint,
+        "capsule_ref": capsule_ref,
+        "substantive_read_count_before_seal": 0,
+        "preexposure_config_seal": {
+            "result": "PASS",
+            **seal_subject,
+            "seal_fingerprint": _canonical_fingerprint(seal_subject),
+        },
+        "currentness": {
+            "externalized": True,
+            "result": "PASS",
+            "basis_fingerprint": basis_fingerprint,
+            "resolver_ref": "MCP-EXTERNAL-CURRENTNESS-SELFTEST",
+        },
+        "requested_input_refs": ["INPUT-A"],
+        "available_input_refs": ["INPUT-A"],
+        "network_dependency": {
+            "causal_threat_proven": False,
+            "result": "UNAVAILABLE",
+        },
+        "exposures": [
+            {"phase": "PRESEAL", "materiality": "CONTROL_NEUTRAL"}
+        ],
+        "human_cost_metrics": {
+            "pulses": 1,
+            "retrieval_calls": 1,
+            "fresh_generations_lost": 0,
+        },
+    }
+
+
 def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dict[str, Any]:
     tests: list[dict[str, Any]] = []
     def check(name: str, ok: bool, detail: str = "") -> None:
@@ -1906,6 +2210,107 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
     simple = resolve({"objective_ref": "AA004-SIMPLE", "consequence": "LOW", "uncertainty": "LOW"}, root, require_git_ancestry=require_git_ancestry)
     check("canonical-nonmaterial-path-live", simple.get("live_control_authority") is True and simple.get("adaptive_invoked") is True and simple.get("mcp_control_decision", {}).get("outcome") == "CONTINUE")
     check("constitutional-normal-consumer-clear", simple.get("constitutional_compliance", {}).get("state") == "CLEAR")
+
+    airlock_fixture = _fixture_refined_airlock()
+    airlock_ready = resolve_refined_airlock(airlock_fixture)
+    check(
+        "refined-airlock-control-neutral-exposure-continues",
+        airlock_ready.get("state") == "READY"
+        and airlock_ready.get("outcome") == "CONTINUE"
+        and airlock_ready.get("contaminated") is False,
+    )
+    material_exposure = copy.deepcopy(airlock_fixture)
+    material_exposure["exposures"] = [
+        {"phase": "PRESEAL", "materiality": "MATERIAL_SEMANTIC"}
+    ]
+    material_assessment = resolve_refined_airlock(material_exposure)
+    check(
+        "refined-airlock-material-semantic-is-terminal-contaminated",
+        material_assessment.get("state") == "CONTAMINATED"
+        and material_assessment.get("fresh_generation_required") is True
+        and material_assessment.get("same_actor_preserved") is False,
+    )
+    unknown_exposure = copy.deepcopy(airlock_fixture)
+    unknown_exposure["exposures"] = [
+        {"phase": "PRESEAL", "materiality": "UNKNOWN_MATERIALITY"}
+    ]
+    unknown_assessment = resolve_refined_airlock(unknown_exposure)
+    check(
+        "refined-airlock-unknown-materiality-pauses-same-actor-with-zero-reads",
+        unknown_assessment.get("state") == "PAUSED_EXTERNAL_CLASSIFICATION"
+        and unknown_assessment.get("same_actor_preserved") is True
+        and unknown_assessment.get("zero_new_reads_required") is True,
+    )
+    postseal_exposure = copy.deepcopy(airlock_fixture)
+    postseal_exposure["exposures"] = [
+        {"phase": "POSTSEAL", "materiality": "MATERIAL_SEMANTIC"}
+    ]
+    postseal_assessment = resolve_refined_airlock(postseal_exposure)
+    check(
+        "refined-airlock-postseal-exposure-preserves-fingerprinted-primary",
+        postseal_assessment.get("state") == "READY"
+        and postseal_assessment.get("primary_fingerprint_preserved") is True,
+    )
+    missing_input = copy.deepcopy(airlock_fixture)
+    missing_input["available_input_refs"] = []
+    missing_assessment = resolve_refined_airlock(missing_input)
+    check(
+        "refined-airlock-missing-allowlisted-input-holds-without-broad-search",
+        missing_assessment.get("state") == "HOLD"
+        and "ALLOWLISTED_INPUT_MISSING_NO_BROAD_SEARCH" in missing_assessment.get("reason_codes", [])
+        and missing_assessment.get("discovery_mode") == "EXACT_ALLOWLIST_ONLY",
+    )
+    no_currentness = copy.deepcopy(airlock_fixture)
+    no_currentness["currentness"] = {"externalized": True, "result": "HOLD"}
+    currentness_assessment = resolve_refined_airlock(no_currentness)
+    check(
+        "adminpulse-runs-currentness-not-blind-work-start",
+        currentness_assessment.get("state") == "HOLD"
+        and "ADMINPULSE_REQUIRES_EXTERNAL_CURRENTNESS_BEFORE_BLIND_WORK"
+        in currentness_assessment.get("reason_codes", []),
+    )
+    network_irrelevant = resolve_refined_airlock(airlock_fixture)
+    check(
+        "network-unavailable-is-not-default-airlock-gate",
+        network_irrelevant.get("state") == "READY",
+    )
+    causal_network = copy.deepcopy(airlock_fixture)
+    causal_network["network_dependency"] = {
+        "causal_threat_proven": True,
+        "result": "FAIL",
+    }
+    causal_network_assessment = resolve_refined_airlock(causal_network)
+    check(
+        "proven-causal-network-threat-is-a-gate",
+        causal_network_assessment.get("state") == "HOLD"
+        and "PROVEN_CAUSAL_NETWORK_THREAT_NONPASS"
+        in causal_network_assessment.get("reason_codes", []),
+    )
+    tampered_seal = copy.deepcopy(airlock_fixture)
+    tampered_seal["preexposure_config_seal"]["allowlist"].append("INPUT-B")
+    tampered_assessment = resolve_refined_airlock(tampered_seal)
+    check(
+        "refined-airlock-tampered-seal-blocks-before-read",
+        tampered_assessment.get("state") == "HOLD"
+        and "PREEXPOSURE_CONFIG_SEAL_FINGERPRINT_MISMATCH"
+        in tampered_assessment.get("reason_codes", []),
+    )
+    integrated_airlock = resolve(
+        {
+            "objective_ref": "A1-REFINED-AIRLOCK-INTEGRATED-SELFTEST",
+            "consequence": "LOW",
+            "uncertainty": "LOW",
+            "refined_airlock": airlock_fixture,
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "refined-airlock-is-subordinate-to-canonical-mcp-control-path",
+        integrated_airlock.get("refined_airlock_assessment", {}).get("state") == "READY"
+        and integrated_airlock.get("adaptive_invoked") is True
+        and integrated_airlock.get("mcp_control_decision", {}).get("outcome") == "CONTINUE",
+    )
 
     missing_context = resolve(
         {"objective_ref": "PROJECT-MISSING-CONTEXT", "project_bound": True},

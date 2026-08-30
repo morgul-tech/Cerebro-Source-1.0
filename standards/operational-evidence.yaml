@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-OPERATIONAL-EVIDENCE
   name: Cerebro Operational Evidence Standard
-  version: 0.2.0
+  version: 0.3.0
   status: approved
   authority: authoritative
   scope: Bounded machine-readable operational evidence for control, change, delivery, validation, diagnostics, recovery, and learning.
@@ -197,6 +197,45 @@ blind_claim_observation_closure_profile:
   claim_scope_boundary:
     valid_observations_may_support_narrower_nonblind_conclusions: true
     quality_gate_pass_may_substitute_for_observation_closure: false
+
+refined_airlock_v006_evidence_profile:
+  purpose: Preserve exact pre-read seal, currentness and exposure evidence for the existing MCP control path without creating a new evidence schema or authority.
+  reuses_evidence_envelope_schema: cerebro-operational-evidence/v0.1
+  assessment_schema: cerebro-refined-airlock-assessment/v1
+  control_ref: CEREBRO-REFINED-AIRLOCK-V006
+  preexposure_config_seal:
+    required_result: PASS
+    required_exact_bindings:
+      - allowlist
+      - denyset
+      - generation_ref
+      - basis_fingerprint
+      - capsule_ref
+      - capsule_fingerprint
+    canonical_seal_fingerprint_required: true
+    substantive_reads_before_valid_seal: 0
+  currentness_evidence:
+    externalized_from_evaluated_actor: true
+    exact_basis_fingerprint_required: true
+    nonpass_effect: HOLD_ZERO_NEW_READS
+  exposure_event:
+    required_fields: [phase, materiality]
+    materiality_values: [CONTROL_NEUTRAL, MATERIAL_SEMANTIC, UNKNOWN_MATERIALITY]
+    phase_values: [PRESEAL, POSTSEAL]
+    CONTROL_NEUTRAL_effect: NO_CONTAMINATION
+    MATERIAL_SEMANTIC_preseal_effect: CONTAMINATED_TERMINAL
+    UNKNOWN_MATERIALITY_effect: PAUSE_FOR_EXTERNAL_CLASSIFICATION
+    POSTSEAL_effect: PRIMARY_FINGERPRINT_REMAINS_VALID
+  retrieval_evidence:
+    requested_refs_must_be_subset_of_allowlist: true
+    requested_refs_must_not_intersect_denyset: true
+    missing_allowlisted_input_effect: HOLD_NO_BROAD_DISCOVERY
+  network_evidence:
+    required_only_when_causal_threat_is_proven: true
+    unavailable_without_proven_causality_is_subject_failure: false
+  human_cost_metrics:
+    fields: [pulses, minutes_per_valid_seal, false_holds, contamination_events, fresh_generations_lost, retrieval_calls, time_to_seal]
+    authority: OBSERVATION_ONLY
 
 progressive_acquisition:
   default_mode: PROGRESSIVE
