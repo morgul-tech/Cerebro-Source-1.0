@@ -754,8 +754,17 @@ session_handoff_validation:
     - local_head_equals_upstream
     - roadmap_hash_required
     - working_context_hash_required
-    - execution_tokens_required
+    - execution_tokens_required_when_resumable_or_actual_handoff
+    - completed_null_null_means_no_resumable_continuation
+    - no_handoff_artifact_write_without_resumable_continuation
     - deterministic_resume_receipt
+
+  required_canaries:
+    - P1-terminal-no-continuation-handoff
+    - N1-active-missing-current
+    - N2-active-missing-next
+    - N3-resumable-current-token-missing
+    - N5-completed-with-active-execution-conflict
 
   required_commands:
     - cerebro_handoff
@@ -836,6 +845,13 @@ handboot_validation:
     - control_transfer_after_handoff_resolution
     - deterministic_operational_receipt
     - failure_receipt_contains_stage_and_code
+    - completed_null_null_projects_null_execution_without_fabrication
+
+  required_canaries:
+    - P2-terminal-boot-no-handoff
+    - P3-terminal-boot-stale-handoff
+    - N4-same-current-malformed-handoff-remains-fail-closed
+    - N6-no-fake-execution
 
   required_runtime_states:
     success: ACTIVE_CONTROL_TRANSFERRED
@@ -847,6 +863,7 @@ handboot_validation:
     - NONE
     - SKIPPED_EXPLICITLY
     - RESUMED
+    - STALE_REJECTED
     - FAILED
 
   fail_closed:
@@ -1321,6 +1338,8 @@ boot_authority_ambiguity_refinement_validation:
     - stale-REBUILD-receipt-cannot-block-current-Source-boot
     - stale-handoff-cannot-override-current-Source-commit
     - boot-cerebro-resolves-to-bootCerebro
+    - terminal-null-execution-projects-no-fake-continuation
+    - nonterminal-missing-execution-remains-fail-closed
   prohibited:
     - document-library-authority-arbitration
     - filename-based-authority

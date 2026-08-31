@@ -62,6 +62,49 @@ function Get-CerebroExecutionBlock {
     return $match.Groups['block'].Value
 }
 
+function Get-CerebroRoadmapStatus {
+    param([Parameter(Mandatory)][string]$Roadmap)
+
+    $match = [regex]::Match(
+        $Roadmap,
+        '(?m)^  status:\s*(?:"([^"]*)"|([^\r\n#]+))\s*$'
+    )
+
+    if (-not $match.Success) {
+        throw 'HANDOFF_ROADMAP_STATUS_NOT_FOUND'
+    }
+
+    if ($match.Groups[1].Success) {
+        return $match.Groups[1].Value
+    }
+
+    return $match.Groups[2].Value.Trim()
+}
+
+function Test-CerebroTerminalNoContinuation {
+    param([Parameter(Mandatory)][string]$Roadmap)
+
+    $status = Get-CerebroRoadmapStatus -Roadmap $Roadmap
+    $currentIsNull = [regex]::IsMatch(
+        $Roadmap,
+        '(?m)^    current:\s*null\s*(?:#.*)?$'
+    )
+    $nextIsNull = [regex]::IsMatch(
+        $Roadmap,
+        '(?m)^    next:\s*null\s*(?:#.*)?$'
+    )
+
+    if ($status -eq 'COMPLETED') {
+        if ($currentIsNull -and $nextIsNull) {
+            return $true
+        }
+
+        throw 'HANDOFF_COMPLETED_EXECUTION_CONFLICT'
+    }
+
+    return $false
+}
+
 function Get-CerebroContextIndexValues {
     param(
         [Parameter(Mandatory)][string]$Context,
@@ -164,13 +207,6 @@ function Invoke-CerebroHandoffCore {
         throw "HANDOFF_REPOSITORY_NOT_FOUND:$RepoPath"
     }
 
-    if (
-        (Test-Path -LiteralPath $OutputPath -PathType Leaf) -and
-        -not $Force
-    ) {
-        throw "HANDOFF_OUTPUT_EXISTS_USE_FORCE:$OutputPath"
-    }
-
     Push-Location -LiteralPath $RepoPath
 
     try {
@@ -216,6 +252,31 @@ function Invoke-CerebroHandoffCore {
 
         $roadmap = [IO.File]::ReadAllText($roadmapPath)
         $context = [IO.File]::ReadAllText($contextPath)
+
+        if (Test-CerebroTerminalNoContinuation -Roadmap $roadmap) {
+            Write-Host (
+                (
+                    'CEREBRO_HANDOFF STATE=NO_CONTINUATION ' +
+                    'SOURCE_COMMIT={0} ARTIFACT_WRITTEN=FALSE OUTPUT={1}'
+                ) -f
+                $head,
+                $OutputPath
+            )
+
+            return [pscustomobject]@{
+                state = 'NO_CONTINUATION'
+                source_commit = $head
+                artifact_written = $false
+                output_path = $OutputPath
+            }
+        }
+
+        if (
+            (Test-Path -LiteralPath $OutputPath -PathType Leaf) -and
+            -not $Force
+        ) {
+            throw "HANDOFF_OUTPUT_EXISTS_USE_FORCE:$OutputPath"
+        }
 
         $currentBlock = Get-CerebroExecutionBlock `
             -Roadmap $roadmap `

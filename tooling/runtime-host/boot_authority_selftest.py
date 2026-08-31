@@ -10,6 +10,27 @@ CURRENT_SOURCE = "github:morgul-tech/Cerebro-Source-1.0/main/cerebro.yaml"
 ACTIVATION_SCHEMA = "cerebro-operational-status-semantics-activation-proof/v1"
 
 
+def execution_projection(status: str, current: dict[str, str] | None, next_: dict[str, str] | None) -> dict[str, str | None]:
+    if status == "COMPLETED":
+        if current is None and next_ is None:
+            return {"current_patch": None, "next_patch": None, "canonical_command": None}
+        raise ValueError("BOOT_COMPLETED_EXECUTION_CONFLICT")
+    if current is None:
+        raise ValueError("BOOT_EXECUTION_SECTION_NOT_FOUND:current")
+    if next_ is None:
+        raise ValueError("BOOT_EXECUTION_SECTION_NOT_FOUND:next")
+    for field in ("patch_ref", "canonical_command"):
+        if not str(current.get(field) or "").strip():
+            raise ValueError(f"BOOT_EXECUTION_VALUE_NOT_FOUND:current:{field}")
+    if not str(next_.get("patch_ref") or "").strip():
+        raise ValueError("BOOT_EXECUTION_VALUE_NOT_FOUND:next:patch_ref")
+    return {
+        "current_patch": current["patch_ref"],
+        "next_patch": next_["patch_ref"],
+        "canonical_command": current["canonical_command"],
+    }
+
+
 def resolve(command: str, candidates: list[dict[str, str]], current_commit: str) -> dict[str, str]:
     if command.strip().lower() not in {"boot cerebro", "bootcerebro", "bootini"}:
         raise ValueError("BOOT_COMMAND_UNRECOGNIZED")
@@ -40,6 +61,27 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
     check("stale-rebuild-receipt-cannot-block", result["commit"] == commit)
     check("stale-handoff-cannot-override", result["commit"] != stale_handoff["commit"])
 
+    terminal = execution_projection("COMPLETED", None, None)
+    check(
+        "P1-terminal-no-continuation-handoff",
+        terminal == {"current_patch": None, "next_patch": None, "canonical_command": None},
+    )
+    check("P2-terminal-boot-no-handoff", terminal["current_patch"] is None)
+    check("P3-terminal-boot-stale-handoff", terminal["canonical_command"] is None)
+
+    for name, status, current, next_, failure in (
+        ("N1-active-missing-current", "ACTIVE", None, {"patch_ref": "NEXT"}, "current"),
+        ("N2-active-missing-next", "ACTIVE", {"patch_ref": "CUR", "canonical_command": "run"}, None, "next"),
+        ("N3-resumable-current-token-missing", "ACTIVE", {"patch_ref": "CUR"}, {"patch_ref": "NEXT"}, "canonical_command"),
+        ("N5-completed-with-active-execution-conflict", "COMPLETED", {"patch_ref": "CUR", "canonical_command": "run"}, None, "CONFLICT"),
+    ):
+        try:
+            execution_projection(status, current, next_)
+            check(name, False)
+        except ValueError as exc:
+            check(name, failure in str(exc))
+    check("N6-no-fake-execution", all(value is None for value in terminal.values()))
+
     handboot = (root / "standards/runtime/handboot.yaml").read_text(encoding="utf-8")
     source_authority = (root / "standards/source-authority.yaml").read_text(encoding="utf-8")
     activation = (root / "mcp/activation.yaml").read_text(encoding="utf-8")
@@ -47,6 +89,31 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
     boot_architecture = (root / "standards/boot-critical-path-architecture.yaml").read_text(encoding="utf-8")
     terminology = (root / "modules/terminology/terms.yaml").read_text(encoding="utf-8")
     interaction = (root / "engines/interaction/rules.yaml").read_text(encoding="utf-8")
+    handoff_standard = (root / "standards/session-handoff.yaml").read_text(encoding="utf-8")
+    handoff_generator = (root / "tooling/builder/templates/pshell/cerebro_handoff.ps1").read_text(encoding="utf-8")
+    boot_runtime = (root / "tooling/runtime-host/cerebro_boot.ps1").read_text(encoding="utf-8")
+
+    check(
+        "N4-same-current-malformed-handoff-remains-fail-closed",
+        "invalid_handoff:" in handboot
+        and "condition: claims_current_source_but_validation_fails" in handboot
+        and "disposition: FAILED" in handboot
+        and "boot_must_fail: true" in handboot,
+    )
+
+    check(
+        "terminal-handoff-contract-bound",
+        "disposition: NO_CONTINUATION" in handoff_standard
+        and "artifact_write: false" in handoff_standard
+        and "execution_tokens_required_when_resumable_or_actual_handoff: true" in handoff_standard,
+    )
+    check(
+        "terminal-powershell-paths-bound",
+        "HANDOFF_COMPLETED_EXECUTION_CONFLICT" in handoff_generator
+        and "STATE=NO_CONTINUATION" in handoff_generator
+        and "BOOT_COMPLETED_EXECUTION_CONFLICT" in boot_runtime
+        and "Test-CerebroBootTerminalNoContinuation" in boot_runtime,
+    )
 
     required = [
         "CURRENT-in-a-filename-confers-no-authority",
@@ -139,7 +206,10 @@ def activation_probe(root: Path) -> dict[str, object]:
             "standards/runtime/handboot.yaml",
             "modules/terminology/terms.yaml",
             "engines/interaction/rules.yaml",
-            "tooling/runtime-host/boot_authority_selftest.py",
+        "tooling/runtime-host/boot_authority_selftest.py",
+        "standards/session-handoff.yaml",
+        "tooling/builder/templates/pshell/cerebro_handoff.ps1",
+        "tooling/runtime-host/cerebro_boot.ps1",
         ],
         "source_state_fingerprint": "",
         "selftest": report,

@@ -85,6 +85,55 @@ function Get-CerebroBootExecutionValue {
     throw "BOOT_EXECUTION_VALUE_NOT_FOUND:$Section`:$Name"
 }
 
+function Get-CerebroBootRoadmapStatus {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Roadmap
+    )
+
+    $match = [regex]::Match(
+        $Roadmap,
+        '(?m)^  status:\s*(?:"([^"]*)"|([^\r\n#]+))\s*$'
+    )
+
+    if (-not $match.Success) {
+        throw 'BOOT_ROADMAP_STATUS_NOT_FOUND'
+    }
+
+    if ($match.Groups[1].Success) {
+        return $match.Groups[1].Value
+    }
+
+    return $match.Groups[2].Value.Trim()
+}
+
+function Test-CerebroBootTerminalNoContinuation {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Roadmap
+    )
+
+    $status = Get-CerebroBootRoadmapStatus -Roadmap $Roadmap
+    $currentIsNull = [regex]::IsMatch(
+        $Roadmap,
+        '(?m)^    current:\s*null\s*(?:#.*)?$'
+    )
+    $nextIsNull = [regex]::IsMatch(
+        $Roadmap,
+        '(?m)^    next:\s*null\s*(?:#.*)?$'
+    )
+
+    if ($status -eq 'COMPLETED') {
+        if ($currentIsNull -and $nextIsNull) {
+            return $true
+        }
+
+        throw 'BOOT_COMPLETED_EXECUTION_CONFLICT'
+    }
+
+    return $false
+}
+
 function Test-CerebroBootRequiredTokens {
     param(
         [Parameter(Mandatory)]
@@ -548,23 +597,28 @@ function Invoke-CerebroBootCore {
                 $roadmapPath
             )
 
-            $currentPatch =
-                Get-CerebroBootExecutionValue `
-                    -Roadmap $roadmap `
-                    -Section current `
-                    -Name patch_ref
+            if (-not (
+                Test-CerebroBootTerminalNoContinuation `
+                    -Roadmap $roadmap
+            )) {
+                $currentPatch =
+                    Get-CerebroBootExecutionValue `
+                        -Roadmap $roadmap `
+                        -Section current `
+                        -Name patch_ref
 
-            $nextPatch =
-                Get-CerebroBootExecutionValue `
-                    -Roadmap $roadmap `
-                    -Section next `
-                    -Name patch_ref
+                $nextPatch =
+                    Get-CerebroBootExecutionValue `
+                        -Roadmap $roadmap `
+                        -Section next `
+                        -Name patch_ref
 
-            $canonicalCommand =
-                Get-CerebroBootExecutionValue `
-                    -Roadmap $roadmap `
-                    -Section current `
-                    -Name canonical_command
+                $canonicalCommand =
+                    Get-CerebroBootExecutionValue `
+                        -Roadmap $roadmap `
+                        -Section current `
+                        -Name canonical_command
+            }
 
             $bootState = 'ACTIVATING'
             $failureStage = 'RUNTIME_CONSTRUCTION'

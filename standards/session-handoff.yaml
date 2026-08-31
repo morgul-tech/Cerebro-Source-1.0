@@ -26,6 +26,25 @@ session_handoff:
     model_memory: non-authoritative
     runtime_state: non-authoritative
 
+  applicability:
+    generated_only_when: resumable_continuation_state_exists
+    terminal_no_continuation:
+      condition:
+        roadmap_status: COMPLETED
+        execution_current: null
+        execution_next: null
+      disposition: NO_CONTINUATION
+      artifact_write: false
+      artifact_overwrite: false
+      execution_projection:
+        current_patch: null
+        next_patch: null
+        canonical_command: null
+    strict_nonterminal_behavior:
+      missing_current_or_next_execution: FAIL_CLOSED
+      execution_tokens_required_when_resumable_or_actual_handoff: true
+    invariant: NO_SESSION_HANDOFF_ARTIFACT_EXISTS_WITHOUT_RESUMABLE_CONTINUATION_STATE
+
   supported_state:
     - clean_worktree
     - pushed_source_commit
