@@ -164,6 +164,7 @@ def validate(root: Path) -> dict[str, Any]:
                 "Cerebro.ReturnBridgePump.ps1",
                 "RETURN_BRIDGE_STATE",
                 "return_bridge_ref",
+                "if(-not[string]::IsNullOrWhiteSpace($FailureFamily))",
             )
         ),
     )

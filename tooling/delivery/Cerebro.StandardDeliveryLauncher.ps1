@@ -308,11 +308,11 @@ function Publish-ReturnBridgeResult {
             '-SourceBefore',$sourceBefore,
             '-SourceAfter',$SourceAfter,
             '-ProductSha256',(Get-Sha256 -LiteralPath $PrimaryArtifact),
-            '-FailureFamily',$FailureFamily,
-            '-ReachedStage',$ReachedStage,
             '-SourceMutationAssessment',(Get-WorkingSourceSnapshot -Path $WorkingSourcePath).working_tree,
             '-ArtifactPaths'
         ) + $validArtifacts
+        if(-not[string]::IsNullOrWhiteSpace($FailureFamily)){$arguments+=@('-FailureFamily',$FailureFamily)}
+        if(-not[string]::IsNullOrWhiteSpace($ReachedStage)){$arguments+=@('-ReachedStage',$ReachedStage)}
         if($CerebroSyncVerified){$arguments+=@('-CerebroSyncVerified')}
         $enqueue=Invoke-ChildCaptured -PowerShellPath $powershellPath -ArgumentList $arguments -Phase 'RETURN_BRIDGE_ENQUEUE'
         if($enqueue.ExitCode -ne 0){throw ('RETURN_BRIDGE_ENQUEUE_FAILED:{0}' -f $enqueue.Stderr)}
