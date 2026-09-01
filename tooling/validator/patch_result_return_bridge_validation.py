@@ -165,6 +165,7 @@ def validate(root: Path) -> dict[str, Any]:
                 "RETURN_BRIDGE_STATE",
                 "return_bridge_ref",
                 "if(-not[string]::IsNullOrWhiteSpace($FailureFamily))",
+                "-ArtifactPathsJson",
             )
         ),
     )
@@ -257,6 +258,19 @@ def validate(root: Path) -> dict[str, Any]:
             drain_fields.get("RETURN_BRIDGE_STATE") == "DELIVERED"
             and verified.get("Result") == "PASS",
         )
+
+        multi = run(
+            [
+                powershell(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(pump),
+                "-Mode", "Enqueue", "-AttemptId", "ATTEMPT-MULTI", "-PatchId", "PATCH-SELFTEST",
+                "-SourceBefore", "a" * 40, "-SourceAfter", "b" * 40,
+                "-ProductSha256", sha256(pass_artifact), "-ArtifactPathsJson",
+                json.dumps([str(pass_artifact), str(fail_artifact)]), "-OutboxRoot", str(outbox),
+            ]
+        )
+        multi_package = Path(parse_fields(multi.stdout)["RETURN_BRIDGE_PACKAGE"])
+        multi_manifest = json.loads((multi_package / "manifest.json").read_text(encoding="utf-8-sig"))
+        record("multi-artifact-json-boundary", multi_manifest.get("artifact_count") == 2)
 
         failure = invoke_pump(
             pump,

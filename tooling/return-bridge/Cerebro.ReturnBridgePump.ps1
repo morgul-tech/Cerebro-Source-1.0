@@ -16,6 +16,7 @@ param(
     [string]$SourceMutationAssessment='',
     [switch]$CerebroSyncVerified,
     [string[]]$ArtifactPaths=@(),
+    [string]$ArtifactPathsJson='',
     [string]$OutboxRoot='D:\Cerebro\Run\Outbox',
     [string]$DriveReturnRoot='',
     [string]$PackagePath='',
@@ -171,6 +172,14 @@ function Invoke-ReturnBridgeEnqueue {
     if($ProductSha256 -notmatch '^[0-9a-fA-F]{64}$'){throw 'PRODUCT_SHA256_INVALID'}
     if($Result -eq 'FAIL' -and [string]::IsNullOrWhiteSpace($FailureFamily)){throw 'FAILURE_FAMILY_REQUIRED'}
     $artifacts=@($ArtifactPaths|Where-Object{-not[string]::IsNullOrWhiteSpace($_)})
+    if(-not[string]::IsNullOrWhiteSpace($ArtifactPathsJson)){
+        try {$decoded=$ArtifactPathsJson|ConvertFrom-Json}
+        catch {throw 'ARTIFACT_PATHS_JSON_INVALID'}
+        foreach($item in $decoded){
+            $decodedPath=[string]$item
+            if(-not[string]::IsNullOrWhiteSpace($decodedPath)){$artifacts+=,$decodedPath}
+        }
+    }
     if($artifacts.Count -eq 0){throw 'ARTIFACT_REQUIRED'}
     foreach($artifact in $artifacts){
         if(-not(Test-Path -LiteralPath $artifact -PathType Leaf)){throw ('ARTIFACT_NOT_FOUND:{0}' -f $artifact)}
