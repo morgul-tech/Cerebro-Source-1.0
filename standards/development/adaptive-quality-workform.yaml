@@ -1,7 +1,7 @@
 schema: cerebro-adaptive-quality-workform/v0.1
 adaptive_quality_workform:
   id: CEREBRO-ADAPTIVE-QUALITY-WORKFORM-001
-  version: '0.3'
+  version: '0.4'
   status: ACTIVE
   introduced_by: PATCH-005
   kind: STANDARD
@@ -205,6 +205,44 @@ adaptive_quality_workform:
       - no-new-scheduler
       - no-new-truth-store
       - no-runtime-policy-promotion
+    human_effect_fastlane:
+      control_ref: CEREBRO-HUMAN-EFFECT-FASTLANE-001
+      implementation_ref: mcp/control_resolution.py#resolve_human_effect_fastlane
+      owner: MCP
+      new_component: false
+      principle: DEGRADE_CLAIM_OR_PROMOTION_BEFORE_BLOCKING_SAFE_HUMAN_EFFECT
+      separate_axes:
+        human_effect_readiness: EFFECT_PRODUCTION_AND_PRESERVATION_CAPABILITY
+        claim_or_promotion_readiness: EVIDENCE_AND_GOVERNING_GATE_STATE
+      effect_classes:
+      - EMPIRICAL_PREVIEW
+      - DECISION_CANDIDATE
+      - MATERIAL_COMMITMENT
+      - GOVERNING_IRREVERSIBLE
+      gate_effects:
+      - BLOCK_EFFECT
+      - BLOCK_PROMOTION
+      - SIDECAR
+      - OBSERVE_LEARN
+      - UNKNOWN
+      unknown_gate_treatment:
+        severe_plausible_harm: BLOCK_EFFECT
+        otherwise: DOWNGRADE_CLAIM_ADD_SIDECAR_AND_RUN_CHEAPEST_DISCRIMINATOR
+      hard_non_bypass:
+      - safety
+      - privacy
+      - security
+      - authority
+      - explicit-Human-limits
+      - irreversible-or-material-mutation-publication
+      - missing-effect-production-or-preservation-capability
+      - proven-semantic-contamination-when-independence-is-claimed
+      canaries:
+      - strong-claim-gate-does-not-silently-block-lower-honest-candidate
+      - preview-does-not-become-canon
+      - sidecar-failure-does-not-auto-promote-or-reject
+      - repeated-same-family-Human-retry-needs-new-information-or-VINKELPASS
+      - material-gates-remain-unchanged
   solution_quality_profile:
     dimensions:
     - Outcome_Fit
@@ -242,6 +280,14 @@ adaptive_quality_workform:
   claim_calibration:
     invariant: CLAIM_SCOPE_LESS_THAN_OR_EQUAL_TO_VERIFIED_SCOPE
     root_cause_rule: current-failure-root-cause-does-not-imply-whole-problem-root-cause
+    safe_reversible_effect_may_precede_strong_claim: true
+    fastlane_may_manufacture_PASS: false
+    fastlane_may_upgrade_evidence: false
+    preview_is_canonical_authority: false
+    effect_blocker_must_name:
+    - exact_human_effect_ref
+    - exact_claim_or_promotion_ref
+    - causal_failure
   boundaries:
     quality_gate_owns_publication_readiness: true
     decision_assurance_owns_pre-decision-lock-readiness: true

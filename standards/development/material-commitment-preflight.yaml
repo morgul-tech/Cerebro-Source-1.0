@@ -2,7 +2,7 @@ schema: cerebro-material-commitment-preflight/v1
 
 material_commitment_preflight:
   id: CEREBRO-MATERIAL-COMMITMENT-PREFLIGHT-001
-  version: "1.1"
+  version: "1.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   kind: CONTROL_CONTRACT
@@ -79,6 +79,45 @@ material_commitment_preflight:
     material_continue_requires: NONE_FOUND
     absence_of_assessment_is_not_no_conflict: true
 
+  solution_escalation_preflight:
+    id: CEREBRO-SOLUTION-ESCALATION-PREFLIGHT-001
+    name: VINKELPASS
+    implementation_ref: mcp/material_commitment_preflight.py#resolve_solution_escalation_preflight
+    invocation:
+      normal_path: AFTER_RELEVANCE_BEFORE_MATERIAL_DECIDE_OR_LOCK_WHEN_REMEDY_RAISES_STRUCTURAL_COMPLEXITY
+      failure_path: AFTER_FAILURE_FAMILY_AND_EXISTING_RULE_RETRIEVAL_BEFORE_REORIENT_OR_NEW_MECHANISM
+      without_trigger: SILENT_KEEP_CURRENT
+    required_evidence:
+      - observed_fact
+      - supported_causal_layer
+      - prerequisite_state
+      - existing_or_simpler_candidates
+      - cheapest_discriminator_when_decision_relevant
+      - structural_evidence_when_structure_survives
+    outcomes:
+      - KEEP_CURRENT
+      - OBSERVE_FIRST
+      - RESTORE_PREREQUISITE
+      - REMEDIATE_EXISTING
+      - SIMPLIFY
+      - ESCALATE_STRUCTURAL_REVIEW
+      - BLOCK_UNJUSTIFIED_COMPLEXITY
+    material_continue:
+      allowed_only_for_exact_selected_minimum_sufficient_candidate: true
+      allowed_outcomes: [RESTORE_PREREQUISITE, REMEDIATE_EXISTING, SIMPLIFY]
+      outcome_and_candidate_identity_must_match: true
+      structural_candidate_may_be_directly_committed: false
+    structural_route:
+      required_when_evidence_survives: ARCHITECTURAL_REGROUNDING_AND_DECISION_ASSURANCE
+      creates_parallel_control_engine: false
+    canaries:
+      observed_error_is_root_cause: false
+      missing_prerequisite_is_architecture_defect: false
+      self_critique_alone_is_evidence: false
+      human_five_question_projection_limits_machine_checks: false
+      simplest_candidate_always_wins: false
+      compose_before_create: true
+
   control_state_binding:
     required_fields:
       - applicable_knowledge_refs
@@ -104,6 +143,7 @@ material_commitment_preflight:
       - COVERAGE_STATE
       - CONFLICT_STATE
       - RELEVANCE_SOURCE_FINGERPRINTS
+      - SOLUTION_ESCALATION_ASSESSMENT
     material_basis_change_effect: STALE_REASSESS_AND_RE_RESOLVE
 
   receipt:
@@ -147,3 +187,6 @@ material_commitment_preflight:
     - OPERATIONAL_REQUIRES_INVOCATION_CONSUMPTION_AND_EVIDENCE
     - ACTIVATION_PROBE_DOES_NOT_SUBSTITUTE_FOR_NORMAL_MATERIAL_CALL_PATH
     - RESOLVED_INTENT_IS_PART_OF_FRESHNESS_IDENTITY
+    - SOLUTION_ESCALATION_ASSESSMENT_IS_BASIS_BOUND_WHEN_INVOKED
+    - VINKELPASS_COMPOSES_EXISTING_CONTROLS_BEFORE_NEW_STRUCTURE
+    - STRUCTURAL_SURVIVAL_ROUTES_EXISTING_REGROUNDING_NOT_DIRECT_COMMITMENT

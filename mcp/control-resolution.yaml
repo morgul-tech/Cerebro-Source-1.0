@@ -1,7 +1,7 @@
 schema: cerebro-mcp-control-resolution-contract/v1
 control_resolution:
   id: CEREBRO-MCP-CONTROL-RESOLUTION-001
-  version: "1.5.0"
+  version: "1.6.0"
   status: ACTIVE
   owner: MCP
   implementation_ref: mcp/control_resolution.py
@@ -44,6 +44,13 @@ control_resolution:
     identity_authority: GIT_OBJECT_AT_SOURCE_COMMIT
     worktree_byte_representation_authority: PROHIBITED
   ordering:
+    constitutional_control:
+      first: mcp/control_resolution.py#evaluate_constitutional_compliance
+      verified_material_breach_effect: BLOCK
+    human_effect_fastlane:
+      after: constitutional_control
+      before: material_control
+      only_CONTINUE_reaches_existing_material_or_adaptive_path: true
     material_control:
       invariant: MATERIAL_PREFLIGHT_BLOCK_IS_FINAL
       first: mcp/material_commitment_preflight.py
@@ -89,6 +96,44 @@ control_resolution:
       - new-scheduler
       - new-truth-store
       - runtime-resident-airlock-policy
+  human_effect_fastlane:
+    status: ACTIVE
+    control_ref: CEREBRO-HUMAN-EFFECT-FASTLANE-001
+    implementation_ref: mcp/control_resolution.py#resolve_human_effect_fastlane
+    authority_model: DETERMINISTIC_SUBORDINATE_ASSESSMENT
+    direct_live_authority: false
+    final_decision_owner: MCP
+    principle: DEGRADE_CLAIM_OR_PROMOTION_BEFORE_BLOCKING_SAFE_HUMAN_EFFECT
+    effect_classes: [EMPIRICAL_PREVIEW, DECISION_CANDIDATE, MATERIAL_COMMITMENT, GOVERNING_IRREVERSIBLE]
+    gate_effects: [BLOCK_EFFECT, BLOCK_PROMOTION, SIDECAR, OBSERVE_LEARN, UNKNOWN]
+    execution_order:
+      - verify-protected-promotion-basis
+      - validate-project-context-binding-when-applicable
+      - enforce-constitutional-and-hard-boundary-controls
+      - resolve-exact-Human-effect-and-exact-claim-causality
+      - degrade-claim-or-promotion-before-blocking-safe-reversible-effect
+      - preserve-existing-material-preflight-and-adaptive-control-order
+    hard_non_bypass:
+      - safety
+      - privacy
+      - security
+      - authority
+      - explicit-Human-limits
+      - irreversible-or-material-mutation-publication
+      - missing-effect-production-or-preservation-capability
+      - proven-semantic-contamination-when-independence-is-claimed
+    unknown_gate:
+      severe_plausible_harm: BLOCK_EFFECT
+      otherwise: CLAIM_DOWNGRADE_PLUS_SIDECAR_AND_CHEAPEST_DISCRIMINATOR
+    repeated_same_family_human_retry_without_new_outcome_information:
+      effect: BLOCK_EFFECT
+      next_control_ref: CEREBRO-SOLUTION-ESCALATION-PREFLIGHT-001
+    prohibited:
+      - manufacture-PASS
+      - upgrade-evidence
+      - promote-preview-to-canon
+      - let-sidecar-outcome-auto-promote-or-auto-reject
+      - bypass-material-or-governing-gates
   immune_material_permit_projection:
     status: ACTIVE
     owner: MCP
@@ -250,6 +295,12 @@ control_resolution:
     - MATERIAL_SEMANTIC_PRESEAL_EXPOSURE_IS_TERMINAL_CONTAMINATED
     - UNKNOWN_MATERIALITY_PAUSES_WITH_ZERO_NEW_READS
     - POSTSEAL_EXPOSURE_PRESERVES_FINGERPRINTED_PRIMARY
+    - HUMAN_EFFECT_FASTLANE_IS_SUBORDINATE_TO_ONE_CANONICAL_MCP_CONTROL_DECISION
+    - SAFE_REVERSIBLE_HUMAN_EFFECT_AND_CLAIM_PROMOTION_READINESS_ARE_SEPARATE_AXES
+    - CLAIM_OR_PROMOTION_IS_DEGRADED_BEFORE_SAFE_REVERSIBLE_HUMAN_EFFECT_IS_BLOCKED
+    - HUMAN_EFFECT_FASTLANE_NEVER_MANUFACTURES_PASS_OR_UPGRADES_EVIDENCE
+    - HUMAN_EFFECT_FASTLANE_NEVER_BYPASSES_HARD_MATERIAL_OR_GOVERNING_BOUNDARIES
+    - REPEATED_SAME_FAMILY_HUMAN_RETRY_REQUIRES_NEW_INFORMATION_OR_VINKELPASS
   acceptance:
     - exact_AA003_promotion_basis_is_verified
     - promotion_identity_uses_canonical_Git_object_identity_not_worktree_text_representation
@@ -287,6 +338,12 @@ control_resolution:
     - refined-airlock-ADMINPULSE-runs-external-currentness-before-blind-work
     - refined-airlock-network-gates-only-on-proven-causal-threat
     - refined-airlock-negative-canaries-pass-on-the-existing-control-resolution-selftest
+    - strong-claim-gate-does-not-silently-block-lower-honest-preview
+    - preview-never-becomes-canon-through-Human-effect-fastlane
+    - sidecar-failure-neither-auto-promotes-nor-auto-rejects
+    - nonsevere-unknown-gate-degrades-claim-before-blocking-safe-effect
+    - repeated-same-family-Human-retry-requires-VINKELPASS-before-retry
+    - Human-effect-fastlane-preserves-regular-material-preflight
 
 lifecycle_mutation_resolution:
   final_transition_validity_owner: MCP

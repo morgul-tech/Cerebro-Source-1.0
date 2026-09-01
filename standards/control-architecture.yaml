@@ -2,7 +2,7 @@ schema: cerebro-control-architecture/v0.2
 
 control_architecture:
   id: CEREBRO-CONTROL-ARCHITECTURE-001
-  version: "0.7"
+  version: "0.8"
   status: ACTIVE
   introduced_by: GUARDRAILS-001
 
@@ -25,6 +25,8 @@ control_architecture:
     - COMMAND_AND_CONTRACT_RESOLUTION
     - REFINED_AIRLOCK_PRE_READ_CONTROL
     - RELEVANCE_AND_MATERIALITY_PREFLIGHT
+    - SOLUTION_ESCALATION_PREFLIGHT
+    - HUMAN_EFFECT_FASTLANE
     - CONTROL_RESOLUTION
     - MCP_CONTROL_DECISION
     - EXECUTION_PROFILE
@@ -90,6 +92,80 @@ control_architecture:
     empty_retrieval_is_not_no_prior_learning_without_coverage: true
     receipt_required_before_material_commitment: true
     stale_receipt_effect: INVALIDATE_AND_RE_RESOLVE
+
+  solution_escalation_preflight:
+    id: CEREBRO-SOLUTION-ESCALATION-PREFLIGHT-001
+    name: VINKELPASS
+    owner: MCP
+    implementation_ref: mcp/material_commitment_preflight.py#resolve_solution_escalation_preflight
+    relationship: SUBORDINATE_ASSESSMENT_COMPOSED_INTO_EXISTING_MATERIAL_AND_LEARNING_PATHS
+    normal_path:
+      trigger: REMEDY_RAISES_STRUCTURAL_COMPLEXITY
+      after: RELEVANCE_AND_MATERIALITY_EVIDENCE
+      before: MATERIAL_DECIDE_OR_LOCK
+    failure_path:
+      trigger: REMEDIATE_WOULD_BE_ABANDONED_FOR_REORIENT_OR_NEW_MECHANISM
+      after: FAILURE_FAMILY_CLASSIFICATION_AND_EXISTING_RULE_RETRIEVAL
+      before: REORIENT_OR_STRUCTURAL_CREATION
+    outcomes:
+      - KEEP_CURRENT
+      - OBSERVE_FIRST
+      - RESTORE_PREREQUISITE
+      - REMEDIATE_EXISTING
+      - SIMPLIFY
+      - ESCALATE_STRUCTURAL_REVIEW
+      - BLOCK_UNJUSTIFIED_COMPLEXITY
+    structural_survival_route:
+      - standards/development/architectural-regrounding.yaml
+      - standards/development/adaptive-quality-workform.yaml#decision_assurance
+    constraints:
+      - observed-error-is-not-root-cause
+      - missing-prerequisite-is-not-architecture-defect
+      - cheapest-concrete-read-only-discriminator-precedes-new-structure
+      - existing-controls-are-composed-before-new-controls-are-created
+      - structural-candidate-needs-simple-falsifier-or-hard-invariant
+      - self-critique-alone-is-not-evidence
+      - human-question-projection-is-not-machine-cardinality-authority
+      - machine-checks-are-zero-to-many-and-sufficiency-driven
+      - simplest-candidate-is-not-automatic-winner
+      - no-new-control-engine-or-truth-store
+
+  human_effect_fastlane:
+    id: CEREBRO-HUMAN-EFFECT-FASTLANE-001
+    owner: MCP
+    implementation_ref: mcp/control_resolution.py#resolve_human_effect_fastlane
+    relationship: SUBORDINATE_ASSESSMENT_ON_ONE_CANONICAL_MCP_CONTROL_PATH
+    principle: DEGRADE_CLAIM_OR_PROMOTION_BEFORE_BLOCKING_SAFE_HUMAN_EFFECT
+    effect_classes:
+      - EMPIRICAL_PREVIEW
+      - DECISION_CANDIDATE
+      - MATERIAL_COMMITMENT
+      - GOVERNING_IRREVERSIBLE
+    gate_effects:
+      - BLOCK_EFFECT
+      - BLOCK_PROMOTION
+      - SIDECAR
+      - OBSERVE_LEARN
+      - UNKNOWN
+    hard_non_bypass_boundaries:
+      - safety
+      - privacy
+      - security
+      - authority
+      - explicit-human-limits
+      - irreversible-or-material-mutation-publication
+      - missing-effect-production-or-preservation-capability
+      - proven-semantic-contamination-when-independence-is-the-claim
+    unknown_gate_rule:
+      severe_plausible_harm: BLOCK_EFFECT
+      otherwise: EXPLICIT_CLAIM_DOWNGRADE_PLUS_SIDECAR_AND_CHEAPEST_DISCRIMINATOR
+    repeated_machine_only_failure_rule: VINKELPASS_BEFORE_ANOTHER_HUMAN_RETRY_WITHOUT_NEW_OUTCOME_INFORMATION
+    constraints:
+      - fastlane-never-manufactures-PASS
+      - fastlane-never-upgrades-evidence
+      - preview-never-becomes-canon-by-fastlane
+      - sidecar-failure-does-not-auto-reject-or-promote
+      - material-and-governing-gates-remain-unchanged
 
   refined_airlock_pre_read_control:
     id: CEREBRO-REFINED-AIRLOCK-V006
@@ -289,6 +365,11 @@ control_architecture:
     - reorient-requires-material-path-delta
     - unchanged-reorientation-is-invalid
     - control-evidence-does-not-create-Source-authority
+    - solution-escalation-is-composed-before-new-structural-control
+    - structural-escalation-routes-existing-regrounding-and-decision-assurance
+    - Human-effect-and-claim-promotion-readiness-are-independent-axes
+    - safe-reversible-Human-effect-is-not-silently-blocked-by-a-stronger-claim-gate
+    - Human-effect-fastlane-never-bypasses-hard-material-or-governing-boundaries
 
   user_profile_resolution:
     precedence:

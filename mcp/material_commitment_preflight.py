@@ -20,6 +20,17 @@ SOURCE_ROOT = Path(__file__).resolve().parents[1]
 MATERIAL_STAGES = {"DECIDE", "LOCK", "MATERIAL_EXECUTE", "MATERIAL_AUTHORIZE", "GOVERNING_PUBLISH"}
 EXPLORATORY_STAGES = {"UNDERSTAND_FRAME", "EXPLORE_RESEARCH", "CLARIFY", "REFINE", "CRITIQUE", "COMPARE_CONVERGE"}
 CONFLICT_STATES = {"NOT_ASSESSED", "NONE_FOUND", "POTENTIAL", "CONFIRMED", "UNRESOLVED", "ASSESSMENT_FAILED"}
+SOLUTION_ESCALATION_CONTROL_REF = "CEREBRO-SOLUTION-ESCALATION-PREFLIGHT-001"
+SOLUTION_ESCALATION_SCHEMA = "cerebro-solution-escalation-preflight-assessment/v1"
+SOLUTION_ESCALATION_OUTCOMES = {
+    "KEEP_CURRENT",
+    "OBSERVE_FIRST",
+    "RESTORE_PREREQUISITE",
+    "REMEDIATE_EXISTING",
+    "SIMPLIFY",
+    "ESCALATE_STRUCTURAL_REVIEW",
+    "BLOCK_UNJUSTIFIED_COMPLEXITY",
+}
 ACTIVATION_BASIS_FILES = [
     "standards/development/material-commitment-preflight.yaml",
     "standards/development/relevance-retrieval.yaml",
@@ -55,6 +66,183 @@ def sha256_file(path: Path) -> str:
 def normalize(value: Any) -> str:
     text = unicodedata.normalize("NFKC", str(value or "")).casefold()
     return " ".join(text.split())
+
+
+def canonical_fingerprint(value: Any) -> str:
+    return sha256_bytes(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+    )
+
+
+def resolve_solution_escalation_preflight(
+    config: dict[str, Any], relevance_basis_fingerprint: str = ""
+) -> dict[str, Any]:
+    """Resolve VINKELPASS without creating a second control engine.
+
+    The assessment is deliberately evidence- and candidate-bound.  It never
+    authorizes structural commitment directly; surviving structural evidence is
+    handed to the existing architectural-regrounding and decision-assurance path.
+    """
+    if not isinstance(config, dict):
+        raise ValueError("solution-escalation-config-must-be-object")
+
+    trigger = str(config.get("trigger") or "").upper()
+    triggered = config.get("triggered", bool(trigger)) is True
+    observed_fact = str(config.get("observed_fact") or "").strip()
+    supported_causal_layer = str(config.get("supported_causal_layer") or "").strip()
+    proposed = config.get("proposed_remedy") if isinstance(config.get("proposed_remedy"), dict) else {}
+    proposed_kind = str(proposed.get("kind") or "").upper()
+    proposed_id = str(proposed.get("candidate_id") or "").strip()
+
+    prerequisites = [
+        item for item in config.get("prerequisites", []) if isinstance(item, dict)
+    ]
+    restorable = sorted(
+        str(item.get("candidate_id") or item.get("id") or "")
+        for item in prerequisites
+        if str(item.get("state") or "").upper() in {"MISSING", "FAILED", "UNAVAILABLE"}
+        and item.get("causally_sufficient") is True
+        and str(item.get("candidate_id") or item.get("id") or "")
+    )
+
+    simple_candidates = [
+        item for item in config.get("simple_candidates", []) if isinstance(item, dict)
+    ]
+    viable_simple = sorted(
+        (
+            {
+                "candidate_id": str(item.get("candidate_id") or item.get("id") or ""),
+                "kind": str(item.get("kind") or "EXISTING_PATH").upper(),
+                "falsifier_ref": str(item.get("falsifier_ref") or ""),
+            }
+            for item in simple_candidates
+            if str(item.get("candidate_id") or item.get("id") or "")
+            and item.get("preserves_hard_invariants") is True
+            and str(item.get("evidence_state") or "VIABLE").upper() != "FALSIFIED"
+            and str(item.get("falsifier_ref") or "")
+        ),
+        key=lambda item: item["candidate_id"],
+    )
+
+    discriminator = (
+        config.get("cheapest_discriminator")
+        if isinstance(config.get("cheapest_discriminator"), dict)
+        else {}
+    )
+    discriminator_pending = (
+        bool(discriminator)
+        and discriminator.get("read_only") is True
+        and discriminator.get("can_change_decision") is True
+        and str(discriminator.get("result") or "NOT_RUN").upper()
+        in {"NOT_RUN", "UNKNOWN", "INCONCLUSIVE"}
+    )
+
+    structural = (
+        config.get("structural_candidate")
+        if isinstance(config.get("structural_candidate"), dict)
+        else {}
+    )
+    structural_evidence_refs = sorted(
+        str(item) for item in structural.get("evidence_refs", []) if str(item)
+    )
+    structural_justified = (
+        bool(structural_evidence_refs)
+        and str(structural.get("unique_causal_value") or "").strip() != ""
+        and (
+            structural.get("simpler_candidate_falsified") is True
+            or structural.get("hard_invariant_requires_structure") is True
+        )
+    )
+    recurrence_requires_review = (
+        config.get("rule_present_behavior_recurrence") is True
+        or config.get("repeated_failure_after_machine_prevention") is True
+    )
+
+    selected_candidate_id = ""
+    if not triggered:
+        outcome = "KEEP_CURRENT"
+    elif not observed_fact or not supported_causal_layer:
+        outcome = "OBSERVE_FIRST"
+    elif restorable:
+        outcome = "RESTORE_PREREQUISITE"
+        selected_candidate_id = restorable[0]
+    elif discriminator_pending:
+        outcome = "OBSERVE_FIRST"
+    elif recurrence_requires_review:
+        outcome = "ESCALATE_STRUCTURAL_REVIEW"
+        selected_candidate_id = str(structural.get("candidate_id") or proposed_id)
+    elif viable_simple:
+        selected_candidate_id = viable_simple[0]["candidate_id"]
+        outcome = (
+            "REMEDIATE_EXISTING"
+            if viable_simple[0]["kind"] == "EXISTING_PATH"
+            else "SIMPLIFY"
+        )
+    elif proposed_kind in {"STRUCTURAL", "NEW_COMPONENT", "NEW_MECHANISM"} or structural:
+        selected_candidate_id = str(structural.get("candidate_id") or proposed_id)
+        outcome = (
+            "ESCALATE_STRUCTURAL_REVIEW"
+            if structural_justified
+            else "BLOCK_UNJUSTIFIED_COMPLEXITY"
+        )
+    else:
+        outcome = "KEEP_CURRENT"
+
+    if outcome not in SOLUTION_ESCALATION_OUTCOMES:
+        raise RuntimeError("solution-escalation-produced-unknown-outcome")
+
+    selected_outcome = str(config.get("selected_outcome") or "").upper()
+    requested_candidate_id = str(config.get("selected_candidate_id") or "")
+    exact_selection = (
+        outcome in {"RESTORE_PREREQUISITE", "REMEDIATE_EXISTING", "SIMPLIFY"}
+        and selected_outcome == outcome
+        and bool(selected_candidate_id)
+        and requested_candidate_id == selected_candidate_id
+    )
+    material_commitment_ready = exact_selection
+    control_outcome = "CONTINUE" if material_commitment_ready or not triggered else "BLOCK"
+
+    next_action = {
+        "KEEP_CURRENT": "KEEP_CURRENT_PATH_WITHOUT_STRUCTURAL_COMMITMENT",
+        "OBSERVE_FIRST": "RUN_CHEAPEST_CONCRETE_READ_ONLY_DISCRIMINATOR",
+        "RESTORE_PREREQUISITE": "RESTORE_EXACT_PREREQUISITE_THEN_REASSESS",
+        "REMEDIATE_EXISTING": "REMEDIATE_SELECTED_EXISTING_PATH",
+        "SIMPLIFY": "APPLY_SELECTED_SIMPLER_CANDIDATE",
+        "ESCALATE_STRUCTURAL_REVIEW": "ARCHITECTURAL_REGROUNDING_AND_DECISION_ASSURANCE",
+        "BLOCK_UNJUSTIFIED_COMPLEXITY": "REMOVE_OR_JUSTIFY_UNEARNED_STRUCTURAL_COMPLEXITY",
+    }[outcome]
+    if material_commitment_ready:
+        next_action = "CONTINUE_EXACT_SELECTED_MINIMUM_SUFFICIENT_COMMITMENT"
+
+    assessment = {
+        "schema": SOLUTION_ESCALATION_SCHEMA,
+        "control_ref": SOLUTION_ESCALATION_CONTROL_REF,
+        "result": "PASS",
+        "triggered": triggered,
+        "trigger": trigger or "NONE",
+        "outcome": outcome,
+        "control_outcome": control_outcome,
+        "material_commitment_ready": material_commitment_ready,
+        "observed_fact_present": bool(observed_fact),
+        "supported_causal_layer_present": bool(supported_causal_layer),
+        "restorable_prerequisite_ids": restorable,
+        "viable_simple_candidates": viable_simple,
+        "selected_candidate_id": selected_candidate_id or None,
+        "structural_evidence_refs": structural_evidence_refs,
+        "structural_justified": structural_justified,
+        "structural_review_is_existing_path": True,
+        "cheapest_discriminator_ref": str(discriminator.get("probe_ref") or "") or None,
+        "cheapest_discriminator_pending": discriminator_pending,
+        "relevance_basis_fingerprint": relevance_basis_fingerprint or None,
+        "next_action": next_action,
+        "machine_check_cardinality": "ZERO_TO_MANY_SUFFICIENCY_DRIVEN",
+        "human_question_projection_cardinality_is_authority": False,
+        "self_critique_alone_is_evidence": False,
+        "new_engine_created": False,
+        "new_truth_store_created": False,
+    }
+    assessment["basis_fingerprint"] = canonical_fingerprint(assessment)
+    return assessment
 
 
 def source_state_fingerprint(root: Path, paths: list[str] | None = None) -> str:
@@ -155,7 +343,7 @@ def conflict_resolution(request: dict[str, Any], root: Path) -> dict[str, Any]:
     return {"state": state, "refs": refs, "deterministic_findings": deterministic}
 
 
-def build_control_state(request: dict[str, Any], retrieval: dict[str, Any], semantics: dict[str, str], conflict: dict[str, Any], source_identity: str, current_context_identity: str) -> dict[str, Any]:
+def build_control_state(request: dict[str, Any], retrieval: dict[str, Any], semantics: dict[str, str], conflict: dict[str, Any], source_identity: str, current_context_identity: str, solution_escalation: dict[str, Any] | None = None) -> dict[str, Any]:
     material = {
         "source_identity": source_identity,
         "context_identity": current_context_identity,
@@ -172,6 +360,11 @@ def build_control_state(request: dict[str, Any], retrieval: dict[str, Any], sema
         "applicable_knowledge_refs": retrieval.get("applicable_knowledge_refs", []),
         "applicable_wisdom_refs": retrieval.get("applicable_wisdom_refs", []),
         "applicable_history_refs": retrieval.get("applicable_history_refs", []),
+        "solution_escalation_basis_fingerprint": (
+            solution_escalation.get("basis_fingerprint")
+            if isinstance(solution_escalation, dict)
+            else None
+        ),
     }
     fingerprint = sha256_bytes(json.dumps(material, sort_keys=True, separators=(",", ":")).encode("utf-8"))
     return {
@@ -196,11 +389,12 @@ def build_control_state(request: dict[str, Any], retrieval: dict[str, Any], sema
         "source_identity": source_identity,
         "current_context_identity": current_context_identity,
         "relevance_basis_fingerprint": retrieval.get("basis_fingerprint"),
+        "solution_escalation_assessment": solution_escalation,
         "basis_fingerprint": fingerprint,
     }
 
 
-def mcp_decide(request: dict[str, Any], control_state: dict[str, Any], retrieval: dict[str, Any]) -> dict[str, Any]:
+def mcp_decide(request: dict[str, Any], control_state: dict[str, Any], retrieval: dict[str, Any], solution_escalation: dict[str, Any] | None = None) -> dict[str, Any]:
     stage = str(request.get("stage") or "UNDERSTAND_FRAME").upper()
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
     blockers: list[str] = []
@@ -217,6 +411,14 @@ def mcp_decide(request: dict[str, Any], control_state: dict[str, Any], retrieval
             blockers.append("COMMITMENT_TARGET_MISSING")
     if retrieval.get("human_insight_checkpoint") == "CRITIQUE_AND_REASSESS":
         blockers.append("MATERIAL_USER_INSIGHT_REQUIRES_REASSESSMENT")
+    if (
+        material
+        and isinstance(solution_escalation, dict)
+        and solution_escalation.get("control_outcome") != "CONTINUE"
+    ):
+        blockers.append(
+            "SOLUTION_ESCALATION_" + str(solution_escalation.get("outcome") or "NONPASS")
+        )
 
     if blockers:
         outcome = "BLOCK"
@@ -242,7 +444,7 @@ def mcp_decide(request: dict[str, Any], control_state: dict[str, Any], retrieval
         "basis_fingerprint": control_state["basis_fingerprint"],
         "effective_user_config_ref": control_state["effective_user_configuration"],
         "execution_profile_ref": control_state["execution_profile_ref"],
-        "applicable_control_refs": ["CEREBRO-MATERIAL-COMMITMENT-PREFLIGHT-001", "CEREBRO-RELEVANCE-RETRIEVAL-001", "CEREBRO-WISDOM-CONTROL-BINDING-001"],
+        "applicable_control_refs": ["CEREBRO-MATERIAL-COMMITMENT-PREFLIGHT-001", "CEREBRO-RELEVANCE-RETRIEVAL-001", "CEREBRO-WISDOM-CONTROL-BINDING-001"] + ([SOLUTION_ESCALATION_CONTROL_REF] if solution_escalation is not None else []),
         "outcome": outcome,
         "invalidates": blockers,
         "verification_requirement": verification,
@@ -275,8 +477,14 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]
         "coverage_audit_refs": request.get("coverage_audit_refs", []),
     }
     retrieval = engine.retrieve(retrieval_request, root)
-    control_state = build_control_state(request, retrieval, semantics, conflict, source_identity, current_context_identity)
-    decision = mcp_decide(request, control_state, retrieval)
+    solution_escalation = None
+    if "solution_escalation" in request:
+        solution_escalation = resolve_solution_escalation_preflight(
+            request.get("solution_escalation"),
+            str(retrieval.get("basis_fingerprint") or ""),
+        )
+    control_state = build_control_state(request, retrieval, semantics, conflict, source_identity, current_context_identity, solution_escalation)
+    decision = mcp_decide(request, control_state, retrieval, solution_escalation)
     receipt = {
         "schema": "cerebro-material-commitment-preflight-receipt/v1",
         "result": "PASS" if decision["outcome"] == "CONTINUE" else "BLOCKED",
@@ -298,6 +506,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]
         "basis_fingerprint": control_state["basis_fingerprint"],
         "control_state_ref": control_state["control_state_id"],
         "control_decision_ref": decision["control_decision_id"],
+        "solution_escalation_assessment": solution_escalation,
         "issued_at": utc_now(),
         "authority": "DERIVED_CONTROL_EVIDENCE",
     }
@@ -309,6 +518,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]
         "retrieval": retrieval,
         "control_state": control_state,
         "mcp_control_decision": decision,
+        "solution_escalation_assessment": solution_escalation,
         "receipt": receipt,
     }
 
@@ -343,6 +553,7 @@ def consume(request: dict[str, Any], receipt: dict[str, Any], root: Path = SOURC
         "applicable_wisdom_refs",
         "applicable_history_refs",
         "relevance_source_fingerprints",
+        "solution_escalation_assessment",
     )
     for field in freshness_fields:
         if not _freshness_equal(receipt.get(field), current["receipt"].get(field)):
@@ -460,6 +671,77 @@ def selftest(root: Path = SOURCE_ROOT) -> dict[str, Any]:
         check("expected-prior-learning-without-coverage-blocks", resolve(missing, fixture)["control_state"]["coverage_state"] == "INCOMPLETE" and resolve(missing, fixture)["result"] == "BLOCKED")
         exploratory = dict(unresolved); exploratory["stage"] = "EXPLORE_RESEARCH"; exploratory["material"] = False; exploratory["commitment_target"] = ""
         check("non-material-stage-does-not-require-resolved-semantics", resolve(exploratory, fixture)["result"] == "PASS")
+
+        vinkel_base = {
+            "triggered": True,
+            "trigger": "STRUCTURAL_COMPLEXITY_INCREASE",
+            "observed_fact": "one exact dependency is unavailable",
+            "supported_causal_layer": "dependency",
+            "proposed_remedy": {"kind": "STRUCTURAL", "candidate_id": "NEW-ENGINE"},
+            "prerequisites": [],
+            "simple_candidates": [{
+                "candidate_id": "RESTORE-EXISTING-PATH",
+                "kind": "EXISTING_PATH",
+                "preserves_hard_invariants": True,
+                "evidence_state": "VIABLE",
+                "falsifier_ref": "PROBE-RESTORE-FAILS",
+            }],
+            "cheapest_discriminator": {
+                "probe_ref": "PROBE-RESTORE-FAILS",
+                "read_only": True,
+                "can_change_decision": True,
+                "result": "PASS",
+            },
+        }
+        vinkel = resolve_solution_escalation_preflight(vinkel_base, "c" * 64)
+        check(
+            "vinkelpass-existing-path-precedes-structural-complexity",
+            vinkel["outcome"] == "REMEDIATE_EXISTING"
+            and vinkel["control_outcome"] == "BLOCK",
+        )
+        selected_vinkel = dict(vinkel_base)
+        selected_vinkel["selected_outcome"] = "REMEDIATE_EXISTING"
+        selected_vinkel["selected_candidate_id"] = "RESTORE-EXISTING-PATH"
+        selected = resolve_solution_escalation_preflight(selected_vinkel, "c" * 64)
+        check(
+            "vinkelpass-exact-selected-minimum-sufficient-path-may-continue",
+            selected["material_commitment_ready"] is True
+            and selected["control_outcome"] == "CONTINUE",
+        )
+        unjustified = dict(vinkel_base)
+        unjustified["simple_candidates"] = []
+        unjustified["cheapest_discriminator"] = {"result": "PASS"}
+        unjustified["structural_candidate"] = {
+            "candidate_id": "NEW-ENGINE",
+            "unique_causal_value": "",
+            "evidence_refs": [],
+        }
+        rejected = resolve_solution_escalation_preflight(unjustified, "c" * 64)
+        check(
+            "vinkelpass-unjustified-structural-complexity-blocked",
+            rejected["outcome"] == "BLOCK_UNJUSTIFIED_COMPLEXITY"
+            and rejected["control_outcome"] == "BLOCK",
+        )
+        justified = dict(unjustified)
+        justified["structural_candidate"] = {
+            "candidate_id": "NEW-ENGINE",
+            "unique_causal_value": "required atomic ownership boundary",
+            "evidence_refs": ["EVIDENCE-STRUCTURAL-1"],
+            "simpler_candidate_falsified": True,
+        }
+        structural = resolve_solution_escalation_preflight(justified, "c" * 64)
+        check(
+            "vinkelpass-proven-structural-case-routes-existing-regrounding",
+            structural["outcome"] == "ESCALATE_STRUCTURAL_REVIEW"
+            and structural["next_action"] == "ARCHITECTURAL_REGROUNDING_AND_DECISION_ASSURANCE"
+            and structural["control_outcome"] == "BLOCK",
+        )
+        no_trigger = resolve_solution_escalation_preflight({"triggered": False}, "c" * 64)
+        check(
+            "vinkelpass-is-silent-without-escalation-trigger",
+            no_trigger["outcome"] == "KEEP_CURRENT"
+            and no_trigger["control_outcome"] == "CONTINUE",
+        )
     return {"schema": "cerebro-material-commitment-preflight-selftest/v1", "result": "PASS" if all(t["result"] == "PASS" for t in tests) else "FAIL", "tests": tests}
 
 
@@ -491,6 +773,10 @@ def activation_probe(root: Path, output: Path) -> dict[str, Any]:
         "semantic_resolution_gate_exercised": bool(test_map.get("unresolved-semantics-block-material")),
         "deterministic_conflict_guard_exercised": bool(test_map.get("deterministic-current-context-conflict-overrides-none-found")),
         "freshness_consumption_verified": bool(test_map.get("fresh-receipt-consumed")),
+        "solution_escalation_existing_path_guard": bool(test_map.get("vinkelpass-existing-path-precedes-structural-complexity")),
+        "solution_escalation_exact_selection_guard": bool(test_map.get("vinkelpass-exact-selected-minimum-sufficient-path-may-continue")),
+        "solution_escalation_structural_justification_guard": bool(test_map.get("vinkelpass-unjustified-structural-complexity-blocked")) and bool(test_map.get("vinkelpass-proven-structural-case-routes-existing-regrounding")),
+        "solution_escalation_trigger_guard": bool(test_map.get("vinkelpass-is-silent-without-escalation-trigger")),
         "runtime_reasoning_policy_absent": runtime_clean,
         "source_state_fingerprint": source_state_fingerprint(root) if all((root / relative).is_file() for relative in ACTIVATION_BASIS_FILES) else "",
         "basis_files": ACTIVATION_BASIS_FILES,

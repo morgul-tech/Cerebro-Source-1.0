@@ -29,6 +29,31 @@ MATERIAL_STAGES = {"DECIDE", "LOCK", "MATERIAL_EXECUTE", "MATERIAL_AUTHORIZE", "
 CONTROL_OUTCOMES = {"CONTINUE", "REMEDIATE", "RETRY", "REORIENT", "USER_DECISION_REQUIRED", "BLOCK"}
 REFINED_AIRLOCK_SCHEMA = "cerebro-refined-airlock-assessment/v1"
 REFINED_AIRLOCK_CONTROL_REF = "CEREBRO-REFINED-AIRLOCK-V006"
+HUMAN_EFFECT_FASTLANE_CONTROL_REF = "CEREBRO-HUMAN-EFFECT-FASTLANE-001"
+HUMAN_EFFECT_FASTLANE_SCHEMA = "cerebro-human-effect-fastlane-assessment/v1"
+HUMAN_EFFECT_CLASSES = {
+    "EMPIRICAL_PREVIEW",
+    "DECISION_CANDIDATE",
+    "MATERIAL_COMMITMENT",
+    "GOVERNING_IRREVERSIBLE",
+}
+HUMAN_EFFECT_GATE_EFFECTS = {
+    "BLOCK_EFFECT",
+    "BLOCK_PROMOTION",
+    "SIDECAR",
+    "OBSERVE_LEARN",
+    "UNKNOWN",
+}
+HUMAN_EFFECT_HARD_BOUNDARIES = {
+    "SAFETY",
+    "PRIVACY",
+    "SECURITY",
+    "AUTHORITY",
+    "EXPLICIT_HUMAN_LIMIT",
+    "IRREVERSIBLE_OR_MATERIAL_MUTATION_PUBLICATION",
+    "EFFECT_PRODUCTION_OR_PRESERVATION_CAPABILITY_MISSING",
+    "PROVEN_SEMANTIC_CONTAMINATION_WHEN_INDEPENDENCE_IS_CLAIMED",
+}
 AIRLOCK_MATERIALITY_CLASSES = {
     "CONTROL_NEUTRAL",
     "MATERIAL_SEMANTIC",
@@ -312,6 +337,154 @@ def resolve_refined_airlock(config: dict[str, Any]) -> dict[str, Any]:
             else None
         ),
     )
+
+
+def resolve_human_effect_fastlane(config: dict[str, Any]) -> dict[str, Any]:
+    """Classify a Human-visible effect without manufacturing stronger evidence.
+
+    This is a subordinate MCP assessment.  It may preserve a safe reversible
+    effect while lowering or sidecarring its claim, but it never promotes a
+    preview, clears a hard boundary, or substitutes for the material path.
+    """
+    if not isinstance(config, dict):
+        raise ValueError("human-effect-fastlane-config-must-be-object")
+
+    effect_ref = str(config.get("effect_ref") or "").strip()
+    effect_class = str(config.get("effect_class") or "").upper()
+    intended_effect = str(config.get("intended_human_effect") or "").strip()
+    reasons: list[str] = []
+    if not effect_ref:
+        reasons.append("HUMAN_EFFECT_REF_MISSING")
+    if effect_class not in HUMAN_EFFECT_CLASSES:
+        reasons.append("HUMAN_EFFECT_CLASS_UNKNOWN")
+    if not intended_effect:
+        reasons.append("INTENDED_HUMAN_EFFECT_MISSING")
+
+    declared_boundaries = {
+        str(value).upper()
+        for value in config.get("hard_boundaries", [])
+        if str(value)
+    }
+    unknown_boundaries = sorted(declared_boundaries.difference(HUMAN_EFFECT_HARD_BOUNDARIES))
+    if unknown_boundaries:
+        reasons.append("HARD_BOUNDARY_CLASS_UNKNOWN")
+    active_boundaries = sorted(declared_boundaries.intersection(HUMAN_EFFECT_HARD_BOUNDARIES))
+    if active_boundaries:
+        reasons.extend("HARD_BOUNDARY_" + value for value in active_boundaries)
+    if config.get("effect_production_preservation_capability") is not True:
+        active_boundaries.append("EFFECT_PRODUCTION_OR_PRESERVATION_CAPABILITY_MISSING")
+        reasons.append("HARD_BOUNDARY_EFFECT_PRODUCTION_OR_PRESERVATION_CAPABILITY_MISSING")
+    if config.get("proven_semantic_contamination_when_independence_is_claimed") is True:
+        active_boundaries.append("PROVEN_SEMANTIC_CONTAMINATION_WHEN_INDEPENDENCE_IS_CLAIMED")
+        reasons.append("HARD_BOUNDARY_PROVEN_SEMANTIC_CONTAMINATION_WHEN_INDEPENDENCE_IS_CLAIMED")
+    active_boundaries = sorted(set(active_boundaries))
+
+    gates: list[dict[str, Any]] = []
+    for index, raw_gate in enumerate(config.get("gates", [])):
+        if not isinstance(raw_gate, dict):
+            reasons.append("GATE_RECORD_INVALID")
+            continue
+        gate_effect = str(raw_gate.get("effect") or "UNKNOWN").upper()
+        if gate_effect not in HUMAN_EFFECT_GATE_EFFECTS:
+            gate_effect = "UNKNOWN"
+            reasons.append("GATE_EFFECT_UNKNOWN")
+        gates.append({
+            "gate_ref": str(raw_gate.get("gate_ref") or f"UNNAMED-GATE-{index + 1}"),
+            "effect": gate_effect,
+            "causal_effect_ref": str(raw_gate.get("causal_effect_ref") or effect_ref),
+            "claim_ref": str(raw_gate.get("claim_ref") or ""),
+            "evidence_ref": str(raw_gate.get("evidence_ref") or ""),
+        })
+    gates.sort(key=lambda item: (item["gate_ref"], item["effect"], item["claim_ref"]))
+
+    direct_effect_blocks = [
+        item for item in gates
+        if item["effect"] == "BLOCK_EFFECT" and item["causal_effect_ref"] == effect_ref
+    ]
+    promotion_gates = [
+        item for item in gates if item["effect"] in {"BLOCK_PROMOTION", "SIDECAR", "OBSERVE_LEARN"}
+    ]
+    unknown_gates = [item for item in gates if item["effect"] == "UNKNOWN"]
+    severe_unknown = bool(unknown_gates) and config.get("severe_plausible_harm") is True
+
+    repeated_retry = config.get("repeated_machine_failure_same_family") is True
+    new_human_information = config.get("new_human_outcome_information") is True
+    vinkelpass_required = repeated_retry and not new_human_information
+    if vinkelpass_required:
+        reasons.append("REPEATED_SAME_FAMILY_HUMAN_RETRY_REQUIRES_VINKELPASS")
+
+    reversible_fastlane_class = effect_class in {"EMPIRICAL_PREVIEW", "DECISION_CANDIDATE"}
+    if effect_class in {"MATERIAL_COMMITMENT", "GOVERNING_IRREVERSIBLE"}:
+        reasons.append("REGULAR_MATERIAL_OR_GOVERNING_PATH_REQUIRED")
+    if direct_effect_blocks:
+        reasons.append("CAUSAL_GATE_BLOCKS_EXACT_HUMAN_EFFECT")
+    if severe_unknown:
+        reasons.append("UNKNOWN_GATE_WITH_SEVERE_PLAUSIBLE_HARM")
+
+    effect_allowed = (
+        not reasons
+        and reversible_fastlane_class
+        and not direct_effect_blocks
+        and not severe_unknown
+        and not vinkelpass_required
+    )
+    if unknown_gates and not severe_unknown and reversible_fastlane_class and not active_boundaries and not vinkelpass_required:
+        effect_allowed = bool(effect_ref and intended_effect and effect_class in HUMAN_EFFECT_CLASSES)
+
+    claim_downgraded = bool(promotion_gates or unknown_gates)
+    if effect_class == "EMPIRICAL_PREVIEW":
+        honest_claim_class = "EMPIRICAL_PREVIEW"
+    elif effect_class == "DECISION_CANDIDATE":
+        honest_claim_class = "DECISION_CANDIDATE"
+    else:
+        honest_claim_class = "NO_FASTLANE_CLAIM"
+
+    if effect_allowed:
+        next_action = (
+            "DELIVER_REVERSIBLE_EFFECT_WITH_EXPLICIT_CLAIM_DOWNGRADE_AND_SIDECAR"
+            if claim_downgraded
+            else "DELIVER_REVERSIBLE_EFFECT_WITH_CURRENT_HONEST_CLAIM"
+        )
+    elif vinkelpass_required:
+        next_action = "RUN_CEREBRO_SOLUTION_ESCALATION_PREFLIGHT_BEFORE_ANOTHER_HUMAN_RETRY"
+    elif unknown_gates and not severe_unknown:
+        next_action = "RUN_CHEAPEST_READ_ONLY_DISCRIMINATOR_OR_DOWNGRADE_CLAIM"
+    else:
+        next_action = "RESOLVE_EXACT_EFFECT_BOUNDARY_OR_USE_REGULAR_MATERIAL_PATH"
+
+    assessment = {
+        "schema": HUMAN_EFFECT_FASTLANE_SCHEMA,
+        "control_ref": HUMAN_EFFECT_FASTLANE_CONTROL_REF,
+        "result": "PASS",
+        "effect_ref": effect_ref or None,
+        "effect_class": effect_class or None,
+        "intended_human_effect": intended_effect or None,
+        "control_outcome": "CONTINUE" if effect_allowed else "BLOCK_EFFECT",
+        "effect_authorized": effect_allowed,
+        "claim_downgraded": claim_downgraded,
+        "honest_claim_class": honest_claim_class,
+        "promotion_authorized": False,
+        "canon_authorized": False,
+        "preview_can_become_canon_by_fastlane": False,
+        "gate_assessments": gates,
+        "active_hard_boundaries": active_boundaries,
+        "reason_codes": sorted(set(reasons)),
+        "unknown_gate_count": len(unknown_gates),
+        "severe_plausible_harm": severe_unknown,
+        "sidecar_failure_auto_rejects_effect": False,
+        "sidecar_success_auto_promotes_effect": False,
+        "repeated_same_family_human_retry": repeated_retry,
+        "new_human_outcome_information": new_human_information,
+        "vinkelpass_required_before_retry": vinkelpass_required,
+        "regular_material_gates_unchanged": True,
+        "fastlane_manufactures_pass": False,
+        "fastlane_upgrades_evidence": False,
+        "next_action": next_action,
+    }
+    assessment["basis_fingerprint"] = _canonical_fingerprint(assessment)
+    return assessment
+
+
 DELIVERY_OPERATIONS = {"replace", "create", "delete"}
 CONSTITUTIONAL_STATES = {"CLEAR", "SUSPECTED", "VERIFIED_MATERIAL_BREACH", "VERIFIED_NONMATERIAL_BREACH"}
 
@@ -1887,6 +2060,76 @@ def resolve(
             "continuation_effect": "NONE",
         })
 
+    human_effect_assessment = None
+    if "human_effect_fastlane" in request:
+        try:
+            human_effect_assessment = resolve_human_effect_fastlane(
+                request.get("human_effect_fastlane")
+            )
+        except Exception as exc:
+            human_effect_assessment = {
+                "schema": HUMAN_EFFECT_FASTLANE_SCHEMA,
+                "control_ref": HUMAN_EFFECT_FASTLANE_CONTROL_REF,
+                "result": "BLOCKED",
+                "control_outcome": "BLOCK_EFFECT",
+                "effect_authorized": False,
+                "promotion_authorized": False,
+                "canon_authorized": False,
+                "reason_codes": ["HUMAN_EFFECT_FASTLANE_INPUT_OR_EXECUTION_ERROR"],
+                "error_type": type(exc).__name__,
+                "next_action": "REPAIR_HUMAN_EFFECT_FASTLANE_INPUT_AND_RERESOLVE",
+            }
+            human_effect_assessment["basis_fingerprint"] = _canonical_fingerprint(
+                human_effect_assessment
+            )
+        if human_effect_assessment.get("control_outcome") != "CONTINUE":
+            objective = str(request.get("objective_ref") or "UNSPECIFIED")
+            digest = _canonical_fingerprint({
+                "objective_ref": objective,
+                "human_effect_fastlane_assessment": human_effect_assessment,
+            })
+            return finalize({
+                "schema": SCHEMA,
+                "result": "PASS",
+                "authority": "DERIVED_MCP_CONTROL_DECISION",
+                "live_control_authority": True,
+                "normal_control_path_exercised": True,
+                "promotion_basis_verified": True,
+                "promotion_basis": basis,
+                "constitutional_compliance": constitutional,
+                "human_effect_fastlane_assessment": human_effect_assessment,
+                "material_preflight_exercised": False,
+                "material_preflight_passed": None,
+                "material_preflight_precedes_adaptive": True,
+                "adaptive_invoked": False,
+                "mcp_control_decision": {
+                    "schema": DECISION_SCHEMA,
+                    "control_decision_id": "MCPD-HUMAN-EFFECT-BLOCK-" + digest[:12].upper(),
+                    "control_state_ref": HUMAN_EFFECT_FASTLANE_CONTROL_REF,
+                    "objective_ref": objective,
+                    "basis_refs": [HUMAN_EFFECT_FASTLANE_CONTROL_REF],
+                    "basis_fingerprint": digest,
+                    "effective_user_config_ref": "CURRENT_EFFECTIVE_CONFIGURATION",
+                    "execution_profile_ref": "NONE",
+                    "applicable_control_refs": [HUMAN_EFFECT_FASTLANE_CONTROL_REF],
+                    "outcome": "BLOCK",
+                    "classification": "HUMAN_EFFECT_FASTLANE_BLOCK_EFFECT",
+                    "invalidates": list(human_effect_assessment.get("reason_codes") or []),
+                    "verification_requirement": str(
+                        human_effect_assessment.get("next_action") or "RERESOLVE_HUMAN_EFFECT"
+                    ),
+                    "human_boundary": "NONE",
+                    "evidence_scope": "EXACT_HUMAN_EFFECT_AND_CLAIM",
+                    "authority": "MCP",
+                    "control_resolution_surface": CONTROL_SURFACE_ID,
+                    "resolved_at": utc_now(),
+                },
+                "execution_profile": None,
+                "continuation_effect": str(
+                    human_effect_assessment.get("next_action") or "NONE"
+                ),
+            })
+
     adaptive = load_module(root / "mcp/adaptive_control_resolver.py", "cerebro_adaptive_control_validated_logic")
     stage = str(request.get("stage") or "UNDERSTAND_FRAME").upper()
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
@@ -1899,6 +2142,16 @@ def resolve(
             + [
                 REFINED_AIRLOCK_CONTROL_REF,
                 "REFINED-AIRLOCK-SEAL:" + str(airlock_assessment.get("seal_fingerprint") or ""),
+            ]
+        ))
+    if human_effect_assessment is not None:
+        adaptive_request["human_effect_fastlane_assessment"] = human_effect_assessment
+        adaptive_request["governing_basis_refs"] = sorted(set(
+            [str(x) for x in adaptive_request.get("governing_basis_refs", [])]
+            + [
+                HUMAN_EFFECT_FASTLANE_CONTROL_REF,
+                "HUMAN-EFFECT-FASTLANE:"
+                + str(human_effect_assessment.get("basis_fingerprint") or ""),
             ]
         ))
     if context_binding is not None:
@@ -1984,6 +2237,7 @@ def resolve(
                 "execution_profile": None,
                 "continuation_effect": "NONE",
                 "preflight_result": preflight_result,
+                "human_effect_fastlane_assessment": human_effect_assessment,
             })
         control_state = preflight_result.get("control_state", {}) if isinstance(preflight_result, dict) else {}
         receipt = preflight_result.get("receipt", {}) if isinstance(preflight_result, dict) else {}
@@ -2046,6 +2300,7 @@ def resolve(
         "integrity_assessment": integrity_assessment,
         "preflight_result": preflight_result,
         "refined_airlock_assessment": airlock_assessment,
+        "human_effect_fastlane_assessment": human_effect_assessment,
     }
     return finalize(result)
 
@@ -2310,6 +2565,123 @@ def selftest(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True) -> dic
         integrated_airlock.get("refined_airlock_assessment", {}).get("state") == "READY"
         and integrated_airlock.get("adaptive_invoked") is True
         and integrated_airlock.get("mcp_control_decision", {}).get("outcome") == "CONTINUE",
+    )
+
+    fastlane_preview = {
+        "effect_ref": "HUMAN-EFFECT-PREVIEW-1",
+        "effect_class": "EMPIRICAL_PREVIEW",
+        "intended_human_effect": "show one reversible candidate preview",
+        "effect_production_preservation_capability": True,
+        "gates": [{
+            "gate_ref": "STRONG-CLAIM-GATE",
+            "effect": "BLOCK_PROMOTION",
+            "causal_effect_ref": "HUMAN-EFFECT-PREVIEW-1",
+            "claim_ref": "GOVERNING-CLAIM",
+        }],
+    }
+    preview_assessment = resolve_human_effect_fastlane(fastlane_preview)
+    check(
+        "strong-claim-gate-does-not-silently-block-lower-honest-preview",
+        preview_assessment.get("control_outcome") == "CONTINUE"
+        and preview_assessment.get("effect_authorized") is True
+        and preview_assessment.get("claim_downgraded") is True,
+    )
+    check(
+        "human-effect-fastlane-preview-never-becomes-canon",
+        preview_assessment.get("canon_authorized") is False
+        and preview_assessment.get("promotion_authorized") is False
+        and preview_assessment.get("preview_can_become_canon_by_fastlane") is False,
+    )
+    sidecar_preview = copy.deepcopy(fastlane_preview)
+    sidecar_preview["gates"] = [{
+        "gate_ref": "MACHINE-SIDECAR-FAILED",
+        "effect": "SIDECAR",
+        "causal_effect_ref": "HUMAN-EFFECT-PREVIEW-1",
+        "evidence_ref": "SIDECAR-FAILURE-1",
+    }]
+    sidecar_assessment = resolve_human_effect_fastlane(sidecar_preview)
+    check(
+        "sidecar-failure-neither-auto-rejects-nor-auto-promotes-human-effect",
+        sidecar_assessment.get("control_outcome") == "CONTINUE"
+        and sidecar_assessment.get("sidecar_failure_auto_rejects_effect") is False
+        and sidecar_assessment.get("sidecar_success_auto_promotes_effect") is False
+        and sidecar_assessment.get("promotion_authorized") is False,
+    )
+    unknown_preview = copy.deepcopy(fastlane_preview)
+    unknown_preview["gates"] = [{
+        "gate_ref": "UNKNOWN-NONSEVERE-GATE",
+        "effect": "UNKNOWN",
+        "causal_effect_ref": "HUMAN-EFFECT-PREVIEW-1",
+    }]
+    unknown_assessment = resolve_human_effect_fastlane(unknown_preview)
+    check(
+        "nonsevere-unknown-gate-degrades-claim-before-blocking-safe-effect",
+        unknown_assessment.get("control_outcome") == "CONTINUE"
+        and unknown_assessment.get("claim_downgraded") is True
+        and unknown_assessment.get("unknown_gate_count") == 1,
+    )
+    repeated_preview = copy.deepcopy(fastlane_preview)
+    repeated_preview["gates"] = []
+    repeated_preview["repeated_machine_failure_same_family"] = True
+    repeated_preview["new_human_outcome_information"] = False
+    repeated_assessment = resolve_human_effect_fastlane(repeated_preview)
+    check(
+        "repeated-same-family-human-retry-requires-vinkelpass-before-retry",
+        repeated_assessment.get("control_outcome") == "BLOCK_EFFECT"
+        and repeated_assessment.get("vinkelpass_required_before_retry") is True
+        and repeated_assessment.get("next_action")
+        == "RUN_CEREBRO_SOLUTION_ESCALATION_PREFLIGHT_BEFORE_ANOTHER_HUMAN_RETRY",
+    )
+    hard_boundary_preview = copy.deepcopy(fastlane_preview)
+    hard_boundary_preview["hard_boundaries"] = ["PRIVACY"]
+    hard_boundary_assessment = resolve_human_effect_fastlane(hard_boundary_preview)
+    check(
+        "human-effect-fastlane-never-bypasses-hard-boundary",
+        hard_boundary_assessment.get("control_outcome") == "BLOCK_EFFECT"
+        and "PRIVACY" in hard_boundary_assessment.get("active_hard_boundaries", []),
+    )
+    integrated_fastlane = resolve(
+        {
+            "objective_ref": "A2-HUMAN-EFFECT-FASTLANE-INTEGRATED-SELFTEST",
+            "consequence": "LOW",
+            "uncertainty": "LOW",
+            "human_effect_fastlane": fastlane_preview,
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "human-effect-fastlane-is-subordinate-to-canonical-mcp-control-path",
+        integrated_fastlane.get("human_effect_fastlane_assessment", {}).get("control_outcome")
+        == "CONTINUE"
+        and integrated_fastlane.get("adaptive_invoked") is True
+        and integrated_fastlane.get("mcp_control_decision", {}).get("outcome") == "CONTINUE",
+    )
+    material_after_fastlane = resolve(
+        {
+            "objective_ref": "A2-HUMAN-EFFECT-MATERIAL-GATE-PRESERVATION",
+            "current_objective": "prove regular material gates remain authoritative",
+            "current_scope": "A2 Human Effect Fastlane selftest",
+            "resolved_objective": "prove regular material gates remain authoritative",
+            "resolved_scope": "A2 Human Effect Fastlane selftest",
+            "stage": "MATERIAL_AUTHORIZE",
+            "material": True,
+            "semantic_resolution_state": "UNRESOLVED",
+            "commitment_target": "",
+            "expected_prior_learning": False,
+            "coverage_audit_complete": False,
+            "human_effect_fastlane": fastlane_preview,
+        },
+        root,
+        require_git_ancestry=require_git_ancestry,
+    )
+    check(
+        "human-effect-fastlane-does-not-bypass-regular-material-preflight",
+        material_after_fastlane.get("human_effect_fastlane_assessment", {}).get("control_outcome")
+        == "CONTINUE"
+        and material_after_fastlane.get("material_preflight_exercised") is True
+        and material_after_fastlane.get("material_preflight_passed") is False
+        and material_after_fastlane.get("adaptive_invoked") is False,
     )
 
     missing_context = resolve(
@@ -2825,6 +3197,14 @@ def activation_probe(root: Path = SOURCE_ROOT, require_git_ancestry: bool = True
         "constitutional_normal_consumer_clear": test_map.get("constitutional-normal-consumer-clear", False),
         "suspected_constitutional_breach_nonblocking": test_map.get("suspected-constitutional-breach-does-not-auto-block", False),
         "verified_material_constitutional_breach_blocking": test_map.get("verified-material-constitutional-breach-blocks-before-adaptive", False),
+        "human_effect_lower_honest_claim_preserved": test_map.get("strong-claim-gate-does-not-silently-block-lower-honest-preview", False),
+        "human_effect_preview_noncanonical": test_map.get("human-effect-fastlane-preview-never-becomes-canon", False),
+        "human_effect_sidecar_nondeciding": test_map.get("sidecar-failure-neither-auto-rejects-nor-auto-promotes-human-effect", False),
+        "human_effect_unknown_claim_degradation": test_map.get("nonsevere-unknown-gate-degrades-claim-before-blocking-safe-effect", False),
+        "human_effect_repeated_retry_vinkelpass_guard": test_map.get("repeated-same-family-human-retry-requires-vinkelpass-before-retry", False),
+        "human_effect_hard_boundary_preserved": test_map.get("human-effect-fastlane-never-bypasses-hard-boundary", False),
+        "human_effect_fastlane_canonical_path": test_map.get("human-effect-fastlane-is-subordinate-to-canonical-mcp-control-path", False),
+        "human_effect_material_preflight_preserved": test_map.get("human-effect-fastlane-does-not-bypass-regular-material-preflight", False),
         "delivery_profile_resolution_owned_by_mcp": all(
             test_map.get(name, False)
             for name in (

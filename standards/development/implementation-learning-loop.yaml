@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.2"
+  version: "1.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -24,6 +24,7 @@ implementation_learning_loop:
   - establish-Source-mutation-state
   - distinguish-observed-error-from-unreached-error-labels
   - retrieve-applicable-existing-failure-families-and-assurance-rules
+  - invoke-solution-escalation-preflight-before-abandoning-remediate-for-reorient-or-new-mechanism
   - assess-whether-recurrence-indicates-activation-ownership-or-structural-gap
   - invoke-foundational-challenge-when-structural-gap-evidence-is-material
   - map-remaining-reachable-execution-stages-and-adjacent-contracts
@@ -68,6 +69,30 @@ implementation_learning_loop:
     existing_structure_default_winner: false
     new_structure_default_winner: false
     resolution_ref: CEREBRO-FOUNDATIONAL-TRUST-AND-CHALLENGE-001
+
+  solution_escalation_preflight:
+    control_ref: CEREBRO-SOLUTION-ESCALATION-PREFLIGHT-001
+    name: VINKELPASS
+    implementation_ref: mcp/material_commitment_preflight.py#resolve_solution_escalation_preflight
+    trigger: REMEDIATE_WOULD_BE_ABANDONED_FOR_REORIENT_OR_NEW_MECHANISM
+    required_order:
+      - classify-actual-failure-family
+      - retrieve-existing-failure-families-and-assurance-rules
+      - identify-cheapest-concrete-fact-that-can-change-the-decision
+      - restore-causally-sufficient-missing-prerequisite-when-available
+      - evaluate-existing-and-simpler-candidates-with-falsifiers
+      - route-surviving-structural-case-to-existing-architectural-regrounding
+    repeated_human_retry:
+      same_machine_failure_family_without_new_human_outcome_information: PROHIBITED
+      required_next_control: CEREBRO-SOLUTION-ESCALATION-PREFLIGHT-001
+    canaries:
+      - observed-error-does-not-equal-root-cause
+      - missing-prerequisite-does-not-equal-architecture-defect
+      - simplest-is-not-always-the-winner
+      - structural-candidate-requires-simple-falsifier-or-hard-invariant
+      - self-critique-alone-does-not-create-evidence
+      - Human-is-not-a-diagnostic-courier
+      - machine-check-count-is-sufficiency-driven-not-fixed-to-five
 
   recurrence:
     known_failure_family_may_recur_without_explicit_exception: false
