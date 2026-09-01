@@ -1891,6 +1891,43 @@ human_execution_handoff_transport:
     - Project-Manager-as-execution-unit-producer-qualifier-delivery-endpoint-or-responder
     - Human-receipt-transport-when-the-bound-Implementer-can-observe-the-local-result
 
+runtime2_human_execution_handoff_transport:
+  introduced_by: RUNTIME2-HCS8-EXACT8-20260901-001
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/human-continuation-surface.yaml#runtime2_exact_shell_execution_handoff
+  validator: tooling/validator/runtime2_human_execution_handoff.py
+  consumer: tooling/runtime-host/runtime2_handoff_consumer.py
+  invariants:
+    - Runtime2-uses-dedicated-HASH_BOUND_RUNTIME2_CMD-profile-and-binding
+    - active-Runtime2-context-binding-and-fingerprint-validate-before-handoff
+    - C02-active-continuation-is-not-silently-auto-rebased
+    - envelope-contains-exactly-one-CMD-artifact-identity
+    - CMD-resolves-by-exact-sha256-and-unique-cardinality
+    - consumer-independently-rehashes-immediately-before-target-execution
+    - consumer-never-publishes-Source-or-invokes-generic-delivery
+    - target-CMD-and-do-not-modify-paths-remain-byte-unchanged
+    - HCS8-targetset-remains-exactly-eight-Source-paths
+    - both-context-and-transport-activation-must-pass-before-visible-handoff
+  required_canaries:
+    - missing-or-mismatched-Runtime2-context-binding-blocks
+    - unresolved-current-basis-or-full-payload-reference-blocks
+    - C02-auto-rebase-blocks
+    - CMD-mislabeled-as-HASH_BOUND_POWERSHELL-blocks
+    - extra-or-non-CMD-artifact-identity-blocks
+    - zero-or-multiple-CMD-hash-matches-block
+    - consumer-prelaunch-rehash-mismatch-blocks
+    - consumer-publication-or-generic-delivery-call-blocks
+    - target-CMD-byte-change-blocks
+    - do-not-modify-path-change-blocks
+    - non-exact-eight-HCS8-targetset-blocks
+    - handoff-before-context-and-transport-activation-blocks
+  prohibited:
+    - repurpose-HUMAN_EXECUTION_HANDOFF_TRANSPORT
+    - modify-Cerebro.StandardDeliveryLauncher-for-Runtime2
+    - consumer-owned-Source-publication-or-mutation
+    - filename-selected-CMD-execution
+
 local_execution_action_owner_resolution:
   introduced_by: P10-HUMAN-LOCAL-EXECUTION-PRODUCER-OWNERSHIP-SOURCE-PATCH-20260829-001
   severity: error

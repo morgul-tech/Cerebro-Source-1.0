@@ -6306,6 +6306,57 @@ working_context:
       derived_from_refs:
       - CTX-BASIS-C02-P002-CLOSEOUT-20260813-001
     sequence: 141
+  - id: CTX-BASIS-RUNTIME2-HUMAN-EXECUTION-HANDOFF-20260901-001
+    type: CURRENT_BASIS
+    scope: RUNTIME2-HUMAN-EXECUTION-HANDOFF-TRANSPORT
+    statement: Runtime2 human execution uses a dedicated hash-bound CMD envelope and a nonsyncing runtime consumer; the
+      pre-existing C02 continuation and generic Standard Delivery handoff remain unchanged and authoritative in their own scopes.
+    payload:
+      schema: cerebro-runtime2-human-execution-handoff/v1
+      profile: HASH_BOUND_RUNTIME2_CMD
+      transport_binding_id: RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT
+      context_binding_id: RUNTIME2-HUMAN-EXECUTION-HANDOFF-CONTINUE
+      exact_target_artifact:
+        kind: WINDOWS_CMD
+        extension: .cmd
+        cardinality: EXACTLY_1_BY_SHA256
+        bytes_mutable_by_handoff: false
+      generator_validator: tooling/validator/runtime2_human_execution_handoff.py
+      runtime_consumer: tooling/runtime-host/runtime2_handoff_consumer.py
+      consumer_boundary:
+        source_publication: PROHIBITED
+        source_mutation: PROHIBITED
+        runtime_mutation_outside_target_launch: PROHIBITED
+        generic_delivery_invocation: PROHIBITED
+      activation_order:
+      - VALIDATE_DEDICATED_CONTEXT_BINDING_AND_FINGERPRINT
+      - VALIDATE_DEDICATED_TRANSPORT_ACTIVATION
+      - GENERATE_ENVELOPE_AND_VISIBLE_EXACT_SHELL_SURFACE
+      - RESOLVE_EXACTLY_ONE_CMD_BY_SHA256
+      - INDEPENDENTLY_REHASH_BEFORE_EXECUTION
+      - EXECUTE_ALREADY_PREPARED_TARGET_ARTIFACT
+      invariants:
+      - C02_ACTIVE_BINDING_IS_NOT_AUTO_REBASED
+      - CMD_IS_NEVER_LABELED_HASH_BOUND_POWERSHELL
+      - ENVELOPE_CONTAINS_EXACTLY_ONE_CMD_ARTIFACT_IDENTITY
+      - ZERO_OR_MULTIPLE_HASH_MATCHES_BLOCK
+      - TARGET_CMD_BYTES_AND_DO_NOT_MODIFY_PATHS_REMAIN_UNCHANGED
+      - HUMAN_HANDOFF_REQUIRES_BOTH_CONTEXT_AND_TRANSPORT_ACTIVATION_VALIDATION
+      exact_hcs8_source_target_count: 8
+      source_basis: 9d7c042589217eea5fc5efc9ac2fd316de680dd4
+    provenance:
+      introduced_by_ref: RUNTIME2-HCS8-EXACT8-20260901-001
+      basis_refs:
+      - WORK_CLAIMS:766
+      - READY_QUEUE:316
+      - READY_QUEUE:318
+      - standards/human-continuation-surface.yaml
+    relations:
+      supersedes_ref: null
+      revokes_ref: null
+      derived_from_refs:
+      - CTX-DEC-HUMAN-CONTINUATION-HARD-ENFORCEMENT-20260812-001
+    sequence: 142
   current_index:
     decision_refs:
     - CTX-DEC-P1B-PRE001
@@ -6377,6 +6428,7 @@ working_context:
     - CTX-BASIS-DUALITY-ARC-WAVE-02-R5-20260812-001
     - CTX-BASIS-DUALITY-ARC-WAVE-02-PRE-R6-CLOSEOUT-20260812-001
     - CTX-BASIS-C02-P002-CASE-FINAL-20260813-001
+    - CTX-BASIS-RUNTIME2-HUMAN-EXECUTION-HANDOFF-20260901-001
     override_refs: []
     current_wisdom_refs:
     - CTX-WISDOM-COMMAND-RESOLUTION-FIRST-001
@@ -6432,7 +6484,7 @@ working_context:
     - CTX-WISDOM-MCP-DELIVERY-PROFILE-OWNERSHIP-20260812-001
     - CTX-WISDOM-MULTIPATCH-MILESTONE-CLOSEOUT-20260812-001
     - CTX-WISDOM-GIT-WORKTREE-OBJECT-REPRESENTATION-20260813-001
-  next_sequence: 142
+  next_sequence: 143
 patch_005_operational_architecture:
   authority: NON_AUTHORITATIVE_WORKING_CONTEXT
   current_control: MCP

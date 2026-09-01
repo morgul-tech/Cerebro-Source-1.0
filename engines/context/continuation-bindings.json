@@ -2,6 +2,7 @@
   "schema": "cerebro-human-continuation-binding-registry/v1",
   "status": "ACTIVE",
   "active_binding_id": "C02-P002-CASE-FINAL-CONTINUE",
+  "runtime2_active_binding_id": "RUNTIME2-HUMAN-EXECUTION-HANDOFF-CONTINUE",
   "bindings": [
     {
       "schema": "cerebro-human-continuation-binding/v1",
@@ -135,6 +136,45 @@
         "REQUEST_ONLY_MATERIAL_USER_DECISION_IF_PROJECT_SCOPE_AMBIGUOUS"
       ],
       "binding_fingerprint": "1022f9f4c223c721f0125f28cb28d1b9958564433a9a845186fe2219a2a5b8c5"
+    },
+    {
+      "schema": "cerebro-human-continuation-binding/v1",
+      "binding_id": "RUNTIME2-HUMAN-EXECUTION-HANDOFF-CONTINUE",
+      "surface_kind": "SHORT_HUMAN_TRIGGER",
+      "alias": "Kjor Runtime2 handoff",
+      "target_ref": "RUNTIME2-HUMAN-EXECUTION-HANDOFF-TRANSPORT",
+      "operation": "EXECUTE_HASH_BOUND_RUNTIME2_CMD",
+      "current_basis_ref": "CTX-BASIS-RUNTIME2-HUMAN-EXECUTION-HANDOFF-20260901-001",
+      "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS-RUNTIME2-HUMAN-EXECUTION-HANDOFF-20260901-001",
+      "constraints_refs": [
+        "standards/human-continuation-surface.yaml#runtime2_exact_shell_execution_handoff",
+        "tooling/validator/runtime2_human_execution_handoff.py",
+        "tooling/runtime-host/runtime2_handoff_consumer.py"
+      ],
+      "evidence_refs": [
+        "WORK_CLAIMS:766",
+        "READY_QUEUE:316,318",
+        "SOURCE:9d7c042589217eea5fc5efc9ac2fd316de680dd4"
+      ],
+      "maturity": "LOCKED",
+      "readiness": "READY_AFTER_TRANSPORT_ACTIVATION_VALIDATION",
+      "source_revision": "9d7c042589217eea5fc5efc9ac2fd316de680dd4+RUNTIME2-HCS8-EXACT8",
+      "required_next_behavior": [
+        "VERIFY_RUNTIME2_CONTEXT_BINDING",
+        "VERIFY_RUNTIME2_TRANSPORT_ACTIVATION",
+        "RESOLVE_EXACTLY_ONE_CMD_BY_SHA256",
+        "REHASH_IMMEDIATELY_BEFORE_EXECUTION",
+        "EXECUTE_WITH_NONSYNCING_RUNTIME2_CONSUMER"
+      ],
+      "resume_order": [
+        "LOAD_RUNTIME2_ACTIVE_BINDING",
+        "LOAD_CURRENT_BASIS",
+        "VERIFY_TRANSPORT_ACTIVATION",
+        "RESOLVE_AND_REHASH_CMD",
+        "EXECUTE_BOUND_RUNTIME2_HANDOFF"
+      ],
+      "alternative_paths": [],
+      "binding_fingerprint": "84b504cc558531817b95ae4a5cdd3fe405cf213851f71b65406d407f430413cf"
     }
   ]
 }

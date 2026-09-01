@@ -258,6 +258,19 @@ control_adapters:
       runtime_consumer_ref: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
       activation_binding_ref: HUMAN_EXECUTION_HANDOFF_TRANSPORT
       failure_effect: BLOCK_HANDOFF_OR_FAIL_BEFORE_SOURCE_MUTATION
+    runtime2_exact_shell_handoff:
+      schema: cerebro-runtime2-human-execution-handoff/v1
+      profile: HASH_BOUND_RUNTIME2_CMD
+      context_binding_registry_ref: engines/context/continuation-bindings.json
+      context_binding_ref: RUNTIME2-HUMAN-EXECUTION-HANDOFF-CONTINUE
+      generator_validator_ref: tooling/validator/runtime2_human_execution_handoff.py
+      runtime_consumer_ref: tooling/runtime-host/runtime2_handoff_consumer.py
+      activation_binding_ref: RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT
+      target_artifact_kind: WINDOWS_CMD
+      target_artifact_cardinality: EXACTLY_1_BY_SHA256
+      generic_standard_delivery_reused_or_repurposed: false
+      consumer_source_publication_authority: NONE
+      failure_effect: BLOCK_HANDOFF_OR_FAIL_BEFORE_TARGET_EXECUTION
   assurance_continuity:
     contract_ref: mcp/assurance-continuity.yaml
     implementation_ref: tooling/validator/assurance_continuity.py

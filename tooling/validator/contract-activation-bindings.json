@@ -706,6 +706,73 @@
       }
     },
     {
+      "id": "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT",
+      "standard_id": "STD-HUMAN-CONTINUATION-SURFACE",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/human-continuation-surface.yaml",
+      "declaration_tokens": [
+        "HASH_BOUND_RUNTIME2_CMD",
+        "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT",
+        "DEDICATED_CONTEXT_AND_TRANSPORT_MUST_VALIDATE_BEFORE_RUNTIME2_HANDOFF_EXPOSURE",
+        "repurpose-HUMAN_EXECUTION_HANDOFF_TRANSPORT-or-StandardDelivery"
+      ],
+      "registration": "mcp/manifest.yaml",
+      "registration_token": "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT",
+      "implementation": "tooling/validator/runtime2_human_execution_handoff.py",
+      "implementation_tokens": [
+        "def generate_envelope(",
+        "def validate_envelope(",
+        "def resolve_unique_cmd(",
+        "runtime2-envelope-must-contain-exactly-one-cmd-artifact-identity",
+        "runtime2-hcs8-targetset-must-be-exact8"
+      ],
+      "wiring": "tooling/runtime-host/runtime2_handoff_consumer.py",
+      "wiring_proof_kind": "EXPLICIT_ADAPTER",
+      "wiring_tokens": [
+        "def consume(",
+        "runtime2-consumer-prelaunch-rehash-mismatch",
+        "runtime2-target-bytes-changed-during-consumption",
+        "source_mutated_by_consumer"
+      ],
+      "validation": "tooling/validator/checks.yaml",
+      "validation_tokens": [
+        "runtime2_human_execution_handoff_transport:",
+        "consumer-independently-rehashes-immediately-before-target-execution",
+        "HCS8-targetset-remains-exactly-eight-Source-paths"
+      ],
+      "runtime_evidence_state": "BOUND_MACHINE_PROOF_REQUIRED_BEFORE_RUNTIME2_HANDOFF_EXPOSURE",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RUNTIME2_HUMAN_EXECUTION_HANDOFF_ACTIVATION_PROOF.json",
+        "schema": "cerebro-runtime2-human-execution-handoff-activation-proof/v1",
+        "accepted_binding_ids": [
+          "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT"
+        ],
+        "basis_files": [
+          "engines/context/working-context.yaml",
+          "engines/context/continuation-bindings.json",
+          "standards/human-continuation-surface.yaml",
+          "mcp/manifest.yaml",
+          "tooling/validator/checks.yaml",
+          "tooling/validator/contract-activation-bindings.json",
+          "tooling/validator/runtime2_human_execution_handoff.py",
+          "tooling/runtime-host/runtime2_handoff_consumer.py"
+        ],
+        "required_true_fields": [
+          "generator_executed",
+          "envelope_consumer_exercised",
+          "runtime2_context_binding_validated",
+          "cmd_hash_unique_cardinality_enforced",
+          "consumer_independent_rehash_required",
+          "consumer_nonsyncing_boundary_enforced",
+          "target_cmd_bytes_preserved",
+          "do_not_modify_paths_preserved",
+          "exact_hcs8_targetset_enforced",
+          "negative_canaries_passed"
+        ],
+        "required_proves_binding": "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT"
+      }
+    },
+    {
       "id": "PATCH_ATTEMPT_HISTORY",
       "standard_id": "STD-PATCH-ATTEMPT-HISTORY",
       "classification": "OPERATIONAL",

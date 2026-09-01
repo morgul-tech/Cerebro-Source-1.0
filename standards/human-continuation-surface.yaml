@@ -108,6 +108,35 @@ human_continuation_surface:
         - PM_BIND_ADMIT_ONLY_NOT_EXECUTION_UNIT_PRODUCER_OR_DELIVERY_ACTOR
         - WORKMODE_LOCAL_RECEIPT_SELF_CONSUMPTION_WHEN_OBSERVABLE
 
+  runtime2_exact_shell_execution_handoff:
+    schema: cerebro-runtime2-human-execution-handoff/v1
+    profile: HASH_BOUND_RUNTIME2_CMD
+    binding_id: RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT
+    applies_when: EXACT_RUNTIME2_WINDOWS_CMD_IS_THE_AUTHORIZED_HUMAN_ACTION
+    generator_and_validator: tooling/validator/runtime2_human_execution_handoff.py
+    runtime_consumer: tooling/runtime-host/runtime2_handoff_consumer.py
+    context_binding_registry: engines/context/continuation-bindings.json
+    context_binding_id: RUNTIME2-HUMAN-EXECUTION-HANDOFF-CONTINUE
+    invariant: DEDICATED_CONTEXT_AND_TRANSPORT_MUST_VALIDATE_BEFORE_RUNTIME2_HANDOFF_EXPOSURE
+    requirements:
+      - active-Runtime2-context-binding-and-fingerprint-validate
+      - current-basis-and-full-payload-references-resolve
+      - existing-C02-active-binding-is-not-silently-auto-rebased
+      - envelope-contains-exactly-one-Windows-CMD-artifact-identity
+      - target-artifact-resolves-by-exact-sha256-with-unique-cardinality
+      - consumer-independently-rehashes-the-CMD-immediately-before-execution
+      - consumer-does-not-publish-or-mutate-Source
+      - consumer-does-not-invoke-the-generic-delivery-path
+      - target-CMD-and-do-not-modify-bytes-remain-unchanged
+      - exact-HCS8-eight-path-targetset-remains-closed
+    prohibited:
+      - label-Windows-CMD-as-HASH_BOUND_POWERSHELL
+      - include-launcher-bundle-or-multiple-artifacts-in-Runtime2-envelope
+      - zero-or-multiple-CMD-hash-match-execution
+      - expose-human-handoff-before-context-and-transport-activation-pass
+      - repurpose-HUMAN_EXECUTION_HANDOFF_TRANSPORT-or-StandardDelivery
+    failure_effect: BLOCK_HANDOFF_OR_FAIL_BEFORE_TARGET_EXECUTION
+
   binding_contract:
     schema: cerebro-human-continuation-binding/v1
     active_registry: engines/context/continuation-bindings.json
