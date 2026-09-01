@@ -299,6 +299,7 @@ function Publish-ReturnBridgeResult {
         if([string]::IsNullOrWhiteSpace($SourceAfter)){$SourceAfter=$sourceBefore}
         $powershellPath=(Get-Command powershell.exe -ErrorAction Stop|Select-Object -First 1).Source
         $artifactPathsJson=ConvertTo-Json -Compress -InputObject @($validArtifacts)
+        $artifactPathsBase64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($artifactPathsJson))
         $arguments=@(
             '-NoProfile','-ExecutionPolicy','Bypass','-File',$pump,
             '-Mode','Enqueue',
@@ -310,7 +311,7 @@ function Publish-ReturnBridgeResult {
             '-SourceAfter',$SourceAfter,
             '-ProductSha256',(Get-Sha256 -LiteralPath $PrimaryArtifact),
             '-SourceMutationAssessment',(Get-WorkingSourceSnapshot -Path $WorkingSourcePath).working_tree,
-            '-ArtifactPathsJson',$artifactPathsJson
+            '-ArtifactPathsBase64',$artifactPathsBase64
         )
         if(-not[string]::IsNullOrWhiteSpace($FailureFamily)){$arguments+=@('-FailureFamily',$FailureFamily)}
         if(-not[string]::IsNullOrWhiteSpace($ReachedStage)){$arguments+=@('-ReachedStage',$ReachedStage)}

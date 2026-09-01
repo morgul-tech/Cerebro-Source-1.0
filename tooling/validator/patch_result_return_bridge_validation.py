@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -165,7 +166,7 @@ def validate(root: Path) -> dict[str, Any]:
                 "RETURN_BRIDGE_STATE",
                 "return_bridge_ref",
                 "if(-not[string]::IsNullOrWhiteSpace($FailureFamily))",
-                "-ArtifactPathsJson",
+                "-ArtifactPathsBase64",
             )
         ),
     )
@@ -264,13 +265,14 @@ def validate(root: Path) -> dict[str, Any]:
                 powershell(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(pump),
                 "-Mode", "Enqueue", "-AttemptId", "ATTEMPT-MULTI", "-PatchId", "PATCH-SELFTEST",
                 "-SourceBefore", "a" * 40, "-SourceAfter", "b" * 40,
-                "-ProductSha256", sha256(pass_artifact), "-ArtifactPathsJson",
-                json.dumps([str(pass_artifact), str(fail_artifact)]), "-OutboxRoot", str(outbox),
+                "-ProductSha256", sha256(pass_artifact), "-ArtifactPathsBase64",
+                base64.b64encode(json.dumps([str(pass_artifact), str(fail_artifact)]).encode("utf-8")).decode("ascii"),
+                "-OutboxRoot", str(outbox),
             ]
         )
         multi_package = Path(parse_fields(multi.stdout)["RETURN_BRIDGE_PACKAGE"])
         multi_manifest = json.loads((multi_package / "manifest.json").read_text(encoding="utf-8-sig"))
-        record("multi-artifact-json-boundary", multi_manifest.get("artifact_count") == 2)
+        record("multi-artifact-base64-child-boundary", multi_manifest.get("artifact_count") == 2)
 
         failure = invoke_pump(
             pump,
