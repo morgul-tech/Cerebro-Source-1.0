@@ -10,6 +10,7 @@ from typing import Any
 SCHEMA = "cerebro-project-manager-control-governor/v1"
 DECISION_SCHEMA = "cerebro-project-manager-control-governor-decision/v1"
 PROFILE_VERIFICATION_SCHEMA = "cerebro-project-manager-profile-verification/v1"
+LIFECYCLE_EFFECT_VERIFICATION_SCHEMA = "cerebro-context-lifecycle-effect-verification/v1"
 
 FRONTIER_ACTORS = {"PROJECT_MANAGER", "HUMAN"}
 FRONTIER_STATES = {"PENDING", "COMPLETE", "BLOCKED", "SKIPPED"}
@@ -227,8 +228,24 @@ def _worker_terminal_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-# PREBUILD FRAGMENT — insert before _interrupt_gate.
-def _lifecycle_mutation_gate(candidate: dict[str, Any]) -> dict[str, Any]:
+def _lifecycle_candidate_fingerprint(candidate: dict[str, Any]) -> str:
+    subject = copy.deepcopy(candidate)
+    subject.pop("candidate_fingerprint", None)
+    return hashlib.sha256(_canonical(subject)).hexdigest()
+
+
+def _require_hex(value: Any, length: int, message: str) -> str:
+    _require(isinstance(value, str) and len(value) == length, message)
+    _require(all(ch in "0123456789abcdef" for ch in value), message)
+    return value
+
+
+def _lifecycle_mutation_gate(
+    candidate: dict[str, Any],
+    *,
+    lifecycle_effect_verifier: Any | None = None,
+    session: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     raw = candidate.get("lifecycle_mutation")
     if raw is None:
         return {"applicable": False, "result": "PASS"}
@@ -241,15 +258,196 @@ def _lifecycle_mutation_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     }
     _require(isinstance(raw, dict), "lifecycle-mutation-object-required")
     _require(required.issubset(raw), "lifecycle-mutation-required-fields-missing")
-    return {
+    operation = str(raw.get("operation") or "").upper()
+    _require(operation in {"RETIRE", "BIND", "START"}, "lifecycle-mutation-operation-invalid")
+    for field in (
+        "mutation_id", "idempotency_key", "actor_generation_id", "slot_pointer_ref",
+        "expected_slot_pointer", "expected_lifecycle_state", "authority_source",
+    ):
+        _require(isinstance(raw.get(field), str) and bool(raw[field].strip()), f"lifecycle-{field}-required")
+    _require(
+        isinstance(raw.get("expected_lifecycle_revision"), int)
+        and raw["expected_lifecycle_revision"] >= 0,
+        "lifecycle-expected-lifecycle-revision-invalid",
+    )
+    expected_claim_revision = raw.get("expected_claim_revision")
+    _require(
+        expected_claim_revision == "NOT_APPLICABLE"
+        or (isinstance(expected_claim_revision, int) and expected_claim_revision >= 0),
+        "lifecycle-expected-claim-revision-invalid",
+    )
+    _require(
+        isinstance(raw.get("observed_event_frontier"), int)
+        and raw["observed_event_frontier"] >= 0,
+        "lifecycle-observed-event-frontier-invalid",
+    )
+    supplied_fingerprint = _require_hex(
+        raw.get("candidate_fingerprint"), 64, "lifecycle-candidate-fingerprint-invalid"
+    )
+    _require(
+        supplied_fingerprint == _lifecycle_candidate_fingerprint(raw),
+        "lifecycle-candidate-fingerprint-mismatch",
+    )
+
+    base = {
         "applicable": True,
         "result": "PASS",
         "candidate": copy.deepcopy(raw),
         "state_owner": "CONTEXT",
         "control_owner": "MCP",
         "governor_direct_authority": False,
-        "effect_pending_context_commit_receipt": True,
+        "state_mutation_by_governor": False,
     }
+
+    transition = raw.get("source_transition")
+    if transition is None:
+        base["effect_pending_context_commit_receipt"] = operation in {"BIND", "START"}
+        return base
+
+    _require(operation == "BIND", "requalification-must-use-existing-BIND-operation")
+    _require(
+        raw.get("expected_lifecycle_state") == "REQUALIFICATION_REQUIRED",
+        "requalification-expected-state-must-be-REQUALIFICATION_REQUIRED",
+    )
+    _require(raw.get("claim_ref") is None, "requalification-active-claim-prohibited")
+    _require(
+        raw.get("expected_claim_revision") == "NOT_APPLICABLE",
+        "requalification-claim-revision-must-be-NOT_APPLICABLE",
+    )
+    observed_pointer = str(raw.get("observed_slot_pointer") or "")
+    _require(observed_pointer, "requalification-observed-slot-pointer-required")
+    _require(
+        observed_pointer == raw.get("expected_slot_pointer"),
+        "requalification-generation-pointer-mismatch",
+    )
+    _require(isinstance(transition, dict), "requalification-source-transition-object-required")
+    _require(
+        transition.get("intent") == "SAME_GENERATION_SOURCE_REQUALIFICATION",
+        "requalification-intent-invalid",
+    )
+    previous_head = _require_hex(
+        transition.get("previous_source_head"), 40, "requalification-previous-source-head-invalid"
+    )
+    target_head = _require_hex(
+        transition.get("target_source_head"), 40, "requalification-target-source-head-invalid"
+    )
+    _require(previous_head != target_head, "requalification-source-head-must-advance")
+    for field in (
+        "current_source_verified", "actor_nonretired_verified",
+        "no_active_claim_verified", "generation_pointer_verified",
+    ):
+        _require(transition.get(field) is True, f"requalification-{field}-required")
+    changed_contracts = transition.get("changed_contracts")
+    _require(isinstance(changed_contracts, list), "requalification-changed-contracts-array-required")
+    _require(
+        all(isinstance(x, str) and bool(x.strip()) for x in changed_contracts)
+        and len(changed_contracts) == len(set(changed_contracts)),
+        "requalification-changed-contracts-invalid",
+    )
+    gates_rerun = transition.get("gates_rerun")
+    _require(
+        isinstance(gates_rerun, list) and bool(gates_rerun)
+        and all(isinstance(x, str) and bool(x.strip()) for x in gates_rerun)
+        and len(gates_rerun) == len(set(gates_rerun)),
+        "requalification-gates-rerun-invalid",
+    )
+    _require_hex(
+        transition.get("prerequisite_fingerprint"), 64,
+        "requalification-prerequisite-fingerprint-invalid",
+    )
+    _require_hex(
+        transition.get("boot_fingerprint"), 64,
+        "requalification-boot-fingerprint-invalid",
+    )
+
+    base.update({
+        "effect_kind": "SAME_GENERATION_SOURCE_REQUALIFICATION",
+        "existing_operation": "BIND",
+        "previous_source_head": previous_head,
+        "target_source_head": target_head,
+        "same_generation_identity": raw["actor_generation_id"],
+        "ready_effect_allowed": False,
+        "bind_effect_allowed": False,
+        "effect_pending_context_commit_receipt": True,
+        "effect_pending_exact_post_state_readback": True,
+    })
+
+    evidence = raw.get("effect_evidence")
+    if evidence is None:
+        base["result"] = "PASS_CANDIDATE_READY_FOR_CONTEXT"
+        return base
+
+    _require(isinstance(evidence, dict), "requalification-effect-evidence-object-required")
+    _require(
+        isinstance(evidence.get("receipt_id"), str) and bool(evidence["receipt_id"].strip()),
+        "requalification-context-receipt-id-required",
+    )
+    _require(evidence.get("context_commit_result") == "COMMITTED", "requalification-context-commit-required")
+    _require(evidence.get("durable") is True, "requalification-context-receipt-must-be-durable")
+    _require(
+        evidence.get("post_state_readback_verified") is True,
+        "requalification-exact-post-state-readback-required",
+    )
+    _require(
+        evidence.get("post_actor_generation_id") == raw["actor_generation_id"],
+        "requalification-post-generation-mismatch",
+    )
+    _require(
+        evidence.get("post_lifecycle_state") == "READY_CURRENT",
+        "requalification-post-state-must-be-READY_CURRENT",
+    )
+    _require(
+        evidence.get("post_source_head") == target_head,
+        "requalification-post-source-head-mismatch",
+    )
+    _require(
+        isinstance(evidence.get("provider_revision"), int) and evidence["provider_revision"] >= 0,
+        "requalification-provider-revision-invalid",
+    )
+    _require_hex(
+        evidence.get("receipt_fingerprint"), 64,
+        "requalification-receipt-fingerprint-invalid",
+    )
+    verify_effect = getattr(lifecycle_effect_verifier, "verify_lifecycle_effect", None)
+    _require(callable(verify_effect), "constructor-bound-context-effect-verifier-required")
+    try:
+        verified_effect = verify_effect(
+            evidence=copy.deepcopy(evidence),
+            candidate=copy.deepcopy(raw),
+            session=copy.deepcopy(session or {}),
+        )
+    except Exception as exc:
+        raise ProjectManagerGovernorError(f"context-effect-verification-failed:{exc}") from exc
+    _require(isinstance(verified_effect, dict), "context-effect-verification-object-required")
+    _require(
+        verified_effect.get("schema") == LIFECYCLE_EFFECT_VERIFICATION_SCHEMA,
+        "context-effect-verification-schema-mismatch",
+    )
+    _require(verified_effect.get("result") == "PASS", "context-effect-verification-nonpass")
+    for field in (
+        "receipt_id", "post_actor_generation_id", "post_lifecycle_state",
+        "post_source_head", "provider_revision", "receipt_fingerprint",
+    ):
+        _require(
+            verified_effect.get(field) == evidence.get(field),
+            f"context-effect-verification-{field}-mismatch",
+        )
+    _require(
+        isinstance(verified_effect.get("verifier_ref"), str)
+        and bool(verified_effect["verifier_ref"].strip()),
+        "context-effect-verifier-ref-required",
+    )
+    base.update({
+        "result": "PASS_EFFECT_VERIFIED",
+        "ready_effect_allowed": True,
+        "bind_effect_allowed": True,
+        "effect_pending_context_commit_receipt": False,
+        "effect_pending_exact_post_state_readback": False,
+        "context_commit_receipt_id": evidence["receipt_id"],
+        "provider_revision": evidence["provider_revision"],
+        "context_effect_verifier_ref": verified_effect["verifier_ref"],
+    })
+    return base
 
 
 def _interrupt_gate(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -352,7 +550,11 @@ def govern_project_manager_event(
     )
     frontier, next_action = _validate_frontier(candidate, canonical_next_action)
     shared = _shared_write_gate(candidate)
-    lifecycle = _lifecycle_mutation_gate(candidate)
+    lifecycle = _lifecycle_mutation_gate(
+        candidate,
+        lifecycle_effect_verifier=profile_verifier,
+        session=session,
+    )
     worker = _worker_terminal_gate(candidate)
     interrupt = _interrupt_gate(candidate)
     terminal = _terminal_gate(candidate)

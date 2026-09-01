@@ -44,6 +44,10 @@
       "minLength": 1,
       "type": "string"
     },
+    "observed_slot_pointer": {
+      "minLength": 1,
+      "type": "string"
+    },
     "idempotency_key": {
       "minLength": 1,
       "type": "string"
@@ -75,6 +79,122 @@
     "slot_pointer_ref": {
       "minLength": 1,
       "type": "string"
+    },
+    "source_transition": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_nonretired_verified": {
+          "const": true
+        },
+        "boot_fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "changed_contracts": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "current_source_verified": {
+          "const": true
+        },
+        "gates_rerun": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "generation_pointer_verified": {
+          "const": true
+        },
+        "intent": {
+          "const": "SAME_GENERATION_SOURCE_REQUALIFICATION"
+        },
+        "no_active_claim_verified": {
+          "const": true
+        },
+        "prerequisite_fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "previous_source_head": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        "target_source_head": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "intent",
+        "previous_source_head",
+        "target_source_head",
+        "changed_contracts",
+        "gates_rerun",
+        "prerequisite_fingerprint",
+        "boot_fingerprint",
+        "current_source_verified",
+        "actor_nonretired_verified",
+        "no_active_claim_verified",
+        "generation_pointer_verified"
+      ],
+      "type": "object"
+    },
+    "effect_evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "context_commit_result": {
+          "const": "COMMITTED"
+        },
+        "durable": {
+          "const": true
+        },
+        "post_actor_generation_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "post_lifecycle_state": {
+          "const": "READY_CURRENT"
+        },
+        "post_source_head": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        "post_state_readback_verified": {
+          "const": true
+        },
+        "provider_revision": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "receipt_fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "receipt_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "receipt_id",
+        "context_commit_result",
+        "durable",
+        "post_state_readback_verified",
+        "post_actor_generation_id",
+        "post_lifecycle_state",
+        "post_source_head",
+        "provider_revision",
+        "receipt_fingerprint"
+      ],
+      "type": "object"
     }
   },
   "required": [
@@ -93,6 +213,46 @@
     "authority_source",
     "observed_event_frontier",
     "candidate_fingerprint"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "source_transition"
+        ]
+      },
+      "then": {
+        "properties": {
+          "claim_ref": {
+            "type": "null"
+          },
+          "expected_claim_revision": {
+            "const": "NOT_APPLICABLE"
+          },
+          "expected_lifecycle_state": {
+            "const": "REQUALIFICATION_REQUIRED"
+          },
+          "operation": {
+            "const": "BIND"
+          }
+        },
+        "required": [
+          "observed_slot_pointer"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "effect_evidence"
+        ]
+      },
+      "then": {
+        "required": [
+          "source_transition"
+        ]
+      }
+    }
   ],
   "title": "Cerebro Actor Lifecycle Mutation Candidate",
   "type": "object"

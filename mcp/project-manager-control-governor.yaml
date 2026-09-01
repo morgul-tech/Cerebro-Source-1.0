@@ -81,6 +81,32 @@ project_manager_control_governor:
     governor_direct_live_authority: false
     candidate_schema: mcp/actor-lifecycle-mutation.schema.json
     operations: [RETIRE, BIND, START]
+    same_generation_source_requalification:
+      operation: BIND
+      new_operation_created: false
+      applies_from_state: REQUALIFICATION_REQUIRED
+      same_generation_identity_required: true
+      observed_slot_pointer_must_equal_expected: true
+      previous_and_target_source_heads_required: true
+      current_source_verification_required: true
+      actor_nonretired_verification_required: true
+      no_active_claim_verification_required: true
+      generation_pointer_verification_required: true
+      prerequisite_and_boot_fingerprints_required: true
+      changed_contracts_and_gates_rerun_required: true
+      candidate_fingerprint_recomputed: true
+      state_owner: CONTEXT
+      context_effect_verifier_injection: CONSTRUCTOR_BOUND
+      AI_supplied_context_receipt_is_authority: false
+      candidate_acceptance_is_ready_effect: false
+      ready_effect_requires:
+        - durable-context-commit-receipt
+        - exact-same-generation-post-state-readback
+        - exact-target-source-head-readback
+        - READY_CURRENT-post-lifecycle-state
+      stale_or_concurrent_precondition_effect: INVALIDATED_STALE_PRECONDITION
+      retired_terminated_or_no-reuse_effect: REJECT_FRESH_BOOT_ONLY
+      worker_or_researcher_self_transition: PROHIBITED
     exact_generation_identity_required: true
     expected_lifecycle_revision_required: true
     expected_claim_revision_required_when_applicable: true
