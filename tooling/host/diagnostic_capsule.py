@@ -295,6 +295,27 @@ def refresh_active_pointer(store_root: Path, registry: dict[str, Any]) -> dict[s
 def make_transport(full: dict[str, Any], full_path: Path) -> dict[str, Any]:
     failure = full.get("failure", {})
     repo = full.get("repository_observation", {})
+    raw_error = redact_text(
+        failure.get("raw_error_bounded", failure.get("message", "")),
+        MAX_TRANSPORT_TEXT,
+    )
+    classification_fields = {
+        "failure_family": failure.get("failure_family"),
+        "stage": failure.get("stage"),
+        "message": failure.get("message"),
+        "exit_code": failure.get("exit_code"),
+        "raw_error_bounded": raw_error,
+        "source_mutation_assessment": full.get("execution", {}).get(
+            "source_mutation_assessment"
+        ),
+        "changed_paths": repo.get("changed_paths", []),
+        "head": repo.get("probes", {}).get("head", {}),
+        "remote_head": repo.get("probes", {}).get("remote_head", {}),
+        "capsule_id": full.get("capsule_id"),
+    }
+    classification_complete = all(
+        value is not None and value != "" for value in classification_fields.values()
+    )
     transport = {
         "schema": TRANSPORT_SCHEMA,
         "capsule_id": full["capsule_id"],
@@ -307,6 +328,8 @@ def make_transport(full: dict[str, Any], full_path: Path) -> dict[str, Any]:
             "detection": failure.get("detection"),
             "exception_type": failure.get("exception_type"),
             "message": redact_text(failure.get("message", ""), MAX_TRANSPORT_TEXT),
+            "raw_error_bounded": raw_error,
+            "transcript_excerpt": raw_error,
             "script_stack_trace": redact_text(
                 failure.get("script_stack_trace", ""),
                 MAX_TRANSPORT_TEXT,
@@ -320,6 +343,12 @@ def make_transport(full: dict[str, Any], full_path: Path) -> dict[str, Any]:
             "prevention_gap": failure.get("prevention_gap"),
             "candidate_regressions": failure.get("candidate_regressions", []),
         },
+        "diagnostic_classification": (
+            "CLASSIFICATION_SUFFICIENT"
+            if classification_complete
+            else "PARTIAL_DIAGNOSTIC"
+        ),
+        "diagnostic_classification_fields": classification_fields,
         "execution": full.get("execution", {}),
         "repository": {
             "status": repo.get("status"),
@@ -683,6 +712,23 @@ def selftest() -> dict[str, Any]:
         record(
             "artifact_capture",
             full.get("artifacts", {}).get("transcript", {}).get("status") == "COMPLETE",
+        )
+        transport = load_json(Path(captured["transport_path"]))
+        record(
+            "bounded_transport_diagnostic_sufficiency",
+            bool(transport.get("failure", {}).get("raw_error_bounded"))
+            and bool(transport.get("failure", {}).get("transcript_excerpt"))
+            and transport.get("diagnostic_classification")
+            in {"CLASSIFICATION_SUFFICIENT", "PARTIAL_DIAGNOSTIC"}
+            and "ghp_" not in json.dumps(transport),
+            json.dumps(
+                {
+                    "diagnostic_classification": transport.get(
+                        "diagnostic_classification"
+                    ),
+                    "failure": transport.get("failure", {}),
+                }
+            ),
         )
         record(
             "auto_rehydration",

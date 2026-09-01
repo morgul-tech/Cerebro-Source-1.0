@@ -389,6 +389,24 @@ delivery_kernel:
     attempt_id_propagated_to_kernel: true
     success_transport_ref_recorded: true
 
+  patch_result_return_bridge:
+    contract_ref: standards/patch-result-return-bridge.yaml
+    producer: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+    transport_pump: tooling/return-bridge/Cerebro.ReturnBridgePump.ps1
+    validator: tooling/validator/patch_result_return_bridge_validation.py
+    local_outbox_root: D:\Cerebro\Run\Outbox
+    local_output_failsafe_root: D:\Cerebro\Run\Output
+    package_completion_before_transport: REQUIRED
+    PASS_and_FAIL_envelopes: REQUIRED
+    network_semantics_in_delivery_kernel: PROHIBITED
+    transport_failure_masks_patch_result: false
+    Drive_unavailable_effect: PENDING_NO_PATCH_RERUN
+    READY_written_last_but_not_trusted_alone: true
+    manifest_cardinality_and_all_hashes_required: true
+    provider_ingress_authority: NONAUTHORITATIVE_COORDINATION_EVIDENCE
+    human_file_courier_normal_path: PROHIBITED
+    remote_command_channel: PROHIBITED
+
   active_source_integrity_closure:
     contract: standards/active-source-closure.yaml#patch_close_integrity_closure
     implementation: tooling/validator/Cerebro.ActiveSourceIntegrityClosure.ps1

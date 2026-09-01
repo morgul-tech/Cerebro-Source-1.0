@@ -237,6 +237,119 @@ function Invoke-ChildCaptured {
     }
 }
 
+function Set-AttemptReturnBridgeRef {
+    param($Context,$Bridge)
+    if(-not(Test-Path -LiteralPath $Context.attempt_path -PathType Leaf)){return}
+    try {
+        $record=Get-Content -LiteralPath $Context.attempt_path -Raw|ConvertFrom-Json
+        $record|Add-Member -NotePropertyName 'return_bridge_ref' -NotePropertyValue ([ordered]@{
+            state=[string]$Bridge.State
+            envelope_id=[string]$Bridge.EnvelopeId
+            package_path=[string]$Bridge.PackagePath
+            provider_state=[string]$Bridge.ProviderState
+            error=[string]$Bridge.Error
+        }) -Force
+        [IO.File]::WriteAllText(
+            $Context.attempt_path,
+            (($record|ConvertTo-Json -Depth 12)+[Environment]::NewLine),
+            [Text.UTF8Encoding]::new($false)
+        )
+    }
+    catch {}
+}
+
+function Publish-ReturnBridgeResult {
+    param(
+        [Parameter(Mandatory=$true)][ValidateSet('PASS','FAIL')][string]$Result,
+        [Parameter(Mandatory=$true)][string]$PrimaryArtifact,
+        [string[]]$ArtifactPaths=@(),
+        [string]$FailureFamily='',
+        [string]$ReachedStage='',
+        [string]$SourceAfter='',
+        [switch]$CerebroSyncVerified
+    )
+    $bridge=[ordered]@{
+        State='UNAVAILABLE'
+        EnvelopeId=''
+        PackagePath=''
+        ProviderState=''
+        Error=''
+    }
+    try {
+        $pump=Join-Path $WorkingSourcePath 'tooling\return-bridge\Cerebro.ReturnBridgePump.ps1'
+        if(-not(Test-Path -LiteralPath $pump -PathType Leaf)){throw 'RETURN_BRIDGE_PUMP_NOT_FOUND'}
+        $validArtifacts=@($ArtifactPaths|Where-Object{
+            -not[string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_ -PathType Leaf)
+        }|Select-Object -Unique)
+        if($validArtifacts.Count -eq 0){throw 'RETURN_BRIDGE_ARTIFACTS_MISSING'}
+        if(-not(Test-Path -LiteralPath $PrimaryArtifact -PathType Leaf)){throw 'RETURN_BRIDGE_PRIMARY_ARTIFACT_MISSING'}
+        $claimId=''
+        if($null -ne $manifest -and $manifest.PSObject.Properties.Name -contains 'claim_id'){
+            $claimId=[string]$manifest.claim_id
+        }
+        if([string]::IsNullOrWhiteSpace($claimId) -and -not[string]::IsNullOrWhiteSpace(${env:CEREBRO_CLAIM_ID})){
+            $claimId=${env:CEREBRO_CLAIM_ID}
+        }
+        $patchId=[string]$Attempt.patch_id
+        if([string]::IsNullOrWhiteSpace($patchId)){$patchId='UNRESOLVED_PATCH'}
+        $sourceBefore=[string]$Attempt.start_commit
+        if([string]::IsNullOrWhiteSpace($sourceBefore)){$sourceBefore=[string]$Attempt.expected_base_commit}
+        if([string]::IsNullOrWhiteSpace($sourceBefore)){$sourceBefore='UNKNOWN'}
+        if([string]::IsNullOrWhiteSpace($SourceAfter)){$SourceAfter=(Get-WorkingSourceSnapshot -Path $WorkingSourcePath).head}
+        if([string]::IsNullOrWhiteSpace($SourceAfter)){$SourceAfter=$sourceBefore}
+        $powershellPath=(Get-Command powershell.exe -ErrorAction Stop|Select-Object -First 1).Source
+        $arguments=@(
+            '-NoProfile','-ExecutionPolicy','Bypass','-File',$pump,
+            '-Mode','Enqueue',
+            '-Result',$Result,
+            '-AttemptId',[string]$Attempt.attempt_id,
+            '-PatchId',$patchId,
+            '-ClaimId',$claimId,
+            '-SourceBefore',$sourceBefore,
+            '-SourceAfter',$SourceAfter,
+            '-ProductSha256',(Get-Sha256 -LiteralPath $PrimaryArtifact),
+            '-FailureFamily',$FailureFamily,
+            '-ReachedStage',$ReachedStage,
+            '-SourceMutationAssessment',(Get-WorkingSourceSnapshot -Path $WorkingSourcePath).working_tree,
+            '-ArtifactPaths'
+        ) + $validArtifacts
+        if($CerebroSyncVerified){$arguments+=@('-CerebroSyncVerified')}
+        $enqueue=Invoke-ChildCaptured -PowerShellPath $powershellPath -ArgumentList $arguments -Phase 'RETURN_BRIDGE_ENQUEUE'
+        if($enqueue.ExitCode -ne 0){throw ('RETURN_BRIDGE_ENQUEUE_FAILED:{0}' -f $enqueue.Stderr)}
+        $bridge.State=Get-CapturedField -Text $enqueue.Stdout -Name 'RETURN_BRIDGE_STATE'
+        $bridge.EnvelopeId=Get-CapturedField -Text $enqueue.Stdout -Name 'RETURN_BRIDGE_ENVELOPE'
+        $bridge.PackagePath=Get-CapturedField -Text $enqueue.Stdout -Name 'RETURN_BRIDGE_PACKAGE'
+        $drain=Invoke-ChildCaptured -PowerShellPath $powershellPath -ArgumentList @(
+            '-NoProfile','-ExecutionPolicy','Bypass','-File',$pump,'-Mode','Drain'
+        ) -Phase 'RETURN_BRIDGE_DRAIN'
+        if($drain.ExitCode -eq 0){
+            $bridge.ProviderState=Get-CapturedField -Text $drain.Stdout -Name 'RETURN_BRIDGE_STATE'
+        }
+        else {$bridge.ProviderState='PENDING_DRAIN_ERROR'}
+    }
+    catch {
+        $bridge.State='PENDING_LOCAL_ERROR'
+        $bridge.Error=$_.Exception.Message
+    }
+    $value=[pscustomobject]$bridge
+    Set-AttemptReturnBridgeRef -Context $Attempt -Bridge $value
+    return $value
+}
+
+function Write-ReturnBridgeTerminal {
+    param($Bridge)
+    Write-Host ('RETURN_BRIDGE_STATE={0}' -f [string]$Bridge.State)
+    if(-not[string]::IsNullOrWhiteSpace([string]$Bridge.EnvelopeId)){
+        Write-Host ('RETURN_BRIDGE_ENVELOPE={0}' -f [string]$Bridge.EnvelopeId)
+    }
+    if(-not[string]::IsNullOrWhiteSpace([string]$Bridge.ProviderState)){
+        Write-Host ('RETURN_BRIDGE_PROVIDER_STATE={0}' -f [string]$Bridge.ProviderState)
+    }
+    if(-not[string]::IsNullOrWhiteSpace([string]$Bridge.Error)){
+        Write-Host ('RETURN_BRIDGE_ERROR={0}' -f [string]$Bridge.Error)
+    }
+}
+
 function Get-CapturedField {
     param(
         [string]$Text,
@@ -542,6 +655,8 @@ try {
             -ReachedStage $diagnostic.ReachedStage -FailureFamily $diagnostic.FailureFamily `
             -MutationAssessment $diagnostic.MutationAssessment `
             -DiagnosticRef $diagnostic.CanonicalPath
+        $returnBridge=Publish-ReturnBridgeResult -Result 'FAIL' -PrimaryArtifact $diagnostic.HandoffPath -ArtifactPaths @($diagnostic.HandoffPath,$diagnostic.CanonicalPath,$Attempt.attempt_path) -FailureFamily $diagnostic.FailureFamily -ReachedStage $diagnostic.ReachedStage
+        Write-ReturnBridgeTerminal -Bridge $returnBridge
         exit 1
     }
 
@@ -556,6 +671,8 @@ try {
             -ReachedStage $diagnostic.ReachedStage -FailureFamily $diagnostic.FailureFamily `
             -MutationAssessment $diagnostic.MutationAssessment `
             -DiagnosticRef $diagnostic.CanonicalPath
+        $returnBridge=Publish-ReturnBridgeResult -Result 'FAIL' -PrimaryArtifact $diagnostic.HandoffPath -ArtifactPaths @($diagnostic.HandoffPath,$diagnostic.CanonicalPath,$Attempt.attempt_path) -FailureFamily $diagnostic.FailureFamily -ReachedStage $diagnostic.ReachedStage
+        Write-ReturnBridgeTerminal -Bridge $returnBridge
         exit 1
     }
 
@@ -577,6 +694,8 @@ try {
         Write-Host 'SUCCESS_HANDOFF=FAIL'
         Write-Host ('SUCCESS_HANDOFF_ERROR={0}' -f $_.Exception.Message)
         Complete-Attempt -Context $Attempt -Result 'PASS' -ReceiptRef $receipt
+        $returnBridge=Publish-ReturnBridgeResult -Result 'PASS' -PrimaryArtifact $receipt -ArtifactPaths @($receipt,$Attempt.attempt_path) -ReachedStage 'SUCCESS_HANDOFF_DEGRADED' -SourceAfter $resultingCommit -CerebroSyncVerified
+        Write-ReturnBridgeTerminal -Bridge $returnBridge
         exit 2
     }
     Write-Host ''
@@ -587,6 +706,8 @@ try {
     Write-Host ('RECEIPT={0}' -f $successHandoff.CanonicalPath)
     Write-Host ('UPLOAD_FILE={0}' -f $successHandoff.TransportPath)
     Complete-Attempt -Context $Attempt -Result 'PASS' -ReceiptRef $receipt -SuccessTransportRef $successHandoff.TransportPath
+    $returnBridge=Publish-ReturnBridgeResult -Result 'PASS' -PrimaryArtifact $successHandoff.TransportPath -ArtifactPaths @($successHandoff.TransportPath,$successHandoff.CanonicalPath,$Attempt.attempt_path) -ReachedStage 'PATCH_SUCCESS' -SourceAfter $successHandoff.ResultCommit -CerebroSyncVerified
+    Write-ReturnBridgeTerminal -Bridge $returnBridge
     exit 0
 }
 catch {
@@ -610,6 +731,8 @@ catch {
         -ReachedStage $diagnostic.ReachedStage -FailureFamily $diagnostic.FailureFamily `
         -MutationAssessment $diagnostic.MutationAssessment `
         -DiagnosticRef $diagnostic.CanonicalPath
+    $returnBridge=Publish-ReturnBridgeResult -Result 'FAIL' -PrimaryArtifact $diagnostic.HandoffPath -ArtifactPaths @($diagnostic.HandoffPath,$diagnostic.CanonicalPath,$Attempt.attempt_path) -FailureFamily $diagnostic.FailureFamily -ReachedStage $diagnostic.ReachedStage
+    Write-ReturnBridgeTerminal -Bridge $returnBridge
     exit 1
 }
 finally {

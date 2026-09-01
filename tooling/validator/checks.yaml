@@ -1,5 +1,37 @@
 schema: cerebro-validator-checks/v1
 
+patch_result_return_bridge_validation:
+  severity: error
+  owner: tooling.validator
+  contract_ref: standards/patch-result-return-bridge.yaml
+  producer: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+  transport: tooling/return-bridge/Cerebro.ReturnBridgePump.ps1
+  validator: tooling/validator/patch_result_return_bridge_validation.py
+  required_files:
+    - standards/patch-result-return-bridge.yaml
+    - tooling/return-bridge/Cerebro.ReturnBridgePump.ps1
+    - tooling/validator/patch_result_return_bridge_validation.py
+  required_canaries:
+    - outbox-atomic-ready-last
+    - manifest-cardinality-and-all-hashes
+    - pass-provider-readback
+    - fail-auto-return-useful-diagnostic
+    - partial-diagnostic-machine-escalation
+    - incomplete-ignored
+    - hash-mismatch-reject
+    - duplicate-no-duplicate-effect
+    - id-hash-collision-reject
+    - drive-unavailable-pending-no-rerun
+    - recovery-drain
+    - zero-human-file-touch
+  prohibited:
+    - network-semantics-in-StandardDeliveryKernel
+    - Source-secret-or-credential
+    - remote-command-channel
+    - Human-file-courier-normal-path
+    - transport-failure-causes-patch-rerun
+    - parallel-return-bridge
+
 assurance_kernel_seed_validation:
   severity: error
   owner: tooling.validator

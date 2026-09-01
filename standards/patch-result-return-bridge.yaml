@@ -1,0 +1,185 @@
+schema: cerebro-patch-result-return-bridge/v1
+
+patch_result_return_bridge:
+  id: CEREBRO-PATCH-RESULT-RETURN-BRIDGE-001
+  version: "1.0"
+  status: ACTIVE
+  authority: Cerebro Source 1.0
+  scope: STANDARD_DELIVERY_RESULT_RETURN
+
+  purpose: >
+    Return bounded patch results from the Windows host to Cerebro coordination
+    without making the Human discover, upload, paste, or classify local files.
+
+  ownership:
+    evidence_producer: STANDARD_DELIVERY_LAUNCHER
+    durable_local_queue: D:\Cerebro\Run\Outbox
+    transport_owner: tooling/return-bridge/Cerebro.ReturnBridgePump.ps1
+    provider_consumer: CURRENT_CEREBRO_CONTROL_PULSE
+    ingress_projection: PATCH_RESULT_INGRESS
+    ingress_authority: NONAUTHORITATIVE_COORDINATION_EVIDENCE
+    project_decision_owner: PROJECT_MANAGER
+
+  architecture:
+    direction: ONE_WAY_RESULT_RETURN
+    canonical_patch_result_completes_locally_first: true
+    local_pending_root: D:\Cerebro\Run\Outbox\Pending
+    local_sent_root: D:\Cerebro\Run\Outbox\Sent
+    local_rejected_root: D:\Cerebro\Run\Outbox\Rejected
+    human_visible_failsafe_root: D:\Cerebro\Run\Output
+    provider_relative_root: CEREBRO_EVIDENCE/PATCH_RESULT_RETURN
+    transport_v1: GOOGLE_DRIVE_DESKTOP_EXISTING_AUTH_AND_SYNC
+    provider_folder_id: 1dZeaY2AVOEX7c7bKczwXtQLT6C88G6dr
+    applications_script_receiver: HOLD_V2
+    direct_oauth_sender: HOLD_V2
+
+  package:
+    schema: cerebro-patch-result-return-package/v1
+    envelope_schema: cerebro-patch-result-return-envelope/v1
+    manifest_schema: cerebro-patch-result-return-manifest/v1
+    ready_schema: cerebro-patch-result-return-ready/v1
+    immutable_identity:
+      - envelope_id
+      - attempt_id
+      - patch_id
+      - claim_id
+      - result
+      - source_before
+      - source_after
+      - product_sha256
+    result_values: [PASS, FAIL]
+    required_manifest_controls:
+      - exact artifact cardinality
+      - relative filenames only
+      - exact bytes
+      - exact SHA256 for every artifact
+      - exact manifest SHA256 in envelope
+      - exact envelope SHA256 in READY
+    atomicity:
+      local_package_built_under_partial_name: true
+      local_finalization_is_directory_rename: true
+      provider_READY_copied_last: true
+      READY_alone_is_authority: false
+
+  result_fields:
+    required:
+      - envelope_id
+      - created_at_utc
+      - host_id
+      - attempt_id
+      - patch_id
+      - claim_id
+      - result
+      - reached_stage
+      - source_before
+      - source_after
+      - source_mutation_assessment
+      - cerebro_sync_verified
+      - product_sha256
+      - manifest_sha256
+    failure_additions:
+      - failure_family
+      - bounded_redacted_diagnostic
+      - diagnostic_classification
+
+  diagnostic_sufficiency:
+    required_for_FAIL:
+      - failure_family
+      - stage
+      - message
+      - exit_code
+      - raw_error_bounded
+      - source_mutation_assessment
+      - changed_paths
+      - head
+      - remote_head
+      - capsule_id
+    when_complete: CLASSIFICATION_SUFFICIENT
+    when_incomplete: PARTIAL_DIAGNOSTIC
+    partial_effect: MACHINE_ESCALATE_BOUNDED_DIAGNOSTIC
+    human_local_file_retrieval: PROHIBITED_NORMAL_PATH
+    secrets_and_environment_dump: PROHIBITED
+
+  producer_behavior:
+    launcher_integration: tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1
+    PASS_artifacts:
+      - canonical delivery receipt
+      - stable success handoff
+      - immutable attempt record
+    FAIL_artifacts:
+      - bounded diagnostic transport
+      - stable failure handoff
+      - immutable attempt record
+    local_enqueue_failure_masks_patch_result: false
+    Drive_unavailable_effect: PENDING_NO_PATCH_RERUN
+    later_pump_invocation_drains_pending: true
+
+  consumer_behavior:
+    existing_control_surfaces:
+      - ADMINPULS
+      - ADMINPULSE
+      - NERVE
+      - REFRESH_POOL
+      - PROCESS_POOL
+    order:
+      - isolate current control context
+      - scan fixed provider folder
+      - ignore packages without READY
+      - verify envelope and manifest schemas
+      - verify manifest cardinality
+      - verify every artifact SHA256
+      - verify manifest SHA256 and envelope SHA256
+      - compare envelope_id with previously consumed identity
+      - append PATCH_RESULT_INGRESS only after provider readback
+      - route to exact PM and Implementer
+      - recalculate current Source, claims, and live front
+    exact_duplicate: IDEMPOTENT_NO_DUPLICATE_EFFECT
+    same_id_different_hash: REJECT_ID_HASH_COLLISION
+    incomplete: IGNORE_UNTIL_COMPLETE
+    invalid_unrelated_package_blocks_unrelated_currentness: false
+    provider_visible_equals_consumed: false
+    ingress_equals_project_effect: false
+
+  prohibited:
+    - new command or scheduler
+    - daemon requirement
+    - remote command channel
+    - Google or network semantics in StandardDeliveryKernel
+    - Source secrets or credentials
+    - arbitrary client-selected spreadsheet ranges
+    - whole D_Cerebro_Run synchronization
+    - canonical Run root on Drive
+    - parallel return bridges
+    - patch rerun caused by transport failure
+    - Human file courier on the normal path
+
+  acceptance:
+    - A7_UX_FLOOR
+    - ONE_OBVIOUS_LAUNCH
+    - LIVE_HEARTBEAT_PHASE_STATUS
+    - OUTPUT_ROOT_D_CEREBRO_RUN_OUTPUT
+    - OUTBOX_ATOMIC_PACKAGE
+    - READY_LAST
+    - MANIFEST_CARDINALITY_HASH
+    - PASS_AUTO_INGEST
+    - FAIL_AUTO_INGEST_WITH_USEFUL_DIAGNOSTIC
+    - PARTIAL_DIAGNOSTIC_MACHINE_ESCALATION
+    - INCOMPLETE_IGNORED
+    - HASH_MISMATCH_REJECT
+    - DUPLICATE_NO_DUP_EFFECT
+    - ID_HASH_COLLISION_REJECT
+    - DRIVE_UNAVAILABLE_PENDING_NO_RERUN
+    - RECOVERY_DRAIN
+    - PM_AUTO_CLASSIFY
+    - ZERO_HUMAN_FILE_TOUCH
+    - WINDOWS_CANARY_PASS
+
+  invariants:
+    - TRANSPORT_IS_NOT_AUTHORITY
+    - PATCH_RESULT_IS_FINAL_BEFORE_NETWORK_TRANSPORT
+    - LOCAL_OUTPUT_REMAINS_FAILSAFE
+    - READY_IS_WRITTEN_LAST_BUT_FULL_HASH_VERIFICATION_IS_STILL_REQUIRED
+    - INVALID_UNRELATED_PACKAGE_DOES_NOT_BLOCK_CURRENTNESS
+    - NETWORK_FAILURE_NE_PATCH_FAILURE
+    - ONE_DELIVERY_FAMILY_WRITER
+
