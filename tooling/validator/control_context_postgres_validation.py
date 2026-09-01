@@ -274,8 +274,10 @@ def selftest() -> dict[str, Any]:
         tests.append({"name": name, "result": "PASS" if condition else "FAIL"})
 
     sql_path = CONTEXT_ROOT / "control_context_state_postgres.sql"
+    shadow_sql_path = CONTEXT_ROOT / "control_context_state_postgres_0002_actor_claim_shadow.sql"
     adapter_path = CONTEXT_ROOT / "control_context_state_postgres.py"
     sql = sql_path.read_text(encoding="utf-8")
+    shadow_sql = shadow_sql_path.read_text(encoding="utf-8")
     adapter_source = adapter_path.read_text(encoding="utf-8")
     required_tables = {
         "cerebro_project_instances",
@@ -366,12 +368,39 @@ def selftest() -> dict[str, Any]:
         "state-adapter-exposes-no-source-write-credential-surface",
         not any(term in adapter_source.lower() for term in forbidden_runtime_surface),
     )
+    check(
+        "B1-shadow-migration-is-additive-non-live-and-workspace-isolated",
+        all(marker in shadow_sql for marker in (
+            "CREATE TABLE IF NOT EXISTS cerebro_actor_generation_shadow_heads",
+            "CREATE TABLE IF NOT EXISTS cerebro_actor_generation_shadow_revisions",
+            "CREATE TABLE IF NOT EXISTS cerebro_work_claim_shadow_heads",
+            "CREATE TABLE IF NOT EXISTS cerebro_work_claim_shadow_revisions",
+            "SHADOW_ONLY", "live_claim", "ENABLE ROW LEVEL SECURITY",
+        ))
+        and "DROP TABLE" not in shadow_sql.upper(),
+    )
+    check(
+        "B1-adapter-has-CAS-and-immutable-history-for-both-shadow-aggregates",
+        all(marker in adapter_source for marker in (
+            "write_actor_generation_shadow", "write_work_claim_shadow",
+            "actor-generation-shadow-revision-conflict", "work-claim-shadow-revision-conflict",
+            "INSERT INTO cerebro_actor_generation_shadow_revisions",
+            "INSERT INTO cerebro_work_claim_shadow_revisions",
+        )),
+    )
 
     manifest = json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"))
-    checksum = hashlib.sha256(sql_path.read_bytes()).hexdigest()
+    checksum = hashlib.sha256(sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    shadow_checksum = hashlib.sha256(shadow_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     check(
         "migration-manifest-checksum-matches-candidate-SQL",
         manifest["migrations"][0]["checksum_sha256"] == checksum,
+    )
+    check(
+        "B1-additive-0002-migration-manifest-checksum-matches-candidate-SQL",
+        len(manifest["migrations"]) == 2
+        and manifest["migrations"][1]["migration_id"] == "0002-actor-generation-work-claim-shadow"
+        and manifest["migrations"][1]["checksum_sha256"] == shadow_checksum,
     )
     check(
         "runtime-role-is-explicitly-barred-from-migrations",
@@ -384,12 +413,18 @@ def selftest() -> dict[str, Any]:
         {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
         {"contains": "CREATE TABLE IF NOT EXISTS cerebro_project_instances"},
         {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
+        {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
+        {"contains": "CREATE TABLE IF NOT EXISTS cerebro_actor_generation_shadow_heads"},
+        {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
     ]
     migration_connection = ScriptedConnection(migration_steps)
     migration_result = apply_postgres_migrations(lambda: migration_connection)
     check(
         "migration-runner-applies-under-lock-and-commits",
-        migration_result["applied"] == ["0001-control-context-state-service"]
+        migration_result["applied"] == [
+            "0001-control-context-state-service",
+            "0002-actor-generation-work-claim-shadow",
+        ]
         and migration_connection.commit_called
         and not migration_connection.cursor_instance.steps,
     )

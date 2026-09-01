@@ -2,7 +2,7 @@ schema: cerebro-control-context-state-service/v1
 
 control_context_state_service:
   id: CEREBRO-CONTROL-CONTEXT-STATE-SERVICE-001
-  version: "1.5.0"
+  version: "1.6.0"
   status: CANDIDATE_IMPLEMENTATION
   kind: CONTRACT
   definitional_authority: Cerebro Source 1.0
@@ -102,6 +102,33 @@ control_context_state_service:
       set_default_project_control_instance:
         mutation: PRINCIPAL_WORKSPACE_BINDING_ONLY
         required_scope: project_state:transition
+
+  actor_generation_and_work_claim_shadow:
+    status: CANDIDATE_SHADOW_ONLY
+    purpose: TYPED_ROLE_GENERATION_AND_WORK_CLAIM_COMPOSITION_WITHOUT_AUTHORITY_CUTOVER
+    aggregate_schemas:
+      - cerebro-actor-generation-shadow/v1
+      - cerebro-work-claim-shadow/v1
+    storage_migration_ref: tooling/context/control_context_state_postgres_0002_actor_claim_shadow.sql
+    domain_ref: tooling/context/control_context_registry.py
+    port_refs:
+      - tooling/context/control_context_state_port.py
+      - tooling/context/control_context_state_postgres.py
+    constraints:
+      - every-claim-binds-one-exact-role-and-generation
+      - retired-or-mismatched-generation-fails-closed
+      - aggregate-revisions-are-monotonic-CAS
+      - revision-ledgers-are-immutable
+      - terminal-claim-cannot-resurrect
+      - current-principal-role-generation-can-compose-with-Packet533
+      - OAuth-security-principal-is-not-Cerebro-role-generation
+    activation:
+      live_claim_created: false
+      authority_granted: false
+      production_cutover: false
+      normal_consumer_binding_changed: false
+      parallel_identity_engine_created: false
+    access_surface: INTERNAL_STATE_PORT_ONLY
 
   context_owner_effect_persistence:
     semantic_consumer_ref: tooling/context/control_owner_effect.py
@@ -397,3 +424,5 @@ control_context_state_service:
     - OAUTH_TOKEN_VERIFIER_CANNOT_COME_FROM_TOOL_OR_REQUEST_PAYLOAD
     - EVERY_PRIVATE_REMOTE_TOOL_DECLARES_AND_ENFORCES_ITS_MINIMUM_SCOPE
     - LOCAL_AUTH_SERVICE_PROOF_CANNOT_CLAIM_REMOTE_MCP_ACTIVATION
+    - ACTOR_GENERATION_AND_WORK_CLAIM_SHADOWS_CANNOT_GRANT_LIVE_AUTHORITY
+    - OAUTH_SECURITY_PRINCIPAL_CANNOT_SUBSTITUTE_FOR_CEREBRO_ROLE_GENERATION

@@ -30,10 +30,12 @@ from control_context_tools import HmacControlResolutionAttestor  # noqa: E402
 NOW = 2_000_000_000.0
 RESOURCE = "https://mcp.cerebro.invalid"
 ISSUER = "https://auth.cerebro.invalid"
-MIGRATION = (
-    "0001-control-context-state-service",
-    "1.0.0-candidate",
-    "6312ab6d5fae58cfa52bfb1d13b1d361ebe73e3a4b37bb34f4875e480afc420d",
+_MIGRATION_MANIFEST = json.loads(
+    (SOURCE_ROOT / "tooling/context/control_context_postgres_migrations.json").read_text(encoding="utf-8")
+)
+MIGRATIONS = tuple(
+    (entry["migration_id"], entry["schema_version"], entry["checksum_sha256"])
+    for entry in _MIGRATION_MANIFEST["migrations"]
 )
 
 
@@ -105,7 +107,7 @@ class ProbeCursor:
         error: BaseException | None = None,
     ) -> None:
         self.relation_count = relation_count
-        self.migrations = copy.deepcopy(migrations if migrations is not None else [MIGRATION])
+        self.migrations = copy.deepcopy(migrations if migrations is not None else list(MIGRATIONS))
         self.error = error
         self.statement_count = 0
         self.closed = False
@@ -256,7 +258,7 @@ def selftest() -> dict[str, Any]:
     check(
         "readiness-fails-closed-on-migration-ledger-drift",
         PostgresStateServiceReadinessProbe(
-            ProbeFactory(migrations=[(MIGRATION[0], MIGRATION[1], "0" * 64)])
+            ProbeFactory(migrations=[MIGRATIONS[0], (MIGRATIONS[1][0], MIGRATIONS[1][1], "0" * 64)])
         )()
         is False,
     )

@@ -23,6 +23,8 @@ try:
         apply_transition,
         bind_control_session,
         bootstrap_project_state,
+        validate_actor_generation_shadow,
+        validate_work_claim_shadow,
         validate_project_state,
         validate_session_state,
         validate_transition_receipt,
@@ -46,6 +48,8 @@ except ImportError:
         apply_transition,
         bind_control_session,
         bootstrap_project_state,
+        validate_actor_generation_shadow,
+        validate_work_claim_shadow,
         validate_project_state,
         validate_session_state,
         validate_transition_receipt,
@@ -87,11 +91,9 @@ def _sha256(value: Any) -> str:
 
 
 def _file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    # Governed migration checksums bind canonical Git text, independent of a
+    # Windows checkout's CRLF presentation.
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def _json_value(value: Any, *, field: str) -> Any:
@@ -1739,6 +1741,186 @@ class PostgresControlContextStatePort:
                 result = completion
         _require(result is not None, "complete-event-result-missing")
         return result
+
+    def write_actor_generation_shadow(
+        self,
+        state: dict[str, Any],
+        *,
+        expected_revision: int,
+        principal_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """Persist a typed actor-generation shadow with CAS and immutable history."""
+
+        self._require_scope(scopes, "project_state:transition")
+        validate_actor_generation_shadow(state)
+        _require(state["revision"] == expected_revision + 1, "actor-generation-shadow-revision-step-invalid", StateConflict)
+        payload = _canonical_text(state)
+        with self._transaction(
+            tenant_ref=state["tenant_ref"], workspace_ref=state["workspace_ref"], principal_ref=principal_ref,
+        ) as cursor:
+            if expected_revision == 0:
+                cursor.execute(
+                    """
+                    INSERT INTO cerebro_actor_generation_shadow_heads (
+                        tenant_ref, workspace_ref, actor_ref, actor_role, generation_ref,
+                        lifecycle, source_revision, aggregate_revision, aggregate_fingerprint, shadow_payload
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                    ON CONFLICT DO NOTHING
+                    """,
+                    (state["tenant_ref"], state["workspace_ref"], state["actor_ref"], state["role"],
+                     state["generation_ref"], state["lifecycle"], state["source_revision"], state["revision"],
+                     state["fingerprint"], payload),
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE cerebro_actor_generation_shadow_heads
+                       SET lifecycle = %s, source_revision = %s, aggregate_revision = %s,
+                           aggregate_fingerprint = %s, shadow_payload = %s::jsonb, updated_at = now()
+                     WHERE tenant_ref = %s AND workspace_ref = %s AND actor_role = %s
+                       AND generation_ref = %s AND aggregate_revision = %s AND actor_ref = %s
+                    """,
+                    (state["lifecycle"], state["source_revision"], state["revision"], state["fingerprint"], payload,
+                     state["tenant_ref"], state["workspace_ref"], state["role"], state["generation_ref"],
+                     expected_revision, state["actor_ref"]),
+                )
+            if cursor.rowcount != 1:
+                raise StateConflict("actor-generation-shadow-revision-conflict")
+            cursor.execute(
+                """
+                INSERT INTO cerebro_actor_generation_shadow_revisions (
+                    tenant_ref, workspace_ref, actor_role, generation_ref,
+                    aggregate_revision, aggregate_fingerprint, shadow_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+                """,
+                (state["tenant_ref"], state["workspace_ref"], state["role"], state["generation_ref"],
+                 state["revision"], state["fingerprint"], payload),
+            )
+        return copy.deepcopy(state)
+
+    def read_actor_generation_shadow(
+        self, *, tenant_ref: str, workspace_ref: str, role: str, generation_ref: str,
+        principal_ref: str, scopes: set[str],
+    ) -> dict[str, Any]:
+        self._require_scope(scopes, "project_state:read")
+        state: dict[str, Any] | None = None
+        with self._transaction(tenant_ref=tenant_ref, workspace_ref=workspace_ref, principal_ref=principal_ref) as cursor:
+            cursor.execute(
+                """
+                SELECT shadow_payload FROM cerebro_actor_generation_shadow_heads
+                 WHERE tenant_ref = %s AND workspace_ref = %s AND actor_role = %s AND generation_ref = %s
+                 FOR SHARE
+                """,
+                (tenant_ref, workspace_ref, role, generation_ref),
+            )
+            row = _fetchone(cursor)
+            if row is None:
+                raise StateBindingError("actor-generation-shadow-not-found")
+            value = _json_value(row.get("shadow_payload"), field="actor-generation-shadow-payload")
+            _require(isinstance(value, dict), "actor-generation-shadow-payload-invalid")
+            state = value
+            validate_actor_generation_shadow(state)
+        _require(state is not None, "actor-generation-shadow-not-found", StateBindingError)
+        return copy.deepcopy(state)
+
+    def write_work_claim_shadow(
+        self,
+        state: dict[str, Any],
+        *,
+        expected_revision: int,
+        principal_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """Persist a non-live work-claim shadow with CAS and immutable history."""
+
+        self._require_scope(scopes, "project_state:transition")
+        validate_work_claim_shadow(state)
+        _require(state["revision"] == expected_revision + 1, "work-claim-shadow-revision-step-invalid", StateConflict)
+        payload = _canonical_text(state)
+        with self._transaction(
+            tenant_ref=state["tenant_ref"], workspace_ref=state["workspace_ref"], principal_ref=principal_ref,
+        ) as cursor:
+            cursor.execute(
+                """
+                SELECT shadow_payload FROM cerebro_actor_generation_shadow_heads
+                 WHERE tenant_ref = %s AND workspace_ref = %s AND actor_role = %s
+                   AND generation_ref = %s FOR SHARE
+                """,
+                (state["tenant_ref"], state["workspace_ref"], state["actor_role"], state["actor_generation_ref"]),
+            )
+            actor_row = _fetchone(cursor)
+            if actor_row is None:
+                raise StateBindingError("work-claim-shadow-actor-generation-not-found")
+            actor_state = _json_value(actor_row.get("shadow_payload"), field="actor-generation-shadow-payload")
+            _require(isinstance(actor_state, dict), "actor-generation-shadow-payload-invalid")
+            validate_work_claim_shadow(state, actor_state)
+            if expected_revision == 0:
+                cursor.execute(
+                    """
+                    INSERT INTO cerebro_work_claim_shadow_heads (
+                        tenant_ref, workspace_ref, claim_ref, project_ref, actor_ref, actor_role,
+                        actor_generation_ref, scope_ref, claim_mode, lifecycle, source_revision,
+                        aggregate_revision, aggregate_fingerprint, shadow_payload
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                    ON CONFLICT DO NOTHING
+                    """,
+                    (state["tenant_ref"], state["workspace_ref"], state["claim_ref"], state["project_ref"],
+                     state["actor_ref"], state["actor_role"], state["actor_generation_ref"], state["scope_ref"],
+                     state["mode"], state["lifecycle"], state["source_revision"], state["revision"],
+                     state["fingerprint"], payload),
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE cerebro_work_claim_shadow_heads
+                       SET lifecycle = %s, source_revision = %s, aggregate_revision = %s,
+                           aggregate_fingerprint = %s, shadow_payload = %s::jsonb, updated_at = now()
+                     WHERE tenant_ref = %s AND workspace_ref = %s AND claim_ref = %s
+                       AND aggregate_revision = %s AND project_ref = %s AND actor_ref = %s
+                       AND actor_role = %s AND actor_generation_ref = %s AND scope_ref = %s AND claim_mode = %s
+                    """,
+                    (state["lifecycle"], state["source_revision"], state["revision"], state["fingerprint"], payload,
+                     state["tenant_ref"], state["workspace_ref"], state["claim_ref"], expected_revision,
+                     state["project_ref"], state["actor_ref"], state["actor_role"], state["actor_generation_ref"],
+                     state["scope_ref"], state["mode"]),
+                )
+            if cursor.rowcount != 1:
+                raise StateConflict("work-claim-shadow-revision-conflict")
+            cursor.execute(
+                """
+                INSERT INTO cerebro_work_claim_shadow_revisions (
+                    tenant_ref, workspace_ref, claim_ref, aggregate_revision, aggregate_fingerprint, shadow_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+                """,
+                (state["tenant_ref"], state["workspace_ref"], state["claim_ref"],
+                 state["revision"], state["fingerprint"], payload),
+            )
+        return copy.deepcopy(state)
+
+    def read_work_claim_shadow(
+        self, *, tenant_ref: str, workspace_ref: str, claim_ref: str,
+        principal_ref: str, scopes: set[str],
+    ) -> dict[str, Any]:
+        self._require_scope(scopes, "project_state:read")
+        state: dict[str, Any] | None = None
+        with self._transaction(tenant_ref=tenant_ref, workspace_ref=workspace_ref, principal_ref=principal_ref) as cursor:
+            cursor.execute(
+                """
+                SELECT shadow_payload FROM cerebro_work_claim_shadow_heads
+                 WHERE tenant_ref = %s AND workspace_ref = %s AND claim_ref = %s FOR SHARE
+                """,
+                (tenant_ref, workspace_ref, claim_ref),
+            )
+            row = _fetchone(cursor)
+            if row is None:
+                raise StateBindingError("work-claim-shadow-not-found")
+            value = _json_value(row.get("shadow_payload"), field="work-claim-shadow-payload")
+            _require(isinstance(value, dict), "work-claim-shadow-payload-invalid")
+            state = value
+            validate_work_claim_shadow(state)
+        _require(state is not None, "work-claim-shadow-not-found", StateBindingError)
+        return copy.deepcopy(state)
 
     def read_state_commit_evidence(
         self,

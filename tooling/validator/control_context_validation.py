@@ -22,11 +22,18 @@ from control_context_registry import (  # noqa: E402
     ControlContextError,
     ancestor_chain,
     apply_transition,
+    bootstrap_actor_generation_shadow,
+    bootstrap_work_claim_shadow,
     lowest_common_ancestor,
     refresh_project_fingerprints,
     refresh_session_fingerprint,
+    transition_actor_generation_shadow,
+    transition_work_claim_shadow,
+    validate_actor_generation_shadow,
     validate_project_state,
     validate_session_state,
+    validate_trusted_role_generation_binding,
+    validate_work_claim_shadow,
     validate_transition_receipt,
 )
 from control_context_state_port import (  # noqa: E402
@@ -677,6 +684,86 @@ def selftest() -> dict[str, Any]:
                 project_ref="TOTAL_MCP_REVISION", scopes=set()
             ),
             StateAuthorizationError,
+        ),
+    )
+
+    shadow_port = InMemoryControlContextStatePort()
+    actor_ready = bootstrap_actor_generation_shadow(
+        tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", actor_ref="IMPLEMENTER",
+        role="IMPLEMENTER", generation_ref="ACCCBBFC", source_revision="bf4f",
+    )
+    check("B1-actor-generation-shadow-valid", validate_actor_generation_shadow(actor_ready)["result"] == "PASS")
+    shadow_port.write_actor_generation_shadow(actor_ready, expected_revision=0, scopes=scopes)
+    actor_active = transition_actor_generation_shadow(actor_ready, lifecycle="ACTIVE", source_revision="bf4f")
+    shadow_port.write_actor_generation_shadow(actor_active, expected_revision=1, scopes=scopes)
+    claim_prestart = bootstrap_work_claim_shadow(
+        tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", claim_ref="WORK_CLAIMS:767",
+        project_ref="CEREBRO_FACTORY_PROGRAM", actor_generation=actor_active,
+        scope_ref="B1-ACTOR-CLAIM-SHADOW", mode="MATERIAL_IMPLEMENTATION_WORKMODE_REQUIRED_ONE_JOB",
+        source_revision="bf4f",
+    )
+    shadow_port.write_work_claim_shadow(claim_prestart, expected_revision=0, scopes=scopes)
+    claim_active = transition_work_claim_shadow(
+        claim_prestart, actor_active, lifecycle="ACTIVE", source_revision="bf4f",
+    )
+    shadow_port.write_work_claim_shadow(claim_active, expected_revision=1, scopes=scopes)
+    check(
+        "B1-work-claim-shadow-roundtrip-remains-non-live",
+        shadow_port.read_work_claim_shadow(
+            tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", claim_ref="WORK_CLAIMS:767",
+            scopes={"project_state:read"},
+        ) == claim_active and claim_active["authority"] == "SHADOW_ONLY" and claim_active["live_claim"] is False,
+    )
+    check(
+        "B1-claim-generation-mismatch-fails-closed",
+        _expect_error(
+            lambda: validate_work_claim_shadow(
+                claim_active,
+                bootstrap_actor_generation_shadow(
+                    tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", actor_ref="IMPLEMENTER",
+                    role="IMPLEMENTER", generation_ref="PREDECESSOR", source_revision="bf4f", lifecycle="ACTIVE",
+                ),
+            ),
+            ControlContextError,
+        ),
+    )
+    principal = bootstrap_actor_generation_shadow(
+        tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", actor_ref="PRINCIPAL",
+        role="PRINCIPAL", generation_ref="7B925FEA", source_revision="bf4f", lifecycle="ACTIVE",
+    )
+    check(
+        "B1-Packet533-current-principal-role-generation-composes",
+        validate_trusted_role_generation_binding(
+            principal, required_role="PRINCIPAL", generation_ref="7B925FEA",
+        )["authority"] == "SHADOW_ONLY",
+    )
+    check(
+        "B1-Packet533-predecessor-and-non-principal-rejected",
+        _expect_error(
+            lambda: validate_trusted_role_generation_binding(
+                principal, required_role="PRINCIPAL", generation_ref="PREDECESSOR",
+            ),
+            ControlContextError,
+        )
+        and _expect_error(
+            lambda: validate_trusted_role_generation_binding(
+                actor_active, required_role="PRINCIPAL", generation_ref="ACCCBBFC",
+            ),
+            ControlContextError,
+        ),
+    )
+    check(
+        "B1-terminal-claim-cannot-resurrect",
+        _expect_error(
+            lambda: transition_work_claim_shadow(
+                transition_work_claim_shadow(
+                    claim_active, actor_active, lifecycle="TERMINAL_PASS", source_revision="bf4f",
+                ),
+                actor_active,
+                lifecycle="ACTIVE",
+                source_revision="bf4f",
+            ),
+            ControlContextError,
         ),
     )
 

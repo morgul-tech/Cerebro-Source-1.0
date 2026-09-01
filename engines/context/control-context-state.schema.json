@@ -4,12 +4,55 @@
   "title": "Cerebro Project Context and Control Session State",
   "oneOf": [
     {"$ref": "#/$defs/project_state"},
-    {"$ref": "#/$defs/session_state"}
+    {"$ref": "#/$defs/session_state"},
+    {"$ref": "#/$defs/actor_generation_shadow"},
+    {"$ref": "#/$defs/work_claim_shadow"}
   ],
   "$defs": {
     "sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "actor_generation_shadow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "tenant_ref", "workspace_ref", "actor_ref", "role", "generation_ref", "lifecycle", "source_revision", "revision", "authority", "fingerprint"],
+      "properties": {
+        "schema": {"const": "cerebro-actor-generation-shadow/v1"},
+        "tenant_ref": {"type": "string", "minLength": 1},
+        "workspace_ref": {"type": "string", "minLength": 1},
+        "actor_ref": {"type": "string", "minLength": 1},
+        "role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"]},
+        "generation_ref": {"type": "string", "minLength": 1},
+        "lifecycle": {"enum": ["READY", "ACTIVE", "RETIRED"]},
+        "source_revision": {"type": "string", "minLength": 1},
+        "revision": {"type": "integer", "minimum": 1},
+        "authority": {"const": "SHADOW_ONLY"},
+        "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "work_claim_shadow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "tenant_ref", "workspace_ref", "claim_ref", "project_ref", "actor_ref", "actor_role", "actor_generation_ref", "scope_ref", "mode", "lifecycle", "source_revision", "revision", "authority", "live_claim", "fingerprint"],
+      "properties": {
+        "schema": {"const": "cerebro-work-claim-shadow/v1"},
+        "tenant_ref": {"type": "string", "minLength": 1},
+        "workspace_ref": {"type": "string", "minLength": 1},
+        "claim_ref": {"type": "string", "minLength": 1},
+        "project_ref": {"type": "string", "minLength": 1},
+        "actor_ref": {"type": "string", "minLength": 1},
+        "actor_role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"]},
+        "actor_generation_ref": {"type": "string", "minLength": 1},
+        "scope_ref": {"type": "string", "minLength": 1},
+        "mode": {"type": "string", "minLength": 1},
+        "lifecycle": {"enum": ["BOUND_ACTIVE_PRESTART", "ACTIVE", "TERMINAL_PASS", "TERMINAL_FAIL", "RELEASED"]},
+        "source_revision": {"type": "string", "minLength": 1},
+        "revision": {"type": "integer", "minimum": 1},
+        "authority": {"const": "SHADOW_ONLY"},
+        "live_claim": {"const": false},
+        "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
     },
     "project_state": {
       "type": "object",

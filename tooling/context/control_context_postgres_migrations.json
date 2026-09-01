@@ -8,6 +8,12 @@
       "schema_version": "1.0.0-candidate",
       "path": "control_context_state_postgres.sql",
       "checksum_sha256": "6312ab6d5fae58cfa52bfb1d13b1d361ebe73e3a4b37bb34f4875e480afc420d"
+    },
+    {
+      "migration_id": "0002-actor-generation-work-claim-shadow",
+      "schema_version": "1.1.0-shadow-candidate",
+      "path": "control_context_state_postgres_0002_actor_claim_shadow.sql",
+      "checksum_sha256": "9b51fa1cb0b46618f5677670a7ad48411ceb50febb05503c8948df8844e02b0c"
     }
   ]
 }

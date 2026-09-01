@@ -20,6 +20,8 @@ CONTEXT_SCHEMA = "cerebro-control-context/v1"
 BINDING_SCHEMA = "cerebro-control-continuation-binding/v1"
 DIRECTIVE_SCHEMA = "cerebro-control-context-transition-directive/v1"
 RECEIPT_SCHEMA = "cerebro-control-context-transition-receipt/v1"
+ACTOR_GENERATION_SHADOW_SCHEMA = "cerebro-actor-generation-shadow/v1"
+WORK_CLAIM_SHADOW_SCHEMA = "cerebro-work-claim-shadow/v1"
 
 PROJECT_STATUSES = {"ACTIVE", "PAUSED", "BLOCKED", "COMPLETED", "CANCELLED"}
 LIFECYCLES = {"OPEN", "RETURNED", "CLOSED", "CANCELLED"}
@@ -38,6 +40,11 @@ PROJECT_OPERATIONS = {
     "SET_DEFAULT_CONTEXT",
 }
 SESSION_OPERATIONS = {"SET_ACTIVE", "SET_CONTINUATION_BINDING", "CLEAR_CONTINUATION_BINDING"}
+ACTOR_ROLES = {"PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"}
+ACTOR_GENERATION_LIFECYCLES = {"READY", "ACTIVE", "RETIRED"}
+WORK_CLAIM_LIFECYCLES = {
+    "BOUND_ACTIVE_PRESTART", "ACTIVE", "TERMINAL_PASS", "TERMINAL_FAIL", "RELEASED"
+}
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 MACHINE_PAYLOAD_PATTERNS = (
@@ -64,6 +71,167 @@ def _canonical_json(value: Any) -> bytes:
 
 def _sha256(value: Any) -> str:
     return hashlib.sha256(_canonical_json(value)).hexdigest()
+
+
+def actor_generation_shadow_fingerprint(state: dict[str, Any]) -> str:
+    subject = copy.deepcopy(state)
+    subject.pop("fingerprint", None)
+    return _sha256(subject)
+
+
+def work_claim_shadow_fingerprint(state: dict[str, Any]) -> str:
+    subject = copy.deepcopy(state)
+    subject.pop("fingerprint", None)
+    return _sha256(subject)
+
+
+def validate_actor_generation_shadow(state: dict[str, Any]) -> dict[str, Any]:
+    required = {
+        "schema", "tenant_ref", "workspace_ref", "actor_ref", "role", "generation_ref",
+        "lifecycle", "source_revision", "revision", "authority", "fingerprint",
+    }
+    _require(isinstance(state, dict), "actor-generation-shadow-object-required")
+    _require(set(state) == required, "actor-generation-shadow-fields-mismatch")
+    _require(state.get("schema") == ACTOR_GENERATION_SHADOW_SCHEMA, "actor-generation-shadow-schema-mismatch")
+    for field in ("tenant_ref", "workspace_ref", "actor_ref", "generation_ref", "source_revision"):
+        _require(isinstance(state.get(field), str) and bool(state[field].strip()), f"actor-generation-shadow-{field}-required")
+    _require(state.get("role") in ACTOR_ROLES, "actor-generation-shadow-role-invalid")
+    _require(state.get("lifecycle") in ACTOR_GENERATION_LIFECYCLES, "actor-generation-shadow-lifecycle-invalid")
+    _require(state.get("authority") == "SHADOW_ONLY", "actor-generation-shadow-authority-must-be-shadow-only")
+    _require(isinstance(state.get("revision"), int) and state["revision"] >= 1, "actor-generation-shadow-revision-invalid")
+    _require(state.get("fingerprint") == actor_generation_shadow_fingerprint(state), "actor-generation-shadow-fingerprint-mismatch")
+    return {"result": "PASS", "role": state["role"], "generation_ref": state["generation_ref"], "revision": state["revision"]}
+
+
+def bootstrap_actor_generation_shadow(
+    *, tenant_ref: str, workspace_ref: str, actor_ref: str, role: str,
+    generation_ref: str, source_revision: str, lifecycle: str = "READY",
+) -> dict[str, Any]:
+    state = {
+        "schema": ACTOR_GENERATION_SHADOW_SCHEMA,
+        "tenant_ref": tenant_ref,
+        "workspace_ref": workspace_ref,
+        "actor_ref": actor_ref,
+        "role": role,
+        "generation_ref": generation_ref,
+        "lifecycle": lifecycle,
+        "source_revision": source_revision,
+        "revision": 1,
+        "authority": "SHADOW_ONLY",
+    }
+    state["fingerprint"] = actor_generation_shadow_fingerprint(state)
+    validate_actor_generation_shadow(state)
+    return state
+
+
+def transition_actor_generation_shadow(
+    state: dict[str, Any], *, lifecycle: str, source_revision: str,
+) -> dict[str, Any]:
+    validate_actor_generation_shadow(state)
+    allowed = {"READY": {"ACTIVE", "RETIRED"}, "ACTIVE": {"RETIRED"}, "RETIRED": set()}
+    _require(lifecycle in allowed[state["lifecycle"]], "actor-generation-shadow-transition-invalid")
+    _require(isinstance(source_revision, str) and bool(source_revision.strip()), "actor-generation-shadow-source-revision-required")
+    candidate = copy.deepcopy(state)
+    candidate.update(lifecycle=lifecycle, source_revision=source_revision, revision=state["revision"] + 1)
+    candidate["fingerprint"] = actor_generation_shadow_fingerprint(candidate)
+    validate_actor_generation_shadow(candidate)
+    return candidate
+
+
+def validate_work_claim_shadow(
+    state: dict[str, Any], actor_generation: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    required = {
+        "schema", "tenant_ref", "workspace_ref", "claim_ref", "project_ref", "actor_ref",
+        "actor_role", "actor_generation_ref", "scope_ref", "mode", "lifecycle",
+        "source_revision", "revision", "authority", "live_claim", "fingerprint",
+    }
+    _require(isinstance(state, dict), "work-claim-shadow-object-required")
+    _require(set(state) == required, "work-claim-shadow-fields-mismatch")
+    _require(state.get("schema") == WORK_CLAIM_SHADOW_SCHEMA, "work-claim-shadow-schema-mismatch")
+    for field in (
+        "tenant_ref", "workspace_ref", "claim_ref", "project_ref", "actor_ref",
+        "actor_generation_ref", "scope_ref", "mode", "source_revision",
+    ):
+        _require(isinstance(state.get(field), str) and bool(state[field].strip()), f"work-claim-shadow-{field}-required")
+    _require(state.get("actor_role") in ACTOR_ROLES, "work-claim-shadow-role-invalid")
+    _require(state.get("lifecycle") in WORK_CLAIM_LIFECYCLES, "work-claim-shadow-lifecycle-invalid")
+    _require(state.get("authority") == "SHADOW_ONLY" and state.get("live_claim") is False, "work-claim-shadow-cannot-be-live-authority")
+    _require(isinstance(state.get("revision"), int) and state["revision"] >= 1, "work-claim-shadow-revision-invalid")
+    _require(state.get("fingerprint") == work_claim_shadow_fingerprint(state), "work-claim-shadow-fingerprint-mismatch")
+    if actor_generation is not None:
+        validate_actor_generation_shadow(actor_generation)
+        _require(actor_generation["tenant_ref"] == state["tenant_ref"] and actor_generation["workspace_ref"] == state["workspace_ref"], "work-claim-shadow-actor-scope-mismatch")
+        _require(actor_generation["actor_ref"] == state["actor_ref"], "work-claim-shadow-actor-ref-mismatch")
+        _require(actor_generation["role"] == state["actor_role"], "work-claim-shadow-actor-role-mismatch")
+        _require(actor_generation["generation_ref"] == state["actor_generation_ref"], "work-claim-shadow-actor-generation-mismatch")
+        _require(actor_generation["lifecycle"] != "RETIRED", "work-claim-shadow-retired-generation-prohibited")
+        if state["lifecycle"] == "ACTIVE":
+            _require(actor_generation["lifecycle"] == "ACTIVE", "work-claim-shadow-active-requires-active-generation")
+    return {"result": "PASS", "claim_ref": state["claim_ref"], "revision": state["revision"]}
+
+
+def bootstrap_work_claim_shadow(
+    *, tenant_ref: str, workspace_ref: str, claim_ref: str, project_ref: str,
+    actor_generation: dict[str, Any], scope_ref: str, mode: str, source_revision: str,
+) -> dict[str, Any]:
+    validate_actor_generation_shadow(actor_generation)
+    state = {
+        "schema": WORK_CLAIM_SHADOW_SCHEMA,
+        "tenant_ref": tenant_ref,
+        "workspace_ref": workspace_ref,
+        "claim_ref": claim_ref,
+        "project_ref": project_ref,
+        "actor_ref": actor_generation["actor_ref"],
+        "actor_role": actor_generation["role"],
+        "actor_generation_ref": actor_generation["generation_ref"],
+        "scope_ref": scope_ref,
+        "mode": mode,
+        "lifecycle": "BOUND_ACTIVE_PRESTART",
+        "source_revision": source_revision,
+        "revision": 1,
+        "authority": "SHADOW_ONLY",
+        "live_claim": False,
+    }
+    state["fingerprint"] = work_claim_shadow_fingerprint(state)
+    validate_work_claim_shadow(state, actor_generation)
+    return state
+
+
+def transition_work_claim_shadow(
+    state: dict[str, Any], actor_generation: dict[str, Any], *, lifecycle: str,
+    source_revision: str,
+) -> dict[str, Any]:
+    validate_work_claim_shadow(state, actor_generation)
+    allowed = {
+        "BOUND_ACTIVE_PRESTART": {"ACTIVE", "RELEASED"},
+        "ACTIVE": {"TERMINAL_PASS", "TERMINAL_FAIL", "RELEASED"},
+        "TERMINAL_PASS": set(), "TERMINAL_FAIL": set(), "RELEASED": set(),
+    }
+    _require(lifecycle in allowed[state["lifecycle"]], "work-claim-shadow-transition-invalid")
+    _require(isinstance(source_revision, str) and bool(source_revision.strip()), "work-claim-shadow-source-revision-required")
+    candidate = copy.deepcopy(state)
+    candidate.update(lifecycle=lifecycle, source_revision=source_revision, revision=state["revision"] + 1)
+    candidate["fingerprint"] = work_claim_shadow_fingerprint(candidate)
+    validate_work_claim_shadow(candidate, actor_generation)
+    return candidate
+
+
+def validate_trusted_role_generation_binding(
+    actor_generation: dict[str, Any], *, required_role: str, generation_ref: str,
+) -> dict[str, Any]:
+    validate_actor_generation_shadow(actor_generation)
+    _require(actor_generation["role"] == required_role, "trusted-role-generation-role-mismatch")
+    _require(actor_generation["generation_ref"] == generation_ref, "trusted-role-generation-ref-mismatch")
+    _require(actor_generation["lifecycle"] == "ACTIVE", "trusted-role-generation-not-active")
+    return {
+        "result": "PASS",
+        "authority": "SHADOW_ONLY",
+        "actor_ref": actor_generation["actor_ref"],
+        "role": actor_generation["role"],
+        "generation_ref": actor_generation["generation_ref"],
+        "fingerprint": actor_generation["fingerprint"],
+    }
 
 
 def _finalize_receipt(receipt: dict[str, Any]) -> dict[str, Any]:

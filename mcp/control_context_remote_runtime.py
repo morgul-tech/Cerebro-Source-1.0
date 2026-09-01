@@ -234,11 +234,9 @@ class ControlContextRemoteRuntimeConfig:
 
 
 def _file_sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    # Match the migration runner's canonical Git-text identity on Windows and
+    # POSIX checkouts without weakening content-drift detection.
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def _close_safely(value: Any) -> None:

@@ -23,6 +23,8 @@ try:
         bind_control_session,
         bootstrap_project_state,
         continuation_fingerprint,
+        validate_actor_generation_shadow,
+        validate_work_claim_shadow,
         refresh_session_fingerprint,
         validate_project_state,
         validate_session_state,
@@ -36,6 +38,8 @@ except ImportError:
         bind_control_session,
         bootstrap_project_state,
         continuation_fingerprint,
+        validate_actor_generation_shadow,
+        validate_work_claim_shadow,
         refresh_session_fingerprint,
         validate_project_state,
         validate_session_state,
@@ -182,6 +186,8 @@ class InMemoryControlContextStatePort:
         self._events: dict[tuple[str, str, str, str, str, str], dict[str, Any]] = {}
         self._idempotency: dict[tuple[str, str, str, str, str, str], str] = {}
         self._bootstraps: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
+        self._actor_generation_shadows: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+        self._work_claim_shadows: dict[tuple[str, str, str], dict[str, Any]] = {}
 
     def set_available(self, available: bool) -> None:
         with self._lock:
@@ -536,3 +542,91 @@ class InMemoryControlContextStatePort:
             event["completion_request_fingerprint"] = _sha256(request)
             event["completion_fingerprint"] = _sha256(completion)
             return completion
+
+    def write_actor_generation_shadow(
+        self,
+        state: dict[str, Any],
+        *,
+        expected_revision: int,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """CAS-write an internal shadow projection; it grants no live authority."""
+
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:transition")
+            validate_actor_generation_shadow(state)
+            key = (state["tenant_ref"], state["workspace_ref"], state["role"], state["generation_ref"])
+            current = self._actor_generation_shadows.get(key)
+            actual_revision = 0 if current is None else current["revision"]
+            _require(actual_revision == expected_revision, "actor-generation-shadow-revision-conflict", StateConflict)
+            _require(state["revision"] == expected_revision + 1, "actor-generation-shadow-revision-step-invalid", StateConflict)
+            if current is not None:
+                _require(current["actor_ref"] == state["actor_ref"], "actor-generation-shadow-identity-immutable", StateConflict)
+            self._actor_generation_shadows[key] = copy.deepcopy(state)
+            return copy.deepcopy(state)
+
+    def read_actor_generation_shadow(
+        self,
+        *,
+        tenant_ref: str,
+        workspace_ref: str,
+        role: str,
+        generation_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:read")
+            key = (tenant_ref, workspace_ref, role, generation_ref)
+            _require(key in self._actor_generation_shadows, "actor-generation-shadow-not-found", StateBindingError)
+            state = self._actor_generation_shadows[key]
+            validate_actor_generation_shadow(state)
+            return copy.deepcopy(state)
+
+    def write_work_claim_shadow(
+        self,
+        state: dict[str, Any],
+        *,
+        expected_revision: int,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """CAS-write a non-authoritative claim shadow without creating a live claim."""
+
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:transition")
+            validate_work_claim_shadow(state)
+            actor_key = (
+                state["tenant_ref"], state["workspace_ref"],
+                state["actor_role"], state["actor_generation_ref"],
+            )
+            _require(actor_key in self._actor_generation_shadows, "work-claim-shadow-actor-generation-not-found", StateBindingError)
+            validate_work_claim_shadow(state, self._actor_generation_shadows[actor_key])
+            key = (state["tenant_ref"], state["workspace_ref"], state["claim_ref"])
+            current = self._work_claim_shadows.get(key)
+            actual_revision = 0 if current is None else current["revision"]
+            _require(actual_revision == expected_revision, "work-claim-shadow-revision-conflict", StateConflict)
+            _require(state["revision"] == expected_revision + 1, "work-claim-shadow-revision-step-invalid", StateConflict)
+            if current is not None:
+                for field in ("project_ref", "actor_ref", "actor_role", "actor_generation_ref", "scope_ref", "mode"):
+                    _require(current[field] == state[field], f"work-claim-shadow-{field}-immutable", StateConflict)
+            self._work_claim_shadows[key] = copy.deepcopy(state)
+            return copy.deepcopy(state)
+
+    def read_work_claim_shadow(
+        self,
+        *,
+        tenant_ref: str,
+        workspace_ref: str,
+        claim_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:read")
+            key = (tenant_ref, workspace_ref, claim_ref)
+            _require(key in self._work_claim_shadows, "work-claim-shadow-not-found", StateBindingError)
+            state = self._work_claim_shadows[key]
+            validate_work_claim_shadow(state)
+            return copy.deepcopy(state)
