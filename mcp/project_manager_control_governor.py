@@ -24,6 +24,11 @@ LEARNING_DISPOSITIONS = {
     "RECOVERY_REVIEW_ONLY", "NON_PROPAGATING"
 }
 
+EXECUTION_STATES = {"ACTIVE", "TERMINAL_REPORTED", "CLOSED"}
+VERIFICATION_STATES = {"NOT_REQUIRED", "PENDING", "PASS", "FAIL", "UNAVAILABLE", "UNKNOWN"}
+ADMISSION_STATES = {"NOT_REQUIRED", "PENDING", "ADMITTED", "REJECTED"}
+EVIDENCE_CARRIER_STATES = {"NOT_APPLICABLE", "AVAILABLE", "UNAVAILABLE", "ERROR", "UNKNOWN"}
+
 
 class ProjectManagerGovernorError(ValueError):
     pass
@@ -450,6 +455,105 @@ def _lifecycle_mutation_gate(
     return base
 
 
+
+def _executor_terminal_reconciliation_gate(candidate: dict[str, Any]) -> dict[str, Any]:
+    raw = candidate.get("executor_terminal_reconciliation")
+    if raw is None:
+        return {"applicable": False, "result": "PASS", "executor_reactivation_allowed": False, "next_edge_class": "NONE"}
+    _require(isinstance(raw, dict), "executor-terminal-reconciliation-object-required")
+    executor_ref = str(raw.get("executor_ref") or "").strip()
+    execution_state = str(raw.get("execution_state") or "").upper()
+    verification_state = str(raw.get("verification_state") or "").upper()
+    admission_state = str(raw.get("admission_state") or "").upper()
+    _require(executor_ref, "executor-terminal-executor-ref-required")
+    _require(execution_state in EXECUTION_STATES, f"executor-terminal-execution-state-invalid:{execution_state}")
+    _require(verification_state in VERIFICATION_STATES, f"executor-terminal-verification-state-invalid:{verification_state}")
+    _require(admission_state in ADMISSION_STATES, f"executor-terminal-admission-state-invalid:{admission_state}")
+
+    defect_verified = raw.get("new_execution_defect_verified") is True
+    carrier = raw.get("evidence_carrier")
+    if carrier is None:
+        carrier = {"status": "NOT_APPLICABLE"}
+    _require(isinstance(carrier, dict), "executor-terminal-evidence-carrier-object-required")
+    carrier_status = str(carrier.get("status") or "NOT_APPLICABLE").upper()
+    _require(carrier_status in EVIDENCE_CARRIER_STATES, f"executor-terminal-carrier-state-invalid:{carrier_status}")
+    exact_question = str(carrier.get("exact_evidence_question") or "").strip()
+    capable_carrier_ref = str(carrier.get("capable_carrier_ref") or "").strip()
+    uncertain_carrier = carrier_status in {"UNAVAILABLE", "ERROR", "UNKNOWN"}
+    if uncertain_carrier:
+        _require(verification_state != "FAIL", "carrier-unavailable-cannot-classify-subject-fail")
+        _require(not defect_verified, "carrier-unavailable-cannot-verify-execution-defect")
+        _require(exact_question, "carrier-unavailable-requires-exact-evidence-question")
+    if carrier_status == "UNAVAILABLE":
+        _require(capable_carrier_ref, "carrier-unavailable-requires-capable-carrier-route")
+
+    if defect_verified:
+        _require(execution_state == "TERMINAL_REPORTED", "verified-execution-defect-requires-terminal-reported-execution")
+        _require(verification_state == "FAIL", "verified-execution-defect-requires-verification-fail")
+    if raw.get("executor_reactivated") is True:
+        _require(defect_verified, "executor-terminal-reopen-requires-verified-execution-defect")
+
+    next_edge = "NONE"
+    reactivation_allowed = False
+    if execution_state == "TERMINAL_REPORTED":
+        if defect_verified:
+            next_edge = "REMEDIATE_EXECUTION"
+            reactivation_allowed = True
+        elif verification_state in {"PENDING", "UNAVAILABLE", "UNKNOWN"}:
+            next_edge = "VERIFY"
+        elif verification_state in {"PASS", "NOT_REQUIRED"} and admission_state == "PENDING":
+            next_edge = "ADMIT"
+        elif verification_state in {"PASS", "NOT_REQUIRED"} and admission_state in {"ADMITTED", "NOT_REQUIRED"}:
+            next_edge = "CLOSE"
+        elif admission_state == "REJECTED":
+            next_edge = "REVIEW_ADMISSION"
+        elif verification_state == "FAIL":
+            raise ProjectManagerGovernorError("verification-fail-without-verified-execution-defect-cannot-reopen-executor")
+        else:
+            next_edge = "VERIFY_OR_ADMIT"
+
+    return {
+        "applicable": True, "result": "PASS", "executor_ref": executor_ref,
+        "execution_state": execution_state, "verification_state": verification_state,
+        "admission_state": admission_state, "evidence_carrier_status": carrier_status,
+        "evidence_result": "UNKNOWN" if uncertain_carrier else verification_state,
+        "capable_carrier_ref": capable_carrier_ref or None,
+        "new_execution_defect_verified": defect_verified,
+        "executor_reactivation_allowed": reactivation_allowed, "next_edge_class": next_edge,
+        "state_owner": "EXISTING_WORK_CLAIM_OR_LIFECYCLE_ENVELOPE",
+        "persistent_state_axis_created": False,
+    }
+
+
+def _continuation_progress_gate(candidate: dict[str, Any], next_action: dict[str, Any]) -> dict[str, Any]:
+    applicable = (
+        next_action.get("owner") == "MACHINE"
+        and next_action.get("pm_actor") == "PROJECT_MANAGER"
+        and next_action.get("internally_executable") is True
+    )
+    if not applicable:
+        return {"applicable": False, "result": "PASS", "same_cycle_progress_required": False, "response_handoff_allowed": True}
+    observation = candidate.get("pm_same_cycle_progress")
+    if observation is None:
+        return {
+            "applicable": True, "result": "PASS_OBLIGATION_ACTIVE",
+            "same_cycle_progress_required": True, "response_handoff_allowed": False,
+            "acceptable_terminal_evidence": ["VERIFIED_STATE_DELTA", "EXACT_EXTERNAL_BLOCKER"],
+            "human_pulse_dependency_allowed": False,
+        }
+    _require(isinstance(observation, dict), "pm-same-cycle-progress-object-required")
+    state_delta = observation.get("state_delta_observed") is True
+    status_only = observation.get("status_only_terminal_surface") is True
+    blocker = str(observation.get("exact_external_blocker") or "").strip()
+    machine_route_available = observation.get("machine_route_available")
+    if state_delta:
+        return {"applicable": True, "result": "PASS_STATE_DELTA_OBSERVED", "same_cycle_progress_required": False, "response_handoff_allowed": True, "state_delta_observed": True, "human_pulse_dependency_allowed": False}
+    if blocker:
+        _require(machine_route_available is False, "external-blocker-requires-machine-route-unavailable")
+        return {"applicable": True, "result": "PASS_EXACT_EXTERNAL_BLOCKER", "same_cycle_progress_required": False, "response_handoff_allowed": True, "state_delta_observed": False, "exact_external_blocker": blocker, "human_pulse_dependency_allowed": False}
+    _require(not status_only, "self-next-owner-status-only-prohibited")
+    raise ProjectManagerGovernorError("self-next-owner-executable-edge-requires-state-delta-or-exact-external-blocker")
+
 def _interrupt_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     raw = candidate.get("interrupt")
     if raw is None:
@@ -556,9 +660,11 @@ def govern_project_manager_event(
         session=session,
     )
     worker = _worker_terminal_gate(candidate)
+    executor_reconciliation = _executor_terminal_reconciliation_gate(candidate)
     interrupt = _interrupt_gate(candidate)
     terminal = _terminal_gate(candidate)
     progress = _progress_gate(candidate)
+    continuation_progress = _continuation_progress_gate(candidate, next_action)
 
     if next_action["owner"] == "HUMAN":
         _require(terminal.get("state") not in {"TERMINATE"}, "terminated-pm-event-cannot-produce-human-continuation")
@@ -576,11 +682,13 @@ def govern_project_manager_event(
         "frontier": frontier,
         "next_action": next_action,
         "shared_write_gate": shared,
-        "worker_terminal_gate": worker,        "lifecycle_mutation_gate": lifecycle,
-
+        "worker_terminal_gate": worker,
+        "executor_terminal_reconciliation_gate": executor_reconciliation,
+        "lifecycle_mutation_gate": lifecycle,
         "interrupt_gate": interrupt,
         "terminal_gate": terminal,
         "progress_observability_gate": progress,
+        "continuation_progress_gate": continuation_progress,
         "human_continuation_allowed": next_action["human_continuation_allowed"],
         "pm_internal_action_must_run_before_human_boundary": (
             next_action["owner"] == "MACHINE" and next_action["required_before_event_closure"] is True
@@ -789,6 +897,38 @@ def selftest() -> dict[str, Any]:
         }})
     ))
 
+
+    def reconciliation_candidate() -> dict[str, Any]:
+        return {"executor_terminal_reconciliation": {"executor_ref": "L-CANARY", "execution_state": "TERMINAL_REPORTED", "verification_state": "PENDING", "admission_state": "PENDING", "new_execution_defect_verified": False, "executor_reactivated": False, "evidence_carrier": {"status": "AVAILABLE"}}}
+
+    check("terminal-executor-pending-verification-does-not-reopen", lambda: (
+        _executor_terminal_reconciliation_gate(reconciliation_candidate())["executor_reactivation_allowed"] is False
+        and _executor_terminal_reconciliation_gate(reconciliation_candidate())["next_edge_class"] == "VERIFY"
+    ))
+    check("terminal-executor-admission-pending-does-not-reopen", lambda: (
+        _executor_terminal_reconciliation_gate({"executor_terminal_reconciliation": {**reconciliation_candidate()["executor_terminal_reconciliation"], "verification_state": "PASS"}})["next_edge_class"] == "ADMIT"
+    ))
+
+    def carrier_fail_is_blocked() -> bool:
+        c = reconciliation_candidate()
+        c["executor_terminal_reconciliation"]["verification_state"] = "FAIL"
+        c["executor_terminal_reconciliation"]["evidence_carrier"] = {"status": "UNAVAILABLE", "exact_evidence_question": "exact terminal effect?", "capable_carrier_ref": "CAPABLE-CARRIER"}
+        try:
+            _executor_terminal_reconciliation_gate(c)
+        except ProjectManagerGovernorError:
+            return True
+        return False
+    check("carrier-unavailable-cannot-be-subject-fail", carrier_fail_is_blocked)
+
+    check("verified-execution-defect-allows-remediation", lambda: (
+        _executor_terminal_reconciliation_gate({"executor_terminal_reconciliation": {**reconciliation_candidate()["executor_terminal_reconciliation"], "verification_state": "FAIL", "new_execution_defect_verified": True}})["executor_reactivation_allowed"] is True
+    ))
+    check("self-next-owner-executable-edge-requires-same-cycle-progress", lambda: (
+        govern_project_manager_event(candidate=valid_candidate(), canonical_next_action=canonical_machine, session=session, profile_binding=binding, profile_verifier=verifier)["continuation_progress_gate"]["same_cycle_progress_required"] is True
+    ))
+    check("self-next-owner-status-only-terminal-blocks", lambda: expect_block(
+        lambda c: c.update({"pm_same_cycle_progress": {"state_delta_observed": False, "status_only_terminal_surface": True, "machine_route_available": True}})
+    ))
     passed=sum(1 for x in tests if x["result"]=="PASS")
     return {
         "schema":"cerebro-project-manager-control-governor-selftest/v1",

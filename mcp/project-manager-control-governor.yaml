@@ -1,7 +1,7 @@
 schema: cerebro-project-manager-control-governor/v1
 project_manager_control_governor:
   id: CEREBRO-PROJECT-MANAGER-CONTROL-GOVERNOR-001
-  version: "0.1.0"
+  version: "0.2.0"
   status: SOURCE_IMPLEMENTED_ACTIVATION_PENDING_TRUSTED_PROFILE_BINDING
   kind: MCP_SUBRESOLUTION
   definitional_authority: Cerebro Source 1.0
@@ -43,6 +43,8 @@ project_manager_control_governor:
     - enforce-PAUSE-STOP-TERMINATE-distinct-inheritance-semantics
     - require-COMPLETE-continuation-and-learning-dispositions
     - require-progress-observability-for-long-running-PM-work
+    - reconcile-executor-terminal-execution-verification-and-admission-without-reopening-execution
+    - require-self-next-owner-executable-PM-edge-same-cycle-progress-or-exact-external-blocker
 
   non_responsibilities:
     - define-project-semantics
@@ -126,6 +128,32 @@ project_manager_control_governor:
       - all_expected_worker_terminals_admitted
       - frozen_integration_input_manifest
 
+  executor_terminal_reconciliation:
+    derived_only: true
+    persistent_state_axis_created: false
+    existing_state_carrier: WORK_CLAIM_OR_LIFECYCLE_ENVELOPE
+    orthogonal_dimensions:
+      - EXECUTION_STATE
+      - VERIFICATION_STATE
+      - ADMISSION_STATE
+    terminal_execution_reopens_only_if: NEW_EXECUTION_DEFECT_VERIFIED
+    verification_or_admission_pending_effect: EXECUTOR_STAYS_TERMINAL
+    admission_pending_reactivates_executor: false
+    same_executor_retry_without_verified_execution_defect: PROHIBITED
+    evidence_carrier_unavailable_effect: VERIFICATION_UNKNOWN_ROUTE_CAPABLE_CARRIER
+    subject_failure_from_unavailable_carrier: PROHIBITED
+    carrier_capability_is_system_truth: false
+
+  self_next_owner_progress:
+    applies_when: NEXT_OWNER_IS_SAME_PROJECT_MANAGER_AND_EDGE_INTERNALLY_EXECUTABLE
+    same_cycle_requires:
+      - VERIFIED_STATE_DELTA
+      - EXACT_EXTERNAL_BLOCKER
+    status_only_terminal_surface: PROHIBITED
+    external_blocker_must_prove_machine_route_unavailable: true
+    human_pulse_dependency: PROHIBITED
+    new_scheduler_or_queue_created: false
+
   interrupt_semantics:
     PAUSE:
       claim: RESERVED
@@ -187,3 +215,5 @@ project_manager_control_governor:
     - Worker-cannot-admit-own-terminal-envelope
     - terminal-completion-without-learning-disposition-blocks
     - long-running-PM-work-without-progress-observability-blocks
+    - terminal-executor-is-not-reactivated-by-verification-or-admission-debt-alone
+    - self-next-owner-executable-edge-cannot-terminalize-as-status-only

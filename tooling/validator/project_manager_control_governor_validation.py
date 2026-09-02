@@ -341,6 +341,43 @@ def lifecycle_canaries(mod: Any) -> dict[str, Any]:
         "tests": tests,
     }
 
+
+def anti_loop_canaries(mod: Any) -> dict[str, Any]:
+    tests: list[dict[str, Any]] = []
+    def check(name: str, fn) -> None:
+        try:
+            passed = bool(fn())
+            tests.append({"name": name, "result": "PASS" if passed else "FAIL"})
+        except Exception as exc:
+            tests.append({"name": name, "result": "FAIL", "detail": str(exc)})
+    def base(*, verification: str = "PENDING", admission: str = "PENDING") -> dict[str, Any]:
+        return {"executor_terminal_reconciliation": {"executor_ref": "L-VALIDATOR-CANARY", "execution_state": "TERMINAL_REPORTED", "verification_state": verification, "admission_state": admission, "new_execution_defect_verified": False, "executor_reactivated": False, "evidence_carrier": {"status": "AVAILABLE"}}}
+    check("anti-loop-01-verification-pending-does-not-reopen", lambda: mod._executor_terminal_reconciliation_gate(base())["executor_reactivation_allowed"] is False)
+    check("anti-loop-02-admission-pending-routes-admission-not-executor", lambda: mod._executor_terminal_reconciliation_gate(base(verification="PASS"))["next_edge_class"] == "ADMIT")
+    check("anti-loop-03-unavailable-carrier-routes-unknown", lambda: mod._executor_terminal_reconciliation_gate({"executor_terminal_reconciliation": {**base()["executor_terminal_reconciliation"], "verification_state": "UNAVAILABLE", "evidence_carrier": {"status": "UNAVAILABLE", "exact_evidence_question": "did the terminal effect occur?", "capable_carrier_ref": "CAPABLE-CARRIER"}}})["evidence_result"] == "UNKNOWN")
+    def unavailable_subject_fail_blocks() -> bool:
+        value = base(verification="FAIL")
+        value["executor_terminal_reconciliation"]["evidence_carrier"] = {"status": "UNAVAILABLE", "exact_evidence_question": "did the terminal effect occur?", "capable_carrier_ref": "CAPABLE-CARRIER"}
+        try:
+            mod._executor_terminal_reconciliation_gate(value)
+        except mod.ProjectManagerGovernorError:
+            return True
+        return False
+    check("anti-loop-04-unavailable-carrier-cannot-subject-fail", unavailable_subject_fail_blocks)
+    check("anti-loop-05-verified-defect-is-only-reopen-path", lambda: mod._executor_terminal_reconciliation_gate({"executor_terminal_reconciliation": {**base(verification="FAIL")["executor_terminal_reconciliation"], "new_execution_defect_verified": True}})["executor_reactivation_allowed"] is True)
+    machine_next = {"owner": "MACHINE", "pm_actor": "PROJECT_MANAGER", "internally_executable": True}
+    check("anti-loop-06-self-next-owner-obligation-active", lambda: mod._continuation_progress_gate({}, machine_next)["same_cycle_progress_required"] is True)
+    def status_only_blocks() -> bool:
+        try:
+            mod._continuation_progress_gate({"pm_same_cycle_progress": {"state_delta_observed": False, "status_only_terminal_surface": True, "machine_route_available": True}}, machine_next)
+        except mod.ProjectManagerGovernorError:
+            return True
+        return False
+    check("anti-loop-07-status-only-self-next-owner-blocks", status_only_blocks)
+    check("anti-loop-08-exact-external-blocker-is-terminal-evidence", lambda: mod._continuation_progress_gate({"pm_same_cycle_progress": {"state_delta_observed": False, "status_only_terminal_surface": False, "exact_external_blocker": "REPO_CARRIER_UNAVAILABLE", "machine_route_available": False}}, machine_next)["result"] == "PASS_EXACT_EXTERNAL_BLOCKER")
+    passed = sum(1 for item in tests if item["result"] == "PASS")
+    return {"schema": "cerebro-project-manager-anti-loop-canaries/v1", "result": "PASS" if passed == 8 and len(tests) == 8 else "FAIL", "passed": passed, "total": len(tests), "tests": tests}
+
 def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> dict:
     contract=root/"mcp/project-manager-control-governor.yaml"
     implementation=root/"mcp/project_manager_control_governor.py"
@@ -368,6 +405,11 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "new_operation_created: false",
         "context_effect_verifier_injection: CONSTRUCTOR_BOUND",
         "AI_supplied_context_receipt_is_authority: false",
+        "executor_terminal_reconciliation:",
+        "admission_pending_reactivates_executor: false",
+        "subject_failure_from_unavailable_carrier: PROHIBITED",
+        "self_next_owner_progress:",
+        "status_only_terminal_surface: PROHIBITED",
     ]
     missing_tokens=[x for x in required_contract_tokens if x not in text]
     if missing_tokens:
@@ -403,7 +445,7 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
 
     mod=load(implementation,"cerebro_project_manager_control_governor_validation_subject")
     selftest=mod.selftest()
-    if selftest.get("result")!="PASS" or int(selftest.get("passed") or 0)!=17:
+    if selftest.get("result")!="PASS" or int(selftest.get("passed") or 0)!=23:
         return {"schema":"cerebro-project-manager-control-governor-validation/v1","result":"FAIL","selftest":selftest}
 
     lifecycle_schema_data=json.loads(lifecycle_schema.read_text(encoding="utf-8"))
@@ -422,6 +464,14 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
             "result":"FAIL","selftest":selftest,"lifecycle_canaries":lifecycle
         }
 
+    anti_loop=anti_loop_canaries(mod)
+    if anti_loop.get("result")!="PASS" or int(anti_loop.get("passed") or 0)!=8:
+        return {
+            "schema":"cerebro-project-manager-control-governor-validation/v1",
+            "result":"FAIL","selftest":selftest,"lifecycle_canaries":lifecycle,
+            "anti_loop_canaries":anti_loop
+        }
+
     integration=integration_test(root)
     if require_integration and integration.get("result")!="PASS":
         return {
@@ -432,7 +482,10 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
     return {
         "schema":"cerebro-project-manager-control-governor-validation/v1",
         "result":"PASS",
-        "governor_canaries":17,
+        "governor_canaries":23,
+        "anti_loop_canaries":anti_loop,
+        "executor_terminal_reconciliation_effect":True,
+        "self_next_owner_same_cycle_progress_effect":True,
         "trusted_profile_binding_required":True,
         "direct_live_authority":False,
         "state_mutation_by_governor":False,
