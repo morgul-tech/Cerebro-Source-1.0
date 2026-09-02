@@ -2,7 +2,7 @@
 """Normal host binding for canonical MCP owner-effect resolution and execution.
 
 The host constructs capability and persistence-verification dependencies from
-trusted runtime objects.  Event payloads may carry owner receipts, but they can
+trusted runtime objects. Event payloads may carry owner receipts, but they can
 neither provide these dependencies nor self-assert executability or durability.
 """
 
@@ -24,6 +24,8 @@ EXPECTED_EFFECT = {
     "context": "REFRESH_GOVERNING_REFS",
 }
 PERSISTENCE_VERIFICATION_SCHEMA = "cerebro-owner-state-persistence-verification/v1"
+PM_AUTHORIZED_COMMAND_STATE_SCHEMA = "cerebro-pm-authorized-command-state/v1"
+PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA = "cerebro-pm-authorized-command-consumption/v1"
 PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "persistence_evidence_verifier",
     "owner_persistence_verifier",
@@ -32,6 +34,9 @@ PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "capability_available",
     "verifier_callable",
     "executor_callable",
+    "pm_command_executor",
+    "authorized_command_executor",
+    "command_executor",
 }
 
 
@@ -254,3 +259,273 @@ class BoundControlResolutionHost:
             completions.append(copy.deepcopy(completion))
             executed.add(owner)
         raise ControlResolutionHostError("owner-sequence-did-not-converge")
+
+
+def _pm_command_hmi(next_machine_action: str, next_owner: str) -> dict[str, str]:
+    return {
+        "next_machine_action": next_machine_action,
+        "next_owner": next_owner,
+        "human_action": "NONE",
+    }
+
+
+def _pm_command_exact_blocker(
+    command_id: str | None,
+    blocker: str,
+    *,
+    next_owner: str = "PROJECT_MANAGER",
+    reflex_resolution: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    _require(isinstance(blocker, str) and bool(blocker.strip()), "pm-command-exact-blocker-required")
+    return {
+        "schema": PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA,
+        "result": "EXACT_BLOCKER",
+        "command_id": command_id,
+        "command_executed": False,
+        "state_delta_observed": False,
+        "exact_blocker": blocker,
+        "retry_allowed": False,
+        "reflex_resolution": copy.deepcopy(reflex_resolution),
+        "hmi": _pm_command_hmi("RESOLVE_BLOCKER", next_owner),
+    }
+
+
+def consume_pm_authorized_command(
+    host: BoundControlResolutionHost,
+    *,
+    governance: dict[str, Any],
+    command_state: dict[str, Any] | None,
+    carrier: dict[str, Any],
+    command_executor: Any | None,
+    progress_evidence: dict[str, Any] | None = None,
+    root: Path = control_resolution.SOURCE_ROOT,
+    require_git_ancestry: bool = True,
+) -> dict[str, Any]:
+    """Consume one already-authorized PM command synchronously; never decide/admit it."""
+
+    _require(isinstance(host, BoundControlResolutionHost), "pm-command-bound-host-required")
+    _require(isinstance(governance, dict), "pm-command-governance-object-required")
+    next_action = governance.get("next_action")
+    _require(isinstance(next_action, dict), "pm-command-next-action-object-required")
+
+    actionable = (
+        next_action.get("owner") == "MACHINE"
+        and next_action.get("pm_actor") == "PROJECT_MANAGER"
+        and next_action.get("internally_executable") is True
+        and next_action.get("required_before_event_closure") is True
+    )
+    if not actionable:
+        return {
+            "schema": PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA,
+            "result": "NO_EFFECT",
+            "command_id": None,
+            "command_executed": False,
+            "state_delta_observed": False,
+            "retry_allowed": False,
+            "hmi": _pm_command_hmi("NONE", "NONE"),
+        }
+
+    if command_state is None:
+        return {
+            "schema": PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA,
+            "result": "NO_EFFECT",
+            "command_id": None,
+            "command_executed": False,
+            "state_delta_observed": False,
+            "retry_allowed": False,
+            "hmi": _pm_command_hmi("NONE", "PROJECT_MANAGER"),
+        }
+
+    _require(isinstance(command_state, dict), "pm-command-state-object-required")
+    _reject_runtime_authority_injection(command_state, "pm_command_state")
+    _require(
+        command_state.get("schema") == PM_AUTHORIZED_COMMAND_STATE_SCHEMA,
+        "pm-command-state-schema-mismatch",
+    )
+    _require(
+        command_state.get("authority") == "PROJECT_MANAGER",
+        "pm-command-authority-must-be-PROJECT_MANAGER",
+    )
+    command_id = str(command_state.get("command_id") or "").strip()
+    action_ref = str(next_action.get("action_ref") or "").strip()
+    _require(command_id, "pm-command-id-required")
+    _require(action_ref, "pm-command-action-ref-required")
+    _require(command_state.get("action_ref") == action_ref, "pm-command-action-ref-mismatch")
+    source_head = str(command_state.get("source_head") or "").strip()
+    _require(
+        len(source_head) == 40 and all(ch in "0123456789abcdef" for ch in source_head),
+        "pm-command-source-head-invalid",
+    )
+    canonical_state_ref = str(command_state.get("canonical_state_ref") or "").strip()
+    canonical_revision = command_state.get("canonical_state_revision")
+    _require(canonical_state_ref, "pm-command-canonical-state-ref-required")
+    _require(
+        isinstance(canonical_revision, int) and canonical_revision >= 0,
+        "pm-command-canonical-state-revision-invalid",
+    )
+    _require(isinstance(command_state.get("payload"), dict), "pm-command-payload-object-required")
+    precondition = command_state.get("precondition")
+    _require(isinstance(precondition, dict), "pm-command-precondition-object-required")
+    pre_state_ref = str(precondition.get("state_ref") or "").strip()
+    pre_fingerprint = str(precondition.get("state_fingerprint") or "").strip()
+    _require(pre_state_ref, "pm-command-precondition-state-ref-required")
+    _require(
+        len(pre_fingerprint) == 64 and all(ch in "0123456789abcdef" for ch in pre_fingerprint),
+        "pm-command-precondition-fingerprint-invalid",
+    )
+
+    _require(isinstance(carrier, dict), "pm-command-carrier-object-required")
+    _reject_runtime_authority_injection(carrier, "pm_command_carrier")
+    carrier_ref = str(carrier.get("carrier_ref") or "").strip()
+    _require(carrier_ref, "pm-command-carrier-ref-required")
+    _require(carrier.get("identity_verified") is True, "pm-command-carrier-identity-required")
+    _require(carrier.get("currentness_verified") is True, "pm-command-carrier-currentness-required")
+    _require(carrier.get("source_head") == source_head, "pm-command-carrier-source-mismatch")
+    _require(
+        carrier.get("canonical_state_ref") == canonical_state_ref,
+        "pm-command-carrier-state-ref-mismatch",
+    )
+    _require(
+        carrier.get("canonical_state_revision") == canonical_revision,
+        "pm-command-carrier-state-revision-mismatch",
+    )
+
+    if isinstance(progress_evidence, dict):
+        _reject_runtime_authority_injection(progress_evidence, "pm_command_progress")
+        reflex_trigger = (
+            progress_evidence.get("repeated_same_family") is True
+            and progress_evidence.get("no_state_advance") is True
+            and progress_evidence.get("material_human_recontact") is True
+            and progress_evidence.get("elapsed_time_only") is not True
+        )
+        if reflex_trigger:
+            fallback_state = str(progress_evidence.get("fallback_state") or "UNKNOWN").upper()
+            if fallback_state in {"STALE", "UNKNOWN"}:
+                return _pm_command_exact_blocker(
+                    command_id,
+                    f"FALLBACK_CURRENTNESS_UNRESOLVED:{fallback_state}",
+                )
+            if fallback_state == "AVAILABLE":
+                _require(progress_evidence.get("fallback_proven") is True, "pm-command-proven-fallback-required")
+                _require(
+                    isinstance(progress_evidence.get("fallback_ref"), str)
+                    and bool(progress_evidence["fallback_ref"].strip()),
+                    "pm-command-fallback-ref-required",
+                )
+            elif fallback_state in {"NONE_PROVEN", "UNAVAILABLE"}:
+                semantic_owner_ref = str(progress_evidence.get("semantic_owner_ref") or "").strip()
+                _require(
+                    semantic_owner_ref
+                    and semantic_owner_ref.upper() not in {"HOST", "PROJECT_MANAGER", "PM"},
+                    "pm-command-lawful-semantic-owner-required",
+                )
+            else:
+                _require(
+                    fallback_state in {"AVAILABLE", "NONE_PROVEN", "UNAVAILABLE"},
+                    "pm-command-fallback-state-invalid",
+                )
+
+            reorientation_request = progress_evidence.get("reorientation_request")
+            _require(isinstance(reorientation_request, dict), "pm-command-reorientation-request-required")
+            reorientation_request = copy.deepcopy(reorientation_request)
+            reorientation_request["materially_different_path_required"] = True
+            reorientation_request.setdefault("authoritative_source_commit", source_head)
+            routed = host.resolve(
+                reorientation_request,
+                root=root,
+                require_git_ancestry=require_git_ancestry,
+            )
+            decision = routed.get("mcp_control_decision") if isinstance(routed, dict) else None
+            _require(isinstance(decision, dict), "pm-command-canonical-reorientation-decision-required")
+            outcome = str(decision.get("outcome") or "").upper()
+            if outcome != "REORIENT":
+                return _pm_command_exact_blocker(
+                    command_id,
+                    "NO_PROGRESS_REORIENTATION_" + (outcome or "UNRESOLVED"),
+                    reflex_resolution=routed,
+                )
+            return {
+                "schema": PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA,
+                "result": "REORIENTED_BEFORE_IDENTICAL_RETRY",
+                "command_id": command_id,
+                "command_executed": False,
+                "state_delta_observed": True,
+                "state_delta": {
+                    "kind": "CONTROL_ROUTE",
+                    "from_action_ref": action_ref,
+                    "to_control_decision_ref": decision.get("control_decision_id"),
+                },
+                "reflex_resolution": copy.deepcopy(routed),
+                "retry_allowed": False,
+                "hmi": _pm_command_hmi("CONSUME_REORIENTED_PM_COMMAND", "PROJECT_MANAGER"),
+            }
+
+    is_available = getattr(command_executor, "is_available", None)
+    execute = getattr(command_executor, "execute", None)
+    if not callable(is_available) or not callable(execute):
+        return _pm_command_exact_blocker(
+            command_id,
+            f"CARRIER_COMMAND_EXECUTOR_UNAVAILABLE:{carrier_ref}:{action_ref}",
+            next_owner=str(carrier.get("capable_carrier_ref") or "PROJECT_MANAGER"),
+        )
+    if is_available(command=copy.deepcopy(command_state), carrier=copy.deepcopy(carrier)) is not True:
+        return _pm_command_exact_blocker(
+            command_id,
+            f"CARRIER_COMMAND_EXECUTOR_UNAVAILABLE:{carrier_ref}:{action_ref}",
+            next_owner=str(carrier.get("capable_carrier_ref") or "PROJECT_MANAGER"),
+        )
+
+    completion = execute(
+        command=copy.deepcopy(command_state),
+        carrier=copy.deepcopy(carrier),
+    )
+    _require(isinstance(completion, dict), "pm-command-execution-completion-object-required")
+    if completion.get("result") == "STALE_PRECONDITION":
+        blocker = str(completion.get("exact_blocker") or "STALE_PRECONDITION").strip()
+        return _pm_command_exact_blocker(command_id, blocker)
+
+    _require(completion.get("result") == "PASS", "pm-command-execution-PASS-required")
+    _require(completion.get("command_id") == command_id, "pm-command-execution-command-id-mismatch")
+    _require(completion.get("action_ref") == action_ref, "pm-command-execution-action-ref-mismatch")
+    _require(
+        completion.get("precondition_fingerprint") == pre_fingerprint,
+        "pm-command-execution-precondition-fingerprint-mismatch",
+    )
+    state_delta = completion.get("state_delta")
+    readback = completion.get("readback")
+    _require(isinstance(state_delta, dict), "pm-command-state-delta-object-required")
+    _require(isinstance(readback, dict), "pm-command-readback-object-required")
+    _require(state_delta.get("before_state_ref") == pre_state_ref, "pm-command-before-state-ref-mismatch")
+    _require(
+        state_delta.get("before_state_fingerprint") == pre_fingerprint,
+        "pm-command-before-state-fingerprint-mismatch",
+    )
+    _require(state_delta.get("mutated") is True, "pm-command-state-delta-mutation-required")
+    _require(
+        state_delta.get("after_state_ref") == readback.get("state_ref"),
+        "pm-command-after-state-ref-readback-mismatch",
+    )
+    _require(
+        state_delta.get("after_state_fingerprint") == readback.get("state_fingerprint"),
+        "pm-command-after-state-fingerprint-readback-mismatch",
+    )
+    _require(
+        state_delta.get("after_state_fingerprint") != state_delta.get("before_state_fingerprint"),
+        "pm-command-state-delta-required",
+    )
+    _require(readback.get("verified") is True, "pm-command-readback-verification-required")
+    _require(
+        isinstance(readback.get("provider_revision"), int) and readback["provider_revision"] >= 0,
+        "pm-command-readback-provider-revision-invalid",
+    )
+    return {
+        "schema": PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA,
+        "result": "PASS_STATE_DELTA_READBACK",
+        "command_id": command_id,
+        "command_executed": True,
+        "state_delta_observed": True,
+        "state_delta": copy.deepcopy(state_delta),
+        "readback": copy.deepcopy(readback),
+        "retry_allowed": False,
+        "hmi": _pm_command_hmi("RERESOLVE_CONTROL", "PROJECT_MANAGER"),
+    }
