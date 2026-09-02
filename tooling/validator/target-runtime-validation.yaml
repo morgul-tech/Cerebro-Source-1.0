@@ -1,7 +1,7 @@
 schema: cerebro-target-runtime-validation-contract/v1
 target_runtime_validation:
   id: CEREBRO-TARGET-RUNTIME-VALIDATION-001
-  version: 0.3.0
+  version: 0.4.0
   status: ACTIVE
   owner: tooling.validator
   assurance_governance: tooling.change
@@ -15,6 +15,7 @@ purpose:
   package_handoff_is_not_patch_success: true
   first_target_profile: windows-powershell
   reusable_across_target_runtimes: true
+  durable_downstream_evidence_custody_required: true
 
 boundary:
   invariant: TARGET_RUNTIME_VALIDATION_VALIDATES_CANDIDATE_SOURCE_STANDARD_DELIVERY_PUBLISHES_VALIDATED_SOURCE_RUNTIME_EXECUTES_VALIDATED_RELEASE
@@ -27,6 +28,10 @@ boundary:
     - produce-all-impacted-proof-evidence-before-CAC
     - execute-producer-output-against-mandatory-consumers
     - execute-actual-contract-activation-closure
+    - transfer-every-receipt-referenced-material-proof-to-durable-content-addressed-custody-before-scratch-cleanup
+    - bind-every-external-evidence-reference-to-sha256-byte-count-and-durable-ref
+    - verify-post-cleanup-evidence-resolvability-and-digest-equality
+    - cleanup-only-after-custody-transfer-and-consumer-validation
     - preserve-complete-blocking_findings
     - run-DEEP-assurance-after-activation-closure
     - produce-machine-readable-receipt
@@ -40,23 +45,44 @@ boundary:
     - substitute-parity-emulation-for-required-target-runtime
     - treat-manual-user-judgment-as-machine-validation
     - weaken-CAC-or-change-assurance-to-obtain-pass
+    - accept-temp-or-scratch-only-evidence-reference-as-durable-custody
+    - accept-hash-with-dead-reference-when-downstream-liveness-is-required
+    - substitute-receipt-summary-for-referenced-evidence-bytes
+    - rewrite-already-finalized-custody-merely-to-obtain-pass
 
 evidence:
   receipt_schema: cerebro-target-runtime-validation-receipt/v1
+  receipt_verification_schema: cerebro-target-runtime-validation-receipt-verification/v1
+  evidence_binding_schema: cerebro-target-runtime-evidence-binding/v1
+  evidence_custody_schema: cerebro-target-runtime-evidence-custody/v1
+  custody_algorithm: SHA256_CONTENT_ADDRESSED_FILESYSTEM
   terminal_protocol_field: TARGET_RUNTIME_RECEIPT
   generic_RECEIPT_field: PROHIBITED
   required_receipt_fields:
     - source_base_commit
     - candidate_identity
     - target_profile
+    - target_profile_binding
+    - target_runtime_adapter_binding
+    - delivery_adapter_binding
+    - target_plan_fingerprint
     - target_runtime_execution
+    - target_runtime_identity
     - changed_paths
     - impacted_runtime_evidence_bindings
     - activation_proofs
+    - evidence_custody
     - producer_consumer_compatibility
     - cac
     - deep_assurance
     - authoritative_source_mutated
+  custody_acceptance:
+    each-referenced-proof-has-exact-sha256: true
+    each-referenced-proof-has-byte-count: true
+    each-referenced-proof-has-durable-ref: true
+    each-durable-ref-resolves-after-scratch-cleanup: true
+    each-durable-ref-hash-equals-bound-sha256: true
+    cleanup-after-custody-and-consumer-validation-only: true
 
 profiles:
   directory: tooling/validator/target-runtime

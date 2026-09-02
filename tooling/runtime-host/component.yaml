@@ -1,64 +1,99 @@
 schema: cerebro-component/v1
 component:
   id: runtime-host
-  name: Runtime Host
+  name: Cerebro Runtime Host
   type: tooling
-  version: 1.2.0
-  status: active-source
+  version: 2.0.0-m4
+  status: active-source-candidate
 responsibility:
-  primary: >
-    Hoste Ã©n deterministisk Runtime 0.1-invokasjon fra validert Release,
-    forberede og verifisere bootstrap-input, konstruere avledet operasjonell
-    state, prosessere Ã©n event, verifisere resultat og skrive evidence/receipt.
+  primary: >-
+    Execute one bounded Runtime2 event under one exact canonical MCP decision
+    epoch and one immutable execution basis, producing one deterministic plan
+    and one evidence-only terminal receipt without becoming a control, policy,
+    project-state, publication or supervision owner.
 boundaries:
   must:
-  - verify-release-integrity
-  - prepare-bootstrap-environment
-  - transfer-control-to-runtime
-  - initialize-runtime
-  - accept-one-runtime-event
-  - resolve-declared-capability-binding
-  - verify-runtime-result-before-success
-  - write-runtime-receipt-for-success-and-failure
-  - host-first-light-on-demand-one-event
-  - require-first-light-module-in-exact-snapshot
-  - share-first-light-temporalis-reducer
-  - enforce-temporalis-side-effects-deny
-  - canonicalize-natural-language-boot
-  - resolve-source-before-derived-state
-  - reject-stale-derived-input
-  - require-current-commit-bound-operational-receipt
+    - host-first-light-on-demand-one-event
+    - require-first-light-module-in-exact-snapshot
+    - share-first-light-temporalis-reducer
+    - enforce-temporalis-side-effects-deny
+    - consume-exact-canonical-mcp-control-decision
+    - validate-one-versioned-event-envelope-per-invocation
+    - bind-event-decision-execution-basis-and-plan-by-exact-fingerprints
+    - compile-plan-purely-and-deterministically-before-effects
+    - derive-plan-id-from-plan-fingerprint
+    - derive-node-id-from-strict-ordinal
+    - execute-nodes-in-strict-ordinal-order
+    - resolve-every-node-to-source-derived-capability-owner-and-binding
+    - stop-at-mandatory-mcp-reresolution-boundary
+    - preserve-execution-verification-process-and-owner-evidence-as-separate-truth-classes
+    - preserve-partial-effects-and-unknown-poststate
+    - emit-recovery-required-when-material-execution-truth-is-unknown
+    - emit-exact-fingerprint-bound-external-evidence-references
+    - keep-receipt-and-event-state-evidence-only
+    - consume-tooling-host-through-typed-basis-bound-supervision-interface
+    - keep-one-invocation-one-event-one-decision-epoch-one-plan-one-terminal-receipt
   must_not:
-  - mutate-source-from-runtime
-  - create-source-authority
-  - execute-undeclared-capability
-  - retain-hidden-resident-runtime-state
-  - reinterpret-bootstrap-state-as-runtime-state
-  - infer-authority-from-library-filename
-  - infer-authority-from-conversation-memory
-  - treat-stale-receipt-or-handoff-as-current-gate
-  - grant-first-light-material-authority
-  - allow-temporalis-external-side-effects
+    - grant-first-light-material-authority
+    - allow-temporalis-external-side-effects
+    - own-mcp-control-or-recompute-policy
+    - infer-authority-from-event-plan-receipt-path-or-transport
+    - dispatch-from-mutable-working-source
+    - mutate-authoritative-source
+    - create-a-resident-runtime-service
+    - create-a-worker-pool-or-hidden-cross-event-state
+    - discover-new-plan-nodes-at-runtime
+    - select-semantic-branches-from-capability-output
+    - autonomously-retry-replay-or-reorient
+    - cross-a-required-mcp-reresolution-boundary
+    - collapse-process-exit-into-semantic-pass-or-fail
+    - collapse-missing-or-unknown-evidence-into-failure
+    - self-authenticate-owner-persistence-or-verification
+    - include-wall-clock-random-or-machine-path-metadata-in-canonical-plan-identity
+    - report-receipt-custody-without-separate-storage-observation
 interfaces:
   consumes:
-  - validated-release
-  - runtime-profile
-  - bootstrap-state
-  - runtime-event
-  - first-light-event
-  - temporalis-scenario
+    - first-light-event
+    - temporalis-scenario
+    - cerebro-runtime2-event/v1
+    - MCP_CONTROL_DECISION
+    - cerebro-runtime2-execution-basis/v1
+    - source-derived-capability-registry
+    - tooling-host-runtime2-supervision-result-v1
+    - owner-and-validator-evidence-bindings
   produces:
-  - runtime-state
-  - runtime-receipt
-  - runtime-failure-ledger
-  - control-transfer-evidence
-  - first-light-receipt
-  - temporalis-trace
-documentation:
-  path: README.md
+    - first-light-receipt
+    - temporalis-trace
+    - cerebro-runtime2-execution-plan/v1
+    - cerebro-runtime2-node-outcome/v1
+    - cerebro-runtime2-terminal-receipt/v1
+    - cerebro-runtime2-kernel-selftest/v1
+authority:
+  source: canonical-source
+  live_control_owner: MCP
+  runtime_host_role: bounded-executor-and-evidence-composer
+  durable_state_owner: existing-context-and-owner-services
+  process_supervision_owner: tooling.host
+runtime2:
+  architecture: R2_OWNER_PRESERVING_EVENT_FABRIC
+  event_cardinality: one
+  decision_epoch_cardinality: one
+  plan_mutability_after_freeze: forbidden
+  resident_state: false
+  autonomous_retry: false
+  canonical_json: RFC8785_JCS_SUPPORTED_DOMAIN
+  hash_algorithm: SHA256
+  plan_id_rule: R2PLAN-first-24-uppercase-hex-of-plan-fingerprint
+  node_id_rule: N plus four-digit-strict-ordinal
+  receipt_id_rule: R2REC-first-24-uppercase-hex-of-receipt-fingerprint
+  execution_basis_id_rule: R2BASIS-first-24-uppercase-hex-of-basis-fingerprint
+  execution_modes:
+    - IN_PROCESS_TRUSTED_PURE
+    - SUPERVISED_PROCESS
+    - ISOLATED_CAPABILITY_WORKER
 migration:
-  introduced_by: PATCH-005
-  supersedes: loader
+  preserves_legacy_runtime0_1_as_oracle: true
+  legacy_powershell_runtime_retirement_requires_equivalence_or-unreachability: true
 version:
-  component: 1.1.0
+  component: 2.0.0-m4
   schema: 1

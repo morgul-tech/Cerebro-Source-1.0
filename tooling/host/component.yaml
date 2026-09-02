@@ -3,10 +3,14 @@ component:
   id: host
   name: Cerebro Host
   type: tooling
-  version: 0.5.0
+  version: 0.9.0
   status: active-source
 responsibility:
-  primary: Provide one small stable local entrypoint that verifies Source identity, selects an exact immutable tooling snapshot, and delegates execution.
+  primary: >-
+    Provide the stable local host entrypoint and the single shared tooling.host
+    process-supervision mechanism, including typed basis-bound Runtime2
+    supervision that emits neutral process evidence without selecting work,
+    control flow or semantic success.
 boundaries:
   must:
     - verify-source-repository-binding
@@ -14,14 +18,26 @@ boundaries:
     - dispatch-from-immutable-tooling-snapshot
     - preserve-delegate-argv-verbatim-after-component-selector-including-option-prefixed-first-token
     - preserve-live-child-output
-    - dispatch-change-delivery-closure-and-diagnostics-capabilities
+    - dispatch-change-delivery-closure-diagnostics-and-first-light-capabilities
     - rehydrate-latest-unresolved-diagnostic-context-before-delegation
+    - precommit-first-light-event-and-invocation-identity-before-child-start
     - supervise-delegated-native-processes-through-one-reusable-path
-    - persist-operation-journal-before-delegate-execution
-    - emit-heartbeat-independent-of-child-stdout
+    - accept-typed-runtime2-supervision-request
+    - bind-runtime2-supervision-to-exact-invocation-event-plan-node-and-execution-basis
+    - persist-runtime2-pre-start-journal-before-process-start
+    - resolve-and-recheck-exact-executable-before-process-start
+    - use-direct-argv-with-shell-disabled
+    - build-runtime2-child-environment-only-from-frozen-environment-binding
+    - bind-runtime2-cwd-io-heartbeat-timeout-and-termination-policies
+    - emit-heartbeat-independent-of-child-stdout-and-progress
     - preserve-process-observation-separately-from-material-poststate
+    - classify-unavailable-exit-status-as-unknown-not-failure
+    - preserve-start-failure-separately-from-process-exit
     - keep-stall-detection-non-destructive-by-default
-    - classify-unavailable-exit-status-as-unknown-not-nonzero
+    - require-explicit-safe-termination-policy-before-forced-termination
+    - fingerprint-every-runtime2-evidence-artifact
+    - prohibit-autonomous-retry-or-replay
+    - keep-runtime2-diagnostics-evidence-only-and-non-masking
   must_not:
     - mutate-working-source
     - parse-roadmap
@@ -29,6 +45,15 @@ boundaries:
     - own-quality-policy
     - own-publication-policy
     - own-runtime-transition-policy
+    - select-runtime2-work
+    - add-runtime2-plan-nodes-or-branches
+    - infer-semantic-pass-or-fail-from-process-exit
+    - infer-progress-from-heartbeat-or-output-silence
+    - inherit-ambient-environment-into-runtime2-child
+    - use-shell-command-reconstruction-for-runtime2-supervision
+    - silently-refresh-runtime2-execution-basis
+    - autonomously-retry-or-replay-runtime2-effects
+    - maintain-a-resident-runtime2-worker-pool
 dependencies:
   build: []
   runtime:
@@ -39,6 +64,7 @@ interfaces:
     - working-source-location
     - exact-source-commit
     - command
+    - runtime2-supervision-request-v1
   produces:
     - delegated-process-result
     - operation-journal
@@ -46,6 +72,25 @@ interfaces:
     - heartbeat-evidence
     - rehydrated-diagnostic-context-binding
     - diagnostic-capability-result
+    - runtime2-supervision-result-v1
+    - runtime2-operation-journal-v1
+    - runtime2-process-observation-operational-evidence-v0.1
+    - runtime2-heartbeat-summary-v1
+documentation:
+  runtime2_supervision_owner: tooling.host
+  runtime2_control_owner: MCP
+  runtime2_semantic_result_owner: capability-owner
+  runtime2_execution_modes:
+    - SUPERVISED_PROCESS
+    - ISOLATED_CAPABILITY_WORKER
+  runtime2_isolation_rule: >-
+    ISOLATED_CAPABILITY_WORKER is one fresh stateless process per node with only
+    frozen serialized request/resource bindings. It is a process/state boundary,
+    not an implicit security sandbox; stronger sandboxing is consumed only when
+    the capability contract explicitly supplies a verified sandbox binding.
+  legacy_dispatch_compatibility: >-
+    Existing change/delivery/closure/diagnostics/first-light dispatch remains
+    available but is not the canonical Runtime2 supervision path.
 version:
-  component: 0.1.0
+  component: 0.9.0
   schema: 1
