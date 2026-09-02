@@ -16,6 +16,7 @@ SOURCE_ROOT = Path(__file__).resolve().parents[2]
 if str(SOURCE_ROOT / "mcp") not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT / "mcp"))
 
+import adaptive_control_resolver  # noqa: E402
 from control_owner_effect_receipt import build_owner_effect_receipt  # noqa: E402
 from control_owner_routing import _consolidation_fixture  # noqa: E402
 from control_resolution_host import (  # noqa: E402
@@ -23,6 +24,8 @@ from control_resolution_host import (  # noqa: E402
     BoundRuntimeCapabilityResolver,
     CompositeOwnerPersistenceVerifier,
     ControlResolutionHostError,
+    PM_AUTHORIZED_COMMAND_STATE_SCHEMA,
+    consume_pm_authorized_command,
 )
 
 
@@ -100,6 +103,47 @@ class FixtureExecutor:
             "result": "PASS",
             "owner": self.owner,
             "receipt": receipt,
+        }
+
+
+class PMCommandExecutorFixture:
+    def __init__(self, *, available: bool = True, stale: bool = False):
+        self.available = available
+        self.stale = stale
+        self.calls: list[dict[str, Any]] = []
+
+    def is_available(self, *, command: dict[str, Any], carrier: dict[str, Any]) -> bool:
+        return self.available
+
+    def execute(self, *, command: dict[str, Any], carrier: dict[str, Any]) -> dict[str, Any]:
+        self.calls.append({"command": copy.deepcopy(command), "carrier": copy.deepcopy(carrier)})
+        if self.stale:
+            return {
+                "result": "STALE_PRECONDITION",
+                "exact_blocker": "STALE_PRECONDITION:CANONICAL_STATE_REVISION_ADVANCED",
+            }
+        precondition = command["precondition"]
+        after_fingerprint = hashlib.sha256(
+            f"{command['command_id']}:{precondition['state_fingerprint']}:after".encode()
+        ).hexdigest()
+        return {
+            "result": "PASS",
+            "command_id": command["command_id"],
+            "action_ref": command["action_ref"],
+            "precondition_fingerprint": precondition["state_fingerprint"],
+            "state_delta": {
+                "before_state_ref": precondition["state_ref"],
+                "before_state_fingerprint": precondition["state_fingerprint"],
+                "after_state_ref": "PM-COMMAND-STATE-AFTER",
+                "after_state_fingerprint": after_fingerprint,
+                "mutated": True,
+            },
+            "readback": {
+                "state_ref": "PM-COMMAND-STATE-AFTER",
+                "state_fingerprint": after_fingerprint,
+                "provider_revision": command["canonical_state_revision"] + 1,
+                "verified": True,
+            },
         }
 
 
@@ -260,6 +304,292 @@ def selftest() -> dict[str, Any]:
             ),
             ControlResolutionHostError,
         ),
+    )
+
+    # Packet553 C1-C20: bounded PM-authorized command consumer + existing reorientation physiology.
+    def adaptive_live_stub(request: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+        return adaptive_control_resolver.resolve(request)
+
+    pm_host = BoundControlResolutionHost(
+        persistence_verifier=composite,
+        capability_resolver=capability,
+        canonical_resolver=adaptive_live_stub,
+    )
+    governance = {
+        "next_action": {
+            "action_ref": "PM-ACTION-1",
+            "owner": "MACHINE",
+            "pm_actor": "PROJECT_MANAGER",
+            "internally_executable": True,
+            "required_before_event_closure": True,
+        }
+    }
+    source_head = "9e5625ea3de06840489d5b145a9e63d08650e0fe"
+    pre_fingerprint = hashlib.sha256(b"pm-command-before").hexdigest()
+    command = {
+        "schema": PM_AUTHORIZED_COMMAND_STATE_SCHEMA,
+        "authority": "PROJECT_MANAGER",
+        "command_id": "PMCMD-1",
+        "action_ref": "PM-ACTION-1",
+        "source_head": source_head,
+        "canonical_state_ref": "CONTEXT:PMCMD:1",
+        "canonical_state_revision": 7,
+        "authorized_carrier_ref": "L-OLD-CARRIER",
+        "precondition": {
+            "state_ref": "PM-COMMAND-STATE-BEFORE",
+            "state_fingerprint": pre_fingerprint,
+        },
+        "payload": {"operation": "EXECUTE_ALREADY_AUTHORIZED_COMMAND"},
+    }
+    carrier = {
+        "carrier_ref": "L-FRESH-CARRIER",
+        "identity_verified": True,
+        "currentness_verified": True,
+        "source_head": source_head,
+        "canonical_state_ref": "CONTEXT:PMCMD:1",
+        "canonical_state_revision": 7,
+    }
+    executor = PMCommandExecutorFixture()
+    consumed = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=carrier,
+        command_executor=executor,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C1-pm-decides-consumer-does-not-decide",
+        command["authority"] == "PROJECT_MANAGER"
+        and consumed["result"] == "PASS_STATE_DELTA_READBACK"
+        and len(executor.calls) == 1,
+    )
+    check(
+        "C2-authorized-command-consumed-same-cycle-with-exact-readback",
+        consumed["command_executed"] is True
+        and consumed["state_delta_observed"] is True
+        and consumed["state_delta"]["after_state_fingerprint"] == consumed["readback"]["state_fingerprint"],
+    )
+    no_effect = consume_pm_authorized_command(
+        pm_host,
+        governance={"next_action": {"action_ref": "NONE", "owner": "NONE"}},
+        command_state=None,
+        carrier=carrier,
+        command_executor=executor,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check("C3-no-authorized-command-means-no-effect", no_effect["result"] == "NO_EFFECT")
+
+    stale = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=carrier,
+        command_executor=PMCommandExecutorFixture(stale=True),
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C4-stale-precondition-returns-exact-blocker-no-retry",
+        stale["result"] == "EXACT_BLOCKER"
+        and stale["exact_blocker"].startswith("STALE_PRECONDITION:")
+        and stale["retry_allowed"] is False,
+    )
+    unavailable_carrier = copy.deepcopy(carrier)
+    unavailable_carrier["capable_carrier_ref"] = "L-CAPABLE"
+    unavailable = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=unavailable_carrier,
+        command_executor=PMCommandExecutorFixture(available=False),
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C5-capability-unavailable-returns-exact-external-blocker",
+        unavailable["result"] == "EXACT_BLOCKER"
+        and unavailable["exact_blocker"].startswith("CARRIER_COMMAND_EXECUTOR_UNAVAILABLE:")
+        and unavailable["hmi"]["next_owner"] == "L-CAPABLE",
+    )
+    check(
+        "C6-carrier-replacement-recovers-pending-command-from-canonical-state",
+        command["authorized_carrier_ref"] != carrier["carrier_ref"]
+        and consumed["result"] == "PASS_STATE_DELTA_READBACK",
+    )
+    check(
+        "C7-terminal-result-fronting-does-not-auto-admit",
+        "admission" not in consumed and consumed["hmi"]["next_owner"] == "PROJECT_MANAGER",
+    )
+    check(
+        "C8-consumer-has-no-disjoint-lane-global-stop",
+        consumed["result"] == "PASS_STATE_DELTA_READBACK" and "global_stop" not in consumed,
+    )
+    check(
+        "C9-zero-human-pulse-dependency",
+        consumed["hmi"]["human_action"] == "NONE",
+    )
+    check(
+        "C10-consumer-is-not-authority",
+        command["authority"] == "PROJECT_MANAGER"
+        and consumed.get("authority") is None,
+    )
+    check(
+        "C11-hmi-renders-next-machine-action-owner-human-action",
+        set(consumed["hmi"]) == {"next_machine_action", "next_owner", "human_action"}
+        and consumed["hmi"]["next_machine_action"] == "RERESOLVE_CONTROL",
+    )
+    check(
+        "C12-carrier-capability-does-not-collapse-system-capability",
+        unavailable["hmi"]["next_owner"] == "L-CAPABLE"
+        and "SYSTEM_CAPABILITY_UNAVAILABLE" not in unavailable["exact_blocker"],
+    )
+
+    reflex = {
+        "repeated_same_family": True,
+        "no_state_advance": True,
+        "material_human_recontact": True,
+        "elapsed_time_only": False,
+        "fallback_state": "AVAILABLE",
+        "fallback_proven": True,
+        "fallback_ref": "KNOWN-FALLBACK",
+        "reorientation_request": {
+            "objective_ref": "P553-REFLEX",
+            "current_execution_mechanism": "same-wall-A",
+            "proposed_execution_mechanism": "known-fallback-B",
+            "requested_capabilities": [
+                {
+                    "id": "primary-route",
+                    "required": False,
+                    "fallback": "known-fallback-B",
+                    "fallback_proven": True,
+                }
+            ],
+            "governing_basis_refs": ["FAILURE_INDEX", "LEVERINGSARV", "VINKELPASS"],
+        },
+    }
+    reoriented = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=carrier,
+        command_executor=executor,
+        progress_evidence=reflex,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C13-repeated-same-family-no-advance-human-burden-routes-reorientation",
+        reoriented["result"] == "REORIENTED_BEFORE_IDENTICAL_RETRY"
+        and reoriented["reflex_resolution"]["mcp_control_decision"]["outcome"] == "REORIENT",
+    )
+    elapsed_only = copy.deepcopy(reflex)
+    elapsed_only["repeated_same_family"] = False
+    elapsed_only["no_state_advance"] = False
+    elapsed_only["material_human_recontact"] = False
+    elapsed_only["elapsed_time_only"] = True
+    elapsed_executor = PMCommandExecutorFixture()
+    elapsed_result = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=carrier,
+        command_executor=elapsed_executor,
+        progress_evidence=elapsed_only,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C14-elapsed-time-alone-does-not-trigger-reflex",
+        elapsed_result["result"] == "PASS_STATE_DELTA_READBACK"
+        and len(elapsed_executor.calls) == 1,
+    )
+    check(
+        "C15-proven-sufficient-fallback-routes-before-new-architecture",
+        reoriented["reflex_resolution"]["execution_profile"]["execution_mechanism"] == "known-fallback-B"
+        and reoriented["reflex_resolution"]["mcp_control_decision"]["outcome"] == "REORIENT",
+    )
+    stale_fallback = copy.deepcopy(reflex)
+    stale_fallback["fallback_state"] = "STALE"
+    stale_fallback_result = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=carrier,
+        command_executor=executor,
+        progress_evidence=stale_fallback,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C16-stale-or-unknown-fallback-requires-refresh-not-blind-use",
+        stale_fallback_result["result"] == "EXACT_BLOCKER"
+        and stale_fallback_result["exact_blocker"] == "FALLBACK_CURRENTNESS_UNRESOLVED:STALE",
+    )
+    no_fallback = copy.deepcopy(reflex)
+    no_fallback["fallback_state"] = "NONE_PROVEN"
+    no_fallback["fallback_proven"] = False
+    no_fallback["fallback_ref"] = ""
+    no_fallback["semantic_owner_ref"] = "MCP_CONTROL_ARCHITECTURE"
+    no_fallback["reorientation_request"]["proposed_execution_mechanism"] = "bounded-regrounding-owner-route"
+    regrounded = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=carrier,
+        command_executor=executor,
+        progress_evidence=no_fallback,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C17-no-proven-fallback-routes-bounded-regrounding-to-lawful-owner",
+        regrounded["result"] == "REORIENTED_BEFORE_IDENTICAL_RETRY"
+        and no_fallback["semantic_owner_ref"] == "MCP_CONTROL_ARCHITECTURE",
+    )
+    invalid_owner = copy.deepcopy(no_fallback)
+    invalid_owner["semantic_owner_ref"] = "PROJECT_MANAGER"
+    check(
+        "C18-host-or-pm-is-not-architecture-authority",
+        _expect_error(
+            lambda: consume_pm_authorized_command(
+                pm_host,
+                governance=governance,
+                command_state=command,
+                carrier=carrier,
+                command_executor=executor,
+                progress_evidence=invalid_owner,
+                root=SOURCE_ROOT,
+                require_git_ancestry=False,
+            ),
+            ControlResolutionHostError,
+        ),
+    )
+    check(
+        "C19-behavior-canary-executes-real-adaptive-routing",
+        reoriented["reflex_resolution"]["schema"] == "cerebro-adaptive-control-resolution/v0.1"
+        and reoriented["reflex_resolution"]["mcp_control_decision"]["outcome"] == "REORIENT",
+    )
+    same_wall = copy.deepcopy(reflex)
+    same_wall["reorientation_request"]["proposed_execution_mechanism"] = "same-wall-A"
+    same_wall_result = consume_pm_authorized_command(
+        pm_host,
+        governance=governance,
+        command_state=command,
+        carrier=carrier,
+        command_executor=executor,
+        progress_evidence=same_wall,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "C20-same-wall-retry-without-material-delta-blocks-no-progress",
+        same_wall_result["result"] == "EXACT_BLOCKER"
+        and same_wall_result["exact_blocker"] == "NO_PROGRESS_REORIENTATION_BLOCK"
+        and "REORIENTATION_INVALID_UNCHANGED_PATH"
+        in same_wall_result["reflex_resolution"]["mcp_control_decision"]["invalidates"],
     )
 
     result = "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL"
