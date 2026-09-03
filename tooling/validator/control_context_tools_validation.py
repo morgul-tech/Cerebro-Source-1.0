@@ -25,6 +25,7 @@ from control_context_state_port import (  # noqa: E402
     StateConflict,
 )
 from control_context_tools import (  # noqa: E402
+    ContextLifecycleEffectAdapter,
     ControlContextMcpTools,
     ControlContextToolAuthorizationError,
     HmacControlResolutionAttestor,
@@ -455,6 +456,280 @@ def selftest() -> dict[str, Any]:
             ),
             StateBindingError,
         ),
+    )
+
+
+    # Packet554: existing complete tool is the bounded lifecycle-effect consumer.
+    from control_context_registry import bootstrap_actor_generation_shadow
+    import project_manager_control_governor
+
+    class LifecycleProfileVerifier:
+        def verify(self, *, binding: dict[str, Any], session: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "schema": "cerebro-project-manager-profile-verification/v1",
+                "result": "PASS",
+                "profile": "PROJECT_MANAGER",
+                "session_ref": session["session_ref"],
+                "binding_fingerprint": "a" * 64,
+                "verifier_ref": "LIFECYCLE-TOOLS-SELFTEST",
+            }
+
+    class LifecycleFixturePort:
+        def __init__(self):
+            self.inner = InMemoryControlContextStatePort()
+            self.commit_evidence: dict[str, dict[str, Any]] = {}
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self.inner, name)
+
+        def complete_event(self, request: dict[str, Any], *, scopes: set[str]) -> dict[str, Any]:
+            completion = self.inner.complete_event(request, scopes=scopes)
+            directive = copy.deepcopy(request["directive"])
+            commit_fingerprint = hashlib.sha256(
+                json.dumps(
+                    directive,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=False,
+                ).encode("utf-8")
+            ).hexdigest()
+            commit_ref = "SSC-LIFECYCLE-" + commit_fingerprint[:16].upper()
+            commit = {"commit_ref": commit_ref, "commit_fingerprint": commit_fingerprint}
+            completion["state_commit"] = copy.deepcopy(commit)
+            self.commit_evidence[commit_ref] = {
+                "schema": "cerebro-state-service-commit-evidence-bundle/v1",
+                "commit": copy.deepcopy(commit),
+                "directive": directive,
+            }
+            return completion
+
+        def read_state_commit_evidence(self, *, commit_ref: str, **_: Any) -> dict[str, Any]:
+            if commit_ref not in self.commit_evidence:
+                raise StateBindingError("state-commit-evidence-not-found")
+            return copy.deepcopy(self.commit_evidence[commit_ref])
+
+    lifecycle_port = LifecycleFixturePort()
+    lifecycle_attestor = HmacControlResolutionAttestor(
+        key_id="LIFECYCLE-TOOLS-SELFTEST",
+        secret=b"lifecycle-tools-selftest-attestation-0001",
+    )
+    lifecycle_adapter = ContextLifecycleEffectAdapter(
+        lifecycle_port,
+        LifecycleProfileVerifier(),
+    )
+    lifecycle_tools = ControlContextMcpTools(
+        lifecycle_port,
+        lifecycle_attestor,
+        lifecycle_effect_adapter=lifecycle_adapter,
+    )
+    lifecycle_context = _context()
+    lifecycle_tools.dispatch(
+        "create_project_control_instance",
+        _signed_args(
+            lifecycle_attestor,
+            "create_project_control_instance",
+            create_payload,
+            lifecycle_context,
+        ),
+        lifecycle_context,
+    )
+    lifecycle_begin = lifecycle_tools.dispatch(
+        "begin_project_control_event",
+        {"event_id": "EVENT-LIFECYCLE", "idempotency_key": "IDEMPOTENCY-LIFECYCLE"},
+        lifecycle_context,
+    )["structuredContent"]
+    shadow = bootstrap_actor_generation_shadow(
+        tenant_ref="TENANT-1",
+        workspace_ref="WORKSPACE-1",
+        actor_ref="W-LIFECYCLE",
+        role="WORKER",
+        generation_ref="W-LIFECYCLE",
+        source_revision="1" * 40,
+    )
+    lifecycle_port.write_actor_generation_shadow(
+        shadow,
+        expected_revision=0,
+        scopes={"project_state:transition"},
+    )
+    lifecycle_candidate = {
+        "schema": "cerebro-actor-lifecycle-mutation/v1",
+        "mutation_id": "MUT-LIFECYCLE-1",
+        "idempotency_key": "IDEMPOTENCY-LIFECYCLE-1",
+        "operation": "BIND",
+        "actor_generation_id": "W-LIFECYCLE",
+        "slot_pointer_ref": "READY_QUEUE:LIFECYCLE",
+        "expected_slot_pointer": "W-LIFECYCLE",
+        "observed_slot_pointer": "W-LIFECYCLE",
+        "expected_lifecycle_revision": 1,
+        "expected_lifecycle_state": "REQUALIFICATION_REQUIRED",
+        "expected_claim_revision": "NOT_APPLICABLE",
+        "packet_ref": "WORK_PACKETS:534",
+        "claim_ref": None,
+        "authority_source": "PROJECT_MANAGER+MCP",
+        "observed_event_frontier": 3988,
+        "source_transition": {
+            "intent": "SAME_GENERATION_SOURCE_REQUALIFICATION",
+            "previous_source_head": "1" * 40,
+            "target_source_head": "2" * 40,
+            "changed_contracts": ["mcp/control-context"],
+            "gates_rerun": ["SOURCE", "CURRENTNESS", "ROLE", "INTEGRITY"],
+            "prerequisite_fingerprint": "3" * 64,
+            "boot_fingerprint": "4" * 64,
+            "current_source_verified": True,
+            "actor_nonretired_verified": True,
+            "no_active_claim_verified": True,
+            "generation_pointer_verified": True,
+        },
+    }
+    lifecycle_candidate["candidate_fingerprint"] = hashlib.sha256(
+        json.dumps(
+            lifecycle_candidate,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    lifecycle_directive = {
+        "schema": DIRECTIVE_SCHEMA,
+        "event_id": "EVENT-LIFECYCLE",
+        "decision_ref": "MCPD-LIFECYCLE",
+        "expected_project_revision": lifecycle_begin["expected_project_revision"],
+        "expected_project_fingerprint": lifecycle_begin["expected_project_fingerprint"],
+        "expected_session_revision": lifecycle_begin["expected_session_revision"],
+        "expected_session_fingerprint": lifecycle_begin["expected_session_fingerprint"],
+        "project_operations": [],
+        "session_operations": [],
+    }
+    lifecycle_payload = {
+        "event_id": "EVENT-LIFECYCLE",
+        "directive": lifecycle_directive,
+        "navigation_options_candidate": None,
+        "actor_lifecycle_mutation_candidate": lifecycle_candidate,
+    }
+    lifecycle_completion = lifecycle_tools.dispatch(
+        "complete_project_control_event",
+        _signed_args(
+            lifecycle_attestor,
+            "complete_project_control_event",
+            lifecycle_payload,
+            lifecycle_context,
+        ),
+        lifecycle_context,
+    )["structuredContent"]
+    lifecycle_evidence = lifecycle_completion["actor_lifecycle_effect_evidence"]
+    lifecycle_post = lifecycle_port.read_actor_generation_shadow(
+        tenant_ref="TENANT-1",
+        workspace_ref="WORKSPACE-1",
+        role="WORKER",
+        generation_ref="W-LIFECYCLE",
+        scopes={"project_state:read"},
+    )
+    check(
+        "P554-existing-complete-tool-produces-derived-ready-current-evidence",
+        lifecycle_evidence["post_lifecycle_state"] == "READY_CURRENT"
+        and lifecycle_evidence["post_source_head"] == "2" * 40
+        and lifecycle_evidence["provider_revision"] == 2,
+    )
+    check(
+        "P554-shadow-remains-READY-and-SHADOW_ONLY",
+        lifecycle_post["authority"] == "SHADOW_ONLY"
+        and lifecycle_post["lifecycle"] == "READY"
+        and lifecycle_post["source_revision"] == "2" * 40,
+    )
+    verified_candidate = copy.deepcopy(lifecycle_candidate)
+    verified_candidate["effect_evidence"] = copy.deepcopy(lifecycle_evidence)
+    verified_candidate["candidate_fingerprint"] = hashlib.sha256(
+        json.dumps(
+            {key: value for key, value in verified_candidate.items() if key != "candidate_fingerprint"},
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    lifecycle_gate = project_manager_control_governor._lifecycle_mutation_gate(
+        {"lifecycle_mutation": verified_candidate},
+        lifecycle_effect_verifier=lifecycle_adapter,
+        session=lifecycle_begin["session"],
+    )
+    check(
+        "P554-governor-accepts-only-after-constructor-bound-durable-readback",
+        lifecycle_gate["result"] == "PASS_EFFECT_VERIFIED"
+        and lifecycle_gate["ready_effect_allowed"] is True,
+    )
+    replay_evidence = lifecycle_adapter.execute_lifecycle_effect(
+        candidate=lifecycle_candidate,
+        context=lifecycle_context,
+        completion=lifecycle_completion,
+        bound_directive={
+            "actor_lifecycle_mutation_candidate_fingerprint":
+                lifecycle_adapter._pre_effect_fingerprint(lifecycle_candidate)
+        },
+    )
+    check(
+        "P554-exact-replay-is-idempotent-no-second-shadow-revision",
+        replay_evidence == lifecycle_evidence
+        and lifecycle_port.read_actor_generation_shadow(
+            tenant_ref="TENANT-1",
+            workspace_ref="WORKSPACE-1",
+            role="WORKER",
+            generation_ref="W-LIFECYCLE",
+            scopes={"project_state:read"},
+        )["revision"] == 2,
+    )
+    check(
+        "P554-unbound-adapter-fails-closed",
+        _expect_error(
+            lambda: ControlContextMcpTools(
+                LifecycleFixturePort(),
+                lifecycle_attestor,
+            ).dispatch(
+                "complete_project_control_event",
+                _signed_args(
+                    lifecycle_attestor,
+                    "complete_project_control_event",
+                    lifecycle_payload,
+                    lifecycle_context,
+                ),
+                lifecycle_context,
+            ),
+            ControlContextToolAuthorizationError,
+        ),
+    )
+    stale_candidate = copy.deepcopy(lifecycle_candidate)
+    stale_candidate["mutation_id"] = "MUT-LIFECYCLE-STALE"
+    stale_candidate["expected_lifecycle_revision"] = 2
+    stale_candidate["candidate_fingerprint"] = hashlib.sha256(
+        json.dumps(
+            {key: value for key, value in stale_candidate.items() if key != "candidate_fingerprint"},
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    check(
+        "P554-stale-shadow-source-or-revision-blocks",
+        _expect_error(
+            lambda: lifecycle_adapter.execute_lifecycle_effect(
+                candidate=stale_candidate,
+                context=lifecycle_context,
+                completion=lifecycle_completion,
+                bound_directive={
+                    "actor_lifecycle_mutation_candidate_fingerprint":
+                        lifecycle_adapter._pre_effect_fingerprint(stale_candidate)
+                },
+            ),
+            ControlContextToolAuthorizationError,
+        ),
+    )
+    check(
+        "P554-no-new-public-MCP-tool",
+        [item["name"] for item in tool_definitions()] == [
+            "read_project_control_state",
+            "begin_project_control_event",
+            "complete_project_control_event",
+            "create_project_control_instance",
+            "set_default_project_control_instance",
+        ],
     )
 
     manifest = yaml.safe_load((SOURCE_ROOT / "mcp/manifest.yaml").read_text(encoding="utf-8"))

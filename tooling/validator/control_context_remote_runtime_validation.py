@@ -303,7 +303,8 @@ def selftest() -> dict[str, Any]:
         and runtime_descriptor["state_backend"] == "POSTGRESQL"
         and runtime_descriptor["runtime_applies_migrations"] is False
         and runtime_descriptor["deployed"] is False
-        and runtime_descriptor["identity_provider_selected"] is False,
+        and runtime_descriptor["identity_provider_selected"] is False
+        and runtime_descriptor["pm_lifecycle_verifier_bound"] is False,
     )
     check(
         "runtime-descriptor-cannot-disclose-credentials-or-grant-repository-authority",
@@ -352,6 +353,60 @@ def selftest() -> dict[str, Any]:
             and metadata.json()["resource"] == RESOURCE
             and metadata.json()["authorization_servers"] == [ISSUER],
         )
+
+
+    class RuntimePmProfileVerifier:
+        def verify(self, *, binding: dict[str, Any], session: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "schema": "cerebro-project-manager-profile-verification/v1",
+                "result": "PASS",
+                "profile": "PROJECT_MANAGER",
+                "session_ref": session.get("session_ref"),
+                "binding_fingerprint": "a" * 64,
+                "verifier_ref": "REMOTE-RUNTIME-PM-SELFTEST",
+            }
+
+    class RuntimePersistenceVerifier:
+        def verify(self, *, receipt: dict[str, Any]) -> dict[str, Any]:
+            return {"result": "PASS", "receipt": receipt}
+
+    class RuntimeCapabilityResolver:
+        def is_available(self, **_: Any) -> bool:
+            return False
+
+        def executor(self, **_: Any) -> Any:
+            raise RuntimeError("not-used")
+
+    lifecycle_runtime_factory = ProbeFactory()
+    lifecycle_runtime = assemble_postgres_control_context_remote_runtime_from_connection_factory(
+        config=config,
+        connection_factory=lifecycle_runtime_factory,
+        token_verifier=StaticTokenVerifier(),
+        resolution_attestation_verifier=attestor,
+        pm_profile_verifier=RuntimePmProfileVerifier(),
+        clock=lambda: NOW,
+    )
+    check(
+        "P554-runtime-binds-combined-pm-lifecycle-verifier",
+        lifecycle_runtime.pm_lifecycle_verifier is not None
+        and callable(getattr(lifecycle_runtime.pm_lifecycle_verifier, "verify", None))
+        and callable(getattr(lifecycle_runtime.pm_lifecycle_verifier, "verify_lifecycle_effect", None))
+        and lifecycle_runtime.descriptor()["pm_lifecycle_verifier_bound"] is True,
+    )
+    bound_host = lifecycle_runtime.bind_control_resolution_host(
+        persistence_verifier=RuntimePersistenceVerifier(),
+        capability_resolver=RuntimeCapabilityResolver(),
+    )
+    check(
+        "P554-runtime-binds-same-verifier-into-normal-host",
+        getattr(bound_host, "_pm_profile_verifier", None)
+        is lifecycle_runtime.pm_lifecycle_verifier,
+    )
+    check(
+        "P554-readiness-requires-existing-actor-shadow-relations",
+        "cerebro_actor_generation_shadow_heads" in REQUIRED_POSTGRES_RELATIONS
+        and "cerebro_actor_generation_shadow_revisions" in REQUIRED_POSTGRES_RELATIONS,
+    )
 
     source_text = (
         SOURCE_ROOT / "mcp/control_context_remote_runtime.py"

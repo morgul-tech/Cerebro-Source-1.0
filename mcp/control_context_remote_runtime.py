@@ -42,7 +42,7 @@ from control_context_state_postgres import (  # noqa: E402
     PostgresControlContextStatePort,
     make_psycopg_connection_factory,
 )
-from control_context_tools import ControlContextMcpTools  # noqa: E402
+from control_context_tools import ContextLifecycleEffectAdapter, ControlContextMcpTools  # noqa: E402
 
 
 REMOTE_RUNTIME_SCHEMA = "cerebro-control-context-remote-runtime/v1"
@@ -64,6 +64,8 @@ REQUIRED_POSTGRES_RELATIONS = (
     "cerebro_owner_state_heads",
     "cerebro_owner_state_revisions",
     "cerebro_owner_state_commit_receipts",
+    "cerebro_actor_generation_shadow_heads",
+    "cerebro_actor_generation_shadow_revisions",
 )
 
 
@@ -367,6 +369,7 @@ class ControlContextRemoteRuntime:
     state_port: PostgresControlContextStatePort = field(repr=False)
     readiness_probe: PostgresStateServiceReadinessProbe = field(repr=False)
     app: Any = field(repr=False)
+    pm_lifecycle_verifier: Any | None = field(default=None, repr=False)
 
     def descriptor(self) -> dict[str, Any]:
         sdk = official_mcp_sdk_runtime()
@@ -383,8 +386,23 @@ class ControlContextRemoteRuntime:
             "runtime_applies_migrations": False,
             "repository_credentials": "NONE",
             "identity_provider_selected": False,
+            "pm_lifecycle_verifier_bound": self.pm_lifecycle_verifier is not None,
             "deployed": False,
         }
+
+    def bind_control_resolution_host(
+        self,
+        *,
+        persistence_verifier: Any,
+        capability_resolver: Any,
+    ) -> Any:
+        _require(self.pm_lifecycle_verifier is not None, "runtime-pm-lifecycle-verifier-unbound")
+        from control_resolution_host import BoundControlResolutionHost
+        return BoundControlResolutionHost(
+            persistence_verifier=persistence_verifier,
+            capability_resolver=capability_resolver,
+            pm_profile_verifier=self.pm_lifecycle_verifier,
+        )
 
 
 def assemble_postgres_control_context_remote_runtime_from_connection_factory(
@@ -393,6 +411,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     connection_factory: Callable[[], Any],
     token_verifier: Any,
     resolution_attestation_verifier: Any,
+    pm_profile_verifier: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -408,7 +427,16 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     _require(callable(clock), "runtime-clock-required")
     state_port = PostgresControlContextStatePort(connection_factory)
     readiness_probe = PostgresStateServiceReadinessProbe(connection_factory, manifest_path)
-    tools = ControlContextMcpTools(state_port, resolution_attestation_verifier)
+    pm_lifecycle_verifier = (
+        ContextLifecycleEffectAdapter(state_port, pm_profile_verifier)
+        if pm_profile_verifier is not None
+        else None
+    )
+    tools = ControlContextMcpTools(
+        state_port,
+        resolution_attestation_verifier,
+        lifecycle_effect_adapter=pm_lifecycle_verifier,
+    )
     service = ControlContextRemoteMcpService(
         config=config.service,
         tools=tools,
@@ -428,6 +456,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         state_port=state_port,
         readiness_probe=readiness_probe,
         app=app,
+        pm_lifecycle_verifier=pm_lifecycle_verifier,
     )
 
 
@@ -437,6 +466,7 @@ def assemble_postgres_control_context_remote_runtime(
     postgres_dsn: str,
     token_verifier: Any,
     resolution_attestation_verifier: Any,
+    pm_profile_verifier: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -452,6 +482,7 @@ def assemble_postgres_control_context_remote_runtime(
         connection_factory=connection_factory,
         token_verifier=token_verifier,
         resolution_attestation_verifier=resolution_attestation_verifier,
+        pm_profile_verifier=pm_profile_verifier,
         clock=clock,
         manifest_path=manifest_path,
     )

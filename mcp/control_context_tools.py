@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import inspect
 import json
 import sys
 import copy
@@ -26,7 +27,9 @@ for path in (CONTEXT_TOOLING, VALIDATOR_TOOLING):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from control_context_state_port import BEGIN_SCHEMA
+from control_context_state_port import BEGIN_SCHEMA, StateBindingError
+from control_context_registry import actor_generation_shadow_fingerprint, validate_actor_generation_shadow
+import project_manager_control_governor
 from control_owner_effect_receipt import validate_owner_effect_receipt  # noqa: E402
 from human_navigation_surface_validation import (  # noqa: E402
     validate_navigation_options,
@@ -49,6 +52,7 @@ class ControlContextToolAuthorizationError(ControlContextToolError):
 
 
 ATTESTATION_SCHEMA = "cerebro-mcp-control-resolution-attestation/v1"
+LIFECYCLE_EFFECT_VERIFICATION_SCHEMA = "cerebro-context-lifecycle-effect-verification/v1"
 
 
 @dataclass(frozen=True)
@@ -190,6 +194,305 @@ class HmacControlResolutionAttestor:
         signature = attestation.get("signature")
         if not isinstance(signature, str) or not hmac.compare_digest(signature, expected["signature"]):
             raise ControlContextToolAuthorizationError("control-resolution-attestation-signature-invalid")
+
+
+
+class ContextLifecycleEffectAdapter:
+    """Constructor-bound Packet534 bridge over the existing actor shadow state port.
+
+    READY_CURRENT is derived effect evidence only. The persisted shadow remains
+    SHADOW_ONLY and stores lifecycle READY plus the exact target source revision.
+    """
+
+    _ROLES = ("ASSISTANT", "IMPLEMENTER", "PRINCIPAL", "PROJECT_MANAGER", "RESEARCHER", "WORKER")
+
+    def __init__(self, state_port: Any, profile_verifier: Any):
+        if not callable(getattr(profile_verifier, "verify", None)):
+            raise ControlContextToolAuthorizationError("pm-profile-verifier-required")
+        self._state_port = state_port
+        self._profile_verifier = profile_verifier
+
+    @staticmethod
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+            raise ControlContextToolAuthorizationError(message)
+
+    def verify(self, *, binding: dict[str, Any], session: dict[str, Any]) -> dict[str, Any]:
+        return self._profile_verifier.verify(
+            binding=copy.deepcopy(binding),
+            session=copy.deepcopy(session),
+        )
+
+    def _state_call(self, method: str, **kwargs: Any) -> Any:
+        target = getattr(self._state_port, method, None)
+        self._require(callable(target), f"lifecycle-state-port-method-required:{method}")
+        parameters = inspect.signature(target).parameters
+        return target(**{key: value for key, value in kwargs.items() if key in parameters})
+
+    @staticmethod
+    def _pre_effect_fingerprint(candidate: dict[str, Any]) -> str:
+        subject = copy.deepcopy(candidate)
+        subject.pop("effect_evidence", None)
+        subject.pop("candidate_fingerprint", None)
+        return hashlib.sha256(
+            json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+
+    @staticmethod
+    def _effect_receipt_fingerprint(
+        *,
+        commit_ref: str,
+        commit_fingerprint: str,
+        candidate_fingerprint: str,
+        shadow: dict[str, Any],
+    ) -> str:
+        subject = {
+            "schema": "cerebro-context-lifecycle-effect-receipt/v1",
+            "context_commit_ref": commit_ref,
+            "context_commit_fingerprint": commit_fingerprint,
+            "candidate_fingerprint": candidate_fingerprint,
+            "actor_shadow_fingerprint": shadow["fingerprint"],
+            "actor_shadow_revision": shadow["revision"],
+        }
+        return hashlib.sha256(
+            json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+
+    def _validate_pre_effect_candidate(self, candidate: dict[str, Any]) -> dict[str, Any]:
+        self._require(isinstance(candidate, dict), "actor-lifecycle-candidate-object-required")
+        self._require(candidate.get("effect_evidence") is None, "pre-effect-candidate-must-not-contain-effect-evidence")
+        self._require(candidate.get("authority_source") == "PROJECT_MANAGER+MCP", "actor-lifecycle-authority-source-mismatch")
+        try:
+            gate = project_manager_control_governor._lifecycle_mutation_gate(
+                {"lifecycle_mutation": copy.deepcopy(candidate)}
+            )
+        except Exception as exc:
+            raise ControlContextToolAuthorizationError(f"actor-lifecycle-candidate-invalid:{exc}") from exc
+        self._require(
+            gate.get("result") == "PASS_CANDIDATE_READY_FOR_CONTEXT"
+            and gate.get("ready_effect_allowed") is False,
+            "actor-lifecycle-candidate-not-ready-for-context",
+        )
+        return gate
+
+    def _read_unique_shadow(
+        self,
+        *,
+        tenant_ref: str,
+        workspace_ref: str,
+        principal_ref: str,
+        generation_ref: str,
+    ) -> dict[str, Any]:
+        matches: list[dict[str, Any]] = []
+        for role in self._ROLES:
+            try:
+                state = self._state_call(
+                    "read_actor_generation_shadow",
+                    tenant_ref=tenant_ref,
+                    workspace_ref=workspace_ref,
+                    role=role,
+                    generation_ref=generation_ref,
+                    principal_ref=principal_ref,
+                    scopes={"project_state:read"},
+                )
+            except StateBindingError:
+                continue
+            validate_actor_generation_shadow(state)
+            matches.append(state)
+        self._require(
+            len(matches) == 1,
+            f"actor-generation-shadow-unique-match-required:{generation_ref}:{len(matches)}",
+        )
+        return matches[0]
+
+    def execute_lifecycle_effect(
+        self,
+        *,
+        candidate: dict[str, Any],
+        context: McpToolCallContext,
+        completion: dict[str, Any],
+        bound_directive: dict[str, Any],
+    ) -> dict[str, Any]:
+        gate = self._validate_pre_effect_candidate(candidate)
+        identity = context.identity
+        identity.validate()
+        generation_ref = candidate["actor_generation_id"]
+        expected_revision = candidate["expected_lifecycle_revision"]
+        previous_head = gate["previous_source_head"]
+        target_head = gate["target_source_head"]
+        pre_fingerprint = self._pre_effect_fingerprint(candidate)
+        self._require(
+            bound_directive.get("actor_lifecycle_mutation_candidate_fingerprint") == pre_fingerprint,
+            "context-directive-lifecycle-candidate-fingerprint-mismatch",
+        )
+        state_commit = completion.get("state_commit")
+        self._require(isinstance(state_commit, dict), "durable-state-commit-receipt-required")
+        commit_ref = str(state_commit.get("commit_ref") or "")
+        commit_fingerprint = str(state_commit.get("commit_fingerprint") or "")
+        self._require(commit_ref, "durable-state-commit-ref-required")
+        self._require(len(commit_fingerprint) == 64, "durable-state-commit-fingerprint-required")
+
+        current = self._read_unique_shadow(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            generation_ref=generation_ref,
+        )
+        self._require(current["authority"] == "SHADOW_ONLY", "actor-shadow-authority-must-remain-shadow-only")
+        self._require(current["lifecycle"] == "READY", "requalification-shadow-must-be-ready")
+
+        if current["revision"] == expected_revision and current["source_revision"] == previous_head:
+            after = copy.deepcopy(current)
+            after.update(
+                lifecycle="READY",
+                source_revision=target_head,
+                revision=current["revision"] + 1,
+            )
+            after["fingerprint"] = actor_generation_shadow_fingerprint(after)
+            validate_actor_generation_shadow(after)
+            self._state_call(
+                "write_actor_generation_shadow",
+                state=after,
+                expected_revision=current["revision"],
+                principal_ref=identity.principal_ref,
+                scopes={"project_state:transition"},
+            )
+        elif (
+            current["revision"] == expected_revision + 1
+            and current["source_revision"] == target_head
+            and current["lifecycle"] == "READY"
+        ):
+            after = current
+        else:
+            raise ControlContextToolAuthorizationError(
+                "actor-generation-shadow-stale-or-unexpected-poststate"
+            )
+
+        readback = self._read_unique_shadow(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            generation_ref=generation_ref,
+        )
+        self._require(readback == after, "actor-generation-shadow-exact-readback-mismatch")
+        self._require(readback["authority"] == "SHADOW_ONLY", "actor-shadow-authority-promotion-prohibited")
+        self._require(readback["lifecycle"] == "READY", "actor-shadow-ready-readback-required")
+        self._require(readback["source_revision"] == target_head, "actor-shadow-target-source-readback-required")
+        receipt_fingerprint = self._effect_receipt_fingerprint(
+            commit_ref=commit_ref,
+            commit_fingerprint=commit_fingerprint,
+            candidate_fingerprint=pre_fingerprint,
+            shadow=readback,
+        )
+        return {
+            "receipt_id": commit_ref,
+            "context_commit_result": "COMMITTED",
+            "durable": True,
+            "post_state_readback_verified": True,
+            "post_actor_generation_id": generation_ref,
+            "post_lifecycle_state": "READY_CURRENT",
+            "post_source_head": target_head,
+            "provider_revision": readback["revision"],
+            "receipt_fingerprint": receipt_fingerprint,
+        }
+
+    def verify_lifecycle_effect(
+        self,
+        *,
+        evidence: dict[str, Any],
+        candidate: dict[str, Any],
+        session: dict[str, Any],
+    ) -> dict[str, Any]:
+        self._require(isinstance(evidence, dict), "lifecycle-effect-evidence-object-required")
+        self._require(isinstance(candidate, dict), "lifecycle-effect-candidate-object-required")
+        for field in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref"):
+            self._require(
+                isinstance(session.get(field), str) and bool(session[field].strip()),
+                f"lifecycle-session-{field}-required",
+            )
+        self._require(evidence.get("context_commit_result") == "COMMITTED", "lifecycle-context-commit-required")
+        self._require(evidence.get("durable") is True, "lifecycle-durable-commit-required")
+        self._require(
+            evidence.get("post_state_readback_verified") is True,
+            "lifecycle-poststate-readback-required",
+        )
+        pre_fingerprint = self._pre_effect_fingerprint(candidate)
+        commit_ref = str(evidence.get("receipt_id") or "")
+        bundle = self._state_call(
+            "read_state_commit_evidence",
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            consumer_ref=session["consumer_ref"],
+            session_ref=session["session_ref"],
+            commit_ref=commit_ref,
+            scopes={"project_state:read"},
+        )
+        self._require(isinstance(bundle, dict), "durable-context-commit-evidence-bundle-required")
+        directive = bundle.get("directive")
+        commit = bundle.get("commit")
+        self._require(
+            isinstance(directive, dict) and isinstance(commit, dict),
+            "durable-context-commit-directive-required",
+        )
+        self._require(commit.get("commit_ref") == commit_ref, "durable-context-commit-ref-mismatch")
+        self._require(
+            directive.get("actor_lifecycle_mutation_candidate_fingerprint") == pre_fingerprint,
+            "durable-context-commit-lifecycle-candidate-mismatch",
+        )
+        readback = self._read_unique_shadow(
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            generation_ref=candidate["actor_generation_id"],
+        )
+        transition = candidate.get("source_transition") or {}
+        self._require(
+            readback["authority"] == "SHADOW_ONLY",
+            "verified-shadow-authority-must-remain-shadow-only",
+        )
+        self._require(readback["lifecycle"] == "READY", "verified-shadow-ready-required")
+        self._require(
+            readback["source_revision"] == transition.get("target_source_head"),
+            "verified-shadow-target-source-mismatch",
+        )
+        self._require(
+            readback["revision"] == evidence.get("provider_revision"),
+            "verified-shadow-provider-revision-mismatch",
+        )
+        expected_fingerprint = self._effect_receipt_fingerprint(
+            commit_ref=commit_ref,
+            commit_fingerprint=commit["commit_fingerprint"],
+            candidate_fingerprint=pre_fingerprint,
+            shadow=readback,
+        )
+        self._require(
+            evidence.get("receipt_fingerprint") == expected_fingerprint,
+            "lifecycle-effect-receipt-fingerprint-mismatch",
+        )
+        self._require(
+            evidence.get("post_actor_generation_id") == candidate["actor_generation_id"],
+            "verified-lifecycle-generation-mismatch",
+        )
+        self._require(
+            evidence.get("post_lifecycle_state") == "READY_CURRENT",
+            "verified-lifecycle-derived-state-mismatch",
+        )
+        self._require(
+            evidence.get("post_source_head") == readback["source_revision"],
+            "verified-lifecycle-source-mismatch",
+        )
+        return {
+            "schema": LIFECYCLE_EFFECT_VERIFICATION_SCHEMA,
+            "result": "PASS",
+            "receipt_id": evidence["receipt_id"],
+            "post_actor_generation_id": evidence["post_actor_generation_id"],
+            "post_lifecycle_state": evidence["post_lifecycle_state"],
+            "post_source_head": evidence["post_source_head"],
+            "provider_revision": evidence["provider_revision"],
+            "receipt_fingerprint": evidence["receipt_fingerprint"],
+            "verifier_ref": "CONTEXT-ACTOR-SHADOW-DURABLE-READBACK",
+        }
 
 
 def activate_committed_navigation_options(
@@ -369,6 +672,7 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "directive": {"type": "object"},
                     "navigation_options_candidate": {"type": "object"},
                     "context_owner_effect_candidate": {"type": "object"},
+                    "actor_lifecycle_mutation_candidate": {"type": "object"},
                     "control_resolution_attestation": _attestation_input_schema(),
                 },
             },
@@ -457,11 +761,21 @@ def tool_definitions() -> list[dict[str, Any]]:
 class ControlContextMcpTools:
     """MCP handler collection over an injected state-port implementation."""
 
-    def __init__(self, state_port: Any, resolution_attestation_verifier: Any):
+    def __init__(
+        self,
+        state_port: Any,
+        resolution_attestation_verifier: Any,
+        lifecycle_effect_adapter: Any | None = None,
+    ):
         self._state_port = state_port
         if not callable(getattr(resolution_attestation_verifier, "verify", None)):
             raise ControlContextToolAuthorizationError("control-resolution-attestation-verifier-required")
+        if lifecycle_effect_adapter is not None:
+            for method in ("verify", "execute_lifecycle_effect", "verify_lifecycle_effect"):
+                if not callable(getattr(lifecycle_effect_adapter, method, None)):
+                    raise ControlContextToolAuthorizationError(f"lifecycle-effect-adapter-method-required:{method}")
         self._resolution_attestation_verifier = resolution_attestation_verifier
+        self._lifecycle_effect_adapter = lifecycle_effect_adapter
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -557,6 +871,12 @@ class ControlContextMcpTools:
                 raise ControlContextToolError(str(exc)) from exc
             if validated_owner_candidate["current"] is not False or owner_candidate.get("result") != "CANDIDATE":
                 raise ControlContextToolError("context-owner-effect-precommit-candidate-required")
+        lifecycle_candidate = args.get("actor_lifecycle_mutation_candidate")
+        if lifecycle_candidate is not None:
+            if not isinstance(lifecycle_candidate, dict):
+                raise ControlContextToolError("actor-lifecycle-mutation-candidate-object-required")
+            if self._lifecycle_effect_adapter is None:
+                raise ControlContextToolAuthorizationError("actor-lifecycle-effect-adapter-unbound")
         event_id = _require_text(args, "event_id")
         signed_payload = {
             "event_id": event_id,
@@ -565,12 +885,19 @@ class ControlContextMcpTools:
         }
         if owner_candidate is not None:
             signed_payload["context_owner_effect_candidate"] = copy.deepcopy(owner_candidate)
+        if lifecycle_candidate is not None:
+            signed_payload["actor_lifecycle_mutation_candidate"] = copy.deepcopy(lifecycle_candidate)
         self._resolution_attestation_verifier.verify(
             operation="complete_project_control_event",
             payload=signed_payload,
             attestation=args.get("control_resolution_attestation"),
             context=context,
         )
+        state_directive = copy.deepcopy(directive)
+        if lifecycle_candidate is not None:
+            state_directive["actor_lifecycle_mutation_candidate_fingerprint"] = (
+                self._lifecycle_effect_adapter._pre_effect_fingerprint(lifecycle_candidate)
+            )
         completion = self._state_port.complete_event(
             {
                 "tenant_ref": identity.tenant_ref,
@@ -579,7 +906,7 @@ class ControlContextMcpTools:
                 "consumer_ref": identity.consumer_ref,
                 "session_ref": context.session_ref(),
                 "event_id": event_id,
-                "directive": directive,
+                "directive": state_directive,
                 "navigation_options_candidate_fingerprint": (
                     candidate.get("candidate_fingerprint") if isinstance(candidate, dict) else None
                 ),
@@ -587,6 +914,15 @@ class ControlContextMcpTools:
             },
             scopes=identity.state_scopes,
         )
+        if lifecycle_candidate is not None:
+            completion["actor_lifecycle_effect_evidence"] = (
+                self._lifecycle_effect_adapter.execute_lifecycle_effect(
+                    candidate=copy.deepcopy(lifecycle_candidate),
+                    context=context,
+                    completion=completion,
+                    bound_directive=state_directive,
+                )
+            )
         navigation_error = None
         try:
             options = activate_committed_navigation_options(candidate, completion)

@@ -37,6 +37,8 @@ PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "pm_command_executor",
     "authorized_command_executor",
     "command_executor",
+    "pm_profile_verifier",
+    "lifecycle_effect_verifier",
 }
 
 
@@ -146,14 +148,19 @@ class BoundControlResolutionHost:
         persistence_verifier: Any,
         capability_resolver: BoundRuntimeCapabilityResolver,
         canonical_resolver: Callable[..., dict[str, Any]] = control_resolution.resolve,
+        pm_profile_verifier: Any | None = None,
     ):
         _require(callable(getattr(persistence_verifier, "verify", None)), "host-persistence-verifier-required")
         _require(callable(getattr(capability_resolver, "is_available", None)), "host-capability-resolver-required")
         _require(callable(getattr(capability_resolver, "executor", None)), "host-capability-executor-binding-required")
         _require(callable(canonical_resolver), "canonical-control-resolver-required")
+        if pm_profile_verifier is not None:
+            _require(callable(getattr(pm_profile_verifier, "verify", None)), "host-pm-profile-verifier-invalid")
+            _require(callable(getattr(pm_profile_verifier, "verify_lifecycle_effect", None)), "host-lifecycle-effect-verifier-invalid")
         self._persistence_verifier = persistence_verifier
         self._capability_resolver = capability_resolver
         self._canonical_resolver = canonical_resolver
+        self._pm_profile_verifier = pm_profile_verifier
 
     def resolve(
         self,
@@ -170,6 +177,7 @@ class BoundControlResolutionHost:
             require_git_ancestry=require_git_ancestry,
             owner_persistence_verifier=self._persistence_verifier,
             runtime_capability_resolver=self._capability_resolver,
+            pm_profile_verifier=self._pm_profile_verifier,
         )
 
     def execute_owner_sequence(

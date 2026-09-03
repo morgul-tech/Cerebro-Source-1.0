@@ -187,6 +187,25 @@ def selftest() -> dict[str, Any]:
         ]
     )
     capability, composite, executors, order = _runtime()
+
+    class CombinedPmLifecycleVerifierFixture:
+        def verify(self, *, binding: dict[str, Any], session: dict[str, Any]) -> dict[str, Any]:
+            return {
+                "schema": "cerebro-project-manager-profile-verification/v1",
+                "result": "PASS",
+                "profile": "PROJECT_MANAGER",
+                "session_ref": session.get("session_ref"),
+                "binding_fingerprint": "a" * 64,
+                "verifier_ref": "HOST-COMBINED-SELFTEST",
+            }
+
+        def verify_lifecycle_effect(self, **_: Any) -> dict[str, Any]:
+            return {
+                "schema": "cerebro-context-lifecycle-effect-verification/v1",
+                "result": "PASS",
+            }
+
+    combined_pm_verifier = CombinedPmLifecycleVerifierFixture()
     injected: dict[str, Any] = {}
 
     def canonical_stub(request: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
@@ -197,19 +216,32 @@ def selftest() -> dict[str, Any]:
         persistence_verifier=composite,
         capability_resolver=capability,
         canonical_resolver=canonical_stub,
+        pm_profile_verifier=combined_pm_verifier,
     )
     resolved = host.resolve({"objective_ref": "OBJ"}, root=SOURCE_ROOT, require_git_ancestry=False)
     check(
         "normal-host-injects-trusted-dependencies-outside-event-payload",
         resolved["schema"] == "fixture-canonical-resolution/v1"
         and injected["owner_persistence_verifier"] is composite
-        and injected["runtime_capability_resolver"] is capability,
+        and injected["runtime_capability_resolver"] is capability
+        and injected["pm_profile_verifier"] is combined_pm_verifier,
     )
     check(
         "event-payload-cannot-inject-runtime-verifier-or-capability",
         _expect_error(
             lambda: host.resolve(
                 {"nested": {"capability_resolver": "SELF_ASSERTED"}},
+                root=SOURCE_ROOT,
+                require_git_ancestry=False,
+            ),
+            ControlResolutionHostError,
+        ),
+    )
+    check(
+        "event-payload-cannot-inject-pm-or-lifecycle-verifier",
+        _expect_error(
+            lambda: host.resolve(
+                {"nested": {"pm_profile_verifier": "SELF_ASSERTED"}},
                 root=SOURCE_ROOT,
                 require_git_ancestry=False,
             ),
