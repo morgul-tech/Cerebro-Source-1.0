@@ -714,6 +714,40 @@ def selftest() -> dict[str, Any]:
             scopes={"project_state:read"},
         ) == claim_active and claim_active["authority"] == "SHADOW_ONLY" and claim_active["live_claim"] is False,
     )
+    claim_released = transition_work_claim_shadow(
+        claim_active, actor_active, lifecycle="RELEASED", source_revision="bf4f",
+    )
+    shadow_port.write_work_claim_shadow(claim_released, expected_revision=2, scopes=scopes)
+    actor_ready_after_job = transition_actor_generation_shadow(
+        actor_active, lifecycle="READY", source_revision="bf4f",
+    )
+    shadow_port.write_actor_generation_shadow(actor_ready_after_job, expected_revision=2, scopes=scopes)
+    check(
+        "B1-ordinary-success-releases-claim-and-preserves-generation-ready",
+        claim_released["lifecycle"] == "RELEASED"
+        and actor_ready_after_job["lifecycle"] == "READY"
+        and actor_ready_after_job["generation_ref"] == actor_active["generation_ref"]
+        and validate_work_claim_shadow(claim_released, actor_ready_after_job)["result"] == "PASS",
+    )
+    check(
+        "B1-ready-generation-cannot-carry-active-claim",
+        _expect_error(
+            lambda: validate_work_claim_shadow(claim_active, actor_ready_after_job),
+            ControlContextError,
+        ),
+    )
+    actor_retired = transition_actor_generation_shadow(
+        actor_active, lifecycle="RETIRED", source_revision="bf4f",
+    )
+    check(
+        "B1-retired-generation-remains-terminal-sink",
+        _expect_error(
+            lambda: transition_actor_generation_shadow(
+                actor_retired, lifecycle="READY", source_revision="bf4f",
+            ),
+            ControlContextError,
+        ),
+    )
     check(
         "B1-claim-generation-mismatch-fails-closed",
         _expect_error(

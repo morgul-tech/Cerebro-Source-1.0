@@ -116,6 +116,10 @@ control_context_state_service:
       - tooling/context/control_context_state_postgres.py
     constraints:
       - every-claim-binds-one-exact-role-and-generation
+      - ordinary-success-releases-claim-before-same-generation-ACTIVE-to-READY
+      - ACTIVE-to-READY-preserves-generation-identity-and-grants-no-claim-or-bind-authority
+      - RETIRED-remains-a-terminal-sink
+      - explicit-terminate-contamination-isolation-security-or-stale-generation-controls-remain-retiring-no-reuse
       - retired-or-mismatched-generation-fails-closed
       - aggregate-revisions-are-monotonic-CAS
       - revision-ledgers-are-immutable

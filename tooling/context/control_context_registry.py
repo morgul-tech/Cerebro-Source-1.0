@@ -128,7 +128,7 @@ def transition_actor_generation_shadow(
     state: dict[str, Any], *, lifecycle: str, source_revision: str,
 ) -> dict[str, Any]:
     validate_actor_generation_shadow(state)
-    allowed = {"READY": {"ACTIVE", "RETIRED"}, "ACTIVE": {"RETIRED"}, "RETIRED": set()}
+    allowed = {"READY": {"ACTIVE", "RETIRED"}, "ACTIVE": {"READY", "RETIRED"}, "RETIRED": set()}
     _require(lifecycle in allowed[state["lifecycle"]], "actor-generation-shadow-transition-invalid")
     _require(isinstance(source_revision, str) and bool(source_revision.strip()), "actor-generation-shadow-source-revision-required")
     candidate = copy.deepcopy(state)
