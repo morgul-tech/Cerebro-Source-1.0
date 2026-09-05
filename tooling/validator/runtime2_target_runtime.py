@@ -28,6 +28,8 @@ TARGET_VALIDATOR = "tooling/validator/target_runtime_validation.py"
 HOST_PATH = "tooling/host/cerebro_host.py"
 RUNTIME_PATH = "tooling/runtime-host/cerebro_runtime.py"
 ACTIVATION_SCHEMA = "cerebro-runtime2-m4-activation-proof/v1"
+ACTIVATION_BINDING_IMPLEMENTATION = "tooling/validator/runtime2_target_runtime.py"
+ACTIVATION_REGISTRY = "tooling/validator/contract-activation-bindings.json"
 ACTIVATION_BASIS = [
     "tooling/runtime-host/component.yaml",
     "tooling/runtime-host/cerebro_runtime.py",
@@ -94,12 +96,38 @@ def _load_module(path: Path, name: str):
     return module
 
 
+def _cac_path_sort_key(value: str) -> str:
+    # Windows PowerShell Sort-Object uses a linguistic comparison that ignores
+    # separator punctuation for these Source-relative paths. Preserve input
+    # order for punctuation-only ties so producer and CAC hash the same rows.
+    return ''.join(ch for ch in value.casefold() if ch.isalnum())
+
+
 def source_state_fingerprint(root: Path, paths: list[str]) -> str:
     rows=[]
-    for relative in sorted(paths):
+    for relative in sorted(paths,key=_cac_path_sort_key):
         path=root/relative
         rows.append(f"{relative}|{sha256_file(path) if path.is_file() else 'ABSENT'}")
     return hashlib.sha256("\n".join(rows).encode('utf-8')).hexdigest()
+
+
+def resolve_activation_binding(registry: Mapping[str, Any]) -> str:
+    bindings=registry.get('bindings')
+    if not isinstance(bindings,list): fail('M4_ACTIVATION_BINDING_REGISTRY_INVALID','bindings')
+    candidates=[b for b in bindings if isinstance(b,Mapping) and str(b.get('implementation',''))==ACTIVATION_BINDING_IMPLEMENTATION]
+    if not candidates: fail('M4_ACTIVATION_BINDING_MISSING',ACTIVATION_BINDING_IMPLEMENTATION)
+    if len(candidates)!=1: fail('M4_ACTIVATION_BINDING_AMBIGUOUS',str(len(candidates)))
+    binding=dict(candidates[0]); binding_id=require_text(binding.get('id'),'binding.id')
+    if str(binding.get('wiring_proof_kind',''))!='RUNTIME_EVIDENCE': fail('M4_ACTIVATION_BINDING_PROOF_KIND_MISMATCH',binding_id)
+    spec=binding.get('runtime_evidence')
+    if not isinstance(spec,Mapping): fail('M4_ACTIVATION_BINDING_RUNTIME_EVIDENCE_MISSING',binding_id)
+    if str(spec.get('schema',''))!=ACTIVATION_SCHEMA: fail('M4_ACTIVATION_BINDING_SCHEMA_MISMATCH',binding_id)
+    basis=spec.get('basis_files')
+    if not isinstance(basis,list) or sorted(str(x) for x in basis)!=sorted(ACTIVATION_BASIS): fail('M4_ACTIVATION_BINDING_BASIS_MISMATCH',binding_id)
+    accepted=spec.get('accepted_binding_ids')
+    if not isinstance(accepted,list) or binding_id not in [str(x) for x in accepted]: fail('M4_ACTIVATION_BINDING_ACCEPTED_ID_MISMATCH',binding_id)
+    if str(spec.get('required_proves_binding',''))!=binding_id: fail('M4_ACTIVATION_BINDING_PROVES_REQUIREMENT_MISMATCH',binding_id)
+    return binding_id
 
 
 def activation_probe(source_root: Path) -> dict[str, Any]:
@@ -109,6 +137,7 @@ def activation_probe(source_root: Path) -> dict[str, Any]:
     kernel_result=runtime.runtime2_selftest()
     host_result=host.selftest()
     adapter_result=selftest()
+    binding_id=resolve_activation_binding(read_json(root/ACTIVATION_REGISTRY))
     delegate_parse=host.parse_host_arguments(['change','--option-prefixed-first-token','value'])
     runtime_parse=host.parse_host_arguments(['runtime2-supervise','--request','request.json','--output','output.json'])
     canaries={
@@ -125,8 +154,8 @@ def activation_probe(source_root: Path) -> dict[str, Any]:
         'probe_id':'RUNTIME2_M4_EXACT7_WINDOWS_CANARIES',
         'basis_files':ACTIVATION_BASIS,
         'source_state_fingerprint':source_state_fingerprint(root,ACTIVATION_BASIS),
-        'proves_bindings':[],
-        'binding_id':'',
+        'proves_bindings':[binding_id],
+        'binding_id':binding_id,
         'canaries':canaries,
         'canary_count':len(canaries),
         'pass_count':sum(1 for value in canaries.values() if value),
@@ -243,6 +272,19 @@ def selftest() -> dict[str, Any]:
     check('no_target_truth_from_process_exit', 'returncode' not in execute.__code__.co_names and 'exit_code' not in execute.__code__.co_names)
     check('no_autonomous_retry_surface', not any(x in globals() for x in ('retry','retry_loop','scheduler')))
     check('prepublication_only_until_semantic_verification_pass', True)
+    check('cac_linguistic_path_order_preserved', sorted(['target_runtime_validation.py','target-runtime-validation.yaml'],key=_cac_path_sort_key)==['target_runtime_validation.py','target-runtime-validation.yaml'])
+    fixture_id='RUNTIME2_M4_TARGET_RUNTIME_ACTIVATION'
+    fixture={'bindings':[{'id':fixture_id,'implementation':ACTIVATION_BINDING_IMPLEMENTATION,'wiring_proof_kind':'RUNTIME_EVIDENCE','runtime_evidence':{'schema':ACTIVATION_SCHEMA,'basis_files':list(ACTIVATION_BASIS),'accepted_binding_ids':[fixture_id],'required_proves_binding':fixture_id}}]}
+    check('m4_activation_binding_resolution', resolve_activation_binding(fixture)==fixture_id)
+    def binding_block(name, mutate, classification):
+        value=json.loads(json.dumps(fixture)); mutate(value)
+        try: resolve_activation_binding(value); ok=False
+        except TargetRuntime2Error as exc: ok=exc.classification==classification
+        check(name,ok)
+    binding_block('m4_activation_binding_missing_blocks',lambda v:v.__setitem__('bindings',[]),'M4_ACTIVATION_BINDING_MISSING')
+    binding_block('m4_activation_binding_ambiguous_blocks',lambda v:v['bindings'].append(dict(v['bindings'][0])),'M4_ACTIVATION_BINDING_AMBIGUOUS')
+    binding_block('m4_activation_binding_schema_mismatch_blocks',lambda v:v['bindings'][0]['runtime_evidence'].__setitem__('schema','wrong'),'M4_ACTIVATION_BINDING_SCHEMA_MISMATCH')
+    binding_block('m4_activation_binding_basis_mismatch_blocks',lambda v:v['bindings'][0]['runtime_evidence'].__setitem__('basis_files',ACTIVATION_BASIS[:-1]),'M4_ACTIVATION_BINDING_BASIS_MISMATCH')
     return {'schema':'cerebro-runtime2-target-runtime-selftest/v1','result':'PASS' if all(x['result']=='PASS' for x in tests) else 'FAIL','tests':tests,
             'process_supervision_owner':'tooling.host','semantic_result_owner':'validator','control_owner':'MCP','autonomous_retry':False}
 

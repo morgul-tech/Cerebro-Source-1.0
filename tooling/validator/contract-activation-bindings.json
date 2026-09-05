@@ -1614,6 +1614,54 @@
         ],
         "required_proves_binding": "MCP_INTEGRITY_CONTROL"
       }
+    },
+    {
+      "id": "RUNTIME2_M4_TARGET_RUNTIME_ACTIVATION",
+      "standard_id": "STD-CHANGE-DELIVERY",
+      "classification": "OPERATIONAL",
+      "declaration": "standards/change-delivery.yaml",
+      "declaration_tokens": [
+        "namespaced-target-runtime-and-delivery-receipt-protocol"
+      ],
+      "registration": "standards/standards.yaml",
+      "registration_token": "STD-CHANGE-DELIVERY",
+      "implementation": "tooling/validator/runtime2_target_runtime.py",
+      "implementation_tokens": [
+        "ACTIVATION_SCHEMA",
+        "def resolve_activation_binding(",
+        "RUNTIME2_M4_EXACT7_WINDOWS_CANARIES"
+      ],
+      "wiring": "tooling/validator/target-runtime/Invoke-CerebroWindowsPowerShellValidation.ps1",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
+      "wiring_tokens": [
+        "manifest.activation_probes",
+        "activation-probe",
+        "proofByBinding"
+      ],
+      "validation": "standards/development/delivery-failure-regression.yaml",
+      "validation_tokens": [
+        "activation-probes-leave-no-untracked-Python-bytecode",
+        "target-runtime-executes-delivery-adapter-selftest-before-publication"
+      ],
+      "runtime_evidence_state": "REQUIRED_BOUND_MACHINE_PROOF",
+      "runtime_evidence": {
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RUNTIME2_M4_ACTIVATION_PROOF.json",
+        "schema": "cerebro-runtime2-m4-activation-proof/v1",
+        "accepted_binding_ids": [
+          "RUNTIME2_M4_TARGET_RUNTIME_ACTIVATION"
+        ],
+        "basis_files": [
+          "tooling/runtime-host/component.yaml",
+          "tooling/runtime-host/cerebro_runtime.py",
+          "tooling/host/component.yaml",
+          "tooling/host/cerebro_host.py",
+          "tooling/validator/target_runtime_validation.py",
+          "tooling/validator/target-runtime-validation.yaml",
+          "tooling/validator/runtime2_target_runtime.py"
+        ],
+        "required_true_fields": [],
+        "required_proves_binding": "RUNTIME2_M4_TARGET_RUNTIME_ACTIVATION"
+      }
     }
   ],
   "canonical_responsibilities": [
