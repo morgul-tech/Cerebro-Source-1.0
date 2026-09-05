@@ -30,6 +30,38 @@ RUNTIME_PATH = "tooling/runtime-host/cerebro_runtime.py"
 ACTIVATION_SCHEMA = "cerebro-runtime2-m4-activation-proof/v1"
 ACTIVATION_BINDING_IMPLEMENTATION = "tooling/validator/runtime2_target_runtime.py"
 ACTIVATION_REGISTRY = "tooling/validator/contract-activation-bindings.json"
+TARGET_ENV_KEYS = (
+    "SYSTEMROOT", "WINDIR", "SYSTEMDRIVE", "COMSPEC", "PATHEXT", "PATH",
+    "TEMP", "TMP", "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "LOCALAPPDATA",
+    "APPDATA", "PROGRAMDATA", "PROGRAMFILES", "PROGRAMFILES(X86)", "PROGRAMW6432",
+    "PSMODULEPATH",
+)
+
+def target_child_environment() -> dict[str, str]:
+    home=Path(os.environ.get('USERPROFILE') or Path.home()).resolve()
+    system_root=Path(os.environ.get('SYSTEMROOT') or os.environ.get('WINDIR') or (Path(home.drive or 'C:')/'Windows')).resolve()
+    system_drive=os.environ.get('SYSTEMDRIVE') or system_root.drive or home.drive or 'C:'
+    local_app=Path(os.environ.get('LOCALAPPDATA') or (home/'AppData'/'Local')).resolve()
+    roaming=Path(os.environ.get('APPDATA') or (home/'AppData'/'Roaming')).resolve()
+    temp=Path(os.environ.get('TEMP') or os.environ.get('TMP') or (local_app/'Temp')).resolve()
+    python_dir=str(Path(sys.executable).resolve().parent)
+    inherited_path=os.environ.get('PATH','')
+    values={
+        'SYSTEMROOT':str(system_root),'WINDIR':str(system_root),'SYSTEMDRIVE':system_drive,
+        'COMSPEC':os.environ.get('COMSPEC') or str(system_root/'System32'/'cmd.exe'),
+        'PATHEXT':os.environ.get('PATHEXT') or '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL',
+        'PATH':python_dir+(os.pathsep+inherited_path if inherited_path else ''),
+        'TEMP':str(temp),'TMP':str(temp),'USERPROFILE':str(home),
+        'HOMEDRIVE':os.environ.get('HOMEDRIVE') or home.drive or system_drive,
+        'HOMEPATH':os.environ.get('HOMEPATH') or str(home)[len(home.drive):],
+        'LOCALAPPDATA':str(local_app),'APPDATA':str(roaming),
+        'PROGRAMDATA':os.environ.get('PROGRAMDATA') or str(Path(system_drive+'/')/'ProgramData'),
+        'PROGRAMFILES':os.environ.get('PROGRAMFILES') or str(Path(system_drive+'/')/'Program Files'),
+        'PROGRAMFILES(X86)':os.environ.get('PROGRAMFILES(X86)') or str(Path(system_drive+'/')/'Program Files (x86)'),
+        'PROGRAMW6432':os.environ.get('PROGRAMW6432') or os.environ.get('PROGRAMFILES') or str(Path(system_drive+'/')/'Program Files'),
+        'PSMODULEPATH':os.environ.get('PSMODULEPATH',''),
+    }
+    return {k:str(v) for k,v in values.items() if str(v)}
 ACTIVATION_BASIS = [
     "tooling/runtime-host/component.yaml",
     "tooling/runtime-host/cerebro_runtime.py",
@@ -217,8 +249,7 @@ def build_supervision_request(request: Mapping[str, Any], powershell: Path) -> d
     argv=[str(powershell),'-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',str(script),
           '-CandidateRoot',str(root),'-ManifestPath',str(Path(r['manifest_path']).resolve()),'-CapsuleRoot',str(Path(r['capsule_root']).resolve()),
           '-RepositoryRoot',str(Path(r['repository_root']).resolve()),'-OutputPath',str(Path(r['output_path']).resolve()),'-ProfileId',r['profile_id']]
-    env={'SYSTEMROOT':os.environ.get('SYSTEMROOT',''),'WINDIR':os.environ.get('WINDIR','')}
-    env={k:v for k,v in env.items() if v}
+    env=target_child_environment()
     return {
         'schema':'cerebro-runtime2-supervision-request/v1',
         'invocation_id':r['invocation_id'],'receipt_subject_fingerprint':r['receipt_subject_fingerprint'],
@@ -269,6 +300,8 @@ def selftest() -> dict[str, Any]:
     check('planner_and_verifier_remain_separate_owner', TARGET_VALIDATOR != __file__)
     check('supervision_owner_is_tooling_host', HOST_PATH=='tooling/host/cerebro_host.py')
     check('windows_adapter_is_preserved_existing_boundary', TARGET_SCRIPT.endswith('Invoke-CerebroWindowsPowerShellValidation.ps1'))
+    target_env=target_child_environment()
+    check('target_child_environment_resolution_is_explicitly_bound', all(k in target_env for k in ('SYSTEMROOT','WINDIR','SYSTEMDRIVE','COMSPEC','PATHEXT','PATH','TEMP','TMP','USERPROFILE','LOCALAPPDATA','APPDATA','PROGRAMDATA','PSMODULEPATH')) and Path(target_env['PATH'].split(os.pathsep)[0]).resolve()==Path(sys.executable).resolve().parent)
     check('no_target_truth_from_process_exit', 'returncode' not in execute.__code__.co_names and 'exit_code' not in execute.__code__.co_names)
     check('no_autonomous_retry_surface', not any(x in globals() for x in ('retry','retry_loop','scheduler')))
     check('prepublication_only_until_semantic_verification_pass', True)
