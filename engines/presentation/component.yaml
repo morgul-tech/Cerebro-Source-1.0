@@ -29,6 +29,7 @@ interfaces:
   - matching-state-service-completion-receipt
   - terminal-roadmap-projection-request
   - fresh-structured-roadmap-snapshot
+  - runtime2-live-shadow-evidence-basis
   output:
   - presentation-model
   - format
@@ -40,10 +41,12 @@ interfaces:
   - human-navigation-surface-candidate
   - official-roadmap-pdf
   - roadmap-projection-draft-receipt
+  - native-live-shadow-projection
 schemas:
   human_navigation_surface_candidate: human-navigation-surface-candidate.schema.json
   MCP_navigation_options: ../../mcp/context-navigation-options.schema.json
   MCP_navigation_options_precommit_candidate: ../../mcp/context-navigation-options-candidate.schema.json
+  native_live_shadow_projection: live-shadow-projection.schema.json
 rules:
   path: rules.yaml
 profiles:
@@ -88,6 +91,8 @@ boundaries:
   - treat-roadmap-pdf-as-state-authority
   - publish-or-verify-provider-artifact
   - invent-roadmap-status
+  - promote-live-shadow-projection-to-state-or-control-authority
+  - render-operational-work-or-actor-truth-before-B1-session-readback
 version:
   component: 1.4.0
   schema: 1

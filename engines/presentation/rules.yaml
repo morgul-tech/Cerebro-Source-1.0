@@ -825,3 +825,31 @@ rules:
   validation: error
   provenance: {type: explicit-user-design-selection, source: ADMIN-ROADMAP-AUTOUPDATE-001}
 # END ADMIN-ROADMAP-AUTOUPDATE-001
+
+# BEGIN NATIVE-WAVE0-LIVE-SHADOW-001
+- id: PRE-NATIVE-LIVE-SHADOW-001
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {native_live_shadow_projection_requested: true}
+  action:
+    implementation_ref: engines/presentation/live_shadow_projection.py
+    schema_ref: engines/presentation/live-shadow-projection.schema.json
+    validator_ref: tooling/validator/live_shadow_projection_validation.py
+    consume_runtime2_evidence_by_exact_fingerprint: true
+    require_nonempty_BASIS_SET: true
+    projection_states: [CURRENT, STALE, GAP, UNKNOWN, PROVISIONAL]
+    stream_revision_scope: STREAM_LOCAL_ONLY
+    duplicate_same_revision_same_fingerprint: IDEMPOTENT_NO_EFFECT
+    same_revision_different_fingerprint: BLOCK
+    stale_or_out_of_order_revision: BLOCK
+    preserve_NO_RESPONSE_REJECTED_FAIL_distinction: true
+    presentation_state_authority: NONE
+    operational_work_actor_truth_before_B1_session_readback: prohibited
+    source_or_provider_mutation: prohibited
+  statement: Live Shadow SKAL v?re en deterministisk, read-only Presentation-projeksjon av eksplisitt Runtime2-evidence og BASIS_SET; den kan aldri bli en ny sannhets-, kontroll- eller state-eier.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: P576_WAVE0_LIVE_SHADOW, source: P578_EXACT5_TARGET_FREEZE}
+# END NATIVE-WAVE0-LIVE-SHADOW-001
