@@ -476,6 +476,20 @@ human_admin_projection_validation:
     - tooling/validator/human_admin_projection_validation.py
   required_canaries: [presentation-only-authority, deterministic-same-input, n0-remains-noncurrent-no-authority, brief-one-screen-12-lines-max, info-exact-resolver, info-unresolved-fails-closed, ambiguous-ref-fails-closed, missing-owner-input-is-unknown, stale-basis-not-current, provider-neutral-injected-bundle, host-read-only-view-integration, host-status-info-parser, runtime2-cli-preserved, host-does-not-own-roadmap-or-projection-truth, no-store-bus-scheduler-surface]
   prohibited: [human-admin-projection-as-authoritative-state, host-owned-roadmap-parsing, local-cache-as-owner-truth, Runtime2-kernel-as-Human-Admin-CLI, integrity-CLI-as-generic-info-surface, duplicate-roadmap-store, new-bus-scheduler-daemon-role]
+kompass_obsidian_validation:
+  severity: error
+  owner: tooling.validator
+  contract_ref: engines/presentation/human_admin_projection.py
+  implementation: engines/presentation/kompass_obsidian.py
+  validator: tooling/validator/kompass_obsidian_validation.py
+  required_files:
+    - engines/presentation/human_admin_projection.py
+    - engines/presentation/kompass_obsidian.py
+    - engines/presentation/component.yaml
+    - tooling/validator/kompass_obsidian_validation.py
+  required_canaries: [render-readback-pass, one-canvas-seven-notes, presentation-only-authority, projection-fingerprint-bound, orientation-5-10-second-fields, human-cognitive-location-preserved, blocker-and-human-gate-explicit, info-grammar-matches-cli, evidence-last-layer, canvas-calm-bounded, canvas-file-nodes-only, status-meaning-not-color-dependent, deterministic-file-manifest, deterministic-receipt, simplification-no-extra-deps-processes-stores, delete-renderer-output-zero-core-effect, ordinary-host-benchmark-recorded, no-network-or-provider-client, presentation-component-registers-kompass]
+  prohibited: [obsidian-as-authority, obsidian-as-state-owner, duplicate-human-admin-truth, renderer-network-fetch, background-render-daemon, all-to-all-dashboard, evidence-required-for-first-view]
+
 phases:
   structure:
   - required-files

@@ -3,7 +3,7 @@ component:
   id: presentation
   name: Presentation Engine
   type: engine
-  version: 1.4.0
+  version: 1.5.0
   status: active-source
 responsibility:
   primary: Velge presentasjonsform, informasjonsstruktur, detaljnivå, output-budsjett, Styringsstatus og visuelle virkemidler.
@@ -30,6 +30,7 @@ interfaces:
   - terminal-roadmap-projection-request
   - fresh-structured-roadmap-snapshot
   - runtime2-live-shadow-evidence-basis
+  - human-admin-projection
   output:
   - presentation-model
   - format
@@ -42,6 +43,7 @@ interfaces:
   - official-roadmap-pdf
   - roadmap-projection-draft-receipt
   - native-live-shadow-projection
+  - cerebro-kompass-obsidian-v0
 schemas:
   human_navigation_surface_candidate: human-navigation-surface-candidate.schema.json
   MCP_navigation_options: ../../mcp/context-navigation-options.schema.json
@@ -58,6 +60,10 @@ profiles:
     path: roadmap-official.yaml
     surface_id: CEREBRO-ROADMAP-OFFICIAL-001
     status: ACTIVE
+  kompass_obsidian:
+    implementation: kompass_obsidian.py
+    surface_id: CEREBRO-KOMPASS-OBSIDIAN-001
+    status: ACTIVE_SOURCE
 documentation:
   path: specification.md
 migration:
@@ -82,6 +88,7 @@ boundaries:
   - render-official-roadmap-from-fresh-structured-state
   - preserve-layout-F-roadmap-grammar
   - keep-A-linear-progress-strip-secondary-only
+  - render-kompass-only-from-validated-human-admin-projection
   must_not:
   - invent-or-self-approve-navigation-action
   - let-HNS-override-HCS-or-exact-shell-handoff
@@ -93,6 +100,7 @@ boundaries:
   - invent-roadmap-status
   - promote-live-shadow-projection-to-state-or-control-authority
   - render-operational-work-or-actor-truth-before-B1-session-readback
+  - obsidian-ne-authority-or-state-owner
 version:
-  component: 1.4.0
+  component: 1.5.0
   schema: 1
