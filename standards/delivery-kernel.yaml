@@ -1,7 +1,7 @@
 schema: cerebro-delivery-kernel-standard/v1
 delivery_kernel:
   id: CEREBRO-STANDARD-DELIVERY-KERNEL-001
-  version: "2.8"
+  version: "2.9"
   status: ACTIVE
   authority: Cerebro Source 1.0
   scope: STANDARD
@@ -433,3 +433,18 @@ delivery_kernel:
   assurance:
     existing_contract: standards/development/powershell-level3-delivery-assurance.yaml
     regression_contract: standards/development/delivery-failure-regression.yaml
+
+  permanence_obligation_snapshot:
+    manifest_field: permanence_obligation_snapshot
+    required_flag: permanence_obligation_snapshot_required
+    fingerprint_field: permanence_obligation_snapshot_fingerprint
+    fingerprint_identity: CANONICAL_SEPARATE_FROM_CANDIDATE_IDENTITY
+    candidate_identity_may_substitute: false
+    candidate_target_runtime_CAC_before_mutation: REQUIRED
+    installed_CAC_before_sync: REQUIRED
+    same_snapshot_object_and_fingerprint_across_both_consumers: REQUIRED
+    impacted_runtime_evidence_fresh_producers_before_mutation: REQUIRED
+    dynamic_snapshot_is_static_registry_backlog: false
+    source_required_now_missing_candidate_source: BLOCK
+    source_after_dependency_open_or_unknown: NON_GREEN
+    shared_only_justified_requires: [owner, rationale]

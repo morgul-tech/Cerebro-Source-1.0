@@ -70,6 +70,7 @@ ACTIVATION_BASIS = [
     "tooling/validator/target_runtime_validation.py",
     "tooling/validator/target-runtime-validation.yaml",
     "tooling/validator/runtime2_target_runtime.py",
+    "tooling/validator/target-runtime/Invoke-CerebroWindowsPowerShellValidation.ps1",
 ]
 
 

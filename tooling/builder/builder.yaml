@@ -1188,3 +1188,13 @@ level_3_payload_partitioning:
     - consolidate_and_sync
 
 # END PATCH-002.PRE-001 LEVEL 3 PAYLOAD PARTITIONING
+
+permanence_snapshot_carriage:
+  owner: tooling.builder
+  input: permanence_obligation_snapshot
+  manifest_fields: [permanence_obligation_snapshot_required, permanence_obligation_snapshot, permanence_obligation_snapshot_fingerprint]
+  behavior: CARRY_UNCHANGED_FROM_DECLARATIVE_INPUT_TO_SEALED_MANIFEST
+  canonical_fingerprint_required: true
+  candidate_identity_may_substitute: false
+  dynamic_snapshot_must_not_be_written_to_activation_registry: true
+  failure_effect: BLOCK_PACKAGE_GENERATION

@@ -1,7 +1,7 @@
 schema: cerebro-delivery-failure-regression/v1
 delivery_failure_regression:
   id: CEREBRO-DELIVERY-FAILURE-REGRESSION-001
-  version: "2.2"
+  version: "2.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
   inherits: standards/development/powershell-level3-delivery-assurance.yaml
@@ -220,3 +220,17 @@ delivery_failure_regression:
   recurrence_rule: >
     A corrective delivery must run the full relevant regression family, not only the
     check corresponding to the most recent observed error.
+
+  permanence_wave0_canaries:
+  - missing-required-permanence-snapshot-blocks-before-mutation
+  - changed-snapshot-fingerprint-blocks-before-mutation
+  - candidate-identity-cannot-substitute-for-permanence-snapshot-identity
+  - source-required-now-missing-candidate-source-blocks
+  - source-after-dependency-open-or-unknown-remains-non-green
+  - source-after-dependency-resolved-missing-source-blocks
+  - shared-only-justified-requires-owner-and-rationale
+  - impacted-runtime-evidence-binding-without-fresh-producer-blocks-before-mutation
+  - changed-target-runtime-wiring-invalidates-runtime2-m4-proof
+  - same-permanence-snapshot-fingerprint-is-consumed-by-candidate-and-installed-CAC
+  - installed-CAC-passes-before-canonical-sync
+  - dynamic-permanence-items-are-not-stored-in-static-activation-registry

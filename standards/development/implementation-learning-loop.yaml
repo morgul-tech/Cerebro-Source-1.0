@@ -108,3 +108,14 @@ implementation_learning_loop:
   - structural-review-complete-when-triggered
   - generalizable-learning-persisted-or-explicitly-rejected-with-reason
   - relevant-regression-controls-pass
+
+  permanence_disposition:
+    trigger_scope: [repeated-user-correction, generalizable-learning, rule-present-behavior-recurrence]
+    terminal_layer_decision_required: true
+    fields: [item_id, origin_ref, owner, expected_terminal_layer, current_layer, disposition]
+    dispositions: [SOURCE_REQUIRED_NOW, SOURCE_AFTER_DEPENDENCY, RUNTIME_ONLY, SHARED_ONLY_JUSTIFIED, DEFER, SUPERSEDE, RETIRE]
+    source_required_now_may_stop_at_provider_or_chat_memory: false
+    source_after_dependency_must_remain_visible_until_resolved: true
+    shared_only_justified_requires: [owner, rationale]
+    source_canonical_does_not_imply: [RUNTIME_ENFORCED, EFFECT_PROVEN]
+    closure_requires: terminal-layer-disposition-and-readback

@@ -1259,6 +1259,12 @@ function Assert-TargetRuntimeValidationReceipt {
         throw ('TARGET_RUNTIME_VALIDATION_RECEIPT_INVALID:{0}' -f $_.Exception.Message)
     }
     $expectedIdentity=Get-KernelCandidateIdentity -PatchManifest $PatchManifest
+    $permanenceRequired=[bool](Get-KernelOptionalProperty -Object $PatchManifest -Name 'permanence_obligation_snapshot_required' -Default $false)
+    $permanenceExpected=[string](Get-KernelOptionalProperty -Object $PatchManifest -Name 'permanence_obligation_snapshot_fingerprint' -Default '')
+    if($permanenceRequired -and [string]::IsNullOrWhiteSpace($permanenceExpected)){
+        $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
+        throw 'PERMANENCE_SNAPSHOT_FINGERPRINT_REQUIRED'
+    }
     [string[]]$expectedPaths=Get-KernelOrdinalStrings -Values @($PatchManifest.files | ForEach-Object {[string]$_.path})
     [string[]]$actualPaths=Get-KernelOrdinalStrings -Values @($receipt.changed_paths | ForEach-Object {[string]$_})
     if([string]$receipt.schema -ne [string]$spec.receipt_schema -or
@@ -1266,6 +1272,7 @@ function Assert-TargetRuntimeValidationReceipt {
        [string]$receipt.patch_id -ne [string]$PatchManifest.patch_id -or
        [string]$receipt.source_base_commit -ne [string]$PatchManifest.expected_base_commit -or
        [string]$receipt.candidate_identity -ne $expectedIdentity -or
+       ($permanenceRequired -and ([string]$receipt.permanence_snapshot_validation -ne 'PASS' -or [string]$receipt.permanence_snapshot_fingerprint -ne $permanenceExpected)) -or
        [string]$receipt.target_profile -ne [string]$spec.profile -or
        -not[bool]$receipt.target_runtime_execution -or
        [bool]$receipt.authoritative_source_mutated -or
@@ -1897,7 +1904,9 @@ function Invoke-Apply {
         $cacScript = Join-Path -Path $WorkingSourcePath -ChildPath 'tooling\validator\cerebro_contract_activation_closure.ps1'
         if (Test-Path -LiteralPath $cacScript -PathType Leaf) {
             . $cacScript
-            $cacResult = Invoke-CerebroContractActivationClosure -Root $WorkingSourcePath -PassThru
+            $permanenceSnapshot=Get-KernelOptionalProperty -Object $State.Manifest -Name 'permanence_obligation_snapshot' -Default $null
+            $permanenceExpected=[string](Get-KernelOptionalProperty -Object $State.Manifest -Name 'permanence_obligation_snapshot_fingerprint' -Default '')
+            $cacResult = Invoke-CerebroContractActivationClosure -Root $WorkingSourcePath -PermanenceSnapshot $permanenceSnapshot -ExpectedPermanenceSnapshotFingerprint $permanenceExpected -PassThru
             if ([string]$cacResult.result -ne 'PASS') {
                 $State.FailureFamily = 'CONTRACT_ACTIVATION_GAP'
                 $blockingFindings = @($cacResult.blocking_findings)

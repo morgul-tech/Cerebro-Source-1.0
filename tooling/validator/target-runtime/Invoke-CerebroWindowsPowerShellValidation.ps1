@@ -145,6 +145,20 @@ try {
     if(-not(Test-Path -LiteralPath $cacScript -PathType Leaf)){throw 'TARGET_RUNTIME_ACTUAL_CAC_MISSING'}
     . $cacScript
 
+    $permanenceRequired=[bool](Get-CacProperty $manifest 'permanence_obligation_snapshot_required' $false)
+    $permanenceSnapshot=Get-CacProperty $manifest 'permanence_obligation_snapshot' $null
+    $permanenceExpected=[string](Get-CacProperty $manifest 'permanence_obligation_snapshot_fingerprint' '')
+    $permanenceFingerprint=''; $permanenceItemCount=0
+    if($permanenceRequired -and ($null -eq $permanenceSnapshot -or [string]::IsNullOrWhiteSpace($permanenceExpected))){
+        throw 'TARGET_RUNTIME_PERMANENCE_SNAPSHOT_REQUIRED'
+    }
+    if($null -ne $permanenceSnapshot){
+        $permanenceCheck=Test-CacPermanenceSnapshot -Root $CandidateRoot -Snapshot $permanenceSnapshot -ExpectedFingerprint $permanenceExpected
+        if([string]$permanenceCheck.state -ne 'PASS'){throw 'TARGET_RUNTIME_PERMANENCE_SNAPSHOT_NOT_PASS'}
+        $permanenceFingerprint=[string]$permanenceCheck.fingerprint
+        $permanenceItemCount=[int]$permanenceCheck.item_count
+    }
+
     # Proof map: binding id -> ephemeral evidence file.
     $proofByBinding=@{}
     $activationProofs=@()
@@ -241,7 +255,7 @@ try {
     Write-TrvJson -Path $ephemeralRegistry -Value $registry
 
     # Actual CAC from candidate Source. No parity implementation is accepted.
-    $cac=Invoke-CerebroContractActivationClosure -Root $CandidateRoot -RegistryPath $ephemeralRegistryRelative -PassThru
+    $cac=Invoke-CerebroContractActivationClosure -Root $CandidateRoot -RegistryPath $ephemeralRegistryRelative -PermanenceSnapshot $permanenceSnapshot -ExpectedPermanenceSnapshotFingerprint $permanenceExpected -PassThru
     $blocking=@($cac.blocking_findings)
     if([string]$cac.result -ne 'PASS'){
         $summary=@($blocking|ForEach-Object{('{0}|{1}|{2}|{3}' -f [string]$_.code,[string]$_.scope,[string]$_.subject,[string]$_.message)}) -join '; '
@@ -273,6 +287,9 @@ try {
         patch_id=[string]$manifest.patch_id
         source_base_commit=[string]$plan.source_base_commit
         candidate_identity=[string]$plan.candidate_identity
+        permanence_snapshot_validation=if($null -eq $permanenceSnapshot){'NOT_DECLARED'}else{'PASS'}
+        permanence_snapshot_fingerprint=$permanenceFingerprint
+        permanence_snapshot_item_count=$permanenceItemCount
         target_profile=$ProfileId
         target_runtime_execution=$true
         target_runtime_identity=$runtimeIdentity

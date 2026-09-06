@@ -1,7 +1,7 @@
 schema: cerebro-contract-activation-closure/v2
 contract_activation_closure:
   id: CEREBRO-CONTRACT-ACTIVATION-CLOSURE-001
-  version: "2.1"
+  version: "2.2"
   status: ACTIVE
   authority: Cerebro Source 1.0
   kind: STANDARD
@@ -134,3 +134,18 @@ contract_activation_closure:
   - RUNTIME_EVIDENCE_BINDING_REQUIRES_INVOCATION_CONSUMPTION_AND_SOURCE_BOUND_PROOF
   - STALE_RUNTIME_EVIDENCE_NEVER_PROVES_OPERATIONAL
   - RUNTIME_EVIDENCE_EXPLICITLY_NAMES_EACH_PROVEN_BINDING
+
+  permanence_promotion_closure:
+    snapshot_schema: cerebro-permanence-obligation-snapshot/v1
+    manifest_carrier: permanence_obligation_snapshot
+    fingerprint_field: permanence_obligation_snapshot_fingerprint
+    canonical_snapshot_identity_required: true
+    candidate_identity_may_substitute: false
+    truth_layers: [PROVIDER_PERSISTED, PERMANENT_SHARED_CONTINUITY, SOURCE_CANONICAL, RUNTIME_ENFORCED, EFFECT_PROVEN]
+    dispositions: [SOURCE_REQUIRED_NOW, SOURCE_AFTER_DEPENDENCY, RUNTIME_ONLY, SHARED_ONLY_JUSTIFIED, DEFER, SUPERSEDE, RETIRE]
+    source_required_now_missing_candidate_source: BLOCK
+    source_after_dependency_open_or_unknown: EXPLICIT_NON_GREEN_DEBT
+    source_after_dependency_resolved_missing_source: BLOCK
+    shared_only_justified_requires: [owner, rationale]
+    dynamic_items_in_static_activation_registry: PROHIBITED
+    invariant: SOURCE_CANONICAL_NE_RUNTIME_ENFORCED_NE_EFFECT_PROVEN

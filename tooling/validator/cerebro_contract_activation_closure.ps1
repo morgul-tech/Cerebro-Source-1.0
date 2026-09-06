@@ -90,6 +90,112 @@ function Get-CacEvidenceBasisFingerprint {
     return Get-CacSha256Text -Text ($rows -join "`n")
 }
 
+
+function Get-CacCanonicalRows {
+    param($Value,[string]$Path='$')
+    if($null -eq $Value){return @($Path+'|null')}
+    if($Value -is [string]){return @($Path+'|string|'+($Value|ConvertTo-Json -Compress))}
+    if($Value -is [bool]){return @($Path+'|bool|'+$Value.ToString().ToLowerInvariant())}
+    if($Value -is [ValueType]){
+        return @($Path+'|value|'+([Convert]::ToString($Value,[Globalization.CultureInfo]::InvariantCulture)))
+    }
+    $rows=@()
+    if($Value -is [Collections.IDictionary]){
+        $keys=@($Value.Keys|ForEach-Object{[string]$_}|Sort-Object)
+        $rows += ($Path+'|object|'+$keys.Count)
+        foreach($key in $keys){$rows += @(Get-CacCanonicalRows -Value $Value[$key] -Path ($Path+'.'+$key))}
+        return @($rows)
+    }
+    if($Value -is [Collections.IEnumerable]){
+        $items=@($Value); $rows += ($Path+'|array|'+$items.Count)
+        for($i=0;$i -lt $items.Count;$i++){$rows += @(Get-CacCanonicalRows -Value $items[$i] -Path ($Path+'['+$i+']'))}
+        return @($rows)
+    }
+
+    $names=@($Value.PSObject.Properties.Name|Sort-Object)
+    $rows += ($Path+'|object|'+$names.Count)
+    foreach($name in $names){$rows += @(Get-CacCanonicalRows -Value $Value.$name -Path ($Path+'.'+$name))}
+    return @($rows)
+}
+
+function Get-CacPermanenceSnapshotFingerprint {
+    param([Parameter(Mandatory=$true)]$Snapshot)
+    $rows=@(Get-CacCanonicalRows -Value $Snapshot -Path '$')
+    return Get-CacSha256Text -Text ($rows -join "`n")
+}
+
+function Test-CacPermanenceSnapshot {
+    param([string]$Root,$Snapshot,[string]$ExpectedFingerprint='')
+    if($null -eq $Snapshot){
+        return [pscustomobject]@{state='NOT_DECLARED';fingerprint='';item_count=0;inventory=@();findings=@()}
+    }
+    $findings=@(); $inventory=@(); $seen=@{}
+    $fingerprint=Get-CacPermanenceSnapshotFingerprint -Snapshot $Snapshot
+    if(-not[string]::IsNullOrWhiteSpace($ExpectedFingerprint) -and $fingerprint -ne $ExpectedFingerprint.ToLowerInvariant()){
+        $findings += New-CacFinding -Code 'PERMANENCE_SNAPSHOT_FINGERPRINT_MISMATCH' -Scope 'PERMANENCE' -Subject 'SNAPSHOT' -Message 'Permanence snapshot fingerprint mismatch.' -Blocking $true
+    }
+
+    if([string](Get-CacProperty $Snapshot 'schema' '') -ne 'cerebro-permanence-obligation-snapshot/v1'){
+        $findings += New-CacFinding -Code 'PERMANENCE_SNAPSHOT_SCHEMA_MISMATCH' -Scope 'PERMANENCE' -Subject 'SNAPSHOT' -Message 'Permanence snapshot schema mismatch.' -Blocking $true
+    }
+    $items=@(Get-CacOptionalValues $Snapshot 'items')
+    if($items.Count -eq 0){
+        $findings += New-CacFinding -Code 'PERMANENCE_SNAPSHOT_ITEMS_MISSING' -Scope 'PERMANENCE' -Subject 'SNAPSHOT' -Message 'Permanence snapshot requires at least one item.' -Blocking $true
+    }
+    $allowedLayers=@('PROVIDER_PERSISTED','PERMANENT_SHARED_CONTINUITY','SOURCE_CANONICAL','RUNTIME_ENFORCED','EFFECT_PROVEN')
+    $allowed=@('SOURCE_REQUIRED_NOW','SOURCE_AFTER_DEPENDENCY','RUNTIME_ONLY','SHARED_ONLY_JUSTIFIED','DEFER','SUPERSEDE','RETIRE')
+    foreach($item in $items){
+        $id=[string](Get-CacProperty $item 'item_id' '')
+        $origin=[string](Get-CacProperty $item 'origin_ref' '')
+        $owner=[string](Get-CacProperty $item 'owner' '')
+        $expected=[string](Get-CacProperty $item 'expected_terminal_layer' '')
+        $current=[string](Get-CacProperty $item 'current_layer' '')
+        $disposition=[string](Get-CacProperty $item 'disposition' '')
+        $sourceRef=[string](Get-CacProperty $item 'source_standard_or_owner_ref' '')
+        $rationale=[string](Get-CacProperty $item 'rationale' '')
+        if([string]::IsNullOrWhiteSpace($id) -or [string]::IsNullOrWhiteSpace($origin) -or [string]::IsNullOrWhiteSpace($owner)){
+            $findings += New-CacFinding -Code 'PERMANENCE_ITEM_IDENTITY_MISSING' -Scope 'PERMANENCE' -Subject $id -Message 'item_id, origin_ref and owner are required.' -Blocking $true
+        }
+
+        if(-not[string]::IsNullOrWhiteSpace($id)){
+            if($seen.ContainsKey($id)){$findings += New-CacFinding -Code 'PERMANENCE_ITEM_DUPLICATE' -Scope 'PERMANENCE' -Subject $id -Message 'Duplicate permanence item id.' -Blocking $true}
+            $seen[$id]=$true
+        }
+        if($allowedLayers -notcontains $expected -or $allowedLayers -notcontains $current){
+            $findings += New-CacFinding -Code 'PERMANENCE_LAYER_INVALID' -Scope 'PERMANENCE' -Subject $id -Message 'Expected/current truth layer is invalid.' -Blocking $true
+        }
+        if($allowed -notcontains $disposition){
+            $findings += New-CacFinding -Code 'PERMANENCE_DISPOSITION_INVALID' -Scope 'PERMANENCE' -Subject $id -Message ('Unsupported disposition: '+$disposition) -Blocking $true
+        }
+        if($disposition -eq 'SOURCE_REQUIRED_NOW'){
+            if([string]::IsNullOrWhiteSpace($sourceRef) -or -not(Test-Path -LiteralPath (Join-Path $Root ($sourceRef -replace '/','\\')) -PathType Leaf)){
+                $findings += New-CacFinding -Code 'PERMANENCE_SOURCE_REQUIRED_MISSING' -Scope 'PERMANENCE' -Subject $id -Message ('SOURCE_REQUIRED_NOW missing candidate Source representation: '+$sourceRef) -Blocking $true
+            }
+        }
+        elseif($disposition -eq 'SOURCE_AFTER_DEPENDENCY'){
+            $dependency=[string](Get-CacProperty $item 'dependency_ref' '')
+            $dependencyState=[string](Get-CacProperty $item 'dependency_state' 'UNKNOWN')
+            if([string]::IsNullOrWhiteSpace($dependency)){$findings += New-CacFinding -Code 'PERMANENCE_DEPENDENCY_REF_MISSING' -Scope 'PERMANENCE' -Subject $id -Message 'SOURCE_AFTER_DEPENDENCY requires dependency_ref.' -Blocking $true}
+            if(@('OPEN','UNKNOWN') -contains $dependencyState){$findings += New-CacFinding -Code 'PERMANENCE_DEPENDENCY_OPEN' -Scope 'PERMANENCE' -Subject $id -Message 'SOURCE_AFTER_DEPENDENCY remains non-green until dependency resolves.' -Blocking $false}
+            elseif($dependencyState -ne 'RESOLVED'){$findings += New-CacFinding -Code 'PERMANENCE_DEPENDENCY_STATE_INVALID' -Scope 'PERMANENCE' -Subject $id -Message 'dependency_state must be OPEN, UNKNOWN or RESOLVED.' -Blocking $true}
+
+            elseif([string]::IsNullOrWhiteSpace($sourceRef) -or -not(Test-Path -LiteralPath (Join-Path $Root ($sourceRef -replace '/','\\')) -PathType Leaf)){
+                $findings += New-CacFinding -Code 'PERMANENCE_RESOLVED_SOURCE_MISSING' -Scope 'PERMANENCE' -Subject $id -Message 'Resolved dependency requires candidate Source representation.' -Blocking $true
+            }
+        }
+        elseif($disposition -eq 'SHARED_ONLY_JUSTIFIED'){
+            if([string]::IsNullOrWhiteSpace($owner) -or [string]::IsNullOrWhiteSpace($rationale)){
+                $findings += New-CacFinding -Code 'PERMANENCE_SHARED_ONLY_JUSTIFICATION_MISSING' -Scope 'PERMANENCE' -Subject $id -Message 'SHARED_ONLY_JUSTIFIED requires owner and rationale.' -Blocking $true
+            }
+        }
+        elseif(@('RUNTIME_ONLY','DEFER','SUPERSEDE','RETIRE') -contains $disposition){
+            if([string]::IsNullOrWhiteSpace($rationale)){$findings += New-CacFinding -Code 'PERMANENCE_DISPOSITION_RATIONALE_MISSING' -Scope 'PERMANENCE' -Subject $id -Message ($disposition+' requires rationale.') -Blocking $true}
+        }
+        $inventory += [pscustomobject]@{item_id=$id;origin_ref=$origin;owner=$owner;expected_terminal_layer=$expected;current_layer=$current;disposition=$disposition;source_ref=$sourceRef}
+    }
+    return [pscustomobject]@{state=$(if(@($findings|Where-Object{$_.blocking}).Count -eq 0){'PASS'}else{'BLOCKED'});fingerprint=$fingerprint;item_count=$items.Count;inventory=@($inventory);findings=@($findings)}
+}
+
 function Test-CacRuntimeEvidence {
     param([string]$Root,$Binding)
     $id=[string](Get-CacProperty $Binding 'id' '')
@@ -481,6 +587,8 @@ function Invoke-CerebroContractActivationClosure {
     param(
         [Parameter(Mandatory)][string]$Root,
         [string]$RegistryPath='tooling/validator/contract-activation-bindings.json',
+        $PermanenceSnapshot=$null,
+        [string]$ExpectedPermanenceSnapshotFingerprint='',
         [switch]$PassThru
     )
 
@@ -496,8 +604,9 @@ function Invoke-CerebroContractActivationClosure {
     $coverage=Get-CacClassificationCoverage -Root $rootPath -Registry $registry -StrictStates $strict.states
     $canonical=Get-CacCanonicalResponsibilityFindings -Registry $registry
     $debt=Get-CacKnownDebtFindings -Registry $registry
+    $permanence=Test-CacPermanenceSnapshot -Root $rootPath -Snapshot $PermanenceSnapshot -ExpectedFingerprint $ExpectedPermanenceSnapshotFingerprint
 
-    $allFindings=@($strict.findings)+@($coverage.findings)+@($canonical.findings)+@($debt.findings)
+    $allFindings=@($strict.findings)+@($coverage.findings)+@($canonical.findings)+@($debt.findings)+@($permanence.findings)
     $blocking=@($allFindings | Where-Object {$_.blocking -eq $true})
     $nonblocking=@($allFindings | Where-Object {$_.blocking -ne $true})
 
@@ -524,6 +633,10 @@ function Invoke-CerebroContractActivationClosure {
         strict_contract_states=@($strict.states)
         canonical_responsibilities=@($canonical.responsibilities)
         known_activation_debt=@($debt.debt)
+        permanence_snapshot_state=[string]$permanence.state
+        permanence_snapshot_fingerprint=[string]$permanence.fingerprint
+        permanence_snapshot_item_count=[int]$permanence.item_count
+        permanence_snapshot_inventory=@($permanence.inventory)
         blocking_findings=@($blocking)
         nonblocking_findings=@($nonblocking)
     }
