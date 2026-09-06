@@ -459,6 +459,23 @@ blind_evaluation_claim_admissibility_validation:
     - self-certification-of-observation-closure
     - quality-gate-semantic-change
 
+human_admin_projection_validation:
+  severity: error
+  owner: tooling.validator
+  contract_refs: [standards/project-status.yaml, standards/human-navigation-surface.yaml, standards/human-continuation-surface.yaml, engines/project/roadmap-schema.yaml, engines/presentation/live_shadow_projection.py]
+  implementation: engines/presentation/human_admin_projection.py
+  source_adapter: tooling/host/human_admin_projection_sources.py
+  host_frontdoor: tooling/host/cerebro_host.py
+  validator: tooling/validator/human_admin_projection_validation.py
+  required_files:
+    - engines/presentation/human-admin-projection.schema.json
+    - engines/presentation/human_admin_projection.py
+    - tooling/host/human_admin_projection_sources.py
+    - tooling/host/cerebro_host.py
+    - tooling/host/component.yaml
+    - tooling/validator/human_admin_projection_validation.py
+  required_canaries: [presentation-only-authority, deterministic-same-input, n0-remains-noncurrent-no-authority, brief-one-screen-12-lines-max, info-exact-resolver, info-unresolved-fails-closed, ambiguous-ref-fails-closed, missing-owner-input-is-unknown, stale-basis-not-current, provider-neutral-injected-bundle, host-read-only-view-integration, host-status-info-parser, runtime2-cli-preserved, host-does-not-own-roadmap-or-projection-truth, no-store-bus-scheduler-surface]
+  prohibited: [human-admin-projection-as-authoritative-state, host-owned-roadmap-parsing, local-cache-as-owner-truth, Runtime2-kernel-as-Human-Admin-CLI, integrity-CLI-as-generic-info-surface, duplicate-roadmap-store, new-bus-scheduler-daemon-role]
 phases:
   structure:
   - required-files

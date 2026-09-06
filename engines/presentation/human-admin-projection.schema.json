@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-human-admin-projection.schema.json",
+  "title": "Cerebro Human Admin Projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema","authority","projection_ref","projection_revision","projection_fingerprint","source_revision","currentness","basis_set","coverage","unknowns","orientation","current_objective","return_points","human_cognitive_location","blockers","next_human_gate","active_work","objects","evidence_refs","n0"],
+  "properties": {
+    "schema": {"const":"cerebro-human-admin-projection/v1"},
+    "authority": {"const":"PRESENTATION_ONLY_NON_AUTHORITATIVE"},
+    "projection_ref": {"type":"string","minLength":1},
+    "projection_revision": {"type":"integer","minimum":0},
+    "projection_fingerprint": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+    "source_revision": {"type":"string","pattern":"^[0-9a-f]{40}$"},
+    "currentness": {"enum":["CURRENT","STALE","GAP","UNKNOWN","PROVISIONAL"]},
+    "basis_set": {"type":"array"},
+    "coverage": {"type":"object"},
+    "unknowns": {"type":"array","items":{"type":"string"}},
+    "orientation": {"type":"object"},
+    "current_objective": {"type":"string"},
+    "return_points": {"type":"array","items":{"type":"string"}},
+    "human_cognitive_location": {"type":"string"},
+    "blockers": {"type":"array","items":{"type":"string"}},
+    "next_human_gate": {"type":"string"},
+    "active_work": {"type":"array","items":{"type":"string"}},
+    "objects": {"type":"array"},
+    "evidence_refs": {"type":"array","items":{"type":"string"}},
+    "n0": {"type":"object"}
+  }
+}

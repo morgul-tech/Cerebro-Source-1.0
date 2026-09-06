@@ -19,7 +19,7 @@ from typing import Any, BinaryIO, Iterable, Iterator, Mapping
 
 from diagnostic_capsule import capture_capsule, latest_unresolved_context
 
-HOST_VERSION = "0.9.0"
+HOST_VERSION = "0.10.0"
 SOURCE_REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 DEFAULT_SOURCE_CANDIDATES = [
     Path(r"D:\Cerebro\Source\Cerebro_Source_v1.0"),
@@ -2593,7 +2593,8 @@ DELEGATE_COMMANDS = (
     "diagnostics",
     "runtime-first-light",
 )
-HOST_COMMANDS = ("selftest", "runtime2-supervise", *DELEGATE_COMMANDS)
+HAP_COMMANDS = ("status", "info")
+HOST_COMMANDS = ("selftest", "runtime2-supervise", *HAP_COMMANDS, *DELEGATE_COMMANDS)
 
 
 def parse_host_arguments(argv: list[str] | None = None) -> argparse.Namespace:
@@ -2607,6 +2608,10 @@ def parse_host_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     args.request = None
     args.output = None
     args.delegate_args = []
+    args.hap_depth = None
+    args.hap_scope = None
+    args.hap_query = None
+    args.hap_snapshot_bundle = None
     if args.command == "selftest":
         if args.command_args:
             parser.error("selftest does not accept delegated arguments")
@@ -2619,8 +2624,47 @@ def parse_host_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         args.request = parsed.request
         args.output = parsed.output
         return args
+    if args.command == "status":
+        hap = argparse.ArgumentParser(prog=f"{parser.prog} status")
+        hap.add_argument("depth", nargs="?", choices=("brief","standard","deep"), default="standard")
+        hap.add_argument("scope", nargs="?")
+        hap.add_argument("--snapshot-bundle")
+        hap.add_argument("--output")
+        parsed = hap.parse_args(args.command_args)
+        args.hap_depth = parsed.depth
+        args.hap_scope = parsed.scope
+        args.hap_snapshot_bundle = parsed.snapshot_bundle
+        args.output = parsed.output
+        return args
+    if args.command == "info":
+        hap = argparse.ArgumentParser(prog=f"{parser.prog} info")
+        hap.add_argument("query")
+        hap.add_argument("--snapshot-bundle")
+        hap.add_argument("--output")
+        parsed = hap.parse_args(args.command_args)
+        args.hap_query = parsed.query
+        args.hap_snapshot_bundle = parsed.snapshot_bundle
+        args.output = parsed.output
+        return args
     args.delegate_args = list(args.command_args)
     return args
+
+
+def run_human_admin_projection(snapshot: Path, source_commit: str, args: argparse.Namespace) -> dict[str, Any]:
+    module_path = snapshot / "tooling" / "host" / "human_admin_projection_sources.py"
+    spec = importlib.util.spec_from_file_location("cerebro_human_admin_projection_sources", module_path)
+    if spec is None or spec.loader is None:
+        raise HostError("HAP_SOURCE_ADAPTER_MISSING", str(module_path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    try:
+        return module.run_view(
+            snapshot, source_commit, args.command,
+            snapshot_bundle_path=args.hap_snapshot_bundle,
+            depth=args.hap_depth or "standard", scope=args.hap_scope, query=args.hap_query,
+        )
+    except Exception as exc:
+        raise HostError("HAP_READ_FAILED", str(exc)) from exc
 
 
 def main() -> int:
@@ -2645,6 +2689,10 @@ def main() -> int:
         source = locate_source(args.source_root)
         commit = verify_source(source, args.source_commit)
         snapshot = create_snapshot(source, commit)
+        if args.command in HAP_COMMANDS:
+            result = run_human_admin_projection(snapshot, commit, args)
+            _write_cli_result(args.output, result)
+            return 0
         component_args = list(args.delegate_args)
         if not component_args:
             raise HostError("MISSING_DELEGATE_COMMAND", f"pass engine arguments after '{args.command}'")
