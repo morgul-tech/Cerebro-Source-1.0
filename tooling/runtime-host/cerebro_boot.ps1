@@ -642,6 +642,53 @@ function Invoke-CerebroBootCore {
                 ).Substring(0, 24)
             )
 
+            $hmiKernelId = 'CEREBRO-HMI-BIRTH-KERNEL-001'
+            $hmiKernelVersion = '1.0'
+            $hmiKernelRefs = @(
+                'standards/human-continuation-surface.yaml',
+                'standards/continuation-surface-system-policy.yaml',
+                'engines/presentation/human-admin-projection.schema.json'
+            )
+            $hmiKernelMaterial = (
+                $hmiKernelRefs | ForEach-Object {
+                    $kernelPath = Join-Path $WorkingSourcePath $_
+                    '{0}|{1}' -f $_, (Get-FileHash -Algorithm SHA256 -LiteralPath $kernelPath).Hash.ToLowerInvariant()
+                }
+            ) -join "`n"
+            $hmiKernelFingerprint = Get-CerebroBootSha256Text (
+                '{0}|{1}|{2}' -f $hmiKernelId, $hmiKernelVersion, $hmiKernelMaterial
+            )
+
+            $roleKernelId = 'CEREBRO-ROLE-BIRTH-KERNEL-001'
+            $roleKernelVersion = '1.0'
+            $roleKernelRefs = @(
+                'engines/presentation/component.yaml',
+                'engines/presentation/rules.yaml'
+            )
+            $roleKernelMaterial = (
+                $roleKernelRefs | ForEach-Object {
+                    $kernelPath = Join-Path $WorkingSourcePath $_
+                    '{0}|{1}' -f $_, (Get-FileHash -Algorithm SHA256 -LiteralPath $kernelPath).Hash.ToLowerInvariant()
+                }
+            ) -join "`n"
+            $roleKernelFingerprint = Get-CerebroBootSha256Text (
+                '{0}|{1}|{2}' -f $roleKernelId, $roleKernelVersion, $roleKernelMaterial
+            )
+
+            $successionOrder = @(
+                'identity',
+                'HMI-birth-kernel',
+                'ROLE-birth-kernel',
+                'Fresh-World-currentness',
+                'lineage-wisdom',
+                'reconcile',
+                'canaries',
+                'Arvetone-last',
+                'Identitetshilsen',
+                'READY'
+            )
+            $successionFingerprint = Get-CerebroBootSha256Text ($successionOrder -join '|')
+
             $runtimeState = [ordered]@{
                 schema =
                     'cerebro-handboot-runtime-state/v0.1'
@@ -711,6 +758,29 @@ function Invoke-CerebroBootCore {
                         canonical_command = $canonicalCommand
                     }
 
+                    birth_kernels = [ordered]@{
+                        HMI = [ordered]@{
+                            id = $hmiKernelId
+                            version = $hmiKernelVersion
+                            fingerprint = $hmiKernelFingerprint
+                            consumed = $true
+                        }
+                        ROLE = [ordered]@{
+                            id = $roleKernelId
+                            version = $roleKernelVersion
+                            fingerprint = $roleKernelFingerprint
+                            consumed = $true
+                        }
+                    }
+
+                    succession = [ordered]@{
+                        zero_live_state_inheritance = $true
+                        order = $successionOrder
+                        order_fingerprint = $successionFingerprint
+                        completed = $true
+                        final_state = 'READY'
+                    }
+
                     handoff = [ordered]@{
                         requested = (
                             -not $SkipHandoff
@@ -734,7 +804,7 @@ function Invoke-CerebroBootCore {
                         algorithm = 'sha256'
                         value = $null
                         material_version =
-                            'handboot-receipt/v0.1'
+                            'handboot-receipt/v0.2'
                     }
                 }
             }
@@ -814,7 +884,7 @@ function Invoke-CerebroBootCore {
             $failureStage = 'CONTROL_TRANSFER'
 
             $receiptMaterial = (
-                '{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}' -f
+                '{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}|{10}' -f
                 'bootCerebro',
                 $bootEngineHash,
                 $localCommit,
@@ -822,7 +892,10 @@ function Invoke-CerebroBootCore {
                 'ACTIVE_CONTROL_TRANSFERRED',
                 $handoffState,
                 $currentPatch,
-                $canonicalCommand
+                $canonicalCommand,
+                $hmiKernelFingerprint,
+                $roleKernelFingerprint,
+                $successionFingerprint
             )
 
             $receipt =
@@ -887,6 +960,15 @@ function Invoke-CerebroBootCore {
             Write-Host 'components:             VERIFIED'
             Write-Host 'runtime:                ACTIVE'
             Write-Host (
+                'birth_kernels:          HMI={0} ROLE={1}' -f
+                $hmiKernelFingerprint,
+                $roleKernelFingerprint
+            )
+            Write-Host (
+                'succession:             READY {0}' -f
+                $successionFingerprint
+            )
+            Write-Host (
                 'handoff:                {0}' -f
                 $handoffState
             )
@@ -939,6 +1021,8 @@ function Invoke-CerebroBootCore {
                 manifest = 'VERIFIED'
                 components = 'VERIFIED'
                 runtime = 'ACTIVE'
+                birth_kernels = $runtimeState.runtime.birth_kernels
+                succession = $runtimeState.runtime.succession
                 handoff = $handoffState
                 handoff_id = $handoffId
                 resume_receipt = $resumeReceipt

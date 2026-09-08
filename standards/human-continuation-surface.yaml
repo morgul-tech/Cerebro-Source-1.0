@@ -268,3 +268,26 @@ human_continuation_surface:
       - provider_readback_not_verified
       - stable_identity_not_verified
     pdf_authority: NONE
+
+  typed_hmi_boundary:
+    schema: cerebro-hmi-boundary-resolution/v1
+    signal_source: Interaction
+    consumer: Presentation
+    consumption_required_before_human_surface: true
+    surface_first: true
+    required_signals:
+      - role_assessment
+      - responsibility_assessment
+      - human_boundary_assessment
+      - presentation_request
+    machine_route_before_Human_relay: REQUIRED
+    genuine_Human_gate_visibility: REQUIRED
+    HA_semantics:
+      expansion: HUMAN_ADMIN
+      scope: PRESENTATION_SHORTHAND_ONLY
+      actor_identity_authority: NONE
+    carrier_change:
+      actor_identity_effect: NONE
+      manual_actor_recreation: PROHIBITED
+    zero_live_state_inheritance: true
+    provider_global_presemantic_effect: OPEN_NOT_PROVEN

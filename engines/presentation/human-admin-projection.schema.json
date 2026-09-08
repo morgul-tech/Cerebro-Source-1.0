@@ -4,7 +4,7 @@
   "title": "Cerebro Human Admin Projection",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema","authority","projection_ref","projection_revision","projection_fingerprint","source_revision","currentness","basis_set","coverage","unknowns","orientation","current_objective","return_points","human_cognitive_location","blockers","next_human_gate","active_work","objects","evidence_refs","n0"],
+  "required": ["schema","authority","projection_ref","projection_revision","projection_fingerprint","source_revision","currentness","basis_set","coverage","unknowns","orientation","current_objective","return_points","human_cognitive_location","blockers","next_human_gate","active_work","role_assessment","responsibility_assessment","human_boundary_assessment","presentation_request","hmi","objects","evidence_refs","n0"],
   "properties": {
     "schema": {"const":"cerebro-human-admin-projection/v1"},
     "authority": {"const":"PRESENTATION_ONLY_NON_AUTHORITATIVE"},
@@ -23,6 +23,11 @@
     "blockers": {"type":"array","items":{"type":"string"}},
     "next_human_gate": {"type":"string"},
     "active_work": {"type":"array","items":{"type":"string"}},
+    "role_assessment": {"type":"object"},
+    "responsibility_assessment": {"type":"object"},
+    "human_boundary_assessment": {"type":"object"},
+    "presentation_request": {"type":"object"},
+    "hmi": {"type":"object","required":["surface_first","machine_route_before_human_relay","ha_expansion","actor_identity_mutation_allowed"],"properties":{"surface_first":{"const":true},"machine_route_before_human_relay":{"const":true},"ha_expansion":{"const":"HUMAN_ADMIN"},"actor_identity_mutation_allowed":{"const":false}}},
     "objects": {"type":"array"},
     "evidence_refs": {"type":"array","items":{"type":"string"}},
     "n0": {"type":"object"}

@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.2"
+  version: "1.3"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -21,12 +21,53 @@ boot_critical_path:
     - pin-exact-Source-commit
     - verify-manifest-and-MCP-extension
     - verify-boot-critical-contract-identities
+    - consume-HMI-birth-kernel
+    - consume-ROLE-birth-kernel
     - reuse-exact-commit-integrity-evidence-when-valid
     - deep-validate-automatically-when-invalidated
     - establish-Source-operational-state
     - detect-environment-capabilities
     - load-task-relevant-semantics-on-demand
+    - complete-frozen-succession-order
+    - emit-Identitetshilsen
     - emit-human-boot-completion-surface
+
+  birth_kernels:
+    receipt_required_before_first_operational_response: true
+    HMI:
+      id: CEREBRO-HMI-BIRTH-KERNEL-001
+      version: "1.0"
+      contract_refs:
+      - standards/human-continuation-surface.yaml
+      - standards/continuation-surface-system-policy.yaml
+      - engines/presentation/human-admin-projection.schema.json
+      required_receipt_fields: [id, version, fingerprint, consumed]
+    ROLE:
+      id: CEREBRO-ROLE-BIRTH-KERNEL-001
+      version: "1.0"
+      contract_refs:
+      - engines/presentation/component.yaml
+      - engines/presentation/rules.yaml
+      required_receipt_fields: [id, version, fingerprint, consumed]
+    fingerprint_algorithm: SHA256
+    provider_global_presemantic_effect: OPEN_NOT_PROVEN
+
+  fresh_world_succession:
+    zero_live_state_inheritance: true
+    live_conversation_model_or_runtime_state_authority: NONE
+    frozen_order:
+    - identity
+    - HMI-birth-kernel
+    - ROLE-birth-kernel
+    - Fresh-World-currentness
+    - lineage-wisdom
+    - reconcile
+    - canaries
+    - Arvetone-last
+    - Identitetshilsen
+    - READY
+    order_receipt_required: true
+    reorder_or_skip: BLOCK_FIRST_OPERATIONAL_RESPONSE
 
   conversation_source_alignment:
     result: CONVERSATION_SOURCE_ALIGNMENT

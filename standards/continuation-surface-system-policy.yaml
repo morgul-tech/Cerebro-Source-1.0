@@ -160,3 +160,21 @@ continuation_surface_system_policy:
       - allow-terminal-completion-claim
     projection_failure_effect: BLOCK_HANDOFF_AND_COMPLETION_CLAIM
     new_project_auto_start_after_close: PROHIBITED
+
+  typed_interaction_to_presentation:
+    schema: cerebro-hmi-boundary-resolution/v1
+    order:
+    - consume-role-assessment
+    - consume-responsibility-assessment
+    - consume-human-boundary-assessment
+    - consume-presentation-request
+    - resolve-machine-route-before-Human-relay
+    - preserve-genuine-Human-gate
+    - render-surface-first
+    invariants:
+    - HA-means-HUMAN_ADMIN-presentation-shorthand-only
+    - HA-never-creates-or-mutates-actor-identity
+    - carrier-change-never-creates-a-new-actor
+    - normal-HMI-never-requires-manual-actor-id
+    - zero-live-state-inheritance
+    provider_global_presemantic_effect: OPEN_NOT_PROVEN

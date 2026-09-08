@@ -168,6 +168,35 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
         "success-semantics-are-available",
         "Yes — this conversation is now running against the current authoritative Cerebro Source, and Cerebro is actively being used for my responses." in interaction,
     )
+    check(
+        "birth-kernel-contract-identities-and-consumption",
+        all(token in boot_architecture for token in (
+            "CEREBRO-HMI-BIRTH-KERNEL-001","CEREBRO-ROLE-BIRTH-KERNEL-001",
+            "receipt_required_before_first_operational_response: true",
+            "required_receipt_fields: [id, version, fingerprint, consumed]",
+        ))
+        and all(token in boot_runtime for token in (
+            "$hmiKernelFingerprint","$roleKernelFingerprint","birth_kernels = [ordered]@{",
+            "consumed = $true","handboot-receipt/v0.2",
+        )),
+    )
+    succession_order_tokens=(
+        "identity","HMI-birth-kernel","ROLE-birth-kernel","Fresh-World-currentness",
+        "lineage-wisdom","reconcile","canaries","Arvetone-last","Identitetshilsen","READY",
+    )
+    check(
+        "fresh-world-succession-order-frozen",
+        "zero_live_state_inheritance: true" in boot_architecture
+        and "zero_live_state_inheritance = $true" in boot_runtime
+        and all(token in boot_architecture for token in succession_order_tokens)
+        and all(token in boot_runtime for token in succession_order_tokens)
+        and "$successionFingerprint" in boot_runtime
+        and "completed = $true" in boot_runtime,
+    )
+    check(
+        "provider-global-presemantic-effect-remains-open",
+        "provider_global_presemantic_effect: OPEN_NOT_PROVEN" in boot_architecture,
+    )
 
     if bootengine_path is not None:
         bootengine = bootengine_path.read_text(encoding="utf-8")

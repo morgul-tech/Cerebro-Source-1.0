@@ -31,6 +31,10 @@ interfaces:
   - fresh-structured-roadmap-snapshot
   - runtime2-live-shadow-evidence-basis
   - human-admin-projection
+  - typed-role-assessment
+  - typed-responsibility-assessment
+  - typed-human-boundary-assessment
+  - typed-presentation-request
   output:
   - presentation-model
   - format
@@ -43,6 +47,7 @@ interfaces:
   - official-roadmap-pdf
   - roadmap-projection-draft-receipt
   - native-live-shadow-projection
+  - typed-hmi-boundary-resolution
   - cerebro-kompass-obsidian-v0
 schemas:
   human_navigation_surface_candidate: human-navigation-surface-candidate.schema.json
@@ -89,6 +94,9 @@ boundaries:
   - preserve-layout-F-roadmap-grammar
   - keep-A-linear-progress-strip-secondary-only
   - render-kompass-only-from-validated-human-admin-projection
+  - consume-typed-interaction-signals-before-human-surface
+  - render-genuine-human-gates-and-route-machine-work-before-human-relay
+  - expand-HA-to-HUMAN-ADMIN-as-presentation-shorthand-only
   must_not:
   - invent-or-self-approve-navigation-action
   - let-HNS-override-HCS-or-exact-shell-handoff
@@ -101,6 +109,8 @@ boundaries:
   - promote-live-shadow-projection-to-state-or-control-authority
   - render-operational-work-or-actor-truth-before-B1-session-readback
   - obsidian-ne-authority-or-state-owner
+  - create-or-mutate-actor-identity-from-HA-or-carrier-change
+  - suppress-genuine-human-gate-or-present-machine-work-as-human-duty
 version:
   component: 1.5.0
   schema: 1

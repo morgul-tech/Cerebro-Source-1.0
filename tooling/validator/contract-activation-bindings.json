@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.16-first-activation-r6",
+  "classification_version": "2.17-p16-wave1-typed-hmi-birth-kernels",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -553,7 +553,10 @@
         "HARD_SYSTEM_INVARIANT",
         "BLOCK_RESPONSE_HANDOFF_AND_RERENDER",
         "PM_BIND_ADMIT_ONLY_NOT_EXECUTION_UNIT_PRODUCER_OR_DELIVERY_ACTOR",
-        "WORKMODE_LOCAL_RECEIPT_SELF_CONSUMPTION_WHEN_OBSERVABLE"
+        "WORKMODE_LOCAL_RECEIPT_SELF_CONSUMPTION_WHEN_OBSERVABLE",
+        "cerebro-hmi-boundary-resolution/v1",
+        "machine_route_before_Human_relay: REQUIRED",
+        "provider_global_presemantic_effect: OPEN_NOT_PROVEN"
       ],
       "registration": "mcp/manifest.yaml",
       "registration_token": "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT",
@@ -565,14 +568,21 @@
         "alias-machine-payload-prohibited",
         "def validate_action_owner_resolution(",
         "def validate_terminal_roadmap_projection_receipt(",
-        "terminal-roadmap-projection-receipt-required"
+        "terminal-roadmap-projection-receipt-required",
+        "def validate_hmi_boundary_resolution(",
+        "machine-route-required-before-human-relay",
+        "genuine-human-gate-must-remain-visible",
+        "HA-presentation-shorthand-cannot-carry-actor-identity"
       ],
       "wiring": "engines/presentation/rules.yaml",
       "wiring_proof_kind": "RUNTIME_EVIDENCE",
       "wiring_tokens": [
         "PRE-023",
         "required_before_response_handoff: true",
-        "failure_effect: BLOCK_AND_RERENDER"
+        "failure_effect: BLOCK_AND_RERENDER",
+        "PRE-P16-TYPED-HMI-BOUNDARY-001",
+        "machine_route_before_Human_relay: required",
+        "HA_scope: PRESENTATION_SHORTHAND_ONLY"
       ],
       "validation": "standards/development/delivery-failure-regression.yaml",
       "validation_tokens": [
@@ -614,6 +624,12 @@
           "full_state_reference_required",
           "visible_alias_is_trigger_not_state",
           "action_owner_resolution_exercised",
+          "typed_hmi_boundary_resolution_exercised",
+          "typed_interaction_signals_consumed",
+          "machine_route_before_human_relay_enforced",
+          "genuine_human_gate_visibility_enforced",
+          "HA_presentation_shorthand_only_enforced",
+          "carrier_change_identity_invariance_enforced",
           "workmode_machine_observable_self_consumption_enforced",
           "exact_capability_invalidator_fallback_preserved",
           "non_implementer_workmode_scope_preserved",

@@ -474,7 +474,7 @@ human_admin_projection_validation:
     - tooling/host/cerebro_host.py
     - tooling/host/component.yaml
     - tooling/validator/human_admin_projection_validation.py
-  required_canaries: [presentation-only-authority, deterministic-same-input, n0-remains-noncurrent-no-authority, brief-one-screen-12-lines-max, info-exact-resolver, info-unresolved-fails-closed, ambiguous-ref-fails-closed, missing-owner-input-is-unknown, stale-basis-not-current, provider-neutral-injected-bundle, host-read-only-view-integration, host-status-info-parser, runtime2-cli-preserved, host-does-not-own-roadmap-or-projection-truth, no-store-bus-scheduler-surface]
+  required_canaries: [presentation-only-authority, deterministic-same-input, n0-remains-noncurrent-no-authority, typed-interaction-signals-consumed, machine-route-before-human-relay, HA-presentation-shorthand-only, carrier-change-has-no-identity-effect, genuine-human-gate-remains-visible, brief-one-screen-12-lines-max, info-exact-resolver, info-unresolved-fails-closed, ambiguous-ref-fails-closed, missing-owner-input-is-unknown, stale-basis-not-current, provider-neutral-injected-bundle, host-read-only-view-integration, host-status-info-parser, runtime2-cli-preserved, host-does-not-own-roadmap-or-projection-truth, no-store-bus-scheduler-surface]
   prohibited: [human-admin-projection-as-authoritative-state, host-owned-roadmap-parsing, local-cache-as-owner-truth, Runtime2-kernel-as-Human-Admin-CLI, integrity-CLI-as-generic-info-surface, duplicate-roadmap-store, new-bus-scheduler-daemon-role]
 kompass_obsidian_validation:
   severity: error
@@ -1396,6 +1396,10 @@ boot_authority_ambiguity_refinement_validation:
     - library-and-conversation-memory-have-no-authority
     - stale-derived-state-is-rejected-without-reopening-current-state
     - operational-claim-requires-current-commit-bound-receipt
+    - HMI-and-ROLE-birth-kernels-have-id-version-fingerprint-and-consumed-receipt
+    - fresh-world-succession-order-is-frozen-before-first-operational-response
+    - zero-live-state-inheritance
+    - provider-global-presemantic-effect-remains-OPEN-NOT-PROVEN
   required_canaries:
     - legacy-DOCX-CURRENT-cannot-compete-with-cerebro-yaml
     - stale-REBUILD-receipt-cannot-block-current-Source-boot
@@ -1403,6 +1407,9 @@ boot_authority_ambiguity_refinement_validation:
     - boot-cerebro-resolves-to-bootCerebro
     - terminal-null-execution-projects-no-fake-continuation
     - nonterminal-missing-execution-remains-fail-closed
+    - birth-kernel-contract-identities-and-consumption
+    - fresh-world-succession-order-frozen
+    - provider-global-presemantic-effect-remains-open
   prohibited:
     - document-library-authority-arbitration
     - filename-based-authority
@@ -1431,6 +1438,11 @@ continuation_presentation_regression_validation:
     - internally-executable-next-action-is-completed-before-response-handoff
     - human-continuation-surface-requires-real-human-boundary
     - abstraction-gap-hypothesis-requires-bounded-Source-xref-before-user-handoff
+    - typed-Interaction-role-responsibility-human-boundary-and-presentation-signals-are-consumed
+    - machine-route-is-resolved-before-Human-relay
+    - genuine-Human-gates-remain-visible
+    - HA-is-HUMAN_ADMIN-presentation-shorthand-only
+    - carrier-change-does-not-create-or-mutate-actor-identity
   required_canaries:
     - question-during-active-sequence-keeps-next-step-surface
     - observation-during-active-sequence-keeps-next-step-surface
@@ -1444,6 +1456,12 @@ continuation_presentation_regression_validation:
     - internally-executable-next-step-renders-result-not-question
     - internally-executable-next-step-does-not-render-human-continuation-surface
     - existing-cross-cutting-rules-are-xrefed-before-new-abstraction-gap-is-proposed
+    - typed-HMI-machine-route-is-accepted
+    - typed-HMI-genuine-Human-gate-is-accepted
+    - HA-manual-actor-identity-is-rejected
+    - machine-route-Human-relay-is-rejected
+    - hidden-genuine-Human-gate-is-rejected
+    - carrier-identity-mutation-is-rejected
   prohibited:
     - implicit-sequence-termination-from-question-observation-critique-or-learning
     - silent-active-continuation-drop
@@ -1453,6 +1471,9 @@ continuation_presentation_regression_validation:
     - internally-executable-step-returned-as-user-question-recommendation-or-trigger
     - human-continuation-surface-without-real-human-boundary
     - unverified-abstraction-gap-handed-to-user-before-bounded-Source-xref
+    - manual-actor-id-required-for-normal-HMI
+    - machine-owned-next-presented-as-Human-duty
+    - genuine-Human-gate-suppressed
 # END CLOSURE-PRESENTATION-CONTINUITY-001
 
 standard_manifest_assertion_encoding_regression:

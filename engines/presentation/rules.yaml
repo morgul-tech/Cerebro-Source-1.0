@@ -853,3 +853,31 @@ rules:
   validation: error
   provenance: {type: P576_WAVE0_LIVE_SHADOW, source: P578_EXACT5_TARGET_FREEZE}
 # END NATIVE-WAVE0-LIVE-SHADOW-001
+
+# BEGIN P16-WAVE1-TYPED-HMI-BOUNDARY-001
+- id: PRE-P16-TYPED-HMI-BOUNDARY-001
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {human_surface_candidate_requested: true}
+  action:
+    consume_before_render:
+    - role_assessment
+    - responsibility_assessment
+    - human_boundary_assessment
+    - presentation_request
+    surface_first: true
+    machine_route_before_Human_relay: required
+    genuine_Human_gate_visibility: required
+    HA_expansion: HUMAN_ADMIN
+    HA_scope: PRESENTATION_SHORTHAND_ONLY
+    actor_identity_mutation_from_HA_or_carrier_change: prohibited
+    manual_actor_id_for_normal_HMI: prohibited
+    zero_live_state_inheritance: true
+    provider_global_presemantic_effect: OPEN_NOT_PROVEN
+  statement: Presentation SKAL konsumere typede Interaction-signaler, rute maskinutførbart arbeid før Human-relé og samtidig gjøre ekte Human-porter synlige; HA er kun visningsforkortelse for HUMAN_ADMIN.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: P16_WAVE1_MODIFY13_NEW0, source: WORK_PACKETS:649}
+# END P16-WAVE1-TYPED-HMI-BOUNDARY-001

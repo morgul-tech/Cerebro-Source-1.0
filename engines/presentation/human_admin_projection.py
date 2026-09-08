@@ -86,6 +86,44 @@ def _collect_state_list(objects:Sequence[Mapping[str,Any]],fields:Sequence[str])
             elif isinstance(value,list): out.extend(x.strip() for x in value if isinstance(x,str) and x.strip())
     return sorted(set(out))
 
+def _unique_state_value(objects:Sequence[Mapping[str,Any]],fields:Sequence[str],default:Any)->Any:
+    values={}
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        for field in fields:
+            if field not in state: continue
+            value=state[field]
+            if isinstance(value,(str,Mapping,bool)) and (not isinstance(value,str) or value.strip()):
+                normalized=dict(value) if isinstance(value,Mapping) else value.strip() if isinstance(value,str) else value
+                values[_canonical(normalized)]=normalized
+                break
+    return next(iter(values.values())) if len(values)==1 else default
+
+def _typed_hmi_signals(objects:Sequence[Mapping[str,Any]])->dict[str,dict[str,Any]]:
+    role_raw=_unique_state_value(objects,("role_assessment","role"),{})
+    role=dict(role_raw) if isinstance(role_raw,Mapping) else {"role":role_raw} if isinstance(role_raw,str) else {}
+    role_name=str(role.get("role") or role.get("value") or "UNKNOWN").strip().upper()
+    if role_name=="HA":
+        role={"role":"HUMAN_ADMIN","presentation_shorthand":"HA","identity_authority":"NONE"}
+    elif "role" not in role:
+        role={"role":role_name}
+
+    responsibility_raw=_unique_state_value(objects,("responsibility_assessment","responsibility"),{})
+    responsibility=dict(responsibility_raw) if isinstance(responsibility_raw,Mapping) else {"owner":responsibility_raw} if isinstance(responsibility_raw,str) else {"owner":"UNKNOWN"}
+    boundary_raw=_unique_state_value(objects,("human_boundary_assessment","human_boundary"),{})
+    boundary=dict(boundary_raw) if isinstance(boundary_raw,Mapping) else {"real_human_action_is_next":boundary_raw} if isinstance(boundary_raw,bool) else {"real_human_action_is_next":False}
+    request_raw=_unique_state_value(objects,("presentation_request",),{})
+    request=dict(request_raw) if isinstance(request_raw,Mapping) else {"dialect":request_raw} if isinstance(request_raw,str) else {"dialect":"DEFAULT"}
+    return {
+        "role_assessment":role,
+        "responsibility_assessment":responsibility,
+        "human_boundary_assessment":boundary,
+        "presentation_request":request,
+        "hmi":{"surface_first":True,"machine_route_before_human_relay":True,"ha_expansion":"HUMAN_ADMIN",
+               "actor_identity_mutation_allowed":False,"carrier_change_identity_effect":"NONE"},
+    }
+
 def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,Any]],required_refs:Sequence[str]=(),projection_ref:str="human-admin/current",projection_revision:int=0)->dict[str,Any]:
     source_revision=_text(source_revision,"source_revision").lower()
     if not _HEX40.fullmatch(source_revision): raise HumanAdminProjectionError("source_revision:sha1-required")
@@ -104,6 +142,13 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
     blockers=_collect_state_list(objects,("blockers","blocked_by","blocker"))
     active_work=sorted({x["canonical_ref"] for x in objects if str((x.get("state") or {}).get("status","")).upper().startswith("ACTIVE") or x["object_type"] in {"ACTIVE_WORK","WORK_PACKET_ACTIVE"}})
     human_gate=_unique_state_text(objects,("next_human_gate","human_action","human_gate"),default="UNKNOWN" if missing else "NONE")
+    typed_signals=_typed_hmi_signals(objects)
+    boundary=typed_signals["human_boundary_assessment"]
+    responsibility=typed_signals["responsibility_assessment"]
+    if boundary.get("real_human_action_is_next") is True:
+        human_gate=str(boundary.get("next_human_gate") or boundary.get("human_action") or (human_gate if human_gate not in {"NONE","UNKNOWN"} else "REAL_HUMAN_ACTION_REQUIRED"))
+    elif str(responsibility.get("owner","")).upper() in {"MACHINE","CEREBRO","IMPLEMENTER"}:
+        human_gate="NONE"
     where_were=_unique_state_text(objects,("where_we_were",),default="UNKNOWN")
     where_are=_unique_state_text(objects,("where_we_are","current_state"),default=current_objective)
     where_going=_unique_state_text(objects,("where_we_are_going","next_horizon"),default="UNKNOWN")
@@ -115,7 +160,10 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
         "basis_set":basis,"coverage":{"required":required,"observed":observed,"missing":missing},"unknowns":unknowns,
         "orientation":{"where_we_were":where_were,"where_we_are":where_are,"where_we_are_going":where_going},
         "current_objective":current_objective,"return_points":return_points,"human_cognitive_location":human_location,
-        "blockers":blockers,"next_human_gate":human_gate,"active_work":active_work,"objects":objects,"evidence_refs":evidence_refs,
+        "blockers":blockers,"next_human_gate":human_gate,"active_work":active_work,
+        "role_assessment":typed_signals["role_assessment"],"responsibility_assessment":typed_signals["responsibility_assessment"],
+        "human_boundary_assessment":typed_signals["human_boundary_assessment"],"presentation_request":typed_signals["presentation_request"],
+        "hmi":typed_signals["hmi"],"objects":objects,"evidence_refs":evidence_refs,
         "n0":{"surface_state":"NONCURRENT","authority_mutation_allowed":False,"current_situation":where_are,
               "continuation_view":{"current_objective":current_objective,"return_points":return_points,"active_work":active_work,"blockers":blockers,"next_human_gate":human_gate},
               "human_cognitive_location":human_location},
@@ -128,6 +176,9 @@ def validate_projection(value:Mapping[str,Any])->dict[str,Any]:
     supplied=value.get("projection_fingerprint"); body={k:v for k,v in value.items() if k!="projection_fingerprint"}
     if supplied!=fingerprint(body): raise HumanAdminProjectionError("projection:fingerprint-mismatch")
     if value.get("currentness") not in CURRENTNESS: raise HumanAdminProjectionError("projection:currentness-invalid")
+    hmi=value.get("hmi") or {}
+    if hmi.get("surface_first") is not True or hmi.get("machine_route_before_human_relay") is not True or hmi.get("ha_expansion")!="HUMAN_ADMIN" or hmi.get("actor_identity_mutation_allowed") is not False:
+        raise HumanAdminProjectionError("projection:hmi-boundary-invalid")
     if (value.get("n0") or {}).get("surface_state")!="NONCURRENT" or (value.get("n0") or {}).get("authority_mutation_allowed") is not False:
         raise HumanAdminProjectionError("projection:n0-authority-boundary-invalid")
     return dict(value)

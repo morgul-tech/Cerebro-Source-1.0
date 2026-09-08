@@ -17,6 +17,7 @@ RESPONSE_SCHEMA = "cerebro-human-continuation-response/v1"
 ACTIVATION_SCHEMA = "cerebro-human-continuation-activation-proof/v1"
 REGISTRY_SCHEMA = "cerebro-human-continuation-binding-registry/v1"
 ACTION_OWNER_SCHEMA = "cerebro-action-owner-resolution/v1"
+HMI_BOUNDARY_SCHEMA = "cerebro-hmi-boundary-resolution/v1"
 BINDING_ID = "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
 ROADMAP_RECEIPT_SCHEMA = "cerebro-project-terminal-roadmap-projection-receipt/v1"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -287,6 +288,46 @@ def validate_action_owner_resolution(candidate: dict[str, Any]) -> dict[str, Any
     }
 
 
+def validate_hmi_boundary_resolution(candidate: dict[str, Any]) -> dict[str, Any]:
+    if candidate.get("schema") != HMI_BOUNDARY_SCHEMA:
+        raise ContinuationSurfaceError("hmi-boundary-schema-mismatch")
+    if candidate.get("surface_first") is not True:
+        raise ContinuationSurfaceError("hmi-surface-first-required")
+    for field in ("role_assessment","responsibility_assessment","human_boundary_assessment","presentation_request"):
+        if not isinstance(candidate.get(field),dict):
+            raise ContinuationSurfaceError(f"hmi-{field.replace('_','-')}-required")
+
+    role=candidate["role_assessment"]
+    responsibility=candidate["responsibility_assessment"]
+    boundary=candidate["human_boundary_assessment"]
+    role_name=str(role.get("role") or "").strip().upper()
+    owner=str(responsibility.get("owner") or "").strip().upper()
+    real_human=boundary.get("real_human_action_is_next") is True
+    machine_route=candidate.get("machine_route_available") is True
+    human_relay=candidate.get("human_relay_requested") is True
+    if role_name=="HA" and any(key in role for key in ("actor_id","generation_id","identity_fingerprint")):
+        raise ContinuationSurfaceError("HA-presentation-shorthand-cannot-carry-actor-identity")
+    if candidate.get("actor_identity_mutation_requested") is True:
+        raise ContinuationSurfaceError("hmi-actor-identity-mutation-prohibited")
+    if machine_route and not real_human and human_relay:
+        raise ContinuationSurfaceError("machine-route-required-before-human-relay")
+    gate=str(boundary.get("next_human_gate") or "").strip()
+    if real_human and not gate:
+        raise ContinuationSurfaceError("genuine-human-gate-must-remain-visible")
+    if owner in {"MACHINE","CEREBRO","IMPLEMENTER"} and not real_human and gate.upper() not in {"","NONE"}:
+        raise ContinuationSurfaceError("machine-owned-next-cannot-be-presented-as-human-duty")
+    return {
+        "schema":"cerebro-hmi-boundary-resolution-validation/v1","result":"PASS",
+        "surface_first":True,"typed_signals_consumed":True,
+        "machine_route_before_human_relay":machine_route and not real_human,
+        "genuine_human_gate_visible":real_human and bool(gate),
+        "ha_expansion":"HUMAN_ADMIN" if role_name=="HA" else None,
+        "ha_presentation_shorthand_only":role_name=="HA",
+        "actor_identity_mutation_allowed":False,
+        "carrier_change_identity_effect":"NONE",
+    }
+
+
 def _fixture_binding(alias: str = "Fortsett DualityArc Wave 02") -> dict[str, Any]:
     value: dict[str, Any] = {
         "schema": BINDING_SCHEMA,
@@ -382,6 +423,25 @@ def selftest() -> dict[str, Any]:
     human_fallback["exact_capability_or_access_invalidator"] = "LOCAL_RECEIPT_NOT_MACHINE_OBSERVABLE"
     fallback_result = validate_action_owner_resolution(human_fallback)
 
+    hmi_machine = {
+        "schema": HMI_BOUNDARY_SCHEMA, "surface_first": True,
+        "role_assessment": {"role":"HA"},
+        "responsibility_assessment": {"owner":"MACHINE"},
+        "human_boundary_assessment": {"real_human_action_is_next":False,"next_human_gate":"NONE"},
+        "presentation_request": {"dialect":"IMPLEMENTER"},
+        "machine_route_available": True, "human_relay_requested": False,
+        "actor_identity_mutation_requested": False, "carrier_changed": True,
+    }
+    hmi_machine_result=validate_hmi_boundary_resolution(hmi_machine)
+    hmi_human=json.loads(json.dumps(hmi_machine))
+    hmi_human["responsibility_assessment"]={"owner":"HUMAN"}
+    hmi_human["human_boundary_assessment"]={"real_human_action_is_next":True,"next_human_gate":"APPROVE_RELEASE"}
+    hmi_human_result=validate_hmi_boundary_resolution(hmi_human)
+    hmi_manual_actor=json.loads(json.dumps(hmi_machine)); hmi_manual_actor["role_assessment"]["actor_id"]="MANUAL"
+    hmi_relay=json.loads(json.dumps(hmi_machine)); hmi_relay["human_relay_requested"]=True
+    hmi_hidden_gate=json.loads(json.dumps(hmi_human)); hmi_hidden_gate["human_boundary_assessment"].pop("next_human_gate")
+    hmi_identity_mutation=json.loads(json.dumps(hmi_machine)); hmi_identity_mutation["actor_identity_mutation_requested"]=True
+
     return {
         "result": "PASS",
         "valid_short_trigger_accepted": True,
@@ -397,6 +457,12 @@ def selftest() -> dict[str, Any]:
         "workmode_human_courier_rejected": _must_reject("workmode-human-courier", validate_action_owner_resolution, human_courier),
         "exact_capability_invalidator_fallback_accepted": fallback_result.get("genuine_human_physical_boundary_preserved") is True,
         "non_implementer_workmode_rejected": _must_reject("non-implementer-workmode", validate_action_owner_resolution, worker_work_mode),
+        "typed_hmi_machine_route_accepted": hmi_machine_result.get("machine_route_before_human_relay") is True,
+        "typed_hmi_genuine_human_gate_accepted": hmi_human_result.get("genuine_human_gate_visible") is True,
+        "HA_manual_actor_identity_rejected": _must_reject("HA-manual-actor",validate_hmi_boundary_resolution,hmi_manual_actor),
+        "machine_route_human_relay_rejected": _must_reject("machine-route-human-relay",validate_hmi_boundary_resolution,hmi_relay),
+        "hidden_genuine_human_gate_rejected": _must_reject("hidden-genuine-human-gate",validate_hmi_boundary_resolution,hmi_hidden_gate),
+        "carrier_identity_mutation_rejected": _must_reject("carrier-identity-mutation",validate_hmi_boundary_resolution,hmi_identity_mutation),
     }
 
 
@@ -445,6 +511,12 @@ def activation_probe(root: Path) -> dict[str, Any]:
         "full_state_reference_required": True,
         "visible_alias_is_trigger_not_state": True,
         "action_owner_resolution_exercised": checks.get("workmode_machine_observable_action_accepted") is True,
+        "typed_hmi_boundary_resolution_exercised": checks.get("typed_hmi_machine_route_accepted") is True,
+        "typed_interaction_signals_consumed": checks.get("typed_hmi_machine_route_accepted") is True,
+        "machine_route_before_human_relay_enforced": checks.get("machine_route_human_relay_rejected") is True,
+        "genuine_human_gate_visibility_enforced": checks.get("typed_hmi_genuine_human_gate_accepted") is True,
+        "HA_presentation_shorthand_only_enforced": checks.get("HA_manual_actor_identity_rejected") is True,
+        "carrier_change_identity_invariance_enforced": checks.get("carrier_identity_mutation_rejected") is True,
         "workmode_machine_observable_self_consumption_enforced": checks.get("workmode_human_courier_rejected") is True,
         "exact_capability_invalidator_fallback_preserved": checks.get("exact_capability_invalidator_fallback_accepted") is True,
         "non_implementer_workmode_scope_preserved": checks.get("non_implementer_workmode_rejected") is True,
@@ -470,6 +542,9 @@ def main() -> int:
     p_action_owner = sub.add_parser("validate-action-owner")
     p_action_owner.add_argument("--input", required=True)
     p_action_owner.add_argument("--output")
+    p_hmi = sub.add_parser("validate-hmi-boundary")
+    p_hmi.add_argument("--input", required=True)
+    p_hmi.add_argument("--output")
     p_registry = sub.add_parser("validate-registry")
     p_registry.add_argument("--input", required=True)
     p_registry.add_argument("--output")
@@ -489,6 +564,8 @@ def main() -> int:
             result = validate_response(_read_json(Path(args.input)))
         elif args.command == "validate-action-owner":
             result = validate_action_owner_resolution(_read_json(Path(args.input)))
+        elif args.command == "validate-hmi-boundary":
+            result = validate_hmi_boundary_resolution(_read_json(Path(args.input)))
         elif args.command == "validate-registry":
             result = validate_registry(_read_json(Path(args.input)))
         elif args.command == "resolve-active-binding":

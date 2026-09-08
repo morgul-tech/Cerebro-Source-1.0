@@ -27,7 +27,9 @@ def run_all():
        "why_it_matters":"It is the current material implementation frontier.","aliases":["P612","claim 838"],"related_refs":["WORK_PACKETS:630"],
        "state":{"status":"ACTIVE_BOUND","current_objective":"N0 Human Admin Projection","where_we_were":"P611 targetset freeze",
        "where_we_are":"P612 HAP core implementation","where_we_are_going":"P613 replaceable Kompass renderer","return_point":"P612 validation",
-       "human_cognitive_location":"Implementing shared read-only Human Admin Projection","human_action":"NONE","blockers":[]}},
+       "human_cognitive_location":"Implementing shared read-only Human Admin Projection","human_action":"NONE","blockers":[],
+       "role_assessment":{"role":"HA"},"responsibility_assessment":{"owner":"MACHINE"},
+       "human_boundary_assessment":{"real_human_action_is_next":False},"presentation_request":{"dialect":"IMPLEMENTER"}}},
       {"schema":"cerebro-owner-snapshot/v1","owner_ref":"SHARED_PM","object_ref":"PROJECT_MANAGER_5168B029","object_type":"PROJECT_MANAGER",
        "currentness":"CURRENT","revision_or_token":"pm-current","evidence_ref":"PM_PRINCIPAL_CHANNEL:3448","human_summary":"Current Project Manager",
        "why_it_matters":"Owns bind/start/admit orchestration.","aliases":["current pm"],"state":{"status":"CURRENT"}}
@@ -38,6 +40,14 @@ def run_all():
     check("deterministic-same-input",p==hap.build_projection(source_revision=source,owner_snapshots=list(snaps),required_refs=["WORK_CLAIMS:838","PROJECT_MANAGER_5168B029"],projection_revision=3))
     check("current-owner-basis-current",p["currentness"]=="CURRENT")
     check("n0-remains-noncurrent-no-authority",p["n0"]["surface_state"]=="NONCURRENT" and p["n0"]["authority_mutation_allowed"] is False)
+    check("typed-interaction-signals-consumed",p["responsibility_assessment"]["owner"]=="MACHINE" and p["presentation_request"]["dialect"]=="IMPLEMENTER")
+    check("machine-route-before-human-relay",p["next_human_gate"]=="NONE" and p["hmi"]["machine_route_before_human_relay"] is True)
+    check("HA-presentation-shorthand-only",p["role_assessment"]=={"role":"HUMAN_ADMIN","presentation_shorthand":"HA","identity_authority":"NONE"} and p["hmi"]["actor_identity_mutation_allowed"] is False)
+    check("carrier-change-has-no-identity-effect",p["hmi"]["carrier_change_identity_effect"]=="NONE" and "actor_id" not in p["role_assessment"])
+    gate_snaps=json.loads(json.dumps(snaps)); gate_snaps[0]["state"]["responsibility_assessment"]={"owner":"HUMAN"}
+    gate_snaps[0]["state"]["human_boundary_assessment"]={"real_human_action_is_next":True,"next_human_gate":"APPROVE_RELEASE"}
+    pgate=hap.build_projection(source_revision=source,owner_snapshots=gate_snaps)
+    check("genuine-human-gate-remains-visible",pgate["next_human_gate"]=="APPROVE_RELEASE")
     brief=hap.render_status(p,"brief"); check("brief-one-screen-12-lines-max",len(brief["lines"])<=12)
     info=hap.render_info(p,"P612"); check("info-exact-resolver",info["result"]=="RESOLVED" and info["canonical_ref"]=="WORK_CLAIMS:838")
     check("info-unresolved-fails-closed",hap.render_info(p,"missing-ref")["result"]=="UNRESOLVED")
