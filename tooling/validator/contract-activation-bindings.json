@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.17-p16-wave1-typed-hmi-birth-kernels",
+  "classification_version": "2.18-p16-wave2-pm-fixed-point",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -1315,7 +1315,9 @@
         "MATERIAL_PREFLIGHT_BLOCK_IS_FINAL",
         "MATERIAL_PREFLIGHT_INPUT_OR_EXECUTION_FAILURE_FAILS_CLOSED",
         "MCP_IS_THE_ONLY_DELIVERY_PROFILE_DECISION_OWNER",
-        "DELIVERY_ADAPTER_MUST_NOT_RECOMPUTE_MCP_DELIVERY_POLICY"
+        "DELIVERY_ADAPTER_MUST_NOT_RECOMPUTE_MCP_DELIVERY_POLICY",
+        "PM_same_turn_fixed_point:",
+        "NONPROGRESS_CYCLE"
       ],
       "registration": "mcp/manifest.yaml",
       "registration_token": "control_resolution:",

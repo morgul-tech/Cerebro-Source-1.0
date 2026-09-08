@@ -25,7 +25,9 @@ from control_resolution_host import (  # noqa: E402
     CompositeOwnerPersistenceVerifier,
     ControlResolutionHostError,
     PM_AUTHORIZED_COMMAND_STATE_SCHEMA,
+    PM_FIXED_POINT_STOP_REASONS,
     consume_pm_authorized_command,
+    consume_pm_authorized_command_chain,
 )
 
 
@@ -104,6 +106,19 @@ class FixtureExecutor:
             "owner": self.owner,
             "receipt": receipt,
         }
+
+
+class PMCurrentStateReaderFixture:
+    def __init__(self, states: list[dict[str, Any]]):
+        self.states = copy.deepcopy(states)
+        self.calls = 0
+
+    def read_current(self, *, previous: dict[str, Any]) -> dict[str, Any]:
+        if self.calls >= len(self.states):
+            return {"currentness": "UNKNOWN"}
+        value = copy.deepcopy(self.states[self.calls])
+        self.calls += 1
+        return value
 
 
 class PMCommandExecutorFixture:
@@ -623,6 +638,95 @@ def selftest() -> dict[str, Any]:
         and "REORIENTATION_INVALID_UNCHANGED_PATH"
         in same_wall_result["reflex_resolution"]["mcp_control_decision"]["invalidates"],
     )
+
+    # P655 Wave2: bounded same-turn PM fixed point with fresh readback/currentness.
+    fixed_vocabulary = {
+        "QUIESCENT", "OTHER_OWNER_WAIT", "REAL_HUMAN_GATE", "CAPABILITY_MISSING",
+        "CONFLICT", "UNKNOWN_HOLD", "NONPROGRESS_CYCLE",
+    }
+    check("W2-fixed-point-stop-vocabulary-is-exact", set(PM_FIXED_POINT_STOP_REASONS) == fixed_vocabulary)
+
+    def chain_resolver(request: dict[str, Any], **_: Any) -> dict[str, Any]:
+        return copy.deepcopy(request["canonical_resolution"])
+
+    chain_host = BoundControlResolutionHost(
+        persistence_verifier=composite,
+        capability_resolver=capability,
+        canonical_resolver=chain_resolver,
+    )
+    human_governance = {"next_action": {"action_ref": "HUMAN-GATE", "owner": "HUMAN"}}
+    human_reader = PMCurrentStateReaderFixture([{
+        "currentness": "CURRENT", "provider_readback_verified": True,
+        "control_request": {"canonical_resolution": {"project_manager_control_governance": human_governance}},
+        "command_state": None, "carrier": carrier,
+    }])
+    human_fixed = consume_pm_authorized_command_chain(
+        chain_host, governance=governance, command_state=command, carrier=carrier,
+        command_executor=PMCommandExecutorFixture(), current_state_reader=human_reader,
+        root=SOURCE_ROOT, require_git_ancestry=False,
+    )
+    check(
+        "W2-same-turn-readback-reresolve-reaches-real-human-gate",
+        human_fixed["stop_reason"] == "REAL_HUMAN_GATE"
+        and human_fixed["step_count"] == 1
+        and human_fixed["human_action"] == "REQUIRED"
+        and human_reader.calls == 1,
+    )
+
+    stale_reader = PMCurrentStateReaderFixture([{"currentness": "STALE"}])
+    stale_fixed = consume_pm_authorized_command_chain(
+        chain_host, governance=governance, command_state=command, carrier=carrier,
+        command_executor=PMCommandExecutorFixture(), current_state_reader=stale_reader,
+        root=SOURCE_ROOT, require_git_ancestry=False,
+    )
+    check(
+        "W2-stale-currentness-fails-closed-without-next-command",
+        stale_fixed["stop_reason"] == "UNKNOWN_HOLD"
+        and stale_fixed["currentness"] == "STALE"
+        and stale_fixed["step_count"] == 1,
+    )
+
+    repeated_reader = PMCurrentStateReaderFixture([{
+        "currentness": "CURRENT", "provider_readback_verified": True,
+        "control_request": {"canonical_resolution": {"project_manager_control_governance": governance}},
+        "command_state": command, "carrier": carrier,
+    }])
+    repeated_fixed = consume_pm_authorized_command_chain(
+        chain_host, governance=governance, command_state=command, carrier=carrier,
+        command_executor=PMCommandExecutorFixture(), current_state_reader=repeated_reader,
+        root=SOURCE_ROOT, require_git_ancestry=False,
+    )
+    check(
+        "W2-identical-frontier-stops-nonprogress-cycle",
+        repeated_fixed["stop_reason"] == "NONPROGRESS_CYCLE"
+        and repeated_fixed["exact_blocker"] == "REPEATED_PM_COMMAND_FRONTIER",
+    )
+
+    other_owner = consume_pm_authorized_command_chain(
+        chain_host,
+        governance={"next_action": {"action_ref": "QUALITY-WAIT", "owner": "MACHINE", "pm_actor": "QUALITY"}},
+        command_state=None, carrier=carrier, command_executor=None,
+        current_state_reader=PMCurrentStateReaderFixture([]), root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check("W2-other-owner-is-a-declared-fixed-point", other_owner["stop_reason"] == "OTHER_OWNER_WAIT")
+
+    missing_capability = consume_pm_authorized_command_chain(
+        chain_host,
+        governance={"next_action": {**governance["next_action"], "internally_executable": False}},
+        command_state=command, carrier=carrier, command_executor=None,
+        current_state_reader=PMCurrentStateReaderFixture([]), root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check("W2-missing-capability-is-a-declared-fixed-point", missing_capability["stop_reason"] == "CAPABILITY_MISSING")
+
+    conflict_fixed = consume_pm_authorized_command_chain(
+        chain_host, governance=governance, command_state=command, carrier=carrier,
+        command_executor=PMCommandExecutorFixture(stale=True),
+        current_state_reader=PMCurrentStateReaderFixture([]), root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check("W2-stale-precondition-is-conflict-fixed-point", conflict_fixed["stop_reason"] == "CONFLICT")
 
     result = "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL"
     return {

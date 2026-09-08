@@ -101,6 +101,22 @@ continuation_surface_system_policy:
     - stop-at-recommendation-when-authorized-analysis-can-resolve-it
     - assert-new-abstraction-gap-before-bounded-Source-xref
 
+  machine_fixed_point_handoff:
+    applies_when: PROJECT_MANAGER_OWNS_AUTHORIZED_INTERNALLY_EXECUTABLE_NEXT_ACTION
+    required_same_turn_chain:
+    - execute-authorized-command
+    - verify-provider-readback
+    - refresh-currentness
+    - canonical-control-reresolve
+    - consume-next-authorized-PM-command
+    bounded: true
+    fixed_point_stop_vocabulary: [QUIESCENT, OTHER_OWNER_WAIT, REAL_HUMAN_GATE, CAPABILITY_MISSING, CONFLICT, UNKNOWN_HOLD, NONPROGRESS_CYCLE]
+    stale_or_missing_currentness: [STALE, UNKNOWN]
+    human_surface_allowed_only_at: REAL_HUMAN_GATE
+    status_only_self_handoff: PROHIBITED
+    user-pulse-as-machine-loop-clock: PROHIBITED
+    new-scheduler-queue-or-role: PROHIBITED
+
   local_execution_action_owner:
     schema: cerebro-action-owner-resolution/v1
     applies_when:

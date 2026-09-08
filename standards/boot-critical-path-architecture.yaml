@@ -69,6 +69,23 @@ boot_critical_path:
     order_receipt_required: true
     reorder_or_skip: BLOCK_FIRST_OPERATIONAL_RESPONSE
 
+  bounded_operational_pulses:
+    ADMINPULSE:
+      purpose: CURRENT_PM_AND_CONTROL_DELTA_SCAN
+      scope: BOUND_PROJECT_MANAGER_AND_CONTROL_CARRIERS_ONLY
+      watermarks_required: [carrier_ref, provider_revision, event_frontier]
+      output_vocabulary: [delta, NONE]
+      stale_or_missing_currentness: [STALE, UNKNOWN]
+      authority: NONE
+      may_start_blind_substantive_work: false
+    NERVE:
+      purpose: SIGNAL_AND_TRANSPORT_ONLY
+      watermarks_required: [channel_ref, observed_revision]
+      authority: NONE
+      may_create_control_state: false
+      may_create_role_or-wake-authority: false
+    provider_global_or_dormant_peer_wake_effect: NOT_PROVEN
+
   conversation_source_alignment:
     result: CONVERSATION_SOURCE_ALIGNMENT
     established_when:

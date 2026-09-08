@@ -102,6 +102,23 @@ implementation_learning_loop:
     role: EXECUTION_ENVIRONMENT
     development_environment: false
 
+  correction_and_report_debt_drain:
+    id: CEREBRO-FRESH-WORLD-DEBT-DRAIN-001
+    applies_at: [FRESH_WORLD, CURRENT_CONTACT, PRE_CLOSE]
+    scope: ROLE_LOCAL_RELEVANT_CURRENT_ONLY
+    mandatory_sequence:
+    - read-current-authoritative-debt-carriers
+    - filter-to-bound-role-and-active-objective
+    - reject-stale-missing-or-ambiguous-currentness
+    - drain-actionable-correction-and-report-debt-before-new-discretionary-work
+    - persist-effect-and-read-back-before-marking-drained
+    currentness_vocabulary: [CURRENT, STALE, UNKNOWN]
+    stale_or_missing_currentness_effect: UNKNOWN_HOLD
+    debt_carrier_does_not_create_authority: true
+    unbounded-global-debt-scan: PROHIBITED
+    unrelated-role-debt-consumption: PROHIBITED
+    elapsed-time-only-retry: PROHIBITED
+
   closure_gate:
   - failure-classification-complete
   - mutation-state-known

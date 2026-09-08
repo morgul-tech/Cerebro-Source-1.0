@@ -141,6 +141,9 @@ project_manager_control_governor_validation:
     - lifecycle-CAS-conflict-reloads-and-reresolves
     - bind-start-effect-requires-context-commit-receipt-and-poststate-readback
     - unknown-provider-outcome-requires-idempotency-receipt-readback
+    - PM-same-turn-chain-requires-readback-currentness-and-canonical-reresolve
+    - PM-fixed-point-stop-vocabulary-is-exact
+    - user-pulse-is-not-the-PM-loop-clock
   required_canaries:
     - trusted-profile-binding-required
     - actor-owned-frontier-enforced
@@ -151,6 +154,9 @@ project_manager_control_governor_validation:
     - PAUSE-STOP-TERMINATE-distinct
     - terminal-learning-disposition-required
     - heartbeat-required-for-long-running-PM-work
+    - same-turn-readback-reresolve-reaches-real-human-gate
+    - stale-currentness-holds-without-next-command
+    - identical-frontier-stops-nonprogress-cycle
     - lifecycle-targetset-exactly-eight
     - lifecycle-race-family-36-pass
     - lifecycle-preflight-family-8-pass
@@ -1410,6 +1416,7 @@ boot_authority_ambiguity_refinement_validation:
     - birth-kernel-contract-identities-and-consumption
     - fresh-world-succession-order-frozen
     - provider-global-presemantic-effect-remains-open
+    - bounded-adminpulse-and-nerve-authority-boundary
   prohibited:
     - document-library-authority-arbitration
     - filename-based-authority
@@ -1437,6 +1444,9 @@ continuation_presentation_regression_validation:
     - STANDARD-canonical-command-is-CWD-independent
     - internally-executable-next-action-is-completed-before-response-handoff
     - human-continuation-surface-requires-real-human-boundary
+    - machine-fixed-point-handoff-requires-readback-currentness-and-reresolve
+    - stale-or-missing-currentness-fails-closed
+    - fixed-point-stop-vocabulary-is-exact
     - abstraction-gap-hypothesis-requires-bounded-Source-xref-before-user-handoff
     - typed-Interaction-role-responsibility-human-boundary-and-presentation-signals-are-consumed
     - machine-route-is-resolved-before-Human-relay

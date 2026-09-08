@@ -154,6 +154,29 @@ project_manager_control_governor:
     human_pulse_dependency: PROHIBITED
     new_scheduler_or_queue_created: false
 
+  same_turn_fixed_point:
+    owner: PROJECT_MANAGER
+    consumer_ref: mcp/control_resolution_host.py#consume_pm_authorized_command_chain
+    sequence:
+      - consume-one-already-authorized-command
+      - require-exact-state-delta-and-provider-readback
+      - perform-fresh-role-local-currentness-read
+      - re-enter-one-canonical-MCP-control-resolution
+      - continue-only-when-next-PM-command-is-current-authorized-and-executable
+    bound_required: true
+    fixed_point_stop_vocabulary:
+      - QUIESCENT
+      - OTHER_OWNER_WAIT
+      - REAL_HUMAN_GATE
+      - CAPABILITY_MISSING
+      - CONFLICT
+      - UNKNOWN_HOLD
+      - NONPROGRESS_CYCLE
+    stale_or_missing_currentness_effect: UNKNOWN_HOLD
+    repeated_identical_frontier_effect: NONPROGRESS_CYCLE
+    user_pulse_dependency: PROHIBITED
+    new_scheduler_queue_state_service_or_role: PROHIBITED
+
   interrupt_semantics:
     PAUSE:
       claim: RESERVED

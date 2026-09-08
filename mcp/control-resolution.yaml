@@ -249,6 +249,18 @@ control_resolution:
       self_asserted_authority_is_sufficient: false
     plain_CONSOLIDATE_backward_compatibility: REQUIRED
     cross_project_structural_join_default: PROHIBITED
+    PM_same_turn_fixed_point:
+      normal_host_consumer: mcp/control_resolution_host.py#consume_pm_authorized_command_chain
+      authority: MCP_DECISION_WITH_PROJECT_MANAGER_COMMAND_OWNERSHIP
+      reader_binding: CONSTRUCTOR_BOUND_CURRENT_STATE_READER
+      order: [execute, provider-readback, currentness, canonical-reresolve, next-command]
+      bounded: true
+      fixed_point_stop_vocabulary: [QUIESCENT, OTHER_OWNER_WAIT, REAL_HUMAN_GATE, CAPABILITY_MISSING, CONFLICT, UNKNOWN_HOLD, NONPROGRESS_CYCLE]
+      stale_or_missing_currentness: [STALE, UNKNOWN]
+      identical_frontier_effect: NONPROGRESS_CYCLE
+      user_pulse_dependency: PROHIBITED
+      discretionary_auto_work: PROHIBITED
+      new_scheduler_queue_or_truth_store: PROHIBITED
   activation:
     binding_id: ADAPTIVE_MCP_CONTROL_RESOLUTION
     evidence_path: D:\Cerebro\Run\Evidence\Audits\CEREBRO_AA004_MCP_CONTROL_ACTIVATION_PROOF.json

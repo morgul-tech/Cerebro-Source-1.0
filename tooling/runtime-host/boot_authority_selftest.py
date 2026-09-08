@@ -197,6 +197,17 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
         "provider-global-presemantic-effect-remains-open",
         "provider_global_presemantic_effect: OPEN_NOT_PROVEN" in boot_architecture,
     )
+    check(
+        "bounded-adminpulse-and-nerve-authority-boundary",
+        all(token in boot_architecture for token in (
+            "bounded_operational_pulses:",
+            "purpose: CURRENT_PM_AND_CONTROL_DELTA_SCAN",
+            "output_vocabulary: [delta, NONE]",
+            "purpose: SIGNAL_AND_TRANSPORT_ONLY",
+            "may_create_control_state: false",
+            "provider_global_or_dormant_peer_wake_effect: NOT_PROVEN",
+        )),
+    )
 
     if bootengine_path is not None:
         bootengine = bootengine_path.read_text(encoding="utf-8")

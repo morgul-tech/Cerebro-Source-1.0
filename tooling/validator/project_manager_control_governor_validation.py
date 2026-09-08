@@ -410,6 +410,12 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "subject_failure_from_unavailable_carrier: PROHIBITED",
         "self_next_owner_progress:",
         "status_only_terminal_surface: PROHIBITED",
+        "same_turn_fixed_point:",
+        "consume_pm_authorized_command_chain",
+        "perform-fresh-role-local-currentness-read",
+        "fixed_point_stop_vocabulary:",
+        "repeated_identical_frontier_effect: NONPROGRESS_CYCLE",
+        "user_pulse_dependency: PROHIBITED",
     ]
     missing_tokens=[x for x in required_contract_tokens if x not in text]
     if missing_tokens:
@@ -486,6 +492,8 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "anti_loop_canaries":anti_loop,
         "executor_terminal_reconciliation_effect":True,
         "self_next_owner_same_cycle_progress_effect":True,
+        "same_turn_fixed_point_contract_bound":True,
+        "fixed_point_stop_vocabulary_exact":True,
         "trusted_profile_binding_required":True,
         "direct_live_authority":False,
         "state_mutation_by_governor":False,

@@ -442,9 +442,23 @@ def selftest() -> dict[str, Any]:
     hmi_hidden_gate=json.loads(json.dumps(hmi_human)); hmi_hidden_gate["human_boundary_assessment"].pop("next_human_gate")
     hmi_identity_mutation=json.loads(json.dumps(hmi_machine)); hmi_identity_mutation["actor_identity_mutation_requested"]=True
 
+    policy_text = (Path(__file__).resolve().parents[2] / "standards/continuation-surface-system-policy.yaml").read_text(encoding="utf-8")
+    fixed_point_tokens = (
+        "machine_fixed_point_handoff:",
+        "execute-authorized-command",
+        "verify-provider-readback",
+        "canonical-control-reresolve",
+        "REAL_HUMAN_GATE",
+        "NONPROGRESS_CYCLE",
+        "user-pulse-as-machine-loop-clock: PROHIBITED",
+    )
+    if not all(token in policy_text for token in fixed_point_tokens):
+        raise ContinuationSurfaceError("machine-fixed-point-handoff-contract-missing")
+
     return {
         "result": "PASS",
         "valid_short_trigger_accepted": True,
+        "machine_fixed_point_handoff_contract_bound": all(token in policy_text for token in fixed_point_tokens),
         "one_word_rejected": _must_reject("one-word", validate_binding, one_word),
         "six_word_rejected": _must_reject("six-word", validate_binding, six_words),
         "machine_payload_rejected": _must_reject("machine-payload", validate_binding, payload),

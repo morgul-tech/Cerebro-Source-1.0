@@ -26,6 +26,16 @@ EXPECTED_EFFECT = {
 PERSISTENCE_VERIFICATION_SCHEMA = "cerebro-owner-state-persistence-verification/v1"
 PM_AUTHORIZED_COMMAND_STATE_SCHEMA = "cerebro-pm-authorized-command-state/v1"
 PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA = "cerebro-pm-authorized-command-consumption/v1"
+PM_COMMAND_CHAIN_SCHEMA = "cerebro-pm-command-fixed-point/v1"
+PM_FIXED_POINT_STOP_REASONS = (
+    "QUIESCENT",
+    "OTHER_OWNER_WAIT",
+    "REAL_HUMAN_GATE",
+    "CAPABILITY_MISSING",
+    "CONFLICT",
+    "UNKNOWN_HOLD",
+    "NONPROGRESS_CYCLE",
+)
 PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "persistence_evidence_verifier",
     "owner_persistence_verifier",
@@ -537,3 +547,122 @@ def consume_pm_authorized_command(
         "retry_allowed": False,
         "hmi": _pm_command_hmi("RERESOLVE_CONTROL", "PROJECT_MANAGER"),
     }
+
+
+def consume_pm_authorized_command_chain(
+    host: BoundControlResolutionHost,
+    *,
+    governance: dict[str, Any],
+    command_state: dict[str, Any] | None,
+    carrier: dict[str, Any],
+    command_executor: Any | None,
+    current_state_reader: Any,
+    max_steps: int = 8,
+    root: Path = control_resolution.SOURCE_ROOT,
+    require_git_ancestry: bool = True,
+) -> dict[str, Any]:
+    """Consume the bounded PM-owned command frontier to a declared fixed point.
+
+    The reader is a constructor-bound host dependency.  After every verified
+    mutation it must return fresh canonical state; payloads cannot manufacture
+    currentness, authority, or the next command.
+    """
+
+    _require(isinstance(max_steps, int) and 1 <= max_steps <= 32, "pm-command-chain-bound-invalid")
+    read_current = getattr(current_state_reader, "read_current", None)
+    _require(callable(read_current), "pm-command-chain-current-state-reader-required")
+    current_governance = copy.deepcopy(governance)
+    current_command = copy.deepcopy(command_state)
+    current_carrier = copy.deepcopy(carrier)
+    steps: list[dict[str, Any]] = []
+    observed_frontiers: set[tuple[Any, ...]] = set()
+
+    def stop(reason: str, *, currentness: str = "CURRENT", blocker: str | None = None) -> dict[str, Any]:
+        _require(reason in PM_FIXED_POINT_STOP_REASONS, "pm-command-chain-stop-reason-invalid")
+        value: dict[str, Any] = {
+            "schema": PM_COMMAND_CHAIN_SCHEMA,
+            "result": "FIXED_POINT",
+            "stop_reason": reason,
+            "currentness": currentness,
+            "steps": copy.deepcopy(steps),
+            "step_count": len(steps),
+            "human_action": "REQUIRED" if reason == "REAL_HUMAN_GATE" else "NONE",
+        }
+        if blocker:
+            value["exact_blocker"] = blocker
+        return value
+
+    for _ in range(max_steps):
+        _require(isinstance(current_governance, dict), "pm-command-chain-governance-object-required")
+        next_action = current_governance.get("next_action")
+        if not isinstance(next_action, dict) or not next_action.get("action_ref"):
+            return stop("QUIESCENT")
+        if next_action.get("owner") == "HUMAN":
+            return stop("REAL_HUMAN_GATE")
+        if next_action.get("owner") != "MACHINE" or next_action.get("pm_actor") != "PROJECT_MANAGER":
+            return stop("OTHER_OWNER_WAIT")
+        if not (next_action.get("internally_executable") is True and next_action.get("required_before_event_closure") is True):
+            return stop("CAPABILITY_MISSING", blocker="PM_INTERNAL_ACTION_NOT_EXECUTABLE")
+
+        command_signature = (
+            next_action.get("action_ref"),
+            (current_command or {}).get("command_id"),
+            (current_command or {}).get("canonical_state_revision"),
+            ((current_command or {}).get("precondition") or {}).get("state_fingerprint"),
+        )
+        if command_signature in observed_frontiers:
+            return stop("NONPROGRESS_CYCLE", blocker="REPEATED_PM_COMMAND_FRONTIER")
+        observed_frontiers.add(command_signature)
+
+        consumed = consume_pm_authorized_command(
+            host,
+            governance=current_governance,
+            command_state=current_command,
+            carrier=current_carrier,
+            command_executor=command_executor,
+            root=root,
+            require_git_ancestry=require_git_ancestry,
+        )
+        steps.append(copy.deepcopy(consumed))
+        if consumed.get("result") == "EXACT_BLOCKER":
+            blocker = str(consumed.get("exact_blocker") or "UNKNOWN")
+            if "STALE_PRECONDITION" in blocker:
+                return stop("CONFLICT", blocker=blocker)
+            if "UNAVAILABLE" in blocker:
+                return stop("CAPABILITY_MISSING", blocker=blocker)
+            return stop("UNKNOWN_HOLD", currentness="UNKNOWN", blocker=blocker)
+        if consumed.get("result") == "NO_EFFECT":
+            return stop("QUIESCENT")
+        _require(
+            consumed.get("result") in {"PASS_STATE_DELTA_READBACK", "REORIENTED_BEFORE_IDENTICAL_RETRY"},
+            "pm-command-chain-consumption-result-invalid",
+        )
+
+        fresh = read_current(previous=copy.deepcopy(consumed))
+        _require(isinstance(fresh, dict), "pm-command-chain-fresh-state-object-required")
+        _reject_runtime_authority_injection(fresh, "pm_command_chain_fresh_state")
+        currentness = str(fresh.get("currentness") or "UNKNOWN").upper()
+        _require(currentness in {"CURRENT", "STALE", "UNKNOWN"}, "pm-command-chain-currentness-invalid")
+        if currentness != "CURRENT":
+            return stop("UNKNOWN_HOLD", currentness=currentness, blocker=f"CURRENTNESS_{currentness}")
+        if fresh.get("conflict") is True:
+            return stop("CONFLICT", blocker=str(fresh.get("exact_blocker") or "CANONICAL_STATE_CONFLICT"))
+        if fresh.get("provider_readback_verified") is not True:
+            return stop("UNKNOWN_HOLD", currentness="UNKNOWN", blocker="PROVIDER_READBACK_NOT_VERIFIED")
+        control_request = fresh.get("control_request")
+        _require(isinstance(control_request, dict), "pm-command-chain-control-request-required")
+        reresolved = host.resolve(
+            control_request,
+            root=root,
+            require_git_ancestry=require_git_ancestry,
+        )
+        _require(isinstance(reresolved, dict), "pm-command-chain-canonical-reresolution-required")
+        current_governance = copy.deepcopy(reresolved.get("project_manager_control_governance"))
+        if not isinstance(current_governance, dict):
+            decision = reresolved.get("mcp_control_decision")
+            _require(isinstance(decision, dict), "pm-command-chain-control-decision-required")
+            current_governance = {"next_action": copy.deepcopy(decision.get("next_action"))}
+        current_command = copy.deepcopy(fresh.get("command_state"))
+        current_carrier = copy.deepcopy(fresh.get("carrier"))
+
+    return stop("NONPROGRESS_CYCLE", blocker="PM_COMMAND_CHAIN_BOUND_EXHAUSTED")
