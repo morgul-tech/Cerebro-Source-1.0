@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import inspect
 import json
+import re
 import sys
 import copy
 from dataclasses import dataclass
@@ -215,6 +216,15 @@ def _principal_permit_fingerprint(permit: dict[str, Any]) -> str:
     ).hexdigest()
 
 
+def _validate_content_blind_id(value: Any) -> None:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}", value) is None
+        or any(token in value.lower() for token in ("diary", "stambok"))
+    ):
+        raise ControlContextToolAuthorizationError("principal-succession-private-or-locator-ref-prohibited")
+
+
 def _validate_content_blind_receipt(value: Any, *, pass_required: bool = False) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ControlContextToolAuthorizationError("principal-succession-receipt-object-required")
@@ -225,8 +235,7 @@ def _validate_content_blind_receipt(value: Any, *, pass_required: bool = False) 
         raise ControlContextToolAuthorizationError("principal-succession-receipt-fields-invalid")
     ref = value.get("receipt_ref")
     fingerprint = value.get("receipt_fingerprint")
-    if not isinstance(ref, str) or not ref or any(token in ref.lower() for token in ("http:", "https:", "file:", "\\", "/", "diary", "stambok")):
-        raise ControlContextToolAuthorizationError("principal-succession-private-or-locator-ref-prohibited")
+    _validate_content_blind_id(ref)
     if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(ch not in "0123456789abcdef" for ch in fingerprint):
         raise ControlContextToolAuthorizationError("principal-succession-receipt-fingerprint-invalid")
     if value.get("durable") is not True or value.get("readback_verified") is not True:
@@ -253,8 +262,7 @@ def qualify_lived_continuity_event(
     fingerprint = event.get("event_fingerprint")
     qualification = str(event.get("qualification") or "").upper()
     debt_state = str(event.get("debt_state") or "").upper()
-    if not isinstance(event_id, str) or not event_id:
-        raise ControlContextToolAuthorizationError("lived-continuity-event-id-required")
+    _validate_content_blind_id(event_id)
     if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(ch not in "0123456789abcdef" for ch in fingerprint):
         raise ControlContextToolAuthorizationError("lived-continuity-event-fingerprint-invalid")
     if qualification not in {"CAPTURE", "NO_CAPTURE", "UNKNOWN"}:
@@ -271,7 +279,7 @@ def qualify_lived_continuity_event(
         if debt_state != "CLEAR":
             raise ControlContextToolAuthorizationError("captured-lived-continuity-debt-must-be-clear")
     elif qualification == "NO_CAPTURE":
-        if receipt is not None:
+        if "machine_diary_effect_receipt" in event:
             raise ControlContextToolAuthorizationError("no-capture-must-not-create-fake-diary-effect")
         if debt_state != "CLEAR":
             raise ControlContextToolAuthorizationError("no-capture-lived-continuity-debt-must-be-clear")
@@ -309,6 +317,12 @@ def validate_principal_succession_permit(
         raise ControlContextToolAuthorizationError("principal-succession-permit-fields-invalid")
     if permit.get("schema") != PRINCIPAL_SUCCESSION_PERMIT_SCHEMA:
         raise ControlContextToolAuthorizationError("principal-succession-permit-schema-mismatch")
+    for field in ("permit_id", "predecessor_generation_id"):
+        _validate_content_blind_id(permit.get(field))
+    if permit.get("successor_generation_id") is not None:
+        _validate_content_blind_id(permit["successor_generation_id"])
+    if not isinstance(permit.get("source_head"), str) or re.fullmatch(r"[0-9a-f]{40}", permit["source_head"]) is None:
+        raise ControlContextToolAuthorizationError("principal-succession-source-head-invalid")
     if permit.get("permit_id") != expected_ref:
         raise ControlContextToolAuthorizationError("principal-succession-permit-ref-mismatch")
     supplied = permit.get("permit_fingerprint")
@@ -318,9 +332,9 @@ def validate_principal_succession_permit(
         raise ControlContextToolAuthorizationError("principal-succession-permit-source-stale")
     if permit.get("currentness") != "CURRENT" or permit.get("post_state_readback_verified") is not True:
         raise ControlContextToolAuthorizationError("principal-succession-permit-current-readback-required")
-    if not isinstance(permit.get("provider_revision"), int) or permit["provider_revision"] < 0:
+    if type(permit.get("provider_revision")) is not int or permit["provider_revision"] < 0:
         raise ControlContextToolAuthorizationError("principal-succession-provider-revision-invalid")
-    if not isinstance(permit.get("covered_through_frontier"), int) or permit["covered_through_frontier"] < 0:
+    if type(permit.get("covered_through_frontier")) is not int or permit["covered_through_frontier"] < 0:
         raise ControlContextToolAuthorizationError("principal-succession-covered-frontier-invalid")
     lived = qualify_lived_continuity_event(
         permit.get("lived_continuity"),
@@ -526,6 +540,15 @@ class ContextLifecycleEffectAdapter:
             expected_fingerprint=binding["permit_fingerprint"],
             expected_source_head=shadow["source_revision"],
             machine_diary_effect_verifier=self._machine_diary_effect_verifier,
+        )
+        observed_frontier = candidate.get("observed_event_frontier")
+        self._require(
+            type(observed_frontier) is int and observed_frontier >= 0,
+            "principal-succession-observed-frontier-required",
+        )
+        self._require(
+            verified["covered_through_frontier"] >= observed_frontier,
+            "principal-succession-permit-frontier-behind-observed",
         )
         operation = str(candidate.get("operation") or "").upper()
         if operation == "RETIRE":
@@ -1209,6 +1232,22 @@ class ControlContextMcpTools:
             state_directive["actor_lifecycle_mutation_candidate_fingerprint"] = (
                 self._lifecycle_effect_adapter._pre_effect_fingerprint(lifecycle_candidate)
             )
+        principal_succession = None
+        if lifecycle_candidate is not None and isinstance(lifecycle_candidate.get("source_transition"), dict):
+            # A source-transition field must not bypass precommit authorization.
+            self._lifecycle_effect_adapter._validate_pre_effect_candidate(lifecycle_candidate)
+        elif lifecycle_candidate is not None:
+            # Authorization must precede the durable Context completion.
+            principal_succession = self._lifecycle_effect_adapter.verify_principal_succession(
+                candidate=copy.deepcopy(lifecycle_candidate),
+                session={
+                    "tenant_ref": identity.tenant_ref,
+                    "workspace_ref": identity.workspace_ref,
+                    "principal_ref": identity.principal_ref,
+                    "consumer_ref": identity.consumer_ref,
+                    "session_ref": context.session_ref(),
+                },
+            )
         completion = self._state_port.complete_event(
             {
                 "tenant_ref": identity.tenant_ref,
@@ -1252,18 +1291,7 @@ class ControlContextMcpTools:
                     )
                 )
             else:
-                completion["principal_succession_verification"] = (
-                    self._lifecycle_effect_adapter.verify_principal_succession(
-                        candidate=copy.deepcopy(lifecycle_candidate),
-                        session={
-                            "tenant_ref": identity.tenant_ref,
-                            "workspace_ref": identity.workspace_ref,
-                            "principal_ref": identity.principal_ref,
-                            "consumer_ref": identity.consumer_ref,
-                            "session_ref": context.session_ref(),
-                        },
-                    )
-                )
+                completion["principal_succession_verification"] = principal_succession
         navigation_error = None
         try:
             options = activate_committed_navigation_options(candidate, completion)

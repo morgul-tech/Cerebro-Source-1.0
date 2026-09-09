@@ -6,9 +6,9 @@
   "additionalProperties": false,
   "properties": {
     "schema": {"const": "cerebro-principal-succession-permit/v1"},
-    "permit_id": {"type": "string", "minLength": 1},
-    "predecessor_generation_id": {"type": "string", "minLength": 1},
-    "successor_generation_id": {"type": ["string", "null"], "minLength": 1},
+    "permit_id": {"$ref": "#/$defs/opaqueId"},
+    "predecessor_generation_id": {"$ref": "#/$defs/opaqueId"},
+    "successor_generation_id": {"anyOf": [{"$ref": "#/$defs/opaqueId"}, {"type": "null"}]},
     "source_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
     "currentness": {"const": "CURRENT"},
     "provider_revision": {"type": "integer", "minimum": 0},
@@ -17,7 +17,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "event_id": {"type": "string", "minLength": 1},
+        "event_id": {"$ref": "#/$defs/opaqueId"},
         "event_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "qualification": {"enum": ["CAPTURE", "NO_CAPTURE"]},
         "debt_state": {"const": "CLEAR"},
@@ -79,11 +79,12 @@
     "permit_fingerprint"
   ],
   "$defs": {
+    "opaqueId": {"type": "string", "pattern": "^(?!.*(?:[dD][iI][aA][rR][yY]|[sS][tT][aA][mM][bB][oO][kK]))[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}(?![\\s\\S])"},
     "receipt": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "receipt_ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,255}$"},
+        "receipt_ref": {"$ref": "#/$defs/opaqueId"},
         "receipt_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "durable": {"const": true},
         "readback_verified": {"const": true}
@@ -96,7 +97,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "receipt_ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,255}$"},
+        "receipt_ref": {"$ref": "#/$defs/opaqueId"},
         "receipt_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "durable": {"const": true},
         "readback_verified": {"const": true},

@@ -296,7 +296,7 @@ function Invoke-CerebroFreshWorldOperationalPulse {
 }
 
 function ConvertTo-CerebroCanonicalObject {
-    param([Parameter(Mandatory)]$Value)
+    param([Parameter(Mandatory)][AllowNull()]$Value)
     if ($Value -is [Collections.IDictionary]) {
         $ordered = [ordered]@{}
         foreach ($key in @($Value.Keys | Sort-Object)) {
@@ -325,12 +325,52 @@ function Test-CerebroPrincipalSuccessionPermit {
     [CmdletBinding()]
     param(
         [scriptblock]$PermitReader,
+        [scriptblock]$MachineDiaryEffectVerifier,
+        [object]$ObservedEventFrontier,
         [string]$PredecessorGenerationId,
         [string]$SuccessorGenerationId,
         [string]$PermitRef,
         [string]$PermitFingerprint,
         [Parameter(Mandatory)][string]$SourceHead
     )
+    function Assert-PermitFields($Value, [string[]]$Required, [string[]]$Optional = @()) {
+        if ($Value -is [Collections.IDictionary]) { $keys = @($Value.Keys) }
+        elseif ($Value -is [pscustomobject]) { $keys = @($Value.PSObject.Properties.Name) }
+        else { throw 'PRINCIPAL_SUCCESSION_OBJECT_REQUIRED' }
+        foreach ($key in $Required) {
+            if ($keys -cnotcontains $key) { throw ('PRINCIPAL_SUCCESSION_FIELD_REQUIRED:' + $key) }
+        }
+        foreach ($key in $keys) {
+            if ($Required -cnotcontains $key -and $Optional -cnotcontains $key) {
+                throw 'PRINCIPAL_SUCCESSION_PRIVATE_CONTENT_OR_LOCATOR_PROHIBITED'
+            }
+        }
+    }
+    function Assert-PermitId($Value) {
+        if ($Value -isnot [string] -or $Value -cnotmatch '^[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}\z' -or
+            $Value -match '(?i)diary|stambok') {
+            throw 'PRINCIPAL_SUCCESSION_PRIVATE_CONTENT_OR_LOCATOR_PROHIBITED'
+        }
+    }
+    function Assert-PermitInteger($Value) {
+        if (($Value -isnot [int] -and $Value -isnot [long] -and $Value -isnot [bigint]) -or $Value -lt 0) {
+            throw 'PRINCIPAL_SUCCESSION_NONNEGATIVE_INTEGER_REQUIRED'
+        }
+    }
+    function Assert-PermitReceipt($Value, [bool]$PassRequired = $false) {
+        $fields = @('receipt_ref','receipt_fingerprint','durable','readback_verified')
+        if ($PassRequired) { $fields += 'result' }
+        Assert-PermitFields $Value $fields
+        Assert-PermitId $Value.receipt_ref
+        if ($Value.receipt_fingerprint -isnot [string] -or $Value.receipt_fingerprint -cnotmatch '^[0-9a-f]{64}$' -or
+            $Value.durable -isnot [bool] -or $Value.durable -ne $true -or
+            $Value.readback_verified -isnot [bool] -or $Value.readback_verified -ne $true) {
+            throw 'PRINCIPAL_SUCCESSION_EVIDENCE_INCOMPLETE'
+        }
+        if ($PassRequired -and $Value.result -cne 'PASS') {
+            throw 'PRINCIPAL_SUCCESSION_COLD_SUCCESSOR_CANARY_NONPASS'
+        }
+    }
     $requested = @(@(
         $PredecessorGenerationId, $SuccessorGenerationId, $PermitRef, $PermitFingerprint
     ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -340,64 +380,75 @@ function Test-CerebroPrincipalSuccessionPermit {
     if ($requested.Count -ne 4 -or $null -eq $PermitReader) {
         throw 'PRINCIPAL_SUCCESSION_BOUND_READER_AND_EXACT_BINDING_REQUIRED'
     }
+    Assert-PermitInteger $ObservedEventFrontier
     $permit = & $PermitReader ([ordered]@{
         permit_ref=$PermitRef; predecessor_generation_id=$PredecessorGenerationId
         successor_generation_id=$SuccessorGenerationId; source_head=$SourceHead
     })
-    if ($null -eq $permit -or $permit.schema -ne 'cerebro-principal-succession-permit/v1') {
+    Assert-PermitFields $permit @('schema','permit_id','predecessor_generation_id','successor_generation_id',
+        'source_head','currentness','provider_revision','covered_through_frontier','lived_continuity',
+        'evidence','post_state_readback_verified','permit_fingerprint')
+    if ($permit.schema -cne 'cerebro-principal-succession-permit/v1') {
         throw 'PRINCIPAL_SUCCESSION_PERMIT_SCHEMA_REQUIRED'
     }
-    if ($permit.permit_id -ne $PermitRef -or $permit.predecessor_generation_id -ne $PredecessorGenerationId -or
-        $permit.successor_generation_id -ne $SuccessorGenerationId) {
+    foreach ($value in @($permit.permit_id,$permit.predecessor_generation_id,$permit.successor_generation_id)) {
+        Assert-PermitId $value
+    }
+    if ($permit.permit_id -cne $PermitRef -or $permit.predecessor_generation_id -cne $PredecessorGenerationId -or
+        $permit.successor_generation_id -cne $SuccessorGenerationId) {
         throw 'PRINCIPAL_SUCCESSION_PERMIT_BINDING_MISMATCH'
     }
-    if ($permit.currentness -ne 'CURRENT' -or $permit.source_head -ne $SourceHead -or
-        $permit.post_state_readback_verified -ne $true -or $null -eq $permit.provider_revision) {
+    if ($permit.currentness -cne 'CURRENT' -or $permit.source_head -cne $SourceHead -or
+        $permit.source_head -isnot [string] -or $permit.source_head -cnotmatch '^[0-9a-f]{40}$' -or
+        $permit.post_state_readback_verified -isnot [bool] -or $permit.post_state_readback_verified -ne $true) {
         throw 'PRINCIPAL_SUCCESSION_PERMIT_CURRENT_READBACK_REQUIRED'
+    }
+    Assert-PermitInteger $permit.provider_revision
+    Assert-PermitInteger $permit.covered_through_frontier
+    if ($permit.covered_through_frontier -lt $ObservedEventFrontier) {
+        throw 'PRINCIPAL_SUCCESSION_PERMIT_FRONTIER_BEHIND_OBSERVED'
     }
     $canonical = ConvertTo-CerebroCanonicalObject $permit
     $actualFingerprint = Get-CerebroBootSha256Text ($canonical | ConvertTo-Json -Compress -Depth 32)
-    if ($PermitFingerprint -notmatch '^[0-9a-f]{64}$' -or
-        $permit.permit_fingerprint -ne $PermitFingerprint -or $actualFingerprint -ne $PermitFingerprint) {
+    if ($PermitFingerprint -cnotmatch '^[0-9a-f]{64}$' -or
+        $permit.permit_fingerprint -cne $PermitFingerprint -or $actualFingerprint -cne $PermitFingerprint) {
         throw 'PRINCIPAL_SUCCESSION_PERMIT_FINGERPRINT_MISMATCH'
     }
-    if ($permit.lived_continuity.debt_state -ne 'CLEAR' -or
-        $permit.lived_continuity.qualification -notin @('CAPTURE','NO_CAPTURE')) {
+    $lived = $permit.lived_continuity
+    Assert-PermitFields $lived @('event_id','event_fingerprint','qualification','debt_state') @('machine_diary_effect_receipt')
+    Assert-PermitId $lived.event_id
+    if ($lived.event_fingerprint -isnot [string] -or $lived.event_fingerprint -cnotmatch '^[0-9a-f]{64}$' -or
+        $lived.debt_state -cne 'CLEAR' -or $lived.qualification -cnotin @('CAPTURE','NO_CAPTURE')) {
         throw 'PRINCIPAL_SUCCESSION_LIVED_CONTINUITY_DEBT_BLOCK'
     }
-    $diary = $null
-    if ($permit.lived_continuity -is [Collections.IDictionary] -and
-        $permit.lived_continuity.Contains('machine_diary_effect_receipt')) {
-        $diary = $permit.lived_continuity['machine_diary_effect_receipt']
-    }
-    elseif ($null -ne $permit.lived_continuity.PSObject.Properties['machine_diary_effect_receipt']) {
-        $diary = $permit.lived_continuity.machine_diary_effect_receipt
-    }
-    if (($permit.lived_continuity.qualification -eq 'CAPTURE' -and $null -eq $diary) -or
-        ($permit.lived_continuity.qualification -eq 'NO_CAPTURE' -and $null -ne $diary)) {
+    $hasDiary = if ($lived -is [Collections.IDictionary]) {
+        @($lived.Keys) -ccontains 'machine_diary_effect_receipt'
+    } else { $null -ne $lived.PSObject.Properties['machine_diary_effect_receipt'] }
+    if ($lived.qualification -ceq 'CAPTURE') {
+        if (-not $hasDiary -or $null -eq $MachineDiaryEffectVerifier) {
+            throw 'PRINCIPAL_SUCCESSION_BOUND_MACHINE_DIARY_EFFECT_VERIFIER_REQUIRED'
+        }
+        Assert-PermitReceipt $lived.machine_diary_effect_receipt
+        $verifiedDiary = & $MachineDiaryEffectVerifier ([ordered]@{
+            event=$lived; receipt=$lived.machine_diary_effect_receipt
+        })
+        if ($null -eq $verifiedDiary -or $verifiedDiary.result -cne 'PASS') {
+            throw 'PRINCIPAL_SUCCESSION_MACHINE_DIARY_EFFECT_VERIFICATION_NONPASS'
+        }
+    } elseif ($hasDiary) {
         throw 'PRINCIPAL_SUCCESSION_MACHINE_DIARY_EFFECT_MISMATCH'
     }
     $names = @('living_ledger','livspuls','etterklang_review','stambok_seal','gjenklang_publication',
         'human_readability','predecessor_closeout','cold_successor_canary')
+    Assert-PermitFields $permit.evidence $names
     foreach ($name in $names) {
-        $receipt = $permit.evidence.$name
-        if ($null -eq $receipt -or $receipt.durable -ne $true -or $receipt.readback_verified -ne $true -or
-            [string]::IsNullOrWhiteSpace([string]$receipt.receipt_ref) -or
-            [string]$receipt.receipt_fingerprint -notmatch '^[0-9a-f]{64}$') {
-            throw ('PRINCIPAL_SUCCESSION_EVIDENCE_INCOMPLETE:' + $name)
-        }
-    }
-    if ($permit.evidence.cold_successor_canary.result -ne 'PASS') {
-        throw 'PRINCIPAL_SUCCESSION_COLD_SUCCESSOR_CANARY_NONPASS'
-    }
-    $serialized = $permit | ConvertTo-Json -Compress -Depth 32
-    if ($serialized -match '(?i)"(prose|content|uri|url|path|locator|diary_text|stambok_text)"\s*:') {
-        throw 'PRINCIPAL_SUCCESSION_PRIVATE_CONTENT_OR_LOCATOR_PROHIBITED'
+        Assert-PermitReceipt $permit.evidence.$name ($name -ceq 'cold_successor_canary')
     }
     return [ordered]@{
         schema='cerebro-principal-succession-verification/v1'; applicable=$true; result='PASS'
         permit_ref=$PermitRef; permit_fingerprint=$PermitFingerprint
         provider_revision=$permit.provider_revision; post_state_readback_verified=$true
+        covered_through_frontier=$permit.covered_through_frontier
     }
 }
 
@@ -427,6 +478,8 @@ function Invoke-CerebroBootCore {
         [string]$OperationalPulseObjectiveRef = 'BOOT',
 
         [scriptblock]$PrincipalSuccessionPermitReader,
+
+        [scriptblock]$PrincipalMachineDiaryEffectVerifier,
 
         [string]$PredecessorPrincipalGenerationId,
 
@@ -885,8 +938,16 @@ function Invoke-CerebroBootCore {
                 -ProviderTailReader $OperationalPulseReader `
                 -ActorRole $OperationalPulseActorRole `
                 -ObjectiveRef $OperationalPulseObjectiveRef
+            $principalObservedFrontier = $null
+            $frontierText = [string]$operationalPulse.watermarks.control.event_frontier
+            $parsedFrontier = 0L
+            if ($frontierText -cmatch '^[0-9]+$' -and [long]::TryParse($frontierText, [ref]$parsedFrontier)) {
+                $principalObservedFrontier = $parsedFrontier
+            }
             $principalSuccession = Test-CerebroPrincipalSuccessionPermit `
                 -PermitReader $PrincipalSuccessionPermitReader `
+                -MachineDiaryEffectVerifier $PrincipalMachineDiaryEffectVerifier `
+                -ObservedEventFrontier $principalObservedFrontier `
                 -PredecessorGenerationId $PredecessorPrincipalGenerationId `
                 -SuccessorGenerationId $PrincipalSuccessorGenerationId `
                 -PermitRef $PrincipalSuccessionPermitRef `

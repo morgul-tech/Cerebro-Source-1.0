@@ -282,7 +282,7 @@ def _lifecycle_mutation_gate(
         "lifecycle-expected-claim-revision-invalid",
     )
     _require(
-        isinstance(raw.get("observed_event_frontier"), int)
+        type(raw.get("observed_event_frontier")) is int
         and raw["observed_event_frontier"] >= 0,
         "lifecycle-observed-event-frontier-invalid",
     )
@@ -329,16 +329,30 @@ def _lifecycle_mutation_gate(
                 succession.get("result") in {"PASS", "PASS_NON_PRINCIPAL_UNCHANGED"},
                 "principal-succession-verification-nonpass",
             )
+            role = succession.get("trusted_actor_role")
+            _require(
+                succession.get("generation_ref") == raw["actor_generation_id"],
+                "principal-succession-trusted-generation-mismatch",
+            )
+            if role == "PRINCIPAL":
+                _require(
+                    binding_present and succession.get("applicable") is True
+                    and succession.get("result") == "PASS"
+                    and succession.get("operation") == operation,
+                    "principal-succession-trusted-principal-permit-required",
+                )
+            else:
+                _require(
+                    role in {"ASSISTANT", "IMPLEMENTER", "PROJECT_MANAGER", "RESEARCHER", "WORKER"}
+                    and not binding_present and succession.get("applicable") is False
+                    and succession.get("result") == "PASS_NON_PRINCIPAL_UNCHANGED",
+                    "principal-succession-trusted-nonprincipal-role-required",
+                )
             base["principal_succession"] = copy.deepcopy(succession)
         else:
-            _require(
-                not binding_present,
-                "constructor-bound-principal-succession-verifier-required",
+            raise ProjectManagerGovernorError(
+                "constructor-bound-principal-succession-verifier-required"
             )
-            base["principal_succession"] = {
-                "applicable": False,
-                "result": "PASS_LEGACY_NONPRINCIPAL_PATH_UNCHANGED",
-            }
 
     transition = raw.get("source_transition")
     if transition is None:
