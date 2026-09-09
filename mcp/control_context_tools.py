@@ -198,6 +198,160 @@ class HmacControlResolutionAttestor:
 
 
 
+PRINCIPAL_SUCCESSION_PERMIT_SCHEMA = "cerebro-principal-succession-permit/v1"
+_RECEIPT_KEYS = {"receipt_ref", "receipt_fingerprint", "durable", "readback_verified"}
+_PERMIT_EVIDENCE_KEYS = {
+    "living_ledger", "livspuls", "etterklang_review", "stambok_seal",
+    "gjenklang_publication", "human_readability", "predecessor_closeout",
+    "cold_successor_canary",
+}
+
+
+def _principal_permit_fingerprint(permit: dict[str, Any]) -> str:
+    subject = copy.deepcopy(permit)
+    subject.pop("permit_fingerprint", None)
+    return hashlib.sha256(
+        json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+
+
+def _validate_content_blind_receipt(value: Any, *, pass_required: bool = False) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ControlContextToolAuthorizationError("principal-succession-receipt-object-required")
+    allowed = set(_RECEIPT_KEYS)
+    if pass_required:
+        allowed.add("result")
+    if set(value) != allowed:
+        raise ControlContextToolAuthorizationError("principal-succession-receipt-fields-invalid")
+    ref = value.get("receipt_ref")
+    fingerprint = value.get("receipt_fingerprint")
+    if not isinstance(ref, str) or not ref or any(token in ref.lower() for token in ("http:", "https:", "file:", "\\", "/", "diary", "stambok")):
+        raise ControlContextToolAuthorizationError("principal-succession-private-or-locator-ref-prohibited")
+    if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(ch not in "0123456789abcdef" for ch in fingerprint):
+        raise ControlContextToolAuthorizationError("principal-succession-receipt-fingerprint-invalid")
+    if value.get("durable") is not True or value.get("readback_verified") is not True:
+        raise ControlContextToolAuthorizationError("principal-succession-durable-readback-required")
+    if pass_required and value.get("result") != "PASS":
+        raise ControlContextToolAuthorizationError("principal-cold-successor-canary-pass-required")
+    return copy.deepcopy(value)
+
+
+def qualify_lived_continuity_event(
+    event: dict[str, Any],
+    *,
+    machine_diary_effect_verifier: Any | None = None,
+) -> dict[str, Any]:
+    if not isinstance(event, dict):
+        raise ControlContextToolAuthorizationError("lived-continuity-event-object-required")
+    allowed = {
+        "event_id", "event_fingerprint", "qualification", "debt_state",
+        "machine_diary_effect_receipt",
+    }
+    if set(event).difference(allowed):
+        raise ControlContextToolAuthorizationError("lived-continuity-private-content-or-unknown-field-prohibited")
+    event_id = event.get("event_id")
+    fingerprint = event.get("event_fingerprint")
+    qualification = str(event.get("qualification") or "").upper()
+    debt_state = str(event.get("debt_state") or "").upper()
+    if not isinstance(event_id, str) or not event_id:
+        raise ControlContextToolAuthorizationError("lived-continuity-event-id-required")
+    if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(ch not in "0123456789abcdef" for ch in fingerprint):
+        raise ControlContextToolAuthorizationError("lived-continuity-event-fingerprint-invalid")
+    if qualification not in {"CAPTURE", "NO_CAPTURE", "UNKNOWN"}:
+        raise ControlContextToolAuthorizationError("lived-continuity-qualification-invalid")
+    receipt = event.get("machine_diary_effect_receipt")
+    if qualification == "CAPTURE":
+        receipt = _validate_content_blind_receipt(receipt)
+        verify = getattr(machine_diary_effect_verifier, "verify_machine_diary_effect", None)
+        if not callable(verify):
+            raise ControlContextToolAuthorizationError("constructor-bound-machine-diary-effect-verifier-required")
+        verified = verify(event=copy.deepcopy(event), receipt=copy.deepcopy(receipt))
+        if not isinstance(verified, dict) or verified.get("result") != "PASS":
+            raise ControlContextToolAuthorizationError("machine-diary-effect-receipt-verification-nonpass")
+        if debt_state != "CLEAR":
+            raise ControlContextToolAuthorizationError("captured-lived-continuity-debt-must-be-clear")
+    elif qualification == "NO_CAPTURE":
+        if receipt is not None:
+            raise ControlContextToolAuthorizationError("no-capture-must-not-create-fake-diary-effect")
+        if debt_state != "CLEAR":
+            raise ControlContextToolAuthorizationError("no-capture-lived-continuity-debt-must-be-clear")
+    else:
+        if receipt is not None:
+            raise ControlContextToolAuthorizationError("unknown-lived-continuity-must-not-claim-diary-effect")
+        if debt_state != "UNKNOWN":
+            raise ControlContextToolAuthorizationError("unknown-lived-continuity-debt-required")
+    return {
+        "event_id": event_id,
+        "event_fingerprint": fingerprint,
+        "qualification": qualification,
+        "debt_state": debt_state,
+        "permit_eligible": qualification != "UNKNOWN",
+        "result": "PASS" if qualification != "UNKNOWN" else "UNKNOWN_HOLD",
+    }
+
+
+def validate_principal_succession_permit(
+    permit: dict[str, Any],
+    *,
+    expected_ref: str,
+    expected_fingerprint: str,
+    expected_source_head: str,
+    machine_diary_effect_verifier: Any | None = None,
+) -> dict[str, Any]:
+    if not isinstance(permit, dict):
+        raise ControlContextToolAuthorizationError("principal-succession-permit-object-required")
+    required = {
+        "schema", "permit_id", "predecessor_generation_id", "successor_generation_id",
+        "source_head", "currentness", "provider_revision", "covered_through_frontier",
+        "lived_continuity", "evidence", "post_state_readback_verified", "permit_fingerprint",
+    }
+    if set(permit) != required:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-fields-invalid")
+    if permit.get("schema") != PRINCIPAL_SUCCESSION_PERMIT_SCHEMA:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-schema-mismatch")
+    if permit.get("permit_id") != expected_ref:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-ref-mismatch")
+    supplied = permit.get("permit_fingerprint")
+    if supplied != expected_fingerprint or supplied != _principal_permit_fingerprint(permit):
+        raise ControlContextToolAuthorizationError("principal-succession-permit-fingerprint-mismatch")
+    if permit.get("source_head") != expected_source_head:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-source-stale")
+    if permit.get("currentness") != "CURRENT" or permit.get("post_state_readback_verified") is not True:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-current-readback-required")
+    if not isinstance(permit.get("provider_revision"), int) or permit["provider_revision"] < 0:
+        raise ControlContextToolAuthorizationError("principal-succession-provider-revision-invalid")
+    if not isinstance(permit.get("covered_through_frontier"), int) or permit["covered_through_frontier"] < 0:
+        raise ControlContextToolAuthorizationError("principal-succession-covered-frontier-invalid")
+    lived = qualify_lived_continuity_event(
+        permit.get("lived_continuity"),
+        machine_diary_effect_verifier=machine_diary_effect_verifier,
+    )
+    if lived["permit_eligible"] is not True:
+        raise ControlContextToolAuthorizationError("unknown-lived-continuity-debt-blocks-permit")
+    evidence = permit.get("evidence")
+    if not isinstance(evidence, dict) or set(evidence) != _PERMIT_EVIDENCE_KEYS:
+        raise ControlContextToolAuthorizationError("principal-succession-evidence-set-incomplete")
+    verified_evidence = {
+        name: _validate_content_blind_receipt(
+            evidence[name], pass_required=name == "cold_successor_canary"
+        )
+        for name in sorted(_PERMIT_EVIDENCE_KEYS)
+    }
+    return {
+        "schema": PRINCIPAL_SUCCESSION_PERMIT_SCHEMA,
+        "result": "PASS",
+        "permit_id": permit["permit_id"],
+        "permit_fingerprint": supplied,
+        "predecessor_generation_id": permit["predecessor_generation_id"],
+        "successor_generation_id": permit["successor_generation_id"],
+        "source_head": permit["source_head"],
+        "provider_revision": permit["provider_revision"],
+        "covered_through_frontier": permit["covered_through_frontier"],
+        "lived_continuity": lived,
+        "evidence": verified_evidence,
+    }
+
+
 class ContextLifecycleEffectAdapter:
     """Constructor-bound Packet534 bridge over the existing actor shadow state port.
 
@@ -207,11 +361,27 @@ class ContextLifecycleEffectAdapter:
 
     _ROLES = ("ASSISTANT", "IMPLEMENTER", "PRINCIPAL", "PROJECT_MANAGER", "RESEARCHER", "WORKER")
 
-    def __init__(self, state_port: Any, profile_verifier: Any):
+    def __init__(
+        self,
+        state_port: Any,
+        profile_verifier: Any,
+        principal_succession_reader: Any | None = None,
+        machine_diary_effect_verifier: Any | None = None,
+    ):
         if not callable(getattr(profile_verifier, "verify", None)):
             raise ControlContextToolAuthorizationError("pm-profile-verifier-required")
+        if principal_succession_reader is not None and not callable(
+            getattr(principal_succession_reader, "read_principal_succession_permit", None)
+        ):
+            raise ControlContextToolAuthorizationError("principal-succession-reader-invalid")
         self._state_port = state_port
         self._profile_verifier = profile_verifier
+        self._principal_succession_reader = principal_succession_reader
+        self._machine_diary_effect_verifier = (
+            machine_diary_effect_verifier
+            if machine_diary_effect_verifier is not None
+            else principal_succession_reader
+        )
 
     @staticmethod
     def _require(condition: bool, message: str) -> None:
@@ -305,6 +475,86 @@ class ContextLifecycleEffectAdapter:
             f"actor-generation-shadow-unique-match-required:{generation_ref}:{len(matches)}",
         )
         return matches[0]
+
+    def verify_principal_succession(
+        self,
+        *,
+        candidate: dict[str, Any],
+        session: dict[str, Any],
+    ) -> dict[str, Any]:
+        self._require(isinstance(candidate, dict), "principal-succession-candidate-object-required")
+        generation_ref = str(candidate.get("actor_generation_id") or "")
+        self._require(generation_ref, "principal-succession-generation-required")
+        for field in ("tenant_ref", "workspace_ref", "principal_ref"):
+            self._require(
+                isinstance(session.get(field), str) and bool(session[field].strip()),
+                f"principal-succession-session-{field}-required",
+            )
+        shadow = self._read_unique_shadow(
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            generation_ref=generation_ref,
+        )
+        binding = candidate.get("principal_succession_permit_binding")
+        if shadow["role"] != "PRINCIPAL":
+            self._require(binding is None, "principal-permit-binding-on-nonprincipal-prohibited")
+            return {
+                "schema": "cerebro-principal-succession-verification/v1",
+                "applicable": False,
+                "result": "PASS_NON_PRINCIPAL_UNCHANGED",
+                "trusted_actor_role": shadow["role"],
+                "generation_ref": generation_ref,
+            }
+        self._require(isinstance(binding, dict), "principal-succession-permit-binding-required")
+        self._require(
+            set(binding) == {"permit_ref", "permit_fingerprint"},
+            "principal-succession-permit-binding-fields-invalid",
+        )
+        reader = getattr(self._principal_succession_reader, "read_principal_succession_permit", None)
+        self._require(callable(reader), "constructor-bound-principal-succession-reader-required")
+        permit = reader(
+            permit_ref=binding["permit_ref"],
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            actor_generation_id=generation_ref,
+        )
+        verified = validate_principal_succession_permit(
+            permit,
+            expected_ref=binding["permit_ref"],
+            expected_fingerprint=binding["permit_fingerprint"],
+            expected_source_head=shadow["source_revision"],
+            machine_diary_effect_verifier=self._machine_diary_effect_verifier,
+        )
+        operation = str(candidate.get("operation") or "").upper()
+        if operation == "RETIRE":
+            self._require(
+                verified["predecessor_generation_id"] == generation_ref,
+                "principal-retire-predecessor-generation-mismatch",
+            )
+        elif operation == "START":
+            self._require(
+                verified["successor_generation_id"] == generation_ref,
+                "principal-ready-successor-generation-mismatch",
+            )
+        else:
+            raise ControlContextToolAuthorizationError(
+                "principal-succession-permit-only-valid-for-retire-or-start"
+            )
+        return {
+            "schema": "cerebro-principal-succession-verification/v1",
+            "applicable": True,
+            "result": "PASS",
+            "trusted_actor_role": "PRINCIPAL",
+            "operation": operation,
+            "generation_ref": generation_ref,
+            "permit_id": verified["permit_id"],
+            "permit_fingerprint": verified["permit_fingerprint"],
+            "provider_revision": verified["provider_revision"],
+            "covered_through_frontier": verified["covered_through_frontier"],
+            "post_state_readback_verified": True,
+        }
 
     def execute_lifecycle_effect(
         self,
@@ -992,14 +1242,28 @@ class ControlContextMcpTools:
             )
             completion["operational_pulse"] = operational_pulse
         if lifecycle_candidate is not None:
-            completion["actor_lifecycle_effect_evidence"] = (
-                self._lifecycle_effect_adapter.execute_lifecycle_effect(
-                    candidate=copy.deepcopy(lifecycle_candidate),
-                    context=context,
-                    completion=completion,
-                    bound_directive=state_directive,
+            if isinstance(lifecycle_candidate.get("source_transition"), dict):
+                completion["actor_lifecycle_effect_evidence"] = (
+                    self._lifecycle_effect_adapter.execute_lifecycle_effect(
+                        candidate=copy.deepcopy(lifecycle_candidate),
+                        context=context,
+                        completion=completion,
+                        bound_directive=state_directive,
+                    )
                 )
-            )
+            else:
+                completion["principal_succession_verification"] = (
+                    self._lifecycle_effect_adapter.verify_principal_succession(
+                        candidate=copy.deepcopy(lifecycle_candidate),
+                        session={
+                            "tenant_ref": identity.tenant_ref,
+                            "workspace_ref": identity.workspace_ref,
+                            "principal_ref": identity.principal_ref,
+                            "consumer_ref": identity.consumer_ref,
+                            "session_ref": context.session_ref(),
+                        },
+                    )
+                )
         navigation_error = None
         try:
             options = activate_committed_navigation_options(candidate, completion)

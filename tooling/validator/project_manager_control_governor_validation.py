@@ -383,7 +383,8 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
     implementation=root/"mcp/project_manager_control_governor.py"
     schema=root/"mcp/project-manager-control-governor-decision.schema.json"
     lifecycle_schema=root/"mcp/actor-lifecycle-mutation.schema.json"
-    required=[contract,implementation,schema,lifecycle_schema]
+    succession_schema=root/"mcp/principal-succession-permit.schema.json"
+    required=[contract,implementation,schema,lifecycle_schema,succession_schema]
     missing=[str(p.relative_to(root)) for p in required if not p.is_file()]
     if missing:
         return {"schema":"cerebro-project-manager-control-governor-validation/v1","result":"FAIL","missing":missing}
@@ -416,6 +417,12 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "fixed_point_stop_vocabulary:",
         "repeated_identical_frontier_effect: NONPROGRESS_CYCLE",
         "user_pulse_dependency: PROHIBITED",
+        "principal_succession:",
+        "permit_reader_injection: CONSTRUCTOR_BOUND",
+        "event_payload_self_assertion_authority: NONE",
+        "content_blind_refs_and_fingerprints_only: true",
+        "missing_incomplete_stale_tampered_or_nonpass_effect: BLOCK",
+        "nonprincipal_lifecycle_semantics: UNCHANGED",
     ]
     missing_tokens=[x for x in required_contract_tokens if x not in text]
     if missing_tokens:
@@ -463,6 +470,30 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
             "schema":"cerebro-project-manager-control-governor-validation/v1",
             "result":"FAIL","error":"lifecycle-schema-currentization-fields-missing"
         }
+    succession_schema_data=json.loads(succession_schema.read_text(encoding="utf-8"))
+    succession_required={
+        "predecessor_generation_id", "successor_generation_id", "lived_continuity",
+        "evidence", "permit_fingerprint", "post_state_readback_verified",
+    }
+    if (
+        succession_schema_data.get("$id") != "cerebro://schemas/principal-succession-permit/v1"
+        or not succession_required.issubset(succession_schema_data.get("properties", {}))
+        or "principal_succession_permit_binding" not in lifecycle_schema_data.get("properties", {})
+    ):
+        return {
+            "schema":"cerebro-project-manager-control-governor-validation/v1",
+            "result":"FAIL","error":"principal-succession-schema-binding-invalid"
+        }
+    implementation_text=implementation.read_text(encoding="utf-8")
+    if not all(token in implementation_text for token in (
+        "verify_principal_succession", "constructor-bound-principal-succession-verifier-required",
+        "PASS_NON_PRINCIPAL_UNCHANGED",
+    )):
+        return {
+            "schema":"cerebro-project-manager-control-governor-validation/v1",
+            "result":"FAIL","error":"principal-succession-executable-gate-missing"
+        }
+
     lifecycle=lifecycle_canaries(mod)
     if lifecycle.get("result")!="PASS" or int(lifecycle.get("passed") or 0)!=44:
         return {
@@ -507,6 +538,8 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "lifecycle_canaries":lifecycle,
         "same_generation_source_requalification_effect":True,
         "ready_effect_requires_context_receipt_and_exact_readback":True,
+        "principal_succession_schema_and_executable_gate_bound":True,
+        "event_payload_self_assertion_authority":False,
     }
 
 def main()->int:

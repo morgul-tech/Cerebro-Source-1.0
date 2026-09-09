@@ -191,7 +191,21 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
         and all(token in boot_architecture for token in succession_order_tokens)
         and all(token in boot_runtime for token in succession_order_tokens)
         and "$successionFingerprint" in boot_runtime
-        and "completed = $true" in boot_runtime,
+        and "completed = ($principalSuccession.result" in boot_runtime,
+    )
+    check(
+        "P669-principal-succession-permit-gates-ready",
+        all(token in boot_runtime for token in (
+            "function Test-CerebroPrincipalSuccessionPermit",
+            "PRINCIPAL_SUCCESSION_BOUND_READER_AND_EXACT_BINDING_REQUIRED",
+            "PRINCIPAL_SUCCESSION_PERMIT_CURRENT_READBACK_REQUIRED",
+            "PRINCIPAL_SUCCESSION_PERMIT_FINGERPRINT_MISMATCH",
+            "PRINCIPAL_SUCCESSION_LIVED_CONTINUITY_DEBT_BLOCK",
+            "PRINCIPAL_SUCCESSION_COLD_SUCCESSOR_CANARY_NONPASS",
+            "PRINCIPAL_SUCCESSION_PRIVATE_CONTENT_OR_LOCATOR_PROHIBITED",
+            "principal_permit = $principalSuccession",
+            "final_state = $(if ($principalSuccession.result",
+        )),
     )
     check(
         "provider-global-presemantic-effect-remains-open",

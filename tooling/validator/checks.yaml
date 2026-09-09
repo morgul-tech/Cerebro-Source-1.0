@@ -496,6 +496,34 @@ kompass_obsidian_validation:
   required_canaries: [render-readback-pass, one-canvas-seven-notes, presentation-only-authority, projection-fingerprint-bound, orientation-5-10-second-fields, human-cognitive-location-preserved, blocker-and-human-gate-explicit, info-grammar-matches-cli, evidence-last-layer, canvas-calm-bounded, canvas-file-nodes-only, status-meaning-not-color-dependent, deterministic-file-manifest, deterministic-receipt, simplification-no-extra-deps-processes-stores, delete-renderer-output-zero-core-effect, ordinary-host-benchmark-recorded, no-network-or-provider-client, presentation-component-registers-kompass]
   prohibited: [obsidian-as-authority, obsidian-as-state-owner, duplicate-human-admin-truth, renderer-network-fetch, background-render-daemon, all-to-all-dashboard, evidence-required-for-first-view]
 
+principal_succession_permit_validation:
+  introduced_by: P17-WAVE3-P0-08-MATERIAL-IMPLEMENTATION-P669-001
+  severity: error
+  owner: tooling.validator
+  schema: mcp/principal-succession-permit.schema.json
+  validators:
+    - tooling/validator/project_manager_control_governor_validation.py
+    - tooling/validator/control_context_tools_validation.py
+    - tooling/validator/control_context_remote_runtime_validation.py
+    - tooling/runtime-host/boot_authority_selftest.py
+  required_canaries:
+    - principal-retire-missing-incomplete-stale-or-tampered-permit-blocks
+    - event-payload-self-assertion-is-not-authority
+    - nonprincipal-retire-and-boot-unchanged
+    - capture-requires-machine-diary-effect-receipt
+    - no-capture-prohibits-fake-diary-effect
+    - unknown-debt-blocks-permit
+    - duplicate-event-idempotent
+    - private-prose-uri-path-or-locator-rejected
+    - successor-ready-requires-predecessor-closeout-and-publication
+    - cold-successor-fail-or-unknown-blocks
+    - missing-reader-or-stale-provider-holds
+  prohibited:
+    - new-state-schema-store-database-migration-daemon-or-role
+    - private-diary-or-stambok-content
+    - declaration-only-principal-gate
+    - event-payload-authority
+
 phases:
   structure:
   - required-files

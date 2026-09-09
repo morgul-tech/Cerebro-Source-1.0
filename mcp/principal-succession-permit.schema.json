@@ -1,0 +1,110 @@
+{
+  "$id": "cerebro://schemas/principal-succession-permit/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Content-blind Principal succession permit",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": "cerebro-principal-succession-permit/v1"},
+    "permit_id": {"type": "string", "minLength": 1},
+    "predecessor_generation_id": {"type": "string", "minLength": 1},
+    "successor_generation_id": {"type": ["string", "null"], "minLength": 1},
+    "source_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "currentness": {"const": "CURRENT"},
+    "provider_revision": {"type": "integer", "minimum": 0},
+    "covered_through_frontier": {"type": "integer", "minimum": 0},
+    "lived_continuity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "qualification": {"enum": ["CAPTURE", "NO_CAPTURE"]},
+        "debt_state": {"const": "CLEAR"},
+        "machine_diary_effect_receipt": {"$ref": "#/$defs/receipt"}
+      },
+      "required": [
+        "event_id", "event_fingerprint", "qualification", "debt_state"
+      ],
+      "allOf": [
+        {
+          "if": {"properties": {"qualification": {"const": "CAPTURE"}}},
+          "then": {"required": ["machine_diary_effect_receipt"]}
+        },
+        {
+          "if": {"properties": {"qualification": {"const": "NO_CAPTURE"}}},
+          "then": {"not": {"required": ["machine_diary_effect_receipt"]}}
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "living_ledger": {"$ref": "#/$defs/receipt"},
+        "livspuls": {"$ref": "#/$defs/receipt"},
+        "etterklang_review": {"$ref": "#/$defs/receipt"},
+        "stambok_seal": {"$ref": "#/$defs/receipt"},
+        "gjenklang_publication": {"$ref": "#/$defs/receipt"},
+        "human_readability": {"$ref": "#/$defs/receipt"},
+        "predecessor_closeout": {"$ref": "#/$defs/receipt"},
+        "cold_successor_canary": {"$ref": "#/$defs/passReceipt"}
+      },
+      "required": [
+        "living_ledger",
+        "livspuls",
+        "etterklang_review",
+        "stambok_seal",
+        "gjenklang_publication",
+        "human_readability",
+        "predecessor_closeout",
+        "cold_successor_canary"
+      ]
+    },
+    "post_state_readback_verified": {"const": true},
+    "permit_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "required": [
+    "schema",
+    "permit_id",
+    "predecessor_generation_id",
+    "successor_generation_id",
+    "source_head",
+    "currentness",
+    "provider_revision",
+    "covered_through_frontier",
+    "lived_continuity",
+    "evidence",
+    "post_state_readback_verified",
+    "permit_fingerprint"
+  ],
+  "$defs": {
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "receipt_ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,255}$"},
+        "receipt_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "durable": {"const": true},
+        "readback_verified": {"const": true}
+      },
+      "required": [
+        "receipt_ref", "receipt_fingerprint", "durable", "readback_verified"
+      ]
+    },
+    "passReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "receipt_ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]{0,255}$"},
+        "receipt_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "durable": {"const": true},
+        "readback_verified": {"const": true},
+        "result": {"const": "PASS"}
+      },
+      "required": [
+        "receipt_ref", "receipt_fingerprint", "durable", "readback_verified", "result"
+      ]
+    }
+  }
+}

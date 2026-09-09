@@ -80,6 +80,24 @@
       "minLength": 1,
       "type": "string"
     },
+    "principal_succession_permit_binding": {
+      "additionalProperties": false,
+      "properties": {
+        "permit_ref": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "permit_fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "permit_ref",
+        "permit_fingerprint"
+      ],
+      "type": "object"
+    },
     "source_transition": {
       "additionalProperties": false,
       "properties": {

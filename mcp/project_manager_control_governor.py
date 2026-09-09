@@ -304,6 +304,42 @@ def _lifecycle_mutation_gate(
         "state_mutation_by_governor": False,
     }
 
+    if operation in {"RETIRE", "START"}:
+        binding_present = raw.get("principal_succession_permit_binding") is not None
+        verify_succession = getattr(
+            lifecycle_effect_verifier, "verify_principal_succession", None
+        )
+        if callable(verify_succession):
+            try:
+                succession = verify_succession(
+                    candidate=copy.deepcopy(raw),
+                    session=copy.deepcopy(session or {}),
+                )
+            except Exception as exc:
+                raise ProjectManagerGovernorError(
+                    f"principal-succession-verification-failed:{exc}"
+                ) from exc
+            _require(
+                isinstance(succession, dict)
+                and succession.get("schema")
+                == "cerebro-principal-succession-verification/v1",
+                "principal-succession-verification-schema-mismatch",
+            )
+            _require(
+                succession.get("result") in {"PASS", "PASS_NON_PRINCIPAL_UNCHANGED"},
+                "principal-succession-verification-nonpass",
+            )
+            base["principal_succession"] = copy.deepcopy(succession)
+        else:
+            _require(
+                not binding_present,
+                "constructor-bound-principal-succession-verifier-required",
+            )
+            base["principal_succession"] = {
+                "applicable": False,
+                "result": "PASS_LEGACY_NONPRINCIPAL_PATH_UNCHANGED",
+            }
+
     transition = raw.get("source_transition")
     if transition is None:
         base["effect_pending_context_commit_receipt"] = operation in {"BIND", "START"}

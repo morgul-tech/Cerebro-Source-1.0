@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.3"
+  version: "1.4"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -68,6 +68,18 @@ boot_critical_path:
     - READY
     order_receipt_required: true
     reorder_or_skip: BLOCK_FIRST_OPERATIONAL_RESPONSE
+    principal_successor_ready_gate:
+      default_nonprincipal_path: UNCHANGED
+      reader: CONSTRUCTOR_BOUND
+      permit_schema: mcp/principal-succession-permit.schema.json
+      current_source_and_provider_readback_required: true
+      predecessor_closeout_and_publication_receipts_required: true
+      lived_continuity_debt_must_be: CLEAR
+      cold_successor_canary_must_be: PASS
+      permit_material: CONTENT_BLIND_REFS_AND_FINGERPRINTS_ONLY
+      event_payload_self_assertion_authority: NONE
+      fail_states: [MISSING, INCOMPLETE, STALE, TAMPERED, UNKNOWN, NONPASS]
+      fail_effect: HOLD_BEFORE_READY
 
   bounded_operational_pulses:
     ADMINPULSE:

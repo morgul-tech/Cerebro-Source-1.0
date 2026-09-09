@@ -270,6 +270,21 @@ def selftest() -> dict[str, Any]:
         is False,
     )
 
+    runtime_source = (
+        SOURCE_ROOT / "mcp/control_context_remote_runtime.py"
+    ).read_text(encoding="utf-8")
+    check(
+        "P669-runtime-composition-exposes-constructor-bound-permit-capabilities",
+        all(token in runtime_source for token in (
+            "principal_succession_reader: Any | None",
+            "machine_diary_effect_verifier: Any | None",
+            '"principal_succession_reader_bound"',
+            '"machine_diary_effect_verifier_bound"',
+            "principal_succession_reader=principal_succession_reader",
+            "machine_diary_effect_verifier=machine_diary_effect_verifier",
+        )),
+    )
+
     try:
         from starlette.testclient import TestClient
     except Exception:
@@ -377,6 +392,14 @@ def selftest() -> dict[str, Any]:
         def executor(self, **_: Any) -> Any:
             raise RuntimeError("not-used")
 
+    class RuntimeSuccessionProvider:
+        def read_principal_succession_permit(self, **_: Any) -> dict[str, Any]:
+            raise RuntimeError("not-used-by-composition-test")
+
+        def verify_machine_diary_effect(self, **_: Any) -> dict[str, Any]:
+            return {"result": "PASS"}
+
+    succession_provider = RuntimeSuccessionProvider()
     lifecycle_runtime_factory = ProbeFactory()
     lifecycle_runtime = assemble_postgres_control_context_remote_runtime_from_connection_factory(
         config=config,
@@ -384,7 +407,16 @@ def selftest() -> dict[str, Any]:
         token_verifier=StaticTokenVerifier(),
         resolution_attestation_verifier=attestor,
         pm_profile_verifier=RuntimePmProfileVerifier(),
+        principal_succession_reader=succession_provider,
+        machine_diary_effect_verifier=succession_provider,
         clock=lambda: NOW,
+    )
+    check(
+        "P669-runtime-binds-principal-succession-provider",
+        lifecycle_runtime.principal_succession_reader is succession_provider
+        and lifecycle_runtime.machine_diary_effect_verifier is succession_provider
+        and lifecycle_runtime.descriptor()["principal_succession_reader_bound"] is True
+        and lifecycle_runtime.descriptor()["machine_diary_effect_verifier_bound"] is True,
     )
     check(
         "P554-runtime-binds-combined-pm-lifecycle-verifier",

@@ -1,7 +1,7 @@
 schema: cerebro-project-manager-control-governor/v1
 project_manager_control_governor:
   id: CEREBRO-PROJECT-MANAGER-CONTROL-GOVERNOR-001
-  version: "0.2.0"
+  version: "0.3.0"
   status: SOURCE_IMPLEMENTED_ACTIVATION_PENDING_TRUSTED_PROFILE_BINDING
   kind: MCP_SUBRESOLUTION
   definitional_authority: Cerebro Source 1.0
@@ -83,6 +83,28 @@ project_manager_control_governor:
     governor_direct_live_authority: false
     candidate_schema: mcp/actor-lifecycle-mutation.schema.json
     operations: [RETIRE, BIND, START]
+    principal_succession:
+      permit_schema: mcp/principal-succession-permit.schema.json
+      applies_to: [PRINCIPAL_RETIRE, PRINCIPAL_SUCCESSOR_READY]
+      trusted_role_source: CONTEXT_ACTOR_GENERATION_SHADOW
+      permit_reader_injection: CONSTRUCTOR_BOUND
+      event_payload_self_assertion_authority: NONE
+      lived_continuity_vocabulary: [CAPTURE, NO_CAPTURE, UNKNOWN]
+      UNKNOWN_effect: HOLD
+      CAPTURE_requires_machine_diary_effect_receipt: true
+      NO_CAPTURE_prohibits_diary_effect_receipt: true
+      evidence_required:
+        - living-ledger
+        - livspuls
+        - etterklang-review
+        - stambok-seal
+        - gjenklang-publication
+        - human-readability
+        - predecessor-closeout
+        - cold-successor-canary-PASS
+      content_blind_refs_and_fingerprints_only: true
+      missing_incomplete_stale_tampered_or_nonpass_effect: BLOCK
+      nonprincipal_lifecycle_semantics: UNCHANGED
     same_generation_source_requalification:
       operation: BIND
       new_operation_created: false

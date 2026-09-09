@@ -295,6 +295,112 @@ function Invoke-CerebroFreshWorldOperationalPulse {
     }
 }
 
+function ConvertTo-CerebroCanonicalObject {
+    param([Parameter(Mandatory)]$Value)
+    if ($Value -is [Collections.IDictionary]) {
+        $ordered = [ordered]@{}
+        foreach ($key in @($Value.Keys | Sort-Object)) {
+            if ([string]$key -ne 'permit_fingerprint') {
+                $ordered[[string]$key] = ConvertTo-CerebroCanonicalObject $Value[$key]
+            }
+        }
+        return $ordered
+    }
+    if ($Value -is [pscustomobject]) {
+        $ordered = [ordered]@{}
+        foreach ($property in @($Value.PSObject.Properties | Sort-Object Name)) {
+            if ($property.Name -ne 'permit_fingerprint') {
+                $ordered[$property.Name] = ConvertTo-CerebroCanonicalObject $property.Value
+            }
+        }
+        return $ordered
+    }
+    if ($Value -is [Collections.IEnumerable] -and $Value -isnot [string]) {
+        return @($Value | ForEach-Object { ConvertTo-CerebroCanonicalObject $_ })
+    }
+    return $Value
+}
+
+function Test-CerebroPrincipalSuccessionPermit {
+    [CmdletBinding()]
+    param(
+        [scriptblock]$PermitReader,
+        [string]$PredecessorGenerationId,
+        [string]$SuccessorGenerationId,
+        [string]$PermitRef,
+        [string]$PermitFingerprint,
+        [Parameter(Mandatory)][string]$SourceHead
+    )
+    $requested = @(@(
+        $PredecessorGenerationId, $SuccessorGenerationId, $PermitRef, $PermitFingerprint
+    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($requested.Count -eq 0) {
+        return [ordered]@{ schema='cerebro-principal-succession-verification/v1'; applicable=$false; result='PASS_NON_PRINCIPAL_UNCHANGED' }
+    }
+    if ($requested.Count -ne 4 -or $null -eq $PermitReader) {
+        throw 'PRINCIPAL_SUCCESSION_BOUND_READER_AND_EXACT_BINDING_REQUIRED'
+    }
+    $permit = & $PermitReader ([ordered]@{
+        permit_ref=$PermitRef; predecessor_generation_id=$PredecessorGenerationId
+        successor_generation_id=$SuccessorGenerationId; source_head=$SourceHead
+    })
+    if ($null -eq $permit -or $permit.schema -ne 'cerebro-principal-succession-permit/v1') {
+        throw 'PRINCIPAL_SUCCESSION_PERMIT_SCHEMA_REQUIRED'
+    }
+    if ($permit.permit_id -ne $PermitRef -or $permit.predecessor_generation_id -ne $PredecessorGenerationId -or
+        $permit.successor_generation_id -ne $SuccessorGenerationId) {
+        throw 'PRINCIPAL_SUCCESSION_PERMIT_BINDING_MISMATCH'
+    }
+    if ($permit.currentness -ne 'CURRENT' -or $permit.source_head -ne $SourceHead -or
+        $permit.post_state_readback_verified -ne $true -or $null -eq $permit.provider_revision) {
+        throw 'PRINCIPAL_SUCCESSION_PERMIT_CURRENT_READBACK_REQUIRED'
+    }
+    $canonical = ConvertTo-CerebroCanonicalObject $permit
+    $actualFingerprint = Get-CerebroBootSha256Text ($canonical | ConvertTo-Json -Compress -Depth 32)
+    if ($PermitFingerprint -notmatch '^[0-9a-f]{64}$' -or
+        $permit.permit_fingerprint -ne $PermitFingerprint -or $actualFingerprint -ne $PermitFingerprint) {
+        throw 'PRINCIPAL_SUCCESSION_PERMIT_FINGERPRINT_MISMATCH'
+    }
+    if ($permit.lived_continuity.debt_state -ne 'CLEAR' -or
+        $permit.lived_continuity.qualification -notin @('CAPTURE','NO_CAPTURE')) {
+        throw 'PRINCIPAL_SUCCESSION_LIVED_CONTINUITY_DEBT_BLOCK'
+    }
+    $diary = $null
+    if ($permit.lived_continuity -is [Collections.IDictionary] -and
+        $permit.lived_continuity.Contains('machine_diary_effect_receipt')) {
+        $diary = $permit.lived_continuity['machine_diary_effect_receipt']
+    }
+    elseif ($null -ne $permit.lived_continuity.PSObject.Properties['machine_diary_effect_receipt']) {
+        $diary = $permit.lived_continuity.machine_diary_effect_receipt
+    }
+    if (($permit.lived_continuity.qualification -eq 'CAPTURE' -and $null -eq $diary) -or
+        ($permit.lived_continuity.qualification -eq 'NO_CAPTURE' -and $null -ne $diary)) {
+        throw 'PRINCIPAL_SUCCESSION_MACHINE_DIARY_EFFECT_MISMATCH'
+    }
+    $names = @('living_ledger','livspuls','etterklang_review','stambok_seal','gjenklang_publication',
+        'human_readability','predecessor_closeout','cold_successor_canary')
+    foreach ($name in $names) {
+        $receipt = $permit.evidence.$name
+        if ($null -eq $receipt -or $receipt.durable -ne $true -or $receipt.readback_verified -ne $true -or
+            [string]::IsNullOrWhiteSpace([string]$receipt.receipt_ref) -or
+            [string]$receipt.receipt_fingerprint -notmatch '^[0-9a-f]{64}$') {
+            throw ('PRINCIPAL_SUCCESSION_EVIDENCE_INCOMPLETE:' + $name)
+        }
+    }
+    if ($permit.evidence.cold_successor_canary.result -ne 'PASS') {
+        throw 'PRINCIPAL_SUCCESSION_COLD_SUCCESSOR_CANARY_NONPASS'
+    }
+    $serialized = $permit | ConvertTo-Json -Compress -Depth 32
+    if ($serialized -match '(?i)"(prose|content|uri|url|path|locator|diary_text|stambok_text)"\s*:') {
+        throw 'PRINCIPAL_SUCCESSION_PRIVATE_CONTENT_OR_LOCATOR_PROHIBITED'
+    }
+    return [ordered]@{
+        schema='cerebro-principal-succession-verification/v1'; applicable=$true; result='PASS'
+        permit_ref=$PermitRef; permit_fingerprint=$PermitFingerprint
+        provider_revision=$permit.provider_revision; post_state_readback_verified=$true
+    }
+}
+
 function Invoke-CerebroBootCore {
     [CmdletBinding()]
     param(
@@ -319,6 +425,16 @@ function Invoke-CerebroBootCore {
         [string]$OperationalPulseActorRole = 'PROJECT_MANAGER',
 
         [string]$OperationalPulseObjectiveRef = 'BOOT',
+
+        [scriptblock]$PrincipalSuccessionPermitReader,
+
+        [string]$PredecessorPrincipalGenerationId,
+
+        [string]$PrincipalSuccessorGenerationId,
+
+        [string]$PrincipalSuccessionPermitRef,
+
+        [string]$PrincipalSuccessionPermitFingerprint,
 
         [switch]$SkipHandoff
     )
@@ -769,6 +885,13 @@ function Invoke-CerebroBootCore {
                 -ProviderTailReader $OperationalPulseReader `
                 -ActorRole $OperationalPulseActorRole `
                 -ObjectiveRef $OperationalPulseObjectiveRef
+            $principalSuccession = Test-CerebroPrincipalSuccessionPermit `
+                -PermitReader $PrincipalSuccessionPermitReader `
+                -PredecessorGenerationId $PredecessorPrincipalGenerationId `
+                -SuccessorGenerationId $PrincipalSuccessorGenerationId `
+                -PermitRef $PrincipalSuccessionPermitRef `
+                -PermitFingerprint $PrincipalSuccessionPermitFingerprint `
+                -SourceHead $authoritativeCommit
 
             $runtimeState = [ordered]@{
                 schema =
@@ -860,8 +983,9 @@ function Invoke-CerebroBootCore {
                         order_fingerprint = $successionFingerprint
                         operational_pulse = $operationalPulse
                         currentness_gate = $operationalPulse.result
-                        completed = $true
-                        final_state = 'READY'
+                        principal_permit = $principalSuccession
+                        completed = ($principalSuccession.result -in @('PASS','PASS_NON_PRINCIPAL_UNCHANGED'))
+                        final_state = $(if ($principalSuccession.result -in @('PASS','PASS_NON_PRINCIPAL_UNCHANGED')) { 'READY' } else { 'HOLD' })
                     }
 
                     handoff = [ordered]@{

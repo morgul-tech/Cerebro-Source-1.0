@@ -31,6 +31,9 @@ from control_context_tools import (  # noqa: E402
     HmacControlResolutionAttestor,
     McpToolCallContext,
     VerifiedMcpIdentity,
+    _principal_permit_fingerprint,
+    qualify_lived_continuity_event,
+    validate_principal_succession_permit,
     tool_definitions,
 )
 
@@ -720,6 +723,171 @@ def selftest() -> dict[str, Any]:
             ),
             ControlContextToolAuthorizationError,
         ),
+    )
+    continuity_base = {
+        "event_id": "LIVED-1",
+        "event_fingerprint": "3" * 64,
+        "qualification": "NO_CAPTURE",
+        "debt_state": "CLEAR",
+    }
+    check(
+        "P669-NO_CAPTURE-creates-no-fake-diary",
+        qualify_lived_continuity_event(copy.deepcopy(continuity_base))["result"] == "PASS",
+    )
+    check(
+        "P669-CAPTURE-requires-machine-diary-effect-receipt",
+        _expect_error(
+            lambda: qualify_lived_continuity_event({
+                **continuity_base, "qualification": "CAPTURE"
+            }),
+            ControlContextToolAuthorizationError,
+        ),
+    )
+    check(
+        "P669-UNKNOWN-continuity-debt-holds",
+        qualify_lived_continuity_event({
+            **continuity_base, "qualification": "UNKNOWN", "debt_state": "UNKNOWN"
+        })["result"] == "UNKNOWN_HOLD",
+    )
+    receipt = {
+        "receipt_ref": "RCPT-1",
+        "receipt_fingerprint": "4" * 64,
+        "durable": True,
+        "readback_verified": True,
+    }
+    permit = {
+        "schema": "cerebro-principal-succession-permit/v1",
+        "permit_id": "PERMIT-1",
+        "predecessor_generation_id": "PRINCIPAL-OLD",
+        "successor_generation_id": "PRINCIPAL-NEW",
+        "source_head": "5" * 40,
+        "currentness": "CURRENT",
+        "provider_revision": 9,
+        "covered_through_frontier": 77,
+        "lived_continuity": copy.deepcopy(continuity_base),
+        "evidence": {
+            name: {**copy.deepcopy(receipt), "receipt_ref": f"RCPT-{index}"}
+            for index, name in enumerate((
+                "living_ledger", "livspuls", "etterklang_review", "stambok_seal",
+                "gjenklang_publication", "human_readability",
+                "predecessor_closeout", "cold_successor_canary",
+            ), start=2)
+        },
+        "post_state_readback_verified": True,
+        "permit_fingerprint": "",
+    }
+    permit["evidence"]["cold_successor_canary"]["result"] = "PASS"
+    permit["permit_fingerprint"] = _principal_permit_fingerprint(permit)
+    check(
+        "P669-current-content-blind-permit-passes",
+        validate_principal_succession_permit(
+            copy.deepcopy(permit),
+            expected_ref="PERMIT-1",
+            expected_fingerprint=permit["permit_fingerprint"],
+            expected_source_head="5" * 40,
+        )["result"] == "PASS",
+    )
+    tampered = copy.deepcopy(permit)
+    tampered["covered_through_frontier"] += 1
+    class PrincipalPermitProvider:
+        def read_principal_succession_permit(self, **_: Any) -> dict[str, Any]:
+            return copy.deepcopy(permit)
+
+        def verify_machine_diary_effect(self, **_: Any) -> dict[str, Any]:
+            return {"result": "PASS"}
+
+    principal_shadow = bootstrap_actor_generation_shadow(
+        tenant_ref="TENANT-1",
+        workspace_ref="WORKSPACE-1",
+        actor_ref="PRINCIPAL-OLD",
+        role="PRINCIPAL",
+        generation_ref="PRINCIPAL-OLD",
+        source_revision="5" * 40,
+    )
+    lifecycle_port.write_actor_generation_shadow(
+        principal_shadow,
+        expected_revision=0,
+        scopes={"project_state:transition"},
+    )
+    principal_provider = PrincipalPermitProvider()
+    principal_adapter = ContextLifecycleEffectAdapter(
+        lifecycle_port,
+        LifecycleProfileVerifier(),
+        principal_succession_reader=principal_provider,
+        machine_diary_effect_verifier=principal_provider,
+    )
+    principal_candidate = {
+        "operation": "RETIRE",
+        "actor_generation_id": "PRINCIPAL-OLD",
+        "principal_succession_permit_binding": {
+            "permit_ref": "PERMIT-1",
+            "permit_fingerprint": permit["permit_fingerprint"],
+        },
+    }
+    succession_session = {
+        "tenant_ref": "TENANT-1",
+        "workspace_ref": "WORKSPACE-1",
+        "principal_ref": "OAUTH-PRINCIPAL-1",
+        "session_ref": "ANON-CHAT-1",
+    }
+    check(
+        "P669-principal-RETIRE-current-permit-passes",
+        principal_adapter.verify_principal_succession(
+            candidate=copy.deepcopy(principal_candidate),
+            session=copy.deepcopy(succession_session),
+        )["result"] == "PASS",
+    )
+    unbound_principal_adapter = ContextLifecycleEffectAdapter(
+        lifecycle_port, LifecycleProfileVerifier()
+    )
+    check(
+        "P669-principal-RETIRE-missing-bound-reader-blocks",
+        _expect_error(
+            lambda: unbound_principal_adapter.verify_principal_succession(
+                candidate=copy.deepcopy(principal_candidate),
+                session=copy.deepcopy(succession_session),
+            ),
+            ControlContextToolAuthorizationError,
+        ),
+    )
+    check(
+        "P669-nonprincipal-RETIRE-remains-unchanged",
+        principal_adapter.verify_principal_succession(
+            candidate={"operation": "RETIRE", "actor_generation_id": "W-LIFECYCLE"},
+            session=copy.deepcopy(succession_session),
+        )["result"] == "PASS_NON_PRINCIPAL_UNCHANGED",
+    )
+    check(
+        "P669-tampered-permit-fingerprint-blocks",
+        _expect_error(
+            lambda: validate_principal_succession_permit(
+                tampered,
+                expected_ref="PERMIT-1",
+                expected_fingerprint=permit["permit_fingerprint"],
+                expected_source_head="5" * 40,
+            ),
+            ControlContextToolAuthorizationError,
+        ),
+    )
+    private_ref = copy.deepcopy(permit)
+    private_ref["evidence"]["living_ledger"]["receipt_ref"] = "file:path"
+    private_ref["permit_fingerprint"] = _principal_permit_fingerprint(private_ref)
+    check(
+        "P669-private-path-locator-rejected",
+        _expect_error(
+            lambda: validate_principal_succession_permit(
+                private_ref,
+                expected_ref="PERMIT-1",
+                expected_fingerprint=private_ref["permit_fingerprint"],
+                expected_source_head="5" * 40,
+            ),
+            ControlContextToolAuthorizationError,
+        ),
+    )
+    check(
+        "P669-duplicate-lived-event-idempotent",
+        qualify_lived_continuity_event(copy.deepcopy(continuity_base))
+        == qualify_lived_continuity_event(copy.deepcopy(continuity_base)),
     )
     check(
         "P554-no-new-public-MCP-tool",

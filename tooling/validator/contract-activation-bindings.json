@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.19-p16-wave2-operational-pulse-consumer",
+  "classification_version": "2.20-p17-wave3-principal-succession-permit",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -1913,6 +1913,12 @@
     }
   ],
   "known_activation_debt": [
+    {
+      "id": "P17_PRINCIPAL_SUCCESSION_LIVE_PROVIDER_ACTIVATION",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "blocking": false,
+      "rationale": "Content-blind permit qualification, constructor-bound Context reader verification, Principal RETIRE/READY governor gates and the local boot consumer are Source-implemented with deterministic canaries. Live external permit-provider binding and a bounded real Principal succession effect remain NOT_PROVEN pending postimplementation falsification."
+    },
     {
       "id": "P16_OPERATIONAL_PULSE_LIVE_PROVIDER_ACTIVATION",
       "classification": "PARTIALLY_OPERATIONAL",

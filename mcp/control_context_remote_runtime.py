@@ -371,6 +371,8 @@ class ControlContextRemoteRuntime:
     app: Any = field(repr=False)
     pm_lifecycle_verifier: Any | None = field(default=None, repr=False)
     provider_tail_reader: Any | None = field(default=None, repr=False)
+    principal_succession_reader: Any | None = field(default=None, repr=False)
+    machine_diary_effect_verifier: Any | None = field(default=None, repr=False)
 
     def descriptor(self) -> dict[str, Any]:
         sdk = official_mcp_sdk_runtime()
@@ -389,6 +391,8 @@ class ControlContextRemoteRuntime:
             "identity_provider_selected": False,
             "pm_lifecycle_verifier_bound": self.pm_lifecycle_verifier is not None,
             "provider_tail_reader_bound": self.provider_tail_reader is not None,
+            "principal_succession_reader_bound": self.principal_succession_reader is not None,
+            "machine_diary_effect_verifier_bound": self.machine_diary_effect_verifier is not None,
             "deployed": False,
         }
 
@@ -415,6 +419,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     resolution_attestation_verifier: Any,
     pm_profile_verifier: Any | None = None,
     provider_tail_reader: Any | None = None,
+    principal_succession_reader: Any | None = None,
+    machine_diary_effect_verifier: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -431,7 +437,12 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     state_port = PostgresControlContextStatePort(connection_factory)
     readiness_probe = PostgresStateServiceReadinessProbe(connection_factory, manifest_path)
     pm_lifecycle_verifier = (
-        ContextLifecycleEffectAdapter(state_port, pm_profile_verifier)
+        ContextLifecycleEffectAdapter(
+            state_port,
+            pm_profile_verifier,
+            principal_succession_reader=principal_succession_reader,
+            machine_diary_effect_verifier=machine_diary_effect_verifier,
+        )
         if pm_profile_verifier is not None
         else None
     )
@@ -462,6 +473,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         app=app,
         pm_lifecycle_verifier=pm_lifecycle_verifier,
         provider_tail_reader=provider_tail_reader,
+        principal_succession_reader=principal_succession_reader,
+        machine_diary_effect_verifier=machine_diary_effect_verifier,
     )
 
 
@@ -473,6 +486,8 @@ def assemble_postgres_control_context_remote_runtime(
     resolution_attestation_verifier: Any,
     pm_profile_verifier: Any | None = None,
     provider_tail_reader: Any | None = None,
+    principal_succession_reader: Any | None = None,
+    machine_diary_effect_verifier: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -490,6 +505,8 @@ def assemble_postgres_control_context_remote_runtime(
         resolution_attestation_verifier=resolution_attestation_verifier,
         pm_profile_verifier=pm_profile_verifier,
         provider_tail_reader=provider_tail_reader,
+        principal_succession_reader=principal_succession_reader,
+        machine_diary_effect_verifier=machine_diary_effect_verifier,
         clock=clock,
         manifest_path=manifest_path,
     )

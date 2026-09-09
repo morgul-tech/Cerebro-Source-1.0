@@ -578,3 +578,40 @@ rules:
   validation: error
   provenance: {type: explicit-user-definition, source: CEREBRO-SPEECH-INPUT-MODE-MINIMAL-RESTART}
 # END SPEECH-INPUT-MODE-001 MINIMAL
+
+# BEGIN P669 PRINCIPAL SUCCESSION CONTINUITY
+- id: CTX-PSC-001
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {lived_continuity_event_observed: true}
+  action:
+    classify_exactly_one: [CAPTURE, NO_CAPTURE, UNKNOWN]
+    CAPTURE_requires_constructor_bound_machine_diary_effect_receipt: true
+    NO_CAPTURE_prohibits_fake_diary_effect: true
+    UNKNOWN_creates_blocking_continuity_debt: true
+    duplicate_event_idempotent: true
+  statement: Lived-continuity SKAL kvalifiseres maskinelt; payloadpåstand er aldri autoritet.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: PM-admitted-prefalsified-implementation, packet: P17-WAVE3-P0-08-MATERIAL-IMPLEMENTATION-P669-001}
+
+- id: CTX-PSC-002
+  owner: context
+  authority: normative
+  priority: critical
+  condition: {principal_retire_or_successor_ready_requested: true}
+  action:
+    require_current_content_blind_permit: true
+    require_predecessor_closeout_and_publication_receipts: true
+    require_cold_successor_canary_PASS: true
+    private_prose_URI_path_or_locator: prohibited
+    missing_stale_tampered_or_unknown_effect: HOLD
+    nonprincipal_lifecycle_and_boot: unchanged
+  statement: Principal RETIRE og etterfølger READY SKAL blokkere uten ferskt, fingeravtrykksbundet og readback-verifisert succession-permit.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: PM-admitted-prefalsified-implementation, packet: P17-WAVE3-P0-08-MATERIAL-IMPLEMENTATION-P669-001}
+# END P669 PRINCIPAL SUCCESSION CONTINUITY
