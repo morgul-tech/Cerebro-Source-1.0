@@ -27,6 +27,9 @@ PERSISTENCE_VERIFICATION_SCHEMA = "cerebro-owner-state-persistence-verification/
 PM_AUTHORIZED_COMMAND_STATE_SCHEMA = "cerebro-pm-authorized-command-state/v1"
 PM_AUTHORIZED_COMMAND_CONSUMPTION_SCHEMA = "cerebro-pm-authorized-command-consumption/v1"
 PM_COMMAND_CHAIN_SCHEMA = "cerebro-pm-command-fixed-point/v1"
+OPERATIONAL_PULSE_SCHEMA = "cerebro-operational-pulse-consumption/v1"
+OPERATIONAL_PULSE_STAGES = ("FRESH_WORLD", "CURRENT_CONTACT", "PRE_CLOSE")
+OPERATIONAL_DEBT_KINDS = ("CORRECTION", "REPORT")
 PM_FIXED_POINT_STOP_REASONS = (
     "QUIESCENT",
     "OTHER_OWNER_WAIT",
@@ -70,6 +73,147 @@ def _reject_runtime_authority_injection(value: Any, path: str = "request") -> No
     elif isinstance(value, list):
         for index, item in enumerate(value):
             _reject_runtime_authority_injection(item, f"{path}[{index}]")
+
+
+def consume_operational_pulse(
+    provider_tail_reader: Any | None,
+    *,
+    stage: str,
+    actor_role: str,
+    objective_ref: str,
+    prior_watermarks: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Read authoritative external tails and derive bounded debt/currentness effects."""
+
+    stage = str(stage or "").upper()
+    actor_role = str(actor_role or "").upper()
+    objective_ref = str(objective_ref or "").strip()
+    _require(stage in OPERATIONAL_PULSE_STAGES, "operational-pulse-stage-invalid")
+    _require(actor_role, "operational-pulse-actor-role-required")
+    _require(objective_ref, "operational-pulse-objective-ref-required")
+    prior = copy.deepcopy(prior_watermarks) if isinstance(prior_watermarks, dict) else {}
+    read_tails = getattr(provider_tail_reader, "read_operational_tails", None)
+    if not callable(read_tails):
+        return {
+            "schema": OPERATIONAL_PULSE_SCHEMA,
+            "stage": stage,
+            "result": "UNKNOWN_HOLD",
+            "currentness": "UNKNOWN",
+            "delta": "NONE",
+            "exact_blocker": "PROVIDER_TAIL_READER_UNBOUND",
+            "terminal_blocked": stage == "PRE_CLOSE",
+            "watermarks": {},
+            "relevant_debt": [],
+            "persistence_directive": None,
+        }
+
+    observed = read_tails(
+        stage=stage,
+        actor_role=actor_role,
+        objective_ref=objective_ref,
+        prior_watermarks=copy.deepcopy(prior),
+    )
+    _require(isinstance(observed, dict), "operational-pulse-provider-read-object-required")
+    control = observed.get("control")
+    protobox = observed.get("protobox")
+    if not isinstance(control, dict) or not isinstance(protobox, dict):
+        return {
+            "schema": OPERATIONAL_PULSE_SCHEMA,
+            "stage": stage,
+            "result": "UNKNOWN_HOLD",
+            "currentness": "UNKNOWN",
+            "delta": "NONE",
+            "exact_blocker": "ADMINPULSE_BOTH_PROVIDER_TAILS_REQUIRED",
+            "terminal_blocked": stage == "PRE_CLOSE",
+            "watermarks": {},
+            "relevant_debt": [],
+            "persistence_directive": None,
+        }
+
+    control_currentness = str(control.get("currentness") or "UNKNOWN").upper()
+    protobox_currentness = str(protobox.get("currentness") or "UNKNOWN").upper()
+    _require(control_currentness in {"CURRENT", "STALE", "UNKNOWN"}, "control-tail-currentness-invalid")
+    _require(protobox_currentness in {"CURRENT", "STALE", "UNKNOWN"}, "protobox-tail-currentness-invalid")
+    watermarks = {
+        "control": {
+            "carrier_ref": str(control.get("carrier_ref") or "").strip(),
+            "provider_revision": control.get("provider_revision"),
+            "event_frontier": str(control.get("event_frontier") or "").strip(),
+        },
+        "protobox": {
+            "channel_ref": str(protobox.get("channel_ref") or "").strip(),
+            "observed_revision": protobox.get("observed_revision"),
+        },
+    }
+    exact_watermarks = (
+        bool(watermarks["control"]["carrier_ref"])
+        and isinstance(watermarks["control"]["provider_revision"], int)
+        and watermarks["control"]["provider_revision"] >= 0
+        and bool(watermarks["control"]["event_frontier"])
+        and bool(watermarks["protobox"]["channel_ref"])
+        and isinstance(watermarks["protobox"]["observed_revision"], int)
+        and watermarks["protobox"]["observed_revision"] >= 0
+    )
+    if not exact_watermarks or control_currentness != "CURRENT" or protobox_currentness != "CURRENT":
+        currentness = "STALE" if "STALE" in {control_currentness, protobox_currentness} else "UNKNOWN"
+        return {
+            "schema": OPERATIONAL_PULSE_SCHEMA,
+            "stage": stage,
+            "result": "UNKNOWN_HOLD",
+            "currentness": currentness,
+            "delta": "NONE",
+            "exact_blocker": "ADMINPULSE_CURRENT_EXACT_WATERMARKS_REQUIRED",
+            "terminal_blocked": stage == "PRE_CLOSE",
+            "watermarks": watermarks,
+            "relevant_debt": [],
+            "persistence_directive": None,
+        }
+
+    relevant: list[dict[str, Any]] = []
+    for tail in (control, protobox):
+        debts = tail.get("debts", [])
+        _require(isinstance(debts, list), "operational-pulse-debts-array-required")
+        for debt in debts:
+            _require(isinstance(debt, dict), "operational-pulse-debt-object-required")
+            kind = str(debt.get("kind") or "").upper()
+            owner = str(debt.get("owner_role") or "").upper()
+            target = str(debt.get("objective_ref") or "").strip()
+            is_relevant = (
+                kind in OPERATIONAL_DEBT_KINDS
+                and owner in {actor_role, "*"}
+                and target in {objective_ref, "*"}
+                and debt.get("currentness") == "CURRENT"
+                and debt.get("relevant") is True
+                and debt.get("historical") is not True
+                and debt.get("resolved") is not True
+            )
+            if is_relevant:
+                debt_id = str(debt.get("debt_id") or "").strip()
+                _require(debt_id, "operational-pulse-relevant-debt-id-required")
+                relevant.append(copy.deepcopy(debt))
+
+    same_watermark = prior == watermarks
+    delta = "NONE" if same_watermark and not relevant else "DELTA"
+    result = "DRAIN_REQUIRED" if relevant else ("NONE" if delta == "NONE" else "PASS")
+    directive = {
+        "effect": "REFRESH_GOVERNING_REFS",
+        "stage": stage,
+        "watermarks": copy.deepcopy(watermarks),
+        "delta": delta,
+        "debt_result": result,
+        "unresolved_debt_ids": [item["debt_id"] for item in relevant],
+    }
+    return {
+        "schema": OPERATIONAL_PULSE_SCHEMA,
+        "stage": stage,
+        "result": result,
+        "currentness": "CURRENT",
+        "delta": delta,
+        "terminal_blocked": bool(relevant) and stage == "PRE_CLOSE",
+        "watermarks": watermarks,
+        "relevant_debt": relevant,
+        "persistence_directive": directive,
+    }
 
 
 def _validate_persistence_verification(

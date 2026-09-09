@@ -201,11 +201,20 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
         "bounded-adminpulse-and-nerve-authority-boundary",
         all(token in boot_architecture for token in (
             "bounded_operational_pulses:",
-            "purpose: CURRENT_PM_AND_CONTROL_DELTA_SCAN",
+            "purpose: CURRENT_PM_CONTROL_AND_PROTOBOX_DELTA_SCAN",
+            "provider_tails_required: [PM_CONTROL, PROTOBOX]",
+            "missing_either_provider_tail_effect: UNKNOWN_HOLD",
             "output_vocabulary: [delta, NONE]",
             "purpose: SIGNAL_AND_TRANSPORT_ONLY",
             "may_create_control_state: false",
             "provider_global_or_dormant_peer_wake_effect: NOT_PROVEN",
+        ))
+        and all(token in boot_runtime for token in (
+            "function Invoke-CerebroFreshWorldOperationalPulse",
+            "PROVIDER_TAIL_READER_UNBOUND",
+            "ADMINPULSE_BOTH_PROVIDER_TAILS_REQUIRED",
+            "ADMINPULSE_CURRENT_EXACT_WATERMARKS_REQUIRED",
+            "operational_pulse = $operationalPulse",
         )),
     )
 

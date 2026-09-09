@@ -451,7 +451,7 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
 
     mod=load(implementation,"cerebro_project_manager_control_governor_validation_subject")
     selftest=mod.selftest()
-    if selftest.get("result")!="PASS" or int(selftest.get("passed") or 0)!=23:
+    if selftest.get("result")!="PASS" or int(selftest.get("passed") or 0)!=26:
         return {"schema":"cerebro-project-manager-control-governor-validation/v1","result":"FAIL","selftest":selftest}
 
     lifecycle_schema_data=json.loads(lifecycle_schema.read_text(encoding="utf-8"))
@@ -488,7 +488,10 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
     return {
         "schema":"cerebro-project-manager-control-governor-validation/v1",
         "result":"PASS",
-        "governor_canaries":23,
+        "governor_canaries":26,
+        "operational_debt_pre_close_gate_exercised":True,
+        "unresolved_relevant_debt_blocks_terminal":True,
+        "persisted_current_pulse_required":True,
         "anti_loop_canaries":anti_loop,
         "executor_terminal_reconciliation_effect":True,
         "self_next_owner_same_cycle_progress_effect":True,

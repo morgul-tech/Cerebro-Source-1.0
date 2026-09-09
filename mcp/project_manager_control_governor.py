@@ -578,6 +578,33 @@ def _interrupt_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     return {"intent": intent, "result": "PASS"}
 
 
+def _operational_debt_gate(candidate: dict[str, Any]) -> dict[str, Any]:
+    terminal_raw = candidate.get("terminal")
+    terminal_state = str((terminal_raw or {}).get("state") or "ACTIVE").upper()
+    retire_requested = candidate.get("retire_requested") is True
+    if terminal_state != "COMPLETE" and not retire_requested:
+        return {"applicable": False, "result": "PASS", "terminal_blocked": False}
+    pulse = candidate.get("operational_pulse")
+    _require(isinstance(pulse, dict), "pre-close-operational-pulse-required")
+    _require(pulse.get("stage") == "PRE_CLOSE", "pre-close-operational-pulse-stage-required")
+    _require(pulse.get("currentness") == "CURRENT", "pre-close-operational-pulse-current-required")
+    _require(pulse.get("persistence_readback_verified") is True, "pre-close-pulse-persistence-readback-required")
+    _require(
+        pulse.get("result") in {"PASS", "NONE", "DRAIN_REQUIRED"},
+        "pre-close-operational-pulse-result-invalid",
+    )
+    unresolved = pulse.get("relevant_debt", [])
+    _require(isinstance(unresolved, list), "pre-close-relevant-debt-array-required")
+    _require(not unresolved and pulse.get("result") != "DRAIN_REQUIRED", "unresolved-relevant-debt-blocks-terminal")
+    return {
+        "applicable": True,
+        "result": "PASS",
+        "terminal_blocked": False,
+        "watermarks": copy.deepcopy(pulse.get("watermarks")),
+        "debt_result": pulse.get("result"),
+    }
+
+
 def _terminal_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     raw = candidate.get("terminal")
     if raw is None:
@@ -662,6 +689,7 @@ def govern_project_manager_event(
     worker = _worker_terminal_gate(candidate)
     executor_reconciliation = _executor_terminal_reconciliation_gate(candidate)
     interrupt = _interrupt_gate(candidate)
+    operational_debt = _operational_debt_gate(candidate)
     terminal = _terminal_gate(candidate)
     progress = _progress_gate(candidate)
     continuation_progress = _continuation_progress_gate(candidate, next_action)
@@ -686,6 +714,7 @@ def govern_project_manager_event(
         "executor_terminal_reconciliation_gate": executor_reconciliation,
         "lifecycle_mutation_gate": lifecycle,
         "interrupt_gate": interrupt,
+        "operational_debt_gate": operational_debt,
         "terminal_gate": terminal,
         "progress_observability_gate": progress,
         "continuation_progress_gate": continuation_progress,
@@ -728,6 +757,19 @@ def selftest() -> dict[str, Any]:
     verifier = Verifier()
     session = {"session_ref": "SESSION-PM-1"}
     binding = {"binding_id": "PM-BINDING-1"}
+
+    def pre_close_pulse() -> dict[str, Any]:
+        return {
+            "stage": "PRE_CLOSE",
+            "currentness": "CURRENT",
+            "result": "NONE",
+            "relevant_debt": [],
+            "watermarks": {
+                "control": {"carrier_ref": "PM", "provider_revision": 1, "event_frontier": "E1"},
+                "protobox": {"channel_ref": "PROTOBOX", "observed_revision": 1},
+            },
+            "persistence_readback_verified": True,
+        }
 
     def valid_candidate() -> dict[str, Any]:
         return {
@@ -871,6 +913,7 @@ def selftest() -> dict[str, Any]:
         c = valid_candidate()
         c["frontier_actions"][0]["state"] = "COMPLETE"
         c["terminal"] = {"state":"COMPLETE","continuation_disposition":"NONE_REQUIRED","learning_disposition":"PENDING"}
+        c["operational_pulse"] = pre_close_pulse()
         try:
             govern_project_manager_event(candidate=c,canonical_next_action={"action_ref":"NONE","owner":"NONE"},
                 session=session,profile_binding=binding,profile_verifier=verifier)
@@ -886,10 +929,49 @@ def selftest() -> dict[str, Any]:
             "state":"COMPLETE","continuation_disposition":"NONE_REQUIRED",
             "learning_disposition":"GENERALIZABLE_LEARNING_CANDIDATE"
         }
+        c["operational_pulse"] = pre_close_pulse()
         out=govern_project_manager_event(candidate=c,canonical_next_action={"action_ref":"NONE","owner":"NONE"},
             session=session,profile_binding=binding,profile_verifier=verifier)
         return out["terminal_gate"]["terminal_ready"] is True
     check("complete-with-continuation-and-learning-disposition-passes", valid_terminal)
+
+    def unresolved_debt_blocks_terminal() -> bool:
+        c = valid_candidate()
+        c["frontier_actions"][0]["state"] = "COMPLETE"
+        c["terminal"] = {
+            "state":"COMPLETE","continuation_disposition":"NONE_REQUIRED",
+            "learning_disposition":"NO_GENERALIZABLE_LEARNING"
+        }
+        pulse = pre_close_pulse()
+        pulse["result"] = "DRAIN_REQUIRED"
+        pulse["relevant_debt"] = [{"debt_id": "D1"}]
+        c["operational_pulse"] = pulse
+        try:
+            govern_project_manager_event(candidate=c, canonical_next_action={"action_ref":"NONE","owner":"NONE"},
+                session=session, profile_binding=binding, profile_verifier=verifier)
+        except ProjectManagerGovernorError:
+            return True
+        return False
+
+    check("unresolved-relevant-debt-blocks-complete", unresolved_debt_blocks_terminal)
+    check("pre-close-without-persisted-pulse-blocks", lambda: expect_block(
+        lambda c: c.update({
+            "frontier_actions": [{**c["frontier_actions"][0], "state": "COMPLETE"}],
+            "terminal": {"state":"COMPLETE","continuation_disposition":"NONE_REQUIRED",
+                         "learning_disposition":"NO_GENERALIZABLE_LEARNING"},
+        }),
+        canonical={"action_ref":"NONE","owner":"NONE"},
+    ))
+    check("unresolved-relevant-debt-blocks-retire", lambda: expect_block(
+        lambda c: c.update({
+            "retire_requested": True,
+            "operational_pulse": {
+                **pre_close_pulse(),
+                "result": "DRAIN_REQUIRED",
+                "relevant_debt": [{"debt_id": "D-RETIRE"}],
+            },
+        })
+    ))
 
     check("long-running-without-heartbeat-blocks", lambda: expect_block(
         lambda c: c.update({"progress_observability":{

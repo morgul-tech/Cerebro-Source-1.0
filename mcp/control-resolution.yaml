@@ -348,6 +348,10 @@ control_resolution:
     - refined-airlock-seal-is-exactly-bound-before-first-substantive-read
     - refined-airlock-missing-allowlisted-input-holds-without-broad-search
     - refined-airlock-ADMINPULSE-runs-external-currentness-before-blind-work
+    - ADMINPULSE-requires-current-PM-control-and-ProtoBox-provider-tails
+    - provider-tail-reader-is-constructor-bound-and-never-event-payload-authority
+    - operational-pulse-persists-through-existing-REFRESH_GOVERNING_REFS-effect-with-readback
+    - unresolved-relevant-debt-blocks-COMPLETE-or-RETIRE
     - refined-airlock-network-gates-only-on-proven-causal-threat
     - refined-airlock-negative-canaries-pass-on-the-existing-control-resolution-selftest
     - strong-claim-gate-does-not-silently-block-lower-honest-preview

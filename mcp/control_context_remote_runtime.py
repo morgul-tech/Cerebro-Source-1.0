@@ -370,6 +370,7 @@ class ControlContextRemoteRuntime:
     readiness_probe: PostgresStateServiceReadinessProbe = field(repr=False)
     app: Any = field(repr=False)
     pm_lifecycle_verifier: Any | None = field(default=None, repr=False)
+    provider_tail_reader: Any | None = field(default=None, repr=False)
 
     def descriptor(self) -> dict[str, Any]:
         sdk = official_mcp_sdk_runtime()
@@ -387,6 +388,7 @@ class ControlContextRemoteRuntime:
             "repository_credentials": "NONE",
             "identity_provider_selected": False,
             "pm_lifecycle_verifier_bound": self.pm_lifecycle_verifier is not None,
+            "provider_tail_reader_bound": self.provider_tail_reader is not None,
             "deployed": False,
         }
 
@@ -412,6 +414,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     token_verifier: Any,
     resolution_attestation_verifier: Any,
     pm_profile_verifier: Any | None = None,
+    provider_tail_reader: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -436,6 +439,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         state_port,
         resolution_attestation_verifier,
         lifecycle_effect_adapter=pm_lifecycle_verifier,
+        provider_tail_reader=provider_tail_reader,
     )
     service = ControlContextRemoteMcpService(
         config=config.service,
@@ -457,6 +461,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         readiness_probe=readiness_probe,
         app=app,
         pm_lifecycle_verifier=pm_lifecycle_verifier,
+        provider_tail_reader=provider_tail_reader,
     )
 
 
@@ -467,6 +472,7 @@ def assemble_postgres_control_context_remote_runtime(
     token_verifier: Any,
     resolution_attestation_verifier: Any,
     pm_profile_verifier: Any | None = None,
+    provider_tail_reader: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -483,6 +489,7 @@ def assemble_postgres_control_context_remote_runtime(
         token_verifier=token_verifier,
         resolution_attestation_verifier=resolution_attestation_verifier,
         pm_profile_verifier=pm_profile_verifier,
+        provider_tail_reader=provider_tail_reader,
         clock=clock,
         manifest_path=manifest_path,
     )

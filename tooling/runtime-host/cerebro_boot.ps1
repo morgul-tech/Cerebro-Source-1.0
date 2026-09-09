@@ -224,6 +224,77 @@ function Write-CerebroBootRuntimeState {
     }
 }
 
+function Invoke-CerebroFreshWorldOperationalPulse {
+    [CmdletBinding()]
+    param(
+        [scriptblock]$ProviderTailReader,
+        [string]$ActorRole = 'PROJECT_MANAGER',
+        [string]$ObjectiveRef = 'BOOT'
+    )
+
+    if ($null -eq $ProviderTailReader) {
+        return [ordered]@{
+            schema = 'cerebro-operational-pulse-consumption/v1'
+            stage = 'FRESH_WORLD'
+            result = 'UNKNOWN_HOLD'
+            currentness = 'UNKNOWN'
+            exact_blocker = 'PROVIDER_TAIL_READER_UNBOUND'
+        }
+    }
+
+    $observed = & $ProviderTailReader ([ordered]@{
+        stage = 'FRESH_WORLD'
+        actor_role = $ActorRole
+        objective_ref = $ObjectiveRef
+    })
+    if ($null -eq $observed -or $null -eq $observed.control -or $null -eq $observed.protobox) {
+        return [ordered]@{
+            schema = 'cerebro-operational-pulse-consumption/v1'
+            stage = 'FRESH_WORLD'
+            result = 'UNKNOWN_HOLD'
+            currentness = 'UNKNOWN'
+            exact_blocker = 'ADMINPULSE_BOTH_PROVIDER_TAILS_REQUIRED'
+        }
+    }
+
+    $controlCurrent = [string]$observed.control.currentness
+    $protoCurrent = [string]$observed.protobox.currentness
+    $exact = (
+        -not [string]::IsNullOrWhiteSpace([string]$observed.control.carrier_ref) -and
+        $null -ne $observed.control.provider_revision -and
+        -not [string]::IsNullOrWhiteSpace([string]$observed.control.event_frontier) -and
+        -not [string]::IsNullOrWhiteSpace([string]$observed.protobox.channel_ref) -and
+        $null -ne $observed.protobox.observed_revision
+    )
+    if (-not $exact -or $controlCurrent -ne 'CURRENT' -or $protoCurrent -ne 'CURRENT') {
+        return [ordered]@{
+            schema = 'cerebro-operational-pulse-consumption/v1'
+            stage = 'FRESH_WORLD'
+            result = 'UNKNOWN_HOLD'
+            currentness = $(if ('STALE' -in @($controlCurrent, $protoCurrent)) { 'STALE' } else { 'UNKNOWN' })
+            exact_blocker = 'ADMINPULSE_CURRENT_EXACT_WATERMARKS_REQUIRED'
+        }
+    }
+
+    return [ordered]@{
+        schema = 'cerebro-operational-pulse-consumption/v1'
+        stage = 'FRESH_WORLD'
+        result = 'PASS'
+        currentness = 'CURRENT'
+        watermarks = [ordered]@{
+            control = [ordered]@{
+                carrier_ref = [string]$observed.control.carrier_ref
+                provider_revision = $observed.control.provider_revision
+                event_frontier = [string]$observed.control.event_frontier
+            }
+            protobox = [ordered]@{
+                channel_ref = [string]$observed.protobox.channel_ref
+                observed_revision = $observed.protobox.observed_revision
+            }
+        }
+    }
+}
+
 function Invoke-CerebroBootCore {
     [CmdletBinding()]
     param(
@@ -242,6 +313,12 @@ function Invoke-CerebroBootCore {
 
         [string]$RuntimeStatePath =
             'D:\Cerebro\Run\State\Active\CEREBRO_BOOTSTRAP_STATE_v1.json',
+
+        [scriptblock]$OperationalPulseReader,
+
+        [string]$OperationalPulseActorRole = 'PROJECT_MANAGER',
+
+        [string]$OperationalPulseObjectiveRef = 'BOOT',
 
         [switch]$SkipHandoff
     )
@@ -688,6 +765,10 @@ function Invoke-CerebroBootCore {
                 'READY'
             )
             $successionFingerprint = Get-CerebroBootSha256Text ($successionOrder -join '|')
+            $operationalPulse = Invoke-CerebroFreshWorldOperationalPulse `
+                -ProviderTailReader $OperationalPulseReader `
+                -ActorRole $OperationalPulseActorRole `
+                -ObjectiveRef $OperationalPulseObjectiveRef
 
             $runtimeState = [ordered]@{
                 schema =
@@ -777,6 +858,8 @@ function Invoke-CerebroBootCore {
                         zero_live_state_inheritance = $true
                         order = $successionOrder
                         order_fingerprint = $successionFingerprint
+                        operational_pulse = $operationalPulse
+                        currentness_gate = $operationalPulse.result
                         completed = $true
                         final_state = 'READY'
                     }

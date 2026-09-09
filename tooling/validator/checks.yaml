@@ -1406,6 +1406,10 @@ boot_authority_ambiguity_refinement_validation:
     - fresh-world-succession-order-is-frozen-before-first-operational-response
     - zero-live-state-inheritance
     - provider-global-presemantic-effect-remains-OPEN-NOT-PROVEN
+    - ADMINPULSE-requires-current-PM-control-and-ProtoBox-provider-tails
+    - operational-pulse-reader-is-constructor-bound-and-event-payload-has-no-authority
+    - correction-and-report-debt-consumer-persists-through-REFRESH_GOVERNING_REFS-readback
+    - PRE_CLOSE-unresolved-relevant-debt-blocks-COMPLETE-or-RETIRE
   required_canaries:
     - legacy-DOCX-CURRENT-cannot-compete-with-cerebro-yaml
     - stale-REBUILD-receipt-cannot-block-current-Source-boot
@@ -1417,6 +1421,12 @@ boot_authority_ambiguity_refinement_validation:
     - fresh-world-succession-order-frozen
     - provider-global-presemantic-effect-remains-open
     - bounded-adminpulse-and-nerve-authority-boundary
+    - missing-provider-reader-yields-UNKNOWN_HOLD
+    - missing-either-adminpulse-tail-yields-UNKNOWN_HOLD
+    - stale-watermark-yields-STALE-UNKNOWN_HOLD
+    - historical-or-irrelevant-correction-is-filtered
+    - same-watermark-is-idempotent-NONE
+    - unresolved-relevant-debt-blocks-terminal
   prohibited:
     - document-library-authority-arbitration
     - filename-based-authority

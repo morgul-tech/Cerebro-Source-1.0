@@ -28,6 +28,15 @@ from control_resolution_host import (  # noqa: E402
     PM_FIXED_POINT_STOP_REASONS,
     consume_pm_authorized_command,
     consume_pm_authorized_command_chain,
+    consume_operational_pulse,
+)
+from control_context_registry import DIRECTIVE_SCHEMA  # noqa: E402
+from control_context_state_port import InMemoryControlContextStatePort  # noqa: E402
+from control_context_tools import (  # noqa: E402
+    ControlContextMcpTools,
+    HmacControlResolutionAttestor,
+    McpToolCallContext,
+    VerifiedMcpIdentity,
 )
 
 
@@ -727,6 +736,180 @@ def selftest() -> dict[str, Any]:
         require_git_ancestry=False,
     )
     check("W2-stale-precondition-is-conflict-fixed-point", conflict_fixed["stop_reason"] == "CONFLICT")
+
+    # P659 Wave2: executable ADMINPULSE/debt consumer with exact provider watermarks.
+    class PulseReader:
+        def __init__(self, observed: dict[str, Any]):
+            self.observed = observed
+            self.calls = 0
+
+        def read_operational_tails(self, **_: Any) -> dict[str, Any]:
+            self.calls += 1
+            return copy.deepcopy(self.observed)
+
+    current_tails = {
+        "control": {
+            "currentness": "CURRENT", "carrier_ref": "PM-CHANNEL",
+            "provider_revision": 7, "event_frontier": "ROW-7", "debts": [],
+        },
+        "protobox": {
+            "currentness": "CURRENT", "channel_ref": "PROTOBOX-INBOX",
+            "observed_revision": 11, "debts": [],
+        },
+    }
+    expected_watermarks = {
+        "control": {"carrier_ref": "PM-CHANNEL", "provider_revision": 7, "event_frontier": "ROW-7"},
+        "protobox": {"channel_ref": "PROTOBOX-INBOX", "observed_revision": 11},
+    }
+    missing_reader = consume_operational_pulse(
+        None, stage="FRESH_WORLD", actor_role="SOURCE_WRITER", objective_ref="P659"
+    )
+    check(
+        "W2-P659-missing-provider-reader-is-unknown-hold",
+        missing_reader["result"] == "UNKNOWN_HOLD"
+        and missing_reader["currentness"] == "UNKNOWN",
+    )
+
+    missing_tail_reader = PulseReader({"control": current_tails["control"]})
+    missing_tail = consume_operational_pulse(
+        missing_tail_reader, stage="CURRENT_CONTACT", actor_role="SOURCE_WRITER", objective_ref="P659"
+    )
+    check(
+        "W2-P659-adminpulse-requires-control-and-protobox-tails",
+        missing_tail["result"] == "UNKNOWN_HOLD"
+        and missing_tail_reader.calls == 1,
+    )
+
+    stale_tails = copy.deepcopy(current_tails)
+    stale_tails["control"]["currentness"] = "STALE"
+    stale = consume_operational_pulse(
+        PulseReader(stale_tails), stage="PRE_CLOSE", actor_role="SOURCE_WRITER", objective_ref="P659"
+    )
+    check(
+        "W2-P659-stale-watermark-is-stale-unknown-hold",
+        stale["result"] == "UNKNOWN_HOLD" and stale["currentness"] == "STALE",
+    )
+
+    irrelevant_tails = copy.deepcopy(current_tails)
+    irrelevant_tails["protobox"]["debts"] = [
+        {
+            "debt_id": "OLD-1", "kind": "CORRECTION", "owner_role": "OTHER",
+            "objective_ref": "OLD", "currentness": "CURRENT", "relevant": True,
+            "historical": True, "resolved": False,
+        }
+    ]
+    irrelevant = consume_operational_pulse(
+        PulseReader(irrelevant_tails), stage="PRE_CLOSE", actor_role="SOURCE_WRITER",
+        objective_ref="P659", prior_watermarks=expected_watermarks,
+    )
+    check(
+        "W2-P659-historical-or-irrelevant-correction-is-filtered",
+        irrelevant["result"] == "NONE" and irrelevant["relevant_debt"] == [],
+    )
+    check(
+        "W2-P659-same-watermark-is-idempotent-none",
+        irrelevant["delta"] == "NONE" and irrelevant["watermarks"] == expected_watermarks,
+    )
+
+    relevant_tails = copy.deepcopy(current_tails)
+    relevant_tails["control"]["debts"] = [
+        {
+            "debt_id": "FIX-1", "kind": "REPORT", "owner_role": "SOURCE_WRITER",
+            "objective_ref": "P659", "currentness": "CURRENT", "relevant": True,
+            "historical": False, "resolved": False,
+        }
+    ]
+    relevant = consume_operational_pulse(
+        PulseReader(relevant_tails), stage="PRE_CLOSE", actor_role="SOURCE_WRITER",
+        objective_ref="P659", prior_watermarks=expected_watermarks,
+    )
+    check(
+        "W2-P659-unresolved-relevant-debt-blocks-terminal",
+        relevant["result"] == "DRAIN_REQUIRED"
+        and relevant["terminal_blocked"] is True
+        and relevant["persistence_directive"]["effect"] == "REFRESH_GOVERNING_REFS",
+    )
+
+    def persisted_pulse_readback() -> bool:
+        port = InMemoryControlContextStatePort()
+        attestor = HmacControlResolutionAttestor(
+            key_id="P659-SELFTEST",
+            secret=b"p659-operational-pulse-selftest-key",
+        )
+        context = McpToolCallContext(
+            identity=VerifiedMcpIdentity(
+                tenant_ref="T-P659", workspace_ref="W-P659", principal_ref="P-P659",
+                scopes=frozenset({"project_state:read", "project_state:transition"}),
+                token_verified=True,
+            ),
+            request_meta={"openai/session": "S-P659"},
+        )
+        tools = ControlContextMcpTools(
+            port,
+            attestor,
+            provider_tail_reader=PulseReader(current_tails),
+        )
+        create_payload = {
+            "project_ref": "P659", "aggregate_id": "A-P659", "source_revision": "a" * 40,
+            "event_id": "CREATE-P659", "decision_ref": "D-CREATE-P659",
+            "root": {
+                "context_id": "CTX-P659", "human_label": "P659", "objective_ref": "P659",
+                "scope_ref": "S-P659", "basis_refs": ["BASE-P659"],
+                "project_basis_ref": "PB-P659", "quality_trace_ref": "QT-P659",
+                "completion_criteria_refs": ["DONE-P659"],
+            },
+            "make_default": True,
+        }
+        create_args = copy.deepcopy(create_payload)
+        create_args["control_resolution_attestation"] = attestor.seal(
+            operation="create_project_control_instance", payload=create_payload, context=context,
+        )
+        tools.dispatch("create_project_control_instance", create_args, context)
+        begun = tools.dispatch(
+            "begin_project_control_event",
+            {"event_id": "EVENT-P659", "idempotency_key": "IDEMPOTENCY-P659"},
+            context,
+        )["structuredContent"]
+        directive = {
+            "schema": DIRECTIVE_SCHEMA, "event_id": "EVENT-P659", "decision_ref": "D-P659",
+            "expected_project_revision": begun["expected_project_revision"],
+            "expected_project_fingerprint": begun["expected_project_fingerprint"],
+            "expected_session_revision": begun["expected_session_revision"],
+            "expected_session_fingerprint": begun["expected_session_fingerprint"],
+            "project_operations": [{
+                "operation": "REFRESH_GOVERNING_REFS",
+                "context_ref": "CTX-P659",
+                "basis_refs": ["BASE-P659"],
+            }],
+            "session_operations": [],
+        }
+        payload = {
+            "event_id": "EVENT-P659",
+            "directive": directive,
+            "navigation_options_candidate": None,
+            "operational_pulse_request": {
+                "stage": "PRE_CLOSE", "actor_role": "SOURCE_WRITER", "objective_ref": "P659",
+            },
+        }
+        args = copy.deepcopy(payload)
+        args["control_resolution_attestation"] = attestor.seal(
+            operation="complete_project_control_event", payload=payload, context=context,
+        )
+        completion = tools.dispatch(
+            "complete_project_control_event", args, context,
+        )["structuredContent"]
+        pulse = completion.get("operational_pulse", {})
+        refs = completion["project"]["contexts"][0]["basis_refs"]
+        return (
+            pulse.get("persistence_readback_verified") is True
+            and pulse.get("persistence_ref") in refs
+            and completion["receipt"].get("mutated") is True
+        )
+
+    check(
+        "W2-P659-existing-refresh-effect-persists-pulse-and-reads-back",
+        persisted_pulse_readback(),
+    )
 
     result = "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL"
     return {

@@ -118,6 +118,12 @@ implementation_learning_loop:
     unbounded-global-debt-scan: PROHIBITED
     unrelated-role-debt-consumption: PROHIBITED
     elapsed-time-only-retry: PROHIBITED
+    executable_consumer:
+      implementation: mcp/control_resolution_host.py#consume_operational_pulse
+      persistence_path: mcp/control_context_tools.py#complete_project_control_event
+      owner_effect_reused: REFRESH_GOVERNING_REFS
+      terminal_gate: mcp/project_manager_control_governor.py#_operational_debt_gate
+      declaration_only_satisfaction: PROHIBITED
 
   closure_gate:
   - failure-classification-complete

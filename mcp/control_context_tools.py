@@ -30,6 +30,7 @@ for path in (CONTEXT_TOOLING, VALIDATOR_TOOLING):
 from control_context_state_port import BEGIN_SCHEMA, StateBindingError
 from control_context_registry import actor_generation_shadow_fingerprint, validate_actor_generation_shadow
 import project_manager_control_governor
+from control_resolution_host import consume_operational_pulse
 from control_owner_effect_receipt import validate_owner_effect_receipt  # noqa: E402
 from human_navigation_surface_validation import (  # noqa: E402
     validate_navigation_options,
@@ -673,6 +674,17 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "navigation_options_candidate": {"type": "object"},
                     "context_owner_effect_candidate": {"type": "object"},
                     "actor_lifecycle_mutation_candidate": {"type": "object"},
+                    "operational_pulse_request": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["stage", "actor_role", "objective_ref"],
+                        "properties": {
+                            "stage": {"enum": ["FRESH_WORLD", "CURRENT_CONTACT", "PRE_CLOSE"]},
+                            "actor_role": {"type": "string", "minLength": 1},
+                            "objective_ref": {"type": "string", "minLength": 1},
+                            "prior_watermarks": {"type": "object"},
+                        },
+                    },
                     "control_resolution_attestation": _attestation_input_schema(),
                 },
             },
@@ -692,6 +704,7 @@ def tool_definitions() -> list[dict[str, Any]]:
                     },
                     "human_navigation_surface_required": {"type": "boolean"},
                     "navigation_activation": {"type": "object"},
+                    "operational_pulse": {"type": "object"},
                     "repository_permission_required": {"const": False},
                 },
             ),
@@ -766,6 +779,7 @@ class ControlContextMcpTools:
         state_port: Any,
         resolution_attestation_verifier: Any,
         lifecycle_effect_adapter: Any | None = None,
+        provider_tail_reader: Any | None = None,
     ):
         self._state_port = state_port
         if not callable(getattr(resolution_attestation_verifier, "verify", None)):
@@ -774,8 +788,13 @@ class ControlContextMcpTools:
             for method in ("verify", "execute_lifecycle_effect", "verify_lifecycle_effect"):
                 if not callable(getattr(lifecycle_effect_adapter, method, None)):
                     raise ControlContextToolAuthorizationError(f"lifecycle-effect-adapter-method-required:{method}")
+        if provider_tail_reader is not None and not callable(
+            getattr(provider_tail_reader, "read_operational_tails", None)
+        ):
+            raise ControlContextToolAuthorizationError("provider-tail-reader-invalid")
         self._resolution_attestation_verifier = resolution_attestation_verifier
         self._lifecycle_effect_adapter = lifecycle_effect_adapter
+        self._provider_tail_reader = provider_tail_reader
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -877,6 +896,9 @@ class ControlContextMcpTools:
                 raise ControlContextToolError("actor-lifecycle-mutation-candidate-object-required")
             if self._lifecycle_effect_adapter is None:
                 raise ControlContextToolAuthorizationError("actor-lifecycle-effect-adapter-unbound")
+        pulse_request = args.get("operational_pulse_request")
+        if pulse_request is not None and not isinstance(pulse_request, dict):
+            raise ControlContextToolError("operational-pulse-request-object-required")
         event_id = _require_text(args, "event_id")
         signed_payload = {
             "event_id": event_id,
@@ -887,13 +909,52 @@ class ControlContextMcpTools:
             signed_payload["context_owner_effect_candidate"] = copy.deepcopy(owner_candidate)
         if lifecycle_candidate is not None:
             signed_payload["actor_lifecycle_mutation_candidate"] = copy.deepcopy(lifecycle_candidate)
+        if pulse_request is not None:
+            signed_payload["operational_pulse_request"] = copy.deepcopy(pulse_request)
         self._resolution_attestation_verifier.verify(
             operation="complete_project_control_event",
             payload=signed_payload,
             attestation=args.get("control_resolution_attestation"),
             context=context,
         )
+        operational_pulse = None
+        if pulse_request is not None:
+            operational_pulse = consume_operational_pulse(
+                self._provider_tail_reader,
+                stage=pulse_request.get("stage"),
+                actor_role=pulse_request.get("actor_role"),
+                objective_ref=pulse_request.get("objective_ref"),
+                prior_watermarks=pulse_request.get("prior_watermarks"),
+            )
+            if operational_pulse.get("result") == "UNKNOWN_HOLD":
+                raise ControlContextToolAuthorizationError(
+                    "operational-pulse-unknown-hold:" + str(operational_pulse.get("exact_blocker"))
+                )
         state_directive = copy.deepcopy(directive)
+        operational_pulse_ref = None
+        if operational_pulse is not None:
+            pulse_material = json.dumps(
+                operational_pulse["persistence_directive"],
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            operational_pulse_ref = "OPERATIONAL-PULSE-" + hashlib.sha256(pulse_material).hexdigest()
+            if operational_pulse.get("delta") == "DELTA":
+                project_operations = state_directive.get("project_operations")
+                if not isinstance(project_operations, list):
+                    raise ControlContextToolError("operational-pulse-project-operations-required")
+                refreshes = [
+                    item for item in project_operations
+                    if isinstance(item, dict) and item.get("operation") == "REFRESH_GOVERNING_REFS"
+                ]
+                if len(refreshes) != 1:
+                    raise ControlContextToolError("operational-pulse-single-refresh-governing-refs-required")
+                basis_refs = refreshes[0].get("basis_refs")
+                if not isinstance(basis_refs, list):
+                    raise ControlContextToolError("operational-pulse-refresh-basis-refs-required")
+                refreshes[0]["basis_refs"] = list(dict.fromkeys([*basis_refs, operational_pulse_ref]))
+            operational_pulse["persistence_ref"] = operational_pulse_ref
         if lifecycle_candidate is not None:
             state_directive["actor_lifecycle_mutation_candidate_fingerprint"] = (
                 self._lifecycle_effect_adapter._pre_effect_fingerprint(lifecycle_candidate)
@@ -914,6 +975,22 @@ class ControlContextMcpTools:
             },
             scopes=identity.state_scopes,
         )
+        if operational_pulse is not None:
+            receipt = completion.get("receipt")
+            if not isinstance(receipt, dict):
+                raise ControlContextToolError("operational-pulse-persistence-readback-required")
+            if operational_pulse.get("delta") == "DELTA":
+                project_readback = completion.get("project")
+                if (
+                    not isinstance(project_readback, dict)
+                    or operational_pulse_ref not in json.dumps(project_readback, sort_keys=True)
+                ):
+                    raise ControlContextToolError("operational-pulse-persistence-ref-readback-mismatch")
+            operational_pulse["persistence_readback_verified"] = True
+            operational_pulse["persistence_receipt_ref"] = (
+                receipt.get("receipt_ref") or receipt.get("event_id") or event_id
+            )
+            completion["operational_pulse"] = operational_pulse
         if lifecycle_candidate is not None:
             completion["actor_lifecycle_effect_evidence"] = (
                 self._lifecycle_effect_adapter.execute_lifecycle_effect(

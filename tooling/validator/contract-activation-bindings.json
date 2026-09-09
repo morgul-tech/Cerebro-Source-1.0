@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.18-p16-wave2-pm-fixed-point",
+  "classification_version": "2.19-p16-wave2-operational-pulse-consumer",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -1913,6 +1913,12 @@
     }
   ],
   "known_activation_debt": [
+    {
+      "id": "P16_OPERATIONAL_PULSE_LIVE_PROVIDER_ACTIVATION",
+      "classification": "PARTIALLY_OPERATIONAL",
+      "blocking": false,
+      "rationale": "The constructor-bound PM/control plus ProtoBox tail consumer, exact watermark/currentness gates, role/objective debt filter, existing REFRESH_GOVERNING_REFS persistence path, readback surface and PRE_CLOSE terminal blocker pass local executable canaries. Live external provider-tail activation and provider-global or dormant-peer wake remain NOT_PROVEN."
+    },
     {
       "id": "BLIND_CLAIM_OBSERVATION_CLOSURE_ADMISSIBILITY",
       "classification": "PARTIALLY_OPERATIONAL",

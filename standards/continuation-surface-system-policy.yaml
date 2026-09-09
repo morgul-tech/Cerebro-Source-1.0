@@ -57,6 +57,8 @@ continuation_surface_system_policy:
         effect:
         - process-human-insight
         - critique-and-reassess
+        - consume-CURRENT_CONTACT-correction-and-report-debt-through-constructor-bound-provider-reader
+        - persist-operational-pulse-through-existing-REFRESH_GOVERNING_REFS-effect-and-readback
         - re-resolve-control
         - preserve-or-replace-continuation-from-current-basis
         - render-resulting-next-action-surface-at-absolute-response-end-when-human-action-is-next

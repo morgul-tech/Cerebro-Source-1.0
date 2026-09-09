@@ -507,6 +507,15 @@ def activation_probe(root: Path) -> dict[str, Any]:
         sys.dont_write_bytecode = previous
     if renderer_checks.get("result") != "PASS":
         raise ContinuationSurfaceError("roadmap-renderer-selftest-failed")
+    continuation_policy = (
+        root / "standards" / "continuation-surface-system-policy.yaml"
+    ).read_text(encoding="utf-8")
+    operational_pulse_tokens = (
+        "consume-CURRENT_CONTACT-correction-and-report-debt-through-constructor-bound-provider-reader",
+        "persist-operational-pulse-through-existing-REFRESH_GOVERNING_REFS-effect-and-readback",
+    )
+    if not all(token in continuation_policy for token in operational_pulse_tokens):
+        raise ContinuationSurfaceError("continuation-operational-pulse-binding-missing")
     return {
         "schema": ACTIVATION_SCHEMA,
         "result": "PASS",
@@ -531,6 +540,8 @@ def activation_probe(root: Path) -> dict[str, Any]:
         "genuine_human_gate_visibility_enforced": checks.get("typed_hmi_genuine_human_gate_accepted") is True,
         "HA_presentation_shorthand_only_enforced": checks.get("HA_manual_actor_identity_rejected") is True,
         "carrier_change_identity_invariance_enforced": checks.get("carrier_identity_mutation_rejected") is True,
+        "current_contact_operational_debt_consumer_bound": True,
+        "operational_pulse_existing_effect_readback_bound": True,
         "workmode_machine_observable_self_consumption_enforced": checks.get("workmode_human_courier_rejected") is True,
         "exact_capability_invalidator_fallback_preserved": checks.get("exact_capability_invalidator_fallback_accepted") is True,
         "non_implementer_workmode_scope_preserved": checks.get("non_implementer_workmode_rejected") is True,

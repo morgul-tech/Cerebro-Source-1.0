@@ -71,11 +71,16 @@ boot_critical_path:
 
   bounded_operational_pulses:
     ADMINPULSE:
-      purpose: CURRENT_PM_AND_CONTROL_DELTA_SCAN
-      scope: BOUND_PROJECT_MANAGER_AND_CONTROL_CARRIERS_ONLY
-      watermarks_required: [carrier_ref, provider_revision, event_frontier]
+      purpose: CURRENT_PM_CONTROL_AND_PROTOBOX_DELTA_SCAN
+      scope: BOUND_PROJECT_MANAGER_CONTROL_AND_PROTOBOX_CARRIERS_ONLY
+      provider_tails_required: [PM_CONTROL, PROTOBOX]
+      control_watermarks_required: [carrier_ref, provider_revision, event_frontier]
+      protobox_watermarks_required: [channel_ref, observed_revision]
       output_vocabulary: [delta, NONE]
       stale_or_missing_currentness: [STALE, UNKNOWN]
+      missing_either_provider_tail_effect: UNKNOWN_HOLD
+      constructor_bound_reader_required: true
+      event_payload_authority: NONE
       authority: NONE
       may_start_blind_substantive_work: false
     NERVE:

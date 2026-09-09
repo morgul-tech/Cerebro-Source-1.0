@@ -237,6 +237,9 @@ project_manager_control_governor:
     - Shared-write-retry-requires-fresh-read-and-readback-barrier
     - Worker-cannot-admit-own-terminal-envelope
     - terminal-completion-without-learning-disposition-blocks
+    - COMPLETE-or-RETIRE-requires-current-PRE_CLOSE-operational-pulse-persistence-readback
+    - unresolved-role-current-relevant-correction-or-report-debt-blocks-terminal
+    - historical-stale-or-irrelevant-debt-cannot-block-terminal
     - long-running-PM-work-without-progress-observability-blocks
     - terminal-executor-is-not-reactivated-by-verification-or-admission-debt-alone
     - self-next-owner-executable-edge-cannot-terminalize-as-status-only
