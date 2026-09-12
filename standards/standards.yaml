@@ -61,6 +61,9 @@ documents:
 - id: STD-RULE-MODEL
   path: standards/rule-model.yaml
   required: true
+- id: STD-PRINCIPALSTAMBOK
+  path: standards/principalstambok.yaml
+  required: true
 - id: STD-CANONICAL-DEFINITION-SYSTEM
   path: standards/canonical-definition-system.yaml
   required: true

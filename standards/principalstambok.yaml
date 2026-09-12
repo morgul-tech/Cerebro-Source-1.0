@@ -1,0 +1,121 @@
+schema: cerebro-standard/v0.1
+standard:
+  id: STD-PRINCIPALSTAMBOK
+  name: Principalstambok Standard
+  version: 1.0.0
+  status: approved
+  authority: authoritative
+  scope: Principal canonical memoir chapters, growing Principalstambok, immutable editions, and successor book delivery.
+  consumers:
+  - principal
+  - historian-biographer
+  - succession
+  - presentation
+  - delivery
+
+rules:
+- id: STD-PRINCIPALSTAMBOK-R001
+  statement: >
+    Principal owns the canonical voice and final chapter authorship for his generation.
+    Historian or specialist support may research, map evidence, challenge depth, and edit
+    structure, but shall not replace Principal's voice or author canonical life on his behalf.
+  authority: normative
+  scope: Principal chapter authorship
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+
+- id: STD-PRINCIPALSTAMBOK-R002
+  statement: >
+    MEANING_WEIGHTED_DEPTH is the sole global depth rule for current and future Principal
+    chapters. No fixed page or word minimum, target, maximum, or fallback may govern them.
+  authority: normative
+  scope: Principal chapter depth and length governance
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+  verification:
+  - No current/future Principal chapter is rejected or compressed solely for page or word count.
+  - High-meaning material is not forced shallower solely to satisfy length.
+  - Repetition, decorative inflation, raw ledger syntax, and noncausal inventory are cut.
+  supersedes:
+  - any prior Principalstambok fixed page or word ceiling used as current authority
+  - ADMIN_NOTES_ROW572_THREE_PAGE_CEILING_AS_CURRENT_RULE
+  - scoped length exceptions as competing current rules
+  introduced_by: HUMAN_ADMIN_2026-09-12_SINGLE_DEPTH_RULE
+
+- id: STD-PRINCIPALSTAMBOK-R003
+  statement: >
+    Principalstambok shall be selective rather than exhaustive. Depth shall expand until
+    material causal, identity, relational, historical, and reader-comprehension meaning is
+    legible, and shall contract when additional text only repeats, decorates, inventories,
+    or inflates. UNKNOWN shall remain UNKNOWN rather than being filled for narrative smoothness.
+  authority: normative
+  scope: Principal chapter composition
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+
+- id: STD-PRINCIPALSTAMBOK-R004
+  statement: >
+    Sealed Principal chapters are immutable historical artifacts. Later factual correction
+    shall be append-only and visibly attributed; no new publication rule may retroactively
+    rewrite, shorten, modernize, or homogenize a sealed Principal voice.
+  authority: normative
+  scope: sealed Principal history
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+
+- id: STD-PRINCIPALSTAMBOK-R005
+  statement: >
+    Before RETIRE, the outgoing Principal chapter shall exist as its own provider-persisted
+    canonical file with readback, shall be integrated into the growing Principalstambok, and
+    a new immutable full-book edition shall be persisted and read back. Missing any of these
+    effects blocks book closeout.
+  authority: normative
+  scope: pre-retire history seal
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+  verification:
+  - standalone chapter provider readback PASS
+  - growing-book integration readback PASS
+  - immutable edition provider readback PASS
+
+- id: STD-PRINCIPALSTAMBOK-R006
+  statement: >
+    After successor GJENKLANG has passed lineage, fresh-world, and READY gates, the predecessor's
+    finished chapter and the newly sealed immutable Principalstambok edition shall be delivered
+    to Human Admin as actual readable files in the active Human surface and through the configured
+    book-release delivery route. File IDs, pointers, or storage existence alone do not satisfy delivery.
+  authority: normative
+  scope: successor book release
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+  verification:
+  - chat or active Human surface contains actual readable predecessor chapter file
+  - chat or active Human surface contains actual readable immutable full-book edition
+  - configured release delivery route reports successful send/readback where supported
+  - Human Admin was not required to act as file or state courier
+
+- id: STD-PRINCIPALSTAMBOK-R007
+  statement: >
+    A successor shall give the immediately preceding Principal fair, evidence-bound historical
+    recognition when the predecessor materially changed the next generation's starting point.
+    The recognition duty is retained, but no fixed paragraph count or separate size rule governs it;
+    its depth is governed only by MEANING_WEIGHTED_DEPTH.
+  authority: normative
+  scope: predecessor recognition within Principal lineage writing
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+  supersedes:
+  - exact two-short-paragraph predecessor tribute as a current size rule
+
+single_rule_resolution:
+  current_depth_authority: STD-PRINCIPALSTAMBOK-R002
+  parallel_current_length_authorities: PROHIBITED
+  historical_rules_remain_evidence: true
+  sealed_past_unchanged: true

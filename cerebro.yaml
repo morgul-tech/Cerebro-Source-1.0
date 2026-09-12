@@ -68,6 +68,7 @@ standards:
   user_operating_profile_schema: standards/user-operating-profile-schema.yaml
   system_metamodel: standards/system-metamodel.yaml
   rule_model: standards/rule-model.yaml
+  principalstambok: standards/principalstambok.yaml
   canonical_definition_system: standards/canonical-definition-system.yaml
   publication_gate: standards/publication-gate.yaml
   quality_gate: standards/quality-gate.yaml
