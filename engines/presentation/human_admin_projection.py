@@ -6,6 +6,8 @@ from typing import Any,Mapping,Sequence
 SCHEMA="cerebro-human-admin-projection/v1"
 AUTHORITY="PRESENTATION_ONLY_NON_AUTHORITATIVE"
 CURRENTNESS=("CURRENT","STALE","GAP","UNKNOWN","PROVISIONAL")
+ROOM_PALETTE=(("🔵","BLUE"),("🟢","GREEN"),("🟣","PURPLE"),("🟠","ORANGE"),("🟡","YELLOW"),("🔴","RED"),("🟤","BROWN"),("⚪","WHITE"))
+ROOM_NAME_MAX_LENGTH=48
 _HEX40=re.compile(r"^[0-9a-f]{40}$")
 _WS=re.compile(r"\s+")
 
@@ -100,6 +102,50 @@ def _unique_state_value(objects:Sequence[Mapping[str,Any]],fields:Sequence[str],
                 break
     return next(iter(values.values())) if len(values)==1 else default
 
+def _room_identity(objects:Sequence[Mapping[str,Any]])->dict[str,Any]:
+    observed=[]
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        room_id=state.get("room_id")
+        case_id=state.get("case_container_id")
+        room_name=state.get("room_name")
+        room_id=room_id.strip() if isinstance(room_id,str) else ""
+        case_id=case_id.strip() if isinstance(case_id,str) else ""
+        room_name=room_name.strip() if isinstance(room_name,str) else ""
+        if not room_id and not case_id:
+            if room_name: raise HumanAdminProjectionError("room-identity:durable-id-required")
+            continue
+        if not room_name or "\n" in room_name or "\r" in room_name or len(room_name)>ROOM_NAME_MAX_LENGTH:
+            raise HumanAdminProjectionError("room-identity:short-room-name-required")
+        durable_id=room_id or case_id
+        source="ROOM_ID" if room_id else "CASE_CONTAINER_ID"
+        observed.append((durable_id,room_name,source))
+    if not observed:
+        return {"type":"ROOM_IDENTITY","active":False,"membership_semantics":"MEMBERSHIP_ONLY","source":"NONE",
+                "durable_room_id":None,"room_name":None,"color_derivation":"SHA256_FIXED_PALETTE_AT_RENDER",
+                "derived_color_storage":"NONE","encodes_status_or_authority":False}
+    identities={(room_id,room_name) for room_id,room_name,_ in observed}
+    if len(identities)!=1: raise HumanAdminProjectionError("room-identity:multiple-active-rooms-not-proven")
+    durable_id,room_name=next(iter(identities))
+    sources={source for _,_,source in observed}
+    source=next(iter(sources)) if len(sources)==1 else "ROOM_ID_OR_CASE_CONTAINER_ID"
+    return {"type":"ROOM_IDENTITY","active":True,"membership_semantics":"MEMBERSHIP_ONLY","source":source,
+            "durable_room_id":durable_id,"room_name":room_name,"color_derivation":"SHA256_FIXED_PALETTE_AT_RENDER",
+            "derived_color_storage":"NONE","encodes_status_or_authority":False}
+
+def _render_room_identity(room_identity:Mapping[str,Any])->dict[str,Any]:
+    if room_identity.get("active") is not True:
+        return {"active":False,"membership_semantics":"MEMBERSHIP_ONLY","palette_marker":None,
+                "palette_name":None,"textual_fallback":None,"header":None,"derived_at_render":True}
+    durable_id=_text(room_identity.get("durable_room_id"),"room_identity.durable_room_id")
+    room_name=_text(room_identity.get("room_name"),"room_identity.room_name")
+    palette_marker,palette_name=ROOM_PALETTE[int(hashlib.sha256(durable_id.encode("utf-8")).hexdigest(),16)%len(ROOM_PALETTE)]
+    fallback=f"ROM · {room_name}"
+    return {"active":True,"membership_semantics":"MEMBERSHIP_ONLY","palette_marker":palette_marker,
+            "palette_name":palette_name,"textual_fallback":fallback,"header":f"{palette_marker} {fallback}",
+            "derived_at_render":True}
+
 def _typed_hmi_signals(objects:Sequence[Mapping[str,Any]])->dict[str,dict[str,Any]]:
     role_raw=_unique_state_value(objects,("role_assessment","role"),{})
     role=dict(role_raw) if isinstance(role_raw,Mapping) else {"role":role_raw} if isinstance(role_raw,str) else {}
@@ -121,7 +167,9 @@ def _typed_hmi_signals(objects:Sequence[Mapping[str,Any]])->dict[str,dict[str,An
         "human_boundary_assessment":boundary,
         "presentation_request":request,
         "hmi":{"surface_first":True,"machine_route_before_human_relay":True,"ha_expansion":"HUMAN_ADMIN",
-               "actor_identity_mutation_allowed":False,"carrier_change_identity_effect":"NONE"},
+               "actor_identity_mutation_allowed":False,"carrier_change_identity_effect":"NONE",
+               "room_header_at_absolute_top":True,"room_color_membership_only":True,
+               "derived_room_color_persisted":False},
     }
 
 def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,Any]],required_refs:Sequence[str]=(),projection_ref:str="human-admin/current",projection_revision:int=0)->dict[str,Any]:
@@ -142,6 +190,7 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
     blockers=_collect_state_list(objects,("blockers","blocked_by","blocker"))
     active_work=sorted({x["canonical_ref"] for x in objects if str((x.get("state") or {}).get("status","")).upper().startswith("ACTIVE") or x["object_type"] in {"ACTIVE_WORK","WORK_PACKET_ACTIVE"}})
     human_gate=_unique_state_text(objects,("next_human_gate","human_action","human_gate"),default="UNKNOWN" if missing else "NONE")
+    room_identity=_room_identity(objects)
     typed_signals=_typed_hmi_signals(objects)
     boundary=typed_signals["human_boundary_assessment"]
     responsibility=typed_signals["responsibility_assessment"]
@@ -160,7 +209,7 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
         "basis_set":basis,"coverage":{"required":required,"observed":observed,"missing":missing},"unknowns":unknowns,
         "orientation":{"where_we_were":where_were,"where_we_are":where_are,"where_we_are_going":where_going},
         "current_objective":current_objective,"return_points":return_points,"human_cognitive_location":human_location,
-        "blockers":blockers,"next_human_gate":human_gate,"active_work":active_work,
+        "blockers":blockers,"next_human_gate":human_gate,"active_work":active_work,"room_identity":room_identity,
         "role_assessment":typed_signals["role_assessment"],"responsibility_assessment":typed_signals["responsibility_assessment"],
         "human_boundary_assessment":typed_signals["human_boundary_assessment"],"presentation_request":typed_signals["presentation_request"],
         "hmi":typed_signals["hmi"],"objects":objects,"evidence_refs":evidence_refs,
@@ -177,8 +226,11 @@ def validate_projection(value:Mapping[str,Any])->dict[str,Any]:
     if supplied!=fingerprint(body): raise HumanAdminProjectionError("projection:fingerprint-mismatch")
     if value.get("currentness") not in CURRENTNESS: raise HumanAdminProjectionError("projection:currentness-invalid")
     hmi=value.get("hmi") or {}
-    if hmi.get("surface_first") is not True or hmi.get("machine_route_before_human_relay") is not True or hmi.get("ha_expansion")!="HUMAN_ADMIN" or hmi.get("actor_identity_mutation_allowed") is not False:
+    if hmi.get("surface_first") is not True or hmi.get("machine_route_before_human_relay") is not True or hmi.get("ha_expansion")!="HUMAN_ADMIN" or hmi.get("actor_identity_mutation_allowed") is not False or hmi.get("room_header_at_absolute_top") is not True or hmi.get("room_color_membership_only") is not True or hmi.get("derived_room_color_persisted") is not False:
         raise HumanAdminProjectionError("projection:hmi-boundary-invalid")
+    room_identity=value.get("room_identity")
+    if room_identity!=_room_identity(value.get("objects") or []):
+        raise HumanAdminProjectionError("projection:room-identity-invalid")
     if (value.get("n0") or {}).get("surface_state")!="NONCURRENT" or (value.get("n0") or {}).get("authority_mutation_allowed") is not False:
         raise HumanAdminProjectionError("projection:n0-authority-boundary-invalid")
     return dict(value)
@@ -195,7 +247,10 @@ def render_status(projection:Mapping[str,Any],depth:str="standard",scope:str|Non
     validate_projection(projection); depth=_text(depth,"depth").lower()
     if depth not in {"brief","standard","deep"}: raise HumanAdminProjectionError("status:depth-invalid")
     prefix=f"[{projection['currentness']}] "
-    lines=[prefix+"HER ER VI: "+projection["orientation"]["where_we_are"],"MAL: "+projection["current_objective"]]
+    room=_render_room_identity(projection["room_identity"])
+    lines=[room["header"]] if room["active"] else []
+    if scope: lines.append("SCOPE: "+_text(scope,"scope"))
+    lines += [prefix+"HER ER VI: "+projection["orientation"]["where_we_are"],"MAL: "+projection["current_objective"]]
     if depth!="brief":
         lines += ["VEIEN VIDERE: "+projection["orientation"]["where_we_are_going"],
                   "BLOKKERE: "+(", ".join(projection["blockers"]) if projection["blockers"] else "NONE"),
@@ -205,17 +260,20 @@ def render_status(projection:Mapping[str,Any],depth:str="standard",scope:str|Non
         lines += ["AKTIVT: "+(", ".join(projection["active_work"]) if projection["active_work"] else "NONE"),
                   "COVERAGE: "+f"{len(projection['coverage']['observed'])}/{len(projection['coverage']['required'])}",
                   "BASIS: "+(", ".join(x["object_ref"] for x in projection["basis_set"]) if projection["basis_set"] else "NONE")]
-    if scope: lines.insert(0,"SCOPE: "+_text(scope,"scope"))
-    return {"schema":"cerebro-human-admin-status-view/v1","depth":depth,"scope":scope,"lines":lines,"text":"\n".join(lines),"projection_fingerprint":projection["projection_fingerprint"]}
+    return {"schema":"cerebro-human-admin-status-view/v1","depth":depth,"scope":scope,"room_identity":room,"lines":lines,"text":"\n".join(lines),"projection_fingerprint":projection["projection_fingerprint"]}
 
 def render_info(projection:Mapping[str,Any],query:str)->dict[str,Any]:
+    validate_projection(projection)
+    room=_render_room_identity(projection["room_identity"])
+    room_lines=[room["header"]] if room["active"] else []
     resolved=resolve_ref(projection,query)
     if resolved["result"]!="RESOLVED":
-        return {"schema":"cerebro-human-admin-info-view/v1","result":resolved["result"],"query":query,"candidate_refs":resolved.get("candidate_refs",[]),"text":resolved["result"]}
+        lines=room_lines+[resolved["result"]]
+        return {"schema":"cerebro-human-admin-info-view/v1","result":resolved["result"],"query":query,"candidate_refs":resolved.get("candidate_refs",[]),"room_identity":room,"lines":lines,"text":"\n".join(lines)}
     obj=resolved["object"]; state=obj.get("state") or {}
     human=str(state.get("human_action") or state.get("next_human_gate") or "NONE")
     blocked=_collect_state_list([obj],("blockers","blocked_by","blocker"))
-    lines=[f"{obj['canonical_ref']} [{obj['object_type']}]",
+    lines=room_lines+[f"{obj['canonical_ref']} [{obj['object_type']}]",
            "WHAT: "+(obj["human_summary"] or "UNKNOWN"),
            "WHY: "+(obj["why_it_matters"] or "UNKNOWN"),
            "NOW: "+obj["currentness"]+" / "+str(state.get("status") or state.get("lifecycle") or "UNKNOWN"),
@@ -224,5 +282,5 @@ def render_info(projection:Mapping[str,Any],query:str)->dict[str,Any]:
            "HUMAN: "+human,
            "RELATED: "+(", ".join(obj["related_refs"]) if obj["related_refs"] else "NONE")]
     return {"schema":"cerebro-human-admin-info-view/v1","result":"RESOLVED","query":query,
-            "canonical_ref":obj["canonical_ref"],"lines":lines,"text":"\n".join(lines),
+            "canonical_ref":obj["canonical_ref"],"room_identity":room,"lines":lines,"text":"\n".join(lines),
             "evidence_refs":obj["evidence_refs"],"projection_fingerprint":projection["projection_fingerprint"]}

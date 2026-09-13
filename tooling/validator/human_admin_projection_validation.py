@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import importlib.util,json,tempfile,sys
+import hashlib,importlib.util,json,tempfile,sys
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -9,6 +9,12 @@ SOURCES=ROOT/"tooling/host/human_admin_projection_sources.py"
 HOST=ROOT/"tooling/host/cerebro_host.py"
 SCHEMA=ROOT/"engines/presentation/human-admin-projection.schema.json"
 COMPONENT=ROOT/"tooling/host/component.yaml"
+HMI_KERNEL_REFS=("standards/human-continuation-surface.yaml","standards/continuation-surface-system-policy.yaml","engines/presentation/human-admin-projection.schema.json")
+PRE_ROOM_COLOR_HMI_KERNEL_FINGERPRINT="da91c3784cd85af2cc040b2fbd739790787e97d035b02d8e2cee3adc92b7ad11"
+
+def hmi_kernel_fingerprint()->str:
+    material="\n".join(f"{ref}|{hashlib.sha256((ROOT/ref).read_bytes()).hexdigest()}" for ref in HMI_KERNEL_REFS)
+    return hashlib.sha256(f"CEREBRO-HMI-BIRTH-KERNEL-001|1.0|{material}".encode("utf-8")).hexdigest()
 
 def load(path:Path,name:str):
     spec=importlib.util.spec_from_file_location(name,path); module=importlib.util.module_from_spec(spec)
@@ -44,6 +50,29 @@ def run_all():
     check("machine-route-before-human-relay",p["next_human_gate"]=="NONE" and p["hmi"]["machine_route_before_human_relay"] is True)
     check("HA-presentation-shorthand-only",p["role_assessment"]=={"role":"HUMAN_ADMIN","presentation_shorthand":"HA","identity_authority":"NONE"} and p["hmi"]["actor_identity_mutation_allowed"] is False)
     check("carrier-change-has-no-identity-effect",p["hmi"]["carrier_change_identity_effect"]=="NONE" and "actor_id" not in p["role_assessment"])
+    check("no-room-renders-no-room-marker",p["room_identity"]["active"] is False and not hap.render_status(p,"brief")["lines"][0].startswith(tuple(x[0] for x in hap.ROOM_PALETTE)))
+    room_snaps=json.loads(json.dumps(snaps))
+    for snap in room_snaps:
+        snap["state"].update({"room_id":"ROOM-BROWSER-ALPHA-001","case_container_id":"CASE-ALPHA-001","room_name":"Kildeprøving"})
+    participant_a=hap.build_projection(source_revision=source,owner_snapshots=[room_snaps[0]])
+    participant_b=hap.build_projection(source_revision=source,owner_snapshots=[room_snaps[1]])
+    view_a=hap.render_status(participant_a,"brief"); view_b=hap.render_status(participant_b,"brief")
+    header_a=view_a["lines"][0]; header_b=view_b["lines"][0]
+    check("same-room-independent-participants-same-marker-and-text",header_a==header_b and header_a==view_a["room_identity"]["header"])
+    reopened=hap.build_projection(source_revision=source,owner_snapshots=json.loads(json.dumps([room_snaps[0]])))
+    check("close-reopen-same-room-same-header-without-live-state",hap.render_status(reopened,"brief")["lines"][0]==header_a)
+    changed_room=json.loads(json.dumps([room_snaps[0]])); changed_room[0]["state"]["room_id"]="ROOM-BROWSER-BETA-017"; changed_room[0]["state"]["case_container_id"]="CASE-BETA-017"; changed_room[0]["state"]["room_name"]="Sikkerhetsrom"
+    changed=hap.build_projection(source_revision=source,owner_snapshots=changed_room)
+    changed_view=hap.render_status(changed,"brief")
+    check("changed-room-recomputes-never-inherits-identity",changed["room_identity"]["durable_room_id"]!=participant_a["room_identity"]["durable_room_id"] and changed_view["room_identity"]["palette_marker"]!=view_a["room_identity"]["palette_marker"])
+    pass_state=json.loads(json.dumps([room_snaps[0]])); pass_state[0]["state"]["status"]="PASS"
+    hold_state=json.loads(json.dumps([room_snaps[0]])); hold_state[0]["state"]["status"]="HOLD"
+    pass_view=hap.render_status(hap.build_projection(source_revision=source,owner_snapshots=pass_state),"brief")
+    hold_view=hap.render_status(hap.build_projection(source_revision=source,owner_snapshots=hold_state),"brief")
+    check("status-health-authority-do-not-change-room-color",pass_view["room_identity"]["palette_marker"]==hold_view["room_identity"]["palette_marker"]==view_a["room_identity"]["palette_marker"])
+    check("room-projection-fingerprint-deterministic",participant_a==hap.build_projection(source_revision=source,owner_snapshots=json.loads(json.dumps([room_snaps[0]]))))
+    info_room=hap.render_info(participant_a,"P612")
+    check("room-header-absolute-top-status-and-info",header_a.startswith(view_a["room_identity"]["palette_marker"]+" ROM · ") and info_room["lines"][0]==header_a)
     gate_snaps=json.loads(json.dumps(snaps)); gate_snaps[0]["state"]["responsibility_assessment"]={"owner":"HUMAN"}
     gate_snaps[0]["state"]["human_boundary_assessment"]={"real_human_action_is_next":True,"next_human_gate":"APPROVE_RELEASE"}
     pgate=hap.build_projection(source_revision=source,owner_snapshots=gate_snaps)
@@ -60,6 +89,9 @@ def run_all():
     check("stale-basis-not-current",hap.build_projection(source_revision=source,owner_snapshots=stale)["currentness"]=="STALE")
     schema=json.loads(SCHEMA.read_text(encoding="utf-8"))
     check("typed-schema-identity",schema["properties"]["schema"]["const"]=="cerebro-human-admin-projection/v1")
+    check("typed-room-identity-schema-consumed",schema["properties"]["room_identity"]["properties"]["membership_semantics"]["const"]=="MEMBERSHIP_ONLY" and "room_identity" in schema["required"])
+    current_hmi_fingerprint=hmi_kernel_fingerprint()
+    check("hmi-birth-kernel-fingerprint-readback-changed",current_hmi_fingerprint!=PRE_ROOM_COLOR_HMI_KERNEL_FINGERPRINT)
     with tempfile.TemporaryDirectory() as td:
         bundle=Path(td)/"bundle.json"
         bundle.write_text(json.dumps({"schema":sources.BUNDLE_SCHEMA,"projection_revision":4,"required_refs":["WORK_CLAIMS:838"],"owner_snapshots":[snaps[0]]}),encoding="utf-8")
@@ -68,6 +100,13 @@ def run_all():
         hosted_args=host.parse_host_arguments(["status","brief","--snapshot-bundle",str(bundle)])
         hosted=host.run_human_admin_projection(ROOT,source,hosted_args)
         check("host-read-only-view-integration",hosted["result"]=="PASS" and hosted["view"]["depth"]=="brief" and hosted["source_mutation"] is False)
+        browser_headers=[]
+        for index,snapshot in enumerate((room_snaps[0],room_snaps[1],json.loads(json.dumps(room_snaps[0])))):
+            room_bundle=Path(td)/f"room-browser-{index}.json"
+            room_bundle.write_text(json.dumps({"schema":sources.BUNDLE_SCHEMA,"projection_revision":index,"owner_snapshots":[snapshot]}),encoding="utf-8")
+            room_args=host.parse_host_arguments(["status","brief","--snapshot-bundle",str(room_bundle)])
+            browser_headers.append(host.run_human_admin_projection(ROOT,source,room_args)["view"]["lines"][0])
+        check("browser-live-reopen-render-path",browser_headers==[header_a,header_a,header_a])
     unavailable=sources.load_snapshot_bundle(None,env={})
     check("missing-provider-bundle-explicit-unavailable",unavailable["provider_state"]=="UNAVAILABLE" and "OWNER_SNAPSHOT_BUNDLE_NOT_INJECTED" in unavailable["unknowns"])
     status_args=host.parse_host_arguments(["status","brief"]); info_args=host.parse_host_arguments(["info","P612"])
@@ -78,6 +117,7 @@ def run_all():
     check("host-does-not-own-roadmap-or-projection-truth","- parse-roadmap" in component and "own-human-admin-projection-truth" in component)
     check("no-store-bus-scheduler-surface",not any(hasattr(hap,n) for n in ("save","persist","commit","scheduler","database","bus")))
     return {"schema":"cerebro-human-admin-projection-validation/v1","result":"PASS" if all(x["result"]=="PASS" for x in tests) else "FAIL",
+            "hmi_birth_kernel_fingerprint":current_hmi_fingerprint,"room_header":header_a,
             "tests":tests,"test_count":len(tests),"pass_count":sum(x["result"]=="PASS" for x in tests)}
 
 if __name__=="__main__":

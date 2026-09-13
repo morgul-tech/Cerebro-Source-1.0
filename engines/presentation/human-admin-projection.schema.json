@@ -4,7 +4,7 @@
   "title": "Cerebro Human Admin Projection",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema","authority","projection_ref","projection_revision","projection_fingerprint","source_revision","currentness","basis_set","coverage","unknowns","orientation","current_objective","return_points","human_cognitive_location","blockers","next_human_gate","active_work","role_assessment","responsibility_assessment","human_boundary_assessment","presentation_request","hmi","objects","evidence_refs","n0"],
+  "required": ["schema","authority","projection_ref","projection_revision","projection_fingerprint","source_revision","currentness","basis_set","coverage","unknowns","orientation","current_objective","return_points","human_cognitive_location","blockers","next_human_gate","active_work","room_identity","role_assessment","responsibility_assessment","human_boundary_assessment","presentation_request","hmi","objects","evidence_refs","n0"],
   "properties": {
     "schema": {"const":"cerebro-human-admin-projection/v1"},
     "authority": {"const":"PRESENTATION_ONLY_NON_AUTHORITATIVE"},
@@ -23,11 +23,27 @@
     "blockers": {"type":"array","items":{"type":"string"}},
     "next_human_gate": {"type":"string"},
     "active_work": {"type":"array","items":{"type":"string"}},
+    "room_identity": {
+      "type":"object",
+      "additionalProperties":false,
+      "required":["type","active","membership_semantics","source","durable_room_id","room_name","color_derivation","derived_color_storage","encodes_status_or_authority"],
+      "properties":{
+        "type":{"const":"ROOM_IDENTITY"},
+        "active":{"type":"boolean"},
+        "membership_semantics":{"const":"MEMBERSHIP_ONLY"},
+        "source":{"enum":["NONE","ROOM_ID","CASE_CONTAINER_ID","ROOM_ID_OR_CASE_CONTAINER_ID"]},
+        "durable_room_id":{"type":["string","null"]},
+        "room_name":{"type":["string","null"],"maxLength":48},
+        "color_derivation":{"const":"SHA256_FIXED_PALETTE_AT_RENDER"},
+        "derived_color_storage":{"const":"NONE"},
+        "encodes_status_or_authority":{"const":false}
+      }
+    },
     "role_assessment": {"type":"object"},
     "responsibility_assessment": {"type":"object"},
     "human_boundary_assessment": {"type":"object"},
     "presentation_request": {"type":"object"},
-    "hmi": {"type":"object","required":["surface_first","machine_route_before_human_relay","ha_expansion","actor_identity_mutation_allowed"],"properties":{"surface_first":{"const":true},"machine_route_before_human_relay":{"const":true},"ha_expansion":{"const":"HUMAN_ADMIN"},"actor_identity_mutation_allowed":{"const":false}}},
+    "hmi": {"type":"object","required":["surface_first","machine_route_before_human_relay","ha_expansion","actor_identity_mutation_allowed","room_header_at_absolute_top","room_color_membership_only","derived_room_color_persisted"],"properties":{"surface_first":{"const":true},"machine_route_before_human_relay":{"const":true},"ha_expansion":{"const":"HUMAN_ADMIN"},"actor_identity_mutation_allowed":{"const":false},"room_header_at_absolute_top":{"const":true},"room_color_membership_only":{"const":true},"derived_room_color_persisted":{"const":false}}},
     "objects": {"type":"array"},
     "evidence_refs": {"type":"array","items":{"type":"string"}},
     "n0": {"type":"object"}
