@@ -26,19 +26,23 @@ def run_all():
     host=load(HOST,"cerebro_hap_validation_host")
     tests=[]
     def check(name,condition): tests.append({"name":name,"result":"PASS" if condition else "FAIL"})
+    def rejects(name,fn):
+        try: fn()
+        except hap.HumanAdminProjectionError: check(name,True)
+        else: check(name,False)
     source="9"*40
     snaps=[
       {"schema":"cerebro-owner-snapshot/v1","owner_ref":"SHARED_WORK","object_ref":"WORK_CLAIMS:838","object_type":"WORK_CLAIM",
        "currentness":"CURRENT","revision_or_token":838,"evidence_ref":"EVENTS:4185","human_summary":"P612 is the active N0 HAP implementation claim",
        "why_it_matters":"It is the current material implementation frontier.","aliases":["P612","claim 838"],"related_refs":["WORK_PACKETS:630"],
-       "state":{"status":"ACTIVE_BOUND","current_objective":"N0 Human Admin Projection","where_we_were":"P611 targetset freeze",
+       "state":{"status":"ACTIVE_BOUND","human_label":"HAP implementation","current_objective":"N0 Human Admin Projection","where_we_were":"P611 targetset freeze",
        "where_we_are":"P612 HAP core implementation","where_we_are_going":"P613 replaceable Kompass renderer","return_point":"P612 validation",
        "human_cognitive_location":"Implementing shared read-only Human Admin Projection","human_action":"NONE","blockers":[],
        "role_assessment":{"role":"HA"},"responsibility_assessment":{"owner":"MACHINE"},
        "human_boundary_assessment":{"real_human_action_is_next":False},"presentation_request":{"dialect":"IMPLEMENTER"}}},
       {"schema":"cerebro-owner-snapshot/v1","owner_ref":"SHARED_PM","object_ref":"PROJECT_MANAGER_5168B029","object_type":"PROJECT_MANAGER",
        "currentness":"CURRENT","revision_or_token":"pm-current","evidence_ref":"PM_PRINCIPAL_CHANNEL:3448","human_summary":"Current Project Manager",
-       "why_it_matters":"Owns bind/start/admit orchestration.","aliases":["current pm"],"state":{"status":"CURRENT"}}
+       "why_it_matters":"Owns bind/start/admit orchestration.","aliases":["current pm"],"state":{"status":"CURRENT","human_label":"HAP implementation"}}
     ]
     p=hap.build_projection(source_revision=source,owner_snapshots=snaps,required_refs=["WORK_CLAIMS:838","PROJECT_MANAGER_5168B029"],projection_revision=3)
     check("projection-validates",hap.validate_projection(p)["projection_fingerprint"]==p["projection_fingerprint"])
@@ -48,6 +52,7 @@ def run_all():
     check("n0-remains-noncurrent-no-authority",p["n0"]["surface_state"]=="NONCURRENT" and p["n0"]["authority_mutation_allowed"] is False)
     check("typed-interaction-signals-consumed",p["responsibility_assessment"]["owner"]=="MACHINE" and p["presentation_request"]["dialect"]=="IMPLEMENTER")
     check("machine-route-before-human-relay",p["next_human_gate"]=="NONE" and p["hmi"]["machine_route_before_human_relay"] is True)
+    check("human-label-primary-typed",p["human_label"]=="HAP implementation" and p["hmi"]["human_label_primary"] is True)
     check("HA-presentation-shorthand-only",p["role_assessment"]=={"role":"HUMAN_ADMIN","presentation_shorthand":"HA","identity_authority":"NONE"} and p["hmi"]["actor_identity_mutation_allowed"] is False)
     check("carrier-change-has-no-identity-effect",p["hmi"]["carrier_change_identity_effect"]=="NONE" and "actor_id" not in p["role_assessment"])
     check("no-room-renders-no-room-marker",p["room_identity"]["active"] is False and not hap.render_status(p,"brief")["lines"][0].startswith(tuple(x[0] for x in hap.ROOM_PALETTE)))
@@ -77,12 +82,41 @@ def run_all():
     gate_snaps[0]["state"]["human_boundary_assessment"]={"real_human_action_is_next":True,"next_human_gate":"APPROVE_RELEASE"}
     pgate=hap.build_projection(source_revision=source,owner_snapshots=gate_snaps)
     check("genuine-human-gate-remains-visible",pgate["next_human_gate"]=="APPROVE_RELEASE")
-    brief=hap.render_status(p,"brief"); check("brief-one-screen-12-lines-max",len(brief["lines"])<=12)
+    brief=hap.render_status(p,"brief"); standard=hap.render_status(p,"standard",scope="WORK_PACKETS:630")
+    deep=hap.render_status(p,"deep",scope="WORK_PACKETS:630")
+    check("human-label-is-primary-status-line",brief["lines"][0]=="[CURRENT] HAP implementation")
+    check("brief-one-screen-12-lines-max",len(brief["lines"])<=12)
+    check("opaque-ids-absent-brief-standard",not any(token in brief["text"]+standard["text"] for token in ("P612","WORK_CLAIMS:838","WORK_PACKETS:630")))
+    check("opaque-ids-available-deep",all(token in deep["text"] for token in ("WORK_CLAIMS:838","WORK_PACKETS:630")))
     info=hap.render_info(p,"P612"); check("info-exact-resolver",info["result"]=="RESOLVED" and info["canonical_ref"]=="WORK_CLAIMS:838")
+    check("opaque-id-available-explicit-info",info["lines"][0].startswith("WORK_CLAIMS:838 "))
     check("info-unresolved-fails-closed",hap.render_info(p,"missing-ref")["result"]=="UNRESOLVED")
     amb=[dict(snaps[0],object_ref="A",aliases=["same"]),dict(snaps[1],object_ref="B",aliases=["same"])]
     pa=hap.build_projection(source_revision=source,owner_snapshots=amb)
     check("ambiguous-ref-fails-closed",hap.render_info(pa,"same")["result"]=="AMBIGUOUS")
+    no_label=json.loads(json.dumps(snaps))
+    for snap in no_label: snap["state"].pop("human_label",None)
+    rejects("missing-human-label-fails-closed",lambda: hap.build_projection(source_revision=source,owner_snapshots=no_label))
+    ambiguous_label=json.loads(json.dumps(snaps)); ambiguous_label[1]["state"]["human_label"]="PM coordination"
+    rejects("ambiguous-human-label-fails-closed",lambda: hap.build_projection(source_revision=source,owner_snapshots=ambiguous_label))
+    invalid_label=json.loads(json.dumps(snaps)); invalid_label[0]["state"]["human_label"]="P764 source effect"
+    rejects("opaque-human-label-fails-closed",lambda: hap.build_projection(source_revision=source,owner_snapshots=invalid_label))
+    legacy_label=json.loads(json.dumps(snaps))
+    for snap in legacy_label: snap["state"].pop("human_label",None)
+    legacy_label[0]["state"]["human_cognitive_location"]="Kompass closure"
+    check("legacy-semantic-cognitive-label-fallback",hap.build_projection(source_revision=source,owner_snapshots=legacy_label)["human_label"]=="Kompass closure")
+    waiting=json.loads(json.dumps([snaps[0]])); waiting[0]["state"].update({"waiting_input":True,"next_owner_label":"PM admission","dependency_labels":["validator pass"]})
+    pwait=hap.build_projection(source_revision=source,owner_snapshots=waiting)
+    waiting_view=hap.render_status(pwait,"standard")
+    check("waiting-standard-exactly-three-human-lines",waiting_view["lines"]==["VENTER","Neste eier: PM admission","Jeg starter når: validator pass"])
+    check("waiting-does-not-create-human-pulse",pwait["next_human_gate"]=="NONE" and pwait["waiting_input"]["human_action_required"] is False and pwait["hmi"]["waiting_is_human_pulse"] is False)
+    room_waiting=json.loads(json.dumps([room_snaps[0]])); room_waiting[0]["state"].update({"waiting_input":True,"next_owner_label":"PM admission","dependency_labels":["validator pass"]})
+    room_wait_view=hap.render_status(hap.build_projection(source_revision=source,owner_snapshots=room_waiting),"standard")
+    check("room-waiting-composes-header-into-line-one",len(room_wait_view["lines"])==3 and room_wait_view["lines"][0]==header_a+" · VENTER")
+    waiting_deep=hap.render_status(pwait,"deep",scope="WORK_PACKETS:764")
+    check("waiting-deep-keeps-opaque-diagnostics-explicit",waiting_deep["lines"][:3]==waiting_view["lines"] and "WORK_PACKETS:764" in waiting_deep["text"] and "WORK_CLAIMS:838" in waiting_deep["text"])
+    waiting_gate=json.loads(json.dumps(waiting)); waiting_gate[0]["state"].update({"responsibility_assessment":{"owner":"HUMAN"},"human_boundary_assessment":{"real_human_action_is_next":True,"next_human_gate":"APPROVE"}})
+    rejects("waiting-and-genuine-human-gate-conflict-fails-closed",lambda: hap.build_projection(source_revision=source,owner_snapshots=waiting_gate))
     pmiss=hap.build_projection(source_revision=source,owner_snapshots=snaps[:1],required_refs=["WORK_CLAIMS:838","MISSING"])
     check("missing-owner-input-is-unknown",pmiss["currentness"]=="UNKNOWN" and "MISSING_OWNER_INPUT:MISSING" in pmiss["unknowns"])
     stale=[dict(snaps[0],currentness="STALE"),snaps[1]]
@@ -90,6 +124,7 @@ def run_all():
     schema=json.loads(SCHEMA.read_text(encoding="utf-8"))
     check("typed-schema-identity",schema["properties"]["schema"]["const"]=="cerebro-human-admin-projection/v1")
     check("typed-room-identity-schema-consumed",schema["properties"]["room_identity"]["properties"]["membership_semantics"]["const"]=="MEMBERSHIP_ONLY" and "room_identity" in schema["required"])
+    check("typed-human-label-waiting-schema-consumed","human_label" in schema["required"] and "waiting_input" in schema["required"] and schema["properties"]["hmi"]["properties"]["waiting_default_max_lines"]["const"]==3)
     current_hmi_fingerprint=hmi_kernel_fingerprint()
     check("hmi-birth-kernel-fingerprint-readback-changed",current_hmi_fingerprint!=PRE_ROOM_COLOR_HMI_KERNEL_FINGERPRINT)
     with tempfile.TemporaryDirectory() as td:

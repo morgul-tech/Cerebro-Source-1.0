@@ -10,6 +10,10 @@ ROOM_PALETTE=(("🔵","BLUE"),("🟢","GREEN"),("🟣","PURPLE"),("🟠","ORANGE
 ROOM_NAME_MAX_LENGTH=48
 _HEX40=re.compile(r"^[0-9a-f]{40}$")
 _WS=re.compile(r"\s+")
+_OPAQUE_WORK_REF=re.compile(
+    r"(?i)(?:\bWORK_(?:CLAIMS?|PACKETS?):\d+\b|\bP\d{3,}(?:[-_][A-Z0-9]+)*\b|"
+    r"\b(?:CLAIM|PACKET)[-:#\s]*\d+\b|\bPM-[A-Z0-9-]*P\d+[A-Z0-9-]*\b)"
+)
 
 class HumanAdminProjectionError(ValueError): pass
 
@@ -38,6 +42,78 @@ def _list_text(value:Any,name:str)->list[str]:
     if not isinstance(value,list) or not all(isinstance(x,str) for x in value):
         raise HumanAdminProjectionError(f"{name}:string-array-required")
     return [x.strip() for x in value if x.strip()]
+
+def _semantic_label(value:Any,name:str)->str:
+    value=_text(value,name)
+    words=value.split()
+    if not 1<=len(words)<=3 or _OPAQUE_WORK_REF.search(value):
+        raise HumanAdminProjectionError(f"{name}:semantic-label-1-to-3-words-required")
+    if any(not any(ch.isalpha() for ch in word) or any(not (ch.isalpha() or ch in "-&") for ch in word) for word in words):
+        raise HumanAdminProjectionError(f"{name}:semantic-label-1-to-3-words-required")
+    return value
+
+def _human_label(objects:Sequence[Mapping[str,Any]])->str:
+    labels=[]
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        if "human_label" in state:
+            labels.append(_semantic_label(state.get("human_label"),"state.human_label"))
+    labels=sorted(set(labels))
+    if len(labels)==1: return labels[0]
+    if len(labels)>1:
+        raise HumanAdminProjectionError("human-label:missing-or-ambiguous")
+    legacy=[]
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        value=state.get("human_cognitive_location")
+        if not isinstance(value,str) or not value.strip(): continue
+        try: legacy.append(_semantic_label(value,"state.human_cognitive_location"))
+        except HumanAdminProjectionError: continue
+    legacy=sorted(set(legacy))
+    if len(legacy)!=1: raise HumanAdminProjectionError("human-label:missing-or-ambiguous")
+    return legacy[0]
+
+def _waiting_flag(value:Any)->bool:
+    if isinstance(value,bool): return value
+    if isinstance(value,str):
+        normalized=value.strip().upper()
+        if normalized in {"WAITING","WAITING_INPUT","VENTER","TRUE"}: return True
+        if normalized in {"NONE","FALSE","ACTIVE",""}: return False
+    if isinstance(value,Mapping) and isinstance(value.get("active"),bool): return bool(value.get("active"))
+    raise HumanAdminProjectionError("state.waiting_input:boolean-or-waiting-state-required")
+
+def _human_dependency(value:Any,name:str)->str:
+    value=_text(value,name)
+    if "\n" in value or "\r" in value or _OPAQUE_WORK_REF.search(value):
+        raise HumanAdminProjectionError(f"{name}:human-readable-text-required")
+    return value
+
+def _waiting_input(objects:Sequence[Mapping[str,Any]])->dict[str,Any]:
+    waiting=[]
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        if "waiting_input" in state and _waiting_flag(state.get("waiting_input")):
+            waiting.append(state)
+    if not waiting:
+        return {"active":False,"next_owner_label":None,"dependency_labels":[],"human_action_required":False}
+    owners=sorted({_semantic_label(state.get("next_owner_label"),"state.next_owner_label") for state in waiting})
+    if len(owners)!=1: raise HumanAdminProjectionError("waiting-input:next-owner-missing-or-ambiguous")
+    dependencies=[]
+    for state in waiting:
+        raw=state.get("dependency_labels")
+        values=[raw] if isinstance(raw,str) else raw
+        if not isinstance(values,list) or not values:
+            raise HumanAdminProjectionError("waiting-input:dependency-labels-required")
+        dependencies.extend(_human_dependency(value,"state.dependency_labels") for value in values)
+    dependencies=sorted(set(dependencies))
+    if not dependencies: raise HumanAdminProjectionError("waiting-input:dependency-labels-required")
+    return {"active":True,"next_owner_label":owners[0],"dependency_labels":dependencies,"human_action_required":False}
+
+def _public_text(value:Any)->str:
+    return _WS.sub(" ",_OPAQUE_WORK_REF.sub("INTERNAL",str(value))).strip()
 
 def normalize_snapshot(raw:Mapping[str,Any])->dict[str,Any]:
     if not isinstance(raw,Mapping): raise HumanAdminProjectionError("snapshot:object-required")
@@ -169,7 +245,9 @@ def _typed_hmi_signals(objects:Sequence[Mapping[str,Any]])->dict[str,dict[str,An
         "hmi":{"surface_first":True,"machine_route_before_human_relay":True,"ha_expansion":"HUMAN_ADMIN",
                "actor_identity_mutation_allowed":False,"carrier_change_identity_effect":"NONE",
                "room_header_at_absolute_top":True,"room_color_membership_only":True,
-               "derived_room_color_persisted":False},
+               "derived_room_color_persisted":False,"human_label_primary":True,
+               "opaque_ids_brief_standard":"HIDDEN","waiting_default_max_lines":3,
+               "waiting_is_human_pulse":False},
     }
 
 def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,Any]],required_refs:Sequence[str]=(),projection_ref:str="human-admin/current",projection_revision:int=0)->dict[str,Any]:
@@ -191,6 +269,8 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
     active_work=sorted({x["canonical_ref"] for x in objects if str((x.get("state") or {}).get("status","")).upper().startswith("ACTIVE") or x["object_type"] in {"ACTIVE_WORK","WORK_PACKET_ACTIVE"}})
     human_gate=_unique_state_text(objects,("next_human_gate","human_action","human_gate"),default="UNKNOWN" if missing else "NONE")
     room_identity=_room_identity(objects)
+    human_label=_human_label(objects)
+    waiting_input=_waiting_input(objects)
     typed_signals=_typed_hmi_signals(objects)
     boundary=typed_signals["human_boundary_assessment"]
     responsibility=typed_signals["responsibility_assessment"]
@@ -198,6 +278,8 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
         human_gate=str(boundary.get("next_human_gate") or boundary.get("human_action") or (human_gate if human_gate not in {"NONE","UNKNOWN"} else "REAL_HUMAN_ACTION_REQUIRED"))
     elif str(responsibility.get("owner","")).upper() in {"MACHINE","CEREBRO","IMPLEMENTER"}:
         human_gate="NONE"
+    if waiting_input["active"] and human_gate!="NONE":
+        raise HumanAdminProjectionError("waiting-input:human-action-conflict")
     where_were=_unique_state_text(objects,("where_we_were",),default="UNKNOWN")
     where_are=_unique_state_text(objects,("where_we_are","current_state"),default=current_objective)
     where_going=_unique_state_text(objects,("where_we_are_going","next_horizon"),default="UNKNOWN")
@@ -209,7 +291,8 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
         "basis_set":basis,"coverage":{"required":required,"observed":observed,"missing":missing},"unknowns":unknowns,
         "orientation":{"where_we_were":where_were,"where_we_are":where_are,"where_we_are_going":where_going},
         "current_objective":current_objective,"return_points":return_points,"human_cognitive_location":human_location,
-        "blockers":blockers,"next_human_gate":human_gate,"active_work":active_work,"room_identity":room_identity,
+        "blockers":blockers,"next_human_gate":human_gate,"active_work":active_work,"human_label":human_label,
+        "waiting_input":waiting_input,"room_identity":room_identity,
         "role_assessment":typed_signals["role_assessment"],"responsibility_assessment":typed_signals["responsibility_assessment"],
         "human_boundary_assessment":typed_signals["human_boundary_assessment"],"presentation_request":typed_signals["presentation_request"],
         "hmi":typed_signals["hmi"],"objects":objects,"evidence_refs":evidence_refs,
@@ -226,8 +309,15 @@ def validate_projection(value:Mapping[str,Any])->dict[str,Any]:
     if supplied!=fingerprint(body): raise HumanAdminProjectionError("projection:fingerprint-mismatch")
     if value.get("currentness") not in CURRENTNESS: raise HumanAdminProjectionError("projection:currentness-invalid")
     hmi=value.get("hmi") or {}
-    if hmi.get("surface_first") is not True or hmi.get("machine_route_before_human_relay") is not True or hmi.get("ha_expansion")!="HUMAN_ADMIN" or hmi.get("actor_identity_mutation_allowed") is not False or hmi.get("room_header_at_absolute_top") is not True or hmi.get("room_color_membership_only") is not True or hmi.get("derived_room_color_persisted") is not False:
+    if hmi.get("surface_first") is not True or hmi.get("machine_route_before_human_relay") is not True or hmi.get("ha_expansion")!="HUMAN_ADMIN" or hmi.get("actor_identity_mutation_allowed") is not False or hmi.get("room_header_at_absolute_top") is not True or hmi.get("room_color_membership_only") is not True or hmi.get("derived_room_color_persisted") is not False or hmi.get("human_label_primary") is not True or hmi.get("opaque_ids_brief_standard")!="HIDDEN" or hmi.get("waiting_default_max_lines")!=3 or hmi.get("waiting_is_human_pulse") is not False:
         raise HumanAdminProjectionError("projection:hmi-boundary-invalid")
+    if value.get("human_label")!=_human_label(value.get("objects") or []):
+        raise HumanAdminProjectionError("projection:human-label-invalid")
+    waiting_input=value.get("waiting_input")
+    if waiting_input!=_waiting_input(value.get("objects") or []):
+        raise HumanAdminProjectionError("projection:waiting-input-invalid")
+    if waiting_input.get("active") is True and value.get("next_human_gate")!="NONE":
+        raise HumanAdminProjectionError("projection:waiting-input-human-action-conflict")
     room_identity=value.get("room_identity")
     if room_identity!=_room_identity(value.get("objects") or []):
         raise HumanAdminProjectionError("projection:room-identity-invalid")
@@ -248,14 +338,26 @@ def render_status(projection:Mapping[str,Any],depth:str="standard",scope:str|Non
     if depth not in {"brief","standard","deep"}: raise HumanAdminProjectionError("status:depth-invalid")
     prefix=f"[{projection['currentness']}] "
     room=_render_room_identity(projection["room_identity"])
+    waiting=projection["waiting_input"]
+    if waiting["active"]:
+        first=(room["header"]+" · " if room["active"] else "")+"VENTER"
+        lines=[first,"Neste eier: "+waiting["next_owner_label"],
+               "Jeg starter når: "+", ".join(waiting["dependency_labels"])]
+        if depth=="deep":
+            if scope: lines.append("SCOPE: "+_text(scope,"scope"))
+            lines += ["AKTIVT: "+(", ".join(projection["active_work"]) if projection["active_work"] else "NONE"),
+                      "COVERAGE: "+f"{len(projection['coverage']['observed'])}/{len(projection['coverage']['required'])}",
+                      "BASIS: "+(", ".join(x["object_ref"] for x in projection["basis_set"]) if projection["basis_set"] else "NONE")]
+        return {"schema":"cerebro-human-admin-status-view/v1","depth":depth,"scope":scope,"room_identity":room,"lines":lines,"text":"\n".join(lines),"projection_fingerprint":projection["projection_fingerprint"]}
     lines=[room["header"]] if room["active"] else []
-    if scope: lines.append("SCOPE: "+_text(scope,"scope"))
-    lines += [prefix+"HER ER VI: "+projection["orientation"]["where_we_are"],"MAL: "+projection["current_objective"]]
+    if scope and depth=="deep": lines.append("SCOPE: "+_text(scope,"scope"))
+    public=(lambda value: str(value) if depth=="deep" else _public_text(value))
+    lines += [prefix+projection["human_label"],"HER ER VI: "+public(projection["orientation"]["where_we_are"]),"MAL: "+public(projection["current_objective"])]
     if depth!="brief":
-        lines += ["VEIEN VIDERE: "+projection["orientation"]["where_we_are_going"],
-                  "BLOKKERE: "+(", ".join(projection["blockers"]) if projection["blockers"] else "NONE"),
+        lines += ["VEIEN VIDERE: "+public(projection["orientation"]["where_we_are_going"]),
+                  "BLOKKERE: "+(", ".join(public(x) for x in projection["blockers"]) if projection["blockers"] else "NONE"),
                   "HUMAN: "+projection["next_human_gate"],
-                  "RETURN: "+(", ".join(projection["return_points"]) if projection["return_points"] else "UNKNOWN")]
+                  "RETURN: "+(", ".join(public(x) for x in projection["return_points"]) if projection["return_points"] else "UNKNOWN")]
     if depth=="deep":
         lines += ["AKTIVT: "+(", ".join(projection["active_work"]) if projection["active_work"] else "NONE"),
                   "COVERAGE: "+f"{len(projection['coverage']['observed'])}/{len(projection['coverage']['required'])}",
