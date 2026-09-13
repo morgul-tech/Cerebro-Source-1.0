@@ -300,27 +300,75 @@ def validate_hmi_boundary_resolution(candidate: dict[str, Any]) -> dict[str, Any
     role=candidate["role_assessment"]
     responsibility=candidate["responsibility_assessment"]
     boundary=candidate["human_boundary_assessment"]
+    presentation=candidate["presentation_request"]
     role_name=str(role.get("role") or "").strip().upper()
     owner=str(responsibility.get("owner") or "").strip().upper()
+    action_kind=str(responsibility.get("action_kind") or "").strip().upper()
+    boundary_kind=str(boundary.get("boundary_kind") or "").strip().upper()
+    governing_gate=boundary.get("governing_human_gate_is_next") is True
     real_human=boundary.get("real_human_action_is_next") is True
+    governance_effect=str(boundary.get("governance_effect") or "").strip().upper()
     machine_route=candidate.get("machine_route_available") is True
     human_relay=candidate.get("human_relay_requested") is True
+    allowed_semantics = {
+        "MACHINE_CONTINUATION": ("MACHINE_CONTINUATION", False, False, "NONE"),
+        "FOREGROUND_TRANSPORT": ("FOREGROUND_TRANSPORT", True, False, "NONE"),
+        "GOVERNING_HUMAN_GATE": ("GOVERNING_CONSENT", True, True, "APPROVAL_OR_CONSENT"),
+    }
+    if boundary_kind not in allowed_semantics:
+        raise ContinuationSurfaceError("hmi-boundary-kind-required")
+    expected_action, expected_real_human, expected_governing, expected_effect = allowed_semantics[boundary_kind]
+    if (action_kind, real_human, governing_gate, governance_effect) != (
+        expected_action, expected_real_human, expected_governing, expected_effect
+    ):
+        raise ContinuationSurfaceError("hmi-boundary-action-semantics-mismatch")
     if role_name=="HA" and any(key in role for key in ("actor_id","generation_id","identity_fingerprint")):
         raise ContinuationSurfaceError("HA-presentation-shorthand-cannot-carry-actor-identity")
     if candidate.get("actor_identity_mutation_requested") is True:
         raise ContinuationSurfaceError("hmi-actor-identity-mutation-prohibited")
-    if machine_route and not real_human and human_relay:
+    if machine_route and boundary_kind != "GOVERNING_HUMAN_GATE" and human_relay:
         raise ContinuationSurfaceError("machine-route-required-before-human-relay")
     gate=str(boundary.get("next_human_gate") or "").strip()
-    if real_human and not gate:
-        raise ContinuationSurfaceError("genuine-human-gate-must-remain-visible")
-    if owner in {"MACHINE","CEREBRO","IMPLEMENTER"} and not real_human and gate.upper() not in {"","NONE"}:
+    gate_present=gate.upper() not in {"","NONE"}
+    terminal_textbox=False
+    if boundary_kind == "GOVERNING_HUMAN_GATE":
+        if owner != "HUMAN" or not gate_present:
+            raise ContinuationSurfaceError("genuine-human-gate-must-remain-visible")
+        if presentation.get("surface_kind") != "TERMINAL_COPYABLE_TEXTBOX":
+            raise ContinuationSurfaceError("governing-human-gate-terminal-textbox-required")
+        if presentation.get("gate_source") != "human_boundary_assessment.next_human_gate":
+            raise ContinuationSurfaceError("governing-human-gate-current-source-required")
+        response_text=presentation.get("response_text")
+        if not isinstance(response_text,str) or not response_text.strip():
+            raise ContinuationSurfaceError("governing-human-gate-response-text-required")
+        stripped, visible_gate=_terminal_code_block(response_text)
+        if stripped.count("```") != 2:
+            raise ContinuationSurfaceError("exactly-one-governing-human-gate-textbox-required")
+        if visible_gate != gate or stripped.count(gate) != 1:
+            raise ContinuationSurfaceError("governing-human-gate-must-match-current-next-human-gate")
+        terminal_textbox=True
+    elif gate_present:
+        if boundary_kind == "FOREGROUND_TRANSPORT":
+            raise ContinuationSurfaceError("foreground-transport-cannot-be-approval-gate")
         raise ContinuationSurfaceError("machine-owned-next-cannot-be-presented-as-human-duty")
+    if boundary_kind == "FOREGROUND_TRANSPORT":
+        if owner != "HUMAN" or presentation.get("surface_kind") != "FOREGROUND_TRANSPORT_INSTRUCTION":
+            raise ContinuationSurfaceError("foreground-transport-semantics-required")
+    if boundary_kind == "MACHINE_CONTINUATION":
+        if owner not in {"MACHINE","CEREBRO","IMPLEMENTER"} or presentation.get("surface_kind") != "NO_HUMAN_SURFACE":
+            raise ContinuationSurfaceError("machine-continuation-semantics-required")
     return {
         "schema":"cerebro-hmi-boundary-resolution-validation/v1","result":"PASS",
         "surface_first":True,"typed_signals_consumed":True,
-        "machine_route_before_human_relay":machine_route and not real_human,
-        "genuine_human_gate_visible":real_human and bool(gate),
+        "boundary_kind":boundary_kind,
+        "action_kind":action_kind,
+        "machine_route_before_human_relay":machine_route and boundary_kind == "MACHINE_CONTINUATION",
+        "genuine_human_gate_visible":governing_gate and gate_present and terminal_textbox,
+        "governing_human_gate_terminal_textbox":terminal_textbox,
+        "governing_human_gate_textbox_count":1 if terminal_textbox else 0,
+        "gate_source_is_current_next_human_gate":terminal_textbox,
+        "absolute_response_end":terminal_textbox,
+        "foreground_transport_not_governing":boundary_kind == "FOREGROUND_TRANSPORT" and not governing_gate,
         "ha_expansion":"HUMAN_ADMIN" if role_name=="HA" else None,
         "ha_presentation_shorthand_only":role_name=="HA",
         "actor_identity_mutation_allowed":False,
@@ -426,20 +474,36 @@ def selftest() -> dict[str, Any]:
     hmi_machine = {
         "schema": HMI_BOUNDARY_SCHEMA, "surface_first": True,
         "role_assessment": {"role":"HA"},
-        "responsibility_assessment": {"owner":"MACHINE"},
-        "human_boundary_assessment": {"real_human_action_is_next":False,"next_human_gate":"NONE"},
-        "presentation_request": {"dialect":"IMPLEMENTER"},
+        "responsibility_assessment": {"owner":"MACHINE","action_kind":"MACHINE_CONTINUATION"},
+        "human_boundary_assessment": {"boundary_kind":"MACHINE_CONTINUATION","real_human_action_is_next":False,"governing_human_gate_is_next":False,"governance_effect":"NONE","next_human_gate":"NONE"},
+        "presentation_request": {"dialect":"IMPLEMENTER","surface_kind":"NO_HUMAN_SURFACE"},
         "machine_route_available": True, "human_relay_requested": False,
         "actor_identity_mutation_requested": False, "carrier_changed": True,
     }
     hmi_machine_result=validate_hmi_boundary_resolution(hmi_machine)
     hmi_human=json.loads(json.dumps(hmi_machine))
-    hmi_human["responsibility_assessment"]={"owner":"HUMAN"}
-    hmi_human["human_boundary_assessment"]={"real_human_action_is_next":True,"next_human_gate":"APPROVE_RELEASE"}
+    hmi_human["responsibility_assessment"]={"owner":"HUMAN","action_kind":"GOVERNING_CONSENT"}
+    hmi_human["human_boundary_assessment"]={"boundary_kind":"GOVERNING_HUMAN_GATE","real_human_action_is_next":True,"governing_human_gate_is_next":True,"governance_effect":"APPROVAL_OR_CONSENT","next_human_gate":"GODKJENN CANARY V2"}
+    hmi_human["presentation_request"]={"dialect":"IMPLEMENTER","surface_kind":"TERMINAL_COPYABLE_TEXTBOX","gate_source":"human_boundary_assessment.next_human_gate","response_text":"Godkjenning kreves.\n\n```text\nGODKJENN CANARY V2\n```"}
     hmi_human_result=validate_hmi_boundary_resolution(hmi_human)
+    hmi_dynamic_gate=json.loads(json.dumps(hmi_human))
+    hmi_dynamic_gate["human_boundary_assessment"]["next_human_gate"]="GODKJENN CANARY V3"
+    hmi_dynamic_gate["presentation_request"]["response_text"]="Godkjenning kreves.\n\n```text\nGODKJENN CANARY V3\n```"
+    hmi_dynamic_gate_result=validate_hmi_boundary_resolution(hmi_dynamic_gate)
+    hmi_foreground=json.loads(json.dumps(hmi_human))
+    hmi_foreground["responsibility_assessment"]={"owner":"HUMAN","action_kind":"FOREGROUND_TRANSPORT"}
+    hmi_foreground["human_boundary_assessment"]={"boundary_kind":"FOREGROUND_TRANSPORT","real_human_action_is_next":True,"governing_human_gate_is_next":False,"governance_effect":"NONE","next_human_gate":"NONE"}
+    hmi_foreground["presentation_request"]={"dialect":"IMPLEMENTER","surface_kind":"FOREGROUND_TRANSPORT_INSTRUCTION"}
+    hmi_foreground["machine_route_available"]=False
+    hmi_foreground["human_relay_requested"]=True
+    hmi_foreground_result=validate_hmi_boundary_resolution(hmi_foreground)
     hmi_manual_actor=json.loads(json.dumps(hmi_machine)); hmi_manual_actor["role_assessment"]["actor_id"]="MANUAL"
     hmi_relay=json.loads(json.dumps(hmi_machine)); hmi_relay["human_relay_requested"]=True
     hmi_hidden_gate=json.loads(json.dumps(hmi_human)); hmi_hidden_gate["human_boundary_assessment"].pop("next_human_gate")
+    hmi_prose_only=json.loads(json.dumps(hmi_human)); hmi_prose_only["presentation_request"]["response_text"]="GODKJENN CANARY V2"
+    hmi_content_after=json.loads(json.dumps(hmi_human)); hmi_content_after["presentation_request"]["response_text"] += "\nIkke-terminalt innhold"
+    hmi_multiple_textboxes=json.loads(json.dumps(hmi_human)); hmi_multiple_textboxes["presentation_request"]["response_text"]="```text\nIKKE EN PORT\n```\n\n" + hmi_multiple_textboxes["presentation_request"]["response_text"]
+    hmi_foreground_approval=json.loads(json.dumps(hmi_foreground)); hmi_foreground_approval["human_boundary_assessment"]["next_human_gate"]="GODKJENN CANARY V2"
     hmi_identity_mutation=json.loads(json.dumps(hmi_machine)); hmi_identity_mutation["actor_identity_mutation_requested"]=True
 
     policy_text = (Path(__file__).resolve().parents[2] / "standards/continuation-surface-system-policy.yaml").read_text(encoding="utf-8")
@@ -473,9 +537,16 @@ def selftest() -> dict[str, Any]:
         "non_implementer_workmode_rejected": _must_reject("non-implementer-workmode", validate_action_owner_resolution, worker_work_mode),
         "typed_hmi_machine_route_accepted": hmi_machine_result.get("machine_route_before_human_relay") is True,
         "typed_hmi_genuine_human_gate_accepted": hmi_human_result.get("genuine_human_gate_visible") is True,
+        "governing_gate_GODKJENN_CANARY_V2_terminal_textbox_accepted": hmi_human_result.get("governing_human_gate_terminal_textbox") is True,
+        "dynamic_gate_command_without_source_mutation_accepted": hmi_dynamic_gate_result.get("gate_source_is_current_next_human_gate") is True,
+        "foreground_transport_not_approval_gate_accepted": hmi_foreground_result.get("foreground_transport_not_governing") is True,
         "HA_manual_actor_identity_rejected": _must_reject("HA-manual-actor",validate_hmi_boundary_resolution,hmi_manual_actor),
         "machine_route_human_relay_rejected": _must_reject("machine-route-human-relay",validate_hmi_boundary_resolution,hmi_relay),
         "hidden_genuine_human_gate_rejected": _must_reject("hidden-genuine-human-gate",validate_hmi_boundary_resolution,hmi_hidden_gate),
+        "prose_only_governing_gate_rejected": _must_reject("prose-only-governing-gate",validate_hmi_boundary_resolution,hmi_prose_only),
+        "content_after_governing_gate_rejected": _must_reject("content-after-governing-gate",validate_hmi_boundary_resolution,hmi_content_after),
+        "multiple_governing_gate_textboxes_rejected": _must_reject("multiple-governing-gate-textboxes",validate_hmi_boundary_resolution,hmi_multiple_textboxes),
+        "foreground_transport_approval_gate_rejected": _must_reject("foreground-transport-approval-gate",validate_hmi_boundary_resolution,hmi_foreground_approval),
         "carrier_identity_mutation_rejected": _must_reject("carrier-identity-mutation",validate_hmi_boundary_resolution,hmi_identity_mutation),
     }
 

@@ -881,3 +881,33 @@ rules:
   validation: error
   provenance: {type: P16_WAVE1_MODIFY13_NEW0, source: WORK_PACKETS:649}
 # END P16-WAVE1-TYPED-HMI-BOUNDARY-001
+
+# BEGIN P18-HUMAN-GATE-HMI-SOURCE-HARDENING-P750-001
+- id: PRE-P18-HUMAN-GATE-HMI-P750-001
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {typed_HMI_boundary_candidate: true}
+  action:
+    classify_boundary_as_exactly_one_of:
+    - MACHINE_CONTINUATION
+    - FOREGROUND_TRANSPORT
+    - GOVERNING_HUMAN_GATE
+    route_machine_action_before_Human_wake: true
+    FOREGROUND_TRANSPORT:
+      approval_or_consent_effect: NONE
+      governing_Human_gate_surface: prohibited
+    GOVERNING_HUMAN_GATE:
+      source: human_boundary_assessment.next_human_gate
+      source_value: CURRENT_DYNAMIC_VALUE
+      render_as: TERMINAL_COPYABLE_TEXTBOX
+      textbox_count: 1
+      position: absolute-response-end
+      prohibit_content_after: true
+      hidden_or_prose_only_surface: prohibited
+  statement: En ekte styrende Human-port SKAL gjengis som nøyaktig én kopierbar terminal tekstboks hentet dynamisk fra gjeldende next_human_gate, uten innhold etter boksen; foreground- eller browser-transport er aldri i seg selv godkjenning eller samtykke.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: P18_HUMAN_GATE_HMI_SOURCE_HARDENING, source: WORK_PACKETS:750}
+# END P18-HUMAN-GATE-HMI-SOURCE-HARDENING-P750-001

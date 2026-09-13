@@ -1491,6 +1491,11 @@ continuation_presentation_regression_validation:
     - genuine-Human-gates-remain-visible
     - HA-is-HUMAN_ADMIN-presentation-shorthand-only
     - carrier-change-does-not-create-or-mutate-actor-identity
+    - typed-HMI-boundary-distinguishes-machine-foreground-transport-and-governing-Human-gate
+    - governing-Human-gate-is-one-terminal-copyable-textbox-from-current-next-human_gate
+    - governing-Human-gate-surface-has-no-content-after-it
+    - foreground-or-browser-transport-has-no-approval-or-consent-effect
+    - machine-route-is-consumed-before-non-governing-Human-wake
   required_canaries:
     - question-during-active-sequence-keeps-next-step-surface
     - observation-during-active-sequence-keeps-next-step-surface
@@ -1510,6 +1515,12 @@ continuation_presentation_regression_validation:
     - machine-route-Human-relay-is-rejected
     - hidden-genuine-Human-gate-is-rejected
     - carrier-identity-mutation-is-rejected
+    - GODKJENN-CANARY-V2-is-accepted-only-as-terminal-copyable-textbox
+    - governing-gate-hidden-or-prose-only-is-rejected
+    - FOREGROUND_TRANSPORT-is-accepted-as-non-governing
+    - dynamic-next_human_gate-change-requires-no-Source-mutation
+    - content-after-governing-gate-is-rejected
+    - multiple-governing-gate-textboxes-are-rejected
   prohibited:
     - implicit-sequence-termination-from-question-observation-critique-or-learning
     - silent-active-continuation-drop
@@ -1522,6 +1533,9 @@ continuation_presentation_regression_validation:
     - manual-actor-id-required-for-normal-HMI
     - machine-owned-next-presented-as-Human-duty
     - genuine-Human-gate-suppressed
+    - foreground-or-browser-transport-misclassified-as-approval-or-consent
+    - hardcoded-governing-Human-gate-command
+    - governing-Human-gate-rendered-hidden-prose-only-or-nonterminal
 # END CLOSURE-PRESENTATION-CONTINUITY-001
 
 standard_manifest_assertion_encoding_regression:

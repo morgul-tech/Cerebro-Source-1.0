@@ -282,6 +282,30 @@ human_continuation_surface:
       - presentation_request
     machine_route_before_Human_relay: REQUIRED
     genuine_Human_gate_visibility: REQUIRED
+    boundary_kinds:
+      - MACHINE_CONTINUATION
+      - FOREGROUND_TRANSPORT
+      - GOVERNING_HUMAN_GATE
+    action_semantics:
+      MACHINE_CONTINUATION:
+        governance_effect: NONE
+        Human_surface: PROHIBITED
+      FOREGROUND_TRANSPORT:
+        governance_effect: NONE
+        approval_or_consent_semantics: PROHIBITED
+        governing_Human_gate_surface: PROHIBITED
+      GOVERNING_HUMAN_GATE:
+        action_kind: GOVERNING_CONSENT
+        governance_effect: APPROVAL_OR_CONSENT
+        next_human_gate_source: human_boundary_assessment.next_human_gate
+        next_human_gate_value: CURRENT_DYNAMIC_VALUE
+        surface_kind: TERMINAL_COPYABLE_TEXTBOX
+        surface_count: 1
+        position: ABSOLUTE_RESPONSE_END
+        content_after_surface: PROHIBITED
+    route_before_wake:
+      machine_route_available_and_non_governing: HUMAN_RELAY_PROHIBITED
+      foreground_or_browser_transport_is_not_governing_consent: true
     HA_semantics:
       expansion: HUMAN_ADMIN
       scope: PRESENTATION_SHORTHAND_ONLY
