@@ -18,6 +18,7 @@ ACTIVATION_SCHEMA = "cerebro-human-continuation-activation-proof/v1"
 REGISTRY_SCHEMA = "cerebro-human-continuation-binding-registry/v1"
 ACTION_OWNER_SCHEMA = "cerebro-action-owner-resolution/v1"
 HMI_BOUNDARY_SCHEMA = "cerebro-hmi-boundary-resolution/v1"
+ATTENTION_OBJECT_SCHEMA = "cerebro-hmi-attention-object/v1"
 BINDING_ID = "HUMAN_CONTINUATION_SURFACE_ENFORCEMENT"
 ROADMAP_RECEIPT_SCHEMA = "cerebro-project-terminal-roadmap-projection-receipt/v1"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -61,6 +62,27 @@ MACHINE_PAYLOAD_PATTERNS = (
     re.compile(r"https?://", re.IGNORECASE),
     re.compile(r"\b[0-9a-f]{40}(?:[0-9a-f]{24})?\b", re.IGNORECASE),
 )
+ATTENTION_MATERIAL_FIELDS = (
+    "authority_or_consent",
+    "irreversible_or_external_effect",
+    "material_scope",
+    "tradeoff_or_branch",
+    "safety_privacy_or_legal",
+    "material_premise",
+    "final_governing_promotion",
+)
+ATTENTION_LIFECYCLES = {"OPEN", "PRESENTED", "ANSWERED", "SUPERSEDED"}
+ATTENTION_MACHINE_LOCAL_STEPS = {
+    "REFINE",
+    "PROMOTE_INTERMEDIATE",
+    "CROSSREAD",
+    "VALIDATE",
+}
+ATTENTION_CONTINUATION_STEPS = ATTENTION_MACHINE_LOCAL_STEPS | {
+    "GOVERNING_GATE",
+    "SAME_STATE_REVISION",
+}
+ATTENTION_INVALID_MATERIAL_TOKENS = {"", "UNKNOWN", "STALE", "UNRESOLVED", "N/A"}
 
 
 class ContinuationSurfaceError(ValueError):
@@ -77,6 +99,155 @@ def _read_json(path: Path) -> dict[str, Any]:
 def _write_json(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def attention_material_fingerprint(material_state: dict[str, Any]) -> str:
+    if not isinstance(material_state, dict):
+        raise ContinuationSurfaceError("attention-material-state-required")
+    if set(material_state) != set(ATTENTION_MATERIAL_FIELDS):
+        raise ContinuationSurfaceError("attention-material-state-fields-mismatch")
+    normalized: dict[str, str] = {}
+    for field in ATTENTION_MATERIAL_FIELDS:
+        value = material_state.get(field)
+        if not isinstance(value, str):
+            raise ContinuationSurfaceError(f"attention-material-{field.replace('_', '-')}-string-required")
+        value = value.strip()
+        if value.upper() in ATTENTION_INVALID_MATERIAL_TOKENS:
+            raise ContinuationSurfaceError(f"attention-material-{field.replace('_', '-')}-unknown-or-stale")
+        normalized[field] = value
+    payload = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _attention_object_id(material_fingerprint: str) -> str:
+    return f"ATTENTION-{material_fingerprint[:20].upper()}"
+
+
+def _validate_attention_object(value: Any, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ContinuationSurfaceError(f"attention-{label}-object-required")
+    if value.get("schema") != ATTENTION_OBJECT_SCHEMA:
+        raise ContinuationSurfaceError(f"attention-{label}-schema-mismatch")
+    if value.get("provider_ownership") != "CURRENT":
+        raise ContinuationSurfaceError(f"attention-{label}-provider-current-ownership-required")
+    lifecycle = str(value.get("lifecycle") or "").strip().upper()
+    if lifecycle not in ATTENTION_LIFECYCLES:
+        raise ContinuationSurfaceError(f"attention-{label}-lifecycle-unknown-or-stale")
+    fingerprint = str(value.get("material_state_fingerprint") or "").strip().lower()
+    recomputed = attention_material_fingerprint(value.get("material_state"))
+    if not SHA256_RE.fullmatch(fingerprint) or fingerprint != recomputed:
+        raise ContinuationSurfaceError(f"attention-{label}-material-fingerprint-mismatch")
+    if value.get("attention_object_id") != _attention_object_id(recomputed):
+        raise ContinuationSurfaceError(f"attention-{label}-object-id-mismatch")
+    interrupt_count = value.get("interrupt_count")
+    if isinstance(interrupt_count, bool) or not isinstance(interrupt_count, int) or interrupt_count not in {0, 1}:
+        raise ContinuationSurfaceError(f"attention-{label}-interrupt-count-invalid")
+    if lifecycle == "OPEN" and interrupt_count != 0:
+        raise ContinuationSurfaceError(f"attention-{label}-open-cannot-have-interrupt")
+    if lifecycle in {"PRESENTED", "ANSWERED"} and interrupt_count != 1:
+        raise ContinuationSurfaceError(f"attention-{label}-{lifecycle.lower()}-requires-one-interrupt")
+    display_context = value.get("display_context", {})
+    if not isinstance(display_context, dict):
+        raise ContinuationSurfaceError(f"attention-{label}-display-context-must-be-object")
+    return {
+        "object": value,
+        "lifecycle": lifecycle,
+        "fingerprint": recomputed,
+        "material_state": value["material_state"],
+        "interrupt_count": interrupt_count,
+    }
+
+
+def _validate_attention_resolution(
+    value: Any,
+    *,
+    boundary_kind: str,
+    governing_gate: bool,
+) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ContinuationSurfaceError("attention-object-resolution-required")
+    current = _validate_attention_object(value.get("current"), "current")
+    previous_value = value.get("previous")
+    previous = None if previous_value is None else _validate_attention_object(previous_value, "previous")
+    step = str(value.get("continuation_step") or "").strip().upper()
+    if step not in ATTENTION_CONTINUATION_STEPS:
+        raise ContinuationSurfaceError("attention-continuation-step-invalid")
+    supplied_change_classes = value.get("material_change_classes")
+    if not isinstance(supplied_change_classes, list) or not all(isinstance(item, str) for item in supplied_change_classes):
+        raise ContinuationSurfaceError("attention-material-change-classes-required")
+    change_classes = [item.strip().lower() for item in supplied_change_classes]
+    if len(change_classes) != len(set(change_classes)) or any(item not in ATTENTION_MATERIAL_FIELDS for item in change_classes):
+        raise ContinuationSurfaceError("attention-material-change-class-invalid")
+
+    if previous is None:
+        relation = "NEW_MATERIAL_STATE"
+        changed_fields = [
+            field for field in ATTENTION_MATERIAL_FIELDS
+            if str(current["material_state"][field]).strip().upper() != "NONE"
+        ]
+    else:
+        relation = "SAME_MATERIAL_STATE" if current["fingerprint"] == previous["fingerprint"] else "NEW_MATERIAL_STATE"
+        changed_fields = [
+            field for field in ATTENTION_MATERIAL_FIELDS
+            if current["material_state"][field] != previous["material_state"][field]
+        ]
+        if relation == "SAME_MATERIAL_STATE" and current["object"].get("attention_object_id") != previous["object"].get("attention_object_id"):
+            raise ContinuationSurfaceError("attention-same-material-state-object-id-mismatch")
+
+    if sorted(change_classes) != sorted(changed_fields):
+        raise ContinuationSurfaceError("attention-material-change-classes-mismatch")
+    if relation == "SAME_MATERIAL_STATE" and change_classes:
+        raise ContinuationSurfaceError("attention-same-state-cannot-declare-material-change")
+    if relation == "NEW_MATERIAL_STATE" and not change_classes:
+        raise ContinuationSurfaceError("attention-new-state-requires-material-change")
+
+    if step in ATTENTION_MACHINE_LOCAL_STEPS:
+        if previous is None or relation != "SAME_MATERIAL_STATE":
+            raise ContinuationSurfaceError("attention-microiteration-requires-existing-same-material-state")
+        if boundary_kind != "MACHINE_CONTINUATION" or governing_gate:
+            raise ContinuationSurfaceError("attention-microiteration-must-drain-machine-locally")
+        if current["lifecycle"] != previous["lifecycle"] or current["interrupt_count"] != previous["interrupt_count"]:
+            raise ContinuationSurfaceError("attention-microiteration-cannot-change-lifecycle-or-interrupt-count")
+
+    if governing_gate:
+        if step != "GOVERNING_GATE":
+            raise ContinuationSurfaceError("attention-governing-gate-step-required")
+        if current["lifecycle"] != "PRESENTED" or current["interrupt_count"] != 1:
+            raise ContinuationSurfaceError("attention-governing-gate-must-present-exactly-once")
+        if previous is not None and relation == "SAME_MATERIAL_STATE":
+            if previous["lifecycle"] == "ANSWERED":
+                raise ContinuationSurfaceError("attention-answered-same-state-must-carry-forward-without-new-gate")
+            if previous["lifecycle"] == "PRESENTED":
+                raise ContinuationSurfaceError("attention-presented-same-state-cannot-reinterrupt")
+            if previous["lifecycle"] != "OPEN":
+                raise ContinuationSurfaceError("attention-same-state-governing-gate-invalid-predecessor")
+        if previous is not None and relation == "NEW_MATERIAL_STATE" and previous["lifecycle"] != "SUPERSEDED":
+            raise ContinuationSurfaceError("attention-material-change-must-supersede-predecessor")
+    else:
+        if step == "GOVERNING_GATE":
+            raise ContinuationSurfaceError("attention-governing-step-requires-governing-human-gate")
+        if previous is not None and relation == "SAME_MATERIAL_STATE":
+            if previous["lifecycle"] in {"ANSWERED", "PRESENTED"} and current["lifecycle"] != previous["lifecycle"]:
+                raise ContinuationSurfaceError("attention-same-state-carry-forward-lifecycle-mismatch")
+        elif relation == "NEW_MATERIAL_STATE" and current["lifecycle"] != "OPEN":
+            raise ContinuationSurfaceError("attention-new-unpresented-state-must-remain-open")
+
+    return {
+        "attention_object_validated": True,
+        "attention_object_id": current["object"]["attention_object_id"],
+        "material_state_fingerprint": current["fingerprint"],
+        "material_state_relation": relation,
+        "material_change_classes": change_classes,
+        "new_attention_object_count": 1 if relation == "NEW_MATERIAL_STATE" else 0,
+        "same_answered_state_carried_forward": (
+            previous is not None and relation == "SAME_MATERIAL_STATE" and previous["lifecycle"] == "ANSWERED"
+        ),
+        "same_presented_state_reinterrupt_suppressed": (
+            previous is not None and relation == "SAME_MATERIAL_STATE" and previous["lifecycle"] == "PRESENTED"
+        ),
+        "machine_local_microiteration_drained": step in ATTENTION_MACHINE_LOCAL_STEPS,
+        "continuation_step": step,
+    }
 
 
 def _canonical_json(value: dict[str, Any]) -> bytes:
@@ -357,6 +528,22 @@ def validate_hmi_boundary_resolution(candidate: dict[str, Any]) -> dict[str, Any
     if boundary_kind == "MACHINE_CONTINUATION":
         if owner not in {"MACHINE","CEREBRO","IMPLEMENTER"} or presentation.get("surface_kind") != "NO_HUMAN_SURFACE":
             raise ContinuationSurfaceError("machine-continuation-semantics-required")
+    attention_value = candidate.get("attention_object_resolution")
+    if governing_gate and attention_value is None:
+        raise ContinuationSurfaceError("governing-human-gate-attention-object-required")
+    attention_result = {
+        "attention_object_validated": False,
+        "new_attention_object_count": 0,
+        "same_answered_state_carried_forward": False,
+        "same_presented_state_reinterrupt_suppressed": False,
+        "machine_local_microiteration_drained": False,
+    }
+    if attention_value is not None:
+        attention_result = _validate_attention_resolution(
+            attention_value,
+            boundary_kind=boundary_kind,
+            governing_gate=governing_gate,
+        )
     return {
         "schema":"cerebro-hmi-boundary-resolution-validation/v1","result":"PASS",
         "surface_first":True,"typed_signals_consumed":True,
@@ -373,6 +560,7 @@ def validate_hmi_boundary_resolution(candidate: dict[str, Any]) -> dict[str, Any
         "ha_presentation_shorthand_only":role_name=="HA",
         "actor_identity_mutation_allowed":False,
         "carrier_change_identity_effect":"NONE",
+        **attention_result,
     }
 
 
@@ -404,6 +592,33 @@ def _must_reject(label: str, function, value: dict[str, Any]) -> bool:
     except ContinuationSurfaceError:
         return True
     raise ContinuationSurfaceError(f"negative-canary-not-rejected:{label}")
+
+
+def _fixture_attention_material(**overrides: str) -> dict[str, str]:
+    material = {field: "NONE" for field in ATTENTION_MATERIAL_FIELDS}
+    material["authority_or_consent"] = "AUTHORITY-CANARY-V1"
+    material.update(overrides)
+    return material
+
+
+def _fixture_attention_object(
+    material_state: dict[str, str],
+    lifecycle: str,
+    interrupt_count: int,
+    *,
+    display_context: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    fingerprint = attention_material_fingerprint(material_state)
+    return {
+        "schema": ATTENTION_OBJECT_SCHEMA,
+        "provider_ownership": "CURRENT",
+        "attention_object_id": _attention_object_id(fingerprint),
+        "material_state": dict(material_state),
+        "material_state_fingerprint": fingerprint,
+        "lifecycle": lifecycle,
+        "interrupt_count": interrupt_count,
+        "display_context": dict(display_context or {}),
+    }
 
 
 def selftest() -> dict[str, Any]:
@@ -485,10 +700,25 @@ def selftest() -> dict[str, Any]:
     hmi_human["responsibility_assessment"]={"owner":"HUMAN","action_kind":"GOVERNING_CONSENT"}
     hmi_human["human_boundary_assessment"]={"boundary_kind":"GOVERNING_HUMAN_GATE","real_human_action_is_next":True,"governing_human_gate_is_next":True,"governance_effect":"APPROVAL_OR_CONSENT","next_human_gate":"GODKJENN CANARY V2"}
     hmi_human["presentation_request"]={"dialect":"IMPLEMENTER","surface_kind":"TERMINAL_COPYABLE_TEXTBOX","gate_source":"human_boundary_assessment.next_human_gate","response_text":"Godkjenning kreves.\n\n```text\nGODKJENN CANARY V2\n```"}
+    attention_material=_fixture_attention_material()
+    attention_presented=_fixture_attention_object(attention_material,"PRESENTED",1)
+    hmi_human["attention_object_resolution"]={
+        "current":attention_presented,
+        "previous":None,
+        "continuation_step":"GOVERNING_GATE",
+        "material_change_classes":["authority_or_consent"],
+    }
     hmi_human_result=validate_hmi_boundary_resolution(hmi_human)
     hmi_dynamic_gate=json.loads(json.dumps(hmi_human))
     hmi_dynamic_gate["human_boundary_assessment"]["next_human_gate"]="GODKJENN CANARY V3"
     hmi_dynamic_gate["presentation_request"]["response_text"]="Godkjenning kreves.\n\n```text\nGODKJENN CANARY V3\n```"
+    dynamic_material=_fixture_attention_material(authority_or_consent="AUTHORITY-CANARY-V2")
+    hmi_dynamic_gate["attention_object_resolution"]={
+        "current":_fixture_attention_object(dynamic_material,"PRESENTED",1),
+        "previous":None,
+        "continuation_step":"GOVERNING_GATE",
+        "material_change_classes":["authority_or_consent"],
+    }
     hmi_dynamic_gate_result=validate_hmi_boundary_resolution(hmi_dynamic_gate)
     hmi_foreground=json.loads(json.dumps(hmi_human))
     hmi_foreground["responsibility_assessment"]={"owner":"HUMAN","action_kind":"FOREGROUND_TRANSPORT"}
@@ -496,6 +726,7 @@ def selftest() -> dict[str, Any]:
     hmi_foreground["presentation_request"]={"dialect":"IMPLEMENTER","surface_kind":"FOREGROUND_TRANSPORT_INSTRUCTION"}
     hmi_foreground["machine_route_available"]=False
     hmi_foreground["human_relay_requested"]=True
+    hmi_foreground.pop("attention_object_resolution",None)
     hmi_foreground_result=validate_hmi_boundary_resolution(hmi_foreground)
     hmi_manual_actor=json.loads(json.dumps(hmi_machine)); hmi_manual_actor["role_assessment"]["actor_id"]="MANUAL"
     hmi_relay=json.loads(json.dumps(hmi_machine)); hmi_relay["human_relay_requested"]=True
@@ -505,6 +736,74 @@ def selftest() -> dict[str, Any]:
     hmi_multiple_textboxes=json.loads(json.dumps(hmi_human)); hmi_multiple_textboxes["presentation_request"]["response_text"]="```text\nIKKE EN PORT\n```\n\n" + hmi_multiple_textboxes["presentation_request"]["response_text"]
     hmi_foreground_approval=json.loads(json.dumps(hmi_foreground)); hmi_foreground_approval["human_boundary_assessment"]["next_human_gate"]="GODKJENN CANARY V2"
     hmi_identity_mutation=json.loads(json.dumps(hmi_machine)); hmi_identity_mutation["actor_identity_mutation_requested"]=True
+
+    attention_answered_previous=_fixture_attention_object(
+        attention_material,"ANSWERED",1,
+        display_context={"display":"CARD","version":"RC1","status":"WAITING","room":"ROOM-A"},
+    )
+    attention_answered_current=_fixture_attention_object(
+        attention_material,"ANSWERED",1,
+        display_context={"display":"PANEL","version":"RC9","status":"CURRENT","room":"ROOM-Z"},
+    )
+    hmi_answered_carry=json.loads(json.dumps(hmi_machine))
+    hmi_answered_carry["attention_object_resolution"]={
+        "current":attention_answered_current,
+        "previous":attention_answered_previous,
+        "continuation_step":"SAME_STATE_REVISION",
+        "material_change_classes":[],
+    }
+    hmi_answered_carry_result=validate_hmi_boundary_resolution(hmi_answered_carry)
+
+    hmi_answered_regate=json.loads(json.dumps(hmi_human))
+    hmi_answered_regate["attention_object_resolution"]={
+        "current":attention_presented,
+        "previous":attention_answered_previous,
+        "continuation_step":"GOVERNING_GATE",
+        "material_change_classes":[],
+    }
+    hmi_presented_reinterrupt=json.loads(json.dumps(hmi_human))
+    hmi_presented_reinterrupt["attention_object_resolution"]={
+        "current":attention_presented,
+        "previous":attention_presented,
+        "continuation_step":"GOVERNING_GATE",
+        "material_change_classes":[],
+    }
+    hmi_forged_fingerprint=json.loads(json.dumps(hmi_human))
+    hmi_forged_fingerprint["attention_object_resolution"]["current"]["material_state_fingerprint"]="0"*64
+    hmi_unknown_material=json.loads(json.dumps(hmi_human))
+    hmi_unknown_material["attention_object_resolution"]["current"]["material_state"]["material_scope"]="UNKNOWN"
+    hmi_stale_lifecycle=json.loads(json.dumps(hmi_human))
+    hmi_stale_lifecycle["attention_object_resolution"]["current"]["lifecycle"]="STALE"
+
+    microiteration_results: dict[str, dict[str, Any]] = {}
+    for micro_step in sorted(ATTENTION_MACHINE_LOCAL_STEPS):
+        micro_candidate=json.loads(json.dumps(hmi_machine))
+        micro_candidate["attention_object_resolution"]={
+            "current":attention_answered_current,
+            "previous":attention_answered_previous,
+            "continuation_step":micro_step,
+            "material_change_classes":[],
+        }
+        microiteration_results[micro_step]=validate_hmi_boundary_resolution(micro_candidate)
+
+    material_change_results: dict[str, dict[str, Any]] = {}
+    for material_field in ATTENTION_MATERIAL_FIELDS:
+        changed_material=dict(attention_material)
+        changed_material[material_field]=f"{material_field.upper()}-V2"
+        material_candidate=json.loads(json.dumps(hmi_human))
+        material_candidate["attention_object_resolution"]={
+            "current":_fixture_attention_object(changed_material,"PRESENTED",1),
+            "previous":_fixture_attention_object(attention_material,"SUPERSEDED",1),
+            "continuation_step":"GOVERNING_GATE",
+            "material_change_classes":[material_field],
+        }
+        material_change_results[material_field]=validate_hmi_boundary_resolution(material_candidate)
+
+    reversed_attention_material=dict(reversed(list(attention_material.items())))
+    deterministic_attention_fingerprint=(
+        attention_material_fingerprint(attention_material)
+        == attention_material_fingerprint(reversed_attention_material)
+    )
 
     policy_text = (Path(__file__).resolve().parents[2] / "standards/continuation-surface-system-policy.yaml").read_text(encoding="utf-8")
     fixed_point_tokens = (
@@ -540,6 +839,25 @@ def selftest() -> dict[str, Any]:
         "governing_gate_GODKJENN_CANARY_V2_terminal_textbox_accepted": hmi_human_result.get("governing_human_gate_terminal_textbox") is True,
         "dynamic_gate_command_without_source_mutation_accepted": hmi_dynamic_gate_result.get("gate_source_is_current_next_human_gate") is True,
         "foreground_transport_not_approval_gate_accepted": hmi_foreground_result.get("foreground_transport_not_governing") is True,
+        "attention_material_fingerprint_deterministic_accepted": deterministic_attention_fingerprint,
+        "attention_forged_fingerprint_rejected": _must_reject("attention-forged-fingerprint",validate_hmi_boundary_resolution,hmi_forged_fingerprint),
+        "attention_answered_same_state_carry_forward_accepted": hmi_answered_carry_result.get("same_answered_state_carried_forward") is True,
+        "attention_answered_same_state_regate_rejected": _must_reject("attention-answered-same-state-regate",validate_hmi_boundary_resolution,hmi_answered_regate),
+        "attention_presented_same_state_reinterrupt_rejected": _must_reject("attention-presented-same-state-reinterrupt",validate_hmi_boundary_resolution,hmi_presented_reinterrupt),
+        "attention_machine_local_REFINE_accepted": microiteration_results["REFINE"].get("machine_local_microiteration_drained") is True,
+        "attention_machine_local_PROMOTE_INTERMEDIATE_accepted": microiteration_results["PROMOTE_INTERMEDIATE"].get("machine_local_microiteration_drained") is True,
+        "attention_machine_local_CROSSREAD_accepted": microiteration_results["CROSSREAD"].get("machine_local_microiteration_drained") is True,
+        "attention_machine_local_VALIDATE_accepted": microiteration_results["VALIDATE"].get("machine_local_microiteration_drained") is True,
+        "attention_material_change_classes_single_object_accepted": all(
+            result.get("new_attention_object_count") == 1
+            for result in material_change_results.values()
+        ),
+        "attention_nonmaterial_display_version_status_room_reuse_accepted": (
+            hmi_answered_carry_result.get("new_attention_object_count") == 0
+            and hmi_answered_carry_result.get("material_state_relation") == "SAME_MATERIAL_STATE"
+        ),
+        "attention_UNKNOWN_material_state_rejected": _must_reject("attention-unknown-material",validate_hmi_boundary_resolution,hmi_unknown_material),
+        "attention_STALE_lifecycle_rejected": _must_reject("attention-stale-lifecycle",validate_hmi_boundary_resolution,hmi_stale_lifecycle),
         "HA_manual_actor_identity_rejected": _must_reject("HA-manual-actor",validate_hmi_boundary_resolution,hmi_manual_actor),
         "machine_route_human_relay_rejected": _must_reject("machine-route-human-relay",validate_hmi_boundary_resolution,hmi_relay),
         "hidden_genuine_human_gate_rejected": _must_reject("hidden-genuine-human-gate",validate_hmi_boundary_resolution,hmi_hidden_gate),
@@ -609,6 +927,16 @@ def activation_probe(root: Path) -> dict[str, Any]:
         "typed_interaction_signals_consumed": checks.get("typed_hmi_machine_route_accepted") is True,
         "machine_route_before_human_relay_enforced": checks.get("machine_route_human_relay_rejected") is True,
         "genuine_human_gate_visibility_enforced": checks.get("typed_hmi_genuine_human_gate_accepted") is True,
+        "attention_object_material_fingerprint_enforced": checks.get("attention_material_fingerprint_deterministic_accepted") is True and checks.get("attention_forged_fingerprint_rejected") is True,
+        "attention_object_answered_carry_forward_enforced": checks.get("attention_answered_same_state_carry_forward_accepted") is True and checks.get("attention_answered_same_state_regate_rejected") is True,
+        "attention_object_single_interrupt_enforced": checks.get("attention_presented_same_state_reinterrupt_rejected") is True,
+        "attention_object_machine_local_microiteration_drain_enforced": all(
+            checks.get(f"attention_machine_local_{step}_accepted") is True
+            for step in ATTENTION_MACHINE_LOCAL_STEPS
+        ),
+        "attention_object_material_change_singleton_enforced": checks.get("attention_material_change_classes_single_object_accepted") is True,
+        "attention_object_nonmaterial_reuse_enforced": checks.get("attention_nonmaterial_display_version_status_room_reuse_accepted") is True,
+        "attention_object_unknown_stale_fail_closed": checks.get("attention_UNKNOWN_material_state_rejected") is True and checks.get("attention_STALE_lifecycle_rejected") is True,
         "HA_presentation_shorthand_only_enforced": checks.get("HA_manual_actor_identity_rejected") is True,
         "carrier_change_identity_invariance_enforced": checks.get("carrier_identity_mutation_rejected") is True,
         "current_contact_operational_debt_consumer_bound": True,

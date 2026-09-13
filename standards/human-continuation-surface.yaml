@@ -2,7 +2,7 @@ schema: cerebro-human-continuation-surface/v0.1
 
 human_continuation_surface:
   id: CEREBRO-HUMAN-CONTINUATION-SURFACE-001
-  version: "0.6"
+  version: "0.7"
   status: ACTIVE
   authority: Cerebro Source 1.0
   introduced_by: GUARDRAILS-001
@@ -313,5 +313,43 @@ human_continuation_surface:
     carrier_change:
       actor_identity_effect: NONE
       manual_actor_recreation: PROHIBITED
+    attention_object:
+      schema: cerebro-hmi-attention-object/v1
+      ownership: PROVIDER_CURRENT
+      material_state_fingerprint:
+        algorithm: SHA256_CANONICAL_JSON
+        included_dimensions:
+          - authority_or_consent
+          - irreversible_or_external_effect
+          - material_scope
+          - tradeoff_or_branch
+          - safety_privacy_or_legal
+          - material_premise
+          - final_governing_promotion
+        excluded_nonmaterial_dimensions:
+          - display
+          - version
+          - status
+          - room
+        supplied_fingerprint_must_match_recomputed: true
+      lifecycle:
+        states:
+          - OPEN
+          - PRESENTED
+          - ANSWERED
+          - SUPERSEDED
+        interrupts_per_material_state_max: 1
+        answered_same_state_carry_forward: REQUIRED
+        presented_same_state_reinterrupt: PROHIBITED
+        materially_changed_predecessor_state: SUPERSEDED
+      machine_local_microiterations:
+        - REFINE
+        - PROMOTE_INTERMEDIATE
+        - CROSSREAD
+        - VALIDATE
+      machine_local_effect: MACHINE_CONTINUATION
+      new_attention_object_allowed_only_for_material_change: true
+      new_attention_object_count_per_resolution_max: 1
+      unknown_or_stale_material_state: FAIL_CLOSED
     zero_live_state_inheritance: true
     provider_global_presemantic_effect: OPEN_NOT_PROVEN

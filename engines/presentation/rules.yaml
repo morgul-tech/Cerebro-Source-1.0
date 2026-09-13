@@ -905,6 +905,29 @@ rules:
       position: absolute-response-end
       prohibit_content_after: true
       hidden_or_prose_only_surface: prohibited
+    attention_object_resolution:
+      ownership: PROVIDER_CURRENT
+      fingerprint: SHA256_CANONICAL_MATERIAL_STATE
+      lifecycle: [OPEN, PRESENTED, ANSWERED, SUPERSEDED]
+      same_ANSWERED_state: CARRY_FORWARD_WITHOUT_NEW_GATE
+      same_PRESENTED_state: REUSE_WITHOUT_REINTERRUPT
+      machine_local_microiterations:
+      - REFINE
+      - PROMOTE_INTERMEDIATE
+      - CROSSREAD
+      - VALIDATE
+      microiteration_effect: MACHINE_CONTINUATION
+      material_change_dimensions:
+      - authority_or_consent
+      - irreversible_or_external_effect
+      - material_scope
+      - tradeoff_or_branch
+      - safety_privacy_or_legal
+      - material_premise
+      - final_governing_promotion
+      display_version_status_room_only_change: NONMATERIAL_REUSE
+      unknown_or_stale_material_state: fail-closed
+      new_object_count_per_material_state_max: 1
   statement: En ekte styrende Human-port SKAL gjengis som nøyaktig én kopierbar terminal tekstboks hentet dynamisk fra gjeldende next_human_gate, uten innhold etter boksen; foreground- eller browser-transport er aldri i seg selv godkjenning eller samtykke.
   scope: runtime
   lifecycle: active
