@@ -7,9 +7,9 @@ Cerebro Source v1.0 er den stabiliserte autoritative kildekoden for Cerebro.
 - Source-versjon: 1.0.0
 - Source Audit: PASS
 - MASTER_v1.1-dekning: 100.0 %
-- Komponenter: 13
-- Regler: 158
-- Autoritative begreper: 29
+- Komponenter: 19
+- Regler: 420
+- Autoritative begreper: 45
 - Cerebro Release: Ikke bygget
 
 ## Arkitektur
