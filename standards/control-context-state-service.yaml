@@ -9,6 +9,7 @@ control_context_state_service:
   control_authority: MCP
   semantic_state_owner: context
   operational_steward: tooling.context
+  native_substrate_policy_ref: standards/native-substrate.yaml
 
   purpose: >
     Provide one private, durable and transactional state port for project control

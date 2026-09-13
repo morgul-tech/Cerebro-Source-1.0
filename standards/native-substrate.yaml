@@ -1,0 +1,110 @@
+schema: cerebro-native-substrate/v1
+
+native_substrate:
+  id: CEREBRO-NATIVE-SUBSTRATE-001
+  version: "1.0.0"
+  status: APPROVED_NORMATIVE_DIRECTION
+  kind: STANDARD
+  definitional_authority: Cerebro Source 1.0
+  control_authority: MCP
+  state_authority: EXISTING_OWNERS_ONLY
+
+  purpose: >
+    Define the native continuity substrate beneath disposable windows and carriers,
+    so durable addressed work, currentness, execution and return/join can compose
+    without creating a parallel state service, lifecycle authority, scheduler or HMI truth.
+
+  promotion:
+    human_gate: NATIVE-SUBSTRAT-RC1
+    decision: APPROVED
+    approved_scope: ARCHITECTURE_DIRECTION_NS1_NS7
+    promoted_on: "2026-09-13"
+    RC2_mechanism_approval: false
+    live_activation_claim: false
+
+  approved_architecture:
+    NS1_ONE_SUBSTRATE:
+      rule: EXISTING_CONTROL_CONTEXT_STATE_SERVICE_IS_THE_NATIVE_DURABLE_SUBSTRATE
+      parallel_state_fabric: PROHIBITED
+    NS2_WINDOW_DISPOSABLE:
+      rule: WINDOW_ROLE_PROCESS_AND_HMI_ARE_DISPOSABLE_RENDERERS_OR_CARRIERS
+      continuity_owner: SUBSTRATE_NOT_WINDOW
+    NS3_DURABLE_ADDRESSED_WORK:
+      rule: WORK_IDENTITY_AND_RETURN_OR_JOIN_INTENT_EXIST_IN_DURABLE_STATE_BEFORE_CARRIER_EXECUTION
+      chat_memory_authority: NONE
+    NS4_NO_NEW_LIFECYCLE_AUTHORITY:
+      rule: NATIVE_SUBSTRATE_BINDS_TO_EXISTING_PM_MCP_CONTEXT_LIFECYCLE_AUTHORITY
+      actor_generation_shadow_authority: SHADOW_ONLY
+      work_claim_shadow_authority: SHADOW_ONLY
+    NS5_WAKE_IS_EFFECT_NOT_AUTHORITY:
+      rule: WAKE_MAY_ONLY_CONSUME_A_LAWFULLY_ROUTED_CURRENT_BINDING
+      wake_grants_authority: false
+    NS6_CURRENTNESS_BEFORE_EFFECT:
+      rule: CURRENTNESS_AND_SUPERSESSION_MUST_BE_RESOLVED_BEFORE_WAKE_OR_EFFECT
+      stale_effect: BLOCK
+      unknown_effect: BLOCK
+    NS7_FANOUT_FANIN_IS_SUBSTRATE:
+      rule: DURABLE_RETURN_AND_JOIN_STATE_MUST_SURVIVE_WINDOW_OR_CARRIER_LOSS
+      canonical_join_semantics_ref: standards/control-context-hierarchy.yaml
+
+  existing_owner_bindings:
+    durable_state_contract: standards/control-context-state-service.yaml
+    context_hierarchy_contract: standards/control-context-hierarchy.yaml
+    canonical_control_contract: mcp/control-resolution.yaml
+    lifecycle_arbitration_contract: mcp/project-manager-control-governor.yaml
+    runtime_executor_ref: tooling/runtime-host/cerebro_runtime.py
+    process_supervision_ref: tooling/host/cerebro_host.py
+    continuation_surface_ref: standards/human-continuation-surface.yaml
+
+  boundaries:
+    prohibited:
+      - parallel-native-state-store
+      - window-owned-continuity
+      - HMI-owned-continuity
+      - wake-as-authority
+      - actor-or-claim-shadow-authority-promotion
+      - stale-or-unknown-effect-fallthrough
+      - hidden-human-carrier-for-machine-continuation
+      - resident-worker-pool-created-by-native-substrate
+      - autonomous-retry-or-replay-created-by-native-substrate
+    required:
+      - durable-identity-before-carrier-dependent-effect
+      - exact-currentness-check-before-effect
+      - exact-generation-and-claim-composition-when-applicable
+      - idempotent-effect-boundary
+      - lawful-return-or-join-after-effect
+      - final-causal-binding-before-human-or-terminal-surface
+
+  activation_truth:
+    state_service_live_backend: NOT_PROVEN
+    remote_normal_consumer_binding: NOT_PROVEN
+    native_event_wake: NOT_PROVEN
+    cold_window_actor_rehydration_binding: NOT_PROVEN
+    provider_global_or_dormant_peer_wake: NOT_PROVEN
+    final_response_causal_fence: NOT_PROVEN
+    Source_policy_promotion: APPROVED
+
+  RC2_boundary:
+    status: NOT_APPROVED_BY_RC1
+    machine_continuation_binding: CANDIDATE_ONLY
+    implementation_or_activation_requires_separate_admission: true
+
+  falsification:
+    strongest_canary: STALE_DURABLE_WAKE_DUPLICATE
+    must_prove:
+      - stale-generation-or-route-cannot-produce-effect
+      - duplicate-wake-cannot-duplicate-effect
+      - valid-successor-generation-preserves-lawful-continuation
+      - return-or-join-occurs-only-from-current-effect-bound-result
+      - window-loss-does-not-destroy-durable-work-identity
+
+  invariants:
+    - ONE_NATIVE_DURABLE_SUBSTRATE_NOT_PARALLEL_FABRICS
+    - WINDOW_AND_HMI_ARE_NEVER_CONTINUITY_AUTHORITY
+    - DURABLE_WORK_IDENTITY_PRECEDES_CARRIER_DEPENDENCE
+    - EXISTING_LIFECYCLE_AUTHORITY_IS_REUSED_NOT_REIMPLEMENTED
+    - WAKE_IS_AN_EFFECT_AND_NEVER_AN_AUTHORITY_SOURCE
+    - CURRENTNESS_PRECEDES_EFFECT
+    - FANOUT_FANIN_STATE_SURVIVES_CARRIER_LOSS
+    - SHADOW_STATE_CANNOT_GRANT_LIVE_ROLE_OR_CLAIM_AUTHORITY
+    - SOURCE_POLICY_PROMOTION_DOES_NOT_PROVE_RUNTIME_ACTIVATION

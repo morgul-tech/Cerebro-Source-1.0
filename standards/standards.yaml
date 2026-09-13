@@ -19,6 +19,9 @@ documents:
 - id: STD-CONTROL-ARCHITECTURE
   path: standards/control-architecture.yaml
   required: true
+- id: STD-NATIVE-SUBSTRATE
+  path: standards/native-substrate.yaml
+  required: true
 - id: STD-HUMAN-CONTINUATION-SURFACE
   path: standards/human-continuation-surface.yaml
   required: true

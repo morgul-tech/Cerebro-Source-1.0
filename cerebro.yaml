@@ -52,6 +52,7 @@ standards:
   source_authority: standards/source-authority.yaml
   system_lifecycle: standards/system-lifecycle.yaml
   control_architecture: standards/control-architecture.yaml
+  native_substrate: standards/native-substrate.yaml
   human_continuation_surface: standards/human-continuation-surface.yaml
   continuation_surface_system_policy: standards/continuation-surface-system-policy.yaml
   control_context_hierarchy: standards/control-context-hierarchy.yaml
