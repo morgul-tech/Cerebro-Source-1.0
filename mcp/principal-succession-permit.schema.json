@@ -13,6 +13,7 @@
     "currentness": {"const": "CURRENT"},
     "provider_revision": {"type": "integer", "minimum": 0},
     "covered_through_frontier": {"type": "integer", "minimum": 0},
+    "principal_continuity_baseline": {"$ref": "#/$defs/principalContinuityBaseline"},
     "lived_continuity": {
       "type": "object",
       "additionalProperties": false,
@@ -73,6 +74,7 @@
     "currentness",
     "provider_revision",
     "covered_through_frontier",
+    "principal_continuity_baseline",
     "lived_continuity",
     "evidence",
     "post_state_readback_verified",
@@ -91,6 +93,30 @@
       },
       "required": [
         "receipt_ref", "receipt_fingerprint", "durable", "readback_verified"
+      ]
+    },
+    "principalContinuityBaseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {"const": "cerebro-principal-continuity-baseline/v1"},
+        "generation_ref": {"$ref": "#/$defs/opaqueId"},
+        "source_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "ready_epoch": {"type": "integer", "minimum": 1},
+        "currentness": {"const": "CURRENT"},
+        "provider_revision": {"type": "integer", "minimum": 0},
+        "covered_through_frontier": {"type": "integer", "minimum": 0},
+        "diary_bound": {"$ref": "#/$defs/receipt"},
+        "living_ledger_baseline": {"$ref": "#/$defs/receipt"},
+        "livspuls_baseline": {"$ref": "#/$defs/receipt"},
+        "post_state_readback_verified": {"const": true},
+        "baseline_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "required": [
+        "schema", "generation_ref", "source_head", "ready_epoch", "currentness",
+        "provider_revision", "covered_through_frontier", "diary_bound",
+        "living_ledger_baseline", "livspuls_baseline", "post_state_readback_verified",
+        "baseline_fingerprint"
       ]
     },
     "passReceipt": {

@@ -21,6 +21,7 @@ BINDING_SCHEMA = "cerebro-control-continuation-binding/v1"
 DIRECTIVE_SCHEMA = "cerebro-control-context-transition-directive/v1"
 RECEIPT_SCHEMA = "cerebro-control-context-transition-receipt/v1"
 ACTOR_GENERATION_SHADOW_SCHEMA = "cerebro-actor-generation-shadow/v1"
+PRINCIPAL_CONTINUITY_BASELINE_SCHEMA = "cerebro-principal-continuity-baseline/v1"
 WORK_CLAIM_SHADOW_SCHEMA = "cerebro-work-claim-shadow/v1"
 
 PROJECT_STATUSES = {"ACTIVE", "PAUSED", "BLOCKED", "COMPLETED", "CANCELLED"}
@@ -41,7 +42,7 @@ PROJECT_OPERATIONS = {
 }
 SESSION_OPERATIONS = {"SET_ACTIVE", "SET_CONTINUATION_BINDING", "CLEAR_CONTINUATION_BINDING"}
 ACTOR_ROLES = {"PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"}
-ACTOR_GENERATION_LIFECYCLES = {"READY", "ACTIVE", "RETIRED"}
+ACTOR_GENERATION_LIFECYCLES = {"HOLD", "READY", "ACTIVE", "RETIRED"}
 WORK_CLAIM_LIFECYCLES = {
     "BOUND_ACTIVE_PRESTART", "ACTIVE", "TERMINAL_PASS", "TERMINAL_FAIL", "RELEASED"
 }
@@ -79,6 +80,74 @@ def actor_generation_shadow_fingerprint(state: dict[str, Any]) -> str:
     return _sha256(subject)
 
 
+def principal_continuity_baseline_fingerprint(baseline: dict[str, Any]) -> str:
+    subject = copy.deepcopy(baseline)
+    subject.pop("baseline_fingerprint", None)
+    return _sha256(subject)
+
+
+def _validate_principal_baseline_receipt(value: Any) -> dict[str, Any]:
+    required = {"receipt_ref", "receipt_fingerprint", "durable", "readback_verified"}
+    _require(isinstance(value, dict), "principal-continuity-baseline-receipt-object-required")
+    _require(set(value) == required, "principal-continuity-baseline-receipt-fields-mismatch")
+    ref = value.get("receipt_ref")
+    _require(
+        isinstance(ref, str)
+        and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}", ref) is not None
+        and "diary" not in ref.lower()
+        and "stambok" not in ref.lower(),
+        "principal-continuity-private-or-locator-ref-prohibited",
+    )
+    _require(isinstance(value.get("receipt_fingerprint"), str) and SHA256.fullmatch(value["receipt_fingerprint"]) is not None,
+             "principal-continuity-baseline-receipt-fingerprint-invalid")
+    _require(value.get("durable") is True and value.get("readback_verified") is True,
+             "principal-continuity-baseline-durable-readback-required")
+    return copy.deepcopy(value)
+
+
+def validate_principal_continuity_baseline(
+    baseline: dict[str, Any], *, expected_generation_ref: str | None = None,
+    expected_source_head: str | None = None,
+) -> dict[str, Any]:
+    required = {
+        "schema", "generation_ref", "source_head", "ready_epoch", "currentness",
+        "provider_revision", "covered_through_frontier", "diary_bound",
+        "living_ledger_baseline", "livspuls_baseline", "post_state_readback_verified",
+        "baseline_fingerprint",
+    }
+    _require(isinstance(baseline, dict), "principal-continuity-baseline-object-required")
+    _require(set(baseline) == required, "principal-continuity-baseline-fields-mismatch")
+    _require(baseline.get("schema") == PRINCIPAL_CONTINUITY_BASELINE_SCHEMA,
+             "principal-continuity-baseline-schema-mismatch")
+    generation_ref = baseline.get("generation_ref")
+    _require(
+        isinstance(generation_ref, str)
+        and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}", generation_ref) is not None
+        and "diary" not in generation_ref.lower()
+        and "stambok" not in generation_ref.lower(),
+        "principal-continuity-baseline-generation-invalid",
+    )
+    source_head = baseline.get("source_head")
+    _require(isinstance(source_head, str) and re.fullmatch(r"[0-9a-f]{40}", source_head) is not None,
+             "principal-continuity-baseline-source-invalid")
+    _require(type(baseline.get("ready_epoch")) is int and baseline["ready_epoch"] >= 1,
+             "principal-continuity-baseline-ready-epoch-invalid")
+    _require(baseline.get("currentness") == "CURRENT" and baseline.get("post_state_readback_verified") is True,
+             "principal-continuity-baseline-current-readback-required")
+    for field in ("provider_revision", "covered_through_frontier"):
+        _require(type(baseline.get(field)) is int and baseline[field] >= 0,
+                 f"principal-continuity-baseline-{field.replace('_', '-')}-invalid")
+    for field in ("diary_bound", "living_ledger_baseline", "livspuls_baseline"):
+        _validate_principal_baseline_receipt(baseline.get(field))
+    _require(baseline.get("baseline_fingerprint") == principal_continuity_baseline_fingerprint(baseline),
+             "principal-continuity-baseline-fingerprint-mismatch")
+    if expected_generation_ref is not None:
+        _require(generation_ref == expected_generation_ref, "principal-continuity-baseline-generation-mismatch")
+    if expected_source_head is not None:
+        _require(source_head == expected_source_head, "principal-continuity-baseline-source-mismatch")
+    return copy.deepcopy(baseline)
+
+
 def work_claim_shadow_fingerprint(state: dict[str, Any]) -> str:
     subject = copy.deepcopy(state)
     subject.pop("fingerprint", None)
@@ -91,7 +160,8 @@ def validate_actor_generation_shadow(state: dict[str, Any]) -> dict[str, Any]:
         "lifecycle", "source_revision", "revision", "authority", "fingerprint",
     }
     _require(isinstance(state, dict), "actor-generation-shadow-object-required")
-    _require(set(state) == required, "actor-generation-shadow-fields-mismatch")
+    allowed = required | {"principal_continuity_baseline"}
+    _require(set(state).issubset(allowed) and required.issubset(state), "actor-generation-shadow-fields-mismatch")
     _require(state.get("schema") == ACTOR_GENERATION_SHADOW_SCHEMA, "actor-generation-shadow-schema-mismatch")
     for field in ("tenant_ref", "workspace_ref", "actor_ref", "generation_ref", "source_revision"):
         _require(isinstance(state.get(field), str) and bool(state[field].strip()), f"actor-generation-shadow-{field}-required")
@@ -99,14 +169,36 @@ def validate_actor_generation_shadow(state: dict[str, Any]) -> dict[str, Any]:
     _require(state.get("lifecycle") in ACTOR_GENERATION_LIFECYCLES, "actor-generation-shadow-lifecycle-invalid")
     _require(state.get("authority") == "SHADOW_ONLY", "actor-generation-shadow-authority-must-be-shadow-only")
     _require(isinstance(state.get("revision"), int) and state["revision"] >= 1, "actor-generation-shadow-revision-invalid")
+    baseline = state.get("principal_continuity_baseline")
+    if state["role"] == "PRINCIPAL":
+        if baseline is not None:
+            validate_principal_continuity_baseline(
+                baseline,
+                expected_generation_ref=state["generation_ref"],
+                expected_source_head=state["source_revision"],
+            )
+    else:
+        _require(baseline is None, "principal-continuity-baseline-on-nonprincipal-prohibited")
+        _require(state["lifecycle"] != "HOLD", "nonprincipal-hold-lifecycle-prohibited")
     _require(state.get("fingerprint") == actor_generation_shadow_fingerprint(state), "actor-generation-shadow-fingerprint-mismatch")
-    return {"result": "PASS", "role": state["role"], "generation_ref": state["generation_ref"], "revision": state["revision"]}
+    return {
+        "result": "PASS", "role": state["role"], "generation_ref": state["generation_ref"],
+        "revision": state["revision"],
+        "effective_readiness": (
+            "READY_CURRENT" if state["role"] == "PRINCIPAL" and baseline is not None
+            and state["lifecycle"] in {"READY", "ACTIVE"} else
+            "HOLD_CONTINUITY_BASELINE" if state["role"] == "PRINCIPAL" else state["lifecycle"]
+        ),
+    }
 
 
 def bootstrap_actor_generation_shadow(
     *, tenant_ref: str, workspace_ref: str, actor_ref: str, role: str,
     generation_ref: str, source_revision: str, lifecycle: str = "READY",
+    principal_continuity_baseline: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if role == "PRINCIPAL" and principal_continuity_baseline is None and lifecycle in {"READY", "ACTIVE"}:
+        lifecycle = "HOLD"
     state = {
         "schema": ACTOR_GENERATION_SHADOW_SCHEMA,
         "tenant_ref": tenant_ref,
@@ -119,6 +211,8 @@ def bootstrap_actor_generation_shadow(
         "revision": 1,
         "authority": "SHADOW_ONLY",
     }
+    if principal_continuity_baseline is not None:
+        state["principal_continuity_baseline"] = copy.deepcopy(principal_continuity_baseline)
     state["fingerprint"] = actor_generation_shadow_fingerprint(state)
     validate_actor_generation_shadow(state)
     return state
@@ -126,13 +220,46 @@ def bootstrap_actor_generation_shadow(
 
 def transition_actor_generation_shadow(
     state: dict[str, Any], *, lifecycle: str, source_revision: str,
+    principal_continuity_baseline: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     validate_actor_generation_shadow(state)
-    allowed = {"READY": {"ACTIVE", "RETIRED"}, "ACTIVE": {"READY", "RETIRED"}, "RETIRED": set()}
+    allowed = {"HOLD": {"READY", "RETIRED"}, "READY": {"ACTIVE", "RETIRED", "HOLD"}, "ACTIVE": {"READY", "RETIRED", "HOLD"}, "RETIRED": set()}
     _require(lifecycle in allowed[state["lifecycle"]], "actor-generation-shadow-transition-invalid")
     _require(isinstance(source_revision, str) and bool(source_revision.strip()), "actor-generation-shadow-source-revision-required")
     candidate = copy.deepcopy(state)
     candidate.update(lifecycle=lifecycle, source_revision=source_revision, revision=state["revision"] + 1)
+    if principal_continuity_baseline is not None:
+        candidate["principal_continuity_baseline"] = copy.deepcopy(principal_continuity_baseline)
+    if candidate["role"] == "PRINCIPAL" and lifecycle in {"READY", "ACTIVE"}:
+        _require(candidate.get("principal_continuity_baseline") is not None,
+                 "principal-continuity-baseline-required-before-ready")
+    candidate["fingerprint"] = actor_generation_shadow_fingerprint(candidate)
+    validate_actor_generation_shadow(candidate)
+    return candidate
+
+
+def requalify_principal_generation_shadow(
+    state: dict[str, Any], *, baseline: dict[str, Any], source_revision: str,
+) -> dict[str, Any]:
+    validate_actor_generation_shadow(state)
+    _require(state["role"] == "PRINCIPAL", "principal-requalification-role-required")
+    _require(state["lifecycle"] != "RETIRED", "principal-requalification-retired-generation-prohibited")
+    validated = validate_principal_continuity_baseline(
+        baseline, expected_generation_ref=state["generation_ref"], expected_source_head=source_revision,
+    )
+    _require(validated["ready_epoch"] == state["revision"] + 1,
+             "principal-continuity-baseline-ready-epoch-must-be-prospective")
+    current = state.get("principal_continuity_baseline")
+    if current is not None:
+        _require(validated["provider_revision"] >= current["provider_revision"],
+                 "principal-continuity-baseline-provider-revision-regression")
+        _require(validated["covered_through_frontier"] >= current["covered_through_frontier"],
+                 "principal-continuity-baseline-frontier-regression")
+    candidate = copy.deepcopy(state)
+    candidate.update(
+        lifecycle="READY", source_revision=source_revision, revision=state["revision"] + 1,
+        principal_continuity_baseline=validated,
+    )
     candidate["fingerprint"] = actor_generation_shadow_fingerprint(candidate)
     validate_actor_generation_shadow(candidate)
     return candidate
@@ -220,10 +347,16 @@ def transition_work_claim_shadow(
 def validate_trusted_role_generation_binding(
     actor_generation: dict[str, Any], *, required_role: str, generation_ref: str,
 ) -> dict[str, Any]:
-    validate_actor_generation_shadow(actor_generation)
+    validation = validate_actor_generation_shadow(actor_generation)
     _require(actor_generation["role"] == required_role, "trusted-role-generation-role-mismatch")
     _require(actor_generation["generation_ref"] == generation_ref, "trusted-role-generation-ref-mismatch")
     _require(actor_generation["lifecycle"] == "ACTIVE", "trusted-role-generation-not-active")
+    if required_role == "PRINCIPAL":
+        _require(
+            validation["effective_readiness"] == "READY_CURRENT"
+            and actor_generation.get("principal_continuity_baseline") is not None,
+            "principal-current-generation-continuity-baseline-required",
+        )
     return {
         "result": "PASS",
         "authority": "SHADOW_ONLY",

@@ -24,11 +24,42 @@
         "actor_ref": {"type": "string", "minLength": 1},
         "role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"]},
         "generation_ref": {"type": "string", "minLength": 1},
-        "lifecycle": {"enum": ["READY", "ACTIVE", "RETIRED"]},
+        "lifecycle": {"enum": ["HOLD", "READY", "ACTIVE", "RETIRED"]},
         "source_revision": {"type": "string", "minLength": 1},
         "revision": {"type": "integer", "minimum": 1},
         "authority": {"const": "SHADOW_ONLY"},
+        "principal_continuity_baseline": {"$ref": "#/$defs/principal_continuity_baseline"},
         "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "principal_baseline_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_ref", "receipt_fingerprint", "durable", "readback_verified"],
+      "properties": {
+        "receipt_ref": {"type": "string", "pattern": "^(?!.*(?:[dD][iI][aA][rR][yY]|[sS][tT][aA][mM][bB][oO][kK]))[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}(?![\\s\\S])"},
+        "receipt_fingerprint": {"$ref": "#/$defs/sha256"},
+        "durable": {"const": true},
+        "readback_verified": {"const": true}
+      }
+    },
+    "principal_continuity_baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "generation_ref", "source_head", "ready_epoch", "currentness", "provider_revision", "covered_through_frontier", "diary_bound", "living_ledger_baseline", "livspuls_baseline", "post_state_readback_verified", "baseline_fingerprint"],
+      "properties": {
+        "schema": {"const": "cerebro-principal-continuity-baseline/v1"},
+        "generation_ref": {"type": "string", "pattern": "^(?!.*(?:[dD][iI][aA][rR][yY]|[sS][tT][aA][mM][bB][oO][kK]))[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}(?![\\s\\S])"},
+        "source_head": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "ready_epoch": {"type": "integer", "minimum": 1},
+        "currentness": {"const": "CURRENT"},
+        "provider_revision": {"type": "integer", "minimum": 0},
+        "covered_through_frontier": {"type": "integer", "minimum": 0},
+        "diary_bound": {"$ref": "#/$defs/principal_baseline_receipt"},
+        "living_ledger_baseline": {"$ref": "#/$defs/principal_baseline_receipt"},
+        "livspuls_baseline": {"$ref": "#/$defs/principal_baseline_receipt"},
+        "post_state_readback_verified": {"const": true},
+        "baseline_fingerprint": {"$ref": "#/$defs/sha256"}
       }
     },
     "work_claim_shadow": {

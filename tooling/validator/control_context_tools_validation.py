@@ -141,7 +141,10 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
     """P672 independent repros plus P673 boundary canaries; synthetic state only."""
     import control_context_tools as ct
     import project_manager_control_governor as gov
-    from control_context_registry import bootstrap_actor_generation_shadow
+    from control_context_registry import (
+        bootstrap_actor_generation_shadow,
+        principal_continuity_baseline_fingerprint,
+    )
     HEAD = "5" * 40
     rows = []
     def record(name, passed, observed):
@@ -157,7 +160,19 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
     def reseal(p):
         p["permit_fingerprint"] = ct._principal_permit_fingerprint(p)
         return p
-    def permit():
+    def continuity_baseline(generation):
+        receipt={"receipt_ref":"R-BASE","receipt_fingerprint":"6"*64,
+                 "durable":True,"readback_verified":True}
+        value={"schema":"cerebro-principal-continuity-baseline/v1",
+               "generation_ref":generation,"source_head":HEAD,"ready_epoch":1,
+               "currentness":"CURRENT","provider_revision":9,
+               "covered_through_frontier":77,"diary_bound":copy.deepcopy(receipt),
+               "living_ledger_baseline":copy.deepcopy(receipt),
+               "livspuls_baseline":copy.deepcopy(receipt),
+               "post_state_readback_verified":True,"baseline_fingerprint":""}
+        value["baseline_fingerprint"]=principal_continuity_baseline_fingerprint(value)
+        return value
+    def permit(generation="P672-OLD"):
         receipt={"receipt_ref":"R-1","receipt_fingerprint":"4"*64,"durable":True,"readback_verified":True}
         evidence={n:copy.deepcopy(receipt) for n in (
             "living_ledger","livspuls","etterklang_review","stambok_seal",
@@ -168,6 +183,7 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
             "source_head":HEAD,"currentness":"CURRENT","provider_revision":9,
             "covered_through_frontier":77,"lived_continuity":{"event_id":"P672-E1",
             "event_fingerprint":"3"*64,"qualification":"NO_CAPTURE","debt_state":"CLEAR"},
+            "principal_continuity_baseline":continuity_baseline(generation),
             "evidence":evidence,"post_state_readback_verified":True})
     def validate(p, verifier=None):
         return ct.validate_principal_succession_permit(p,expected_ref=p["permit_id"],
@@ -179,6 +195,7 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
             self.calls+=1
             return {"result":self.result}
     baseline=permit()
+    start_baseline=permit("P672-NEW")
     probe("valid_NO_CAPTURE",lambda:validate(baseline),False)
     mutations=[
      ("stale_source",lambda p:p.update(source_head="0"*40)),
@@ -194,12 +211,31 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
      ("provider_revision_bool",lambda p:p.update(provider_revision=True)),
      ("prose_in_receipt_ref",lambda p:p["evidence"]["living_ledger"].update(receipt_ref="SYNTHETIC private prose with spaces")),
      ("URI_in_event_id",lambda p:p["lived_continuity"].update(event_id="https://example.invalid/private")),
+     ("missing_principal_continuity_baseline",lambda p:p.pop("principal_continuity_baseline")),
+     ("missing_diary_bound",lambda p:p["principal_continuity_baseline"].pop("diary_bound")),
+     ("missing_living_ledger_baseline",lambda p:p["principal_continuity_baseline"].pop("living_ledger_baseline")),
+     ("missing_livspuls_baseline",lambda p:p["principal_continuity_baseline"].pop("livspuls_baseline")),
+     ("baseline_readback_false",lambda p:p["principal_continuity_baseline"].update(post_state_readback_verified=False)),
+     ("baseline_ready_epoch_bool",lambda p:p["principal_continuity_baseline"].update(ready_epoch=True)),
+     ("baseline_private_locator",lambda p:p["principal_continuity_baseline"]["diary_bound"].update(receipt_ref="file:private")),
     ]
     for name, change in mutations:
         p=permit(); change(p); reseal(p)
         probe(name,lambda p=p:validate(p),True)
     p=permit(); p["covered_through_frontier"]+=1
     probe("tampered_fingerprint",lambda:validate(p),True)
+    for name, change in (
+        ("baseline_generation_invalid", lambda b: b.update(generation_ref="file:private")),
+        ("baseline_source_mismatch", lambda b: b.update(source_head="0"*40)),
+        ("baseline_provider_revision_drift", lambda b: b.update(provider_revision=10)),
+        ("baseline_frontier_drift", lambda b: b.update(covered_through_frontier=78)),
+    ):
+        p=permit(); change(p["principal_continuity_baseline"])
+        p["principal_continuity_baseline"]["baseline_fingerprint"] = (
+            principal_continuity_baseline_fingerprint(p["principal_continuity_baseline"])
+        )
+        reseal(p)
+        probe(name,lambda p=p:validate(p),True)
     capture=permit(); capture["lived_continuity"].update(qualification="CAPTURE",
         machine_diary_effect_receipt=copy.deepcopy(capture["evidence"]["livspuls"]))
     reseal(capture)
@@ -214,28 +250,41 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
                 "profile":"PROJECT_MANAGER","session_ref":session["session_ref"],
                 "binding_fingerprint":"a"*64,"verifier_ref":"P672-TEST-PROFILE"}
     class Provider(Effect):
-        def __init__(self,p): super().__init__(); self.p=p
-        def read_principal_succession_permit(self,**kw): return copy.deepcopy(self.p)
+        def __init__(self,permits): super().__init__(); self.permits=permits; self.p=None
+        def read_principal_succession_permit(self,**kw):
+            value=self.p or self.permits[kw["actor_generation_id"]]
+            return copy.deepcopy(value)
+        def read_operational_tails(self,**kw):
+            return {"control":{"currentness":"CURRENT","carrier_ref":"PM-CHANNEL",
+                    "provider_revision":9,"event_frontier":"77","debts":[]},
+                    "protobox":{"currentness":"CURRENT","channel_ref":"PROTOBOX-INBOX",
+                    "observed_revision":9,"debts":[]}}
     port=InMemoryControlContextStatePort()
     for role,generation in [("PRINCIPAL","P672-OLD"),("PRINCIPAL","P672-NEW"),("WORKER","P672-W")]:
+        principal_baseline = continuity_baseline(generation) if role == "PRINCIPAL" else None
         shadow=bootstrap_actor_generation_shadow(tenant_ref="T",workspace_ref="W",
-            actor_ref=generation,role=role,generation_ref=generation,source_revision=HEAD)
+            actor_ref=generation,role=role,generation_ref=generation,source_revision=HEAD,
+            principal_continuity_baseline=principal_baseline)
         port.write_actor_generation_shadow(shadow,expected_revision=0,scopes={"project_state:transition"})
     session={"tenant_ref":"T","workspace_ref":"W","principal_ref":"AUTH","session_ref":"S"}
-    provider=Provider(baseline)
+    provider=Provider({"P672-OLD":baseline,"P672-NEW":start_baseline})
     adapter=ct.ContextLifecycleEffectAdapter(port,Profile(),provider,provider)
     def lifecycle(op="RETIRE", generation="P672-OLD", binding=True, frontier=77):
+        bound_permit = provider.p or provider.permits.get(generation, baseline)
         raw={"mutation_id":"P672-M","idempotency_key":"P672-I","operation":op,
             "actor_generation_id":generation,"slot_pointer_ref":"P672-SLOT","expected_slot_pointer":generation,
             "expected_lifecycle_revision":1,"expected_lifecycle_state":"READY",
             "expected_claim_revision":"NOT_APPLICABLE","authority_source":"PROJECT_MANAGER+MCP",
             "observed_event_frontier":frontier}
-        if binding: raw["principal_succession_permit_binding"]={"permit_ref":baseline["permit_id"],
-            "permit_fingerprint":baseline["permit_fingerprint"]}
+        if binding: raw["principal_succession_permit_binding"]={"permit_ref":bound_permit["permit_id"],
+            "permit_fingerprint":bound_permit["permit_fingerprint"]}
         raw["candidate_fingerprint"]=gov._lifecycle_candidate_fingerprint(raw)
         return raw
     probe("Principal_RETIRE_valid_bound",lambda:adapter.verify_principal_succession(candidate=lifecycle(),session=session),False)
     probe("Principal_START_valid_bound",lambda:adapter.verify_principal_succession(candidate=lifecycle("START","P672-NEW"),session=session),False)
+    provider.p=start_baseline
+    probe("Principal_RETIRE_successor_baseline_mismatch",lambda:adapter.verify_principal_succession(candidate=lifecycle(),session=session),True)
+    provider.p=None
     probe("Principal_RETIRE_missing_binding",lambda:adapter.verify_principal_succession(candidate=lifecycle(binding=False),session=session),True)
     probe("Principal_RETIRE_missing_reader",lambda:ct.ContextLifecycleEffectAdapter(port,Profile()).verify_principal_succession(candidate=lifecycle(),session=session),True)
     probe("nonprincipal_RETIRE_unchanged",lambda:adapter.verify_principal_succession(candidate=lifecycle(generation="P672-W",binding=False),session=session),False)
@@ -258,7 +307,8 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
             return result
     mem=RecordingPort()
     shadow=bootstrap_actor_generation_shadow(tenant_ref="T",workspace_ref="W",
-        actor_ref="P672-OLD",role="PRINCIPAL",generation_ref="P672-OLD",source_revision=HEAD)
+        actor_ref="P672-OLD",role="PRINCIPAL",generation_ref="P672-OLD",source_revision=HEAD,
+        principal_continuity_baseline=continuity_baseline("P672-OLD"))
     mem.write_actor_generation_shadow(shadow,expected_revision=0,scopes={"project_state:transition"})
     attestor=ct.HmacControlResolutionAttestor(key_id="P672-SYNTHETIC",secret=b"P672-SYNTHETIC-TEST-KEY-NOT-A-SECRET")
     ctx=ct.McpToolCallContext(identity=ct.VerifiedMcpIdentity(tenant_ref="T",workspace_ref="W",principal_ref="AUTH",
@@ -327,7 +377,8 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
         lifecycle_effect_verifier=UnclassifiedVerifier(), session=session), True)
     # Same uncommitted Context event: invalid supplied permits must also leave no commit.
     mcp = ct.ControlContextMcpTools(mem, attestor,
-        lifecycle_effect_adapter=ct.ContextLifecycleEffectAdapter(mem, Profile(), provider, provider))
+        lifecycle_effect_adapter=ct.ContextLifecycleEffectAdapter(mem, Profile(), provider, provider),
+        provider_tail_reader=provider)
     for case_name, mutate in (
         ("stale", lambda p: p.update(source_head="0"*40)),
         ("uncovered", lambda p: p.update(covered_through_frontier=76)),
@@ -358,6 +409,18 @@ def p673_succession_regressions() -> list[dict[str, Any]]:
                error is not None and len(mem.commits) == n,
                {"error":error, "commits":len(mem.commits)-n})
     payload["actor_lifecycle_mutation_candidate"] = lifecycle()
+    n = len(mem.commits)
+    error = None
+    try: mcp.dispatch("complete_project_control_event", signed("complete_project_control_event", payload), ctx)
+    except ct.ControlContextToolAuthorizationError as exc: error = str(exc)
+    record("principal_lifecycle_missing_operational_pulse_rejects_precommit",
+           error is not None and len(mem.commits) == n,
+           {"error":error,"commits":len(mem.commits)-n})
+    payload["operational_pulse_request"] = {
+        "stage":"PRE_CLOSE","actor_role":"PRINCIPAL","objective_ref":"P672",
+        "prior_watermarks":{"control":{"carrier_ref":"PM-CHANNEL","provider_revision":9,
+        "event_frontier":"77"},"protobox":{"channel_ref":"PROTOBOX-INBOX","observed_revision":9}},
+    }
     n = len(mem.commits)
     completed = mcp.dispatch("complete_project_control_event",
                             signed("complete_project_control_event", payload), ctx)
@@ -702,7 +765,10 @@ def selftest() -> dict[str, Any]:
 
 
     # Packet554: existing complete tool is the bounded lifecycle-effect consumer.
-    from control_context_registry import bootstrap_actor_generation_shadow
+    from control_context_registry import (
+        bootstrap_actor_generation_shadow,
+        principal_continuity_baseline_fingerprint,
+    )
     import project_manager_control_governor
 
     class LifecycleProfileVerifier:
@@ -994,6 +1060,21 @@ def selftest() -> dict[str, Any]:
         "durable": True,
         "readback_verified": True,
     }
+    principal_baseline = {
+        "schema": "cerebro-principal-continuity-baseline/v1",
+        "generation_ref": "PRINCIPAL-OLD",
+        "source_head": "5" * 40,
+        "ready_epoch": 1,
+        "currentness": "CURRENT",
+        "provider_revision": 9,
+        "covered_through_frontier": 77,
+        "diary_bound": copy.deepcopy(receipt),
+        "living_ledger_baseline": copy.deepcopy(receipt),
+        "livspuls_baseline": copy.deepcopy(receipt),
+        "post_state_readback_verified": True,
+        "baseline_fingerprint": "",
+    }
+    principal_baseline["baseline_fingerprint"] = principal_continuity_baseline_fingerprint(principal_baseline)
     permit = {
         "schema": "cerebro-principal-succession-permit/v1",
         "permit_id": "PERMIT-1",
@@ -1003,6 +1084,7 @@ def selftest() -> dict[str, Any]:
         "currentness": "CURRENT",
         "provider_revision": 9,
         "covered_through_frontier": 77,
+        "principal_continuity_baseline": copy.deepcopy(principal_baseline),
         "lived_continuity": copy.deepcopy(continuity_base),
         "evidence": {
             name: {**copy.deepcopy(receipt), "receipt_ref": f"RCPT-{index}"}
@@ -1042,6 +1124,7 @@ def selftest() -> dict[str, Any]:
         role="PRINCIPAL",
         generation_ref="PRINCIPAL-OLD",
         source_revision="5" * 40,
+        principal_continuity_baseline=copy.deepcopy(principal_baseline),
     )
     lifecycle_port.write_actor_generation_shadow(
         principal_shadow,

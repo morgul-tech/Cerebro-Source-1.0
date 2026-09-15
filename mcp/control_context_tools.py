@@ -29,7 +29,13 @@ for path in (CONTEXT_TOOLING, VALIDATOR_TOOLING):
         sys.path.insert(0, str(path))
 
 from control_context_state_port import BEGIN_SCHEMA, StateBindingError
-from control_context_registry import actor_generation_shadow_fingerprint, validate_actor_generation_shadow
+from control_context_registry import (
+    ControlContextError,
+    actor_generation_shadow_fingerprint,
+    principal_continuity_baseline_fingerprint,
+    validate_actor_generation_shadow,
+    validate_principal_continuity_baseline as validate_state_principal_continuity_baseline,
+)
 import project_manager_control_governor
 from control_resolution_host import consume_operational_pulse
 from control_owner_effect_receipt import validate_owner_effect_receipt  # noqa: E402
@@ -206,6 +212,12 @@ _PERMIT_EVIDENCE_KEYS = {
     "gjenklang_publication", "human_readability", "predecessor_closeout",
     "cold_successor_canary",
 }
+_PRINCIPAL_CONTINUITY_BASELINE_KEYS = {
+    "schema", "generation_ref", "source_head", "ready_epoch", "currentness",
+    "provider_revision", "covered_through_frontier", "diary_bound",
+    "living_ledger_baseline", "livspuls_baseline", "post_state_readback_verified",
+    "baseline_fingerprint",
+}
 
 
 def _principal_permit_fingerprint(permit: dict[str, Any]) -> str:
@@ -243,6 +255,22 @@ def _validate_content_blind_receipt(value: Any, *, pass_required: bool = False) 
     if pass_required and value.get("result") != "PASS":
         raise ControlContextToolAuthorizationError("principal-cold-successor-canary-pass-required")
     return copy.deepcopy(value)
+
+
+def validate_principal_continuity_baseline(
+    baseline: dict[str, Any], *, expected_source_head: str,
+) -> dict[str, Any]:
+    if not isinstance(baseline, dict) or set(baseline) != _PRINCIPAL_CONTINUITY_BASELINE_KEYS:
+        raise ControlContextToolAuthorizationError("principal-continuity-baseline-fields-invalid")
+    try:
+        validated = validate_state_principal_continuity_baseline(
+            baseline, expected_source_head=expected_source_head,
+        )
+    except ControlContextError as exc:
+        raise ControlContextToolAuthorizationError(str(exc)) from exc
+    if validated["baseline_fingerprint"] != principal_continuity_baseline_fingerprint(validated):
+        raise ControlContextToolAuthorizationError("principal-continuity-baseline-fingerprint-mismatch")
+    return validated
 
 
 def qualify_lived_continuity_event(
@@ -311,7 +339,8 @@ def validate_principal_succession_permit(
     required = {
         "schema", "permit_id", "predecessor_generation_id", "successor_generation_id",
         "source_head", "currentness", "provider_revision", "covered_through_frontier",
-        "lived_continuity", "evidence", "post_state_readback_verified", "permit_fingerprint",
+        "principal_continuity_baseline", "lived_continuity", "evidence",
+        "post_state_readback_verified", "permit_fingerprint",
     }
     if set(permit) != required:
         raise ControlContextToolAuthorizationError("principal-succession-permit-fields-invalid")
@@ -336,6 +365,14 @@ def validate_principal_succession_permit(
         raise ControlContextToolAuthorizationError("principal-succession-provider-revision-invalid")
     if type(permit.get("covered_through_frontier")) is not int or permit["covered_through_frontier"] < 0:
         raise ControlContextToolAuthorizationError("principal-succession-covered-frontier-invalid")
+    baseline = validate_principal_continuity_baseline(
+        permit.get("principal_continuity_baseline"), expected_source_head=expected_source_head,
+    )
+    if (
+        baseline["provider_revision"] != permit["provider_revision"]
+        or baseline["covered_through_frontier"] != permit["covered_through_frontier"]
+    ):
+        raise ControlContextToolAuthorizationError("principal-continuity-baseline-permit-currentness-mismatch")
     lived = qualify_lived_continuity_event(
         permit.get("lived_continuity"),
         machine_diary_effect_verifier=machine_diary_effect_verifier,
@@ -361,6 +398,7 @@ def validate_principal_succession_permit(
         "source_head": permit["source_head"],
         "provider_revision": permit["provider_revision"],
         "covered_through_frontier": permit["covered_through_frontier"],
+        "principal_continuity_baseline": baseline,
         "lived_continuity": lived,
         "evidence": verified_evidence,
     }
@@ -521,6 +559,19 @@ class ContextLifecycleEffectAdapter:
                 "generation_ref": generation_ref,
             }
         self._require(isinstance(binding, dict), "principal-succession-permit-binding-required")
+        shadow_baseline = shadow.get("principal_continuity_baseline")
+        self._require(
+            shadow_baseline is not None,
+            "principal-current-generation-continuity-baseline-required",
+        )
+        try:
+            validate_state_principal_continuity_baseline(
+                shadow_baseline,
+                expected_generation_ref=generation_ref,
+                expected_source_head=shadow["source_revision"],
+            )
+        except ControlContextError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from exc
         self._require(
             set(binding) == {"permit_ref", "permit_fingerprint"},
             "principal-succession-permit-binding-fields-invalid",
@@ -565,6 +616,15 @@ class ContextLifecycleEffectAdapter:
             raise ControlContextToolAuthorizationError(
                 "principal-succession-permit-only-valid-for-retire-or-start"
             )
+        permit_baseline = verified["principal_continuity_baseline"]
+        self._require(
+            permit_baseline["generation_ref"] == generation_ref,
+            "principal-continuity-baseline-operation-generation-mismatch",
+        )
+        self._require(
+            permit_baseline == shadow_baseline,
+            "principal-continuity-baseline-shadow-readback-mismatch",
+        )
         return {
             "schema": "cerebro-principal-succession-verification/v1",
             "applicable": True,
@@ -576,6 +636,8 @@ class ContextLifecycleEffectAdapter:
             "permit_fingerprint": verified["permit_fingerprint"],
             "provider_revision": verified["provider_revision"],
             "covered_through_frontier": verified["covered_through_frontier"],
+            "ready_epoch": permit_baseline["ready_epoch"],
+            "continuity_baseline_fingerprint": permit_baseline["baseline_fingerprint"],
             "post_state_readback_verified": True,
         }
 
@@ -1248,6 +1310,10 @@ class ControlContextMcpTools:
                     "session_ref": context.session_ref(),
                 },
             )
+            if principal_succession.get("applicable") is True and operational_pulse is None:
+                raise ControlContextToolAuthorizationError(
+                    "principal-lifecycle-operational-pulse-required-before-commit"
+                )
         completion = self._state_port.complete_event(
             {
                 "tenant_ref": identity.tenant_ref,

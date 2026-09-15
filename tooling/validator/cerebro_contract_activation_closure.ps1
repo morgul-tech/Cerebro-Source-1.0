@@ -196,14 +196,89 @@ function Test-CacPermanenceSnapshot {
     return [pscustomobject]@{state=$(if(@($findings|Where-Object{$_.blocking}).Count -eq 0){'PASS'}else{'BLOCKED'});fingerprint=$fingerprint;item_count=$items.Count;inventory=@($inventory);findings=@($findings)}
 }
 
+function Test-CacStrictBoolean {
+    param($Object,[string]$Name,[bool]$Expected)
+    if($null -eq $Object){return $false}
+    $property=$Object.PSObject.Properties[$Name]
+    return ($null -ne $property -and $property.Value -is [bool] -and [bool]$property.Value -eq $Expected)
+}
+
+function Get-CacEvidenceOverridePath {
+    param($EvidenceLocationOverrides,[string]$BindingId,[string]$DefaultPath)
+    if($null -eq $EvidenceLocationOverrides){return $DefaultPath}
+    $property=$EvidenceLocationOverrides.PSObject.Properties[$BindingId]
+    if($null -eq $property -or [string]::IsNullOrWhiteSpace([string]$property.Value)){
+        throw ('CAC_EVIDENCE_OVERRIDE_MISSING:{0}' -f $BindingId)
+    }
+    return [string]$property.Value
+}
+
+function Test-CacRuntime2CurrentConformance {
+    param([string]$Root,$Spec,$Evidence,[string]$EvidencePath,$ExpectedRuntime2CandidateScope)
+    $id='RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT'
+    $findings=@()
+    $mode=if($null -eq $ExpectedRuntime2CandidateScope){'CLEAN_COMMITTED'}else{[string](Get-CacProperty $ExpectedRuntime2CandidateScope 'scope_mode' '')}
+    if(@('CLEAN_COMMITTED','SEALED_VALIDATION','INSTALLED_CANDIDATE') -notcontains $mode){
+        $findings += New-CacFinding -Code 'RUNTIME2_SCOPE_MODE_INVALID' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Expected Runtime2 scope mode is invalid.' -Blocking $true
+    }
+    if([string](Get-CacProperty $Evidence 'scope_mode' '') -ne $mode){
+        $findings += New-CacFinding -Code 'RUNTIME2_SCOPE_MODE_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 evidence does not match independently expected scope mode.' -Blocking $true
+    }
+    $rootFull=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+    $evidenceRoot=[IO.Path]::GetFullPath([string](Get-CacProperty $Evidence 'source_root' '')).TrimEnd('\')
+    if($evidenceRoot -ne $rootFull){
+        $findings += New-CacFinding -Code 'RUNTIME2_SOURCE_ROOT_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 evidence source_root does not equal evaluated Source.' -Blocking $true
+    }
+    $head=(& git -C $Root rev-parse HEAD 2>$null | Select-Object -First 1).Trim().ToLowerInvariant()
+    if($LASTEXITCODE -ne 0 -or [string](Get-CacProperty $Evidence 'base_head' '').ToLowerInvariant() -ne $head){
+        $findings += New-CacFinding -Code 'RUNTIME2_SOURCE_HEAD_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 evidence base_head is not current.' -Blocking $true
+    }
+    $before=Get-CacProperty $Evidence 'snapshot_before' $null
+    $after=Get-CacProperty $Evidence 'snapshot_after' $null
+    if($null -eq $before -or $null -eq $after -or ($before|ConvertTo-Json -Depth 32 -Compress) -cne ($after|ConvertTo-Json -Depth 32 -Compress)){
+        $findings += New-CacFinding -Code 'RUNTIME2_SNAPSHOT_NOT_IMMUTABLE' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 before/after whole-source snapshots must be byte-equivalent JSON values.' -Blocking $true
+    }
+    $livePaths=@(& git -C $Root status --porcelain=v1 --untracked-files=all 2>$null | ForEach-Object { if($_.Length -ge 4){($_.Substring(3) -replace '\\','/')} } | Sort-Object -Unique)
+    $proofPaths=@(Get-CacOptionalValues $after 'changed_paths' | ForEach-Object {[string]$_} | Sort-Object -Unique)
+    if(($livePaths -join "`n") -cne ($proofPaths -join "`n")){
+        $findings += New-CacFinding -Code 'RUNTIME2_LIVE_SNAPSHOT_DRIFT' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 proof dirty pathset differs from the live Source snapshot.' -Blocking $true
+    }
+    if($mode -eq 'CLEAN_COMMITTED' -and ($livePaths.Count -ne 0 -or $null -ne (Get-CacProperty $Evidence 'candidate_manifest_sha256' $null))){
+        $findings += New-CacFinding -Code 'RUNTIME2_CLEAN_SCOPE_NOT_CLEAN' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'CLEAN_COMMITTED requires clean Source and no candidate envelope.' -Blocking $true
+    }
+    elseif($mode -ne 'CLEAN_COMMITTED'){
+        foreach($field in @('candidate_manifest_sha256','candidate_target_bytes_sha256')){
+            if([string](Get-CacProperty $Evidence $field '') -ne [string](Get-CacProperty $ExpectedRuntime2CandidateScope $field '')){
+                $findings += New-CacFinding -Code 'RUNTIME2_CANDIDATE_SCOPE_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message ('Runtime2 evidence mismatch: '+$field) -Blocking $true
+            }
+        }
+    }
+    foreach($field in @(Get-CacOptionalValues $Spec 'forbidden_fields')){
+        if($null -ne $Evidence.PSObject.Properties[[string]$field]){
+            $findings += New-CacFinding -Code 'RUNTIME2_FORBIDDEN_FIELD_PRESENT' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message ('Forbidden Runtime2 proof field is present: '+[string]$field) -Blocking $true
+        }
+    }
+    $history=Get-CacProperty $Spec 'historical_evidence' $null
+    if($null -ne $history){
+        $historyPath=[string](Get-CacProperty $history 'path' '')
+        $expectedHash=[string](Get-CacProperty $history 'sha256' '')
+        if(-not(Test-Path -LiteralPath $historyPath -PathType Leaf) -or (Get-FileHash -LiteralPath $historyPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedHash -or [string](Get-CacProperty $Evidence 'historical_receipt_sha256' '') -ne $expectedHash){
+            $findings += New-CacFinding -Code 'RUNTIME2_HISTORICAL_RECEIPT_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Historical Runtime2 v1 receipt pin is not preserved.' -Blocking $true
+        }
+    }
+    return @($findings)
+}
+
 function Test-CacRuntimeEvidence {
-    param([string]$Root,$Binding)
+    param([string]$Root,$Binding,$EvidenceLocationOverrides=$null,$ExpectedEvidenceSet=$null,$ExpectedRuntime2CandidateScope=$null)
     $id=[string](Get-CacProperty $Binding 'id' '')
     $spec=Get-CacProperty $Binding 'runtime_evidence' $null
     if($null -eq $spec){
         return [pscustomobject]@{state='MISSING';findings=@(New-CacFinding -Code 'RUNTIME_EVIDENCE_SPEC_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'RUNTIME_EVIDENCE binding requires runtime_evidence specification.' -Blocking $true)}
     }
-    $path=[string](Get-CacProperty $spec 'path' '')
+    $registeredPath=[string](Get-CacProperty $spec 'path' '')
+    try {$path=Get-CacEvidenceOverridePath -EvidenceLocationOverrides $EvidenceLocationOverrides -BindingId $id -DefaultPath $registeredPath}
+    catch {return [pscustomobject]@{state='INVALID';findings=@(New-CacFinding -Code 'RUNTIME_EVIDENCE_OVERRIDE_INVALID' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message $_.Exception.Message -Blocking $true)}}
     if([string]::IsNullOrWhiteSpace($path)){
         return [pscustomobject]@{state='MISSING';findings=@(New-CacFinding -Code 'RUNTIME_EVIDENCE_PATH_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'runtime_evidence.path is required.' -Blocking $true)}
     }
@@ -245,8 +320,22 @@ function Test-CacRuntimeEvidence {
         $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_STALE' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime evidence source-state fingerprint does not match installed Source.' -Blocking $true
     }
     foreach($field in @(Get-CacOptionalValues $spec 'required_true_fields')){
-        if(-not[bool](Get-CacProperty $evidence ([string]$field) $false)){
+        if(-not(Test-CacStrictBoolean -Object $evidence -Name ([string]$field) -Expected $true)){
             $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_REQUIRED_PROOF_MISSING' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message ('Required runtime proof is not true: ' + [string]$field) -Blocking $true
+        }
+    }
+    foreach($field in @(Get-CacOptionalValues $spec 'required_false_fields')){
+        if(-not(Test-CacStrictBoolean -Object $evidence -Name ([string]$field) -Expected $false)){
+            $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_REQUIRED_FALSE_INVALID' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message ('Required runtime proof is not strict false: ' + [string]$field) -Blocking $true
+        }
+    }
+    if($id -eq 'RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT'){
+        $findings += @(Test-CacRuntime2CurrentConformance -Root $Root -Spec $spec -Evidence $evidence -EvidencePath $full -ExpectedRuntime2CandidateScope $ExpectedRuntime2CandidateScope)
+    }
+    if($null -ne $ExpectedEvidenceSet){
+        $expected=@(Get-CacOptionalValues $ExpectedEvidenceSet 'items' | Where-Object {[string](Get-CacProperty $_ 'binding_id' '') -eq $id})
+        if($expected.Count -ne 1 -or [IO.Path]::GetFullPath([string](Get-CacProperty $expected[0] 'path' '')) -ne [IO.Path]::GetFullPath($full) -or [string](Get-CacProperty $expected[0] 'sha256' '') -ne (Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash.ToLowerInvariant()){
+            $findings += New-CacFinding -Code 'RUNTIME_EVIDENCE_EXPECTED_SET_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime evidence path/digest is not the independently expected immutable item.' -Blocking $true
         }
     }
     return [pscustomobject]@{state=($(if($findings.Count -eq 0){'PROVEN'}else{'INVALID'}));findings=@($findings)}
@@ -293,7 +382,7 @@ function Get-CacRequiredStandards {
 }
 
 function Get-CacStrictContractStates {
-    param([string]$Root,$Registry)
+    param([string]$Root,$Registry,$EvidenceLocationOverrides=$null,$ExpectedEvidenceSet=$null,$ExpectedRuntime2CandidateScope=$null)
 
     $states=@()
     $findings=@()
@@ -323,7 +412,7 @@ function Get-CacStrictContractStates {
 
         $runtimeState=[string](Get-CacProperty $binding 'runtime_evidence_state' 'UNKNOWN')
         if($proofKind -eq 'RUNTIME_EVIDENCE'){
-            $runtimeProof=Test-CacRuntimeEvidence -Root $Root -Binding $binding
+            $runtimeProof=Test-CacRuntimeEvidence -Root $Root -Binding $binding -EvidenceLocationOverrides $EvidenceLocationOverrides -ExpectedEvidenceSet $ExpectedEvidenceSet -ExpectedRuntime2CandidateScope $ExpectedRuntime2CandidateScope
             $local += @($runtimeProof.findings)
             $runtimeState=[string]$runtimeProof.state
         }
@@ -589,6 +678,9 @@ function Invoke-CerebroContractActivationClosure {
         [string]$RegistryPath='tooling/validator/contract-activation-bindings.json',
         $PermanenceSnapshot=$null,
         [string]$ExpectedPermanenceSnapshotFingerprint='',
+        $ExpectedRuntime2CandidateScope=$null,
+        $EvidenceLocationOverrides=$null,
+        $ExpectedEvidenceSet=$null,
         [switch]$PassThru
     )
 
@@ -600,7 +692,17 @@ function Invoke-CerebroContractActivationClosure {
 
     $registry=Get-Content -LiteralPath $registryFull -Raw | ConvertFrom-Json
 
-    $strict=Get-CacStrictContractStates -Root $rootPath -Registry $registry
+    if($null -ne $EvidenceLocationOverrides -or $null -ne $ExpectedEvidenceSet){
+        if($null -eq $EvidenceLocationOverrides -or $null -eq $ExpectedEvidenceSet){throw 'CAC_EVIDENCE_OVERRIDE_AND_EXPECTED_SET_REQUIRED_TOGETHER'}
+        $runtimeIds=@($registry.bindings | Where-Object {[string](Get-CacProperty $_ 'wiring_proof_kind' '') -eq 'RUNTIME_EVIDENCE'} | ForEach-Object {[string](Get-CacProperty $_ 'id' '')} | Sort-Object -Unique)
+        $overrideIds=@($EvidenceLocationOverrides.PSObject.Properties.Name | Sort-Object -Unique)
+        $expectedIds=@(Get-CacOptionalValues $ExpectedEvidenceSet 'items' | ForEach-Object {[string](Get-CacProperty $_ 'binding_id' '')} | Sort-Object -Unique)
+        if(($runtimeIds -join "`n") -cne ($overrideIds -join "`n") -or ($runtimeIds -join "`n") -cne ($expectedIds -join "`n")){
+            throw 'CAC_EVIDENCE_OVERRIDE_SET_NOT_EXACT'
+        }
+    }
+
+    $strict=Get-CacStrictContractStates -Root $rootPath -Registry $registry -EvidenceLocationOverrides $EvidenceLocationOverrides -ExpectedEvidenceSet $ExpectedEvidenceSet -ExpectedRuntime2CandidateScope $ExpectedRuntime2CandidateScope
     $coverage=Get-CacClassificationCoverage -Root $rootPath -Registry $registry -StrictStates $strict.states
     $canonical=Get-CacCanonicalResponsibilityFindings -Registry $registry
     $debt=Get-CacKnownDebtFindings -Registry $registry

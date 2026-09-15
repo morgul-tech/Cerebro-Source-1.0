@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -66,6 +67,19 @@ function Invoke-P672Canary {
     $script:casePermit=$baseText | ConvertFrom-Json
     & $Mutate $script:casePermit
     if($Reseal) {
+        $baselineProperty=$script:casePermit.PSObject.Properties['principal_continuity_baseline']
+        if ($null -ne $baselineProperty -and $null -ne $baselineProperty.Value) {
+            $caseBaseline=$baselineProperty.Value
+            $baselineSubject=[ordered]@{}
+            foreach($property in @($caseBaseline.PSObject.Properties | Sort-Object Name)) {
+                if($property.Name -ne 'baseline_fingerprint') {
+                    $baselineSubject[$property.Name]=ConvertTo-CerebroCanonicalObject $property.Value
+                }
+            }
+            $caseBaseline.baseline_fingerprint=Get-CerebroBootSha256Text (
+                $baselineSubject | ConvertTo-Json -Compress -Depth 32
+            )
+        }
         $canonical=ConvertTo-CerebroCanonicalObject $script:casePermit
         $script:casePermit.permit_fingerprint=Get-CerebroBootSha256Text ($canonical | ConvertTo-Json -Compress -Depth 32)
     }
@@ -78,6 +92,21 @@ function Invoke-P672Canary {
     $results.Add([ordered]@{id=$Name;verdict=$verdict;expected=$(if($ShouldPass){'ACCEPT'}else{'BLOCK'});accepted=$accepted;observed=$detail})
 }
 Invoke-P672Canary 'ps_valid_no_capture_cross_language_fingerprint' {} $true $false
+Invoke-P672Canary 'ps_missing_principal_continuity_baseline' {$args[0].PSObject.Properties.Remove('principal_continuity_baseline')}
+Invoke-P672Canary 'ps_missing_diary_bound' {$args[0].principal_continuity_baseline.PSObject.Properties.Remove('diary_bound')}
+Invoke-P672Canary 'ps_missing_living_ledger_baseline' {$args[0].principal_continuity_baseline.PSObject.Properties.Remove('living_ledger_baseline')}
+Invoke-P672Canary 'ps_missing_livspuls_baseline' {$args[0].principal_continuity_baseline.PSObject.Properties.Remove('livspuls_baseline')}
+Invoke-P672Canary 'ps_baseline_wrong_generation' {$args[0].principal_continuity_baseline.generation_ref='P672-OLD'}
+Invoke-P672Canary 'ps_baseline_stale_source' {$args[0].principal_continuity_baseline.source_head='0000000000000000000000000000000000000000'}
+Invoke-P672Canary 'ps_baseline_ready_epoch_zero' {$args[0].principal_continuity_baseline.ready_epoch=0}
+Invoke-P672Canary 'ps_baseline_ready_epoch_bool' {$args[0].principal_continuity_baseline.ready_epoch=$true}
+Invoke-P672Canary 'ps_baseline_provider_revision_drift' {$args[0].principal_continuity_baseline.provider_revision=10}
+Invoke-P672Canary 'ps_baseline_frontier_drift' {$args[0].principal_continuity_baseline.covered_through_frontier=78}
+Invoke-P672Canary 'ps_baseline_readback_false' {$args[0].principal_continuity_baseline.post_state_readback_verified=$false}
+Invoke-P672Canary 'ps_baseline_readback_string' {$args[0].principal_continuity_baseline.post_state_readback_verified='true'}
+Invoke-P672Canary 'ps_baseline_receipt_private_locator' {$args[0].principal_continuity_baseline.diary_bound.receipt_ref='file:private'}
+Invoke-P672Canary 'ps_baseline_ledger_not_durable' {$args[0].principal_continuity_baseline.living_ledger_baseline.durable=$false}
+Invoke-P672Canary 'ps_baseline_livspuls_not_readback' {$args[0].principal_continuity_baseline.livspuls_baseline.readback_verified=$false}
 Invoke-P672Canary 'ps_missing_bound_reader' {} $false $false $false
 Invoke-P672Canary 'ps_tampered_fingerprint' {$args[0].provider_revision=10} $false $false
 Invoke-P672Canary 'ps_stale_source' {$args[0].source_head='0000000000000000000000000000000000000000'}
@@ -129,7 +158,7 @@ Invoke-P672Canary 'ps_unknown_evidence_field' {$args[0].evidence | Add-Member No
 Invoke-P672Canary 'ps_unknown_receipt_field' {$args[0].evidence.livspuls | Add-Member NoteProperty note 'synthetic'}
 Invoke-P672Canary 'ps_no_capture_null_receipt' {$args[0].lived_continuity | Add-Member NoteProperty machine_diary_effect_receipt $null}
 Invoke-P672Canary 'ps_frontier_behind' {$args[0].covered_through_frontier=76}
-Invoke-P672Canary 'ps_frontier_ahead' {$args[0].covered_through_frontier=78} $true
+Invoke-P672Canary 'ps_frontier_ahead' {$args[0].covered_through_frontier=78;$args[0].principal_continuity_baseline.covered_through_frontier=78} $true
 Invoke-P672Canary 'ps_frontier_bool' {$args[0].covered_through_frontier=$true}
 Invoke-P672Canary 'ps_frontier_negative' {$args[0].covered_through_frontier=-1}
 Invoke-P672Canary 'ps_observed_frontier_missing' {} $false $true $true $null $null
@@ -137,7 +166,7 @@ Invoke-P672Canary 'ps_observed_frontier_bool' {} $false $true $true $null $true
 Invoke-P672Canary 'ps_observed_frontier_negative' {} $false $true $true $null -1
 Invoke-P672Canary 'ps_provider_revision_string' {$args[0].provider_revision='9'}
 Invoke-P672Canary 'ps_provider_revision_fractional' {$args[0].provider_revision=9.5}
-Invoke-P672Canary 'ps_provider_revision_zero' {$args[0].provider_revision=0} $true
+Invoke-P672Canary 'ps_provider_revision_zero' {$args[0].provider_revision=0;$args[0].principal_continuity_baseline.provider_revision=0} $true
 Invoke-P672Canary 'ps_receipt_durable_string' {$args[0].evidence.livspuls.durable='true'}
 Invoke-P672Canary 'ps_receipt_readback_integer' {$args[0].evidence.livspuls.readback_verified=1}
 
@@ -193,7 +222,34 @@ $json
                                             'readback_verified': True,
                                             'result': 'PASS'}},
      'post_state_readback_verified': True,
-     'permit_fingerprint': '2e39b218cca70ca872174edcce46f89d870c0fac968a74b2e4f1a7c14a1f8dfe'}
+     'permit_fingerprint': ''}
+    baseline_receipt = {'receipt_ref': 'R-BASE',
+                        'receipt_fingerprint': '6' * 64,
+                        'durable': True,
+                        'readback_verified': True}
+    baseline = {'schema': 'cerebro-principal-continuity-baseline/v1',
+                'generation_ref': 'P672-NEW',
+                'source_head': fixture['source_head'],
+                'ready_epoch': 2,
+                'currentness': 'CURRENT',
+                'provider_revision': fixture['provider_revision'],
+                'covered_through_frontier': fixture['covered_through_frontier'],
+                'diary_bound': dict(baseline_receipt),
+                'living_ledger_baseline': dict(baseline_receipt),
+                'livspuls_baseline': dict(baseline_receipt),
+                'post_state_readback_verified': True,
+                'baseline_fingerprint': ''}
+    baseline_subject = dict(baseline)
+    baseline_subject.pop('baseline_fingerprint')
+    baseline['baseline_fingerprint'] = hashlib.sha256(
+        json.dumps(baseline_subject, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    ).hexdigest()
+    fixture['principal_continuity_baseline'] = baseline
+    permit_subject = dict(fixture)
+    permit_subject.pop('permit_fingerprint')
+    fixture['permit_fingerprint'] = hashlib.sha256(
+        json.dumps(permit_subject, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+    ).hexdigest()
     with tempfile.TemporaryDirectory(prefix="cerebro-p673-") as directory:
         run_root = Path(directory)
         script_path = run_root / "permit-canaries.ps1"

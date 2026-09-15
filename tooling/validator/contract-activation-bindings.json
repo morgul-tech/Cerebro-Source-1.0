@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.21-native-substrate-rc1-promotion",
+  "classification_version": "2.22-principal-runtime2-current-conformance",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -21,6 +21,12 @@
       "path": "standards/source-authority.yaml",
       "classification": "POLICY_ONLY",
       "rationale": "Source Authority is the definitional authority contract; operational proof belongs to the boot, delivery and synchronization mechanisms that consume it."
+    },
+    {
+      "standard_id": "STD-PRINCIPALSTAMBOK",
+      "path": "standards/principalstambok.yaml",
+      "classification": "POLICY_ONLY",
+      "rationale": "The Principal memoir and inheritance rules are a canonical Source semantic contract. Provider editions and lifecycle records remain evidence about that policy, not a standalone runtime component, and this classification makes no Principal lifecycle-readiness claim."
     },
     {
       "standard_id": "STD-NATIVE-SUBSTRATE",
@@ -745,11 +751,14 @@
         "def generate_envelope(",
         "def validate_envelope(",
         "def resolve_unique_cmd(",
+        "def capture_current_source_snapshot(",
+        "def validate_current_scope(",
+        "def current_conformance_probe(",
         "runtime2-envelope-must-contain-exactly-one-cmd-artifact-identity",
         "runtime2-hcs8-targetset-must-be-exact8"
       ],
       "wiring": "tooling/runtime-host/runtime2_handoff_consumer.py",
-      "wiring_proof_kind": "EXPLICIT_ADAPTER",
+      "wiring_proof_kind": "RUNTIME_EVIDENCE",
       "wiring_tokens": [
         "def consume(",
         "runtime2-consumer-prelaunch-rehash-mismatch",
@@ -764,8 +773,8 @@
       ],
       "runtime_evidence_state": "BOUND_MACHINE_PROOF_REQUIRED_BEFORE_RUNTIME2_HANDOFF_EXPOSURE",
       "runtime_evidence": {
-        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RUNTIME2_HUMAN_EXECUTION_HANDOFF_ACTIVATION_PROOF.json",
-        "schema": "cerebro-runtime2-human-execution-handoff-activation-proof/v1",
+        "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RUNTIME2_HUMAN_EXECUTION_HANDOFF_CURRENT_CONFORMANCE_PROOF.json",
+        "schema": "cerebro-runtime2-human-execution-handoff-current-conformance-proof/v2",
         "accepted_binding_ids": [
           "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT"
         ],
@@ -777,20 +786,42 @@
           "tooling/validator/checks.yaml",
           "tooling/validator/contract-activation-bindings.json",
           "tooling/validator/runtime2_human_execution_handoff.py",
-          "tooling/runtime-host/runtime2_handoff_consumer.py"
+          "tooling/runtime-host/runtime2_handoff_consumer.py",
+          "tooling/validator/cerebro_contract_activation_closure.ps1"
         ],
         "required_true_fields": [
-          "generator_executed",
-          "envelope_consumer_exercised",
-          "runtime2_context_binding_validated",
-          "cmd_hash_unique_cardinality_enforced",
-          "consumer_independent_rehash_required",
-          "consumer_nonsyncing_boundary_enforced",
+          "generator_exercised",
+          "envelope_validator_exercised",
+          "current_runtime2_context_binding_validated",
+          "unique_cmd_cardinality_enforced",
+          "independent_target_rehash_exercised",
+          "validate_only_consumer_exercised",
           "target_cmd_bytes_preserved",
-          "do_not_modify_paths_preserved",
-          "exact_hcs8_targetset_enforced",
-          "negative_canaries_passed"
+          "source_snapshot_unchanged",
+          "source_scope_validated",
+          "no_target_launch_exercised",
+          "negative_canaries_passed",
+          "historical_receipt_hash_preserved"
         ],
+        "required_false_fields": [
+          "target_launched",
+          "source_mutation_performed",
+          "publication_performed",
+          "authority_granted"
+        ],
+        "forbidden_fields": [
+          "exact_hcs8_targetset_enforced"
+        ],
+        "accepted_scope_modes": [
+          "CLEAN_COMMITTED",
+          "SEALED_VALIDATION",
+          "INSTALLED_CANDIDATE"
+        ],
+        "historical_evidence": {
+          "path": "D:\\Cerebro\\Run\\audits\\CEREBRO_RUNTIME2_HUMAN_EXECUTION_HANDOFF_ACTIVATION_PROOF.json",
+          "schema": "cerebro-runtime2-human-execution-handoff-activation-proof/v1",
+          "sha256": "0b36f8c1e383d5b6ecf707511b57f259da9385af2670b49d5ad2786804ca2c62"
+        },
         "required_proves_binding": "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT"
       }
     },

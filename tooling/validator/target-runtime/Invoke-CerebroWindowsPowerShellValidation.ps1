@@ -5,6 +5,8 @@ param(
     [Parameter(Mandatory=$true)][string]$CapsuleRoot,
     [Parameter(Mandatory=$true)][string]$RepositoryRoot,
     [Parameter(Mandatory=$true)][string]$OutputPath,
+    [Parameter(Mandatory=$true)]$ExpectedRuntime2CandidateScope,
+    [Parameter(Mandatory=$true)][ValidatePattern('^[0-9a-f]{64}$')][string]$ExpectedRuntime2CandidateScopeSha256,
     [string]$ProfileId = 'windows-powershell'
 )
 
@@ -101,9 +103,10 @@ $temp=Join-Path ([IO.Path]::GetTempPath()) ('CerebroTargetRuntimeValidation-'+[g
 $planPath=Join-Path $temp 'plan.json'
 $evidenceRoot=Join-Path $temp 'evidence'
 [IO.Directory]::CreateDirectory($evidenceRoot)|Out-Null
-$ephemeralRegistryDirectory=Join-Path $CandidateRoot ('.cerebro-target-runtime-'+[guid]::NewGuid().ToString('N'))
-$ephemeralRegistry=Join-Path $ephemeralRegistryDirectory 'contract-activation-bindings.runtime.json'
-$ephemeralRegistryRelative=((Split-Path -Leaf $ephemeralRegistryDirectory) + '/contract-activation-bindings.runtime.json')
+$scopePath=Join-Path $temp 'runtime2-candidate-scope.json'
+Write-TrvJson -Path $scopePath -Value $ExpectedRuntime2CandidateScope
+if((Get-FileHash -LiteralPath $scopePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ExpectedRuntime2CandidateScopeSha256){throw 'TARGET_RUNTIME_EXPECTED_SCOPE_DIGEST_MISMATCH'}
+$custodyRoot=Join-Path 'D:\Cerebro\Run\Evidence\Custody' ('target-runtime-'+[guid]::NewGuid().ToString('N'))
 $sourceTouched=$false
 
 try {
@@ -139,6 +142,12 @@ try {
     if([string]$plan.result -ne 'PASS'){throw 'TARGET_RUNTIME_PLAN_NOT_PASS'}
 
     $manifest=Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    $candidateHead=(& git -C $CandidateRoot rev-parse HEAD 2>$null|Select-Object -First 1).Trim()
+    if($LASTEXITCODE -ne 0 -or $candidateHead -ne [string]$manifest.expected_base_commit -or $candidateHead -ne [string]$ExpectedRuntime2CandidateScope.base_head){throw 'TARGET_RUNTIME_CANDIDATE_BASE_IDENTITY_MISMATCH'}
+    if([string]$ExpectedRuntime2CandidateScope.candidate_kind -ne 'SEALED_VALIDATION'){throw 'TARGET_RUNTIME_SCOPE_KIND_MISMATCH'}
+    $capsuleManifest=Join-Path $CapsuleRoot 'capsule.json'
+    if(-not(Test-Path -LiteralPath $capsuleManifest -PathType Leaf) -or (Get-FileHash -LiteralPath $capsuleManifest -Algorithm SHA256).Hash.ToLowerInvariant() -ne [string]$ExpectedRuntime2CandidateScope.capsule_sha256){throw 'TARGET_RUNTIME_CAPSULE_DIGEST_MISMATCH'}
+    $candidateStatusBefore=(& git -C $CandidateRoot status --porcelain=v1 --untracked-files=all 2>$null) -join "`n"
     $registryPath=Join-Path $CandidateRoot 'tooling\validator\contract-activation-bindings.json'
     $registry=Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
     $cacScript=Join-Path $CandidateRoot 'tooling\validator\cerebro_contract_activation_closure.ps1'
@@ -203,7 +212,11 @@ try {
         $impl=Join-Path $CandidateRoot (([string]$probe.implementation_path)-replace '/','\')
         if(-not(Test-Path -LiteralPath $impl -PathType Leaf)){throw ('TARGET_RUNTIME_ACTIVATION_PRODUCER_MISSING:{0}' -f [string]$probe.id)}
         $out=Join-Path $evidenceRoot (([string]$probe.id)+'.json')
-        $args=@($python.Prefix)+@($impl,'activation-probe','--source-root',$CandidateRoot,'--output',$out)
+        if([string]$probe.required_schema -eq 'cerebro-runtime2-human-execution-handoff-current-conformance-proof/v2'){
+            $args=@($python.Prefix)+@($impl,'current-conformance-probe','--source-root',$CandidateRoot,'--scope-mode','SEALED_VALIDATION','--candidate-scope',$scopePath,'--expected-candidate-scope-sha256',$ExpectedRuntime2CandidateScopeSha256,'--output',$out)
+        } else {
+            $args=@($python.Prefix)+@($impl,'activation-probe','--source-root',$CandidateRoot,'--output',$out)
+        }
         [void](Invoke-TrvNative -Executable $python.Executable -Arguments $args)
         $doc=Get-Content $out -Raw|ConvertFrom-Json
         if([string]$doc.result -ne 'PASS' -or [string]$doc.schema -ne [string]$probe.required_schema){
@@ -216,20 +229,18 @@ try {
             if([string]::IsNullOrWhiteSpace($consumerFingerprint)){
                 throw ('TARGET_RUNTIME_CONSUMER_FINGERPRINT_EMPTY:{0}' -f [string]$probe.id)
             }
-            $doc|Add-Member -NotePropertyName producer_source_state_fingerprint -NotePropertyValue $producerFingerprint -Force
-            $doc|Add-Member -NotePropertyName fingerprint_consumer -NotePropertyValue 'CEREBRO_CONTRACT_ACTIVATION_CLOSURE' -Force
-            $doc|Add-Member -NotePropertyName fingerprint_consumer_normalized -NotePropertyValue ($producerFingerprint -ne $consumerFingerprint) -Force
-            $doc.source_state_fingerprint=$consumerFingerprint
-            Write-TrvJson -Path $out -Value $doc
+            if($producerFingerprint -ne $consumerFingerprint){throw ('TARGET_RUNTIME_PRODUCER_FINGERPRINT_MISMATCH:{0}' -f [string]$probe.id)}
         }
         foreach($bindingId in @($doc.proves_bindings)){ $proofByBinding[[string]$bindingId]=$out }
         if(-not[string]::IsNullOrWhiteSpace([string]$doc.binding_id)){ $proofByBinding[[string]$doc.binding_id]=$out }
         $activationProofs += [pscustomobject]@{producer=[string]$probe.id;path=$out;result='PASS';proves_bindings=@($doc.proves_bindings)}
     }
 
-    # Build an ephemeral registry. Impacted bindings MUST use freshly produced evidence.
+    # Build immutable outside-Source evidence location and digest maps. Impacted bindings MUST use freshly produced evidence.
     # Unaffected runtime evidence may be copied from the canonical baseline, but CAC still
     # checks its source-state fingerprint against the exact candidate.
+    $evidenceOverrides=[ordered]@{}
+    $expectedEvidenceItems=@()
     foreach($binding in @($registry.bindings)){
         if([string]$binding.wiring_proof_kind -ne 'RUNTIME_EVIDENCE'){continue}
         $id=[string]$binding.id
@@ -248,22 +259,23 @@ try {
             }
             Copy-TrvEvidence -Source $baseline -Destination $target
         }
-        $binding.runtime_evidence.path=$target
+        $evidenceOverrides[$id]=$target
+        $expectedEvidenceItems += [pscustomobject]@{binding_id=$id;path=$target;sha256=(Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()}
     }
 
-    [IO.Directory]::CreateDirectory($ephemeralRegistryDirectory)|Out-Null
-    Write-TrvJson -Path $ephemeralRegistry -Value $registry
-
-    # Actual CAC from candidate Source. No parity implementation is accepted.
-    $cac=Invoke-CerebroContractActivationClosure -Root $CandidateRoot -RegistryPath $ephemeralRegistryRelative -PermanenceSnapshot $permanenceSnapshot -ExpectedPermanenceSnapshotFingerprint $permanenceExpected -PassThru
+    $expectedEvidenceSet=[pscustomobject]@{schema='cerebro-runtime-evidence-expected-set/v1';items=@($expectedEvidenceItems)}
+    $normalizedRuntime2Expectation=[pscustomobject][ordered]@{
+        scope_mode='SEALED_VALIDATION'
+        candidate_manifest_sha256=$ExpectedRuntime2CandidateScopeSha256
+        candidate_target_bytes_sha256=[string]$ExpectedRuntime2CandidateScope.candidate_target_bytes_sha256
+    }
+    # Actual CAC from candidate Source and its authoritative registry. No alternate semantics are accepted.
+    $cac=Invoke-CerebroContractActivationClosure -Root $CandidateRoot -PermanenceSnapshot $permanenceSnapshot -ExpectedPermanenceSnapshotFingerprint $permanenceExpected -ExpectedRuntime2CandidateScope $normalizedRuntime2Expectation -EvidenceLocationOverrides ([pscustomobject]$evidenceOverrides) -ExpectedEvidenceSet $expectedEvidenceSet -PassThru
     $blocking=@($cac.blocking_findings)
     if([string]$cac.result -ne 'PASS'){
         $summary=@($blocking|ForEach-Object{('{0}|{1}|{2}|{3}' -f [string]$_.code,[string]$_.scope,[string]$_.subject,[string]$_.message)}) -join '; '
         throw ('TARGET_RUNTIME_ACTUAL_CAC_FAILED count={0}; findings={1}' -f $blocking.Count,$summary)
     }
-
-    # Remove scratch from candidate before DEEP exact-scope assurance.
-    Remove-Item -LiteralPath $ephemeralRegistryDirectory -Recurse -Force -ErrorAction SilentlyContinue
 
     $changeEngine=Join-Path $CandidateRoot 'tooling\change\change_engine.py'
     if(-not(Test-Path -LiteralPath $changeEngine -PathType Leaf)){throw 'TARGET_RUNTIME_CHANGE_ENGINE_MISSING'}
@@ -309,6 +321,13 @@ try {
         authoritative_source_mutated=$false
         generated_at_utc=[DateTime]::UtcNow.ToString('o')
     }
+    $candidateStatusAfter=(& git -C $CandidateRoot status --porcelain=v1 --untracked-files=all 2>$null) -join "`n"
+    if($candidateStatusAfter -cne $candidateStatusBefore){throw 'TARGET_RUNTIME_CANDIDATE_SOURCE_SNAPSHOT_CHANGED'}
+    [IO.Directory]::CreateDirectory($custodyRoot)|Out-Null
+    Copy-Item -LiteralPath $evidenceRoot -Destination (Join-Path $custodyRoot 'evidence') -Recurse
+    Copy-Item -LiteralPath $scopePath -Destination (Join-Path $custodyRoot 'runtime2-candidate-scope.json')
+    $receipt.candidate_evidence_custody=$custodyRoot
+    $receipt.runtime2_candidate_scope_sha256=$ExpectedRuntime2CandidateScopeSha256
     Write-TrvJson -Path $OutputPath -Value $receipt
 
     $verifyPath=Join-Path $temp 'receipt-verification.json'
@@ -323,6 +342,5 @@ try {
     Write-Host ('TARGET_RUNTIME_RECEIPT={0}' -f $OutputPath)
 }
 finally {
-    Remove-Item -LiteralPath $ephemeralRegistryDirectory -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
 }

@@ -386,8 +386,8 @@ function Test-CerebroPrincipalSuccessionPermit {
         successor_generation_id=$SuccessorGenerationId; source_head=$SourceHead
     })
     Assert-PermitFields $permit @('schema','permit_id','predecessor_generation_id','successor_generation_id',
-        'source_head','currentness','provider_revision','covered_through_frontier','lived_continuity',
-        'evidence','post_state_readback_verified','permit_fingerprint')
+        'source_head','currentness','provider_revision','covered_through_frontier','principal_continuity_baseline',
+        'lived_continuity','evidence','post_state_readback_verified','permit_fingerprint')
     if ($permit.schema -cne 'cerebro-principal-succession-permit/v1') {
         throw 'PRINCIPAL_SUCCESSION_PERMIT_SCHEMA_REQUIRED'
     }
@@ -407,6 +407,59 @@ function Test-CerebroPrincipalSuccessionPermit {
     Assert-PermitInteger $permit.covered_through_frontier
     if ($permit.covered_through_frontier -lt $ObservedEventFrontier) {
         throw 'PRINCIPAL_SUCCESSION_PERMIT_FRONTIER_BEHIND_OBSERVED'
+    }
+    $baseline = $permit.principal_continuity_baseline
+    Assert-PermitFields $baseline @('schema','generation_ref','source_head','ready_epoch','currentness',
+        'provider_revision','covered_through_frontier','diary_bound','living_ledger_baseline',
+        'livspuls_baseline','post_state_readback_verified','baseline_fingerprint')
+    if ($baseline.schema -cne 'cerebro-principal-continuity-baseline/v1') {
+        throw 'PRINCIPAL_CONTINUITY_BASELINE_SCHEMA_REQUIRED'
+    }
+    Assert-PermitId $baseline.generation_ref
+    Assert-PermitInteger $baseline.ready_epoch
+    Assert-PermitInteger $baseline.provider_revision
+    Assert-PermitInteger $baseline.covered_through_frontier
+    if ($baseline.ready_epoch -lt 1) {
+        throw 'PRINCIPAL_CONTINUITY_BASELINE_READY_EPOCH_REQUIRED'
+    }
+    if ($baseline.generation_ref -cne $SuccessorGenerationId) {
+        throw 'PRINCIPAL_CONTINUITY_BASELINE_SUCCESSOR_GENERATION_MISMATCH'
+    }
+    if ($baseline.source_head -cne $SourceHead -or $baseline.source_head -isnot [string] -or
+        $baseline.source_head -cnotmatch '^[0-9a-f]{40}$' -or $baseline.currentness -cne 'CURRENT' -or
+        $baseline.post_state_readback_verified -isnot [bool] -or
+        $baseline.post_state_readback_verified -ne $true) {
+        throw 'PRINCIPAL_CONTINUITY_BASELINE_CURRENT_READBACK_REQUIRED'
+    }
+    if ($baseline.provider_revision -ne $permit.provider_revision -or
+        $baseline.covered_through_frontier -ne $permit.covered_through_frontier -or
+        $baseline.covered_through_frontier -lt $ObservedEventFrontier) {
+        throw 'PRINCIPAL_CONTINUITY_BASELINE_PERMIT_CURRENTNESS_MISMATCH'
+    }
+    foreach ($name in @('diary_bound','living_ledger_baseline','livspuls_baseline')) {
+        Assert-PermitReceipt $baseline.$name
+    }
+    $baselineSubject = [ordered]@{}
+    if ($baseline -is [Collections.IDictionary]) {
+        foreach ($key in @($baseline.Keys | Sort-Object)) {
+            if ([string]$key -ne 'baseline_fingerprint') {
+                $baselineSubject[[string]$key] = ConvertTo-CerebroCanonicalObject $baseline[$key]
+            }
+        }
+    } else {
+        foreach ($property in @($baseline.PSObject.Properties | Sort-Object Name)) {
+            if ($property.Name -ne 'baseline_fingerprint') {
+                $baselineSubject[$property.Name] = ConvertTo-CerebroCanonicalObject $property.Value
+            }
+        }
+    }
+    $actualBaselineFingerprint = Get-CerebroBootSha256Text (
+        $baselineSubject | ConvertTo-Json -Compress -Depth 32
+    )
+    if ($baseline.baseline_fingerprint -isnot [string] -or
+        $baseline.baseline_fingerprint -cnotmatch '^[0-9a-f]{64}$' -or
+        $baseline.baseline_fingerprint -cne $actualBaselineFingerprint) {
+        throw 'PRINCIPAL_CONTINUITY_BASELINE_FINGERPRINT_MISMATCH'
     }
     $canonical = ConvertTo-CerebroCanonicalObject $permit
     $actualFingerprint = Get-CerebroBootSha256Text ($canonical | ConvertTo-Json -Compress -Depth 32)
@@ -449,6 +502,8 @@ function Test-CerebroPrincipalSuccessionPermit {
         permit_ref=$PermitRef; permit_fingerprint=$PermitFingerprint
         provider_revision=$permit.provider_revision; post_state_readback_verified=$true
         covered_through_frontier=$permit.covered_through_frontier
+        ready_epoch=$baseline.ready_epoch
+        continuity_baseline_fingerprint=$baseline.baseline_fingerprint
     }
 }
 

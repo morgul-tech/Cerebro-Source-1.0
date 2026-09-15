@@ -563,6 +563,47 @@ class InMemoryControlContextStatePort:
             _require(state["revision"] == expected_revision + 1, "actor-generation-shadow-revision-step-invalid", StateConflict)
             if current is not None:
                 _require(current["actor_ref"] == state["actor_ref"], "actor-generation-shadow-identity-immutable", StateConflict)
+                _require(current["lifecycle"] != "RETIRED", "actor-generation-shadow-retired-terminal", StateConflict)
+            if state["role"] == "PRINCIPAL":
+                baseline = state.get("principal_continuity_baseline")
+                _require(
+                    state["lifecycle"] not in {"READY", "ACTIVE"} or baseline is not None,
+                    "principal-continuity-baseline-required-before-ready",
+                    StateConflict,
+                )
+                prior = None if current is None else current.get("principal_continuity_baseline")
+                if prior is not None:
+                    _require(baseline is not None, "principal-continuity-baseline-removal-prohibited", StateConflict)
+                if baseline is not None:
+                    if prior is None:
+                        _require(
+                            baseline["ready_epoch"] == state["revision"],
+                            "principal-continuity-baseline-ready-epoch-must-be-prospective",
+                            StateConflict,
+                        )
+                    elif baseline["baseline_fingerprint"] == prior["baseline_fingerprint"]:
+                        _require(
+                            baseline["ready_epoch"] == prior["ready_epoch"],
+                            "principal-continuity-baseline-ready-epoch-changed-without-new-baseline",
+                            StateConflict,
+                        )
+                    else:
+                        _require(
+                            baseline["ready_epoch"] == state["revision"]
+                            and baseline["ready_epoch"] > prior["ready_epoch"],
+                            "principal-continuity-baseline-ready-epoch-must-advance",
+                            StateConflict,
+                        )
+                        _require(
+                            baseline["provider_revision"] >= prior["provider_revision"],
+                            "principal-continuity-baseline-provider-revision-regression",
+                            StateConflict,
+                        )
+                        _require(
+                            baseline["covered_through_frontier"] >= prior["covered_through_frontier"],
+                            "principal-continuity-baseline-frontier-regression",
+                            StateConflict,
+                        )
             self._actor_generation_shadows[key] = copy.deepcopy(state)
             return copy.deepcopy(state)
 

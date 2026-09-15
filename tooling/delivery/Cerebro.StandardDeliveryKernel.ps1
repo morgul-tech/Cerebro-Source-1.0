@@ -960,12 +960,61 @@ function Normalize-ActivationEvidenceForCac {
     if([string]::IsNullOrWhiteSpace($consumerFingerprint)){
         throw ('ACTIVATION_EVIDENCE_CONSUMER_FINGERPRINT_EMPTY:{0}' -f $ProbeId)
     }
-    $Evidence|Add-Member -NotePropertyName producer_source_state_fingerprint -NotePropertyValue $producerFingerprint -Force
-    $Evidence|Add-Member -NotePropertyName fingerprint_consumer -NotePropertyValue 'CEREBRO_CONTRACT_ACTIVATION_CLOSURE' -Force
-    $Evidence|Add-Member -NotePropertyName fingerprint_consumer_normalized -NotePropertyValue ($producerFingerprint -ne $consumerFingerprint) -Force
-    $Evidence.source_state_fingerprint=$consumerFingerprint
-    [IO.File]::WriteAllText($EvidencePath,(($Evidence|ConvertTo-Json -Depth 64)+"`r`n"),[Text.UTF8Encoding]::new($false))
+    if($producerFingerprint -ne $consumerFingerprint){
+        throw ('ACTIVATION_EVIDENCE_PRODUCER_FINGERPRINT_MISMATCH:{0}' -f $ProbeId)
+    }
     return $Evidence
+}
+
+function Get-KernelCandidateScope {
+    param($PatchManifest,[string]$ScopeMode,[string]$SourceRoot)
+    $files=@(
+        foreach($entry in @($PatchManifest.files | Sort-Object {[string]$_.path})){
+            [ordered]@{
+                path=([string]$entry.path).Replace('\','/')
+                operation=[string]$entry.operation
+                final_sha256=if([string]$entry.operation -eq 'delete'){''}else{[string]$entry.sha256}
+            }
+        }
+    )
+    $rows=@($files|ForEach-Object{('{0}|{1}|{2}' -f $_.path,$_.operation,$_.final_sha256)}) -join "`n"
+    $capsule=Join-Path $BundleRoot 'capsule\capsule.json'
+    return [ordered]@{
+        schema='cerebro-runtime2-candidate-scope/v1'
+        candidate_kind=$ScopeMode
+        repository='morgul-tech/Cerebro-Source-1.0'
+        branch=[string]$PatchManifest.branch
+        base_head=[string]$PatchManifest.expected_base_commit
+        capsule_sha256=if(Test-Path -LiteralPath $capsule -PathType Leaf){Get-Sha256 -LiteralPath $capsule}else{'0'*64}
+        candidate_target_bytes_sha256=Get-CacLikeSha256Text -Text $rows
+        files=@($files)
+    }
+}
+
+function Get-CacLikeSha256Text {
+    param([string]$Text)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try{return ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($Text)))).Replace('-','').ToLowerInvariant()}
+    finally{$sha.Dispose()}
+}
+
+function Write-KernelCandidateScope {
+    param($PatchManifest,[string]$ScopeMode,[string]$SourceRoot,[string]$Directory)
+    [IO.Directory]::CreateDirectory($Directory)|Out-Null
+    $path=Join-Path $Directory 'runtime2-candidate-scope.json'
+    $scope=Get-KernelCandidateScope -PatchManifest $PatchManifest -ScopeMode $ScopeMode -SourceRoot $SourceRoot
+    [IO.File]::WriteAllText($path,(($scope|ConvertTo-Json -Depth 64)+"`r`n"),[Text.UTF8Encoding]::new($false))
+    return [pscustomobject]@{path=$path;sha256=(Get-Sha256 -LiteralPath $path);scope=$scope}
+}
+
+function Get-ActivationProbeArguments {
+    param($Python,[string]$Implementation,$Probe,[string]$SourceRoot,[string]$OutputPath,$CandidateScope=$null,[string]$ScopeMode='CLEAN_COMMITTED')
+    if([string]$Probe.required_schema -eq 'cerebro-runtime2-human-execution-handoff-current-conformance-proof/v2'){
+        $args=@($Python.PrefixArgs)+@($Implementation,'current-conformance-probe','--source-root',$SourceRoot,'--scope-mode',$ScopeMode,'--output',$OutputPath)
+        if($null -ne $CandidateScope){$args+=@('--candidate-scope',[string]$CandidateScope.path,'--expected-candidate-scope-sha256',[string]$CandidateScope.sha256)}
+        return @($args)
+    }
+    return @($Python.PrefixArgs)+@($Implementation,'activation-probe','--source-root',$SourceRoot,'--output',$OutputPath)
 }
 
 function Invoke-DeclaredActivationProbes {
@@ -974,6 +1023,10 @@ function Invoke-DeclaredActivationProbes {
     if($probes.Count -eq 0){return}
     Assert-ActivationProbeManifest -PatchManifest $PatchManifest
     $python=Resolve-PythonRunner
+    $stageRoot=Join-Path 'D:\Cerebro\Run\Evidence\Staging' ('activation-set-'+[guid]::NewGuid().ToString('N'))
+    [IO.Directory]::CreateDirectory($stageRoot)|Out-Null
+    $scope=Write-KernelCandidateScope -PatchManifest $PatchManifest -ScopeMode 'INSTALLED_CANDIDATE' -SourceRoot $WorkingSourcePath -Directory $stageRoot
+    $stagedSet=@()
     foreach($probe in $probes){
         $State.ReachedStage='ACTIVATION_RUNTIME_PROOF'
         $implementation=Join-Path -Path $WorkingSourcePath -ChildPath (([string]$probe.implementation_path) -replace '/','\\')
@@ -985,18 +1038,18 @@ function Invoke-DeclaredActivationProbes {
         if(-not[IO.Path]::IsPathRooted($evidencePath)){$evidencePath=Join-Path $WorkingSourcePath ($evidencePath -replace '/','\\')}
         $evidenceParent=Split-Path -Parent $evidencePath
         if(-not[string]::IsNullOrWhiteSpace($evidenceParent)){[IO.Directory]::CreateDirectory($evidenceParent) | Out-Null}
-        Remove-Item -LiteralPath $evidencePath -Force -ErrorAction SilentlyContinue
-        $activationArguments=@($python.PrefixArgs)+@($implementation,'activation-probe','--source-root',$WorkingSourcePath,'--output',$evidencePath)
+        $stagedEvidence=Join-Path $stageRoot ([string]$probe.id+'.json')
+        $activationArguments=Get-ActivationProbeArguments -Python $python -Implementation $implementation -Probe $probe -SourceRoot $WorkingSourcePath -OutputPath $stagedEvidence -CandidateScope $scope -ScopeMode 'INSTALLED_CANDIDATE'
         try {$probeResult=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $activationArguments}
         catch {
             $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
             throw
         }
-        if($probeResult.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $evidencePath -PathType Leaf)){
+        if($probeResult.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $stagedEvidence -PathType Leaf)){
             $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
             throw ('ACTIVATION_PROBE_EXECUTION_FAILED:{0}' -f [string]$probe.id)
         }
-        try {$evidence=Get-Content -LiteralPath $evidencePath -Raw | ConvertFrom-Json}
+        try {$evidence=Get-Content -LiteralPath $stagedEvidence -Raw | ConvertFrom-Json}
         catch {
             $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
             throw ('ACTIVATION_PROBE_EVIDENCE_INVALID:{0}' -f [string]$probe.id)
@@ -1005,9 +1058,59 @@ function Invoke-DeclaredActivationProbes {
             $State.FailureFamily='ACTIVATION_RUNTIME_PROOF'
             throw ('ACTIVATION_PROBE_NOT_PASS:{0}' -f [string]$probe.id)
         }
-        $evidence=Normalize-ActivationEvidenceForCac -Evidence $evidence -EvidencePath $evidencePath -ProbeId ([string]$probe.id)
-        $State.ActivationProofs += [pscustomobject]@{id=[string]$probe.id;evidence_path=$evidencePath;source_state_fingerprint=[string]$evidence.source_state_fingerprint}
+        $evidence=Normalize-ActivationEvidenceForCac -Evidence $evidence -EvidencePath $stagedEvidence -ProbeId ([string]$probe.id)
+        $stagedHash=Get-Sha256 -LiteralPath $stagedEvidence
+        $stagedSet += [pscustomobject]@{probe=$probe;active_path=$evidencePath;staged_path=$stagedEvidence;sha256=$stagedHash;evidence=$evidence}
     }
+    $activePaths=@($stagedSet|ForEach-Object{[IO.Path]::GetFullPath([string]$_.active_path).ToLowerInvariant()})
+    if(@($activePaths|Select-Object -Unique).Count -ne $activePaths.Count){throw 'ACTIVATION_EVIDENCE_DESTINATION_SET_NOT_UNIQUE'}
+    $journalPath=Join-Path $stageRoot 'promotion-journal.json'
+    $journal=[ordered]@{schema='cerebro-activation-evidence-promotion-journal/v1';state='PREPARED';items=@($stagedSet|ForEach-Object{[ordered]@{id=[string]$_.probe.id;active_path=$_.active_path;staged_path=$_.staged_path;sha256=$_.sha256;promoted=$false}})}
+    [IO.File]::WriteAllText($journalPath,(($journal|ConvertTo-Json -Depth 32)+"`r`n"),[Text.UTF8Encoding]::new($false))
+    for($index=0;$index -lt $stagedSet.Count;$index++){
+        $item=$stagedSet[$index]
+        $evidenceParent=Split-Path -Parent $item.active_path
+        if(-not[string]::IsNullOrWhiteSpace($evidenceParent)){[IO.Directory]::CreateDirectory($evidenceParent)|Out-Null}
+        $promotionTemp=$item.active_path+'.new-'+[guid]::NewGuid().ToString('N')
+        [IO.File]::Copy($item.staged_path,$promotionTemp,$false)
+        Move-Item -LiteralPath $promotionTemp -Destination $item.active_path -Force
+        if((Get-Sha256 -LiteralPath $item.active_path) -ne $item.sha256){throw ('ACTIVATION_EVIDENCE_PROMOTION_READBACK_MISMATCH:{0}' -f [string]$item.probe.id)}
+        $journal.items[$index].promoted=$true
+        $journal.state=if($index -eq $stagedSet.Count-1){'COMPLETE'}else{'PROMOTING'}
+        [IO.File]::WriteAllText($journalPath,(($journal|ConvertTo-Json -Depth 32)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        $State.ActivationProofs += [pscustomobject]@{id=[string]$item.probe.id;evidence_path=$item.active_path;source_state_fingerprint=[string]$item.evidence.source_state_fingerprint;sha256=$item.sha256}
+    }
+}
+
+function Invoke-KernelCleanRuntime2Closure {
+    param($PatchManifest)
+    $registryPath=Join-Path $WorkingSourcePath 'tooling\validator\contract-activation-bindings.json'
+    $registry=Get-Content -LiteralPath $registryPath -Raw|ConvertFrom-Json
+    $binding=@($registry.bindings|Where-Object{[string]$_.id -eq 'RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT'})
+    if($binding.Count -ne 1){throw 'RUNTIME2_CURRENT_BINDING_CARDINALITY_INVALID'}
+    $implementation=Join-Path $WorkingSourcePath ([string]$binding[0].implementation -replace '/','\')
+    $active=[string]$binding[0].runtime_evidence.path
+    $stageRoot=Join-Path 'D:\Cerebro\Run\Evidence\Staging' ('runtime2-clean-'+[guid]::NewGuid().ToString('N'))
+    [IO.Directory]::CreateDirectory($stageRoot)|Out-Null
+    $staged=Join-Path $stageRoot 'runtime2-current.json'
+    $python=Resolve-PythonRunner
+    $args=@($python.PrefixArgs)+@($implementation,'current-conformance-probe','--source-root',$WorkingSourcePath,'--scope-mode','CLEAN_COMMITTED','--output',$staged)
+    $native=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $args
+    if($native.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $staged -PathType Leaf)){throw 'RUNTIME2_CLEAN_CURRENT_PROOF_FAILED'}
+    $proof=Get-Content -LiteralPath $staged -Raw|ConvertFrom-Json
+    if([string]$proof.schema -ne 'cerebro-runtime2-human-execution-handoff-current-conformance-proof/v2' -or [string]$proof.result -ne 'PASS'){throw 'RUNTIME2_CLEAN_CURRENT_PROOF_INVALID'}
+    [IO.Directory]::CreateDirectory((Split-Path -Parent $active))|Out-Null
+    $temp=$active+'.new-'+[guid]::NewGuid().ToString('N')
+    [IO.File]::Copy($staged,$temp,$false)
+    Move-Item -LiteralPath $temp -Destination $active -Force
+    if((Get-Sha256 -LiteralPath $active) -ne (Get-Sha256 -LiteralPath $staged)){throw 'RUNTIME2_CLEAN_CURRENT_PROMOTION_READBACK_MISMATCH'}
+    $cacScript=Join-Path $WorkingSourcePath 'tooling\validator\cerebro_contract_activation_closure.ps1'
+    . $cacScript
+    $permanenceSnapshot=Get-KernelOptionalProperty -Object $PatchManifest -Name 'permanence_obligation_snapshot' -Default $null
+    $permanenceExpected=[string](Get-KernelOptionalProperty -Object $PatchManifest -Name 'permanence_obligation_snapshot_fingerprint' -Default '')
+    $closure=Invoke-CerebroContractActivationClosure -Root $WorkingSourcePath -PermanenceSnapshot $permanenceSnapshot -ExpectedPermanenceSnapshotFingerprint $permanenceExpected -PassThru
+    if([string]$closure.result -ne 'PASS'){throw 'RUNTIME2_CLEAN_CURRENT_CLOSURE_FAILED'}
+    return $closure
 }
 
 function Invoke-SelfTest {
@@ -1220,6 +1323,30 @@ function Get-KernelOrdinalStrings {
     return @($items)
 }
 
+function Assert-PreparedCandidatePrestate {
+    param($PatchManifest,[string]$GitPath,[string]$ObservedStatus,[string]$ObservedHead)
+    $prepared=Get-KernelOptionalProperty -Object $PatchManifest -Name 'prepared_candidate' -Default $null
+    if($null -eq $prepared){throw 'WORKTREE_DIRTY_WITHOUT_PREPARED_CANDIDATE_CONTRACT'}
+    if([string](Get-KernelOptionalProperty $prepared 'schema' '') -ne 'cerebro-prepared-candidate-adoption/v1'){
+        throw 'PREPARED_CANDIDATE_SCHEMA_INVALID'
+    }
+    if([string](Get-KernelOptionalProperty $prepared 'base_head' '') -ne $ObservedHead){throw 'PREPARED_CANDIDATE_BASE_HEAD_MISMATCH'}
+    $declared=@(Get-KernelOptionalProperty $prepared 'prestate_files' @())
+    $expectedPaths=Get-KernelOrdinalStrings -Values @($declared|ForEach-Object{[string]$_.path})
+    $actualPaths=Get-KernelOrdinalStrings -Values @($ObservedStatus -split "`n" | Where-Object {-not[string]::IsNullOrWhiteSpace($_)} | ForEach-Object {($_.Substring(3)).Replace('\','/')})
+    if(($expectedPaths -join "`n") -cne ($actualPaths -join "`n")){throw 'PREPARED_CANDIDATE_DIRTY_PATHSET_MISMATCH'}
+    foreach($item in $declared){
+        $path=Join-Path $WorkingSourcePath (([string]$item.path -replace '/','\'))
+        if(-not(Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Sha256 -LiteralPath $path) -ne [string]$item.sha256){
+            throw ('PREPARED_CANDIDATE_PRESTATE_HASH_MISMATCH:{0}' -f [string]$item.path)
+        }
+    }
+    $manifestPaths=Get-KernelOrdinalStrings -Values @($PatchManifest.files|ForEach-Object{[string]$_.path})
+    $finalPaths=Get-KernelOrdinalStrings -Values @(Get-KernelOptionalProperty $prepared 'final_paths' @())
+    if(($manifestPaths -join "`n") -cne ($finalPaths -join "`n")){throw 'PREPARED_CANDIDATE_FINAL_SCOPE_MISMATCH'}
+    return $true
+}
+
 function Get-KernelCandidateIdentity {
     param($PatchManifest)
     [string[]]$orderedPaths=Get-KernelOrdinalStrings -Values @($PatchManifest.files | ForEach-Object {[string]$_.path})
@@ -1298,6 +1425,7 @@ function Invoke-CandidateActivationProducerSweep {
     $results=@()
     $proved=@{}
     try {
+        $runtime2Scope=Write-KernelCandidateScope -PatchManifest $PatchManifest -ScopeMode 'SEALED_VALIDATION' -SourceRoot $CandidateRoot -Directory $sweepRoot
         foreach($probe in @(Get-DeclaredActivationProbes -PatchManifest $PatchManifest)){
             $probeId=[string]$probe.id
             $implementation=Join-Path $CandidateRoot (([string]$probe.implementation_path)-replace '/','\')
@@ -1307,7 +1435,7 @@ function Invoke-CandidateActivationProducerSweep {
                 if(-not(Test-Path -LiteralPath $implementation -PathType Leaf)){
                     throw ('ACTIVATION_PRODUCER_MISSING:{0}' -f [string]$probe.implementation_path)
                 }
-                $probeArguments=@($python.PrefixArgs)+@($implementation,'activation-probe','--source-root',$CandidateRoot,'--output',$output)
+                $probeArguments=Get-ActivationProbeArguments -Python $python -Implementation $implementation -Probe $probe -SourceRoot $CandidateRoot -OutputPath $output -CandidateScope $runtime2Scope -ScopeMode 'SEALED_VALIDATION'
                 $native=Invoke-NativeCommand -Executable $python.Executable -ArgumentList $probeArguments
                 if($native.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $output -PathType Leaf)){
                     throw ('ACTIVATION_PRODUCER_EXECUTION_FAILED:{0}' -f $probeId)
@@ -1407,8 +1535,11 @@ function Invoke-RequiredTargetRuntimeValidation {
     $manifestPath=Join-Path $BundleRoot 'manifest.json'
     $State.ReachedStage='TARGET_RUNTIME_VALIDATION_EXECUTE'
     $candidateRoot=''
+    $runtime2ScopeRoot=''
     try {
         $candidateRoot=New-SealedCandidateSourceView -PatchManifest $PatchManifest
+        $runtime2ScopeRoot=Join-Path ([IO.Path]::GetTempPath()) ('CerebroTrvScope-'+[guid]::NewGuid().ToString('N'))
+        $runtime2Scope=Write-KernelCandidateScope -PatchManifest $PatchManifest -ScopeMode 'SEALED_VALIDATION' -SourceRoot $candidateRoot -Directory $runtime2ScopeRoot
         [void](Invoke-CandidateActivationProducerSweep -CandidateRoot $candidateRoot -PatchManifest $PatchManifest)
         $validator=Join-Path $candidateRoot 'tooling\validator\target-runtime\Invoke-CerebroWindowsPowerShellValidation.ps1'
         if(-not(Test-Path -LiteralPath $validator -PathType Leaf)){
@@ -1417,7 +1548,9 @@ function Invoke-RequiredTargetRuntimeValidation {
         }
         $trvOutput=& $validator -CandidateRoot $candidateRoot -ManifestPath $manifestPath `
             -CapsuleRoot $capsuleRoot -RepositoryRoot $WorkingSourcePath `
-            -OutputPath $receiptPath -ProfileId ([string]$spec.profile)
+            -OutputPath $receiptPath -ProfileId ([string]$spec.profile) `
+            -ExpectedRuntime2CandidateScope $runtime2Scope.scope `
+            -ExpectedRuntime2CandidateScopeSha256 ([string]$runtime2Scope.sha256)
     }
     catch {
         $State.FailureFamily='TARGET_RUNTIME_VALIDATION_REQUIRED'
@@ -1426,6 +1559,9 @@ function Invoke-RequiredTargetRuntimeValidation {
     finally {
         if(-not[string]::IsNullOrWhiteSpace($candidateRoot) -and (Test-Path -LiteralPath $candidateRoot)){
             Remove-Item -LiteralPath $candidateRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        if(-not[string]::IsNullOrWhiteSpace($runtime2ScopeRoot) -and (Test-Path -LiteralPath $runtime2ScopeRoot)){
+            Remove-Item -LiteralPath $runtime2ScopeRoot -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
     Assert-TargetRuntimeValidationReceipt -PatchManifest $PatchManifest -ReceiptPath $receiptPath
@@ -1565,9 +1701,11 @@ function Invoke-Apply {
         }
 
         $dirty = (Invoke-Git -GitPath $gitPath -ArgumentList @('status','--porcelain','--untracked-files=all')).Stdout
+        $localHead = (Invoke-Git -GitPath $gitPath -ArgumentList @('rev-parse','HEAD')).Stdout
+        $preparedMode=$false
         if (-not [string]::IsNullOrWhiteSpace($dirty)) {
-            $State.FailureFamily = 'DIRTY_WORKTREE'
-            throw ('WORKTREE_NOT_CLEAN:{0}' -f $dirty)
+            try {$preparedMode=Assert-PreparedCandidatePrestate -PatchManifest $State.Manifest -GitPath $gitPath -ObservedStatus $dirty -ObservedHead $localHead}
+            catch {$State.FailureFamily='PREPARED_CANDIDATE_PRESTATE';throw}
         }
 
         $State.ReachedStage = 'FRESH_REMOTE_FETCH'
@@ -1575,7 +1713,9 @@ function Invoke-Apply {
         $remoteHead = (Invoke-Git -GitPath $gitPath -ArgumentList @('rev-parse',('refs/remotes/origin/{0}' -f $State.Manifest.branch))).Stdout
         $localHead = (Invoke-Git -GitPath $gitPath -ArgumentList @('rev-parse','HEAD')).Stdout
 
-        if ($localHead -eq $remoteHead -and (Test-AllFinalBlobsAtHead -GitPath $gitPath -PatchManifest $State.Manifest)) {
+        if (-not$preparedMode -and $localHead -eq $remoteHead -and (Test-AllFinalBlobsAtHead -GitPath $gitPath -PatchManifest $State.Manifest)) {
+            $State.ReachedStage='ALREADY_APPLIED_CURRENT_CONFORMANCE'
+            [void](Invoke-KernelCleanRuntime2Closure -PatchManifest $State.Manifest)
             $receiptRoot='D:\Cerebro\Run\receipts'
             [IO.Directory]::CreateDirectory($receiptRoot)|Out-Null
             $receiptPath=Join-Path $receiptRoot ('CEREBRO_DELIVERY_KERNEL_'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.json')
@@ -1612,6 +1752,7 @@ function Invoke-Apply {
         }
 
         if ($localHead -ne $remoteHead) {
+            if($preparedMode){throw 'PREPARED_CANDIDATE_BASE_MOVED_NO_FAST_FORWARD_ALLOWED'}
             $ancestor = Invoke-Git -GitPath $gitPath -ArgumentList @('merge-base','--is-ancestor',$localHead,$remoteHead) -AllowedExitCodes @(0,1)
             if ($ancestor.ExitCode -ne 0) {
                 $State.FailureFamily = 'LOCAL_AHEAD_OR_DIVERGED'
@@ -1675,9 +1816,9 @@ function Invoke-Apply {
         $State.ReachedStage='LOCAL_EXECUTION_ENVIRONMENT_PREFLIGHT'
         Assert-DeclaredTargetMutationCapabilities -SourceRoot $WorkingSourcePath -PatchManifest $State.Manifest
         $postCapabilityStatus=(Invoke-Git -GitPath $gitPath -ArgumentList @('status','--porcelain','--untracked-files=all')).Stdout
-        if(-not[string]::IsNullOrWhiteSpace($postCapabilityStatus)){
+        if(((-not$preparedMode) -and -not[string]::IsNullOrWhiteSpace($postCapabilityStatus)) -or ($preparedMode -and $postCapabilityStatus -cne $dirty)){
             $State.FailureFamily='LOCAL_EXECUTION_ENVIRONMENT'
-            throw ('CAPABILITY_PROBE_DIRTIED_SOURCE:{0}' -f $postCapabilityStatus)
+            throw ('CAPABILITY_PROBE_CHANGED_SOURCE_PRESTATE:{0}' -f $postCapabilityStatus)
         }
 
         $State.ReachedStage = 'BACKUP'
@@ -1837,6 +1978,7 @@ function Invoke-Apply {
         $State.ReachedStage = 'EXACT_BYTE_INSTALL'
         foreach ($fileEntry in @($State.Manifest.files)) {
             $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
+            if([string]$fileEntry.operation -ne 'delete' -and (Test-Path -LiteralPath $target -PathType Leaf) -and (Get-Sha256 -LiteralPath $target) -eq [string]$fileEntry.sha256){continue}
             if([string]$fileEntry.operation -eq 'delete'){
                 Remove-ExactTargetFile -TargetPath $target
             }
@@ -1906,7 +2048,10 @@ function Invoke-Apply {
             . $cacScript
             $permanenceSnapshot=Get-KernelOptionalProperty -Object $State.Manifest -Name 'permanence_obligation_snapshot' -Default $null
             $permanenceExpected=[string](Get-KernelOptionalProperty -Object $State.Manifest -Name 'permanence_obligation_snapshot_fingerprint' -Default '')
-            $cacResult = Invoke-CerebroContractActivationClosure -Root $WorkingSourcePath -PermanenceSnapshot $permanenceSnapshot -ExpectedPermanenceSnapshotFingerprint $permanenceExpected -PassThru
+            $installedScopeDirectory=Join-Path 'D:\Cerebro\Run\Evidence\Staging' ('installed-scope-'+[guid]::NewGuid().ToString('N'))
+            $installedScopeFile=Write-KernelCandidateScope -PatchManifest $State.Manifest -ScopeMode 'INSTALLED_CANDIDATE' -SourceRoot $WorkingSourcePath -Directory $installedScopeDirectory
+            $expectedInstalledScope=[pscustomobject]@{scope_mode='INSTALLED_CANDIDATE';candidate_manifest_sha256=[string]$installedScopeFile.sha256;candidate_target_bytes_sha256=[string]$installedScopeFile.scope.candidate_target_bytes_sha256}
+            $cacResult = Invoke-CerebroContractActivationClosure -Root $WorkingSourcePath -PermanenceSnapshot $permanenceSnapshot -ExpectedPermanenceSnapshotFingerprint $permanenceExpected -ExpectedRuntime2CandidateScope $expectedInstalledScope -PassThru
             if ([string]$cacResult.result -ne 'PASS') {
                 $State.FailureFamily = 'CONTRACT_ACTIVATION_GAP'
                 $blockingFindings = @($cacResult.blocking_findings)
@@ -1915,11 +2060,6 @@ function Invoke-Apply {
                 throw ('CONTRACT_ACTIVATION_CLOSURE_FAILED count={0}; findings={1}' -f $blockingCount,$blockingSummary)
             }
 
-            try {
-                [void](Invoke-CerebroContractActivationAudit -Root $WorkingSourcePath)
-            }
-            catch {
-            }
         }
 
         $State.ReachedStage = 'CANONICAL_SYNC'
@@ -1943,6 +2083,10 @@ function Invoke-Apply {
             $State.FailureFamily = 'POST_SYNC_EQUALITY_FAILURE'
             throw ('POST_SYNC_PROOF_FAILED local={0} remote={1} dirty={2}' -f $finalLocal,$finalRemote,$finalDirty)
         }
+
+        $State.ReachedStage='POST_SYNC_CLEAN_CURRENT_CONFORMANCE'
+        [void](Invoke-KernelCleanRuntime2Closure -PatchManifest $State.Manifest)
+        [void](Invoke-CerebroContractActivationAudit -Root $WorkingSourcePath)
 
         $completionEvidence=@{source_equality='VERIFIED';working_tree='CLEAN';cerebro_sync_verified=$true}
         [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_COMPLETION_CLAIM' -Evidence $completionEvidence)

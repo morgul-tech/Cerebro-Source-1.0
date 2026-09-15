@@ -22,14 +22,18 @@ from control_context_registry import (  # noqa: E402
     ControlContextError,
     ancestor_chain,
     apply_transition,
+    actor_generation_shadow_fingerprint,
     bootstrap_actor_generation_shadow,
     bootstrap_work_claim_shadow,
     lowest_common_ancestor,
+    principal_continuity_baseline_fingerprint,
+    requalify_principal_generation_shadow,
     refresh_project_fingerprints,
     refresh_session_fingerprint,
     transition_actor_generation_shadow,
     transition_work_claim_shadow,
     validate_actor_generation_shadow,
+    validate_principal_continuity_baseline,
     validate_project_state,
     validate_session_state,
     validate_trusted_role_generation_binding,
@@ -761,9 +765,24 @@ def selftest() -> dict[str, Any]:
             ControlContextError,
         ),
     )
+    principal_source = "b" * 40
     principal = bootstrap_actor_generation_shadow(
         tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", actor_ref="PRINCIPAL",
-        role="PRINCIPAL", generation_ref="7B925FEA", source_revision="bf4f", lifecycle="ACTIVE",
+        role="PRINCIPAL", generation_ref="7B925FEA", source_revision=principal_source, lifecycle="ACTIVE",
+        principal_continuity_baseline=(lambda value: (
+            value.update(baseline_fingerprint=principal_continuity_baseline_fingerprint(value)) or value
+        ))({
+            "schema": "cerebro-principal-continuity-baseline/v1",
+            "generation_ref": "7B925FEA", "source_head": principal_source, "ready_epoch": 1,
+            "currentness": "CURRENT", "provider_revision": 9, "covered_through_frontier": 77,
+            "diary_bound": {"receipt_ref": "R-BASE", "receipt_fingerprint": "6" * 64,
+                              "durable": True, "readback_verified": True},
+            "living_ledger_baseline": {"receipt_ref": "R-BASE", "receipt_fingerprint": "6" * 64,
+                                         "durable": True, "readback_verified": True},
+            "livspuls_baseline": {"receipt_ref": "R-BASE", "receipt_fingerprint": "6" * 64,
+                                    "durable": True, "readback_verified": True},
+            "post_state_readback_verified": True, "baseline_fingerprint": "",
+        }),
     )
     check(
         "B1-Packet533-current-principal-role-generation-composes",
@@ -785,6 +804,110 @@ def selftest() -> dict[str, Any]:
             ),
             ControlContextError,
         ),
+    )
+    legacy_principal = bootstrap_actor_generation_shadow(
+        tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", actor_ref="LEGACY-PRINCIPAL",
+        role="PRINCIPAL", generation_ref="LEGACY-PRINCIPAL", source_revision=principal_source,
+    )
+    check(
+        "D1-principal-missing-baseline-is-hold-not-ready",
+        legacy_principal["lifecycle"] == "HOLD"
+        and validate_actor_generation_shadow(legacy_principal)["effective_readiness"] == "HOLD_CONTINUITY_BASELINE",
+    )
+    legacy_active_without_baseline = {**legacy_principal, "lifecycle": "ACTIVE"}
+    legacy_active_without_baseline["fingerprint"] = actor_generation_shadow_fingerprint(
+        legacy_active_without_baseline
+    )
+    check(
+        "D1-principal-missing-baseline-cannot-bind-as-current",
+        _expect_error(
+            lambda: validate_trusted_role_generation_binding(
+                legacy_active_without_baseline,
+                required_role="PRINCIPAL",
+                generation_ref="LEGACY-PRINCIPAL",
+            ),
+            ControlContextError,
+        ),
+    )
+    late_receipt = {"receipt_ref": "R-LATE", "receipt_fingerprint": "7" * 64,
+                    "durable": True, "readback_verified": True}
+    late_baseline = {
+        "schema": "cerebro-principal-continuity-baseline/v1",
+        "generation_ref": "LEGACY-PRINCIPAL", "source_head": principal_source, "ready_epoch": 2,
+        "currentness": "CURRENT", "provider_revision": 10, "covered_through_frontier": 78,
+        "diary_bound": copy.deepcopy(late_receipt),
+        "living_ledger_baseline": copy.deepcopy(late_receipt),
+        "livspuls_baseline": copy.deepcopy(late_receipt),
+        "post_state_readback_verified": True, "baseline_fingerprint": "",
+    }
+    late_baseline["baseline_fingerprint"] = principal_continuity_baseline_fingerprint(late_baseline)
+    requalified = requalify_principal_generation_shadow(
+        legacy_principal, baseline=late_baseline, source_revision=principal_source,
+    )
+    check(
+        "D3-late-baseline-creates-new-prospective-ready-epoch",
+        requalified["revision"] == 2 and requalified["principal_continuity_baseline"]["ready_epoch"] == 2
+        and legacy_principal["lifecycle"] == "HOLD",
+    )
+    continuity_port = InMemoryControlContextStatePort()
+    continuity_port.write_actor_generation_shadow(legacy_principal, expected_revision=0, scopes=scopes)
+    continuity_port.write_actor_generation_shadow(requalified, expected_revision=1, scopes=scopes)
+    check(
+        "D2-principal-baseline-CAS-readback-exact",
+        continuity_port.read_actor_generation_shadow(
+            tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", role="PRINCIPAL",
+            generation_ref="LEGACY-PRINCIPAL", scopes={"project_state:read"},
+        ) == requalified,
+    )
+    regressed = copy.deepcopy(requalified)
+    regressed["revision"] = 3
+    regressed["principal_continuity_baseline"]["ready_epoch"] = 3
+    regressed["principal_continuity_baseline"]["provider_revision"] = 9
+    regressed["principal_continuity_baseline"]["covered_through_frontier"] = 77
+    regressed["principal_continuity_baseline"]["baseline_fingerprint"] = (
+        principal_continuity_baseline_fingerprint(regressed["principal_continuity_baseline"])
+    )
+    regressed["fingerprint"] = actor_generation_shadow_fingerprint(regressed)
+    check(
+        "D4-principal-baseline-provider-frontier-regression-blocks",
+        _expect_error(
+            lambda: continuity_port.write_actor_generation_shadow(
+                regressed, expected_revision=2, scopes=scopes,
+            ),
+            StateConflict,
+        ),
+    )
+    removed = copy.deepcopy(requalified)
+    removed.update(lifecycle="HOLD", revision=3)
+    removed.pop("principal_continuity_baseline")
+    removed["fingerprint"] = actor_generation_shadow_fingerprint(removed)
+    check(
+        "D4-principal-baseline-removal-blocks",
+        _expect_error(
+            lambda: continuity_port.write_actor_generation_shadow(
+                removed, expected_revision=2, scopes=scopes,
+            ),
+            StateConflict,
+        ),
+    )
+    stale_baseline = copy.deepcopy(late_baseline)
+    stale_baseline["ready_epoch"] = 1
+    stale_baseline["baseline_fingerprint"] = principal_continuity_baseline_fingerprint(stale_baseline)
+    check(
+        "D3-ready-epoch-cannot-retroactively-repair",
+        _expect_error(
+            lambda: requalify_principal_generation_shadow(
+                legacy_principal, baseline=stale_baseline, source_revision=principal_source,
+            ),
+            ControlContextError,
+        ),
+    )
+    private_baseline = copy.deepcopy(late_baseline)
+    private_baseline["diary_bound"]["receipt_ref"] = "file:private"
+    private_baseline["baseline_fingerprint"] = principal_continuity_baseline_fingerprint(private_baseline)
+    check(
+        "D5-private-baseline-locator-rejected",
+        _expect_error(lambda: validate_principal_continuity_baseline(private_baseline), ControlContextError),
     )
     check(
         "B1-terminal-claim-cannot-resurrect",
