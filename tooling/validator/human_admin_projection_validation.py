@@ -82,6 +82,12 @@ def run_all():
     gate_snaps[0]["state"]["human_boundary_assessment"]={"real_human_action_is_next":True,"next_human_gate":"APPROVE_RELEASE"}
     pgate=hap.build_projection(source_revision=source,owner_snapshots=gate_snaps)
     check("genuine-human-gate-remains-visible",pgate["next_human_gate"]=="APPROVE_RELEASE" and pgate["human_surface"]["human_action"]=="APPROVE_RELEASE" and pgate["human_surface"]["human_decision_required"]=="APPROVE_RELEASE")
+    confirm_snaps=json.loads(json.dumps(gate_snaps))
+    for snap in confirm_snaps: snap["state"]["human_label"]="Human bekreftelse"
+    confirm_snaps[0]["state"].update({"status":"ARMED_PENDING_CONFIRM","human_label":"Human bekreftelse","human_action":"CONFIRM","human_boundary_assessment":{"real_human_action_is_next":True,"next_human_gate":"CONFIRM"}})
+    pconfirm=hap.build_projection(source_revision=source,owner_snapshots=confirm_snaps)
+    confirm_view=hap.render_status(pconfirm,"standard")
+    check("HG04-governing-CONFIRM-rendered-presentation-only",pconfirm["next_human_gate"]=="CONFIRM" and pconfirm["human_surface"]["human_decision_required"]=="CONFIRM" and "CONFIRM" in confirm_view["text"] and pconfirm["authority"]=="PRESENTATION_ONLY_NON_AUTHORITATIVE" and pconfirm["n0"]["authority_mutation_allowed"] is False)
     foreground=json.loads(json.dumps(snaps)); foreground[0]["state"]["responsibility_assessment"]={"owner":"HUMAN"}
     foreground[0]["state"]["human_boundary_assessment"]={"boundary_kind":"FOREGROUND_TRANSPORT","real_human_action_is_next":True,"governing_human_gate_is_next":False}
     foreground[0]["state"]["transport_action"]="Åpne arbeidsvinduet"

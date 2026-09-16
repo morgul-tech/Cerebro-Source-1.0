@@ -1,6 +1,6 @@
 {
   "schema": "cerebro-contract-activation-bindings/v2",
-  "classification_version": "2.22-principal-runtime2-current-conformance",
+  "classification_version": "2.23-HG04-local-custody-candidate",
   "standard_classifications": [
     {
       "standard_id": "STD-MCP",
@@ -87,6 +87,7 @@
       "classification": "PARTIALLY_OPERATIONAL",
       "rationale": "The provider-neutral port, checksum-locked PostgreSQL adapter and migrations, immutable commit ledgers, owner persistence ports, OAuth resource-server boundary, official MCP Python SDK streamable-HTTP binding and explicit production-runtime composition pass deterministic, scripted and real in-process protocol tests. The local runtime proves exact schema/migration readiness and a full create-begin-complete-reconnect lifecycle without embedding secrets or migration authority. It cannot prove live PostgreSQL/OAuth availability, remote deployment, ChatGPT connection or normal-host activation.",
       "known_gaps": [
+        "HG04 ARM/CONFIRM local conformance is not remote State Service availability, authenticated consumer binding, final-handoff gate or pre-Human T3 carrier proof",
         "live PostgreSQL migration rehearsal with separate migration and runtime roles is not complete",
         "identity-provider binding, remote deployment, ChatGPT connection and host begin/complete consumption evidence are absent"
       ]

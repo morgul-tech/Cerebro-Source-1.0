@@ -911,6 +911,7 @@ def selftest() -> dict[str, Any]:
         persisted_pulse_readback(),
     )
 
+    tests.extend(human_t3_regressions())
     result = "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL"
     return {
         "schema": "cerebro-control-resolution-host-contract-selftest/v1",
@@ -921,6 +922,169 @@ def selftest() -> dict[str, Any]:
         "failures": [item for item in tests if item["result"] != "PASS"],
         "tests": tests,
     }
+
+
+def human_t3_fixture(*, truth="EFFECT_SUCCESS", capability=True, port=None):
+    """Local fixtures only; never a pre-Human carrier activation proof."""
+    from human_t3_break_glass import HumanT3BreakGlassHost
+    from control_context_state_port import InMemoryControlContextStatePort
+    candidate = {"candidate_id": "T3-CANDIDATE-1", "candidate_digest": "a" * 64,
+                 "generation_id": "GEN-1", "target_binding": "HUMAN-T3-1", "material_fingerprint": "b" * 64,
+                 "supersession_ref": "NONE", "project_revision": "1", "session_revision": "1",
+                 "frontier_revision": "1", "normal_admission": "BLOCK", "override_dimensions": ["AUTHORITY", "FENCE", "CURRENTNESS"]}
+    identity = dict(zip(("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref"),
+                        ("TENANT-T3", "WORKSPACE-T3", "PRINCIPAL-T3", "CHATGPT_REMOTE_MCP", "chatgpt/T3")))
+    class Reader:
+        def __init__(self):
+            self.fresh = {"event_kind": "HUMAN_ARM", "human_ref": "HUMAN-1", "event_id": "ARM-EVENT-1",
+                          "turn_id": "TURN-1", "constitutional_floor_pass": True, "constitutional_request": {"constitutional_breach_candidates": []}, "candidate": copy.deepcopy(candidate)}
+        def read_current(self, **kwargs):
+            return copy.deepcopy(self.fresh)
+        def confirm(self):
+            self.fresh.update(event_kind="HUMAN_CONFIRM", event_id="CONFIRM-EVENT-1", turn_id="TURN-2")
+    class Capability:
+        effect_kind = "HUMAN_FACING_T3"
+        def __init__(self):
+            self.calls = []
+            self.available = True
+            self.on_attempt = None
+        def is_available(self, **kwargs):
+            return self.available
+        def attempt(self, **kwargs):
+            self.calls.append(copy.deepcopy(kwargs))
+            if self.on_attempt:
+                self.on_attempt()
+            if truth == "RAISE":
+                raise RuntimeError("fixture-effect-uncertain")
+            return {"effect_truth": truth}
+    port = port if port is not None else InMemoryControlContextStatePort()
+    reader, effect = Reader(), Capability()
+    host = HumanT3BreakGlassHost(state_port=port, current_reader=reader, effect_capability=effect if capability else None)
+    return host, port, reader, effect, identity, candidate
+
+
+def human_t3_regressions():
+    from concurrent.futures import ThreadPoolExecutor
+    from human_t3_break_glass import HumanT3BreakGlassError, seal_record
+    from control_context_state_port import StateBindingError, StateConflict, StateServiceUnavailable
+    import jsonschema
+    tests = []
+    scopes = {"project_state:transition"}
+    schema = json.loads((SOURCE_ROOT / "mcp/human-t3-break-glass.schema.json").read_text(encoding="utf-8"))
+    def check(name, condition):
+        tests.append({"name": "HG04-" + name, "result": "PASS" if condition else "FAIL"})
+    def rejects(fn, exception=HumanT3BreakGlassError):
+        try:
+            fn()
+        except exception:
+            return True
+        return False
+    def armed(**kwargs):
+        host, port, reader, effect, identity, candidate = human_t3_fixture(**kwargs)
+        arm = host.arm(identity=identity, override_id="OVERRIDE-1", candidate=candidate, scopes=scopes)
+        jsonschema.validate(arm["record"], schema)
+        reader.confirm()
+        return host, port, reader, effect, identity, candidate, arm
+    host, port, reader, effect, identity, candidate, arm = armed(capability=False)
+    held = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)
+    check("ARM-noncurrent-nonauthorizing-no-effect", arm["record"]["current"] is False and arm["record"]["authority"] == "NONAUTHORIZING_CUSTODY" and effect.calls == [])
+    check("no-capability-no-consumption", held["result"] == "HOLD_PREHUMAN_T3_CAPABILITY_NOT_PROVEN" and held["record"] == arm["record"])
+    check("different-Human-rejected", rejects(lambda: (reader.fresh.update(human_ref="HUMAN-2"), host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes))))
+    reader.fresh.update(human_ref="HUMAN-1", turn_id="TURN-1")
+    check("same-turn-rejected", rejects(lambda: host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)))
+    reader.fresh.update(turn_id="TURN-2", event_id="ARM-EVENT-1")
+    check("same-event-rejected", rejects(lambda: host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)))
+    check("bool-revision-rejected", rejects(lambda: host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=True, scopes=scopes)))
+    for field in candidate:
+        host, port, reader, effect, identity, candidate, arm = armed()
+        reader.fresh["candidate"][field] = ["AUTHORITY"] if field == "override_dimensions" else "c" * 64 if field.endswith(("digest", "fingerprint")) else "CHANGED"
+        out = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)
+        jsonschema.validate(out["record"], schema)
+        check(field + "-change-invalidates", out["result"] == "INVALIDATED" and out["record"]["override_consumed"] is False and effect.calls == [])
+        terminal = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=2, scopes=scopes)
+        check(field + "-invalidation-terminal", terminal["result"] == "HOLD_TERMINAL_OR_CONSUMED_NO_RETRY")
+    host, port, reader, effect, identity, candidate, arm = armed()
+    reader.fresh["constitutional_floor_pass"] = False
+    check("constitutional-floor-not-overrideable", host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)["result"] == "INVALIDATED" and effect.calls == [])
+    host, port, reader, effect, identity, candidate, arm = armed()
+    reader.fresh["constitutional_request"]["constitutional_breach_candidates"] = [{"article_id": "C-01", "state": "VERIFIED", "material": True, "evidence_ref": "FIXTURE-BREACH"}]
+    check("canonical-MCP-material-breach-blocks-despite-floor-assertion", host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)["result"] == "INVALIDATED" and effect.calls == [])
+    for truth in ("EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN", "INVALID_TRUTH", "RAISE"):
+        host, port, reader, effect, identity, candidate, arm = armed(truth=truth)
+        out = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)
+        jsonschema.validate(out["record"], schema)
+        expected_truth = truth if truth in {"EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN"} else "EFFECT_UNKNOWN"
+        revisions = next(iter(port._human_t3_revisions.values()))
+        check(truth + "-one-consume-one-attempt", out["result"] == expected_truth and len(effect.calls) == 1 and sum(r["state"] == "OVERRIDE_CONSUMED" for r in revisions) == 1 and len(revisions) == 4)
+        check(truth + "-Context-is-downstream-evidence", revisions[2]["context_override_record"]["authority"] == "EVIDENCE_ONLY" and revisions[2]["context_override_record"]["state_service_receipt"]["record_fingerprint"] == revisions[1]["fingerprint"])
+        again = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=4, scopes=scopes)
+        check(truth + "-duplicate-no-retry", again["result"] == "HOLD_TERMINAL_OR_CONSUMED_NO_RETRY" and len(effect.calls) == 1)
+        check(truth + "-stale-revision-no-retry", rejects(lambda: host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)) and len(effect.calls) == 1)
+        resurrected = copy.deepcopy(out["record"])
+        resurrected.update(revision=5, state="ARMED_PENDING_CONFIRM", override_consumed=False, effect_attempt_id=None, confirm_event_id=None,
+                           effect_truth="NOT_ATTEMPTED", context_override_record=None)
+        check(truth + "-custody-no-resurrection", rejects(lambda: port.commit_human_t3_arm(record=seal_record(resurrected), expected_revision=4, scopes=scopes), StateConflict))
+    host, port, reader, effect, identity, candidate, arm = armed()
+    effect.available = False
+    check("unavailable-capability-no-consumption", host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)["record"] == arm["record"] and effect.calls == [])
+    host, port, reader, effect, identity, candidate, arm = armed()
+    effect.on_attempt = lambda: port.set_available(False)
+    out = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)
+    port.set_available(True)
+    persisted = port.read_human_t3_arm(**identity, override_id="OVERRIDE-1", scopes=scopes)
+    check("postattempt-commit-unknown-no-retry", out["result"] == "EFFECT_UNKNOWN_RECONCILE_REQUIRED" and out["retry_allowed"] is False and persisted["override_consumed"] is True)
+    host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=persisted["revision"], scopes=scopes)
+    check("postcrash-consumed-no-second-attempt", len(effect.calls) == 1)
+    for failure in ("READBACK", "CONTEXT_COMMIT"):
+        host, port, reader, effect, identity, candidate, arm = armed()
+        saved_read, saved_commit = port.read_human_t3_arm, port.commit_human_t3_arm
+        def failing_read(**kwargs):
+            record = saved_read(**kwargs)
+            return None if record and record["state"] == "OVERRIDE_CONSUMED" else record
+        def failing_commit(**kwargs):
+            if kwargs["record"]["state"] == "CONTEXT_OVERRIDE_COMMITTED":
+                raise StateServiceUnavailable("fixture-Context-commit-unavailable")
+            return saved_commit(**kwargs)
+        if failure == "READBACK":
+            port.read_human_t3_arm = failing_read
+        else:
+            port.commit_human_t3_arm = failing_commit
+        expected_error = HumanT3BreakGlassError if failure == "READBACK" else StateServiceUnavailable
+        check(failure + "-failure-before-effect", rejects(lambda: host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes), expected_error) and effect.calls == [])
+        port.read_human_t3_arm, port.commit_human_t3_arm = saved_read, saved_commit
+        observed = saved_read(**identity, override_id="OVERRIDE-1", scopes=scopes)
+        held = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=observed["revision"], scopes=scopes)
+        check(failure + "-consumption-preserved-no-retry", held["result"] == "HOLD_TERMINAL_OR_CONSUMED_NO_RETRY" and effect.calls == [])
+    host, port, reader, effect, identity, candidate, arm = armed()
+    original_read = reader.read_current
+    calls = [0]
+    def drift(**kwargs):
+        calls[0] += 1
+        if calls[0] == 2:
+            reader.fresh["candidate"]["generation_id"] = "NEW-GENERATION"
+        return original_read(**kwargs)
+    reader.read_current = drift
+    out = host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)
+    check("preattempt-drift-holds-consumed-no-retry", out["result"] == "HOLD_CONSUMED_PREATTEMPT_REQUAL_FAILED" and effect.calls == [] and out["retry_allowed"] is False)
+    host, port, reader, effect, identity, candidate, arm = armed()
+    def confirm_once(_):
+        try:
+            return host.confirm(identity=identity, override_id="OVERRIDE-1", expected_revision=1, scopes=scopes)
+        except (HumanT3BreakGlassError, StateConflict):
+            return {"result": "CONFLICT"}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        list(pool.map(confirm_once, range(2)))
+    check("concurrent-confirm-one-attempt", len(effect.calls) == 1 and sum(r["state"] == "OVERRIDE_CONSUMED" for r in next(iter(port._human_t3_revisions.values()))) == 1)
+    other = dict(identity, principal_ref="OTHER")
+    check("custody-principal-isolation", port.read_human_t3_arm(**other, override_id="OVERRIDE-1", scopes=scopes) is None)
+    host, port, reader, effect, identity, candidate = human_t3_fixture()
+    candidate["override_dimensions"] = ["CAPABILITY"]
+    reader.fresh["candidate"] = copy.deepcopy(candidate)
+    check("capability-dimension-rejected", rejects(lambda: host.arm(identity=identity, override_id="BAD", candidate=candidate, scopes=scopes)))
+    reader.fresh["candidate"]["override_dimensions"] = candidate["override_dimensions"] = ["AUTHORITY"]
+    reader.fresh["constitutional_floor_pass"] = False
+    check("ARM-floor-rejected", rejects(lambda: host.arm(identity=identity, override_id="BAD", candidate=candidate, scopes=scopes)))
+    return tests
 
 
 def main() -> int:

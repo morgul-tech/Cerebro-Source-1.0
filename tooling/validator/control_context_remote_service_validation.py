@@ -224,6 +224,14 @@ def selftest() -> dict[str, Any]:
             for item in definitions
         ),
     )
+    check("HG04-private-scope-registry-exact", {item["name"] for item in definitions} == set(TOOL_REQUIRED_SCOPES)
+          and all(TOOL_REQUIRED_SCOPES[name] == "project_state:transition" for name in ("arm_human_t3_break_glass", "confirm_human_t3_break_glass")))
+    ready[0] = True
+    for name in ("arm_human_t3_break_glass", "confirm_human_t3_break_glass"):
+        rejected = service.invoke(tool_name=name, args={}, headers={"Authorization": "Bearer read-token"}, request_meta={"openai/session": "HG04-REMOTE-1"})
+        check("HG04-" + name + "-transition-challenge-before-handler", rejected.get("isError") is True
+              and 'scope="project_state:transition"' in rejected.get("_meta", {}).get("mcp/www_authenticate", [""])[0])
+    ready[0] = False
     schema = json.loads(
         (SOURCE_ROOT / "mcp/control-context-remote-service-config.schema.json").read_text(encoding="utf-8")
     )

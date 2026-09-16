@@ -68,6 +68,8 @@ class ScriptedCursor:
         expected = _normalized(step["contains"])
         if expected not in actual:
             raise AssertionError(f"scripted-SQL-order-mismatch:expected={expected}:actual={actual[:180]}")
+        if "params" in step and tuple(params or ()) != tuple(step["params"]):
+            raise AssertionError("scripted-SQL-parameter-binding-mismatch")
         self.executed.append(actual)
         if "error" in step:
             raise step["error"]
@@ -398,7 +400,7 @@ def selftest() -> dict[str, Any]:
     )
     check(
         "B1-additive-0002-migration-manifest-checksum-matches-candidate-SQL",
-        len(manifest["migrations"]) == 2
+        len(manifest["migrations"]) == 3
         and manifest["migrations"][1]["migration_id"] == "0002-actor-generation-work-claim-shadow"
         and manifest["migrations"][1]["checksum_sha256"] == shadow_checksum,
     )
@@ -416,6 +418,9 @@ def selftest() -> dict[str, Any]:
         {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
         {"contains": "CREATE TABLE IF NOT EXISTS cerebro_actor_generation_shadow_heads"},
         {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
+        {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
+        {"contains": "CREATE TABLE IF NOT EXISTS cerebro_human_t3_break_glass_heads"},
+        {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
     ]
     migration_connection = ScriptedConnection(migration_steps)
     migration_result = apply_postgres_migrations(lambda: migration_connection)
@@ -424,6 +429,7 @@ def selftest() -> dict[str, Any]:
         migration_result["applied"] == [
             "0001-control-context-state-service",
             "0002-actor-generation-work-claim-shadow",
+            "0003-human-t3-break-glass",
         ]
         and migration_connection.commit_called
         and not migration_connection.cursor_instance.steps,
@@ -623,6 +629,7 @@ def selftest() -> dict[str, Any]:
         and not unused_connection.commit_called,
     )
 
+    tests.extend(human_t3_postgres_regressions())
     result = "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL"
     return {
         "schema": "cerebro-control-context-postgres-contract-selftest/v1",
@@ -633,6 +640,68 @@ def selftest() -> dict[str, Any]:
         "failures": [item for item in tests if item["result"] != "PASS"],
         "tests": tests,
     }
+
+
+def human_t3_postgres_regressions():
+    sys.path.insert(0, str(SOURCE_ROOT / "mcp"))
+    from control_resolution_host_validation import human_t3_fixture
+    from human_t3_break_glass import seal_record
+    from control_context_state_port import StateBindingError, StatePortError, validate_human_t3_custody_write
+    tests = []
+    def check(name, condition):
+        tests.append({"name": "HG04-PG-" + name, "result": "PASS" if condition else "FAIL"})
+    host, _, _, _, identity, candidate = human_t3_fixture()
+    scopes = {"project_state:transition"}
+    arm = host.arm(identity=identity, override_id="PG-OVERRIDE", candidate=candidate, scopes=scopes)["record"]
+    key = tuple(identity[k] for k in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref")) + ("PG-OVERRIDE",)
+    def scoped():
+        return [{"contains": "set_config('cerebro.tenant_ref'", "params": (identity["tenant_ref"],)},
+                {"contains": "set_config('cerebro.workspace_ref'", "params": (identity["workspace_ref"],)},
+                {"contains": "set_config('cerebro.principal_ref'", "params": (identity["principal_ref"],)},
+                {"contains": "SET CONSTRAINTS ALL DEFERRED"}]
+    def write_steps(record, prior=None, rowcount=1):
+        return scoped() + [{"contains": "pg_advisory_xact_lock"},
+                           {"contains": "FROM cerebro_human_t3_break_glass_heads", "params": key, "rows": [{"arm_payload": prior}] if prior else []},
+                           {"contains": "UPDATE cerebro_human_t3_break_glass_heads" if prior else "INSERT INTO cerebro_human_t3_break_glass_heads", "rowcount": rowcount},
+                           {"contains": "INSERT INTO cerebro_human_t3_break_glass_revisions", "rowcount": 1},
+                           {"contains": "INSERT INTO cerebro_human_t3_break_glass_receipts", "rowcount": 1}]
+    connection = ScriptedConnection(write_steps(arm))
+    receipt = PostgresControlContextStatePort(lambda: connection).commit_human_t3_arm(record=arm, expected_revision=0, scopes=scopes)
+    check("ARM-CAS-ledgers-commit-before-receipt", receipt == validate_human_t3_custody_write(arm, None, 0)
+          and connection.commit_called and not connection.rollback_called and not connection.cursor_instance.steps)
+    read_connection = ScriptedConnection(scoped() + [{"contains": "SELECT arm_payload", "params": key, "rows": [{"arm_payload": arm}]}])
+    observed = PostgresControlContextStatePort(lambda: read_connection).read_human_t3_arm(**identity, override_id="PG-OVERRIDE", scopes=scopes)
+    check("independent-durable-readback-exact-scope", observed == arm and read_connection.commit_called and read_connection.closed)
+    consumed = copy.deepcopy(arm)
+    consumed.update(revision=2, state="OVERRIDE_CONSUMED", override_consumed=True, confirm_event_id="CONFIRM-EVENT", effect_attempt_id="T3-ATTEMPT", effect_truth="EFFECT_UNKNOWN")
+    consumed = seal_record(consumed)
+    connection = ScriptedConnection(write_steps(consumed, arm))
+    receipt = PostgresControlContextStatePort(lambda: connection).commit_human_t3_arm(record=consumed, expected_revision=1, scopes=scopes)
+    check("one-consume-CAS-and-immutable-receipt", receipt["previous_revision"] == 1 and receipt["revision"] == 2 and connection.commit_called and not connection.cursor_instance.steps)
+    connection = ScriptedConnection(write_steps(consumed, arm, rowcount=0)[:-2])
+    check("lost-CAS-no-ledger-or-receipt", _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).commit_human_t3_arm(record=consumed, expected_revision=1, scopes=scopes), StateConflict)
+          and connection.rollback_called and not connection.commit_called and not connection.cursor_instance.steps)
+    connection = ScriptedConnection(scoped() + [{"contains": "pg_advisory_xact_lock"}, {"contains": "FROM cerebro_human_t3_break_glass_heads", "rows": [{"arm_payload": consumed}]}])
+    check("duplicate-consume-conflicts-before-update", _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).commit_human_t3_arm(record=consumed, expected_revision=1, scopes=scopes), StateConflict)
+          and connection.rollback_called and not connection.commit_called)
+    connection = ScriptedConnection(write_steps(arm), commit_error=RuntimeError("fixture-commit-uncertain"))
+    check("failed-commit-no-receipt", _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).commit_human_t3_arm(record=arm, expected_revision=0, scopes=scopes), StatePortError)
+          and connection.rollback_called)
+    for label, changed in (("fingerprint", dict(arm, fingerprint="0"*64)), ("principal", seal_record({**arm, "identity": {**identity, "principal_ref": "OTHER"}}))):
+        connection = ScriptedConnection(scoped() + [{"contains": "SELECT arm_payload", "rows": [{"arm_payload": changed}]}])
+        check(label + "-readback-rejected", _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).read_human_t3_arm(**identity, override_id="PG-OVERRIDE", scopes=scopes), StateBindingError)
+              and connection.rollback_called and not connection.commit_called)
+    connection = ScriptedConnection([])
+    check("read-and-write-transition-scope-before-DB", _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).read_human_t3_arm(**identity, override_id="PG-OVERRIDE", scopes={"project_state:read"}), StateAuthorizationError)
+          and _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).commit_human_t3_arm(record=arm, expected_revision=0, scopes={"project_state:read"}), StateAuthorizationError) and not connection.commit_called)
+    manifest = json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"))
+    entry = manifest["migrations"][-1]
+    sql_bytes = (CONTEXT_ROOT / entry["path"]).read_bytes().replace(b"\r\n", b"\n")
+    sql = sql_bytes.decode("utf-8")
+    check("0003-additive-canonical-checksum", entry["migration_id"] == "0003-human-t3-break-glass" and entry["checksum_sha256"] == hashlib.sha256(sql_bytes).hexdigest())
+    check("0003-RLS-no-delete-immutable-revisions-receipts", all(marker in sql for marker in ("ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY", "BEFORE DELETE", "BEFORE UPDATE OR DELETE", "cerebro_reject_immutable_ledger_mutation", "cerebro.principal_ref", "NONAUTHORIZING_CUSTODY", "CUSTODY_ONLY"))
+          and all("CREATE TABLE IF NOT EXISTS cerebro_human_t3_break_glass_" + suffix in sql for suffix in ("heads", "revisions", "receipts")) and "DROP TABLE" not in sql)
+    return tests
 
 
 def main() -> int:

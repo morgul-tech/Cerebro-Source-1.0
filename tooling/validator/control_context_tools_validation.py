@@ -1213,8 +1213,10 @@ def selftest() -> dict[str, Any]:
         == qualify_lived_continuity_event(copy.deepcopy(continuity_base)),
     )
     check(
-        "P554-no-new-public-MCP-tool",
+        "HG04-exact-private-operations-plus-legacy-project-tools",
         [item["name"] for item in tool_definitions()] == [
+            "arm_human_t3_break_glass",
+            "confirm_human_t3_break_glass",
             "read_project_control_state",
             "begin_project_control_event",
             "complete_project_control_event",
@@ -1236,6 +1238,7 @@ def selftest() -> dict[str, Any]:
         and adapter["activation_claim_before_both_proofs"] == "PROHIBITED",
     )
     tests.extend(p673_succession_regressions())
+    tests.extend(human_t3_tool_regressions())
     return {
         "schema": "cerebro-control-context-tools-selftest/v1",
         "result": "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL",
@@ -1243,6 +1246,51 @@ def selftest() -> dict[str, Any]:
         "failures": [item for item in tests if item["result"] != "PASS"],
         "tests": tests,
     }
+
+
+def human_t3_tool_regressions():
+    from control_resolution_host_validation import human_t3_fixture
+    from control_context_tools import ControlContextToolError
+    tests = []
+    def check(name, condition):
+        tests.append({"name": "HG04-tool-" + name, "result": "PASS" if condition else "FAIL"})
+    host, port, reader, effect, _, candidate = human_t3_fixture()
+    attestor = HmacControlResolutionAttestor(key_id="HG04-LOCAL-FIXTURE", secret=b"HG04-local-fixture-not-production-key")
+    context = _context()
+    tools = ControlContextMcpTools(port, attestor, human_t3_host=host)
+    def arguments(operation, payload, ctx=context):
+        return {**copy.deepcopy(payload), "control_resolution_attestation": attestor.seal(operation=operation, payload=payload, context=ctx)}
+    arm_name, confirm_name = "arm_human_t3_break_glass", "confirm_human_t3_break_glass"
+    arm_payload = {"override_id": "TOOL-OVERRIDE", "candidate": candidate}
+    confirm_payload = {"override_id": "TOOL-OVERRIDE", "expected_revision": 1}
+    for name, payload in ((arm_name, arm_payload), (confirm_name, confirm_payload)):
+        check(name + "-missing-attestation-rejected", _expect_error(lambda: tools.dispatch(name, {**payload, "control_resolution_attestation": None}, context), ControlContextToolAuthorizationError))
+        read_context = McpToolCallContext(identity=_identity(scopes=frozenset({"project_state:read"})), request_meta=context.request_meta)
+        check(name + "-read-scope-rejected", _expect_error(lambda: tools.dispatch(name, arguments(name, payload, read_context), read_context), ControlContextToolAuthorizationError))
+        wrong_context = McpToolCallContext(identity=context.identity, request_meta={"openai/session": "OTHER-SESSION"})
+        check(name + "-attestation-session-bound", _expect_error(lambda: tools.dispatch(name, arguments(name, payload), wrong_context), ControlContextToolAuthorizationError))
+        wrong_principal = McpToolCallContext(identity=VerifiedMcpIdentity(tenant_ref=context.identity.tenant_ref, workspace_ref=context.identity.workspace_ref, principal_ref="OTHER", scopes=context.identity.scopes, token_verified=True), request_meta=context.request_meta)
+        check(name + "-attestation-principal-bound", _expect_error(lambda: tools.dispatch(name, arguments(name, payload), wrong_principal), ControlContextToolAuthorizationError))
+        check(name + "-operation-bound", _expect_error(lambda: tools.dispatch(name, arguments("OTHER-OPERATION", payload), context), ControlContextToolAuthorizationError))
+        tampered = arguments(name, payload)
+        tampered["override_id"] = "TAMPERED"
+        check(name + "-payload-bound", _expect_error(lambda: tools.dispatch(name, tampered, context), ControlContextToolAuthorizationError))
+        for injected in ("principal_ref", "effect_capability", "human_t3_host", "current_reader", "human_ref", "turn_id"):
+            check(name + "-no-injection-" + injected, _expect_error(lambda: tools.dispatch(name, {**arguments(name, payload), injected: "AI-ASSERTED"}, context), ControlContextToolError))
+    out = tools.dispatch(arm_name, arguments(arm_name, arm_payload), context)["structuredContent"]
+    expected_identity = {k: getattr(context.identity, k) for k in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref")}
+    expected_identity["session_ref"] = context.session_ref()
+    check("identity-from-OAuth-host-not-args", out["record"]["identity"] == expected_identity and effect.calls == [])
+    again = tools.dispatch(arm_name, arguments(arm_name, arm_payload), context)["structuredContent"]
+    check("ARM-idempotent-no-second-custody-revision", again["result"] == "ARM_ALREADY_RECORDED" and len(next(iter(port._human_t3_revisions.values()))) == 1)
+    reader.confirm()
+    out = tools.dispatch(confirm_name, arguments(confirm_name, confirm_payload), context)["structuredContent"]
+    check("CONFIRM-attested-one-attempt", out["result"] == "EFFECT_SUCCESS" and len(effect.calls) == 1 and out["repository_permission_required"] is False)
+    no_host = ControlContextMcpTools(InMemoryControlContextStatePort(), attestor)
+    for name, payload in ((arm_name, arm_payload), (confirm_name, confirm_payload)):
+        out = no_host.dispatch(name, arguments(name, payload), context)["structuredContent"]
+        check(name + "-unbound-host-holds-no-effect", out["result"] == "HOLD_TRUSTED_HUMAN_T3_HOST_NOT_BOUND" and out["effect_attempted"] is False)
+    return tests
 
 
 def main() -> int:

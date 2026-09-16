@@ -37,7 +37,8 @@ from control_context_registry import (
     validate_principal_continuity_baseline as validate_state_principal_continuity_baseline,
 )
 import project_manager_control_governor
-from control_resolution_host import consume_operational_pulse
+from control_resolution_host import consume_operational_pulse, HumanT3BreakGlassHost
+from human_t3_break_glass import HumanT3BreakGlassError
 from control_owner_effect_receipt import validate_owner_effect_receipt  # noqa: E402
 from human_navigation_surface_validation import (  # noqa: E402
     validate_navigation_options,
@@ -938,7 +939,7 @@ def _object_output_schema(
 def tool_definitions() -> list[dict[str, Any]]:
     """Return MCP-compatible tool descriptors with conservative annotations."""
 
-    return [
+    return human_t3_tool_definitions() + [
         {
             "name": "read_project_control_state",
             "title": "Read project control state",
@@ -1106,6 +1107,27 @@ def tool_definitions() -> list[dict[str, Any]]:
     ]
 
 
+def human_t3_tool_definitions() -> list[dict[str, Any]]:
+    """Private HG04 control operations: scoped/attested, not generic effects."""
+    candidate = json.loads((SOURCE_ROOT / "mcp" / "human-t3-break-glass.schema.json").read_text(encoding="utf-8"))["properties"]["candidate"]
+    result = []
+    for operation in ("arm", "confirm"):
+        properties = {"override_id": {"type": "string", "minLength": 1},
+                      "control_resolution_attestation": _attestation_input_schema()}
+        if operation == "arm":
+            properties["candidate"] = copy.deepcopy(candidate)
+        else:
+            properties["expected_revision"] = {"type": "integer", "minimum": 1}
+        result.append({"name": operation + "_human_t3_break_glass",
+                       "title": operation.upper() + " Human T3 break-glass",
+                       "description": "Private MCP-owned " + operation.upper() + " custody operation. Requires a distinct authenticated Human event and bound pre-Human T3 carrier; grants no general authority.",
+                       "inputSchema": {"type": "object", "additionalProperties": False, "required": list(properties), "properties": properties},
+                       "outputSchema": _object_output_schema(required=("result", "effect_attempted", "repository_permission_required"), properties={"result": {"type": "string"}, "effect_attempted": {"type": "boolean"}, "repository_permission_required": {"const": False}}),
+                       "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+                       "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}})
+    return result
+
+
 class ControlContextMcpTools:
     """MCP handler collection over an injected state-port implementation."""
 
@@ -1115,6 +1137,7 @@ class ControlContextMcpTools:
         resolution_attestation_verifier: Any,
         lifecycle_effect_adapter: Any | None = None,
         provider_tail_reader: Any | None = None,
+        human_t3_host: HumanT3BreakGlassHost | None = None,
     ):
         self._state_port = state_port
         if not callable(getattr(resolution_attestation_verifier, "verify", None)):
@@ -1130,6 +1153,9 @@ class ControlContextMcpTools:
         self._resolution_attestation_verifier = resolution_attestation_verifier
         self._lifecycle_effect_adapter = lifecycle_effect_adapter
         self._provider_tail_reader = provider_tail_reader
+        if human_t3_host is not None and not isinstance(human_t3_host, HumanT3BreakGlassHost):
+            raise ControlContextToolAuthorizationError("constructor-bound-Human-T3-host-required")
+        self._human_t3_host = human_t3_host
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -1154,10 +1180,41 @@ class ControlContextMcpTools:
             "complete_project_control_event": self.complete_project_control_event,
             "create_project_control_instance": self.create_project_control_instance,
             "set_default_project_control_instance": self.set_default_project_control_instance,
+            "arm_human_t3_break_glass": self.arm_human_t3_break_glass,
+            "confirm_human_t3_break_glass": self.confirm_human_t3_break_glass,
         }
         if tool_name not in handlers:
             raise ControlContextToolError(f"unknown-control-context-tool:{tool_name}")
         return handlers[tool_name](_require_args(args), context)
+
+    def _human_t3(self, operation: str, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        fields = {"override_id", "control_resolution_attestation", "candidate" if operation == "arm" else "expected_revision"}
+        if set(args) != fields:
+            raise ControlContextToolError("exact-private-Human-T3-operation-fields-required")
+        override_id = _require_text(args, "override_id")
+        payload = {k: copy.deepcopy(v) for k, v in args.items() if k != "control_resolution_attestation"}
+        self._resolution_attestation_verifier.verify(operation=operation + "_human_t3_break_glass", payload=payload,
+                                                    attestation=args["control_resolution_attestation"], context=context)
+        if self._human_t3_host is None:
+            return self._result({"result": "HOLD_TRUSTED_HUMAN_T3_HOST_NOT_BOUND", "effect_attempted": False,
+                                 "repository_permission_required": False}, context)
+        host_identity = {k: getattr(identity, k) for k in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref")}
+        host_identity["session_ref"] = context.session_ref()
+        try:
+            value = getattr(self._human_t3_host, operation)(identity=host_identity, override_id=override_id,
+                        scopes=identity.state_scopes, **{k: args[k] for k in fields - {"override_id", "control_resolution_attestation"}})
+        except HumanT3BreakGlassError as exc:
+            raise ControlContextToolError(str(exc)) from exc
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def arm_human_t3_break_glass(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return self._human_t3("arm", args, context)
+
+    def confirm_human_t3_break_glass(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return self._human_t3("confirm", args, context)
 
     def read_project_control_state(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         identity = self._identity(context)

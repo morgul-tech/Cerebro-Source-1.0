@@ -174,6 +174,96 @@ def validate_context_owner_candidate_binding(
     }
 
 
+HUMAN_T3_IDENTITY_FIELDS = ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref")
+
+
+def validate_human_t3_record(record: dict[str, Any]) -> None:
+    """Custody integrity only; this port does not decide Human admission."""
+    _require(isinstance(record, dict), "T3-record-object-required", StateBindingError)
+    fields = {"schema", "identity", "override_id", "candidate", "human_ref", "arm_event_id", "arm_turn_id", "revision", "state", "authority", "current", "override_consumed", "confirm_event_id", "effect_attempt_id", "effect_truth", "context_override_record", "invalidation_reason", "fingerprint"}
+    _require(set(record) == fields, "T3-exact-record-fields-required", StateBindingError)
+    subject = copy.deepcopy(record)
+    supplied = subject.pop("fingerprint", None)
+    _require(supplied == _sha256(subject), "T3-record-fingerprint-mismatch", StateBindingError)
+    _require(record.get("schema") == "cerebro-human-t3-break-glass/v1", "T3-schema-mismatch", StateBindingError)
+    identity = record.get("identity")
+    _require(isinstance(identity, dict) and set(identity) == set(HUMAN_T3_IDENTITY_FIELDS)
+             and all(isinstance(v, str) and bool(v.strip()) for v in identity.values()), "T3-identity-invalid", StateBindingError)
+    _require(record.get("current") is False and record.get("authority") == "NONAUTHORIZING_CUSTODY", "T3-custody-cannot-authorize", StateBindingError)
+    _require(type(record.get("revision")) is int and record["revision"] >= 1, "T3-revision-invalid", StateBindingError)
+    _require(isinstance(record.get("override_id"), str) and bool(record["override_id"].strip()), "T3-override-id-invalid", StateBindingError)
+    for key in ("human_ref", "arm_event_id", "arm_turn_id"):
+        _require(isinstance(record[key], str) and bool(record[key].strip()), "T3-Human-binding-invalid", StateBindingError)
+    candidate = record.get("candidate")
+    candidate_fields = {"candidate_id", "candidate_digest", "generation_id", "target_binding", "material_fingerprint", "supersession_ref", "project_revision", "session_revision", "frontier_revision", "normal_admission", "override_dimensions"}
+    _require(isinstance(candidate, dict) and set(candidate) == candidate_fields, "T3-candidate-shape-invalid", StateBindingError)
+    _require(all(isinstance(candidate[k], str) and bool(candidate[k].strip()) for k in candidate_fields - {"override_dimensions"}), "T3-candidate-field-invalid", StateBindingError)
+    for key in ("candidate_digest", "material_fingerprint"):
+        _require(len(candidate[key]) == 64 and all(c in "0123456789abcdef" for c in candidate[key]), "T3-candidate-fingerprint-invalid", StateBindingError)
+    dims = candidate["override_dimensions"]
+    _require(isinstance(dims, list) and bool(dims) and all(isinstance(d, str) for d in dims)
+             and len(dims) == len(set(dims)) and set(dims) <= {"AUTHORITY", "FENCE", "CURRENTNESS"}, "T3-candidate-dimensions-invalid", StateBindingError)
+    _require(candidate["normal_admission"] in {"BLOCK", "UNKNOWN"}, "T3-candidate-admission-shape-invalid", StateBindingError)
+    states = {"ARMED_PENDING_CONFIRM", "INVALIDATED", "OVERRIDE_CONSUMED", "CONTEXT_OVERRIDE_COMMITTED", "EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN"}
+    _require(record.get("state") in states, "T3-state-invalid", StateBindingError)
+    consumed = record["state"] not in {"ARMED_PENDING_CONFIRM", "INVALIDATED"}
+    _require(record.get("override_consumed") is consumed, "T3-consumption-state-mismatch", StateBindingError)
+    _require((record.get("effect_attempt_id") is not None) is consumed
+             and (record.get("confirm_event_id") is not None) is consumed, "T3-attempt-binding-mismatch", StateBindingError)
+    if consumed:
+        _require(all(isinstance(record[k], str) and bool(record[k].strip()) for k in ("confirm_event_id", "effect_attempt_id")), "T3-consumed-binding-invalid", StateBindingError)
+        _require(record["confirm_event_id"] != record["arm_event_id"], "T3-distinct-event-required", StateBindingError)
+    _require((record["invalidation_reason"] is not None) is (record["state"] == "INVALIDATED"), "T3-invalidation-reason-mismatch", StateBindingError)
+    context = record["context_override_record"]
+    needs_context = record["state"] in {"CONTEXT_OVERRIDE_COMMITTED", "EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN"}
+    _require((context is not None) is needs_context, "T3-Context-evidence-state-mismatch", StateBindingError)
+    if context is not None:
+        _require(isinstance(context, dict) and set(context) == {"record_type", "authority", "mcp_decision", "override_id", "effect_attempt_id", "candidate_fingerprint", "state_service_receipt", "readback_verified"}, "T3-Context-evidence-shape-invalid", StateBindingError)
+        _require(context["record_type"] == "OVERRIDE" and context["authority"] == "EVIDENCE_ONLY"
+                 and context["mcp_decision"] == "CONFIRM_ADMITTED" and context["readback_verified"] is True,
+                 "T3-Context-evidence-cannot-authorize", StateBindingError)
+        _require(context["override_id"] == record["override_id"] and context["effect_attempt_id"] == record["effect_attempt_id"]
+                 and context["candidate_fingerprint"] == _sha256(candidate), "T3-Context-evidence-binding-mismatch", StateBindingError)
+        receipt = context["state_service_receipt"]
+        _require(isinstance(receipt, dict), "T3-Context-custody-receipt-required", StateBindingError)
+        subject = copy.deepcopy(receipt)
+        fp = subject.pop("fingerprint", None)
+        _require(fp == _sha256(subject) and receipt.get("authority") == "CUSTODY_ONLY"
+                 and receipt.get("schema") == "cerebro-human-t3-custody-receipt/v1", "T3-Context-custody-receipt-invalid", StateBindingError)
+    _require(record.get("effect_truth") == (record["state"] if record["state"].startswith("EFFECT_") else "EFFECT_UNKNOWN" if consumed else "NOT_ATTEMPTED"), "T3-effect-truth-mismatch", StateBindingError)
+
+
+def validate_human_t3_custody_write(record: dict[str, Any], prior: dict[str, Any] | None, expected_revision: int) -> dict[str, Any]:
+    validate_human_t3_record(record)
+    _require(type(expected_revision) is int and expected_revision >= 0, "T3-expected-revision-invalid", StateBindingError)
+    _require((prior["revision"] if prior else 0) == expected_revision, "T3-custody-CAS-conflict", StateConflict)
+    _require(record["revision"] == expected_revision + 1, "T3-revision-sequence-invalid", StateBindingError)
+    if prior is None:
+        _require(record["state"] == "ARMED_PENDING_CONFIRM", "T3-first-revision-must-be-ARM", StateBindingError)
+    else:
+        validate_human_t3_record(prior)
+        for key in ("schema", "identity", "override_id", "candidate", "human_ref", "arm_event_id", "arm_turn_id", "authority", "current"):
+            _require(record.get(key) == prior.get(key), "T3-immutable-binding-changed:" + key, StateBindingError)
+        next_states = {"ARMED_PENDING_CONFIRM": {"INVALIDATED", "OVERRIDE_CONSUMED"},
+                       "OVERRIDE_CONSUMED": {"CONTEXT_OVERRIDE_COMMITTED"},
+                       "CONTEXT_OVERRIDE_COMMITTED": {"EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN"}}
+        _require(record["state"] in next_states.get(prior["state"], set()), "T3-terminal-or-consumed-no-retry", StateConflict)
+        if prior["override_consumed"]:
+            for key in ("confirm_event_id", "effect_attempt_id"):
+                _require(record[key] == prior[key], "T3-consumed-binding-changed", StateBindingError)
+        if prior.get("context_override_record") is not None:
+            _require(record.get("context_override_record") == prior["context_override_record"], "T3-Context-evidence-immutable", StateBindingError)
+        if record["state"] == "CONTEXT_OVERRIDE_COMMITTED":
+            embedded = record["context_override_record"]["state_service_receipt"]
+            _require(embedded.get("record_fingerprint") == prior["fingerprint"] and embedded.get("revision") == prior["revision"]
+                     and embedded.get("override_id") == prior["override_id"], "T3-Context-consumption-receipt-binding-mismatch", StateBindingError)
+    receipt = {"schema": "cerebro-human-t3-custody-receipt/v1", "authority": "CUSTODY_ONLY",
+               "override_id": record["override_id"], "revision": record["revision"],
+               "previous_revision": expected_revision, "record_fingerprint": record["fingerprint"]}
+    receipt["fingerprint"] = _sha256(receipt)
+    return receipt
+
+
 class InMemoryControlContextStatePort:
     """Thread-safe test adapter implementing session-scoped focus and CAS."""
 
@@ -188,6 +278,32 @@ class InMemoryControlContextStatePort:
         self._bootstraps: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
         self._actor_generation_shadows: dict[tuple[str, str, str, str], dict[str, Any]] = {}
         self._work_claim_shadows: dict[tuple[str, str, str], dict[str, Any]] = {}
+        self._human_t3_arms: dict[tuple[str, ...], dict[str, Any]] = {}
+        self._human_t3_revisions: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+        self._human_t3_receipts: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+
+    def read_human_t3_arm(self, *, override_id: str, scopes: set[str], **identity: str) -> dict[str, Any] | None:
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:transition")
+            _require(set(identity) == set(HUMAN_T3_IDENTITY_FIELDS), "T3-exact-identity-required", StateBindingError)
+            key = tuple(identity[k] for k in HUMAN_T3_IDENTITY_FIELDS) + (override_id,)
+            record = self._human_t3_arms.get(key)
+            if record is not None:
+                validate_human_t3_record(record)
+            return copy.deepcopy(record)
+
+    def commit_human_t3_arm(self, *, record: dict[str, Any], expected_revision: int, scopes: set[str]) -> dict[str, Any]:
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:transition")
+            validate_human_t3_record(record)
+            key = tuple(record["identity"][k] for k in HUMAN_T3_IDENTITY_FIELDS) + (record["override_id"],)
+            receipt = validate_human_t3_custody_write(record, self._human_t3_arms.get(key), expected_revision)
+            self._human_t3_arms[key] = copy.deepcopy(record)
+            self._human_t3_revisions.setdefault(key, []).append(copy.deepcopy(record))
+            self._human_t3_receipts.setdefault(key, []).append(copy.deepcopy(receipt))
+            return copy.deepcopy(receipt)
 
     def set_available(self, available: bool) -> None:
         with self._lock:

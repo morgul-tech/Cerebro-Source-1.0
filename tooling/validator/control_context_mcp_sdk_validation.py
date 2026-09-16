@@ -286,6 +286,16 @@ def selftest() -> dict[str, Any]:
         )
         listed = _json(list_response)["result"]["tools"]
         tool_by_name = {tool["name"]: tool for tool in listed}
+        for sequence, name in enumerate(("arm_human_t3_break_glass", "confirm_human_t3_break_glass")):
+            descriptor = tool_by_name[name]
+            check("HG04-SDK-" + name + "-strict-private-scope", descriptor["inputSchema"]["additionalProperties"] is False
+                  and "control_resolution_attestation" in descriptor["inputSchema"]["required"]
+                  and descriptor["securitySchemes"] == [{"type": "oauth2", "scopes": ["project_state:transition"]}])
+            response = client.post("/mcp", headers={**protocol_headers, "Authorization": "Bearer read-token"},
+                                   json={"jsonrpc": "2.0", "id": 8700+sequence, "method": "tools/call", "params": {"name": name, "arguments": {}, "_meta": trusted_context.request_meta}})
+            value = _json(response).get("result", {})
+            check("HG04-SDK-" + name + "-read-scope-denied", response.status_code == 200 and value.get("isError") is True
+                  and 'scope="project_state:transition"' in value.get("_meta", {}).get("mcp/www_authenticate", [""])[0])
         check(
             "official-SDK-lists-the-complete-private-tool-surface-without-authentication",
             list_response.status_code == 200

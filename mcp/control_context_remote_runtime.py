@@ -43,6 +43,7 @@ from control_context_state_postgres import (  # noqa: E402
     make_psycopg_connection_factory,
 )
 from control_context_tools import ContextLifecycleEffectAdapter, ControlContextMcpTools  # noqa: E402
+from control_resolution_host import HumanT3BreakGlassHost  # noqa: E402
 
 
 REMOTE_RUNTIME_SCHEMA = "cerebro-control-context-remote-runtime/v1"
@@ -66,6 +67,9 @@ REQUIRED_POSTGRES_RELATIONS = (
     "cerebro_owner_state_commit_receipts",
     "cerebro_actor_generation_shadow_heads",
     "cerebro_actor_generation_shadow_revisions",
+    "cerebro_human_t3_break_glass_heads",
+    "cerebro_human_t3_break_glass_revisions",
+    "cerebro_human_t3_break_glass_receipts",
 )
 
 
@@ -373,6 +377,7 @@ class ControlContextRemoteRuntime:
     provider_tail_reader: Any | None = field(default=None, repr=False)
     principal_succession_reader: Any | None = field(default=None, repr=False)
     machine_diary_effect_verifier: Any | None = field(default=None, repr=False)
+    human_t3_host: HumanT3BreakGlassHost | None = field(default=None, repr=False)
 
     def descriptor(self) -> dict[str, Any]:
         sdk = official_mcp_sdk_runtime()
@@ -393,6 +398,8 @@ class ControlContextRemoteRuntime:
             "provider_tail_reader_bound": self.provider_tail_reader is not None,
             "principal_succession_reader_bound": self.principal_succession_reader is not None,
             "machine_diary_effect_verifier_bound": self.machine_diary_effect_verifier is not None,
+            "human_t3_host_bound": self.human_t3_host is not None,
+            "human_t3_remote_activation": "NOT_PROVEN",
             "deployed": False,
         }
 
@@ -421,6 +428,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     provider_tail_reader: Any | None = None,
     principal_succession_reader: Any | None = None,
     machine_diary_effect_verifier: Any | None = None,
+    human_t3_current_reader: Any | None = None,
+    human_t3_effect_capability: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -435,6 +444,11 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     )
     _require(callable(clock), "runtime-clock-required")
     state_port = PostgresControlContextStatePort(connection_factory)
+    _require(human_t3_effect_capability is None or human_t3_current_reader is not None,
+             "T3-effect-capability-requires-trusted-current-reader")
+    human_t3_host = (HumanT3BreakGlassHost(state_port=state_port, current_reader=human_t3_current_reader,
+                                        effect_capability=human_t3_effect_capability)
+                     if human_t3_current_reader is not None else None)
     readiness_probe = PostgresStateServiceReadinessProbe(connection_factory, manifest_path)
     pm_lifecycle_verifier = (
         ContextLifecycleEffectAdapter(
@@ -451,6 +465,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         resolution_attestation_verifier,
         lifecycle_effect_adapter=pm_lifecycle_verifier,
         provider_tail_reader=provider_tail_reader,
+        human_t3_host=human_t3_host,
     )
     service = ControlContextRemoteMcpService(
         config=config.service,
@@ -471,6 +486,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         state_port=state_port,
         readiness_probe=readiness_probe,
         app=app,
+        human_t3_host=human_t3_host,
         pm_lifecycle_verifier=pm_lifecycle_verifier,
         provider_tail_reader=provider_tail_reader,
         principal_succession_reader=principal_succession_reader,
@@ -488,6 +504,8 @@ def assemble_postgres_control_context_remote_runtime(
     provider_tail_reader: Any | None = None,
     principal_succession_reader: Any | None = None,
     machine_diary_effect_verifier: Any | None = None,
+    human_t3_current_reader: Any | None = None,
+    human_t3_effect_capability: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -507,6 +525,8 @@ def assemble_postgres_control_context_remote_runtime(
         provider_tail_reader=provider_tail_reader,
         principal_succession_reader=principal_succession_reader,
         machine_diary_effect_verifier=machine_diary_effect_verifier,
+        human_t3_current_reader=human_t3_current_reader,
+        human_t3_effect_capability=human_t3_effect_capability,
         clock=clock,
         manifest_path=manifest_path,
     )

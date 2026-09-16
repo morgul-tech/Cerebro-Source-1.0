@@ -116,6 +116,29 @@ control_adapters:
     AI_supplied_profile_binding_is_authority: false
     activation_claim_before_host_binding_proof: PROHIBITED
   project_control_context:
+    human_t3_break_glass:
+      status: LOCAL_CANDIDATE_REMOTE_ACTIVATION_NOT_PROVEN
+      semantic_owner: MCP
+      implementation_ref: mcp/human_t3_break_glass.py
+      schema_ref: mcp/human-t3-break-glass.schema.json
+      host_ref: mcp/control_resolution_host.py
+      migration_ref: tooling/context/control_context_state_postgres_0003_human_t3_break_glass.sql
+      private_operations: [arm_human_t3_break_glass, confirm_human_t3_break_glass]
+      scope: project_state:transition
+      exact_attestation_required: true
+      trusted_Human_event_and_currentness: CONSTRUCTOR_BOUND
+      preHuman_T3_effect_capability: CONSTRUCTOR_BOUND
+      missing_capability: HOLD_BEFORE_CONSUMPTION
+      ARM_authority: NONCURRENT_NONAUTHORIZING
+      Context_override_record: DOWNSTREAM_EVIDENCE_ONLY
+      HCS: PRESENTATION_ONLY
+      effect_attempts: ONE_AFTER_CONSUMPTION_AND_READBACK
+      UNKNOWN: NO_RETRY
+      remote_State_Service_available: NOT_PROVEN
+      authenticated_remote_consumer_bound: NOT_PROVEN
+      final_handoff_gate_proven: false
+      preHuman_T3_carrier_proven: false
+      local_proof_is_remote_activation: false
     hierarchy_contract_ref: standards/control-context-hierarchy.yaml
     state_service_contract_ref: standards/control-context-state-service.yaml
     domain_implementation_ref: tooling/context/control_context_registry.py

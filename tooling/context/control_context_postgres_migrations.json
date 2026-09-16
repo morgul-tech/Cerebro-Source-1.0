@@ -14,6 +14,12 @@
       "schema_version": "1.1.0-shadow-candidate",
       "path": "control_context_state_postgres_0002_actor_claim_shadow.sql",
       "checksum_sha256": "9b51fa1cb0b46618f5677670a7ad48411ceb50febb05503c8948df8844e02b0c"
+    },
+    {
+      "migration_id": "0003-human-t3-break-glass",
+      "schema_version": "1.2.0-human-t3-custody-candidate",
+      "path": "control_context_state_postgres_0003_human_t3_break_glass.sql",
+      "checksum_sha256": "5c83038f88d7946554ee6cc7a01cdb703d23da739cd0734bd6c50b5e51a34167"
     }
   ]
 }

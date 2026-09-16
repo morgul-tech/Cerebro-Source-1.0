@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cerebro-human-t3-break-glass/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "identity", "override_id", "candidate", "human_ref", "arm_event_id", "arm_turn_id", "revision", "state", "authority", "current", "override_consumed", "confirm_event_id", "effect_attempt_id", "effect_truth", "context_override_record", "invalidation_reason", "fingerprint"],
+  "allOf": [
+    {"if": {"properties": {"state": {"enum": ["ARMED_PENDING_CONFIRM", "INVALIDATED"]}}}, "then": {"properties": {"override_consumed": {"const": false}, "confirm_event_id": {"type": "null"}, "effect_attempt_id": {"type": "null"}, "effect_truth": {"const": "NOT_ATTEMPTED"}, "context_override_record": {"type": "null"}}}, "else": {"properties": {"override_consumed": {"const": true}, "confirm_event_id": {"type": "string", "minLength": 1}, "effect_attempt_id": {"type": "string", "minLength": 1}}}},
+    {"if": {"properties": {"state": {"enum": ["CONTEXT_OVERRIDE_COMMITTED", "EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN"]}}}, "then": {"properties": {"context_override_record": {"type": "object"}}}, "else": {"properties": {"context_override_record": {"type": "null"}}}},
+    {"if": {"properties": {"state": {"const": "INVALIDATED"}}}, "then": {"properties": {"invalidation_reason": {"type": "string", "minLength": 1}}}, "else": {"properties": {"invalidation_reason": {"type": "null"}}}},
+    {"if": {"properties": {"state": {"const": "EFFECT_SUCCESS"}}}, "then": {"properties": {"effect_truth": {"const": "EFFECT_SUCCESS"}}}},
+    {"if": {"properties": {"state": {"const": "EFFECT_NO_EFFECT"}}}, "then": {"properties": {"effect_truth": {"const": "EFFECT_NO_EFFECT"}}}},
+    {"if": {"properties": {"state": {"enum": ["OVERRIDE_CONSUMED", "CONTEXT_OVERRIDE_COMMITTED", "EFFECT_UNKNOWN"]}}}, "then": {"properties": {"effect_truth": {"const": "EFFECT_UNKNOWN"}}}}
+  ],
+  "properties": {
+    "schema": {"const": "cerebro-human-t3-break-glass/v1"},
+    "identity": {"type": "object", "additionalProperties": false, "required": ["tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref"], "properties": {"tenant_ref": {"type": "string", "minLength": 1}, "workspace_ref": {"type": "string", "minLength": 1}, "principal_ref": {"type": "string", "minLength": 1}, "consumer_ref": {"type": "string", "minLength": 1}, "session_ref": {"type": "string", "minLength": 1}}},
+    "override_id": {"type": "string", "minLength": 1},
+    "candidate": {"type": "object", "additionalProperties": false, "required": ["candidate_id", "candidate_digest", "generation_id", "target_binding", "material_fingerprint", "supersession_ref", "project_revision", "session_revision", "frontier_revision", "normal_admission", "override_dimensions"], "properties": {"candidate_id": {"type": "string", "minLength": 1}, "candidate_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "generation_id": {"type": "string", "minLength": 1}, "target_binding": {"type": "string", "minLength": 1}, "material_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "supersession_ref": {"type": "string", "minLength": 1}, "project_revision": {"type": "string", "minLength": 1}, "session_revision": {"type": "string", "minLength": 1}, "frontier_revision": {"type": "string", "minLength": 1}, "normal_admission": {"enum": ["BLOCK", "UNKNOWN"]}, "override_dimensions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["AUTHORITY", "FENCE", "CURRENTNESS"]}}}},
+    "human_ref": {"type": "string", "minLength": 1},
+    "arm_event_id": {"type": "string", "minLength": 1},
+    "arm_turn_id": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "state": {"enum": ["ARMED_PENDING_CONFIRM", "INVALIDATED", "OVERRIDE_CONSUMED", "CONTEXT_OVERRIDE_COMMITTED", "EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN"]},
+    "authority": {"const": "NONAUTHORIZING_CUSTODY"},
+    "current": {"const": false},
+    "override_consumed": {"type": "boolean"},
+    "confirm_event_id": {"type": ["string", "null"]},
+    "effect_attempt_id": {"type": ["string", "null"]},
+    "effect_truth": {"enum": ["NOT_ATTEMPTED", "EFFECT_SUCCESS", "EFFECT_NO_EFFECT", "EFFECT_UNKNOWN"]},
+    "context_override_record": {"type": ["object", "null"], "additionalProperties": false, "required": ["record_type", "authority", "mcp_decision", "override_id", "effect_attempt_id", "candidate_fingerprint", "state_service_receipt", "readback_verified"], "properties": {"record_type": {"const": "OVERRIDE"}, "authority": {"const": "EVIDENCE_ONLY"}, "mcp_decision": {"const": "CONFIRM_ADMITTED"}, "override_id": {"type": "string", "minLength": 1}, "effect_attempt_id": {"type": "string", "minLength": 1}, "candidate_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "state_service_receipt": {"type": "object"}, "readback_verified": {"const": true}}},
+    "invalidation_reason": {"type": ["string", "null"]},
+    "fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

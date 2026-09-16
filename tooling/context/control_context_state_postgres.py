@@ -40,6 +40,9 @@ try:
         StateServiceUnavailable,
         rehydrate_control_session,
         validate_context_owner_candidate_binding,
+        HUMAN_T3_IDENTITY_FIELDS,
+        validate_human_t3_record,
+        validate_human_t3_custody_write,
     )
 except ImportError:
     from control_context_registry import (
@@ -65,6 +68,9 @@ except ImportError:
         StateServiceUnavailable,
         rehydrate_control_session,
         validate_context_owner_candidate_binding,
+        HUMAN_T3_IDENTITY_FIELDS,
+        validate_human_t3_record,
+        validate_human_t3_custody_write,
     )
 
 
@@ -460,6 +466,46 @@ class PostgresControlContextStatePort:
     def __init__(self, connection_factory: Callable[[], Any]):
         _require(callable(connection_factory), "postgres-connection-factory-required")
         self._connection_factory = connection_factory
+
+    def read_human_t3_arm(self, *, override_id: str, scopes: set[str], **identity: str) -> dict[str, Any] | None:
+        self._require_scope(scopes, "project_state:transition")
+        _require(set(identity) == set(HUMAN_T3_IDENTITY_FIELDS), "T3-exact-identity-required", StateBindingError)
+        self._validate_text_fields(identity, "T3", HUMAN_T3_IDENTITY_FIELDS)
+        key = tuple(identity[k] for k in HUMAN_T3_IDENTITY_FIELDS) + (override_id,)
+        with self._transaction(**{k: identity[k] for k in HUMAN_T3_IDENTITY_FIELDS[:3]}) as cursor:
+            cursor.execute("SELECT arm_payload FROM cerebro_human_t3_break_glass_heads WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s AND consumer_ref=%s AND session_ref=%s AND override_id=%s", key)
+            row = _fetchone(cursor)
+            record = _json_value(row["arm_payload"], field="T3-arm") if row else None
+            if record is not None:
+                validate_human_t3_record(record)
+                _require(record["identity"] == identity and record["override_id"] == override_id, "T3-read-scope-mismatch", StateBindingError)
+        return record
+
+    def commit_human_t3_arm(self, *, record: dict[str, Any], expected_revision: int, scopes: set[str]) -> dict[str, Any]:
+        self._require_scope(scopes, "project_state:transition")
+        validate_human_t3_record(record)
+        identity = record["identity"]
+        key = tuple(identity[k] for k in HUMAN_T3_IDENTITY_FIELDS) + (record["override_id"],)
+        with self._transaction(**{k: identity[k] for k in HUMAN_T3_IDENTITY_FIELDS[:3]}) as cursor:
+            # Serialize even the absent-head case. Hash collisions only over-lock.
+            cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (_canonical_text(key),))
+            cursor.execute("SELECT arm_payload FROM cerebro_human_t3_break_glass_heads WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s AND consumer_ref=%s AND session_ref=%s AND override_id=%s FOR UPDATE", key)
+            row = _fetchone(cursor)
+            prior = _json_value(row["arm_payload"], field="T3-arm") if row else None
+            receipt = validate_human_t3_custody_write(record, prior, expected_revision)
+            values = key + (record["revision"], record["fingerprint"], _canonical_text(record))
+            if prior is None:
+                cursor.execute("INSERT INTO cerebro_human_t3_break_glass_heads (tenant_ref, workspace_ref, principal_ref, consumer_ref, session_ref, override_id, revision, record_fingerprint, arm_payload) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)", values)
+                _require(cursor.rowcount == 1, "T3-head-insert-unproven", StateConflict)
+            else:
+                cursor.execute("UPDATE cerebro_human_t3_break_glass_heads SET revision=%s, record_fingerprint=%s, arm_payload=%s::jsonb WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s AND consumer_ref=%s AND session_ref=%s AND override_id=%s AND revision=%s", values[6:] + key + (expected_revision,))
+                _require(cursor.rowcount == 1, "T3-custody-CAS-conflict", StateConflict)
+            cursor.execute("INSERT INTO cerebro_human_t3_break_glass_revisions (tenant_ref, workspace_ref, principal_ref, consumer_ref, session_ref, override_id, revision, record_fingerprint, arm_payload) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)", values)
+            _require(cursor.rowcount == 1, "T3-revision-insert-unproven", StateConflict)
+            cursor.execute("INSERT INTO cerebro_human_t3_break_glass_receipts (tenant_ref, workspace_ref, principal_ref, consumer_ref, session_ref, override_id, revision, receipt_payload) VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb)", key + (record["revision"], _canonical_text(receipt)))
+            _require(cursor.rowcount == 1, "T3-receipt-insert-unproven", StateConflict)
+        # _transaction committed successfully before any custody receipt escapes.
+        return receipt
 
     @staticmethod
     def _require_scope(scopes: set[str], required: str) -> None:

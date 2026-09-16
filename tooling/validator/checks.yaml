@@ -2403,11 +2403,21 @@ total_mcp_revision_normal_control_host_binding:
   owner: tooling.validator
   contract_refs:
     - mcp/control-resolution.yaml
+    - mcp/human-t3-break-glass.schema.json
     - standards/control-context-hierarchy.yaml
     - standards/control-context-state-service.yaml
   implementation: mcp/control_resolution_host.py
   validator: tooling/validator/control_resolution_host_validation.py
   invariants:
+    - HG04-ARM-is-durable-noncurrent-nonauthorizing-custody
+    - HG04-CONFIRM-requires-same-Human-separate-event-and-turn
+    - HG04-exact-candidate-material-supersession-and-revisions-requalified
+    - HG04-no-constructor-bound-preHuman-T3-capability-means-no-consumption
+    - HG04-one-CAS-consume-and-one-attempt-after-Context-receipt-readback
+    - HG04-duplicate-and-UNKNOWN-never-license-retry
+    - HG04-private-operations-require-OAuth-transition-and-exact-attestation
+    - HG04-0003-custody-migration-and-relations-required-for-readiness
+    - HG04-HCS-CONFIRM-canary-remains-presentation-only
     - canonical-resolver-receives-verifier-and-capability-through-host-construction
     - event-payload-cannot-inject-verifier-capability-or-executor
     - required-owner-order-is-Project-Quality-Convergence-Context
@@ -2418,6 +2428,7 @@ total_mcp_revision_normal_control_host_binding:
     - default-unbound-canonical-resolver-remains-fail-closed
     - local-host-harness-proof-is-not-remote-host-activation
   prohibited:
+    - HG04-local-conformance-claimed-as-remote-State-Service-consumer-handoff-or-T3-carrier-proof
     - payload-provided-persistence-verifier
     - payload-provided-runtime-capability-resolver
     - downstream-owner-execution-before-prerequisite-PASS

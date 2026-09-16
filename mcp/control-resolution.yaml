@@ -14,6 +14,24 @@ control_resolution:
     existing material/relevance control with the exact AA-003 shadow-validated
     adaptive resolver logic without moving control intelligence into Runtime or
     creating a parallel Adaptive Engine.
+  human_t3_break_glass:
+    disposition: HG04_B_LOCAL_CANDIDATE
+    implementation_ref: mcp/human_t3_break_glass.py
+    schema_ref: mcp/human-t3-break-glass.schema.json
+    semantic_owner: MCP
+    normal_consumers: [resolve_human_t3_arm, resolve_human_t3_confirm]
+    events: [HUMAN_ARM, HUMAN_CONFIRM]
+    arm_authority: NONCURRENT_NONAUTHORIZING
+    confirm_requires: [SAME_HUMAN, SEPARATE_EVENT_AND_TURN, EXACT_CANDIDATE_CURRENTNESS, CONSTITUTIONAL_FLOOR_PASS, CONSTRUCTOR_BOUND_PREHUMAN_T3_CAPABILITY]
+    overrideable_dimensions: [AUTHORITY, FENCE, CURRENTNESS]
+    capability_or_constitution_override: PROHIBITED
+    consumption: CAS_ONCE_BEFORE_CONTEXT_EVIDENCE_AND_ONE_EFFECT_ATTEMPT
+    context_role: DOWNSTREAM_EVIDENCE_ONLY
+    state_service_role: DURABLE_CUSTODY_ONLY
+    hcs_role: PRESENTATION_ONLY
+    uncertain_effect: UNKNOWN_NO_RETRY
+    publication: NOT_AUTHORIZED_BY_P872
+    remote_activation: false
   constitutional_control:
     contract_ref: mcp/constitution.yaml
     normal_consumer: mcp/control_resolution.py#evaluate_constitutional_compliance

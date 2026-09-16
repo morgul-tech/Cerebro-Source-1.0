@@ -24,6 +24,25 @@ control_context_state_service:
     service_may_define_project_semantics: false
     source_contracts_define_semantics: true
 
+  human_t3_break_glass_custody:
+    disposition: HG04_B_LOCAL_CANDIDATE_NOT_REMOTE_ACTIVATION
+    semantic_owner: MCP
+    role: DURABLE_CUSTODY_ONLY
+    aggregate_schema_ref: mcp/human-t3-break-glass.schema.json
+    migration_ref: tooling/context/control_context_state_postgres_0003_human_t3_break_glass.sql
+    private_operations: [arm_human_t3_break_glass, confirm_human_t3_break_glass]
+    required_scope: project_state:transition
+    exact_control_resolution_attestation_required: true
+    identity_binding: [tenant_ref, workspace_ref, principal_ref, consumer_ref, session_ref]
+    atomic_custody: [CAS_HEAD, IMMUTABLE_REVISION, IMMUTABLE_RECEIPT]
+    no_delete: true
+    readback_required_before_effect: true
+    arm_current: false
+    custody_is_override_authority: false
+    context_override_role: DOWNSTREAM_EVIDENCE_ONLY
+    consumed_override_retry: PROHIBITED
+    migration_role_is_runtime_role: false
+    local_proof_is_live_database_proof: false
   universal_scope:
     meaning: SAME_AUTHENTICATED_STATE_PORT_FOR_ALL_CEREBRO_ENABLED_CONSUMERS
     does_not_mean: SOURCE_CAN_INTERCEPT_AN_UNBOUND_HOST_CONVERSATION

@@ -39,6 +39,8 @@ TOOL_REQUIRED_SCOPES = {
     "complete_project_control_event": "project_state:transition",
     "create_project_control_instance": "project_state:transition",
     "set_default_project_control_instance": "project_state:transition",
+    "arm_human_t3_break_glass": "project_state:transition",
+    "confirm_human_t3_break_glass": "project_state:transition",
 }
 ALLOWED_REQUEST_META = frozenset({"openai/session", "openai/subject"})
 _AUTH_ERROR = re.compile(r"^[a-z_]{1,64}$")

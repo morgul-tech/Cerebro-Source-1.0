@@ -262,6 +262,15 @@ def selftest() -> dict[str, Any]:
         )()
         is False,
     )
+    check("HG04-readiness-requires-0003-applied-migration",
+          any(m[0] == "0003-human-t3-break-glass" for m in MIGRATIONS)
+          and PostgresStateServiceReadinessProbe(ProbeFactory(migrations=list(MIGRATIONS[:-1])))() is False)
+    check("HG04-readiness-requires-three-custody-relations",
+          {"cerebro_human_t3_break_glass_heads", "cerebro_human_t3_break_glass_revisions", "cerebro_human_t3_break_glass_receipts"} <= set(REQUIRED_POSTGRES_RELATIONS)
+          and PostgresStateServiceReadinessProbe(ProbeFactory(relation_count=len(REQUIRED_POSTGRES_RELATIONS)-3))() is False)
+    drifted = list(MIGRATIONS)
+    drifted[-1] = (drifted[-1][0], drifted[-1][1], "0" * 64)
+    check("HG04-readiness-rejects-0003-checksum-drift", PostgresStateServiceReadinessProbe(ProbeFactory(migrations=drifted))() is False)
     check(
         "readiness-fails-closed-without-leaking-database-errors",
         PostgresStateServiceReadinessProbe(
@@ -311,6 +320,19 @@ def selftest() -> dict[str, Any]:
         clock=lambda: NOW,
     )
     runtime_descriptor = runtime.descriptor()
+    check("HG04-default-runtime-unbound-not-activated", runtime_descriptor["human_t3_host_bound"] is False
+          and runtime_descriptor["human_t3_remote_activation"] == "NOT_PROVEN")
+    check("HG04-capability-alone-cannot-bind-runtime", _expect_error(
+          lambda: assemble_postgres_control_context_remote_runtime_from_connection_factory(config=config,
+                  connection_factory=runtime_factory, token_verifier=StaticTokenVerifier(), resolution_attestation_verifier=attestor,
+                  human_t3_effect_capability=object(), clock=lambda: NOW), ControlContextRemoteRuntimeError))
+    from control_resolution_host_validation import human_t3_fixture
+    _, _, reader, effect, _, _ = human_t3_fixture()
+    bound_t3_runtime = assemble_postgres_control_context_remote_runtime_from_connection_factory(config=config,
+                       connection_factory=runtime_factory, token_verifier=StaticTokenVerifier(), resolution_attestation_verifier=attestor,
+                       human_t3_current_reader=reader, human_t3_effect_capability=effect, clock=lambda: NOW)
+    check("HG04-runtime-constructor-binds-local-host-without-remote-claim", bound_t3_runtime.descriptor()["human_t3_host_bound"] is True
+          and bound_t3_runtime.descriptor()["human_t3_remote_activation"] == "NOT_PROVEN" and effect.calls == [])
     serialized_descriptor = json.dumps(runtime_descriptor, sort_keys=True).lower()
     check(
         "complete-runtime-is-assembled-with-official-SDK-and-explicitly-not-deployed",

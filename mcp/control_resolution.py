@@ -491,6 +491,31 @@ CONSTITUTIONAL_STATES = {"CLEAR", "SUSPECTED", "VERIFIED_MATERIAL_BREACH", "VERI
 sys.dont_write_bytecode = True
 
 
+def _human_t3_current_with_constitution(trusted_current: dict[str, Any]) -> dict[str, Any]:
+    """Reuse MCP's constitutional consumer; a Human override cannot bypass it."""
+    from human_t3_break_glass import require
+    request = trusted_current.get("constitutional_request")
+    require(isinstance(request, dict) and isinstance(request.get("constitutional_breach_candidates"), list)
+            and all(isinstance(item, dict) for item in request["constitutional_breach_candidates"]),
+            "trusted-MCP-constitutional-input-required")
+    assessment = evaluate_constitutional_compliance(request)
+    result = dict(trusted_current)
+    result["constitutional_floor_pass"] = (trusted_current.get("constitutional_floor_pass") is True
+                                           and assessment["state"] != "VERIFIED_MATERIAL_BREACH")
+    return result
+
+
+def resolve_human_t3_arm(candidate: dict[str, Any], trusted_current: dict[str, Any]) -> dict[str, Any]:
+    """Canonical MCP HG04 admission over constructor-bound Human/current facts."""
+    from human_t3_break_glass import resolve_arm
+    return resolve_arm(candidate, _human_t3_current_with_constitution(trusted_current))
+
+
+def resolve_human_t3_confirm(record: dict[str, Any], trusted_current: dict[str, Any]) -> dict[str, Any]:
+    from human_t3_break_glass import resolve_confirm
+    return resolve_confirm(record, _human_t3_current_with_constitution(trusted_current))
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 

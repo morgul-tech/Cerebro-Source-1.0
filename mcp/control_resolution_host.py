@@ -14,6 +14,7 @@ from typing import Any, Callable, Mapping
 
 import control_owner_routing
 import control_resolution
+from human_t3_break_glass import HumanT3BreakGlassHost
 
 
 OWNER_ORDER = ("project", "quality", "convergence", "context")
@@ -52,6 +53,11 @@ PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "command_executor",
     "pm_profile_verifier",
     "lifecycle_effect_verifier",
+    "human_t3_host",
+    "human_t3_current_reader",
+    "human_t3_effect_capability",
+    "effect_capability",
+    "current_reader",
 }
 
 
