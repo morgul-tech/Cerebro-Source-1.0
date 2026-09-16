@@ -250,6 +250,45 @@ def _typed_hmi_signals(objects:Sequence[Mapping[str,Any]])->dict[str,dict[str,An
                "waiting_is_human_pulse":False},
     }
 
+
+def _human_surface(objects:Sequence[Mapping[str,Any]],*,currentness:str,blockers:Sequence[str],missing:Sequence[str],where_are:str,where_going:str,human_gate:str,waiting_input:Mapping[str,Any],typed_signals:Mapping[str,Any])->dict[str,Any]:
+    boundary=typed_signals["human_boundary_assessment"]
+    responsibility=typed_signals["responsibility_assessment"]
+    kind=str(boundary.get("boundary_kind") or "").strip().upper()
+    foreground=kind=="FOREGROUND_TRANSPORT"
+    governing=kind=="GOVERNING_HUMAN_GATE" or boundary.get("governing_human_gate_is_next") is True or (boundary.get("real_human_action_is_next") is True and not foreground)
+    decision=human_gate if governing else "NONE"
+    transport="NONE"
+    if foreground:
+        transport=_unique_state_text(objects,("human_transport_required","transport_action","foreground_transport_action"),default="UNKNOWN")
+    human_action=decision if decision not in {"NONE","UNKNOWN"} else "Ingen handling fra deg."
+    if waiting_input.get("active") is True:
+        deps=", ".join(waiting_input.get("dependency_labels") or [])
+        status=f"Venter på: {deps}" if deps else "Venter på maskinell avhengighet"
+        next_machine=f"Fortsetter når: {deps}" if deps else "Fortsetter når avhengigheten er klar"
+        next_owner=str(waiting_input.get("next_owner_label") or "MACHINE")
+    else:
+        status=where_are
+        next_machine=_unique_state_text(objects,("next_machine_action","machine_next","machine_action"),default=where_going)
+        next_owner=_unique_state_text(objects,("next_machine_owner","machine_owner","next_owner"),default="MACHINE" if str(responsibility.get("owner","")).upper() in {"MACHINE","CEREBRO","IMPLEMENTER","PROJECT_MANAGER"} else "UNKNOWN")
+    attention=[_public_text(x) for x in blockers]
+
+    if currentness in {"STALE","GAP","UNKNOWN","PROVISIONAL"}:
+        attention.append(f"Currentness: {currentness}")
+    if missing:
+        attention.append("Mangler full currentness-grunnlag")
+    if foreground and transport=="UNKNOWN":
+        attention.append("Human transport er påkrevd, men eksakt handling er UNKNOWN")
+    return {
+        "status":status,
+        "human_action":human_action,
+        "human_transport_required":transport,
+        "human_decision_required":decision,
+        "next_machine":next_machine,
+        "next_owner":next_owner,
+        "attention":sorted(set(x for x in attention if x)),
+    }
+
 def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,Any]],required_refs:Sequence[str]=(),projection_ref:str="human-admin/current",projection_revision:int=0)->dict[str,Any]:
     source_revision=_text(source_revision,"source_revision").lower()
     if not _HEX40.fullmatch(source_revision): raise HumanAdminProjectionError("source_revision:sha1-required")
@@ -274,9 +313,12 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
     typed_signals=_typed_hmi_signals(objects)
     boundary=typed_signals["human_boundary_assessment"]
     responsibility=typed_signals["responsibility_assessment"]
-    if boundary.get("real_human_action_is_next") is True:
+    boundary_kind=str(boundary.get("boundary_kind") or "").strip().upper()
+    foreground_transport=boundary_kind=="FOREGROUND_TRANSPORT"
+    governing_gate=boundary_kind=="GOVERNING_HUMAN_GATE" or boundary.get("governing_human_gate_is_next") is True or (boundary.get("real_human_action_is_next") is True and not foreground_transport)
+    if governing_gate:
         human_gate=str(boundary.get("next_human_gate") or boundary.get("human_action") or (human_gate if human_gate not in {"NONE","UNKNOWN"} else "REAL_HUMAN_ACTION_REQUIRED"))
-    elif str(responsibility.get("owner","")).upper() in {"MACHINE","CEREBRO","IMPLEMENTER"}:
+    elif foreground_transport or str(responsibility.get("owner","")).upper() in {"MACHINE","CEREBRO","IMPLEMENTER","PROJECT_MANAGER"}:
         human_gate="NONE"
     if waiting_input["active"] and human_gate!="NONE":
         raise HumanAdminProjectionError("waiting-input:human-action-conflict")
@@ -285,6 +327,7 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
     where_going=_unique_state_text(objects,("where_we_are_going","next_horizon"),default="UNKNOWN")
     unknowns=[f"MISSING_OWNER_INPUT:{x}" for x in missing]
     evidence_refs=sorted({r for x in objects for r in x["evidence_refs"]})
+    human_surface=_human_surface(objects,currentness=currentness,blockers=blockers,missing=missing,where_are=where_are,where_going=where_going,human_gate=human_gate,waiting_input=waiting_input,typed_signals=typed_signals)
     content={
         "schema":SCHEMA,"authority":AUTHORITY,"projection_ref":_text(projection_ref,"projection_ref"),
         "projection_revision":projection_revision,"source_revision":source_revision,"currentness":currentness,
@@ -292,7 +335,7 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
         "orientation":{"where_we_were":where_were,"where_we_are":where_are,"where_we_are_going":where_going},
         "current_objective":current_objective,"return_points":return_points,"human_cognitive_location":human_location,
         "blockers":blockers,"next_human_gate":human_gate,"active_work":active_work,"human_label":human_label,
-        "waiting_input":waiting_input,"room_identity":room_identity,
+        "human_surface":human_surface,"waiting_input":waiting_input,"room_identity":room_identity,
         "role_assessment":typed_signals["role_assessment"],"responsibility_assessment":typed_signals["responsibility_assessment"],
         "human_boundary_assessment":typed_signals["human_boundary_assessment"],"presentation_request":typed_signals["presentation_request"],
         "hmi":typed_signals["hmi"],"objects":objects,"evidence_refs":evidence_refs,
@@ -318,6 +361,15 @@ def validate_projection(value:Mapping[str,Any])->dict[str,Any]:
         raise HumanAdminProjectionError("projection:waiting-input-invalid")
     if waiting_input.get("active") is True and value.get("next_human_gate")!="NONE":
         raise HumanAdminProjectionError("projection:waiting-input-human-action-conflict")
+    surface=value.get("human_surface")
+    if not isinstance(surface,Mapping) or set(surface)!={"status","human_action","human_transport_required","human_decision_required","next_machine","next_owner","attention"}:
+        raise HumanAdminProjectionError("projection:human-surface-invalid")
+    if not all(isinstance(surface.get(k),str) and surface.get(k).strip() for k in ("status","human_action","human_transport_required","human_decision_required","next_machine","next_owner")) or not isinstance(surface.get("attention"),list) or not all(isinstance(x,str) for x in surface["attention"]):
+        raise HumanAdminProjectionError("projection:human-surface-types-invalid")
+    if surface["human_transport_required"]!="NONE" and surface["human_decision_required"]!="NONE":
+        raise HumanAdminProjectionError("projection:transport-decision-conflation")
+    if surface["human_decision_required"]=="NONE" and surface["human_action"]!="Ingen handling fra deg.":
+        raise HumanAdminProjectionError("projection:human-action-none-render-invalid")
     room_identity=value.get("room_identity")
     if room_identity!=_room_identity(value.get("objects") or []):
         raise HumanAdminProjectionError("projection:room-identity-invalid")
@@ -336,30 +388,27 @@ def resolve_ref(projection:Mapping[str,Any],query:str)->dict[str,Any]:
 def render_status(projection:Mapping[str,Any],depth:str="standard",scope:str|None=None)->dict[str,Any]:
     validate_projection(projection); depth=_text(depth,"depth").lower()
     if depth not in {"brief","standard","deep"}: raise HumanAdminProjectionError("status:depth-invalid")
-    prefix=f"[{projection['currentness']}] "
     room=_render_room_identity(projection["room_identity"])
-    waiting=projection["waiting_input"]
-    if waiting["active"]:
-        first=(room["header"]+" · " if room["active"] else "")+"VENTER"
-        lines=[first,"Neste eier: "+waiting["next_owner_label"],
-               "Jeg starter når: "+", ".join(waiting["dependency_labels"])]
-        if depth=="deep":
-            if scope: lines.append("SCOPE: "+_text(scope,"scope"))
-            lines += ["AKTIVT: "+(", ".join(projection["active_work"]) if projection["active_work"] else "NONE"),
-                      "COVERAGE: "+f"{len(projection['coverage']['observed'])}/{len(projection['coverage']['required'])}",
-                      "BASIS: "+(", ".join(x["object_ref"] for x in projection["basis_set"]) if projection["basis_set"] else "NONE")]
-        return {"schema":"cerebro-human-admin-status-view/v1","depth":depth,"scope":scope,"room_identity":room,"lines":lines,"text":"\n".join(lines),"projection_fingerprint":projection["projection_fingerprint"]}
-    lines=[room["header"]] if room["active"] else []
-    if scope and depth=="deep": lines.append("SCOPE: "+_text(scope,"scope"))
+    surface=projection["human_surface"]
     public=(lambda value: str(value) if depth=="deep" else _public_text(value))
-    lines += [prefix+projection["human_label"],"HER ER VI: "+public(projection["orientation"]["where_we_are"]),"MAL: "+public(projection["current_objective"])]
-    if depth!="brief":
-        lines += ["VEIEN VIDERE: "+public(projection["orientation"]["where_we_are_going"]),
-                  "BLOKKERE: "+(", ".join(public(x) for x in projection["blockers"]) if projection["blockers"] else "NONE"),
-                  "HUMAN: "+projection["next_human_gate"],
-                  "RETURN: "+(", ".join(public(x) for x in projection["return_points"]) if projection["return_points"] else "UNKNOWN")]
+    lines=[room["header"]] if room["active"] else []
+    lines += ["STATUS: "+public(surface["status"]),"HUMAN_ACTION: "+public(surface["human_action"])]
+    if surface["human_transport_required"]!="NONE":
+        lines.append("HUMAN_TRANSPORT_REQUIRED: "+public(surface["human_transport_required"]))
+    next_line="NEXT_MACHINE: "+public(surface["next_machine"])
+    if surface["next_owner"] not in {"","UNKNOWN"}:
+        next_line += " · Eier: "+public(surface["next_owner"])
+    lines.append(next_line)
+    if surface["attention"]:
+        lines.append("ATTENTION: "+"; ".join(public(x) for x in surface["attention"]))
     if depth=="deep":
-        lines += ["AKTIVT: "+(", ".join(projection["active_work"]) if projection["active_work"] else "NONE"),
+        lines.append("DETAILS:")
+        if scope: lines.append("SCOPE: "+_text(scope,"scope"))
+        lines += ["CURRENTNESS: "+projection["currentness"],
+                  "HUMAN_DECISION_REQUIRED: "+surface["human_decision_required"],
+                  "RETURN: "+(", ".join(projection["return_points"]) if projection["return_points"] else "UNKNOWN"),
+                  "BLOKKERE: "+(", ".join(projection["blockers"]) if projection["blockers"] else "NONE"),
+                  "AKTIVT: "+(", ".join(projection["active_work"]) if projection["active_work"] else "NONE"),
                   "COVERAGE: "+f"{len(projection['coverage']['observed'])}/{len(projection['coverage']['required'])}",
                   "BASIS: "+(", ".join(x["object_ref"] for x in projection["basis_set"]) if projection["basis_set"] else "NONE")]
     return {"schema":"cerebro-human-admin-status-view/v1","depth":depth,"scope":scope,"room_identity":room,"lines":lines,"text":"\n".join(lines),"projection_fingerprint":projection["projection_fingerprint"]}

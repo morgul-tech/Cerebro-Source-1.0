@@ -4,7 +4,7 @@
   "title": "Cerebro Human Admin Projection",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema","authority","projection_ref","projection_revision","projection_fingerprint","source_revision","currentness","basis_set","coverage","unknowns","orientation","current_objective","return_points","human_cognitive_location","blockers","next_human_gate","active_work","human_label","waiting_input","room_identity","role_assessment","responsibility_assessment","human_boundary_assessment","presentation_request","hmi","objects","evidence_refs","n0"],
+  "required": ["schema","authority","projection_ref","projection_revision","projection_fingerprint","source_revision","currentness","basis_set","coverage","unknowns","orientation","current_objective","return_points","human_cognitive_location","blockers","next_human_gate","active_work","human_label","human_surface","waiting_input","room_identity","role_assessment","responsibility_assessment","human_boundary_assessment","presentation_request","hmi","objects","evidence_refs","n0"],
   "properties": {
     "schema": {"const":"cerebro-human-admin-projection/v1"},
     "authority": {"const":"PRESENTATION_ONLY_NON_AUTHORITATIVE"},
@@ -24,6 +24,20 @@
     "next_human_gate": {"type":"string"},
     "active_work": {"type":"array","items":{"type":"string"}},
     "human_label": {"type":"string","minLength":1,"maxLength":96,"pattern":"^[^\\s]+(?:\\s+[^\\s]+){0,2}$"},
+    "human_surface": {
+      "type":"object",
+      "additionalProperties":false,
+      "required":["status","human_action","human_transport_required","human_decision_required","next_machine","next_owner","attention"],
+      "properties":{
+        "status":{"type":"string","minLength":1},
+        "human_action":{"type":"string","minLength":1},
+        "human_transport_required":{"type":"string","minLength":1},
+        "human_decision_required":{"type":"string","minLength":1},
+        "next_machine":{"type":"string","minLength":1},
+        "next_owner":{"type":"string","minLength":1},
+        "attention":{"type":"array","items":{"type":"string","minLength":1}}
+      }
+    },
     "waiting_input": {
       "type":"object",
       "additionalProperties":false,

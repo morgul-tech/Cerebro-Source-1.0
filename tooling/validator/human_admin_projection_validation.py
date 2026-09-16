@@ -81,10 +81,18 @@ def run_all():
     gate_snaps=json.loads(json.dumps(snaps)); gate_snaps[0]["state"]["responsibility_assessment"]={"owner":"HUMAN"}
     gate_snaps[0]["state"]["human_boundary_assessment"]={"real_human_action_is_next":True,"next_human_gate":"APPROVE_RELEASE"}
     pgate=hap.build_projection(source_revision=source,owner_snapshots=gate_snaps)
-    check("genuine-human-gate-remains-visible",pgate["next_human_gate"]=="APPROVE_RELEASE")
+    check("genuine-human-gate-remains-visible",pgate["next_human_gate"]=="APPROVE_RELEASE" and pgate["human_surface"]["human_action"]=="APPROVE_RELEASE" and pgate["human_surface"]["human_decision_required"]=="APPROVE_RELEASE")
+    foreground=json.loads(json.dumps(snaps)); foreground[0]["state"]["responsibility_assessment"]={"owner":"HUMAN"}
+    foreground[0]["state"]["human_boundary_assessment"]={"boundary_kind":"FOREGROUND_TRANSPORT","real_human_action_is_next":True,"governing_human_gate_is_next":False}
+    foreground[0]["state"]["transport_action"]="Åpne arbeidsvinduet"
+    pforeground=hap.build_projection(source_revision=source,owner_snapshots=foreground)
+    foreground_view=hap.render_status(pforeground,"standard")
+    check("foreground-transport-ne-human-decision",pforeground["next_human_gate"]=="NONE" and pforeground["human_surface"]["human_action"]=="Ingen handling fra deg." and pforeground["human_surface"]["human_transport_required"]=="Åpne arbeidsvinduet" and pforeground["human_surface"]["human_decision_required"]=="NONE" and any(line=="HUMAN_TRANSPORT_REQUIRED: Åpne arbeidsvinduet" for line in foreground_view["lines"]))
     brief=hap.render_status(p,"brief"); standard=hap.render_status(p,"standard",scope="WORK_PACKETS:630")
     deep=hap.render_status(p,"deep",scope="WORK_PACKETS:630")
-    check("human-label-is-primary-status-line",brief["lines"][0]=="[CURRENT] HAP implementation")
+    check("meaning-first-status-line",brief["lines"][0].startswith("STATUS: "))
+    check("human-action-explicit-second-line",brief["lines"][1]=="HUMAN_ACTION: Ingen handling fra deg.")
+    check("machine-next-separate-third-line",brief["lines"][2].startswith("NEXT_MACHINE: ") and "Eier: MACHINE" in brief["lines"][2])
     check("brief-one-screen-12-lines-max",len(brief["lines"])<=12)
     check("opaque-ids-absent-brief-standard",not any(token in brief["text"]+standard["text"] for token in ("P612","WORK_CLAIMS:838","WORK_PACKETS:630")))
     check("opaque-ids-available-deep",all(token in deep["text"] for token in ("WORK_CLAIMS:838","WORK_PACKETS:630")))
@@ -108,11 +116,11 @@ def run_all():
     waiting=json.loads(json.dumps([snaps[0]])); waiting[0]["state"].update({"waiting_input":True,"next_owner_label":"PM admission","dependency_labels":["validator pass"]})
     pwait=hap.build_projection(source_revision=source,owner_snapshots=waiting)
     waiting_view=hap.render_status(pwait,"standard")
-    check("waiting-standard-exactly-three-human-lines",waiting_view["lines"]==["VENTER","Neste eier: PM admission","Jeg starter når: validator pass"])
+    check("waiting-standard-meaning-first-three-lines",waiting_view["lines"]==["STATUS: Venter på: validator pass","HUMAN_ACTION: Ingen handling fra deg.","NEXT_MACHINE: Fortsetter når: validator pass · Eier: PM admission"])
     check("waiting-does-not-create-human-pulse",pwait["next_human_gate"]=="NONE" and pwait["waiting_input"]["human_action_required"] is False and pwait["hmi"]["waiting_is_human_pulse"] is False)
     room_waiting=json.loads(json.dumps([room_snaps[0]])); room_waiting[0]["state"].update({"waiting_input":True,"next_owner_label":"PM admission","dependency_labels":["validator pass"]})
     room_wait_view=hap.render_status(hap.build_projection(source_revision=source,owner_snapshots=room_waiting),"standard")
-    check("room-waiting-composes-header-into-line-one",len(room_wait_view["lines"])==3 and room_wait_view["lines"][0]==header_a+" · VENTER")
+    check("room-waiting-keeps-header-absolute-top",len(room_wait_view["lines"])==4 and room_wait_view["lines"][0]==header_a and room_wait_view["lines"][1:]==waiting_view["lines"])
     waiting_deep=hap.render_status(pwait,"deep",scope="WORK_PACKETS:764")
     check("waiting-deep-keeps-opaque-diagnostics-explicit",waiting_deep["lines"][:3]==waiting_view["lines"] and "WORK_PACKETS:764" in waiting_deep["text"] and "WORK_CLAIMS:838" in waiting_deep["text"])
     waiting_gate=json.loads(json.dumps(waiting)); waiting_gate[0]["state"].update({"responsibility_assessment":{"owner":"HUMAN"},"human_boundary_assessment":{"real_human_action_is_next":True,"next_human_gate":"APPROVE"}})
@@ -124,7 +132,7 @@ def run_all():
     schema=json.loads(SCHEMA.read_text(encoding="utf-8"))
     check("typed-schema-identity",schema["properties"]["schema"]["const"]=="cerebro-human-admin-projection/v1")
     check("typed-room-identity-schema-consumed",schema["properties"]["room_identity"]["properties"]["membership_semantics"]["const"]=="MEMBERSHIP_ONLY" and "room_identity" in schema["required"])
-    check("typed-human-label-waiting-schema-consumed","human_label" in schema["required"] and "waiting_input" in schema["required"] and schema["properties"]["hmi"]["properties"]["waiting_default_max_lines"]["const"]==3)
+    check("typed-human-surface-schema-consumed","human_surface" in schema["required"] and set(schema["properties"]["human_surface"]["required"])=={"status","human_action","human_transport_required","human_decision_required","next_machine","next_owner","attention"} and "waiting_input" in schema["required"])
     current_hmi_fingerprint=hmi_kernel_fingerprint()
     check("hmi-birth-kernel-fingerprint-readback-changed",current_hmi_fingerprint!=PRE_ROOM_COLOR_HMI_KERNEL_FINGERPRINT)
     with tempfile.TemporaryDirectory() as td:

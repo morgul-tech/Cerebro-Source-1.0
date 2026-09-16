@@ -934,3 +934,40 @@ rules:
   validation: error
   provenance: {type: P18_HUMAN_GATE_HMI_SOURCE_HARDENING, source: WORK_PACKETS:750}
 # END P18-HUMAN-GATE-HMI-SOURCE-HARDENING-P750-001
+
+# BEGIN P19-PM-HUMAN-SURFACE-MEANING-FIRST-P852-001
+- id: P19-PM-HUMAN-SURFACE-MEANING-FIRST-P852-001
+  owner: presentation
+  authority: normative
+  priority: critical
+  condition: {normal_Human_facing_PM_status: true}
+  action:
+    projection_order: [STATUS, HUMAN_ACTION, NEXT_MACHINE, ATTENTION]
+    PM_HUMAN_SURFACE_NE_MACHINE_RECEIPT: true
+    meaning_first: true
+    evidence_second: true
+    raw_mechanics_on_demand: true
+    machine_owned_edge_ne_Human_trigger: true
+    HUMAN_ACTION_NONE:
+      render: Ingen handling fra deg.
+      prohibit_machine_advance_command_as_Human_action: true
+    FOREGROUND_TRANSPORT:
+      render_separately_as: HUMAN_TRANSPORT_REQUIRED
+      Human_decision_semantics: NONE
+    GOVERNING_HUMAN_GATE:
+      preserve_exact_dynamic_gate: true
+    attention_only_when_material:
+      - blocker
+      - stale_or_unknown_currentness
+      - genuine_Human_gate_or_transport_uncertainty
+    routine_machine_success_quiet: true
+    deep_evidence_remains_available: true
+    decision_gravity:
+      source: EXPLICIT_TYPED_PROVIDER_INPUT_ONLY
+      infer_when_absent: prohibited
+  statement: Normal PM Human-status SKAL foregrounde mening, Human-handling, maskinens neste steg/eier og bare materiell oppmerksomhet; transport er ikke beslutning, og receipts/proveniens forblir tilgjengelig i dyp visning uten å dominere Human-flaten.
+  scope: runtime
+  lifecycle: active
+  validation: error
+  provenance: {type: HUMAN_ADMIN_HMI_CORRECTION, source: PM_PRINCIPAL_CHANNEL:5856}
+# END P19-PM-HUMAN-SURFACE-MEANING-FIRST-P852-001
