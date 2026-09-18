@@ -43,6 +43,10 @@ try:
         HUMAN_T3_IDENTITY_FIELDS,
         validate_human_t3_record,
         validate_human_t3_custody_write,
+        SUCCESSION_IDENTITY_FIELDS,
+        validate_principal_succession_custody_record,
+        validate_principal_succession_custody_write,
+        principal_succession_custody_receipt,
     )
 except ImportError:
     from control_context_registry import (
@@ -71,6 +75,10 @@ except ImportError:
         HUMAN_T3_IDENTITY_FIELDS,
         validate_human_t3_record,
         validate_human_t3_custody_write,
+        SUCCESSION_IDENTITY_FIELDS,
+        validate_principal_succession_custody_record,
+        validate_principal_succession_custody_write,
+        principal_succession_custody_receipt,
     )
 
 
@@ -466,6 +474,60 @@ class PostgresControlContextStatePort:
     def __init__(self, connection_factory: Callable[[], Any]):
         _require(callable(connection_factory), "postgres-connection-factory-required")
         self._connection_factory = connection_factory
+        self._succession_last_write_connection = None
+
+    def commit_principal_succession_custody(self, *, record, expected_revision, scopes):
+        """Commit custody, never issue or semantically authorize a permit."""
+        self._require_scope(scopes, "project_state:transition")
+        validate_principal_succession_custody_record(record)
+        identity = record["identity"]
+        key = tuple(identity[k] for k in SUCCESSION_IDENTITY_FIELDS)
+        with self._transaction(**identity, succession_write=True) as cursor:
+            cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (_canonical_text(key),))
+            cursor.execute("SELECT record_payload FROM cerebro_principal_succession_permit_revisions WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s AND request_ref=%s", key + (record["request_ref"],))
+            replay = _fetchone(cursor)
+            if replay is not None:
+                persisted = _json_value(replay["record_payload"], field="succession-replay")
+                validate_principal_succession_custody_record(persisted)
+                _require(persisted == record and type(expected_revision) is int and
+                         expected_revision == record["revision"] - 1,
+                         "succession-custody-divergent-replay", StateConflict)
+                receipt = principal_succession_custody_receipt(persisted)
+            else:
+                cursor.execute("SELECT record_payload FROM cerebro_principal_succession_permit_heads WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s FOR UPDATE", key)
+                row = _fetchone(cursor)
+                prior = _json_value(row["record_payload"], field="succession-head") if row else None
+                receipt = validate_principal_succession_custody_write(record, prior, expected_revision)
+                values = key + (record["revision"], record["request_ref"], record["permit"]["permit_id"], record["fingerprint"], _canonical_text(record))
+                cursor.execute("INSERT INTO cerebro_principal_succession_permit_revisions (tenant_ref,workspace_ref,principal_ref,revision,request_ref,permit_ref,record_fingerprint,record_payload) VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb)", values)
+                _require(cursor.rowcount == 1, "succession-revision-insert-unproven", StateConflict)
+                if prior is None:
+                    cursor.execute("INSERT INTO cerebro_principal_succession_permit_heads (tenant_ref,workspace_ref,principal_ref,revision,request_ref,permit_ref,record_fingerprint,record_payload) VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb)", values)
+                else:
+                    cursor.execute("UPDATE cerebro_principal_succession_permit_heads SET revision=%s,request_ref=%s,permit_ref=%s,record_fingerprint=%s,record_payload=%s::jsonb WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s AND revision=%s", values[3:] + key + (expected_revision,))
+                _require(cursor.rowcount == 1, "succession-head-CAS-unproven", StateConflict)
+                cursor.execute("INSERT INTO cerebro_principal_succession_permit_receipts (tenant_ref,workspace_ref,principal_ref,revision,receipt_payload) VALUES (%s,%s,%s,%s,%s::jsonb)", key + (record["revision"], _canonical_text(receipt)))
+                _require(cursor.rowcount == 1, "succession-receipt-insert-unproven", StateConflict)
+        return receipt  # successful commit occurred before any receipt escapes
+
+    def read_principal_succession_custody(self, *, permit_ref, scopes, **identity):
+        self._require_scope(scopes, "project_state:read")
+        _require(set(identity) == set(SUCCESSION_IDENTITY_FIELDS), "succession-exact-identity", StateBindingError)
+        self._validate_text_fields(identity, "succession", SUCCESSION_IDENTITY_FIELDS)
+        key = tuple(identity[k] for k in SUCCESSION_IDENTITY_FIELDS)
+        with self._transaction(**identity, read_only=True,
+                               independent_of=self._succession_last_write_connection) as cursor:
+            cursor.execute("SELECT r.record_payload, c.receipt_payload FROM cerebro_principal_succession_permit_heads h JOIN cerebro_principal_succession_permit_revisions r ON (h.tenant_ref,h.workspace_ref,h.principal_ref,h.revision,h.record_fingerprint)=(r.tenant_ref,r.workspace_ref,r.principal_ref,r.revision,r.record_fingerprint) JOIN cerebro_principal_succession_permit_receipts c ON (r.tenant_ref,r.workspace_ref,r.principal_ref,r.revision)=(c.tenant_ref,c.workspace_ref,c.principal_ref,c.revision) WHERE h.tenant_ref=%s AND h.workspace_ref=%s AND h.principal_ref=%s AND r.permit_ref=%s", key + (permit_ref,))
+            row = _fetchone(cursor)
+            _require(row is not None, "succession-current-committed-record-missing", StateBindingError)
+            record = _json_value(row["record_payload"], field="succession-record")
+            receipt = _json_value(row["receipt_payload"], field="succession-receipt")
+            validate_principal_succession_custody_record(record)
+            _require(record["identity"] == identity and record["permit"]["permit_id"] == permit_ref,
+                     "succession-readback-scope-mismatch", StateBindingError)
+            _require(receipt == principal_succession_custody_receipt(record),
+                     "succession-readback-receipt-mismatch", StateBindingError)
+        return {"record": record, "receipt": receipt, "independent_committed_readback_verified": True}
 
     def read_human_t3_arm(self, *, override_id: str, scopes: set[str], **identity: str) -> dict[str, Any] | None:
         self._require_scope(scopes, "project_state:transition")
@@ -518,6 +580,9 @@ class PostgresControlContextStatePort:
         tenant_ref: str,
         workspace_ref: str,
         principal_ref: str,
+        read_only: bool = False,
+        independent_of: Any = None,
+        succession_write: bool = False,
     ) -> Iterator[Any]:
         connection = None
         cursor = None
@@ -528,7 +593,13 @@ class PostgresControlContextStatePort:
                 raise
             except Exception as exc:
                 raise StateServiceUnavailable("control-context-state-service-unavailable") from exc
+            _require(independent_of is None or connection is not independent_of,
+                     "succession-fresh-independent-connection-required", StateBindingError)
+            if succession_write:
+                self._succession_last_write_connection = connection
             cursor = connection.cursor()
+            if read_only:
+                cursor.execute("SET TRANSACTION READ ONLY")
             cursor.execute("SELECT set_config('cerebro.tenant_ref', %s, true)", (tenant_ref,))
             cursor.execute("SELECT set_config('cerebro.workspace_ref', %s, true)", (workspace_ref,))
             cursor.execute("SELECT set_config('cerebro.principal_ref', %s, true)", (principal_ref,))

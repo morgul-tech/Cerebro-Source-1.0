@@ -53,6 +53,32 @@ control_context_state_service:
     host_binding_required_for_enforcement_claim: true
 
   storage:
+    principal_succession_custody:
+      migration_ref: tooling/context/control_context_state_postgres_0004_principal_succession_permit.sql
+      production_provider_ref: tooling/context/control_context_principal_succession_provider.py
+      semantic_owner: CONTEXT
+      final_authority: MCP
+      producer_adapter_lifecycle_owner: EXISTING_CONTEXT_STATE_SERVICE_OWNER
+      custody_receipt_authority: CUSTODY_ONLY
+      same_existing_database: true
+      new_service_or_second_store: false
+      immutable_revisions_and_receipts: true
+      current_pointer: CAS_SERIALIZED_ONE_PER_AUTHENTICATED_PRINCIPAL_SCOPE
+      exact_request_retry: SAME_RECORD_NO_EXTRA_REVISION
+      divergent_retry: CONFLICT
+      currentness_inputs: CONSTRUCTOR_BOUND_TRUSTED_PROVIDER_NOT_EVENT_PAYLOAD
+      write_authorization: CONSTRUCTOR_BOUND_MCP_EXACT_PERMIT_AND_SCOPE
+      read_authorization: CONSTRUCTOR_BOUND_MCP_EXACT_PERMIT_SCOPE_AND_GENERATION
+      ordering: FINAL_HASH_BOUND_PAYLOAD_COMMIT_THEN_FRESH_CONNECTION_EXACT_READBACK
+      post_state_readback_boolean_is_authority: false
+      reader_return_requires: INDEPENDENT_COMMITTED_READBACK_AND_FRESH_FULL_MCP_VALIDATION
+      PM_profile_and_machine_diary_verifiers: CONSTRUCTOR_BOUND_REQUIRED_FOR_PRODUCTION_COMPOSITION
+      runtime_applies_migrations: false
+      migration_executed: false
+      deployed: false
+      live_custody_proven: false
+      permit_issued: false
+      successor_created: false
     class: PRIVATE_TRANSACTIONAL_NON_GIT_STORE
     reference_data_model: tooling/context/control_context_state_postgres.sql
     production_directed_adapter_ref: tooling/context/control_context_state_postgres.py

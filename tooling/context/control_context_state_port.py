@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 import threading
 from typing import Any
 
@@ -262,6 +263,72 @@ def validate_human_t3_custody_write(record: dict[str, Any], prior: dict[str, Any
                "previous_revision": expected_revision, "record_fingerprint": record["fingerprint"]}
     receipt["fingerprint"] = _sha256(receipt)
     return receipt
+
+
+SUCCESSION_IDENTITY_FIELDS = ("tenant_ref", "workspace_ref", "principal_ref")
+SUCCESSION_RECORD_SCHEMA = "cerebro-principal-succession-custody-record/v1"
+
+
+def validate_principal_succession_custody_record(record: dict[str, Any]) -> None:
+    """Integrity/custody only; full permit semantics remain MCP-owned."""
+    _require(isinstance(record, dict) and set(record) == {
+        "schema", "identity", "revision", "request_ref", "permit", "fingerprint",
+    }, "succession-custody-record-fields", StateBindingError)
+    _require(record["schema"] == SUCCESSION_RECORD_SCHEMA, "succession-custody-schema", StateBindingError)
+    identity = record["identity"]
+    _require(isinstance(identity, dict) and set(identity) == set(SUCCESSION_IDENTITY_FIELDS),
+             "succession-custody-identity", StateBindingError)
+    for value in [*identity.values(), record["request_ref"]]:
+        _require(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,199}", value) is not None,
+                 "succession-custody-opaque-binding", StateBindingError)
+    _require(type(record["revision"]) is int and record["revision"] >= 1,
+             "succession-custody-revision", StateBindingError)
+    permit = record["permit"]
+    _require(isinstance(permit, dict), "succession-custody-permit-object", StateBindingError)
+    subject = copy.deepcopy(permit)
+    fingerprint = subject.pop("permit_fingerprint", None)
+    _require(fingerprint == _sha256(subject), "succession-custody-permit-fingerprint", StateBindingError)
+    _require(permit.get("schema") == "cerebro-principal-succession-permit/v1",
+             "succession-custody-permit-schema", StateBindingError)
+    _require(isinstance(permit.get("permit_id"), str) and
+             re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}", permit["permit_id"]) is not None and
+             not any(token in permit["permit_id"].lower() for token in ("diary", "stambok")),
+             "succession-custody-permit-ref", StateBindingError)
+    subject = copy.deepcopy(record)
+    supplied = subject.pop("fingerprint")
+    _require(supplied == _sha256(subject), "succession-custody-record-fingerprint", StateBindingError)
+
+
+def principal_succession_custody_receipt(record: dict[str, Any]) -> dict[str, Any]:
+    validate_principal_succession_custody_record(record)
+    receipt = {
+        "schema": "cerebro-principal-succession-custody-receipt/v1",
+        "authority": "CUSTODY_ONLY", "identity": copy.deepcopy(record["identity"]),
+        "revision": record["revision"], "request_ref": record["request_ref"],
+        "record_fingerprint": record["fingerprint"], "permit_ref": record["permit"]["permit_id"],
+        "permit_fingerprint": record["permit"]["permit_fingerprint"],
+    }
+    receipt["fingerprint"] = _sha256(receipt)
+    return receipt
+
+
+def validate_principal_succession_custody_write(record, prior, expected_revision):
+    validate_principal_succession_custody_record(record)
+    _require(type(expected_revision) is int and expected_revision >= 0,
+             "succession-custody-expected-revision", StateBindingError)
+    if prior is not None:
+        validate_principal_succession_custody_record(prior)
+        _require(prior["identity"] == record["identity"], "succession-custody-scope", StateBindingError)
+        for field in ("provider_revision", "covered_through_frontier"):
+            _require(type(record["permit"].get(field)) is int and
+                     type(prior["permit"].get(field)) is int and
+                     record["permit"][field] >= prior["permit"][field],
+                     "succession-custody-currentness-regression", StateConflict)
+    _require((prior["revision"] if prior else 0) == expected_revision,
+             "succession-custody-CAS-conflict", StateConflict)
+    _require(record["revision"] == expected_revision + 1,
+             "succession-custody-revision-sequence", StateBindingError)
+    return principal_succession_custody_receipt(record)
 
 
 class InMemoryControlContextStatePort:

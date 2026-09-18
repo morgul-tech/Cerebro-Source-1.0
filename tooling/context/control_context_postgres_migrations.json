@@ -20,6 +20,12 @@
       "schema_version": "1.2.0-human-t3-custody-candidate",
       "path": "control_context_state_postgres_0003_human_t3_break_glass.sql",
       "checksum_sha256": "5c83038f88d7946554ee6cc7a01cdb703d23da739cd0734bd6c50b5e51a34167"
+    },
+    {
+      "migration_id": "0004-principal-succession-permit",
+      "schema_version": "1.3.0-principal-succession-custody-candidate",
+      "path": "control_context_state_postgres_0004_principal_succession_permit.sql",
+      "checksum_sha256": "71c64f0caca37fa116a68e8c05bb9b08c63671e80b132c1f85f34177f5fdfde6"
     }
   ]
 }

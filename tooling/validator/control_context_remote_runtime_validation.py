@@ -264,12 +264,12 @@ def selftest() -> dict[str, Any]:
     )
     check("HG04-readiness-requires-0003-applied-migration",
           any(m[0] == "0003-human-t3-break-glass" for m in MIGRATIONS)
-          and PostgresStateServiceReadinessProbe(ProbeFactory(migrations=list(MIGRATIONS[:-1])))() is False)
+          and PostgresStateServiceReadinessProbe(ProbeFactory(migrations=[m for m in MIGRATIONS if m[0] != "0003-human-t3-break-glass"]))() is False)
     check("HG04-readiness-requires-three-custody-relations",
           {"cerebro_human_t3_break_glass_heads", "cerebro_human_t3_break_glass_revisions", "cerebro_human_t3_break_glass_receipts"} <= set(REQUIRED_POSTGRES_RELATIONS)
           and PostgresStateServiceReadinessProbe(ProbeFactory(relation_count=len(REQUIRED_POSTGRES_RELATIONS)-3))() is False)
     drifted = list(MIGRATIONS)
-    drifted[-1] = (drifted[-1][0], drifted[-1][1], "0" * 64)
+    drifted = [(m[0], m[1], "0" * 64) if m[0] == "0003-human-t3-break-glass" else m for m in drifted]
     check("HG04-readiness-rejects-0003-checksum-drift", PostgresStateServiceReadinessProbe(ProbeFactory(migrations=drifted))() is False)
     check(
         "readiness-fails-closed-without-leaking-database-errors",
@@ -282,6 +282,17 @@ def selftest() -> dict[str, Any]:
     runtime_source = (
         SOURCE_ROOT / "mcp/control_context_remote_runtime.py"
     ).read_text(encoding="utf-8")
+    check("P1074-readiness-requires-0004-and-succession-custody-relations",
+          any(m[0] == "0004-principal-succession-permit" for m in MIGRATIONS)
+          and PostgresStateServiceReadinessProbe(ProbeFactory(migrations=[m for m in MIGRATIONS if m[0] != "0004-principal-succession-permit"]))() is False
+          and {"cerebro_principal_succession_permit_heads", "cerebro_principal_succession_permit_revisions", "cerebro_principal_succession_permit_receipts"} <= set(REQUIRED_POSTGRES_RELATIONS))
+    check("P1074-readiness-rejects-0004-checksum-drift",
+          PostgresStateServiceReadinessProbe(ProbeFactory(migrations=[(m[0],m[1],"0"*64) if m[0] == "0004-principal-succession-permit" else m for m in MIGRATIONS]))() is False)
+    check("P1074-production-composition-trust-seams-source-contract",
+          all(token in runtime_source for token in ("PrincipalSuccessionPermitProvider(",
+              "runtime-ambiguous-succession-reader-prohibited", "runtime-succession-PM-profile-verifier-required",
+              "principal_succession_inputs_reader=principal_succession_inputs_reader",
+              "principal_succession_mcp_authorizer=principal_succession_mcp_authorizer")))
     check(
         "P669-runtime-composition-exposes-constructor-bound-permit-capabilities",
         all(token in runtime_source for token in (
@@ -422,6 +433,32 @@ def selftest() -> dict[str, Any]:
             return {"result": "PASS"}
 
     succession_provider = RuntimeSuccessionProvider()
+    from control_context_tools_validation import principal_succession_provider_fixture
+    from control_context_principal_succession_provider import PrincipalSuccessionPermitProvider
+    from control_context_state_port import StateBindingError
+    _,_,succession_inputs,succession_authorizer,diary_verifier,_ = principal_succession_provider_fixture()
+    custody_args = dict(config=config, connection_factory=ProbeFactory(),
+        token_verifier=StaticTokenVerifier(), resolution_attestation_verifier=attestor,
+        pm_profile_verifier=RuntimePmProfileVerifier(), machine_diary_effect_verifier=diary_verifier,
+        principal_succession_inputs_reader=succession_inputs,
+        principal_succession_mcp_authorizer=succession_authorizer, clock=lambda:NOW)
+    custody_runtime=assemble_postgres_control_context_remote_runtime_from_connection_factory(**custody_args)
+    check("P1074-real-production-custody-provider-constructor-bound-same-state-port",
+          isinstance(custody_runtime.principal_succession_reader,PrincipalSuccessionPermitProvider)
+          and custody_runtime.principal_succession_reader.state_port is custody_runtime.state_port
+          and custody_runtime.pm_lifecycle_verifier is not None
+          and custody_runtime.machine_diary_effect_verifier is diary_verifier
+          and custody_runtime.descriptor()["principal_succession_custody_provider_bound"] is True
+          and custody_runtime.descriptor()["principal_succession_live_custody_proven"] is False)
+    check("P1074-production-custody-composition-requires-PM-verifier",
+          _expect_error(lambda:assemble_postgres_control_context_remote_runtime_from_connection_factory(
+              **{**custody_args,"pm_profile_verifier":None}),ControlContextRemoteRuntimeError))
+    check("P1074-production-custody-composition-requires-independent-diary-verifier",
+          _expect_error(lambda:assemble_postgres_control_context_remote_runtime_from_connection_factory(
+              **{**custody_args,"machine_diary_effect_verifier":None}),StateBindingError))
+    check("P1074-production-custody-composition-rejects-ambiguous-reader",
+          _expect_error(lambda:assemble_postgres_control_context_remote_runtime_from_connection_factory(
+              **{**custody_args,"principal_succession_reader":succession_provider}),ControlContextRemoteRuntimeError))
     lifecycle_runtime_factory = ProbeFactory()
     lifecycle_runtime = assemble_postgres_control_context_remote_runtime_from_connection_factory(
         config=config,

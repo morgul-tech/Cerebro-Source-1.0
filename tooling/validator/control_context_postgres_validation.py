@@ -413,7 +413,7 @@ def selftest() -> dict[str, Any]:
     )
     check(
         "B1-additive-0002-migration-manifest-checksum-matches-candidate-SQL",
-        len(manifest["migrations"]) == 3
+        len(manifest["migrations"]) == 4
         and manifest["migrations"][1]["migration_id"] == "0002-actor-generation-work-claim-shadow"
         and manifest["migrations"][1]["checksum_sha256"] == shadow_checksum,
     )
@@ -434,6 +434,9 @@ def selftest() -> dict[str, Any]:
         {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
         {"contains": "CREATE TABLE IF NOT EXISTS cerebro_human_t3_break_glass_heads"},
         {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
+        {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
+        {"contains": "CREATE TABLE IF NOT EXISTS cerebro_principal_succession_permit_heads"},
+        {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
     ]
     migration_connection = ScriptedConnection(migration_steps)
     migration_result = apply_postgres_migrations(lambda: migration_connection)
@@ -443,6 +446,7 @@ def selftest() -> dict[str, Any]:
             "0001-control-context-state-service",
             "0002-actor-generation-work-claim-shadow",
             "0003-human-t3-break-glass",
+            "0004-principal-succession-permit",
         ]
         and migration_connection.commit_called
         and not migration_connection.cursor_instance.steps,
@@ -643,6 +647,7 @@ def selftest() -> dict[str, Any]:
     )
 
     tests.extend(human_t3_postgres_regressions())
+    tests.extend(principal_succession_postgres_regressions())
     result = "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL"
     return {
         "schema": "cerebro-control-context-postgres-contract-selftest/v1",
@@ -653,6 +658,96 @@ def selftest() -> dict[str, Any]:
         "failures": [item for item in tests if item["result"] != "PASS"],
         "tests": tests,
     }
+
+
+def principal_succession_postgres_regressions():
+    sys.path.insert(0, str(SOURCE_ROOT / "mcp"))
+    from control_context_tools_validation import principal_succession_provider_fixture
+    from control_context_state_port import (StateBindingError, StatePortError,
+        principal_succession_custody_receipt, validate_principal_succession_custody_write, _sha256)
+    provider,fixture_port,_,_,_,kwargs=principal_succession_provider_fixture()
+    provider.persist_principal_succession_permit(**kwargs)
+    record=fixture_port.record
+    identity=record["identity"]
+    key=tuple(identity[k] for k in ("tenant_ref","workspace_ref","principal_ref"))
+    tests=[]
+    def check(name, condition):
+        tests.append(dict(name="P1074-PG-"+name,result="PASS" if condition else "FAIL"))
+    def scoped(read=False):
+        return ([{"contains":"SET TRANSACTION READ ONLY"}] if read else []) + [
+            {"contains":"set_config('cerebro.tenant_ref'","params":(identity["tenant_ref"],)},
+            {"contains":"set_config('cerebro.workspace_ref'","params":(identity["workspace_ref"],)},
+            {"contains":"set_config('cerebro.principal_ref'","params":(identity["principal_ref"],)},
+            {"contains":"SET CONSTRAINTS ALL DEFERRED"}]
+    def writes(prior=None,cas=1,proposed=None):
+        proposed=proposed or record
+        return scoped()+[{"contains":"pg_advisory_xact_lock"},
+            {"contains":"FROM cerebro_principal_succession_permit_revisions","params":key+(proposed["request_ref"],),"rows":[]},
+            {"contains":"FROM cerebro_principal_succession_permit_heads","params":key,"rows":[{"record_payload":prior}] if prior else []},
+            {"contains":"INSERT INTO cerebro_principal_succession_permit_revisions","rowcount":1},
+            {"contains":"UPDATE cerebro_principal_succession_permit_heads" if prior else "INSERT INTO cerebro_principal_succession_permit_heads","rowcount":cas},
+            {"contains":"INSERT INTO cerebro_principal_succession_permit_receipts","rowcount":1}]
+    receipt=principal_succession_custody_receipt(record)
+    write_connection=ScriptedConnection(writes())
+    read_connection=ScriptedConnection(scoped(True)+[{"contains":"JOIN cerebro_principal_succession_permit_revisions",
+         "params":key+(record["permit"]["permit_id"],),"rows":[dict(record_payload=record,receipt_payload=receipt)]}])
+    connections=iter([write_connection,read_connection])
+    port=PostgresControlContextStatePort(lambda:next(connections))
+    actual=port.commit_principal_succession_custody(record=record,expected_revision=0,scopes={"project_state:transition"})
+    check("atomic-revisions-pointer-receipt-commit-before-return",actual==receipt and write_connection.commit_called
+          and not write_connection.cursor_instance.steps and write_connection.closed)
+    observed=port.read_principal_succession_custody(**identity,permit_ref=record["permit"]["permit_id"],scopes={"project_state:read"})
+    check("fresh-connection-read-only-exact-current-committed-join",observed["record"]==record and observed["receipt"]==receipt
+          and observed["independent_committed_readback_verified"] and read_connection.commit_called
+          and read_connection.closed and not read_connection.cursor_instance.steps)
+    replay=ScriptedConnection(scoped()+[{"contains":"pg_advisory_xact_lock"},
+             {"contains":"FROM cerebro_principal_succession_permit_revisions","rows":[dict(record_payload=record)]}])
+    replay_port=PostgresControlContextStatePort(lambda:replay)
+    check("exact-retry-no-update-insert",replay_port.commit_principal_succession_custody(record=record,expected_revision=0,
+          scopes={"project_state:transition"})==receipt and replay.commit_called and not replay.cursor_instance.steps)
+    changed=copy.deepcopy(record);changed["permit"]["permit_id"]="OTHER-PERMIT"
+    from control_context_tools import _principal_permit_fingerprint
+    changed["permit"]["permit_fingerprint"]=_principal_permit_fingerprint(changed["permit"])
+    changed["fingerprint"]=_sha256({k:v for k,v in changed.items() if k!="fingerprint"})
+    replay=ScriptedConnection(scoped()+[{"contains":"pg_advisory_xact_lock"},
+             {"contains":"FROM cerebro_principal_succession_permit_revisions","rows":[dict(record_payload=record)]}])
+    check("divergent-retry-rollback-before-pointer",_expect_error(lambda:PostgresControlContextStatePort(lambda:replay)
+          .commit_principal_succession_custody(record=changed,expected_revision=0,scopes={"project_state:transition"}),StateConflict)
+          and replay.rollback_called and not replay.commit_called)
+    next_record=copy.deepcopy(changed);next_record.update(revision=2,request_ref="NEXT-REQUEST")
+    next_record["fingerprint"]=_sha256({k:v for k,v in next_record.items() if k!="fingerprint"})
+    lost=ScriptedConnection(writes(record,0,next_record)[:-1])
+    check("lost-CAS-rolls-back-inserted-revision-no-receipt",_expect_error(lambda:PostgresControlContextStatePort(lambda:lost)
+          .commit_principal_succession_custody(record=next_record,expected_revision=1,scopes={"project_state:transition"}),StateConflict)
+          and lost.rollback_called and not lost.commit_called and not lost.cursor_instance.steps)
+    failed=ScriptedConnection(writes(),commit_error=RuntimeError("fixture-failed-commit"))
+    check("failed-commit-no-custody-receipt",_expect_error(lambda:PostgresControlContextStatePort(lambda:failed)
+          .commit_principal_succession_custody(record=record,expected_revision=0,scopes={"project_state:transition"}),StatePortError)
+          and failed.rollback_called)
+    reused=ScriptedConnection([]);reused_port=PostgresControlContextStatePort(lambda:reused)
+    reused_port._succession_last_write_connection=reused
+    check("same-write-connection-rejected-before-read",_expect_error(lambda:reused_port.read_principal_succession_custody(
+          **identity,permit_ref=record["permit"]["permit_id"],scopes={"project_state:read"}),StateBindingError)
+          and reused.rollback_called and not reused.commit_called)
+    for name, row in (("missing",None),("receipt-tamper",dict(record_payload=record,receipt_payload={**receipt,"fingerprint":"0"*64})),
+                      ("scope-tamper",dict(record_payload={**record,"identity":{**identity,"principal_ref":"OTHER"}},receipt_payload=receipt))):
+        connection=ScriptedConnection(scoped(True)+[{"contains":"JOIN cerebro_principal_succession_permit_revisions","rows":[row] if row else []}])
+        check(name+"-readback-blocked",_expect_error(lambda:PostgresControlContextStatePort(lambda:connection)
+              .read_principal_succession_custody(**identity,permit_ref=record["permit"]["permit_id"],scopes={"project_state:read"}),StateBindingError)
+              and connection.rollback_called and not connection.commit_called)
+    check("unauthorized-custody-scope-before-DB",_expect_error(lambda:PostgresControlContextStatePort(lambda:ScriptedConnection([]))
+          .commit_principal_succession_custody(record=record,expected_revision=0,scopes={"project_state:read"}),StateAuthorizationError))
+    check("stale-revision-conflicts",_expect_error(lambda:validate_principal_succession_custody_write(next_record,record,0),StateConflict))
+    manifest=json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"));entry=manifest["migrations"][-1]
+    sql=(CONTEXT_ROOT/entry["path"]).read_bytes().replace(b"\r\n",b"\n")
+    check("0004-additive-canonical-checksum",entry["migration_id"]=="0004-principal-succession-permit"
+          and entry["checksum_sha256"]==hashlib.sha256(sql).hexdigest())
+    text=sql.decode()
+    check("0004-RLS-principal-scope-immutable-history-no-delete",all(s in text for s in (
+          "ENABLE ROW LEVEL SECURITY","FORCE ROW LEVEL SECURITY","BEFORE DELETE","BEFORE UPDATE OR DELETE",
+          "cerebro.principal_ref","CUSTODY_ONLY","DEFERRABLE INITIALLY DEFERRED"))
+          and "DROP TABLE" not in text and "GRANT" not in text)
+    return tests
 
 
 def human_t3_postgres_regressions():
@@ -708,7 +803,7 @@ def human_t3_postgres_regressions():
     check("read-and-write-transition-scope-before-DB", _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).read_human_t3_arm(**identity, override_id="PG-OVERRIDE", scopes={"project_state:read"}), StateAuthorizationError)
           and _expect_error(lambda: PostgresControlContextStatePort(lambda: connection).commit_human_t3_arm(record=arm, expected_revision=0, scopes={"project_state:read"}), StateAuthorizationError) and not connection.commit_called)
     manifest = json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"))
-    entry = manifest["migrations"][-1]
+    entry = next(e for e in manifest["migrations"] if e["migration_id"] == "0003-human-t3-break-glass")
     sql_bytes = (CONTEXT_ROOT / entry["path"]).read_bytes().replace(b"\r\n", b"\n")
     sql = sql_bytes.decode("utf-8")
     check("0003-additive-canonical-checksum", entry["migration_id"] == "0003-human-t3-break-glass" and entry["checksum_sha256"] == hashlib.sha256(sql_bytes).hexdigest())

@@ -1239,6 +1239,7 @@ def selftest() -> dict[str, Any]:
     )
     tests.extend(p673_succession_regressions())
     tests.extend(human_t3_tool_regressions())
+    tests.extend(principal_succession_provider_regressions())
     return {
         "schema": "cerebro-control-context-tools-selftest/v1",
         "result": "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL",
@@ -1246,6 +1247,196 @@ def selftest() -> dict[str, Any]:
         "failures": [item for item in tests if item["result"] != "PASS"],
         "tests": tests,
     }
+
+
+def principal_succession_provider_fixture():
+    """Synthetic contract data only; never a production permit."""
+    from control_context_registry import principal_continuity_baseline_fingerprint
+    from control_context_principal_succession_provider import PrincipalSuccessionPermitProvider
+    from control_context_state_port import principal_succession_custody_receipt, StateConflict
+    identity = dict(tenant_ref="TENANT-TEST", workspace_ref="WORKSPACE-TEST", principal_ref="PRINCIPAL-TEST")
+    receipt = dict(receipt_ref="R-TEST", receipt_fingerprint="4" * 64, durable=True, readback_verified=True)
+    baseline = dict(schema="cerebro-principal-continuity-baseline/v1", generation_ref="PRINCIPAL-OLD",
+                    source_head="5"*40, ready_epoch=1, currentness="CURRENT", provider_revision=9,
+                    covered_through_frontier=77, diary_bound=copy.deepcopy(receipt),
+                    living_ledger_baseline=copy.deepcopy(receipt), livspuls_baseline=copy.deepcopy(receipt),
+                    post_state_readback_verified=True)
+    baseline["baseline_fingerprint"] = principal_continuity_baseline_fingerprint(baseline)
+    class Inputs:
+        def __init__(self):
+            self.value = dict(predecessor_generation_id="PRINCIPAL-OLD", successor_generation_id="PRINCIPAL-NEW",
+                              source_head="5"*40, provider_revision=9, covered_through_frontier=77,
+                              principal_continuity_baseline=baseline,
+                              lived_continuity=dict(event_id="LIVED-TEST",event_fingerprint="3"*64,
+                                                   qualification="NO_CAPTURE",debt_state="CLEAR"),
+                              evidence={k: {**copy.deepcopy(receipt),"receipt_ref":"R-EVIDENCE-"+str(n)}
+                                        for n,k in enumerate(("living_ledger","livspuls","etterklang_review","stambok_seal",
+                                                  "gjenklang_publication","human_readability","predecessor_closeout","cold_successor_canary"))})
+            self.value["evidence"]["cold_successor_canary"]["result"] = "PASS"
+        def read_principal_succession_inputs(self, **kwargs):
+            if any(kwargs.get(k) != v for k,v in identity.items()):
+                raise StateConflict("synthetic-scope-mismatch")
+            return copy.deepcopy(self.value)
+    class Authorizer:
+        allowed = True
+        def authorize_principal_succession_custody(self, **kwargs):
+            return {"result":"PASS" if self.allowed else "BLOCK", "operation":kwargs["operation"],
+                    "identity":kwargs["identity"], "actor_generation_id":kwargs["actor_generation_id"],
+                    "permit_fingerprint":kwargs["permit"]["permit_fingerprint"]}
+    class Diary:
+        def verify_machine_diary_effect(self, **kwargs):
+            return {"result":"BLOCK"}  # no fabricated CAPTURE receipt verification
+    class FixturePort:
+        record = None
+        writes = 0
+        independent = True
+        def commit_principal_succession_custody(self, *, record, expected_revision, scopes):
+            if self.record is not None:
+                if self.record != record:
+                    raise StateConflict("synthetic-divergent-replay")
+            else:
+                self.record = copy.deepcopy(record)
+                self.writes += 1
+            return principal_succession_custody_receipt(self.record)
+        def read_principal_succession_custody(self, **kwargs):
+            if self.record is None or self.record["permit"]["permit_id"] != kwargs["permit_ref"]:
+                raise StateConflict("synthetic-record-missing")
+            return dict(record=copy.deepcopy(self.record),receipt=principal_succession_custody_receipt(self.record),
+                        independent_committed_readback_verified=self.independent)
+    port, inputs, authorizer, diary = FixturePort(), Inputs(), Authorizer(), Diary()
+    provider = PrincipalSuccessionPermitProvider(state_port=port,trusted_inputs_reader=inputs,
+                    mcp_authorizer=authorizer,machine_diary_effect_verifier=diary)
+    kwargs = dict(**identity, actor_generation_id="PRINCIPAL-NEW", permit_ref="PERMIT-TEST",
+                  request_ref="REQUEST-TEST", expected_revision=0)
+    return provider,port,inputs,authorizer,diary,kwargs
+
+
+def principal_succession_provider_regressions():
+    from control_context_principal_succession_provider import PrincipalSuccessionPermitProvider
+    from control_context_state_port import StatePortError
+    tests=[]
+    def check(name, condition):
+        tests.append(dict(name="P1074-provider-"+name,result="PASS" if condition else "FAIL"))
+    def blocked(action):
+        try: action()
+        except (StatePortError, ControlContextToolAuthorizationError, TypeError): return True
+        return False
+    provider,port,inputs,authorizer,diary,kwargs=principal_succession_provider_fixture()
+    out=provider.persist_principal_succession_permit(**kwargs)
+    readkw={k:v for k,v in kwargs.items() if k not in {"expected_revision","request_ref"}}
+    check("persist-commit-exact-independent-readback-before-eligibility", out["record"]==port.record
+          and out["independent_committed_readback_verified"] and port.writes==1)
+    check("read-existing-custody-no-event-synthesis", provider.read_principal_succession_permit(**readkw)==port.record["permit"])
+    check("exact-retry-no-extra-revision",provider.persist_principal_succession_permit(**kwargs)==out and port.writes==1)
+    check("cold-reader-revalidates-durable-state",PrincipalSuccessionPermitProvider(state_port=port,
+          trusted_inputs_reader=inputs,mcp_authorizer=authorizer,machine_diary_effect_verifier=diary)
+          .read_principal_succession_permit(**readkw)==port.record["permit"])
+    port.independent=False
+    check("boolean-in-permit-not-readback-proof",blocked(lambda:provider.read_principal_succession_permit(**readkw)))
+    port.independent=True
+    authorizer.allowed=False
+    check("unauthorized-reader-blocked",blocked(lambda:provider.read_principal_succession_permit(**readkw)))
+    check("unauthorized-producer-blocked",blocked(lambda:provider.persist_principal_succession_permit(**kwargs)))
+    authorizer.allowed=True
+    for key in ("source_head","provider_revision","covered_through_frontier","predecessor_generation_id","successor_generation_id"):
+        before=copy.deepcopy(inputs.value[key])
+        inputs.value[key] = "6"*40 if key=="source_head" else before+1 if type(before) is int else "OTHER-GENERATION"
+        check("stale-trusted-"+key,blocked(lambda:provider.read_principal_succession_permit(**readkw)))
+        inputs.value[key]=before
+    check("wrong-generation-before-read",blocked(lambda:provider.read_principal_succession_permit(**{**readkw,"actor_generation_id":"UNRESERVED"})))
+    check("null-generation-never-reservation",blocked(lambda:provider.read_principal_succession_permit(**{**readkw,"actor_generation_id":None})))
+    check("missing-record-holds-no-synthesis",blocked(lambda:provider.read_principal_succession_permit(**{**readkw,"permit_ref":"MISSING-PERMIT"})))
+    for key in ("tenant_ref","workspace_ref","principal_ref"):
+        check("cross-scope-"+key,blocked(lambda:provider.read_principal_succession_permit(**{**readkw,key:"OTHER"})))
+    original=copy.deepcopy(port.record)
+    port.record["permit"]["permit_fingerprint"]="0"*64
+    check("tampered-durable-record-rejected",blocked(lambda:provider.read_principal_succession_permit(**readkw)))
+    port.record=original
+    for key in ("evidence","principal_continuity_baseline","lived_continuity"):
+        fresh,p,i,a,d,k=principal_succession_provider_fixture()
+        if key=="evidence": i.value[key].pop("predecessor_closeout")
+        elif key=="principal_continuity_baseline": i.value[key]["post_state_readback_verified"]=False
+        else: i.value[key].update(qualification="UNKNOWN",debt_state="UNKNOWN")
+        check("unverified-"+key+"-before-write",blocked(lambda:fresh.persist_principal_succession_permit(**k)) and p.writes==0)
+    fresh,p,i,a,d,k=principal_succession_provider_fixture()
+    i.value["evidence"]["cold_successor_canary"]["result"]="FAIL"
+    check("cold-successor-failure-before-write",blocked(lambda:fresh.persist_principal_succession_permit(**k)) and p.writes==0)
+    fresh,p,i,a,d,k=principal_succession_provider_fixture()
+    i.value["lived_continuity"].update(qualification="CAPTURE")
+    check("capture-without-verified-diary-before-write",blocked(lambda:fresh.persist_principal_succession_permit(**k)) and p.writes==0)
+    for name in ("state_port","trusted_inputs_reader","mcp_authorizer","machine_diary_effect_verifier"):
+        dependencies=dict(state_port=port,trusted_inputs_reader=inputs,mcp_authorizer=authorizer,machine_diary_effect_verifier=diary)
+        dependencies[name]=None
+        check("missing-constructor-"+name,blocked(lambda:PrincipalSuccessionPermitProvider(**dependencies)))
+    check("event-cannot-inject-dependency",blocked(lambda:provider.read_principal_succession_permit(**{**readkw,"trusted_inputs_reader":inputs})))
+    check("bool-revision-rejected-before-write",blocked(lambda:provider.persist_principal_succession_permit(**{**kwargs,"expected_revision":True})))
+    # Custody must follow, not narrow or widen, the unchanged MCP permit-ID domain.
+    from control_context_state_port import validate_principal_succession_custody_record, _sha256
+    valid_refs = ("PERMIT-TEST", "PERMIT@TEST", "P" + "1" * 200,
+                  "P" + "1" * 255, "A_.@-0", "1")
+    for index, permit_ref in enumerate(valid_refs):
+        fresh,p,i,a,d,k=principal_succession_provider_fixture()
+        k["permit_ref"]=permit_ref
+        committed=fresh.persist_principal_succession_permit(**k)
+        read={key:value for key,value in k.items() if key not in {"expected_revision","request_ref"}}
+        check("P1076-valid-id-commit-"+str(index),p.writes==1
+              and committed["record"]["permit"]["permit_id"]==permit_ref
+              and committed["independent_committed_readback_verified"] is True)
+        check("P1076-valid-id-read-"+str(index),fresh.read_principal_succession_permit(**read)
+              ==committed["record"]["permit"])
+        check("P1076-valid-id-retry-"+str(index),fresh.persist_principal_succession_permit(**k)
+              ==committed and p.writes==1)
+    invalid_refs = ("", "@TEST", "-TEST", "_TEST", ".TEST", "PERMIT:TEST",
+                    "P" + "1" * 256, "PERMIT/TEST", "PERMIT TEST", "PERMITé", "PERMIT\n")
+    for index, permit_ref in enumerate(invalid_refs):
+        fresh,p,i,a,d,k=principal_succession_provider_fixture()
+        k["permit_ref"]=permit_ref
+        check("P1076-invalid-id-producer-"+str(index),
+              blocked(lambda:fresh.persist_principal_succession_permit(**k)) and p.writes==0)
+        record=copy.deepcopy(original)
+        record["permit"]["permit_id"]=permit_ref
+        permit_subject=copy.deepcopy(record["permit"])
+        permit_subject.pop("permit_fingerprint")
+        record["permit"]["permit_fingerprint"]=_sha256(permit_subject)
+        record_subject=copy.deepcopy(record)
+        record_subject.pop("fingerprint")
+        record["fingerprint"]=_sha256(record_subject)
+        check("P1076-invalid-id-custody-"+str(index),
+              blocked(lambda:validate_principal_succession_custody_record(record)))
+    # Mirror MCP's case-insensitive substring exclusions, not a word/prefix ban.
+    from control_context_state_port import StateBindingError
+    reserved_refs = ("PERMIT-diary", "PERMIT-DiArY", "PERMIT-stambok", "PERMIT-STAMBOK",
+                     "diary", "DIARY", "stambok", "StAmBoK", "diary-PERMIT",
+                     "stambok-PERMIT", "XDiArYY", "XStAmBoKY")
+    for index, permit_ref in enumerate(reserved_refs):
+        fresh,p,i,a,d,k=principal_succession_provider_fixture()
+        k["permit_ref"]=permit_ref
+        check("P1078-reserved-id-producer-"+str(index),
+              _expect_error(lambda:fresh.persist_principal_succession_permit(**k),
+                            ControlContextToolAuthorizationError) and p.writes==0)
+        record=copy.deepcopy(original)
+        record["permit"]["permit_id"]=permit_ref
+        permit_subject=copy.deepcopy(record["permit"])
+        permit_subject.pop("permit_fingerprint")
+        record["permit"]["permit_fingerprint"]=_sha256(permit_subject)
+        record_subject=copy.deepcopy(record)
+        record_subject.pop("fingerprint")
+        record["fingerprint"]=_sha256(record_subject)
+        check("P1078-reserved-id-custody-"+str(index),
+              _expect_error(lambda:validate_principal_succession_custody_record(record),StateBindingError))
+    for index, permit_ref in enumerate(("PERMIT-dia.ry", "PERMIT-stam.bok", "PERMIT-DIAR", "PERMIT-STAMBO")):
+        fresh,p,i,a,d,k=principal_succession_provider_fixture()
+        k["permit_ref"]=permit_ref
+        committed=fresh.persist_principal_succession_permit(**k)
+        read={key:value for key,value in k.items() if key not in {"expected_revision","request_ref"}}
+        check("P1078-near-token-commit-"+str(index),p.writes==1
+              and committed["record"]["permit"]["permit_id"]==permit_ref
+              and committed["independent_committed_readback_verified"] is True)
+        check("P1078-near-token-read-"+str(index),fresh.read_principal_succession_permit(**read)
+              ==committed["record"]["permit"])
+        check("P1078-near-token-retry-"+str(index),fresh.persist_principal_succession_permit(**k)
+              ==committed and p.writes==1)
+    return tests
 
 
 def human_t3_tool_regressions():

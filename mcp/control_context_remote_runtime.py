@@ -43,6 +43,7 @@ from control_context_state_postgres import (  # noqa: E402
     make_psycopg_connection_factory,
 )
 from control_context_tools import ContextLifecycleEffectAdapter, ControlContextMcpTools  # noqa: E402
+from control_context_principal_succession_provider import PrincipalSuccessionPermitProvider  # noqa: E402
 from control_resolution_host import HumanT3BreakGlassHost  # noqa: E402
 
 
@@ -70,6 +71,9 @@ REQUIRED_POSTGRES_RELATIONS = (
     "cerebro_human_t3_break_glass_heads",
     "cerebro_human_t3_break_glass_revisions",
     "cerebro_human_t3_break_glass_receipts",
+    "cerebro_principal_succession_permit_heads",
+    "cerebro_principal_succession_permit_revisions",
+    "cerebro_principal_succession_permit_receipts",
 )
 
 
@@ -397,6 +401,8 @@ class ControlContextRemoteRuntime:
             "pm_lifecycle_verifier_bound": self.pm_lifecycle_verifier is not None,
             "provider_tail_reader_bound": self.provider_tail_reader is not None,
             "principal_succession_reader_bound": self.principal_succession_reader is not None,
+            "principal_succession_custody_provider_bound": isinstance(self.principal_succession_reader, PrincipalSuccessionPermitProvider),
+            "principal_succession_live_custody_proven": False,
             "machine_diary_effect_verifier_bound": self.machine_diary_effect_verifier is not None,
             "human_t3_host_bound": self.human_t3_host is not None,
             "human_t3_remote_activation": "NOT_PROVEN",
@@ -428,6 +434,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     provider_tail_reader: Any | None = None,
     principal_succession_reader: Any | None = None,
     machine_diary_effect_verifier: Any | None = None,
+    principal_succession_inputs_reader: Any | None = None,
+    principal_succession_mcp_authorizer: Any | None = None,
     human_t3_current_reader: Any | None = None,
     human_t3_effect_capability: Any | None = None,
     clock: Callable[[], float] = time.time,
@@ -444,6 +452,13 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     )
     _require(callable(clock), "runtime-clock-required")
     state_port = PostgresControlContextStatePort(connection_factory)
+    if principal_succession_inputs_reader is not None or principal_succession_mcp_authorizer is not None:
+        _require(principal_succession_reader is None, "runtime-ambiguous-succession-reader-prohibited")
+        _require(pm_profile_verifier is not None, "runtime-succession-PM-profile-verifier-required")
+        principal_succession_reader = PrincipalSuccessionPermitProvider(
+            state_port=state_port, trusted_inputs_reader=principal_succession_inputs_reader,
+            mcp_authorizer=principal_succession_mcp_authorizer,
+            machine_diary_effect_verifier=machine_diary_effect_verifier)
     _require(human_t3_effect_capability is None or human_t3_current_reader is not None,
              "T3-effect-capability-requires-trusted-current-reader")
     human_t3_host = (HumanT3BreakGlassHost(state_port=state_port, current_reader=human_t3_current_reader,
@@ -504,6 +519,8 @@ def assemble_postgres_control_context_remote_runtime(
     provider_tail_reader: Any | None = None,
     principal_succession_reader: Any | None = None,
     machine_diary_effect_verifier: Any | None = None,
+    principal_succession_inputs_reader: Any | None = None,
+    principal_succession_mcp_authorizer: Any | None = None,
     human_t3_current_reader: Any | None = None,
     human_t3_effect_capability: Any | None = None,
     clock: Callable[[], float] = time.time,
@@ -525,6 +542,8 @@ def assemble_postgres_control_context_remote_runtime(
         provider_tail_reader=provider_tail_reader,
         principal_succession_reader=principal_succession_reader,
         machine_diary_effect_verifier=machine_diary_effect_verifier,
+        principal_succession_inputs_reader=principal_succession_inputs_reader,
+        principal_succession_mcp_authorizer=principal_succession_mcp_authorizer,
         human_t3_current_reader=human_t3_current_reader,
         human_t3_effect_capability=human_t3_effect_capability,
         clock=clock,
