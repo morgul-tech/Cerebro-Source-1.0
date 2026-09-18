@@ -507,6 +507,135 @@ function Test-CerebroPrincipalSuccessionPermit {
     }
 }
 
+function Resolve-CerebroCivilizationMethod {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$SourceRoot,
+        [Parameter(Mandatory)][string]$SourceHead,
+        [Parameter(Mandatory)][string]$ActorRole
+    )
+    if ($SourceHead -cnotmatch '^[0-9a-f]{40}$' -or $ActorRole -cnotmatch '^[A-Z][A-Z0-9_]{0,63}$') {
+        throw 'CIVILIZATION_METHOD_EXACT_SOURCE_AND_ROLE_REQUIRED'
+    }
+    $head = @(& git -C $SourceRoot rev-parse HEAD)
+    if ($LASTEXITCODE -ne 0 -or $head.Count -ne 1 -or $head[0] -cne $SourceHead) {
+        throw 'CIVILIZATION_METHOD_STALE_SOURCE'
+    }
+    function Get-PinnedMethodFile([string]$RelativePath) {
+        $path = Join-Path $SourceRoot $RelativePath
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            throw ('CIVILIZATION_METHOD_FILE_MISSING:' + $RelativePath)
+        }
+        $blob = @(& git -C $SourceRoot rev-parse ($SourceHead + ':' + $RelativePath))
+        if ($LASTEXITCODE -ne 0 -or $blob.Count -ne 1 -or $blob[0] -cnotmatch '^[0-9a-f]{40}$') {
+            throw 'CIVILIZATION_METHOD_PINNED_BLOB_REQUIRED'
+        }
+        $actual = @(& git -C $SourceRoot hash-object --no-filters -- $path)
+        if ($LASTEXITCODE -ne 0 -or $actual.Count -ne 1 -or $actual[0] -cne $blob[0]) {
+            throw ('CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH:' + $RelativePath)
+        }
+        return (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+    }
+    $owner = 'standards/boot-critical-path-architecture.yaml'
+    $ownerHash = Get-PinnedMethodFile $owner
+    $text = [IO.File]::ReadAllText((Join-Path $SourceRoot $owner))
+    $owners = [regex]::Matches($text, '(?m)^  current_civilization_method_profile:\s*([^\r\n]+)$')
+    if ($owners.Count -ne 1) { throw 'CIVILIZATION_METHOD_SINGLE_OWNER_REQUIRED' }
+    $profileText = $owners[0].Groups[1].Value
+    $profile = $profileText | ConvertFrom-Json
+    $keys = @('id','version','authority','durable_method','contract_refs')
+    if (@($profile.PSObject.Properties).Count -ne $keys.Count) {
+        throw 'CIVILIZATION_METHOD_PRIVATE_OR_EXTRA_FIELD'
+    }
+    foreach ($key in $keys) {
+        if ($null -eq $profile.PSObject.Properties[$key] -or
+            [regex]::Matches($profileText, ('"' + $key + '"\s*:')).Count -ne 1) {
+            throw 'CIVILIZATION_METHOD_EXACT_FIELDS_REQUIRED'
+        }
+    }
+    if ($profile.id -cne 'CURRENT_CIVILIZATION_METHOD_PROFILE' -or
+        $profile.version -isnot [string] -or $profile.version -cne '1.0' -or
+        $profile.authority -cne 'NONE') {
+        throw 'CIVILIZATION_METHOD_ID_VERSION_AUTHORITY_INVALID'
+    }
+    $methods = @('CURRENTNESS_FIRST','METHOD_NE_AUTHORITY','NO_LIVE_STATE_INHERITANCE',
+        'VERIFY_LOAD_CONSUME_READBACK','TASK_SEMANTICS_ON_DEMAND')
+    $refs = @('mcp/constitution.yaml','mcp/boot-architecture-control.yaml',
+        'engines/presentation/component.yaml','engines/presentation/rules.yaml')
+    # A closed durable vocabulary prevents task/private data hiding in free text.
+    if (($profile.durable_method | ConvertTo-Json -Compress) -cne ($methods | ConvertTo-Json -Compress) -or
+        ($profile.contract_refs | ConvertTo-Json -Compress) -cne ($refs | ConvertTo-Json -Compress)) {
+        throw 'CIVILIZATION_METHOD_DURABLE_CONTRACT_REQUIRED'
+    }
+    $material = @($owner + '|' + $ownerHash)
+    foreach ($ref in $refs) { $material += $ref + '|' + (Get-PinnedMethodFile $ref) }
+    $fingerprint = Get-CerebroBootSha256Text (
+        @($profile.id, $profile.version, $SourceHead, ($methods -join '|'), ($material -join '|')) -join '|'
+    )
+    $current = [ordered]@{
+        id=$profile.id; version=$profile.version; source_head=$SourceHead; fingerprint=$fingerprint
+        authority='NONE'; durable_method=$methods; contract_refs=$refs; verified=$true; loaded=$true
+    }
+    $projection = [ordered]@{
+        id='ROLE_METHOD_PROJECTION'; role=$ActorRole; source_head=$SourceHead
+        method_profile_fingerprint=$fingerprint; durable_method=$methods; authority='NONE'
+    }
+    $projection.fingerprint = Get-CerebroBootSha256Text ($projection | ConvertTo-Json -Compress -Depth 8)
+    return [ordered]@{ method_profile=$current; role_method_projection=$projection }
+}
+
+function New-CerebroAwakeningReceipt {
+    param(
+        [Parameter(Mandatory)][object]$Binding,
+        [Parameter(Mandatory)][string]$SourceRoot,
+        [Parameter(Mandatory)][string]$SourceHead,
+        [Parameter(Mandatory)][string]$ActorRole
+    )
+    $fresh = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole $ActorRole
+    if (($Binding | ConvertTo-Json -Compress -Depth 12) -cne ($fresh | ConvertTo-Json -Compress -Depth 12)) {
+        throw 'CIVILIZATION_METHOD_BINDING_MISMATCH'
+    }
+    $receipt = [ordered]@{
+        kind='AWAKENING_RECEIPT'; source_head=$SourceHead
+        method_profile=$fresh.method_profile; role_method_projection=$fresh.role_method_projection
+        activated=$true; consumed=$true
+    }
+    $receipt.fingerprint = Get-CerebroBootSha256Text ($receipt | ConvertTo-Json -Compress -Depth 12)
+    return $receipt
+}
+
+function Test-CerebroAwakeningReadback {
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [Parameter(Mandatory)][object]$RuntimeState,
+        [Parameter(Mandatory)][string]$SourceRoot,
+        [Parameter(Mandatory)][string]$SourceHead,
+        [Parameter(Mandatory)][string]$ActorRole
+    )
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw 'AWAKENING_PERSISTED_READBACK_MISSING'
+    }
+    $actualText = [IO.File]::ReadAllText($Path)
+    $expectedText = ($RuntimeState | ConvertTo-Json -Depth 16) + "`n"
+    $persistedFingerprint = Get-CerebroBootSha256Text $actualText
+    if ($persistedFingerprint -cne (Get-CerebroBootSha256Text $expectedText)) {
+        throw 'AWAKENING_PERSISTED_STATE_MISMATCH'
+    }
+    $persisted = $actualText | ConvertFrom-Json
+    $binding = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole $ActorRole
+    $expectedReceipt = New-CerebroAwakeningReceipt -Binding $binding -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole $ActorRole
+    if (($persisted.runtime.awakening_receipt | ConvertTo-Json -Compress -Depth 12) -cne
+        ($expectedReceipt | ConvertTo-Json -Compress -Depth 12)) {
+        throw 'AWAKENING_CONSUMPTION_READBACK_MISMATCH'
+    }
+    return [ordered]@{
+        result='PASS'; currentness='CURRENT'; persisted_state_fingerprint=$persistedFingerprint
+        method_profile_fingerprint=$binding.method_profile.fingerprint
+        projection_fingerprint=$binding.role_method_projection.fingerprint
+        receipt_fingerprint=$expectedReceipt.fingerprint
+    }
+}
+
 function Invoke-CerebroBootCore {
     [CmdletBinding()]
     param(
@@ -960,6 +1089,12 @@ function Invoke-CerebroBootCore {
                 '{0}|{1}|{2}' -f $hmiKernelId, $hmiKernelVersion, $hmiKernelMaterial
             )
 
+            $failureStage = 'CIVILIZATION_METHOD_BINDING'
+            $methodBinding = Resolve-CerebroCivilizationMethod `
+                -SourceRoot $WorkingSourcePath -SourceHead $localCommit -ActorRole $OperationalPulseActorRole
+            $awakeningReceipt = New-CerebroAwakeningReceipt -Binding $methodBinding `
+                -SourceRoot $WorkingSourcePath -SourceHead $localCommit -ActorRole $OperationalPulseActorRole
+
             $roleKernelId = 'CEREBRO-ROLE-BIRTH-KERNEL-001'
             $roleKernelVersion = '1.0'
             $roleKernelRefs = @(
@@ -973,18 +1108,22 @@ function Invoke-CerebroBootCore {
                 }
             ) -join "`n"
             $roleKernelFingerprint = Get-CerebroBootSha256Text (
-                '{0}|{1}|{2}' -f $roleKernelId, $roleKernelVersion, $roleKernelMaterial
+                '{0}|{1}|{2}|{3}' -f $roleKernelId, $roleKernelVersion, $roleKernelMaterial,
+                $methodBinding.role_method_projection.fingerprint
             )
 
             $successionOrder = @(
                 'identity',
                 'HMI-birth-kernel',
+                'CURRENT_CIVILIZATION_METHOD_PROFILE',
+                'ROLE_METHOD_PROJECTION',
                 'ROLE-birth-kernel',
                 'Fresh-World-currentness',
                 'lineage-wisdom',
                 'reconcile',
                 'canaries',
                 'Arvetone-last',
+                'AWAKENING_RECEIPT-readback',
                 'Identitetshilsen',
                 'READY'
             )
@@ -1106,6 +1245,9 @@ function Invoke-CerebroBootCore {
                         }
                     }
 
+                    awakening_receipt = $awakeningReceipt
+                    awakening_readback = $null
+
                     succession = [ordered]@{
                         zero_live_state_inheritance = $true
                         order = $successionOrder
@@ -1113,8 +1255,8 @@ function Invoke-CerebroBootCore {
                         operational_pulse = $operationalPulse
                         currentness_gate = $operationalPulse.result
                         principal_permit = $principalSuccession
-                        completed = ($principalSuccession.result -in @('PASS','PASS_NON_PRINCIPAL_UNCHANGED'))
-                        final_state = $(if ($principalSuccession.result -in @('PASS','PASS_NON_PRINCIPAL_UNCHANGED')) { 'READY' } else { 'HOLD' })
+                        completed = $false
+                        final_state = 'AWAITING_AWAKENING_READBACK'
                     }
 
                     handoff = [ordered]@{
@@ -1144,6 +1286,14 @@ function Invoke-CerebroBootCore {
                     }
                 }
             }
+
+            $failureStage = 'AWAKENING_PERSIST_AND_READBACK'
+            Write-CerebroBootRuntimeState -Path $RuntimeStatePath -RuntimeState $runtimeState
+            $runtimeState.runtime.awakening_readback = Test-CerebroAwakeningReadback `
+                -Path $RuntimeStatePath -RuntimeState $runtimeState `
+                -SourceRoot $WorkingSourcePath -SourceHead $localCommit -ActorRole $OperationalPulseActorRole
+            $runtimeState.runtime.succession.completed = ($principalSuccession.result -in @('PASS','PASS_NON_PRINCIPAL_UNCHANGED'))
+            $runtimeState.runtime.succession.final_state = $(if ($principalSuccession.result -in @('PASS','PASS_NON_PRINCIPAL_UNCHANGED')) { 'READY' } else { 'HOLD' })
 
             $failureStage = 'RUNTIME_ACTIVATION'
 
@@ -1220,7 +1370,7 @@ function Invoke-CerebroBootCore {
             $failureStage = 'CONTROL_TRANSFER'
 
             $receiptMaterial = (
-                '{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}|{10}' -f
+                '{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}|{10}|{11}' -f
                 'bootCerebro',
                 $bootEngineHash,
                 $localCommit,
@@ -1231,7 +1381,8 @@ function Invoke-CerebroBootCore {
                 $canonicalCommand,
                 $hmiKernelFingerprint,
                 $roleKernelFingerprint,
-                $successionFingerprint
+                $successionFingerprint,
+                $awakeningReceipt.fingerprint
             )
 
             $receipt =
@@ -1272,6 +1423,10 @@ function Invoke-CerebroBootCore {
                 -Path $RuntimeStatePath `
                 -RuntimeState $runtimeState
 
+            $failureStage = 'AWAKENING_FINAL_READBACK'
+            $finalAwakeningReadback = Test-CerebroAwakeningReadback `
+                -Path $RuntimeStatePath -RuntimeState $runtimeState `
+                -SourceRoot $WorkingSourcePath -SourceHead $localCommit -ActorRole $OperationalPulseActorRole
             $bootState = 'COMPLETE'
             $failureStage = 'NONE'
             $failureCode = 'NONE'
@@ -1359,6 +1514,8 @@ function Invoke-CerebroBootCore {
                 runtime = 'ACTIVE'
                 birth_kernels = $runtimeState.runtime.birth_kernels
                 succession = $runtimeState.runtime.succession
+                awakening_receipt = $runtimeState.runtime.awakening_receipt
+                awakening_readback = $finalAwakeningReadback
                 handoff = $handoffState
                 handoff_id = $handoffId
                 resume_receipt = $resumeReceipt

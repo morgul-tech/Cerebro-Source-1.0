@@ -272,6 +272,228 @@ $json
                      "detail":str(exc) + ":" + process.stdout}]
 
 
+
+def civilization_method_runtime_canaries(root: Path) -> list[dict[str, object]]:
+    """Run actual boot and receipt helpers against disposable offline fixtures."""
+    import shutil
+    import subprocess
+    import tempfile
+    executable = shutil.which("powershell") or shutil.which("pwsh")
+    if executable is None:
+        return [{"name": "K157-runtime", "result": "HOLD_CAPABILITY",
+                 "detail": "PowerShell unavailable; behavior not verified"}]
+    script = r"""param([string]$SourceRoot,[string]$RunRoot)
+$ErrorActionPreference='Stop'
+. (Join-Path $SourceRoot 'tooling/runtime-host/cerebro_boot.ps1')
+$fixture=Join-Path $RunRoot 'source'
+$sourceHead='5555555555555555555555555555555555555555'
+$paths=@('cerebro.yaml','mcp/activation.yaml','mcp/constitution.yaml',
+'standards/boot-critical-path-architecture.yaml','mcp/boot-architecture-control.yaml',
+'standards/runtime/minimal-runtime-bootstrap.yaml','standards/runtime/handboot.yaml',
+'standards/runtime/handboot-bootstrap-state-schema.yaml','standards/session-handoff.yaml',
+'standards/session-handoff-schema.yaml','engines/context/working-context.yaml','engines/project/roadmap.yaml',
+'tooling/builder/templates/pshell/Cerebro.Tools.psd1','tooling/builder/templates/pshell/Cerebro.Tools.psm1',
+'tooling/builder/templates/pshell/cerebro_handoff.ps1','tooling/runtime-host/cerebro_resume.ps1',
+'tooling/runtime-host/cerebro_boot.ps1','tooling/runtime-host/cerebro_machine_proof.ps1',
+'tooling/validator/checks.yaml','standards/human-continuation-surface.yaml',
+'standards/continuation-surface-system-policy.yaml','engines/presentation/human-admin-projection.schema.json',
+'engines/presentation/component.yaml','engines/presentation/rules.yaml')
+foreach($p in $paths){
+    $dest=Join-Path $fixture $p
+    [IO.Directory]::CreateDirectory((Split-Path $dest -Parent)) | Out-Null
+    [IO.File]::WriteAllBytes($dest,[IO.File]::ReadAllBytes((Join-Path $SourceRoot $p)))
+}
+$owner=Join-Path $fixture 'standards/boot-critical-path-architecture.yaml'
+$originalOwner=[IO.File]::ReadAllText($owner)
+[IO.File]::WriteAllText((Join-Path $fixture 'engines/project/roadmap.yaml'),"roadmap:`n  status: COMPLETED`n  execution:`n    current: null`n    next: null`n")
+$blobs=@{}
+foreach($p in $paths){$blobs[$p]=(Get-FileHash -Algorithm SHA1 -LiteralPath (Join-Path $fixture $p)).Hash.ToLowerInvariant()}
+$originalOwnerBlob=$blobs['standards/boot-critical-path-architecture.yaml']
+# Only immutable source lookup and transport are faked. Boot/method/state code is real.
+function git {
+    $a=@($args)
+    if($a[0] -eq '-C'){$a=@($a | Select-Object -Skip 2)}
+    $global:LASTEXITCODE=0
+    switch($a[0]){
+        'rev-parse' {
+            if($a[1] -eq '--is-inside-work-tree'){return 'true'}
+            if($a[1] -in @('HEAD','origin/main')){return ('5'*40)}
+            $relative=([string]$a[1]).Substring(41)
+            if(-not $blobs.ContainsKey($relative)){throw 'FIXTURE_UNEXPECTED_SOURCE_LOOKUP'}
+            return $blobs[$relative]
+        }
+        'hash-object' {return (Get-FileHash -Algorithm SHA1 -LiteralPath $a[-1]).Hash.ToLowerInvariant()}
+        'status' {return}
+        'branch' {return 'main'}
+        'remote' {return 'https://github.com/morgul-tech/Cerebro-Source-1.0'}
+        'fetch' {return}
+        default {throw ('FIXTURE_UNEXPECTED_GIT_COMMAND:'+$a[0])}
+    }
+}
+function Invoke-WebRequest {
+    return [pscustomobject]@{StatusCode=200;Content=@(
+        'BOOTSTRAP ENGINE','Configuration := IMMUTABLE',
+        'CurrentMaster.Repository := morgul-tech/Cerebro-Source-1.0','CurrentMaster.Branch := main',
+        'CurrentMaster.Path := cerebro.yaml','Command.NaturalLanguageAlias := boot cerebro',
+        'Authority.First := github:morgul-tech/Cerebro-Source-1.0/main/cerebro.yaml',
+        'FilenameMarker.CURRENT.Authority := NONE','StaleDerivedState.Action := REJECT_INPUT_CONTINUE_CURRENT_SOURCE',
+        'OperationalClaim.Requires := ACTIVE_CONTROL_TRANSFERRED_RECEIPT_AT_CURRENT_SOURCE_COMMIT',
+        'IDLE','FETCHING','VERIFYING','ANALYZING','ACTIVATING','COMPLETE','FAILED','UndefinedTransition','FORBIDDEN'
+    ) -join '`n'}
+}
+$writerBody=(Get-Item Function:Write-CerebroBootRuntimeState).ScriptBlock
+$writeMode='NORMAL'
+$writtenStates=[Collections.Generic.List[string]]::new()
+function Write-CerebroBootRuntimeState {
+    param([string]$Path,[object]$RuntimeState)
+    $writtenStates.Add([string]$RuntimeState.runtime.state)
+    if($writeMode -eq 'MISSING' -and $RuntimeState.runtime.state -eq 'CONSTRUCTED_INACTIVE'){return}
+    & $writerBody -Path $Path -RuntimeState $RuntimeState
+    if(($writeMode -eq 'TAMPER' -and $RuntimeState.runtime.state -eq 'CONSTRUCTED_INACTIVE') -or
+       ($writeMode -eq 'FINAL_TAMPER' -and $RuntimeState.runtime.state -eq 'ACTIVE_CONTROL_TRANSFERRED')){
+        [IO.File]::AppendAllText($Path,' ')
+    }
+}
+$results=[Collections.Generic.List[object]]::new()
+function Check([string]$name,[scriptblock]$action,[string]$expected=''){
+    try{
+        & $action
+        if($expected){throw 'EXPECTED_REJECTION_NOT_OBSERVED'}
+        $results.Add(@{name=$name;result='PASS'})
+    }catch{
+        $message=$_.Exception.Message
+        $ok=$expected -and $message.Contains($expected)
+        $results.Add(@{name=$name;result=$(if($ok){'PASS'}else{'FAIL'});detail=$message})
+    }
+}
+function Binding([string]$role='IMPLEMENTER'){
+    Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead -ActorRole $role
+}
+function Receipt($binding){
+    New-CerebroAwakeningReceipt -Binding $binding -SourceRoot $fixture -SourceHead $sourceHead -ActorRole 'IMPLEMENTER'
+}
+function Readback($state,[string]$path){
+    Test-CerebroAwakeningReadback -Path $path -RuntimeState $state -SourceRoot $fixture -SourceHead $sourceHead -ActorRole 'IMPLEMENTER'
+}
+Check 'K157-cross-role-profile-shared-projection-distinct' {
+    $one=Binding 'IMPLEMENTER';$two=Binding 'PROJECT_MANAGER'
+    if($one.method_profile.fingerprint -cne $two.method_profile.fingerprint -or
+       $one.role_method_projection.fingerprint -ceq $two.role_method_projection.fingerprint){throw 'CROSS_ROLE_MISMATCH'}
+}
+Check 'K157-stale-head' {
+    Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead ('6'*40) -ActorRole 'IMPLEMENTER' | Out-Null
+} 'CIVILIZATION_METHOD_STALE_SOURCE'
+Check 'K157-invalid-role' {Binding 'task/private' | Out-Null} 'CIVILIZATION_METHOD_EXACT_SOURCE_AND_ROLE_REQUIRED'
+foreach($case in @('missing','duplicate','version','authority','private','durable-leak','duplicate-key')){
+    $caseText=switch($case){
+        'missing' {$originalOwner -replace '(?m)^  current_civilization_method_profile:[^\r\n]+\r?\n',''}
+        'duplicate' {$originalOwner+"`n"+([regex]::Match($originalOwner,'(?m)^  current_civilization_method_profile:[^\r\n]+').Value)}
+        'version' {$originalOwner.Replace('"version":"1.0","authority":"NONE"','"version":"0.9","authority":"NONE"')}
+        'authority' {$originalOwner.Replace('"authority":"NONE"','"authority":"SOURCE_WRITER"')}
+        'private' {$originalOwner.Replace('"id":"CURRENT_CIVILIZATION_METHOD_PROFILE"','"private_state":"task","id":"CURRENT_CIVILIZATION_METHOD_PROFILE"')}
+        'durable-leak' {$originalOwner.Replace('"CURRENTNESS_FIRST"','"CURRENT_TASK_123"')}
+        'duplicate-key' {$originalOwner.Replace('"version":"1.0"','"version":"1.0","version":"1.0"')}
+    }
+    [IO.File]::WriteAllText($owner,$caseText)
+    $blobs['standards/boot-critical-path-architecture.yaml']=(Get-FileHash -Algorithm SHA1 $owner).Hash.ToLowerInvariant()
+    $expected=switch($case){
+        {$_ -in @('missing','duplicate')} {'CIVILIZATION_METHOD_SINGLE_OWNER_REQUIRED'}
+        {$_ -in @('version','authority')} {'CIVILIZATION_METHOD_ID_VERSION_AUTHORITY_INVALID'}
+        'private' {'CIVILIZATION_METHOD_PRIVATE_OR_EXTRA_FIELD'}
+        'durable-leak' {'CIVILIZATION_METHOD_DURABLE_CONTRACT_REQUIRED'}
+        'duplicate-key' {'CIVILIZATION_METHOD_EXACT_FIELDS_REQUIRED'}
+    }
+    Check ('K157-'+$case) {Binding | Out-Null} $expected
+}
+[IO.File]::WriteAllText($owner,$originalOwner)
+$blobs['standards/boot-critical-path-architecture.yaml']=$originalOwnerBlob
+Check 'K157-tampered-pinned-source' {
+    [IO.File]::AppendAllText($owner,' ')
+    Binding | Out-Null
+} 'CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH'
+[IO.File]::WriteAllText($owner,$originalOwner)
+Check 'K157-projection-fingerprint-mismatch' {
+    $binding=Binding;$binding.role_method_projection.fingerprint='0'*64
+    Receipt $binding | Out-Null
+} 'CIVILIZATION_METHOD_BINDING_MISMATCH'
+Check 'K157-projection-task-leak' {
+    $binding=Binding;$binding.role_method_projection.task_state='old'
+    Receipt $binding | Out-Null
+} 'CIVILIZATION_METHOD_BINDING_MISMATCH'
+$statePath=Join-Path $RunRoot 'receipt/state.json'
+$state=[ordered]@{runtime=[ordered]@{awakening_receipt=(Receipt (Binding))}}
+Check 'K157-consumed-persisted-readback' {
+    & $writerBody -Path $statePath -RuntimeState $state
+    $proof=Readback $state $statePath
+    if($proof.result -ne 'PASS'){throw 'READBACK_NONPASS'}
+}
+Check 'K157-verified-not-consumed' {
+    $state.runtime.awakening_receipt.consumed=$false
+    & $writerBody -Path $statePath -RuntimeState $state
+    Readback $state $statePath | Out-Null
+} 'AWAKENING_CONSUMPTION_READBACK_MISMATCH'
+$state.runtime.awakening_receipt.consumed=$true
+Check 'K157-persisted-tamper' {Readback $state $statePath | Out-Null} 'AWAKENING_PERSISTED_STATE_MISMATCH'
+Check 'K157-readback-stale-currentness' {
+    & $writerBody -Path $statePath -RuntimeState $state
+    [IO.File]::AppendAllText($owner,' ')
+    Readback $state $statePath | Out-Null
+} 'CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH'
+[IO.File]::WriteAllText($owner,$originalOwner)
+$script:pulseObserved=$false
+function Run-Boot([string]$suffix,[switch]$Principal){
+    $params=@{WorkingSourcePath=$fixture;RuntimeStatePath=(Join-Path $RunRoot ($suffix+'/state.json'));
+        HandoffPath=(Join-Path $RunRoot 'absent-handoff.json');SkipHandoff=$true;OperationalPulseActorRole='IMPLEMENTER';
+        OperationalPulseReader={
+            $script:pulseObserved=$true
+            return @{control=@{currentness='CURRENT';carrier_ref='FIXTURE';provider_revision=1;event_frontier=77};
+                protobox=@{currentness='CURRENT';channel_ref='FIXTURE';observed_revision=1}}
+        }}
+    if($Principal){$params.PredecessorPrincipalGenerationId='OLD'}
+    Invoke-CerebroBootCore @params 6>$null
+}
+Check 'K157-core-normal-path-ready-after-readback' {
+    $result=Run-Boot 'normal'
+    if($result.state -ne 'ACTIVE_CONTROL_TRANSFERRED' -or $result.succession.final_state -ne 'READY' -or
+       $result.awakening_readback.result -ne 'PASS' -or -not $script:pulseObserved){throw 'CORE_NOT_READY'}
+}
+foreach($mode in @('MISSING','TAMPER','FINAL_TAMPER')){
+    $writeMode=$mode;$writtenStates.Clear()
+    $expected=if($mode -eq 'MISSING'){'AWAKENING_PERSISTED_READBACK_MISSING'}else{'AWAKENING_PERSISTED_STATE_MISMATCH'}
+    Check ('K157-core-'+$mode+'-holds') {Run-Boot $mode | Out-Null} $expected
+    Check ('K157-core-'+$mode+'-inactive-terminal') {
+        $saved=[IO.File]::ReadAllText((Join-Path $RunRoot ($mode+'/state.json'))) | ConvertFrom-Json
+        if($saved.runtime.operational -or $saved.runtime.state -ne 'INACTIVE_CONTROL_RETAINED'){throw 'FAILED_BOOT_LEFT_ACTIVE'}
+        if($mode -ne 'FINAL_TAMPER' -and $writtenStates.Contains('ACTIVE_CONTROL_TRANSFERRED')){throw 'READY_BEFORE_READBACK'}
+    }
+}
+$writeMode='NORMAL';$script:pulseObserved=$false
+[IO.File]::AppendAllText($owner,' ')
+Check 'K157-core-stale-method-before-fresh-world' {Run-Boot 'stale' | Out-Null} 'CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH'
+Check 'K157-core-stale-does-not-consume-fresh-world' {if($script:pulseObserved){throw 'FRESH_WORLD_REACHED'}}
+[IO.File]::WriteAllText($owner,$originalOwner)
+Check 'K157-core-principal-gate-preserved' {Run-Boot 'principal' -Principal | Out-Null} 'PRINCIPAL_SUCCESSION_BOUND_READER_AND_EXACT_BINDING_REQUIRED'
+@{tests=@($results)} | ConvertTo-Json -Depth 16
+"""
+    with tempfile.TemporaryDirectory(prefix="cerebro-k157-") as directory:
+        run_root = Path(directory)
+        script_path = run_root / "method-canaries.ps1"
+        script_path.write_text(script, encoding="utf-8")
+        process = subprocess.run(
+            [executable, "-NoProfile", "-NonInteractive", "-File", str(script_path),
+             "-SourceRoot", str(root), "-RunRoot", str(run_root)],
+            capture_output=True, text=True, timeout=90,
+        )
+        if process.returncode:
+            return [{"name": "K157-runtime", "result": "FAIL",
+                     "detail": process.stderr or process.stdout}]
+        try:
+            return json.loads(process.stdout)["tests"]
+        except (ValueError, KeyError) as exc:
+            return [{"name": "K157-runtime", "result": "FAIL",
+                     "detail": str(exc) + ":" + process.stdout}]
+
+
 def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str, object]:
     commit = "CURRENT-COMMIT"
     source = {"identity": CURRENT_SOURCE, "commit": commit, "kind": "SOURCE"}
@@ -421,7 +643,7 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
         and all(token in boot_architecture for token in succession_order_tokens)
         and all(token in boot_runtime for token in succession_order_tokens)
         and "$successionFingerprint" in boot_runtime
-        and "completed = ($principalSuccession.result" in boot_runtime,
+        and "succession.completed = ($principalSuccession.result" in boot_runtime,
     )
     check(
         "P669-principal-succession-permit-gates-ready",
@@ -434,7 +656,7 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
             "PRINCIPAL_SUCCESSION_COLD_SUCCESSOR_CANARY_NONPASS",
             "PRINCIPAL_SUCCESSION_PRIVATE_CONTENT_OR_LOCATOR_PROHIBITED",
             "principal_permit = $principalSuccession",
-            "final_state = $(if ($principalSuccession.result",
+            "succession.final_state = $(if ($principalSuccession.result",
         )),
     )
     check(
@@ -460,6 +682,21 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
             "ADMINPULSE_CURRENT_EXACT_WATERMARKS_REQUIRED",
             "operational_pulse = $operationalPulse",
         )),
+    )
+
+    check(
+        "K157-single-profile-projection-awakening-contract",
+        all(token in boot_architecture for token in (
+            "current_civilization_method_profile:", "CURRENT_CIVILIZATION_METHOD_PROFILE",
+            "ROLE_METHOD_PROJECTION", "AWAKENING_RECEIPT", "new_receipt_schema: false",
+        )) and "MCP-079" in boot_control and "MCP-080" in boot_control,
+    )
+    check(
+        "K157-readback-before-ready-and-complete",
+        boot_runtime.index("$runtimeState.runtime.awakening_readback = Test-CerebroAwakeningReadback")
+        < boot_runtime.index("$runtimeState.runtime.succession.final_state =")
+        < boot_runtime.index("$finalAwakeningReadback = Test-CerebroAwakeningReadback")
+        < boot_runtime.index("$bootState = 'COMPLETE'"),
     )
 
     if bootengine_path is not None:
@@ -511,19 +748,21 @@ def activation_probe(root: Path) -> dict[str, object]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", nargs="?", choices=("selftest", "activation-probe", "succession-canaries"), default="selftest")
+    parser.add_argument("command", nargs="?", choices=("selftest", "activation-probe", "succession-canaries", "method-canaries"), default="selftest")
     parser.add_argument("--source-root", type=Path, default=ROOT)
     parser.add_argument("--bootengine-path", type=Path)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
 
     root = args.source_root.resolve()
-    if args.command == "succession-canaries":
-        tests = principal_permit_runtime_canaries(root)
+    if args.command in ("succession-canaries", "method-canaries"):
+        tests = (principal_permit_runtime_canaries(root) if args.command == "succession-canaries"
+                 else civilization_method_runtime_canaries(root))
         result = ("FAIL" if any(test["result"] == "FAIL" for test in tests)
                   else "HOLD_CAPABILITY" if any(test["result"] != "PASS" for test in tests)
                   else "PASS")
-        report = {"schema": "cerebro-principal-permit-runtime-canaries/v1",
+        report = {"schema": ("cerebro-principal-permit-runtime-canaries/v1" if args.command == "succession-canaries"
+                             else "cerebro-civilization-method-canaries/v1"),
                   "result": result, "tests": tests}
     elif args.command == "activation-probe":
         report = activation_probe(root)

@@ -171,8 +171,33 @@ mcp_extension:
       history, model memory, patch state and cerebro_sync state may not restore
       ON; only explicit current-session human transition intent may activate it.
 
+  - id: MCP-079
+    authority: normative
+    constitutional_article_ref: C-03
+    statement: >
+      Every role resolves the one CURRENT_CIVILIZATION_METHOD_PROFILE from the
+      pinned boot contract, verifies its identity/version and Source-bound
+      fingerprint, and loads its durable method before ROLE_METHOD_PROJECTION
+      and Fresh World. Missing, duplicate, stale or tampered bindings block READY.
+      A method projection grants no authority and carries no task, specialty,
+      private or predecessor live state.
+  - id: MCP-080
+    authority: normative
+    constitutional_article_ref: C-05
+    statement: >
+      Boot consumes the verified role method projection in the ROLE birth kernel
+      and persists a common typed AWAKENING_RECEIPT in the existing runtime state.
+      READY requires immediate full persisted-state fingerprint comparison and
+      fresh Source/profile/projection readback after write. Present, verified,
+      loaded, activated and consumed remain distinct from behavior verification.
+      The existing handboot receipt container is reused; no new receipt schema,
+      role architecture, store or manifest dependency is introduced.
+
   bindings:
     boot_architecture: standards/boot-critical-path-architecture.yaml
+    current_civilization_method: standards/boot-critical-path-architecture.yaml#current_civilization_method_profile
+    role_method_projection: tooling/runtime-host/cerebro_boot.ps1#Resolve-CerebroCivilizationMethod
+    awakening_readback: tooling/runtime-host/cerebro_boot.ps1#Test-CerebroAwakeningReadback
     boot_completion_surface: standards/boot-critical-path-architecture.yaml#human_boot_completion_surface
     delivery_kernel: standards/delivery-kernel.yaml
     continuation_surface: standards/continuation-surface-system-policy.yaml

@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.4"
+  version: "1.5"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -22,15 +22,38 @@ boot_critical_path:
     - verify-manifest-and-MCP-extension
     - verify-boot-critical-contract-identities
     - consume-HMI-birth-kernel
+    - resolve-verify-load-CURRENT_CIVILIZATION_METHOD_PROFILE
+    - consume-ROLE_METHOD_PROJECTION
     - consume-ROLE-birth-kernel
     - reuse-exact-commit-integrity-evidence-when-valid
     - deep-validate-automatically-when-invalidated
+    - persist-AWAKENING_RECEIPT
+    - verify-immediate-persisted-state-and-current-method-readback
     - establish-Source-operational-state
     - detect-environment-capabilities
     - load-task-relevant-semantics-on-demand
     - complete-frozen-succession-order
     - emit-Identitetshilsen
     - emit-human-boot-completion-surface
+
+  # JSON flow mapping is also YAML: one Source-owned profile, no provider rule store.
+  current_civilization_method_profile: {"id":"CURRENT_CIVILIZATION_METHOD_PROFILE","version":"1.0","authority":"NONE","durable_method":["CURRENTNESS_FIRST","METHOD_NE_AUTHORITY","NO_LIVE_STATE_INHERITANCE","VERIFY_LOAD_CONSUME_READBACK","TASK_SEMANTICS_ON_DEMAND"],"contract_refs":["mcp/constitution.yaml","mcp/boot-architecture-control.yaml","engines/presentation/component.yaml","engines/presentation/rules.yaml"]}
+  civilization_method:
+    owner: boot_critical_path.current_civilization_method_profile
+    resolver: tooling/runtime-host/cerebro_boot.ps1#Resolve-CerebroCivilizationMethod
+    currentness: EXACT_PINNED_SOURCE_BLOBS
+    profile_fingerprint: SHA256_ID_VERSION_METHOD_REFS_SOURCE_HEAD_AND_BOOT_CONTRACT
+    role_projection: ROLE_METHOD_PROJECTION
+    role_projection_inputs: [current_method, role_identity]
+    excluded_inputs: [claims, tasks, specialty_state, private_state, predecessor_live_state]
+    method_authority: NONE
+    receipt_kind: AWAKENING_RECEIPT
+    receipt_container: runtime.awakening_receipt
+    receipt_fields: [kind, source_head, method_profile, role_method_projection, activated, consumed, fingerprint]
+    readback: IMMEDIATE_PERSISTED_STATE_HASH_AND_FRESH_METHOD_BINDING
+    ready_requires: [verified, loaded, activated, consumed, persisted_readback_verified]
+    failure_effect: HOLD_BEFORE_READY
+    new_receipt_schema: false
 
   birth_kernels:
     receipt_required_before_first_operational_response: true
@@ -48,6 +71,8 @@ boot_critical_path:
       contract_refs:
       - engines/presentation/component.yaml
       - engines/presentation/rules.yaml
+      method_binding: CURRENT_CIVILIZATION_METHOD_PROFILE
+      projection: ROLE_METHOD_PROJECTION
       required_receipt_fields: [id, version, fingerprint, consumed]
     fingerprint_algorithm: SHA256
     provider_global_presemantic_effect: OPEN_NOT_PROVEN
@@ -58,12 +83,15 @@ boot_critical_path:
     frozen_order:
     - identity
     - HMI-birth-kernel
+    - CURRENT_CIVILIZATION_METHOD_PROFILE
+    - ROLE_METHOD_PROJECTION
     - ROLE-birth-kernel
     - Fresh-World-currentness
     - lineage-wisdom
     - reconcile
     - canaries
     - Arvetone-last
+    - AWAKENING_RECEIPT-readback
     - Identitetshilsen
     - READY
     order_receipt_required: true
