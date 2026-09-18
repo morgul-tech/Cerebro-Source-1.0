@@ -154,11 +154,52 @@ def run_all():
     check("K154-stable-unknown-derived-with-late-receipt-routing",len(punknown["material_unknowns"])==1 and punknown["material_unknowns"][0]["unknown_fingerprint"]==stable_unknown["unknown_fingerprint"] and punknown["material_unknowns"][0]["late_receipt_route_ref"]=="OLD-CLAIM-ONLY" and punknown["material_unknowns"][0]["authority"]=="DERIVED_PRESENTATION_ONLY")
     stale_unknown=json.loads(json.dumps([unknown_snaps[0],snaps[1]])); stale_unknown[0]["currentness"]="UNKNOWN"
     check("K154-stale-or-unknown-basis-suppresses-material-unknown-projection",hap.build_projection(source_revision=source,owner_snapshots=stale_unknown)["material_unknowns"]==[])
+    # P1006/P1016 K150 Livspuls exact3 canaries.
+    liv_dims={"freshness":"FRESH_OWNER_EVIDENCE","coherence":"COHERENT_OWNER_ASSESSMENT","metabolism":"METABOLISM_OBSERVED","drift":"DRIFT_BOUNDED","truth_gap":"TRUTH_GAP_VISIBLE","human_burden":"HUMAN_BURDEN_BOUNDED","weak_signal":"WEAK_SIGNAL_VISIBLE"}
+    def liv_snap(ref,owner,dimensions,*,phase=None,currentness="CURRENT"):
+        snap=json.loads(json.dumps(snaps[0])); snap["object_ref"]=ref; snap["owner_ref"]=owner; snap["currentness"]=currentness; snap["evidence_ref"]="EVIDENCE:"+ref; snap["evidence_refs"]=["PROVENANCE:"+ref]; snap["aliases"]=[]
+        assessment={"schema":"cerebro-livspuls-owner-assessment/v1","dimensions":dict(dimensions)}
+        if phase is not None: assessment["life_phase"]=phase
+        snap["state"]["livspuls_assessment"]=assessment
+        return snap
+    liv_full=liv_snap("LIV:1","OWNER_A",liv_dims)
+    pliv=hap.build_projection(source_revision=source,owner_snapshots=[liv_full])
+    check("K150-C1-full-explicit-current-input-yields-current-livspuls",pliv["livspuls"]["currentness"]=="CURRENT" and all(x["state"]=="EXPLICIT" for x in pliv["livspuls"]["dimensions"].values()))
+    partial=dict(liv_dims); partial.pop("drift")
+    ppartial=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:2","OWNER_A",partial)])
+    check("K150-C2-partial-missing-core-is-unknown",ppartial["livspuls"]["currentness"]=="UNKNOWN" and ppartial["livspuls"]["dimensions"]["drift"]["reason"]=="MISSING_EXPLICIT_INPUT")
+    conflict_dims=dict(liv_dims); conflict_dims["freshness"]="STALE_OWNER_EVIDENCE"
+    pconflict=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:3A","OWNER_A",liv_dims),liv_snap("LIV:3B","OWNER_B",conflict_dims)])
+    check("K150-C3-conflicting-current-owners-preserve-unknown-no-winner",pconflict["livspuls"]["dimensions"]["freshness"]["state"]=="UNKNOWN" and pconflict["livspuls"]["dimensions"]["freshness"]["value"] is None and pconflict["livspuls"]["dimensions"]["freshness"]["reason"]=="CONFLICTING_EXPLICIT_INPUT")
+    pagree=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:4A","OWNER_A",liv_dims),liv_snap("LIV:4B","OWNER_B",liv_dims)])
+    check("K150-C4-agreeing-multi-owner-merges-deterministic-provenance",pagree["livspuls"]["currentness"]=="CURRENT" and pagree["livspuls"]["dimensions"]["freshness"]["owner_refs"]==["OWNER_A","OWNER_B"])
+    pstale=hap.build_projection(source_revision=source,owner_snapshots=[json.loads(json.dumps(snaps[1])),liv_snap("LIV:5","OWNER_A",liv_dims,currentness="STALE")])
+    check("K150-C5-stale-assessment-cannot-create-current-evidence",pstale["livspuls"]["currentness"]=="UNKNOWN" and all(not x["source_refs"] for x in pstale["livspuls"]["dimensions"].values()))
+    numeric_json=dict(liv_dims); numeric_json["freshness"]=7
+    rejects("K150-C6-numeric-json-health-input-fails-closed",lambda: hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:6A","OWNER_A",numeric_json)]))
+    numeric_text=dict(liv_dims); numeric_text["freshness"]="75%"
+    rejects("K150-C6b-numeric-only-score-string-fails-closed",lambda: hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:6B","OWNER_A",numeric_text)]))
+    pnone=hap.build_projection(source_revision=source,owner_snapshots=[json.loads(json.dumps(snaps[0]))])
+    check("K150-C7-no-assessment-never-synthesizes-from-status-clock-puls-rundbord",pnone["livspuls"]["currentness"]=="UNKNOWN" and all(x["value"] is None for x in pnone["livspuls"]["dimensions"].values()))
+    pphase_none=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:8A","OWNER_A",liv_dims)])
+    pphase_explicit=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:8B","OWNER_A",liv_dims,phase="MORNING")])
+    pphase_conflict=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:8C","OWNER_A",liv_dims,phase="MORNING"),liv_snap("LIV:8D","OWNER_B",liv_dims,phase="EVENING")])
+    check("K150-C8-life-phase-unsupplied-explicit-conflict-semantics",pphase_none["livspuls"]["life_phase"]["state"]=="UNSUPPLIED" and pphase_explicit["livspuls"]["life_phase"]["state"]=="EXPLICIT" and pphase_conflict["livspuls"]["life_phase"]["state"]=="UNKNOWN" and pphase_conflict["livspuls"]["currentness"]=="UNKNOWN")
+    pdet1=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:9","OWNER_A",liv_dims,phase="MORNING")])
+    pdet2=hap.build_projection(source_revision=source,owner_snapshots=[liv_snap("LIV:9","OWNER_A",liv_dims,phase="MORNING")])
+    check("K150-C9-identical-ordered-input-deterministic-livspuls-and-fingerprint",pdet1["livspuls"]==pdet2["livspuls"] and pdet1["projection_fingerprint"]==pdet2["projection_fingerprint"])
+    tampered=json.loads(json.dumps(pliv)); tampered["livspuls"]["dimensions"]["freshness"]["value"]="TAMPERED"; body={k:v for k,v in tampered.items() if k!="projection_fingerprint"}; tampered["projection_fingerprint"]=hap.fingerprint(body)
+    rejects("K150-C10-tampered-derived-livspuls-rejected-after-fingerprint-recompute",lambda: hap.validate_projection(tampered))
+    unavailable_liv=hap._livspuls_projection(sources.load_snapshot_bundle(None,env={})["owner_snapshots"])
+    check("K150-C11-provider-unavailable-yields-no-synthetic-health",unavailable_liv["currentness"]=="UNKNOWN" and all(x["value"] is None for x in unavailable_liv["dimensions"].values()))
+    raw_c12=liv_snap("LIV:12","OWNER_A",liv_dims); before_c12=json.loads(json.dumps(raw_c12)); pc12=hap.build_projection(source_revision=source,owner_snapshots=[raw_c12])
+    check("K150-C12-livspuls-changes-no-owner-truth-or-authority-mutation-surface",raw_c12==before_c12 and pc12["authority"]=="PRESENTATION_ONLY_NON_AUTHORITATIVE" and pc12["livspuls"]["authority"]=="PRESENTATION_ONLY_NON_AUTHORITATIVE" and not any(hasattr(hap,n) for n in ("save","persist","commit","scheduler","database","bus")))
     schema=json.loads(SCHEMA.read_text(encoding="utf-8"))
     check("typed-schema-identity",schema["properties"]["schema"]["const"]=="cerebro-human-admin-projection/v1")
     check("typed-room-identity-schema-consumed",schema["properties"]["room_identity"]["properties"]["membership_semantics"]["const"]=="MEMBERSHIP_ONLY" and "room_identity" in schema["required"])
     check("typed-human-surface-schema-consumed","human_surface" in schema["required"] and set(schema["properties"]["human_surface"]["required"])=={"status","human_action","human_transport_required","human_decision_required","next_machine","next_owner","attention"} and "waiting_input" in schema["required"])
     check("K154-typed-causal-and-material-unknown-schema-consumed","causal_transitions" in schema["required"] and "material_unknowns" in schema["required"] and schema["properties"]["causal_transitions"]["items"]["properties"]["authority"]["const"]=="DERIVED_PRESENTATION_ONLY")
+    check("K150-typed-livspuls-schema-consumed","livspuls" in schema["required"] and schema["properties"]["livspuls"]["properties"]["authority"]["const"]=="PRESENTATION_ONLY_NON_AUTHORITATIVE" and set(schema["properties"]["livspuls"]["properties"]["dimensions"]["required"])==set(hap.LIVSPULS_DIMENSIONS))
     current_hmi_fingerprint=hmi_kernel_fingerprint()
     check("hmi-birth-kernel-fingerprint-readback-changed",current_hmi_fingerprint!=PRE_ROOM_COLOR_HMI_KERNEL_FINGERPRINT)
     with tempfile.TemporaryDirectory() as td:

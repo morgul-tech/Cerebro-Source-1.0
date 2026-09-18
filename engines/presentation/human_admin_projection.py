@@ -6,6 +6,8 @@ from typing import Any,Mapping,Sequence
 SCHEMA="cerebro-human-admin-projection/v1"
 AUTHORITY="PRESENTATION_ONLY_NON_AUTHORITATIVE"
 CURRENTNESS=("CURRENT","STALE","GAP","UNKNOWN","PROVISIONAL")
+LIVSPULS_DIMENSIONS=("freshness","coherence","metabolism","drift","truth_gap","human_burden","weak_signal")
+_NUMERIC_SEMANTIC=re.compile(r"^[+-]?(?:\d+(?:\.\d*)?|\.\d+)%?$")
 ROOM_PALETTE=(("🔵","BLUE"),("🟢","GREEN"),("🟣","PURPLE"),("🟠","ORANGE"),("🟡","YELLOW"),("🔴","RED"),("🟤","BROWN"),("⚪","WHITE"))
 ROOM_NAME_MAX_LENGTH=48
 _HEX40=re.compile(r"^[0-9a-f]{40}$")
@@ -194,6 +196,48 @@ def _derived_material_unknowns(objects:Sequence[Mapping[str,Any]])->list[dict[st
         out.append({"schema":"cerebro-hap-material-unknown/v1","context_ref":context_ref,"work_ref":unknown["work_ref"],"claim_ref":unknown["claim_ref"],"owner_ref":unknown["owner_ref"],"basis_fingerprint":unknown["basis_fingerprint"],"unknown_fingerprint":unknown["unknown_fingerprint"],"reopen_condition":unknown["reopen_condition"],"required_evidence_delta_ref":unknown["required_evidence_delta_ref"],"release_route_ref":unknown["release_route_ref"],"late_receipt_route_ref":unknown["late_receipt_route_ref"],"provider_frontier_ref":unknown["provider_frontier_ref"],"provider_revision":unknown["provider_revision"],"frame_strain_evidence_refs":list(unknown["frame_strain_evidence_refs"]),"authority":"DERIVED_PRESENTATION_ONLY"})
     return sorted(out,key=lambda x:(x["claim_ref"],x["context_ref"],x["unknown_fingerprint"]))
 
+
+def _livspuls_semantic_value(value:Any,name:str)->str:
+    value=_text(value,name)
+    if _NUMERIC_SEMANTIC.fullmatch(value.replace(" ","")):
+        raise HumanAdminProjectionError(f"{name}:nonnumeric-semantic-string-required")
+    return value
+
+def _livspuls_projection(objects:Sequence[Mapping[str,Any]])->dict[str,Any]:
+    observed={name:[] for name in LIVSPULS_DIMENSIONS}; phases=[]
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        raw=state.get("livspuls_assessment")
+        if raw is None: continue
+        if not isinstance(raw,Mapping): raise HumanAdminProjectionError("livspuls-assessment:object-required")
+        allowed={"schema","dimensions","life_phase"}
+        if not set(raw).issubset(allowed) or raw.get("schema")!="cerebro-livspuls-owner-assessment/v1" or "dimensions" not in raw:
+            raise HumanAdminProjectionError("livspuls-assessment:shape-invalid")
+        dimensions=raw.get("dimensions")
+        if not isinstance(dimensions,Mapping) or any(key not in LIVSPULS_DIMENSIONS for key in dimensions):
+            raise HumanAdminProjectionError("livspuls-assessment:dimensions-invalid")
+        provenance=(obj["canonical_ref"],obj["owner_ref"],tuple(obj.get("evidence_refs") or []))
+        for name,value in dimensions.items():
+            observed[name].append((_livspuls_semantic_value(value,f"livspuls_assessment.dimensions.{name}"),*provenance))
+        if "life_phase" in raw:
+            phases.append((_livspuls_semantic_value(raw.get("life_phase"),"livspuls_assessment.life_phase"),*provenance))
+
+    def derived(records:list[tuple[Any,...]],*,optional:bool=False)->dict[str,Any]:
+        if not records:
+            return {"state":"UNSUPPLIED" if optional else "UNKNOWN","value":None,"reason":None if optional else "MISSING_EXPLICIT_INPUT","source_refs":[],"owner_refs":[],"evidence_refs":[]}
+        values=sorted({row[0] for row in records})
+        source_refs=sorted({row[1] for row in records}); owner_refs=sorted({row[2] for row in records})
+        evidence_refs=sorted({ref for row in records for ref in row[3]})
+        if len(values)!=1:
+            return {"state":"UNKNOWN","value":None,"reason":"CONFLICTING_EXPLICIT_INPUT","source_refs":source_refs,"owner_refs":owner_refs,"evidence_refs":evidence_refs}
+        return {"state":"EXPLICIT","value":values[0],"reason":None,"source_refs":source_refs,"owner_refs":owner_refs,"evidence_refs":evidence_refs}
+
+    dimensions={name:derived(observed[name]) for name in LIVSPULS_DIMENSIONS}
+    life_phase=derived(phases,optional=True)
+    current=all(item["state"]=="EXPLICIT" for item in dimensions.values()) and life_phase["state"]!="UNKNOWN"
+    return {"schema":"cerebro-livspuls-projection/v1","authority":AUTHORITY,"currentness":"CURRENT" if current else "UNKNOWN","dimensions":dimensions,"life_phase":life_phase}
+
 def _projection_currentness(objects:Sequence[Mapping[str,Any]],missing:Sequence[str])->str:
     if missing: return "UNKNOWN"
     states={str(x.get("currentness")) for x in objects}
@@ -361,6 +405,7 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
     currentness=_projection_currentness(objects,missing)
     causal_transitions=_derived_causal_transitions(objects) if currentness=="CURRENT" else []
     material_unknowns=_derived_material_unknowns(objects) if currentness=="CURRENT" else []
+    livspuls=_livspuls_projection(objects)
     current_objective=_unique_state_text(objects,("current_objective","objective"))
     human_location=_unique_state_text(objects,("human_cognitive_location","cognitive_location"))
     return_points=_collect_state_list(objects,("return_points","return_point"))
@@ -399,7 +444,7 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
         "role_assessment":typed_signals["role_assessment"],"responsibility_assessment":typed_signals["responsibility_assessment"],
         "human_boundary_assessment":typed_signals["human_boundary_assessment"],"presentation_request":typed_signals["presentation_request"],
         "hmi":typed_signals["hmi"],"causal_transitions":causal_transitions,"material_unknowns":material_unknowns,
-        "objects":objects,"evidence_refs":evidence_refs,
+        "livspuls":livspuls,"objects":objects,"evidence_refs":evidence_refs,
         "n0":{"surface_state":"NONCURRENT","authority_mutation_allowed":False,"current_situation":where_are,
               "continuation_view":{"current_objective":current_objective,"return_points":return_points,"active_work":active_work,"blockers":blockers,"next_human_gate":human_gate},
               "human_cognitive_location":human_location},
@@ -435,6 +480,9 @@ def validate_projection(value:Mapping[str,Any])->dict[str,Any]:
     expected_unknowns=_derived_material_unknowns(value.get("objects") or []) if value.get("currentness")=="CURRENT" else []
     if value.get("causal_transitions")!=expected_causal: raise HumanAdminProjectionError("projection:causal-transitions-invalid")
     if value.get("material_unknowns")!=expected_unknowns: raise HumanAdminProjectionError("projection:material-unknowns-invalid")
+    expected_livspuls=_livspuls_projection(value.get("objects") or [])
+    if value.get("livspuls")!=expected_livspuls: raise HumanAdminProjectionError("projection:livspuls-invalid")
+    if expected_livspuls.get("authority")!=AUTHORITY: raise HumanAdminProjectionError("projection:livspuls-authority-invalid")
     if any(x.get("authority")!="DERIVED_PRESENTATION_ONLY" for x in expected_causal+expected_unknowns): raise HumanAdminProjectionError("projection:derived-authority-invalid")
     room_identity=value.get("room_identity")
     if room_identity!=_room_identity(value.get("objects") or []):

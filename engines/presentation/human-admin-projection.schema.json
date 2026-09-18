@@ -31,6 +31,7 @@
     "human_boundary_assessment",
     "presentation_request",
     "hmi",
+    "livspuls",
     "causal_transitions",
     "material_unknowns",
     "objects",
@@ -474,6 +475,180 @@
           "authority": {
             "const": "DERIVED_PRESENTATION_ONLY"
           }
+        }
+      }
+    },
+    "livspuls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "authority",
+        "currentness",
+        "dimensions",
+        "life_phase"
+      ],
+      "properties": {
+        "schema": {
+          "const": "cerebro-livspuls-projection/v1"
+        },
+        "authority": {
+          "const": "PRESENTATION_ONLY_NON_AUTHORITATIVE"
+        },
+        "currentness": {
+          "enum": [
+            "CURRENT",
+            "UNKNOWN"
+          ]
+        },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "freshness",
+            "coherence",
+            "metabolism",
+            "drift",
+            "truth_gap",
+            "human_burden",
+            "weak_signal"
+          ],
+          "properties": {
+            "freshness": {
+              "$ref": "#/$defs/livspulsDimension"
+            },
+            "coherence": {
+              "$ref": "#/$defs/livspulsDimension"
+            },
+            "metabolism": {
+              "$ref": "#/$defs/livspulsDimension"
+            },
+            "drift": {
+              "$ref": "#/$defs/livspulsDimension"
+            },
+            "truth_gap": {
+              "$ref": "#/$defs/livspulsDimension"
+            },
+            "human_burden": {
+              "$ref": "#/$defs/livspulsDimension"
+            },
+            "weak_signal": {
+              "$ref": "#/$defs/livspulsDimension"
+            }
+          }
+        },
+        "life_phase": {
+          "$ref": "#/$defs/livspulsLifePhase"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "livspulsDimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "value",
+        "reason",
+        "source_refs",
+        "owner_refs",
+        "evidence_refs"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "EXPLICIT",
+            "UNKNOWN"
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "enum": [
+            null,
+            "MISSING_EXPLICIT_INPUT",
+            "CONFLICTING_EXPLICIT_INPUT"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "owner_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "livspulsLifePhase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "value",
+        "reason",
+        "source_refs",
+        "owner_refs",
+        "evidence_refs"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "EXPLICIT",
+            "UNSUPPLIED",
+            "UNKNOWN"
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "enum": [
+            null,
+            "CONFLICTING_EXPLICIT_INPUT"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "owner_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
         }
       }
     }
