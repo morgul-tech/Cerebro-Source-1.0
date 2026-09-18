@@ -391,6 +391,19 @@ def selftest() -> dict[str, Any]:
         )),
     )
 
+    check(
+        "K154-allocation-receipt-and-stable-unknown-fit-existing-jsonb-no-sql-migration",
+        shadow_sql.count("shadow_payload jsonb NOT NULL") >= 4
+        and "provider_allocation_receipt" not in shadow_sql
+        and "stable_unknown" not in shadow_sql
+        and "%s::jsonb" in adapter_source,
+    )
+    check(
+        "K154-no-new-scalar-column-check-index-or-control-condition-enum",
+        "provider_allocation_receipt" not in sql and "provider_allocation_receipt" not in shadow_sql
+        and "stable_unknown" not in sql and "stable_unknown" not in shadow_sql,
+    )
+
     manifest = json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"))
     checksum = hashlib.sha256(sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     shadow_checksum = hashlib.sha256(shadow_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()

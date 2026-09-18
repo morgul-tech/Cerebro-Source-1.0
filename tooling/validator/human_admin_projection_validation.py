@@ -135,10 +135,30 @@ def run_all():
     check("missing-owner-input-is-unknown",pmiss["currentness"]=="UNKNOWN" and "MISSING_OWNER_INPUT:MISSING" in pmiss["unknowns"])
     stale=[dict(snaps[0],currentness="STALE"),snaps[1]]
     check("stale-basis-not-current",hap.build_projection(source_revision=source,owner_snapshots=stale)["currentness"]=="STALE")
+    allocation_body={"schema":"cerebro-provider-allocation-receipt/v1","receipt_ref":"ALLOC-HAP-1","claim_ref":"WORK_CLAIMS:900","actor_generation_ref":"GEN-900","provider_ref":"SHARED_PROVIDER","provider_frontier_ref":"FRONTIER-900","provider_revision":900}
+    allocation_receipt={**allocation_body,"receipt_fingerprint":hap.fingerprint(allocation_body)}
+    causal_snaps=json.loads(json.dumps([snaps[0]])); causal_snaps[0]["object_ref"]="WORK_CLAIMS:900"; causal_snaps[0]["aliases"]=["claim 900"]
+    causal_snaps[0]["state"].update({"claim_ref":"WORK_CLAIMS:900","actor_generation_ref":"GEN-900","lifecycle":"ACTIVE","provider_allocation_receipt":allocation_receipt})
+    pcausal=hap.build_projection(source_revision=source,owner_snapshots=causal_snaps)
+    check("K154-allocation-receipt-derived-into-causal-transition-only",len(pcausal["causal_transitions"])==1 and pcausal["causal_transitions"][0]["allocation_receipt_ref"]=="ALLOC-HAP-1" and pcausal["causal_transitions"][0]["allocation_receipt_fingerprint"]==allocation_receipt["receipt_fingerprint"] and pcausal["causal_transitions"][0]["authority"]=="DERIVED_PRESENTATION_ONLY")
+    stale_causal=json.loads(json.dumps([causal_snaps[0],snaps[1]])); stale_causal[0]["currentness"]="STALE"
+    check("K154-stale-basis-suppresses-causal-transition",hap.build_projection(source_revision=source,owner_snapshots=stale_causal)["causal_transitions"]==[])
+    missing_causal=hap.build_projection(source_revision=source,owner_snapshots=causal_snaps,required_refs=["WORK_CLAIMS:900","MISSING-BASIS"])
+    check("K154-missing-basis-suppresses-causal-transition-and-never-promotes-current",missing_causal["currentness"]=="UNKNOWN" and missing_causal["causal_transitions"]==[])
+
+    stable_body={"schema":"cerebro-stable-unknown-envelope/v1","work_ref":"WORK-OLD","claim_ref":"WORK_CLAIMS:700","owner_ref":"PM","basis_fingerprint":"a"*64,"reopen_condition":"FRESH_PROVIDER_TERMINAL","required_evidence_delta_ref":"EVIDENCE-DELTA-1","release_route_ref":"PM-RELEASE","late_receipt_route_ref":"OLD-CLAIM-ONLY","provider_frontier_ref":"FRONTIER-700","provider_revision":700,"frame_strain_evidence_refs":["FRAME-1"]}
+    stable_unknown={**stable_body,"unknown_fingerprint":hap.fingerprint(stable_body)}
+    unknown_snaps=json.loads(json.dumps([snaps[0]])); unknown_snaps[0]["object_ref"]="CONTEXT:STABLE"; unknown_snaps[0]["aliases"]=[]
+    unknown_snaps[0]["state"].update({"context_id":"CTX-STABLE","control_condition":"SAFE_HOLD","stable_unknown":stable_unknown})
+    punknown=hap.build_projection(source_revision=source,owner_snapshots=unknown_snaps)
+    check("K154-stable-unknown-derived-with-late-receipt-routing",len(punknown["material_unknowns"])==1 and punknown["material_unknowns"][0]["unknown_fingerprint"]==stable_unknown["unknown_fingerprint"] and punknown["material_unknowns"][0]["late_receipt_route_ref"]=="OLD-CLAIM-ONLY" and punknown["material_unknowns"][0]["authority"]=="DERIVED_PRESENTATION_ONLY")
+    stale_unknown=json.loads(json.dumps([unknown_snaps[0],snaps[1]])); stale_unknown[0]["currentness"]="UNKNOWN"
+    check("K154-stale-or-unknown-basis-suppresses-material-unknown-projection",hap.build_projection(source_revision=source,owner_snapshots=stale_unknown)["material_unknowns"]==[])
     schema=json.loads(SCHEMA.read_text(encoding="utf-8"))
     check("typed-schema-identity",schema["properties"]["schema"]["const"]=="cerebro-human-admin-projection/v1")
     check("typed-room-identity-schema-consumed",schema["properties"]["room_identity"]["properties"]["membership_semantics"]["const"]=="MEMBERSHIP_ONLY" and "room_identity" in schema["required"])
     check("typed-human-surface-schema-consumed","human_surface" in schema["required"] and set(schema["properties"]["human_surface"]["required"])=={"status","human_action","human_transport_required","human_decision_required","next_machine","next_owner","attention"} and "waiting_input" in schema["required"])
+    check("K154-typed-causal-and-material-unknown-schema-consumed","causal_transitions" in schema["required"] and "material_unknowns" in schema["required"] and schema["properties"]["causal_transitions"]["items"]["properties"]["authority"]["const"]=="DERIVED_PRESENTATION_ONLY")
     current_hmi_fingerprint=hmi_kernel_fingerprint()
     check("hmi-birth-kernel-fingerprint-readback-changed",current_hmi_fingerprint!=PRE_ROOM_COLOR_HMI_KERNEL_FINGERPRINT)
     with tempfile.TemporaryDirectory() as td:

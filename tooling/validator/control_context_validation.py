@@ -23,10 +23,13 @@ from control_context_registry import (  # noqa: E402
     ancestor_chain,
     apply_transition,
     actor_generation_shadow_fingerprint,
+    bind_control_session,
     bootstrap_actor_generation_shadow,
+    bootstrap_project_state,
     bootstrap_work_claim_shadow,
     lowest_common_ancestor,
     principal_continuity_baseline_fingerprint,
+    provider_allocation_receipt_fingerprint,
     requalify_principal_generation_shadow,
     refresh_project_fingerprints,
     refresh_session_fingerprint,
@@ -37,8 +40,11 @@ from control_context_registry import (  # noqa: E402
     validate_project_state,
     validate_session_state,
     validate_trusted_role_generation_binding,
+    validate_work_claim_allocation_dedup,
     validate_work_claim_shadow,
     validate_transition_receipt,
+    stable_unknown_fingerprint,
+    work_claim_shadow_fingerprint,
 )
 from control_context_state_port import (  # noqa: E402
     BEGIN_SCHEMA,
@@ -909,6 +915,68 @@ def selftest() -> dict[str, Any]:
         "D5-private-baseline-locator-rejected",
         _expect_error(lambda: validate_principal_continuity_baseline(private_baseline), ControlContextError),
     )
+    allocation_receipt = {
+        "schema": "cerebro-provider-allocation-receipt/v1", "receipt_ref": "ALLOC-767",
+        "receipt_fingerprint": "", "claim_ref": "WORK_CLAIMS:768",
+        "actor_generation_ref": actor_active["generation_ref"], "provider_ref": "SHARED_PROVIDER",
+        "provider_frontier_ref": "FRONTIER-100", "provider_revision": 100,
+    }
+    allocation_receipt["receipt_fingerprint"] = provider_allocation_receipt_fingerprint(allocation_receipt)
+    allocated_claim = bootstrap_work_claim_shadow(
+        tenant_ref="TENANT-1", workspace_ref="WORKSPACE-1", claim_ref="WORK_CLAIMS:768",
+        project_ref="CEREBRO_FACTORY_PROGRAM", actor_generation=actor_active, scope_ref="ALLOCATED-SHADOW",
+        mode="READ_ONLY", source_revision="bf4f", provider_allocation_receipt=allocation_receipt,
+    )
+    check("K154-provider-allocation-receipt-roundtrip-and-fingerprint",
+          allocated_claim["provider_allocation_receipt"] == allocation_receipt
+          and validate_work_claim_shadow(allocated_claim, actor_active)["result"] == "PASS")
+    wrong_binding = copy.deepcopy(allocated_claim)
+    wrong_binding["provider_allocation_receipt"]["claim_ref"] = "WORK_CLAIMS:OTHER"
+    wrong_binding["provider_allocation_receipt"]["receipt_fingerprint"] = provider_allocation_receipt_fingerprint(wrong_binding["provider_allocation_receipt"])
+    wrong_binding["fingerprint"] = work_claim_shadow_fingerprint(wrong_binding)
+    check("K154-provider-allocation-receipt-exact-claim-binding",
+          _expect_error(lambda: validate_work_claim_shadow(wrong_binding, actor_active), ControlContextError))
+    duplicate_claim = copy.deepcopy(allocated_claim)
+    duplicate_claim["claim_ref"] = "WORK_CLAIMS:769"
+    duplicate_claim["provider_allocation_receipt"]["claim_ref"] = "WORK_CLAIMS:769"
+    duplicate_claim["provider_allocation_receipt"]["receipt_fingerprint"] = provider_allocation_receipt_fingerprint(duplicate_claim["provider_allocation_receipt"])
+    duplicate_claim["fingerprint"] = work_claim_shadow_fingerprint(duplicate_claim)
+    check("K154-same-allocation-ref-cannot-bind-two-live-claims",
+          _expect_error(lambda: validate_work_claim_allocation_dedup([allocated_claim, duplicate_claim]), ControlContextError))
+
+    stable_unknown = {
+        "schema":"cerebro-stable-unknown-envelope/v1","work_ref":"WORK-PREVIOUS","claim_ref":"WORK_CLAIMS:700",
+        "owner_ref":"PM","basis_fingerprint":"a"*64,"unknown_fingerprint":"","reopen_condition":"FRESH_PROVIDER_TERMINAL",
+        "required_evidence_delta_ref":"EVIDENCE-DELTA-1","release_route_ref":"PM-RELEASE","late_receipt_route_ref":"OLD-CLAIM-ONLY",
+        "provider_frontier_ref":"FRONTIER-700","provider_revision":700,"frame_strain_evidence_refs":["FRAME-1"],
+    }
+    stable_unknown["unknown_fingerprint"] = stable_unknown_fingerprint(stable_unknown)
+    stable_project, _ = bootstrap_project_state(
+        aggregate_id="AGG-STABLE",tenant_ref="TENANT-1",workspace_ref="WORKSPACE-1",project_ref="PROJECT-STABLE",
+        source_revision="bf4f",event_id="EV-STABLE-0",decision_ref="DEC-STABLE-0",
+        root={"context_id":"CTX-STABLE","human_label":"Stable unknown","objective_ref":"OBJ-STABLE","scope_ref":"SCOPE-STABLE",
+              "basis_refs":["BASIS-STABLE"],"project_basis_ref":"PB-STABLE","quality_trace_ref":"QT-STABLE","completion_criteria_refs":["DONE"]},
+    )
+    stable_session = bind_control_session(stable_project,session_binding_id="SESSION-STABLE-BIND",principal_ref="ADMIN-1",consumer_ref="CONSUMER-STABLE",session_ref="SESSION-STABLE")
+    def stable_directive(event_id, decision_ref, project, session, operation):
+        return {"schema":DIRECTIVE_SCHEMA,"event_id":event_id,"decision_ref":decision_ref,
+                "expected_project_revision":project["revision"],"expected_project_fingerprint":project["fingerprint"],
+                "expected_session_revision":session["session_revision"],"expected_session_fingerprint":session["fingerprint"],
+                "project_operations":[operation],"session_operations":[]}
+    park_op={"operation":"PARK_STABLE_UNKNOWN","context_ref":"CTX-STABLE","stable_unknown":stable_unknown}
+    parked_project, parked_session, _ = apply_transition(stable_project, stable_session, stable_directive("EV-STABLE-1","DEC-STABLE-1",stable_project,stable_session,park_op))
+    parked = next(x for x in parked_project["contexts"] if x["context_id"]=="CTX-STABLE")
+    check("K154-stable-unknown-parks-in-existing-safe-hold-vocabulary", parked["control_condition"]=="SAFE_HOLD" and parked["stable_unknown"]["unknown_fingerprint"]==stable_unknown["unknown_fingerprint"])
+    check("K154-unchanged-stable-unknown-does-not-replay",
+          _expect_error(lambda: apply_transition(parked_project,parked_session,stable_directive("EV-STABLE-2","DEC-STABLE-2",parked_project,parked_session,park_op)),ControlContextError))
+    unchanged_op={"operation":"REOPEN_STABLE_UNKNOWN","context_ref":"CTX-STABLE","unknown_fingerprint":stable_unknown["unknown_fingerprint"],"evidence_delta_ref":"EVIDENCE-DELTA-1","evidence_delta_fingerprint":"a"*64}
+    check("K154-unchanged-evidence-cannot-reopen-stable-unknown",
+          _expect_error(lambda: apply_transition(parked_project,parked_session,stable_directive("EV-STABLE-3","DEC-STABLE-3",parked_project,parked_session,unchanged_op)),ControlContextError))
+    changed_op=copy.deepcopy(unchanged_op); changed_op["evidence_delta_fingerprint"]="b"*64
+    reopened_project, _, _ = apply_transition(parked_project,parked_session,stable_directive("EV-STABLE-4","DEC-STABLE-4",parked_project,parked_session,changed_op))
+    reopened=next(x for x in reopened_project["contexts"] if x["context_id"]=="CTX-STABLE")
+    check("K154-changed-required-evidence-reopens-stable-unknown", reopened["control_condition"]=="READY" and "stable_unknown" not in reopened and reopened["basis_fingerprint"]=="b"*64)
+
     check(
         "B1-terminal-claim-cannot-resurrect",
         _expect_error(

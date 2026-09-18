@@ -23,6 +23,8 @@ RECEIPT_SCHEMA = "cerebro-control-context-transition-receipt/v1"
 ACTOR_GENERATION_SHADOW_SCHEMA = "cerebro-actor-generation-shadow/v1"
 PRINCIPAL_CONTINUITY_BASELINE_SCHEMA = "cerebro-principal-continuity-baseline/v1"
 WORK_CLAIM_SHADOW_SCHEMA = "cerebro-work-claim-shadow/v1"
+PROVIDER_ALLOCATION_RECEIPT_SCHEMA = "cerebro-provider-allocation-receipt/v1"
+STABLE_UNKNOWN_SCHEMA = "cerebro-stable-unknown-envelope/v1"
 
 PROJECT_STATUSES = {"ACTIVE", "PAUSED", "BLOCKED", "COMPLETED", "CANCELLED"}
 LIFECYCLES = {"OPEN", "RETURNED", "CLOSED", "CANCELLED"}
@@ -39,6 +41,8 @@ PROJECT_OPERATIONS = {
     "CREATE_DERIVED_CONTEXT",
     "REFRESH_GOVERNING_REFS",
     "SET_DEFAULT_CONTEXT",
+    "PARK_STABLE_UNKNOWN",
+    "REOPEN_STABLE_UNKNOWN",
 }
 SESSION_OPERATIONS = {"SET_ACTIVE", "SET_CONTINUATION_BINDING", "CLEAR_CONTINUATION_BINDING"}
 ACTOR_ROLES = {"PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"}
@@ -146,6 +150,81 @@ def validate_principal_continuity_baseline(
     if expected_source_head is not None:
         _require(source_head == expected_source_head, "principal-continuity-baseline-source-mismatch")
     return copy.deepcopy(baseline)
+
+
+def provider_allocation_receipt_fingerprint(receipt: dict[str, Any]) -> str:
+    subject = copy.deepcopy(receipt)
+    subject.pop("receipt_fingerprint", None)
+    return _sha256(subject)
+
+
+def validate_provider_allocation_receipt(
+    receipt: dict[str, Any], *, expected_claim_ref: str | None = None,
+    expected_actor_generation_ref: str | None = None,
+) -> dict[str, Any]:
+    required = {
+        "schema", "receipt_ref", "receipt_fingerprint", "claim_ref", "actor_generation_ref",
+        "provider_ref", "provider_frontier_ref", "provider_revision",
+    }
+    _require(isinstance(receipt, dict), "provider-allocation-receipt-object-required")
+    _require(set(receipt) == required, "provider-allocation-receipt-fields-mismatch")
+    _require(receipt.get("schema") == PROVIDER_ALLOCATION_RECEIPT_SCHEMA, "provider-allocation-receipt-schema-mismatch")
+    for field in ("receipt_ref", "claim_ref", "actor_generation_ref", "provider_ref", "provider_frontier_ref"):
+        _require(isinstance(receipt.get(field), str) and bool(receipt[field].strip()), f"provider-allocation-receipt-{field}-required")
+    _require(type(receipt.get("provider_revision")) is int and receipt["provider_revision"] >= 0, "provider-allocation-receipt-provider-revision-invalid")
+    _require(receipt.get("receipt_fingerprint") == provider_allocation_receipt_fingerprint(receipt), "provider-allocation-receipt-fingerprint-mismatch")
+    if expected_claim_ref is not None:
+        _require(receipt["claim_ref"] == expected_claim_ref, "provider-allocation-receipt-claim-mismatch")
+    if expected_actor_generation_ref is not None:
+        _require(receipt["actor_generation_ref"] == expected_actor_generation_ref, "provider-allocation-receipt-generation-mismatch")
+    return copy.deepcopy(receipt)
+
+
+def stable_unknown_fingerprint(value: dict[str, Any]) -> str:
+    subject = copy.deepcopy(value)
+    subject.pop("unknown_fingerprint", None)
+    return _sha256(subject)
+
+
+def validate_stable_unknown(value: dict[str, Any]) -> dict[str, Any]:
+    required = {
+        "schema", "work_ref", "claim_ref", "owner_ref", "basis_fingerprint", "unknown_fingerprint",
+        "reopen_condition", "required_evidence_delta_ref", "release_route_ref", "late_receipt_route_ref",
+        "provider_frontier_ref", "provider_revision", "frame_strain_evidence_refs",
+    }
+    _require(isinstance(value, dict), "stable-unknown-object-required")
+    _require(set(value) == required, "stable-unknown-fields-mismatch")
+    _require(value.get("schema") == STABLE_UNKNOWN_SCHEMA, "stable-unknown-schema-mismatch")
+    for field in ("work_ref", "claim_ref", "owner_ref", "reopen_condition", "required_evidence_delta_ref", "release_route_ref", "late_receipt_route_ref", "provider_frontier_ref"):
+        _require(isinstance(value.get(field), str) and bool(value[field].strip()), f"stable-unknown-{field}-required")
+    _require(isinstance(value.get("basis_fingerprint"), str) and SHA256.fullmatch(value["basis_fingerprint"]) is not None, "stable-unknown-basis-fingerprint-invalid")
+    refs = value.get("frame_strain_evidence_refs")
+    _require(isinstance(refs, list) and all(isinstance(ref, str) and bool(ref.strip()) for ref in refs), "stable-unknown-frame-strain-evidence-refs-invalid")
+    _require(len(refs) == len(set(refs)), "stable-unknown-frame-strain-evidence-refs-duplicate")
+    _require(type(value.get("provider_revision")) is int and value["provider_revision"] >= 0, "stable-unknown-provider-revision-invalid")
+    _require(value.get("unknown_fingerprint") == stable_unknown_fingerprint(value), "stable-unknown-fingerprint-mismatch")
+    return copy.deepcopy(value)
+
+
+def validate_work_claim_allocation_dedup(states: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    active = {"BOUND_ACTIVE_PRESTART", "ACTIVE"}
+    seen_refs: dict[str, str] = {}
+    seen_fingerprints: dict[str, str] = {}
+    count = 0
+    for state in states:
+        validate_work_claim_shadow(state)
+        if state["lifecycle"] not in active:
+            continue
+        receipt = state.get("provider_allocation_receipt")
+        if receipt is None:
+            continue
+        count += 1
+        claim_ref = state["claim_ref"]
+        for key, seen in ((receipt["receipt_ref"], seen_refs), (receipt["receipt_fingerprint"], seen_fingerprints)):
+            prior = seen.get(key)
+            _require(prior in {None, claim_ref}, "provider-allocation-receipt-duplicate-live-claim")
+            seen[key] = claim_ref
+    return {"result": "PASS", "active_allocated_claim_count": count}
 
 
 def work_claim_shadow_fingerprint(state: dict[str, Any]) -> str:
@@ -274,7 +353,8 @@ def validate_work_claim_shadow(
         "source_revision", "revision", "authority", "live_claim", "fingerprint",
     }
     _require(isinstance(state, dict), "work-claim-shadow-object-required")
-    _require(set(state) == required, "work-claim-shadow-fields-mismatch")
+    allowed = required | {"provider_allocation_receipt"}
+    _require(required.issubset(state) and set(state).issubset(allowed), "work-claim-shadow-fields-mismatch")
     _require(state.get("schema") == WORK_CLAIM_SHADOW_SCHEMA, "work-claim-shadow-schema-mismatch")
     for field in (
         "tenant_ref", "workspace_ref", "claim_ref", "project_ref", "actor_ref",
@@ -285,6 +365,13 @@ def validate_work_claim_shadow(
     _require(state.get("lifecycle") in WORK_CLAIM_LIFECYCLES, "work-claim-shadow-lifecycle-invalid")
     _require(state.get("authority") == "SHADOW_ONLY" and state.get("live_claim") is False, "work-claim-shadow-cannot-be-live-authority")
     _require(isinstance(state.get("revision"), int) and state["revision"] >= 1, "work-claim-shadow-revision-invalid")
+    allocation_receipt = state.get("provider_allocation_receipt")
+    if allocation_receipt is not None:
+        validate_provider_allocation_receipt(
+            allocation_receipt,
+            expected_claim_ref=state["claim_ref"],
+            expected_actor_generation_ref=state["actor_generation_ref"],
+        )
     _require(state.get("fingerprint") == work_claim_shadow_fingerprint(state), "work-claim-shadow-fingerprint-mismatch")
     if actor_generation is not None:
         validate_actor_generation_shadow(actor_generation)
@@ -301,6 +388,7 @@ def validate_work_claim_shadow(
 def bootstrap_work_claim_shadow(
     *, tenant_ref: str, workspace_ref: str, claim_ref: str, project_ref: str,
     actor_generation: dict[str, Any], scope_ref: str, mode: str, source_revision: str,
+    provider_allocation_receipt: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     validate_actor_generation_shadow(actor_generation)
     state = {
@@ -320,6 +408,12 @@ def bootstrap_work_claim_shadow(
         "authority": "SHADOW_ONLY",
         "live_claim": False,
     }
+    if provider_allocation_receipt is not None:
+        state["provider_allocation_receipt"] = validate_provider_allocation_receipt(
+            provider_allocation_receipt,
+            expected_claim_ref=claim_ref,
+            expected_actor_generation_ref=actor_generation["generation_ref"],
+        )
     state["fingerprint"] = work_claim_shadow_fingerprint(state)
     validate_work_claim_shadow(state, actor_generation)
     return state
@@ -588,6 +682,10 @@ def validate_context(context: dict[str, Any], project_ref: str) -> None:
     _require(context.get("lifecycle") in LIFECYCLES, "context-lifecycle-invalid")
     _require(context.get("control_condition") in CONTROL_CONDITIONS, "context-control-condition-invalid")
     _require(context.get("disposition") in DISPOSITIONS, "context-disposition-invalid")
+    stable_unknown = context.get("stable_unknown")
+    if stable_unknown is not None:
+        validate_stable_unknown(stable_unknown)
+        _require(context.get("lifecycle") == "OPEN" and context.get("control_condition") == "SAFE_HOLD", "stable-unknown-requires-open-safe-hold")
     _require(isinstance(context.get("sequence"), int) and context["sequence"] >= 1, "context-sequence-invalid")
     _require(isinstance(context.get("basis_fingerprint"), str) and SHA256.fullmatch(context["basis_fingerprint"]) is not None, "context-basis-fingerprint-invalid")
     _require(context.get("context_fingerprint") == context_fingerprint(context), "context-fingerprint-mismatch")
@@ -913,6 +1011,33 @@ def _apply_project_operation(project: dict[str, Any], operation: dict[str, Any],
         _require(mapping[target].get("control_condition") != condition, "control-condition-no-delta")
         mapping[target]["control_condition"] = condition
         _touch_context(mapping[target], event_id)
+        return
+
+    if name == "PARK_STABLE_UNKNOWN":
+        context = mapping[target]
+        _require(context.get("lifecycle") == "OPEN", "stable-unknown-target-must-be-open")
+        envelope = validate_stable_unknown(operation.get("stable_unknown"))
+        prior = context.get("stable_unknown")
+        _require(not isinstance(prior, dict) or prior.get("unknown_fingerprint") != envelope["unknown_fingerprint"], "stable-unknown-no-delta")
+        context["control_condition"] = "SAFE_HOLD"
+        context["stable_unknown"] = envelope
+        _touch_context(context, event_id)
+        return
+
+    if name == "REOPEN_STABLE_UNKNOWN":
+        context = mapping[target]
+        _require(context.get("lifecycle") == "OPEN" and context.get("control_condition") == "SAFE_HOLD", "stable-unknown-reopen-requires-safe-hold")
+        envelope = validate_stable_unknown(context.get("stable_unknown"))
+        _require(operation.get("unknown_fingerprint") == envelope["unknown_fingerprint"], "stable-unknown-reopen-identity-mismatch")
+        evidence_delta_ref = operation.get("evidence_delta_ref")
+        _require(evidence_delta_ref == envelope["required_evidence_delta_ref"], "stable-unknown-required-evidence-delta-mismatch")
+        evidence_delta_fingerprint = operation.get("evidence_delta_fingerprint")
+        _require(isinstance(evidence_delta_fingerprint, str) and SHA256.fullmatch(evidence_delta_fingerprint) is not None, "stable-unknown-evidence-delta-fingerprint-invalid")
+        _require(evidence_delta_fingerprint != envelope["basis_fingerprint"], "stable-unknown-unchanged-evidence-cannot-reopen")
+        context.pop("stable_unknown", None)
+        context["control_condition"] = "READY"
+        context["basis_fingerprint"] = evidence_delta_fingerprint
+        _touch_context(context, event_id)
         return
 
     if name == "RETURN_CONTEXT":

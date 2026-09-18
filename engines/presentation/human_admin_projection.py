@@ -9,6 +9,7 @@ CURRENTNESS=("CURRENT","STALE","GAP","UNKNOWN","PROVISIONAL")
 ROOM_PALETTE=(("🔵","BLUE"),("🟢","GREEN"),("🟣","PURPLE"),("🟠","ORANGE"),("🟡","YELLOW"),("🔴","RED"),("🟤","BROWN"),("⚪","WHITE"))
 ROOM_NAME_MAX_LENGTH=48
 _HEX40=re.compile(r"^[0-9a-f]{40}$")
+_HEX64=re.compile(r"^[0-9a-f]{64}$")
 _WS=re.compile(r"\s+")
 _OPAQUE_WORK_REF=re.compile(
     r"(?i)(?:\bWORK_(?:CLAIMS?|PACKETS?):\d+\b|\bP\d{3,}(?:[-_][A-Z0-9]+)*\b|"
@@ -135,6 +136,63 @@ def normalize_snapshot(raw:Mapping[str,Any])->dict[str,Any]:
         "related_refs":sorted(set(_list_text(raw.get("related_refs"),"snapshot.related_refs"))),
         "evidence_refs":sorted(set(evidence_refs)),
     }
+
+def _allocation_receipt(value:Any,*,claim_ref:str,actor_generation_ref:str)->dict[str,Any]:
+    if not isinstance(value,Mapping): raise HumanAdminProjectionError("allocation-receipt:object-required")
+    required={"schema","receipt_ref","receipt_fingerprint","claim_ref","actor_generation_ref","provider_ref","provider_frontier_ref","provider_revision"}
+    if set(value)!=required or value.get("schema")!="cerebro-provider-allocation-receipt/v1": raise HumanAdminProjectionError("allocation-receipt:shape-invalid")
+    for field in ("receipt_ref","claim_ref","actor_generation_ref","provider_ref","provider_frontier_ref"): _text(value.get(field),f"allocation_receipt.{field}")
+    if value["claim_ref"]!=claim_ref or value["actor_generation_ref"]!=actor_generation_ref: raise HumanAdminProjectionError("allocation-receipt:binding-mismatch")
+    if not isinstance(value.get("provider_revision"),int) or isinstance(value.get("provider_revision"),bool) or value["provider_revision"]<0: raise HumanAdminProjectionError("allocation-receipt:provider-revision-invalid")
+    supplied=_text(value.get("receipt_fingerprint"),"allocation_receipt.receipt_fingerprint").lower()
+    if not _HEX64.fullmatch(supplied): raise HumanAdminProjectionError("allocation-receipt:fingerprint-invalid")
+    body={k:v for k,v in value.items() if k!="receipt_fingerprint"}
+    if supplied!=fingerprint(body): raise HumanAdminProjectionError("allocation-receipt:fingerprint-mismatch")
+    return dict(value)
+
+def _stable_unknown(value:Any)->dict[str,Any]:
+    if not isinstance(value,Mapping): raise HumanAdminProjectionError("stable-unknown:object-required")
+    required={"schema","work_ref","claim_ref","owner_ref","basis_fingerprint","unknown_fingerprint","reopen_condition","required_evidence_delta_ref","release_route_ref","late_receipt_route_ref","provider_frontier_ref","provider_revision","frame_strain_evidence_refs"}
+    if set(value)!=required or value.get("schema")!="cerebro-stable-unknown-envelope/v1": raise HumanAdminProjectionError("stable-unknown:shape-invalid")
+    for field in ("work_ref","claim_ref","owner_ref","reopen_condition","required_evidence_delta_ref","release_route_ref","late_receipt_route_ref","provider_frontier_ref"): _text(value.get(field),f"stable_unknown.{field}")
+    for field in ("basis_fingerprint","unknown_fingerprint"):
+        item=_text(value.get(field),f"stable_unknown.{field}").lower()
+        if not _HEX64.fullmatch(item): raise HumanAdminProjectionError(f"stable-unknown:{field}-invalid")
+    refs=value.get("frame_strain_evidence_refs")
+    if not isinstance(refs,list) or not all(isinstance(x,str) and x.strip() for x in refs) or len(refs)!=len(set(refs)): raise HumanAdminProjectionError("stable-unknown:frame-strain-evidence-invalid")
+    if not isinstance(value.get("provider_revision"),int) or isinstance(value.get("provider_revision"),bool) or value["provider_revision"]<0: raise HumanAdminProjectionError("stable-unknown:provider-revision-invalid")
+    body={k:v for k,v in value.items() if k!="unknown_fingerprint"}
+    if value["unknown_fingerprint"]!=fingerprint(body): raise HumanAdminProjectionError("stable-unknown:fingerprint-mismatch")
+    return dict(value)
+
+def _derived_causal_transitions(objects:Sequence[Mapping[str,Any]])->list[dict[str,Any]]:
+    out=[]; seen={}
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        shadow=state.get("work_claim_shadow") if isinstance(state.get("work_claim_shadow"),Mapping) else state
+        receipt=shadow.get("provider_allocation_receipt") if isinstance(shadow,Mapping) else None
+        if receipt is None: continue
+        claim_ref=_text(shadow.get("claim_ref"),"work_claim_shadow.claim_ref"); generation_ref=_text(shadow.get("actor_generation_ref"),"work_claim_shadow.actor_generation_ref")
+        normalized=_allocation_receipt(receipt,claim_ref=claim_ref,actor_generation_ref=generation_ref)
+        key=normalized["receipt_fingerprint"]; prior=seen.get(key)
+        if prior is not None and prior!=claim_ref: raise HumanAdminProjectionError("allocation-receipt:duplicate-live-claim")
+        seen[key]=claim_ref
+        out.append({"schema":"cerebro-hap-causal-transition/v1","transition_ref":obj["canonical_ref"],"claim_ref":claim_ref,"actor_generation_ref":generation_ref,"lifecycle":_text(shadow.get("lifecycle"),"work_claim_shadow.lifecycle"),"allocation_receipt_ref":normalized["receipt_ref"],"allocation_receipt_fingerprint":normalized["receipt_fingerprint"],"provider_ref":normalized["provider_ref"],"provider_frontier_ref":normalized["provider_frontier_ref"],"provider_revision":normalized["provider_revision"],"authority":"DERIVED_PRESENTATION_ONLY"})
+    return sorted(out,key=lambda x:(x["claim_ref"],x["allocation_receipt_ref"],x["transition_ref"]))
+
+def _derived_material_unknowns(objects:Sequence[Mapping[str,Any]])->list[dict[str,Any]]:
+    out=[]
+    for obj in objects:
+        if obj.get("currentness")!="CURRENT": continue
+        state=obj.get("state") or {}
+        context=state.get("control_context") if isinstance(state.get("control_context"),Mapping) else state
+        raw=context.get("stable_unknown") if isinstance(context,Mapping) else None
+        if raw is None: continue
+        unknown=_stable_unknown(raw); context_ref=str(context.get("context_id") or obj["canonical_ref"]).strip()
+        if not context_ref: raise HumanAdminProjectionError("stable-unknown:context-ref-required")
+        out.append({"schema":"cerebro-hap-material-unknown/v1","context_ref":context_ref,"work_ref":unknown["work_ref"],"claim_ref":unknown["claim_ref"],"owner_ref":unknown["owner_ref"],"basis_fingerprint":unknown["basis_fingerprint"],"unknown_fingerprint":unknown["unknown_fingerprint"],"reopen_condition":unknown["reopen_condition"],"required_evidence_delta_ref":unknown["required_evidence_delta_ref"],"release_route_ref":unknown["release_route_ref"],"late_receipt_route_ref":unknown["late_receipt_route_ref"],"provider_frontier_ref":unknown["provider_frontier_ref"],"provider_revision":unknown["provider_revision"],"frame_strain_evidence_refs":list(unknown["frame_strain_evidence_refs"]),"authority":"DERIVED_PRESENTATION_ONLY"})
+    return sorted(out,key=lambda x:(x["claim_ref"],x["context_ref"],x["unknown_fingerprint"]))
 
 def _projection_currentness(objects:Sequence[Mapping[str,Any]],missing:Sequence[str])->str:
     if missing: return "UNKNOWN"
@@ -301,6 +359,8 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
     missing=sorted(set(required)-set(observed))
     basis=[{"owner_ref":x["owner_ref"],"object_ref":x["canonical_ref"],"revision_or_token":x["revision_or_token"],"currentness":x["currentness"],"evidence_ref":x["evidence_refs"][0]} for x in objects]
     currentness=_projection_currentness(objects,missing)
+    causal_transitions=_derived_causal_transitions(objects) if currentness=="CURRENT" else []
+    material_unknowns=_derived_material_unknowns(objects) if currentness=="CURRENT" else []
     current_objective=_unique_state_text(objects,("current_objective","objective"))
     human_location=_unique_state_text(objects,("human_cognitive_location","cognitive_location"))
     return_points=_collect_state_list(objects,("return_points","return_point"))
@@ -338,7 +398,8 @@ def build_projection(*,source_revision:str,owner_snapshots:Sequence[Mapping[str,
         "human_surface":human_surface,"waiting_input":waiting_input,"room_identity":room_identity,
         "role_assessment":typed_signals["role_assessment"],"responsibility_assessment":typed_signals["responsibility_assessment"],
         "human_boundary_assessment":typed_signals["human_boundary_assessment"],"presentation_request":typed_signals["presentation_request"],
-        "hmi":typed_signals["hmi"],"objects":objects,"evidence_refs":evidence_refs,
+        "hmi":typed_signals["hmi"],"causal_transitions":causal_transitions,"material_unknowns":material_unknowns,
+        "objects":objects,"evidence_refs":evidence_refs,
         "n0":{"surface_state":"NONCURRENT","authority_mutation_allowed":False,"current_situation":where_are,
               "continuation_view":{"current_objective":current_objective,"return_points":return_points,"active_work":active_work,"blockers":blockers,"next_human_gate":human_gate},
               "human_cognitive_location":human_location},
@@ -370,6 +431,11 @@ def validate_projection(value:Mapping[str,Any])->dict[str,Any]:
         raise HumanAdminProjectionError("projection:transport-decision-conflation")
     if surface["human_decision_required"]=="NONE" and surface["human_action"]!="Ingen handling fra deg.":
         raise HumanAdminProjectionError("projection:human-action-none-render-invalid")
+    expected_causal=_derived_causal_transitions(value.get("objects") or []) if value.get("currentness")=="CURRENT" else []
+    expected_unknowns=_derived_material_unknowns(value.get("objects") or []) if value.get("currentness")=="CURRENT" else []
+    if value.get("causal_transitions")!=expected_causal: raise HumanAdminProjectionError("projection:causal-transitions-invalid")
+    if value.get("material_unknowns")!=expected_unknowns: raise HumanAdminProjectionError("projection:material-unknowns-invalid")
+    if any(x.get("authority")!="DERIVED_PRESENTATION_ONLY" for x in expected_causal+expected_unknowns): raise HumanAdminProjectionError("projection:derived-authority-invalid")
     room_identity=value.get("room_identity")
     if room_identity!=_room_identity(value.get("objects") or []):
         raise HumanAdminProjectionError("projection:room-identity-invalid")
