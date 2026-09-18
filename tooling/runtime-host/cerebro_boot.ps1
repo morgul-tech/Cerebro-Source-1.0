@@ -994,10 +994,23 @@ function Invoke-CerebroBootCore {
                 -ActorRole $OperationalPulseActorRole `
                 -ObjectiveRef $OperationalPulseObjectiveRef
             $principalObservedFrontier = $null
-            $frontierText = [string]$operationalPulse.watermarks.control.event_frontier
-            $parsedFrontier = 0L
-            if ($frontierText -cmatch '^[0-9]+$' -and [long]::TryParse($frontierText, [ref]$parsedFrontier)) {
-                $principalObservedFrontier = $parsedFrontier
+            $pulseWatermarks = $null
+            if ($operationalPulse -is [Collections.IDictionary] -and $operationalPulse.Contains('watermarks')) {
+                $pulseWatermarks = $operationalPulse['watermarks']
+            }
+            if (
+                $null -ne $pulseWatermarks -and
+                $pulseWatermarks -is [Collections.IDictionary] -and
+                $pulseWatermarks.Contains('control') -and
+                $null -ne $pulseWatermarks['control'] -and
+                $pulseWatermarks['control'] -is [Collections.IDictionary] -and
+                $pulseWatermarks['control'].Contains('event_frontier')
+            ) {
+                $frontierText = [string]$pulseWatermarks['control']['event_frontier']
+                $parsedFrontier = 0L
+                if ($frontierText -cmatch '^[0-9]+$' -and [long]::TryParse($frontierText, [ref]$parsedFrontier)) {
+                    $principalObservedFrontier = $parsedFrontier
+                }
             }
             $principalSuccession = Test-CerebroPrincipalSuccessionPermit `
                 -PermitReader $PrincipalSuccessionPermitReader `
