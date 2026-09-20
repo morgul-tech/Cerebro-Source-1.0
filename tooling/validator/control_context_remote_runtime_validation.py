@@ -498,6 +498,11 @@ def selftest() -> dict[str, Any]:
         "cerebro_actor_generation_shadow_heads" in REQUIRED_POSTGRES_RELATIONS
         and "cerebro_actor_generation_shadow_revisions" in REQUIRED_POSTGRES_RELATIONS,
     )
+    check(
+        "P1099-readiness-requires-pre-role-generation-relations",
+        "cerebro_pre_role_generation_heads" in REQUIRED_POSTGRES_RELATIONS
+        and "cerebro_pre_role_generation_revisions" in REQUIRED_POSTGRES_RELATIONS,
+    )
 
     source_text = (
         SOURCE_ROOT / "mcp/control_context_remote_runtime.py"

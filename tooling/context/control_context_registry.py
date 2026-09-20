@@ -21,6 +21,8 @@ BINDING_SCHEMA = "cerebro-control-continuation-binding/v1"
 DIRECTIVE_SCHEMA = "cerebro-control-context-transition-directive/v1"
 RECEIPT_SCHEMA = "cerebro-control-context-transition-receipt/v1"
 ACTOR_GENERATION_SHADOW_SCHEMA = "cerebro-actor-generation-shadow/v1"
+PRE_ROLE_GENERATION_SCHEMA = "cerebro-pre-role-generation/v1"
+READY_UNBOUND_RECEIPT_SCHEMA = "cerebro-ready-unbound-receipt/v1"
 PRINCIPAL_CONTINUITY_BASELINE_SCHEMA = "cerebro-principal-continuity-baseline/v1"
 WORK_CLAIM_SHADOW_SCHEMA = "cerebro-work-claim-shadow/v1"
 PROVIDER_ALLOCATION_RECEIPT_SCHEMA = "cerebro-provider-allocation-receipt/v1"
@@ -47,6 +49,7 @@ PROJECT_OPERATIONS = {
 SESSION_OPERATIONS = {"SET_ACTIVE", "SET_CONTINUATION_BINDING", "CLEAR_CONTINUATION_BINDING"}
 ACTOR_ROLES = {"PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"}
 ACTOR_GENERATION_LIFECYCLES = {"HOLD", "READY", "ACTIVE", "RETIRED"}
+PRE_ROLE_GENERATION_LIFECYCLES = {"BIRTH_PENDING", "READY_UNBOUND", "ROLE_ATTACHED"}
 WORK_CLAIM_LIFECYCLES = {
     "BOUND_ACTIVE_PRESTART", "ACTIVE", "TERMINAL_PASS", "TERMINAL_FAIL", "RELEASED"
 }
@@ -82,6 +85,258 @@ def actor_generation_shadow_fingerprint(state: dict[str, Any]) -> str:
     subject = copy.deepcopy(state)
     subject.pop("fingerprint", None)
     return _sha256(subject)
+
+
+def pre_role_generation_fingerprint(state: dict[str, Any]) -> str:
+    subject = copy.deepcopy(state)
+    subject.pop("fingerprint", None)
+    return _sha256(subject)
+
+
+def _validate_pre_role_ref(value: Any, field: str) -> str:
+    _require(
+        isinstance(value, str)
+        and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.@:-]{0,255}", value) is not None,
+        f"pre-role-generation-{field}-invalid",
+    )
+    return value
+
+
+def _validate_pre_role_generation_common(state: dict[str, Any]) -> None:
+    for field in ("tenant_ref", "workspace_ref", "generation_ref", "source_revision"):
+        _validate_pre_role_ref(state.get(field), field.replace("_", "-"))
+    _require(state.get("schema") == PRE_ROLE_GENERATION_SCHEMA, "pre-role-generation-schema-mismatch")
+    _require(state.get("lifecycle") in PRE_ROLE_GENERATION_LIFECYCLES, "pre-role-generation-lifecycle-invalid")
+    _require(type(state.get("revision")) is int and state["revision"] >= 1, "pre-role-generation-revision-invalid")
+
+    identity = state.get("identity_envelope")
+    _require(isinstance(identity, dict), "pre-role-generation-identity-envelope-required")
+    _require(set(identity) == {
+        "generation_ref", "predecessor_generation_ref", "predecessor_live_state_inherited",
+        "predecessor_claims_inherited", "private_state_inherited",
+    }, "pre-role-generation-identity-envelope-fields-mismatch")
+    _require(identity["generation_ref"] == state["generation_ref"], "pre-role-generation-identity-ref-mismatch")
+    _require(identity["predecessor_generation_ref"] is None, "pre-role-generation-predecessor-identity-prohibited")
+    for field in ("predecessor_live_state_inherited", "predecessor_claims_inherited", "private_state_inherited"):
+        _require(identity[field] is False, f"pre-role-generation-{field.replace('_', '-')}-prohibited")
+
+    authority = state.get("authority_envelope")
+    _require(isinstance(authority, dict), "pre-role-generation-authority-envelope-required")
+    _require(set(authority) == {
+        "state", "role", "grants_live_authority", "grants_claim", "grants_scheduler_authority",
+    }, "pre-role-generation-authority-envelope-fields-mismatch")
+    _require(authority["state"] == "UNBOUND" and authority["role"] is None,
+             "pre-role-generation-authority-must-be-unbound")
+    for field in ("grants_live_authority", "grants_claim", "grants_scheduler_authority"):
+        _require(authority[field] is False, f"pre-role-generation-{field.replace('_', '-')}-prohibited")
+
+    method = state.get("civilization_method_attestation")
+    _require(isinstance(method, dict), "pre-role-generation-method-attestation-required")
+    _require(set(method) == {
+        "method_ref", "method_version", "method_fingerprint", "currentness", "attested",
+    }, "pre-role-generation-method-attestation-fields-mismatch")
+    _validate_pre_role_ref(method.get("method_ref"), "method-ref")
+    _validate_pre_role_ref(method.get("method_version"), "method-version")
+    _require(isinstance(method.get("method_fingerprint"), str) and SHA256.fullmatch(method["method_fingerprint"]) is not None,
+             "pre-role-generation-method-fingerprint-invalid")
+    _require(method.get("currentness") == "CURRENT" and method.get("attested") is True,
+             "pre-role-generation-current-method-attestation-required")
+
+    fresh_world = state.get("fresh_world")
+    _require(isinstance(fresh_world, dict), "pre-role-generation-fresh-world-required")
+    _require(set(fresh_world) == {
+        "currentness", "source_revision", "provider_frontier_ref", "provider_revision", "verified",
+    }, "pre-role-generation-fresh-world-fields-mismatch")
+    _require(fresh_world.get("currentness") == "CURRENT" and fresh_world.get("verified") is True,
+             "pre-role-generation-fresh-world-current-required")
+    _require(fresh_world.get("source_revision") == state["source_revision"],
+             "pre-role-generation-fresh-world-source-mismatch")
+    _validate_pre_role_ref(fresh_world.get("provider_frontier_ref"), "provider-frontier-ref")
+    _require(type(fresh_world.get("provider_revision")) is int and fresh_world["provider_revision"] >= 0,
+             "pre-role-generation-provider-revision-invalid")
+
+
+def _validate_generic_capability_canaries(value: Any, *, ready: bool) -> list[dict[str, Any]]:
+    _require(isinstance(value, list), "pre-role-generation-generic-capability-canaries-array-required")
+    if ready:
+        _require(bool(value), "pre-role-generation-generic-capability-canaries-required")
+    refs: set[str] = set()
+    result: list[dict[str, Any]] = []
+    for canary in value:
+        _require(isinstance(canary, dict) and set(canary) == {"canary_ref", "result", "evidence_ref"},
+                 "pre-role-generation-generic-capability-canary-fields-mismatch")
+        ref = _validate_pre_role_ref(canary.get("canary_ref"), "canary-ref")
+        _require(ref not in refs, "pre-role-generation-generic-capability-canary-duplicate")
+        refs.add(ref)
+        _require(canary.get("result") == "PASS", "pre-role-generation-generic-capability-canary-nonpass")
+        _validate_pre_role_ref(canary.get("evidence_ref"), "canary-evidence-ref")
+        result.append(copy.deepcopy(canary))
+    return result
+
+
+def ready_unbound_receipt_fingerprint(receipt: dict[str, Any]) -> str:
+    subject = copy.deepcopy(receipt)
+    subject.pop("receipt_fingerprint", None)
+    return _sha256(subject)
+
+
+def validate_ready_unbound_receipt(receipt: dict[str, Any], *, state: dict[str, Any]) -> dict[str, Any]:
+    required = {
+        "schema", "receipt_ref", "generation_ref", "source_revision", "method_fingerprint",
+        "canary_vector_fingerprint", "durable", "post_state_readback_verified", "receipt_fingerprint",
+    }
+    _require(isinstance(receipt, dict) and set(receipt) == required,
+             "ready-unbound-receipt-fields-mismatch")
+    _require(receipt.get("schema") == READY_UNBOUND_RECEIPT_SCHEMA, "ready-unbound-receipt-schema-mismatch")
+    _validate_pre_role_ref(receipt.get("receipt_ref"), "ready-unbound-receipt-ref")
+    _require(receipt.get("generation_ref") == state["generation_ref"], "ready-unbound-receipt-generation-mismatch")
+    _require(receipt.get("source_revision") == state["source_revision"], "ready-unbound-receipt-source-mismatch")
+    _require(receipt.get("method_fingerprint") == state["civilization_method_attestation"]["method_fingerprint"],
+             "ready-unbound-receipt-method-mismatch")
+    expected_canaries = _sha256(state["generic_capability_canaries"])
+    _require(receipt.get("canary_vector_fingerprint") == expected_canaries,
+             "ready-unbound-receipt-canary-vector-mismatch")
+    _require(receipt.get("durable") is True and receipt.get("post_state_readback_verified") is True,
+             "ready-unbound-receipt-durable-readback-required")
+    _require(receipt.get("receipt_fingerprint") == ready_unbound_receipt_fingerprint(receipt),
+             "ready-unbound-receipt-fingerprint-mismatch")
+    return copy.deepcopy(receipt)
+
+
+def validate_pre_role_generation(state: dict[str, Any]) -> dict[str, Any]:
+    required = {
+        "schema", "tenant_ref", "workspace_ref", "generation_ref", "lifecycle", "source_revision",
+        "revision", "identity_envelope", "authority_envelope", "civilization_method_attestation",
+        "fresh_world", "generic_capability_canaries", "ready_unbound_receipt", "role_overlay", "fingerprint",
+    }
+    _require(isinstance(state, dict) and set(state) == required, "pre-role-generation-fields-mismatch")
+    _validate_pre_role_generation_common(state)
+    ready = state["lifecycle"] in {"READY_UNBOUND", "ROLE_ATTACHED"}
+    _validate_generic_capability_canaries(state["generic_capability_canaries"], ready=ready)
+    receipt = state.get("ready_unbound_receipt")
+    overlay = state.get("role_overlay")
+    if ready:
+        _require(isinstance(receipt, dict), "pre-role-generation-ready-unbound-receipt-required")
+        validate_ready_unbound_receipt(receipt, state=state)
+    else:
+        _require(receipt is None and not state["generic_capability_canaries"],
+                 "pre-role-generation-birth-pending-evidence-prohibited")
+    if state["lifecycle"] == "ROLE_ATTACHED":
+        _require(isinstance(overlay, dict) and set(overlay) == {
+            "overlay_ref", "actor_ref", "role", "actor_generation_ref", "ready_unbound_receipt_ref",
+        }, "pre-role-generation-role-overlay-fields-mismatch")
+        _validate_pre_role_ref(overlay.get("overlay_ref"), "role-overlay-ref")
+        _validate_pre_role_ref(overlay.get("actor_ref"), "role-overlay-actor-ref")
+        _require(overlay.get("role") in ACTOR_ROLES, "pre-role-generation-role-overlay-role-invalid")
+        _validate_pre_role_ref(overlay.get("actor_generation_ref"), "role-overlay-generation-ref")
+        _require(overlay.get("ready_unbound_receipt_ref") == receipt["receipt_ref"],
+                 "pre-role-generation-role-overlay-receipt-mismatch")
+    else:
+        _require(overlay is None, "pre-role-generation-role-overlay-premature")
+    _require(state.get("fingerprint") == pre_role_generation_fingerprint(state),
+             "pre-role-generation-fingerprint-mismatch")
+    return {"result": "PASS", "generation_ref": state["generation_ref"],
+            "lifecycle": state["lifecycle"], "revision": state["revision"]}
+
+
+def bootstrap_pre_role_generation(
+    *, tenant_ref: str, workspace_ref: str, generation_ref: str, source_revision: str,
+    method_ref: str, method_version: str, method_fingerprint: str,
+    provider_frontier_ref: str, provider_revision: int,
+) -> dict[str, Any]:
+    state = {
+        "schema": PRE_ROLE_GENERATION_SCHEMA,
+        "tenant_ref": tenant_ref,
+        "workspace_ref": workspace_ref,
+        "generation_ref": generation_ref,
+        "lifecycle": "BIRTH_PENDING",
+        "source_revision": source_revision,
+        "revision": 1,
+        "identity_envelope": {
+            "generation_ref": generation_ref,
+            "predecessor_generation_ref": None,
+            "predecessor_live_state_inherited": False,
+            "predecessor_claims_inherited": False,
+            "private_state_inherited": False,
+        },
+        "authority_envelope": {
+            "state": "UNBOUND", "role": None, "grants_live_authority": False,
+            "grants_claim": False, "grants_scheduler_authority": False,
+        },
+        "civilization_method_attestation": {
+            "method_ref": method_ref, "method_version": method_version,
+            "method_fingerprint": method_fingerprint, "currentness": "CURRENT", "attested": True,
+        },
+        "fresh_world": {
+            "currentness": "CURRENT", "source_revision": source_revision,
+            "provider_frontier_ref": provider_frontier_ref, "provider_revision": provider_revision,
+            "verified": True,
+        },
+        "generic_capability_canaries": [],
+        "ready_unbound_receipt": None,
+        "role_overlay": None,
+    }
+    state["fingerprint"] = pre_role_generation_fingerprint(state)
+    validate_pre_role_generation(state)
+    return state
+
+
+def complete_pre_role_generation(
+    state: dict[str, Any], *, source_revision: str,
+    generic_capability_canaries: list[dict[str, Any]], receipt_ref: str,
+) -> dict[str, Any]:
+    validate_pre_role_generation(state)
+    _require(state["lifecycle"] == "BIRTH_PENDING", "pre-role-generation-complete-from-birth-pending-required")
+    _require(source_revision == state["source_revision"], "pre-role-generation-complete-source-mismatch")
+    candidate = copy.deepcopy(state)
+    candidate["lifecycle"] = "READY_UNBOUND"
+    candidate["revision"] += 1
+    candidate["generic_capability_canaries"] = _validate_generic_capability_canaries(
+        generic_capability_canaries, ready=True,
+    )
+    receipt = {
+        "schema": READY_UNBOUND_RECEIPT_SCHEMA,
+        "receipt_ref": receipt_ref,
+        "generation_ref": candidate["generation_ref"],
+        "source_revision": candidate["source_revision"],
+        "method_fingerprint": candidate["civilization_method_attestation"]["method_fingerprint"],
+        "canary_vector_fingerprint": _sha256(candidate["generic_capability_canaries"]),
+        "durable": True,
+        "post_state_readback_verified": True,
+    }
+    receipt["receipt_fingerprint"] = ready_unbound_receipt_fingerprint(receipt)
+    candidate["ready_unbound_receipt"] = receipt
+    candidate["fingerprint"] = pre_role_generation_fingerprint(candidate)
+    validate_pre_role_generation(candidate)
+    return candidate
+
+
+def attach_role_overlay(
+    state: dict[str, Any], *, overlay_ref: str, actor_ref: str, role: str,
+    actor_generation_ref: str, source_revision: str,
+    principal_continuity_baseline: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    validate_pre_role_generation(state)
+    _require(state["lifecycle"] == "READY_UNBOUND", "pre-role-generation-ready-unbound-required")
+    _require(source_revision == state["source_revision"], "pre-role-generation-role-overlay-source-mismatch")
+    actor = bootstrap_actor_generation_shadow(
+        tenant_ref=state["tenant_ref"], workspace_ref=state["workspace_ref"], actor_ref=actor_ref,
+        role=role, generation_ref=actor_generation_ref, source_revision=source_revision,
+        principal_continuity_baseline=principal_continuity_baseline,
+    )
+    candidate = copy.deepcopy(state)
+    candidate["lifecycle"] = "ROLE_ATTACHED"
+    candidate["revision"] += 1
+    candidate["role_overlay"] = {
+        "overlay_ref": overlay_ref,
+        "actor_ref": actor_ref,
+        "role": role,
+        "actor_generation_ref": actor_generation_ref,
+        "ready_unbound_receipt_ref": state["ready_unbound_receipt"]["receipt_ref"],
+    }
+    candidate["fingerprint"] = pre_role_generation_fingerprint(candidate)
+    validate_pre_role_generation(candidate)
+    return candidate, actor
 
 
 def principal_continuity_baseline_fingerprint(baseline: dict[str, Any]) -> str:

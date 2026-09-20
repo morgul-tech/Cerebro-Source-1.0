@@ -1217,12 +1217,78 @@ def selftest() -> dict[str, Any]:
         [item["name"] for item in tool_definitions()] == [
             "arm_human_t3_break_glass",
             "confirm_human_t3_break_glass",
+            "create_pre_role_generation",
+            "complete_pre_role_generation",
+            "attach_role_overlay",
             "read_project_control_state",
             "begin_project_control_event",
             "complete_project_control_event",
             "create_project_control_instance",
             "set_default_project_control_instance",
         ],
+    )
+
+    pre_create = {
+        "generation_ref": "PRE-ROLE-SELFTEST-1",
+        "source_revision": "5" * 40,
+        "method_ref": "CURRENT_CIVILIZATION_METHOD_PROFILE",
+        "method_version": "1.0",
+        "method_fingerprint": "6" * 64,
+        "provider_frontier_ref": "PM-SELFTEST",
+        "provider_revision": 1,
+    }
+    created_pre = tools.dispatch(
+        "create_pre_role_generation",
+        _signed_args(attestor, "create_pre_role_generation", pre_create, context),
+        context,
+    )["structuredContent"]["pre_role_generation"]
+    check(
+        "P1099-create-pre-role-is-roleless-unbound-and-zero-inheritance",
+        created_pre["lifecycle"] == "BIRTH_PENDING"
+        and created_pre["authority_envelope"]["role"] is None
+        and created_pre["authority_envelope"]["grants_live_authority"] is False
+        and created_pre["identity_envelope"]["predecessor_live_state_inherited"] is False,
+    )
+    pre_complete = {
+        "generation_ref": pre_create["generation_ref"],
+        "expected_revision": 1,
+        "source_revision": pre_create["source_revision"],
+        "generic_capability_canaries": [
+            {"canary_ref": "GENERIC-CAPABILITY", "result": "PASS", "evidence_ref": "SELFTEST-EVIDENCE"}
+        ],
+        "ready_unbound_receipt_ref": "READY-UNBOUND-SELFTEST-1",
+    }
+    ready_pre = tools.dispatch(
+        "complete_pre_role_generation",
+        _signed_args(attestor, "complete_pre_role_generation", pre_complete, context),
+        context,
+    )["structuredContent"]
+    check(
+        "P1099-complete-emits-ready-unbound-durable-readback-receipt",
+        ready_pre["pre_role_generation"]["lifecycle"] == "READY_UNBOUND"
+        and ready_pre["ready_unbound_receipt"]["durable"] is True
+        and ready_pre["ready_unbound_receipt"]["post_state_readback_verified"] is True,
+    )
+    pre_overlay = {
+        "generation_ref": pre_create["generation_ref"],
+        "expected_revision": 2,
+        "overlay_ref": "ROLE-OVERLAY-SELFTEST-1",
+        "actor_ref": "ACTOR-SELFTEST-1",
+        "role": "IMPLEMENTER",
+        "actor_generation_ref": "ACTOR-GENERATION-SELFTEST-1",
+        "source_revision": pre_create["source_revision"],
+    }
+    attached_pre = tools.dispatch(
+        "attach_role_overlay",
+        _signed_args(attestor, "attach_role_overlay", pre_overlay, context),
+        context,
+    )["structuredContent"]
+    check(
+        "P1099-role-overlay-consumes-ready-unbound-and-preserves-existing-role-shadow",
+        attached_pre["pre_role_generation"]["lifecycle"] == "ROLE_ATTACHED"
+        and attached_pre["actor_generation_shadow"]["schema"] == "cerebro-actor-generation-shadow/v1"
+        and attached_pre["actor_generation_shadow"]["role"] == "IMPLEMENTER"
+        and attached_pre["actor_generation_shadow"]["authority"] == "SHADOW_ONLY",
     )
 
     manifest = yaml.safe_load((SOURCE_ROOT / "mcp/manifest.yaml").read_text(encoding="utf-8"))

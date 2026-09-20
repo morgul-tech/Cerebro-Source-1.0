@@ -277,9 +277,11 @@ def selftest() -> dict[str, Any]:
 
     sql_path = CONTEXT_ROOT / "control_context_state_postgres.sql"
     shadow_sql_path = CONTEXT_ROOT / "control_context_state_postgres_0002_actor_claim_shadow.sql"
+    pre_role_sql_path = CONTEXT_ROOT / "control_context_state_postgres_0005_pre_role_generation.sql"
     adapter_path = CONTEXT_ROOT / "control_context_state_postgres.py"
     sql = sql_path.read_text(encoding="utf-8")
     shadow_sql = shadow_sql_path.read_text(encoding="utf-8")
+    pre_role_sql = pre_role_sql_path.read_text(encoding="utf-8")
     adapter_source = adapter_path.read_text(encoding="utf-8")
     required_tables = {
         "cerebro_project_instances",
@@ -390,6 +392,27 @@ def selftest() -> dict[str, Any]:
             "INSERT INTO cerebro_work_claim_shadow_revisions",
         )),
     )
+    check(
+        "P1099-pre-role-migration-is-additive-unbound-and-workspace-isolated",
+        all(marker in pre_role_sql for marker in (
+            "CREATE TABLE IF NOT EXISTS cerebro_pre_role_generation_heads",
+            "CREATE TABLE IF NOT EXISTS cerebro_pre_role_generation_revisions",
+            "BIRTH_PENDING", "READY_UNBOUND", "ROLE_ATTACHED",
+            "authority_envelope,state", "predecessor_live_state_inherited",
+            "ENABLE ROW LEVEL SECURITY", "FORCE ROW LEVEL SECURITY",
+        ))
+        and "DROP TABLE" not in pre_role_sql.upper()
+        and "GRANT " not in pre_role_sql.upper(),
+    )
+    check(
+        "P1099-adapter-has-pre-role-CAS-readback-and-atomic-role-overlay",
+        all(marker in adapter_source for marker in (
+            "write_pre_role_generation", "read_pre_role_generation", "attach_role_overlay",
+            "pre-role-generation-revision-conflict",
+            "INSERT INTO cerebro_pre_role_generation_revisions",
+            "INSERT INTO cerebro_actor_generation_shadow_heads",
+        )),
+    )
 
     check(
         "K154-allocation-receipt-and-stable-unknown-fit-existing-jsonb-no-sql-migration",
@@ -407,15 +430,21 @@ def selftest() -> dict[str, Any]:
     manifest = json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"))
     checksum = hashlib.sha256(sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     shadow_checksum = hashlib.sha256(shadow_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    pre_role_checksum = hashlib.sha256(pre_role_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     check(
         "migration-manifest-checksum-matches-candidate-SQL",
         manifest["migrations"][0]["checksum_sha256"] == checksum,
     )
     check(
         "B1-additive-0002-migration-manifest-checksum-matches-candidate-SQL",
-        len(manifest["migrations"]) == 4
+        len(manifest["migrations"]) == 5
         and manifest["migrations"][1]["migration_id"] == "0002-actor-generation-work-claim-shadow"
         and manifest["migrations"][1]["checksum_sha256"] == shadow_checksum,
+    )
+    check(
+        "P1099-additive-0005-migration-manifest-checksum-matches-candidate-SQL",
+        manifest["migrations"][4]["migration_id"] == "0005-pre-role-generation"
+        and manifest["migrations"][4]["checksum_sha256"] == pre_role_checksum,
     )
     check(
         "runtime-role-is-explicitly-barred-from-migrations",
@@ -437,6 +466,9 @@ def selftest() -> dict[str, Any]:
         {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
         {"contains": "CREATE TABLE IF NOT EXISTS cerebro_principal_succession_permit_heads"},
         {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
+        {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
+        {"contains": "CREATE TABLE IF NOT EXISTS cerebro_pre_role_generation_heads"},
+        {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
     ]
     migration_connection = ScriptedConnection(migration_steps)
     migration_result = apply_postgres_migrations(lambda: migration_connection)
@@ -447,6 +479,7 @@ def selftest() -> dict[str, Any]:
             "0002-actor-generation-work-claim-shadow",
             "0003-human-t3-break-glass",
             "0004-principal-succession-permit",
+            "0005-pre-role-generation",
         ]
         and migration_connection.commit_called
         and not migration_connection.cursor_instance.steps,
@@ -738,7 +771,8 @@ def principal_succession_postgres_regressions():
     check("unauthorized-custody-scope-before-DB",_expect_error(lambda:PostgresControlContextStatePort(lambda:ScriptedConnection([]))
           .commit_principal_succession_custody(record=record,expected_revision=0,scopes={"project_state:read"}),StateAuthorizationError))
     check("stale-revision-conflicts",_expect_error(lambda:validate_principal_succession_custody_write(next_record,record,0),StateConflict))
-    manifest=json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"));entry=manifest["migrations"][-1]
+    manifest=json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"));entry=next(
+        item for item in manifest["migrations"] if item["migration_id"]=="0004-principal-succession-permit")
     sql=(CONTEXT_ROOT/entry["path"]).read_bytes().replace(b"\r\n",b"\n")
     check("0004-additive-canonical-checksum",entry["migration_id"]=="0004-principal-succession-permit"
           and entry["checksum_sha256"]==hashlib.sha256(sql).hexdigest())

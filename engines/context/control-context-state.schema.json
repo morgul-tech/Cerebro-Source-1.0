@@ -13,6 +13,9 @@
       "$ref": "#/$defs/actor_generation_shadow"
     },
     {
+      "$ref": "#/$defs/pre_role_generation"
+    },
+    {
       "$ref": "#/$defs/work_claim_shadow"
     }
   ],
@@ -20,6 +23,104 @@
     "sha256": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "pre_role_generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "tenant_ref", "workspace_ref", "generation_ref", "lifecycle",
+        "source_revision", "revision", "identity_envelope", "authority_envelope",
+        "civilization_method_attestation", "fresh_world", "generic_capability_canaries",
+        "ready_unbound_receipt", "role_overlay", "fingerprint"
+      ],
+      "properties": {
+        "schema": {"const": "cerebro-pre-role-generation/v1"},
+        "tenant_ref": {"type": "string", "minLength": 1},
+        "workspace_ref": {"type": "string", "minLength": 1},
+        "generation_ref": {"type": "string", "minLength": 1},
+        "lifecycle": {"enum": ["BIRTH_PENDING", "READY_UNBOUND", "ROLE_ATTACHED"]},
+        "source_revision": {"type": "string", "minLength": 1},
+        "revision": {"type": "integer", "minimum": 1},
+        "identity_envelope": {
+          "type": "object", "additionalProperties": false,
+          "required": ["generation_ref", "predecessor_generation_ref", "predecessor_live_state_inherited", "predecessor_claims_inherited", "private_state_inherited"],
+          "properties": {
+            "generation_ref": {"type": "string", "minLength": 1},
+            "predecessor_generation_ref": {"type": "null"},
+            "predecessor_live_state_inherited": {"const": false},
+            "predecessor_claims_inherited": {"const": false},
+            "private_state_inherited": {"const": false}
+          }
+        },
+        "authority_envelope": {
+          "type": "object", "additionalProperties": false,
+          "required": ["state", "role", "grants_live_authority", "grants_claim", "grants_scheduler_authority"],
+          "properties": {
+            "state": {"const": "UNBOUND"}, "role": {"type": "null"},
+            "grants_live_authority": {"const": false}, "grants_claim": {"const": false},
+            "grants_scheduler_authority": {"const": false}
+          }
+        },
+        "civilization_method_attestation": {
+          "type": "object", "additionalProperties": false,
+          "required": ["method_ref", "method_version", "method_fingerprint", "currentness", "attested"],
+          "properties": {
+            "method_ref": {"type": "string", "minLength": 1},
+            "method_version": {"type": "string", "minLength": 1},
+            "method_fingerprint": {"$ref": "#/$defs/sha256"},
+            "currentness": {"const": "CURRENT"}, "attested": {"const": true}
+          }
+        },
+        "fresh_world": {
+          "type": "object", "additionalProperties": false,
+          "required": ["currentness", "source_revision", "provider_frontier_ref", "provider_revision", "verified"],
+          "properties": {
+            "currentness": {"const": "CURRENT"}, "source_revision": {"type": "string", "minLength": 1},
+            "provider_frontier_ref": {"type": "string", "minLength": 1},
+            "provider_revision": {"type": "integer", "minimum": 0}, "verified": {"const": true}
+          }
+        },
+        "generic_capability_canaries": {
+          "type": "array", "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["canary_ref", "result", "evidence_ref"],
+            "properties": {
+              "canary_ref": {"type": "string", "minLength": 1}, "result": {"const": "PASS"},
+              "evidence_ref": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "ready_unbound_receipt": {
+          "anyOf": [{"type": "null"}, {"$ref": "#/$defs/ready_unbound_receipt"}]
+        },
+        "role_overlay": {
+          "anyOf": [{"type": "null"}, {
+            "type": "object", "additionalProperties": false,
+            "required": ["overlay_ref", "actor_ref", "role", "actor_generation_ref", "ready_unbound_receipt_ref"],
+            "properties": {
+              "overlay_ref": {"type": "string", "minLength": 1}, "actor_ref": {"type": "string", "minLength": 1},
+              "role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"]},
+              "actor_generation_ref": {"type": "string", "minLength": 1},
+              "ready_unbound_receipt_ref": {"type": "string", "minLength": 1}
+            }
+          }]
+        },
+        "fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "ready_unbound_receipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "receipt_ref", "generation_ref", "source_revision", "method_fingerprint", "canary_vector_fingerprint", "durable", "post_state_readback_verified", "receipt_fingerprint"],
+      "properties": {
+        "schema": {"const": "cerebro-ready-unbound-receipt/v1"},
+        "receipt_ref": {"type": "string", "minLength": 1},
+        "generation_ref": {"type": "string", "minLength": 1},
+        "source_revision": {"type": "string", "minLength": 1},
+        "method_fingerprint": {"$ref": "#/$defs/sha256"},
+        "canary_vector_fingerprint": {"$ref": "#/$defs/sha256"},
+        "durable": {"const": true}, "post_state_readback_verified": {"const": true},
+        "receipt_fingerprint": {"$ref": "#/$defs/sha256"}
+      }
     },
     "actor_generation_shadow": {
       "type": "object",

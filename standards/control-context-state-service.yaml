@@ -148,6 +148,57 @@ control_context_state_service:
       set_default_project_control_instance:
         mutation: PRINCIPAL_WORKSPACE_BINDING_ONLY
         required_scope: project_state:transition
+      create_pre_role_generation:
+        mutation: ATOMIC_ROLE_NEUTRAL_BIRTH_CREATION
+        required_scope: project_state:transition
+        output: BIRTH_PENDING_WITH_UNBOUND_AUTHORITY_ENVELOPE
+      complete_pre_role_generation:
+        mutation: ATOMIC_READY_UNBOUND_COMPLETION
+        required_scope: project_state:transition
+        output: READY_UNBOUND_RECEIPT_AND_EXACT_READBACK
+      attach_role_overlay:
+        mutation: ATOMIC_READY_UNBOUND_CONSUMPTION_AND_EXISTING_ROLE_SHADOW_CREATION
+        required_scope: project_state:transition
+        output: ROLE_ATTACHED_PRE_ROLE_GENERATION_AND_EXISTING_ACTOR_GENERATION_SHADOW
+
+  pre_role_generation:
+    status: CANDIDATE_ROLE_NEUTRAL_BIRTH
+    purpose: GENERATION_IDENTITY_AND_COMMON_METHOD_BEFORE_ROLE_WITHOUT_AUTHORITY_PROMOTION
+    aggregate_schema: cerebro-pre-role-generation/v1
+    ready_receipt_schema: cerebro-ready-unbound-receipt/v1
+    storage_migration_ref: tooling/context/control_context_state_postgres_0005_pre_role_generation.sql
+    domain_ref: tooling/context/control_context_registry.py
+    owner: EXISTING_CONTEXT_STATE_SERVICE
+    final_control_boundary: MCP
+    lifecycles: [BIRTH_PENDING, READY_UNBOUND, ROLE_ATTACHED]
+    common_birth_inputs:
+      - immutable-role-neutral-generation-identity
+      - unbound-authority-envelope
+      - current-civilization-method-attestation
+      - Fresh-World-currentness
+      - generic-capability-canary-vector
+    excluded_inputs:
+      - role
+      - predecessor-live-state
+      - predecessor-claims
+      - private-state
+      - automatic-authority
+    completion:
+      operation: complete_pre_role_generation
+      requires: [ALL_GENERIC_CANARIES_PASS, CURRENT_METHOD_ATTESTED, FRESH_WORLD_VERIFIED]
+      emits: READY_UNBOUND_RECEIPT
+      exact_state_readback_required: true
+    role_overlay:
+      operation: attach_role_overlay
+      precondition: EXACTLY_ONE_READY_UNBOUND_GENERATION
+      result: EXISTING_CEREBRO_ACTOR_GENERATION_SHADOW_V1
+      existing_role_enum_and_work_claim_FKs_unchanged: true
+      grants_live_authority: false
+    activation:
+      new_service_or_store: false
+      live_claim_created: false
+      scheduler_authority_granted: false
+      runtime_cutover: false
 
   actor_generation_and_work_claim_shadow:
     status: CANDIDATE_SHADOW_ONLY
@@ -475,4 +526,7 @@ control_context_state_service:
     - EVERY_PRIVATE_REMOTE_TOOL_DECLARES_AND_ENFORCES_ITS_MINIMUM_SCOPE
     - LOCAL_AUTH_SERVICE_PROOF_CANNOT_CLAIM_REMOTE_MCP_ACTIVATION
     - ACTOR_GENERATION_AND_WORK_CLAIM_SHADOWS_CANNOT_GRANT_LIVE_AUTHORITY
+    - PRE_ROLE_GENERATION_CANNOT_CONTAIN_ROLE_OR_INHERIT_PREDECESSOR_LIVE_STATE
+    - READY_UNBOUND_CANNOT_GRANT_LIVE_CLAIM_SCHEDULER_OR_EXECUTION_AUTHORITY
+    - ROLE_OVERLAY_MUST_CONSUME_EXACTLY_ONE_READY_UNBOUND_GENERATION
     - OAUTH_SECURITY_PRINCIPAL_CANNOT_SUBSTITUTE_FOR_CEREBRO_ROLE_GENERATION

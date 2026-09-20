@@ -55,6 +55,40 @@ boot_critical_path:
     failure_effect: HOLD_BEFORE_READY
     new_receipt_schema: false
 
+  role_neutral_generation_birth:
+    owner: EXISTING_CONTEXT_STATE_SERVICE
+    control_boundary: AUTHENTICATED_ATTESTED_MCP
+    aggregate: PRE_ROLE_GENERATION
+    schema: cerebro-pre-role-generation/v1
+    sequence:
+    - ROOT_OF_TRUST
+    - ROLE_NEUTRAL_IDENTITY_AND_UNBOUND_AUTHORITY_ENVELOPE
+    - CIVILIZATION_KERNEL
+    - CURRENT_CIVILIZATION_METHOD_PROFILE_ATTESTATION
+    - Fresh-World-currentness
+    - GENERIC_CAPABILITY_PROOF_AND_TYPED_CANARIES
+    - AWAKENING_RECEIPT
+    - READY_UNBOUND
+    excluded_before_READY_UNBOUND:
+    - role
+    - specialty-state
+    - predecessor-live-state
+    - predecessor-claims
+    - private-state
+    - automatic-authority
+    ready_unbound_receipt:
+      schema: cerebro-ready-unbound-receipt/v1
+      durable: true
+      exact_state_readback_required: true
+      authority: NONE
+    role_overlay:
+      separate_later_operation: attach_role_overlay
+      consumes: EXACTLY_ONE_READY_UNBOUND_GENERATION
+      produces: EXISTING_ACTOR_GENERATION_SHADOW_V1
+      changes_existing_role_enum_or_work_claim_FKs: false
+      grants_live_authority: false
+    failure_effect: HOLD_BEFORE_ROLE_OVERLAY
+
   birth_kernels:
     receipt_required_before_first_operational_response: true
     HMI:

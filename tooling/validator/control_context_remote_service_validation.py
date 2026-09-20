@@ -224,10 +224,14 @@ def selftest() -> dict[str, Any]:
             for item in definitions
         ),
     )
+    transition_tools = (
+        "arm_human_t3_break_glass", "confirm_human_t3_break_glass",
+        "create_pre_role_generation", "complete_pre_role_generation", "attach_role_overlay",
+    )
     check("HG04-private-scope-registry-exact", {item["name"] for item in definitions} == set(TOOL_REQUIRED_SCOPES)
-          and all(TOOL_REQUIRED_SCOPES[name] == "project_state:transition" for name in ("arm_human_t3_break_glass", "confirm_human_t3_break_glass")))
+          and all(TOOL_REQUIRED_SCOPES[name] == "project_state:transition" for name in transition_tools))
     ready[0] = True
-    for name in ("arm_human_t3_break_glass", "confirm_human_t3_break_glass"):
+    for name in transition_tools:
         rejected = service.invoke(tool_name=name, args={}, headers={"Authorization": "Bearer read-token"}, request_meta={"openai/session": "HG04-REMOTE-1"})
         check("HG04-" + name + "-transition-challenge-before-handler", rejected.get("isError") is True
               and 'scope="project_state:transition"' in rejected.get("_meta", {}).get("mcp/www_authenticate", [""])[0])

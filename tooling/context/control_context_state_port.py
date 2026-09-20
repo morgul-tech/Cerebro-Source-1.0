@@ -24,6 +24,7 @@ try:
         bind_control_session,
         bootstrap_project_state,
         continuation_fingerprint,
+        validate_pre_role_generation,
         validate_actor_generation_shadow,
         validate_work_claim_shadow,
         refresh_session_fingerprint,
@@ -39,6 +40,7 @@ except ImportError:
         bind_control_session,
         bootstrap_project_state,
         continuation_fingerprint,
+        validate_pre_role_generation,
         validate_actor_generation_shadow,
         validate_work_claim_shadow,
         refresh_session_fingerprint,
@@ -344,6 +346,7 @@ class InMemoryControlContextStatePort:
         self._idempotency: dict[tuple[str, str, str, str, str, str], str] = {}
         self._bootstraps: dict[tuple[str, str, str, str, str], dict[str, Any]] = {}
         self._actor_generation_shadows: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+        self._pre_role_generations: dict[tuple[str, str, str], dict[str, Any]] = {}
         self._work_claim_shadows: dict[tuple[str, str, str], dict[str, Any]] = {}
         self._human_t3_arms: dict[tuple[str, ...], dict[str, Any]] = {}
         self._human_t3_revisions: dict[tuple[str, ...], list[dict[str, Any]]] = {}
@@ -789,6 +792,100 @@ class InMemoryControlContextStatePort:
                         )
             self._actor_generation_shadows[key] = copy.deepcopy(state)
             return copy.deepcopy(state)
+
+    def write_pre_role_generation(
+        self,
+        state: dict[str, Any],
+        *,
+        expected_revision: int,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """CAS-write one role-neutral birth aggregate without granting authority."""
+
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:transition")
+            validate_pre_role_generation(state)
+            key = (state["tenant_ref"], state["workspace_ref"], state["generation_ref"])
+            current = self._pre_role_generations.get(key)
+            actual_revision = 0 if current is None else current["revision"]
+            _require(actual_revision == expected_revision, "pre-role-generation-revision-conflict", StateConflict)
+            _require(state["revision"] == expected_revision + 1, "pre-role-generation-revision-step-invalid", StateConflict)
+            if current is not None:
+                for field in (
+                    "source_revision", "identity_envelope", "authority_envelope",
+                    "civilization_method_attestation", "fresh_world",
+                ):
+                    _require(current[field] == state[field], f"pre-role-generation-{field.replace('_', '-')}-immutable", StateConflict)
+                _require(current["lifecycle"] != "ROLE_ATTACHED", "pre-role-generation-role-attached-terminal", StateConflict)
+            self._pre_role_generations[key] = copy.deepcopy(state)
+            return copy.deepcopy(state)
+
+    def read_pre_role_generation(
+        self,
+        *,
+        tenant_ref: str,
+        workspace_ref: str,
+        generation_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:read")
+            key = (tenant_ref, workspace_ref, generation_ref)
+            _require(key in self._pre_role_generations, "pre-role-generation-not-found", StateBindingError)
+            state = self._pre_role_generations[key]
+            validate_pre_role_generation(state)
+            return copy.deepcopy(state)
+
+    def attach_role_overlay(
+        self,
+        *,
+        pre_role_state: dict[str, Any],
+        actor_generation_state: dict[str, Any],
+        expected_revision: int,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """Atomically consume READY_UNBOUND and materialize the existing role shadow."""
+
+        with self._lock:
+            self._require_available()
+            self._require_scope(scopes, "project_state:transition")
+            validate_pre_role_generation(pre_role_state)
+            validate_actor_generation_shadow(actor_generation_state)
+            key = (
+                pre_role_state["tenant_ref"], pre_role_state["workspace_ref"],
+                pre_role_state["generation_ref"],
+            )
+            current = self._pre_role_generations.get(key)
+            _require(current is not None, "pre-role-generation-not-found", StateBindingError)
+            _require(current["revision"] == expected_revision, "pre-role-generation-revision-conflict", StateConflict)
+            _require(current["lifecycle"] == "READY_UNBOUND", "pre-role-generation-ready-unbound-required", StateConflict)
+            _require(pre_role_state["revision"] == expected_revision + 1, "pre-role-generation-revision-step-invalid", StateConflict)
+            for field in (
+                "source_revision", "identity_envelope", "authority_envelope",
+                "civilization_method_attestation", "fresh_world",
+                "generic_capability_canaries", "ready_unbound_receipt",
+            ):
+                _require(current[field] == pre_role_state[field],
+                         f"pre-role-generation-{field.replace('_', '-')}-immutable", StateConflict)
+            overlay = pre_role_state["role_overlay"]
+            _require(overlay["actor_ref"] == actor_generation_state["actor_ref"]
+                     and overlay["role"] == actor_generation_state["role"]
+                     and overlay["actor_generation_ref"] == actor_generation_state["generation_ref"],
+                     "pre-role-generation-role-overlay-actor-mismatch", StateBindingError)
+            actor_key = (
+                actor_generation_state["tenant_ref"], actor_generation_state["workspace_ref"],
+                actor_generation_state["role"], actor_generation_state["generation_ref"],
+            )
+            _require(actor_key not in self._actor_generation_shadows,
+                     "pre-role-generation-role-overlay-actor-exists", StateConflict)
+            self._actor_generation_shadows[actor_key] = copy.deepcopy(actor_generation_state)
+            self._pre_role_generations[key] = copy.deepcopy(pre_role_state)
+            return {
+                "pre_role_generation": copy.deepcopy(pre_role_state),
+                "actor_generation_shadow": copy.deepcopy(actor_generation_state),
+            }
 
     def read_actor_generation_shadow(
         self,

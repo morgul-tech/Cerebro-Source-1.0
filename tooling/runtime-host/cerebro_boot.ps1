@@ -604,6 +604,64 @@ function New-CerebroAwakeningReceipt {
     return $receipt
 }
 
+function Test-CerebroPreRoleReadyUnbound {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][object]$PreRoleState,
+        [Parameter(Mandatory)][string]$SourceRoot,
+        [Parameter(Mandatory)][string]$SourceHead
+    )
+    if ($PreRoleState.schema -cne 'cerebro-pre-role-generation/v1' -or
+        $PreRoleState.lifecycle -cne 'READY_UNBOUND' -or
+        $PreRoleState.source_revision -cne $SourceHead) {
+        throw 'PRE_ROLE_READY_UNBOUND_CURRENT_STATE_REQUIRED'
+    }
+    if ($PreRoleState.authority_envelope.state -cne 'UNBOUND' -or
+        $null -ne $PreRoleState.authority_envelope.role -or
+        $PreRoleState.authority_envelope.grants_live_authority -ne $false -or
+        $PreRoleState.authority_envelope.grants_claim -ne $false -or
+        $PreRoleState.authority_envelope.grants_scheduler_authority -ne $false) {
+        throw 'PRE_ROLE_UNBOUND_AUTHORITY_ENVELOPE_REQUIRED'
+    }
+    if ($null -ne $PreRoleState.identity_envelope.predecessor_generation_ref -or
+        $PreRoleState.identity_envelope.predecessor_live_state_inherited -ne $false -or
+        $PreRoleState.identity_envelope.predecessor_claims_inherited -ne $false -or
+        $PreRoleState.identity_envelope.private_state_inherited -ne $false) {
+        throw 'PRE_ROLE_FRESH_WORLD_ZERO_INHERITANCE_REQUIRED'
+    }
+    $method = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole 'PRE_ROLE_UNBOUND'
+    if ($PreRoleState.civilization_method_attestation.method_fingerprint -cne
+        $method.method_profile.fingerprint -or
+        $PreRoleState.civilization_method_attestation.currentness -cne 'CURRENT' -or
+        $PreRoleState.civilization_method_attestation.attested -ne $true) {
+        throw 'PRE_ROLE_CURRENT_CIVILIZATION_METHOD_ATTESTATION_REQUIRED'
+    }
+    if ($PreRoleState.fresh_world.currentness -cne 'CURRENT' -or
+        $PreRoleState.fresh_world.verified -ne $true -or
+        $PreRoleState.fresh_world.source_revision -cne $SourceHead) {
+        throw 'PRE_ROLE_FRESH_WORLD_CURRENTNESS_REQUIRED'
+    }
+    $canaries = @($PreRoleState.generic_capability_canaries)
+    if ($canaries.Count -lt 1 -or @($canaries | Where-Object result -cne 'PASS').Count -ne 0) {
+        throw 'PRE_ROLE_GENERIC_CAPABILITY_CANARIES_PASS_REQUIRED'
+    }
+    $receipt = $PreRoleState.ready_unbound_receipt
+    if ($null -eq $receipt -or $receipt.schema -cne 'cerebro-ready-unbound-receipt/v1' -or
+        $receipt.generation_ref -cne $PreRoleState.generation_ref -or
+        $receipt.source_revision -cne $SourceHead -or
+        $receipt.method_fingerprint -cne $method.method_profile.fingerprint -or
+        $receipt.durable -ne $true -or $receipt.post_state_readback_verified -ne $true) {
+        throw 'PRE_ROLE_READY_UNBOUND_RECEIPT_REQUIRED'
+    }
+    return [ordered]@{
+        result='PASS'; lifecycle='READY_UNBOUND'; role=$null; authority='UNBOUND'
+        generation_ref=$PreRoleState.generation_ref; source_head=$SourceHead
+        method_profile_fingerprint=$method.method_profile.fingerprint
+        canary_count=$canaries.Count; ready_unbound_receipt_ref=$receipt.receipt_ref
+        post_state_readback_verified=$true
+    }
+}
+
 function Test-CerebroAwakeningReadback {
     param(
         [Parameter(Mandatory)][string]$Path,

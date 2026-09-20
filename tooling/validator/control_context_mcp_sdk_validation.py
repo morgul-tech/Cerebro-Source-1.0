@@ -286,7 +286,10 @@ def selftest() -> dict[str, Any]:
         )
         listed = _json(list_response)["result"]["tools"]
         tool_by_name = {tool["name"]: tool for tool in listed}
-        for sequence, name in enumerate(("arm_human_t3_break_glass", "confirm_human_t3_break_glass")):
+        for sequence, name in enumerate((
+            "arm_human_t3_break_glass", "confirm_human_t3_break_glass",
+            "create_pre_role_generation", "complete_pre_role_generation", "attach_role_overlay",
+        )):
             descriptor = tool_by_name[name]
             check("HG04-SDK-" + name + "-strict-private-scope", descriptor["inputSchema"]["additionalProperties"] is False
                   and "control_resolution_attestation" in descriptor["inputSchema"]["required"]

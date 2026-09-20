@@ -68,6 +68,8 @@ REQUIRED_POSTGRES_RELATIONS = (
     "cerebro_owner_state_commit_receipts",
     "cerebro_actor_generation_shadow_heads",
     "cerebro_actor_generation_shadow_revisions",
+    "cerebro_pre_role_generation_heads",
+    "cerebro_pre_role_generation_revisions",
     "cerebro_human_t3_break_glass_heads",
     "cerebro_human_t3_break_glass_revisions",
     "cerebro_human_t3_break_glass_receipts",

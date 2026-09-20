@@ -692,6 +692,21 @@ def selftest(root: Path = ROOT, bootengine_path: Path | None = None) -> dict[str
         )) and "MCP-079" in boot_control and "MCP-080" in boot_control,
     )
     check(
+        "P1099-pre-role-ready-unbound-before-role-overlay",
+        all(token in boot_architecture for token in (
+            "role_neutral_generation_birth:", "PRE_ROLE_GENERATION", "READY_UNBOUND",
+            "attach_role_overlay", "EXACTLY_ONE_READY_UNBOUND_GENERATION",
+            "predecessor-live-state", "private-state",
+        ))
+        and all(token in boot_runtime for token in (
+            "function Test-CerebroPreRoleReadyUnbound",
+            "PRE_ROLE_UNBOUND_AUTHORITY_ENVELOPE_REQUIRED",
+            "PRE_ROLE_FRESH_WORLD_ZERO_INHERITANCE_REQUIRED",
+            "PRE_ROLE_CURRENT_CIVILIZATION_METHOD_ATTESTATION_REQUIRED",
+            "PRE_ROLE_READY_UNBOUND_RECEIPT_REQUIRED",
+        )),
+    )
+    check(
         "K157-readback-before-ready-and-complete",
         boot_runtime.index("$runtimeState.runtime.awakening_readback = Test-CerebroAwakeningReadback")
         < boot_runtime.index("$runtimeState.runtime.succession.final_state =")

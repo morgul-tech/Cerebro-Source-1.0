@@ -24,6 +24,7 @@ try:
         bind_control_session,
         bootstrap_project_state,
         validate_actor_generation_shadow,
+        validate_pre_role_generation,
         validate_work_claim_shadow,
         validate_project_state,
         validate_session_state,
@@ -56,6 +57,7 @@ except ImportError:
         bind_control_session,
         bootstrap_project_state,
         validate_actor_generation_shadow,
+        validate_pre_role_generation,
         validate_work_claim_shadow,
         validate_project_state,
         validate_session_state,
@@ -1858,6 +1860,174 @@ class PostgresControlContextStatePort:
                 result = completion
         _require(result is not None, "complete-event-result-missing")
         return result
+
+    def write_pre_role_generation(
+        self,
+        state: dict[str, Any],
+        *,
+        expected_revision: int,
+        principal_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """Persist a role-neutral birth aggregate with CAS and immutable history."""
+
+        self._require_scope(scopes, "project_state:transition")
+        validate_pre_role_generation(state)
+        _require(state["revision"] == expected_revision + 1,
+                 "pre-role-generation-revision-step-invalid", StateConflict)
+        payload = _canonical_text(state)
+        with self._transaction(
+            tenant_ref=state["tenant_ref"], workspace_ref=state["workspace_ref"], principal_ref=principal_ref,
+        ) as cursor:
+            if expected_revision == 0:
+                cursor.execute(
+                    """
+                    INSERT INTO cerebro_pre_role_generation_heads (
+                        tenant_ref, workspace_ref, generation_ref, lifecycle, source_revision,
+                        aggregate_revision, aggregate_fingerprint, generation_payload
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                    ON CONFLICT DO NOTHING
+                    """,
+                    (state["tenant_ref"], state["workspace_ref"], state["generation_ref"],
+                     state["lifecycle"], state["source_revision"], state["revision"],
+                     state["fingerprint"], payload),
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE cerebro_pre_role_generation_heads
+                       SET lifecycle = %s, aggregate_revision = %s,
+                           aggregate_fingerprint = %s, generation_payload = %s::jsonb, updated_at = now()
+                     WHERE tenant_ref = %s AND workspace_ref = %s AND generation_ref = %s
+                       AND aggregate_revision = %s AND source_revision = %s
+                    """,
+                    (state["lifecycle"], state["revision"], state["fingerprint"], payload,
+                     state["tenant_ref"], state["workspace_ref"], state["generation_ref"],
+                     expected_revision, state["source_revision"]),
+                )
+            if cursor.rowcount != 1:
+                raise StateConflict("pre-role-generation-revision-conflict")
+            cursor.execute(
+                """
+                INSERT INTO cerebro_pre_role_generation_revisions (
+                    tenant_ref, workspace_ref, generation_ref, aggregate_revision,
+                    aggregate_fingerprint, generation_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+                """,
+                (state["tenant_ref"], state["workspace_ref"], state["generation_ref"],
+                 state["revision"], state["fingerprint"], payload),
+            )
+        return copy.deepcopy(state)
+
+    def read_pre_role_generation(
+        self, *, tenant_ref: str, workspace_ref: str, generation_ref: str,
+        principal_ref: str, scopes: set[str],
+    ) -> dict[str, Any]:
+        self._require_scope(scopes, "project_state:read")
+        state: dict[str, Any] | None = None
+        with self._transaction(tenant_ref=tenant_ref, workspace_ref=workspace_ref, principal_ref=principal_ref) as cursor:
+            cursor.execute(
+                """
+                SELECT generation_payload FROM cerebro_pre_role_generation_heads
+                 WHERE tenant_ref = %s AND workspace_ref = %s AND generation_ref = %s
+                 FOR SHARE
+                """,
+                (tenant_ref, workspace_ref, generation_ref),
+            )
+            row = _fetchone(cursor)
+            if row is None:
+                raise StateBindingError("pre-role-generation-not-found")
+            value = _json_value(row.get("generation_payload"), field="pre-role-generation-payload")
+            _require(isinstance(value, dict), "pre-role-generation-payload-invalid")
+            state = value
+            validate_pre_role_generation(state)
+        _require(state is not None, "pre-role-generation-not-found", StateBindingError)
+        return copy.deepcopy(state)
+
+    def attach_role_overlay(
+        self,
+        *,
+        pre_role_state: dict[str, Any],
+        actor_generation_state: dict[str, Any],
+        expected_revision: int,
+        principal_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """Atomically consume READY_UNBOUND and create the unchanged actor shadow."""
+
+        self._require_scope(scopes, "project_state:transition")
+        validate_pre_role_generation(pre_role_state)
+        validate_actor_generation_shadow(actor_generation_state)
+        _require(pre_role_state["revision"] == expected_revision + 1,
+                 "pre-role-generation-revision-step-invalid", StateConflict)
+        overlay = pre_role_state["role_overlay"]
+        _require(overlay["actor_ref"] == actor_generation_state["actor_ref"]
+                 and overlay["role"] == actor_generation_state["role"]
+                 and overlay["actor_generation_ref"] == actor_generation_state["generation_ref"],
+                 "pre-role-generation-role-overlay-actor-mismatch", StateBindingError)
+        pre_payload = _canonical_text(pre_role_state)
+        actor_payload = _canonical_text(actor_generation_state)
+        with self._transaction(
+            tenant_ref=pre_role_state["tenant_ref"],
+            workspace_ref=pre_role_state["workspace_ref"],
+            principal_ref=principal_ref,
+        ) as cursor:
+            cursor.execute(
+                """
+                UPDATE cerebro_pre_role_generation_heads
+                   SET lifecycle = 'ROLE_ATTACHED', aggregate_revision = %s,
+                       aggregate_fingerprint = %s, generation_payload = %s::jsonb, updated_at = now()
+                 WHERE tenant_ref = %s AND workspace_ref = %s AND generation_ref = %s
+                   AND aggregate_revision = %s AND lifecycle = 'READY_UNBOUND'
+                """,
+                (pre_role_state["revision"], pre_role_state["fingerprint"], pre_payload,
+                 pre_role_state["tenant_ref"], pre_role_state["workspace_ref"],
+                 pre_role_state["generation_ref"], expected_revision),
+            )
+            if cursor.rowcount != 1:
+                raise StateConflict("pre-role-generation-revision-conflict")
+            cursor.execute(
+                """
+                INSERT INTO cerebro_actor_generation_shadow_heads (
+                    tenant_ref, workspace_ref, actor_ref, actor_role, generation_ref,
+                    lifecycle, source_revision, aggregate_revision, aggregate_fingerprint, shadow_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)
+                ON CONFLICT DO NOTHING
+                """,
+                (actor_generation_state["tenant_ref"], actor_generation_state["workspace_ref"],
+                 actor_generation_state["actor_ref"], actor_generation_state["role"],
+                 actor_generation_state["generation_ref"], actor_generation_state["lifecycle"],
+                 actor_generation_state["source_revision"], actor_generation_state["revision"],
+                 actor_generation_state["fingerprint"], actor_payload),
+            )
+            if cursor.rowcount != 1:
+                raise StateConflict("pre-role-generation-role-overlay-actor-exists")
+            cursor.execute(
+                """
+                INSERT INTO cerebro_pre_role_generation_revisions (
+                    tenant_ref, workspace_ref, generation_ref, aggregate_revision,
+                    aggregate_fingerprint, generation_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+                """,
+                (pre_role_state["tenant_ref"], pre_role_state["workspace_ref"],
+                 pre_role_state["generation_ref"], pre_role_state["revision"],
+                 pre_role_state["fingerprint"], pre_payload),
+            )
+            cursor.execute(
+                """
+                INSERT INTO cerebro_actor_generation_shadow_revisions (
+                    tenant_ref, workspace_ref, actor_role, generation_ref,
+                    aggregate_revision, aggregate_fingerprint, shadow_payload
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s::jsonb)
+                """,
+                (actor_generation_state["tenant_ref"], actor_generation_state["workspace_ref"],
+                 actor_generation_state["role"], actor_generation_state["generation_ref"],
+                 actor_generation_state["revision"], actor_generation_state["fingerprint"], actor_payload),
+            )
+        return {
+            "pre_role_generation": copy.deepcopy(pre_role_state),
+            "actor_generation_shadow": copy.deepcopy(actor_generation_state),
+        }
 
     def write_actor_generation_shadow(
         self,

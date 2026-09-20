@@ -31,9 +31,13 @@ for path in (CONTEXT_TOOLING, VALIDATOR_TOOLING):
 from control_context_state_port import BEGIN_SCHEMA, StateBindingError
 from control_context_registry import (
     ControlContextError,
+    attach_role_overlay as build_role_overlay,
     actor_generation_shadow_fingerprint,
+    bootstrap_pre_role_generation,
+    complete_pre_role_generation,
     principal_continuity_baseline_fingerprint,
     validate_actor_generation_shadow,
+    validate_pre_role_generation,
     validate_principal_continuity_baseline as validate_state_principal_continuity_baseline,
 )
 import project_manager_control_governor
@@ -941,6 +945,103 @@ def tool_definitions() -> list[dict[str, Any]]:
 
     return human_t3_tool_definitions() + [
         {
+            "name": "create_pre_role_generation",
+            "title": "Create pre-role generation",
+            "description": "Create one attested Fresh World generation with no role, claim, scheduler authority or predecessor live state.",
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "generation_ref", "source_revision", "method_ref", "method_version",
+                    "method_fingerprint", "provider_frontier_ref", "provider_revision",
+                    "control_resolution_attestation",
+                ],
+                "properties": {
+                    "generation_ref": {"type": "string", "minLength": 1},
+                    "source_revision": {"type": "string", "minLength": 1},
+                    "method_ref": {"type": "string", "minLength": 1},
+                    "method_version": {"type": "string", "minLength": 1},
+                    "method_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                    "provider_frontier_ref": {"type": "string", "minLength": 1},
+                    "provider_revision": {"type": "integer", "minimum": 0},
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "complete_pre_role_generation",
+            "title": "Complete pre-role generation",
+            "description": "Consume generic birth canaries and emit a durable READY_UNBOUND receipt with exact readback.",
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "generation_ref", "expected_revision", "source_revision",
+                    "generic_capability_canaries", "ready_unbound_receipt_ref",
+                    "control_resolution_attestation",
+                ],
+                "properties": {
+                    "generation_ref": {"type": "string", "minLength": 1},
+                    "expected_revision": {"type": "integer", "minimum": 1},
+                    "source_revision": {"type": "string", "minLength": 1},
+                    "generic_capability_canaries": {
+                        "type": "array", "minItems": 1,
+                        "items": {"type": "object", "additionalProperties": False,
+                                  "required": ["canary_ref", "result", "evidence_ref"],
+                                  "properties": {"canary_ref": {"type": "string", "minLength": 1},
+                                                 "result": {"const": "PASS"},
+                                                 "evidence_ref": {"type": "string", "minLength": 1}}},
+                    },
+                    "ready_unbound_receipt_ref": {"type": "string", "minLength": 1},
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "ready_unbound_receipt", "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "ready_unbound_receipt": {"type": "object"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "attach_role_overlay",
+            "title": "Attach role overlay",
+            "description": "Consume exactly one READY_UNBOUND generation and atomically create the existing role-specific actor-generation shadow.",
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+                    "actor_generation_ref", "source_revision", "control_resolution_attestation",
+                ],
+                "properties": {
+                    "generation_ref": {"type": "string", "minLength": 1},
+                    "expected_revision": {"type": "integer", "minimum": 1},
+                    "overlay_ref": {"type": "string", "minLength": 1},
+                    "actor_ref": {"type": "string", "minLength": 1},
+                    "role": {"enum": sorted(ContextLifecycleEffectAdapter._ROLES)},
+                    "actor_generation_ref": {"type": "string", "minLength": 1},
+                    "source_revision": {"type": "string", "minLength": 1},
+                    "principal_continuity_baseline": {"type": "object"},
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "actor_generation_shadow", "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "actor_generation_shadow": {"type": "object"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
             "name": "read_project_control_state",
             "title": "Read project control state",
             "description": "Use this when the user needs the authenticated workspace's current project-control snapshot.",
@@ -1175,6 +1276,9 @@ class ControlContextMcpTools:
 
     def dispatch(self, tool_name: str, args: Any, context: McpToolCallContext) -> dict[str, Any]:
         handlers = {
+            "create_pre_role_generation": self.create_pre_role_generation,
+            "complete_pre_role_generation": self.complete_pre_role_generation,
+            "attach_role_overlay": self.attach_role_overlay,
             "read_project_control_state": self.read_project_control_state,
             "begin_project_control_event": self.begin_project_control_event,
             "complete_project_control_event": self.complete_project_control_event,
@@ -1186,6 +1290,166 @@ class ControlContextMcpTools:
         if tool_name not in handlers:
             raise ControlContextToolError(f"unknown-control-context-tool:{tool_name}")
         return handlers[tool_name](_require_args(args), context)
+
+    def _attested_payload(
+        self, operation: str, args: dict[str, Any], context: McpToolCallContext,
+    ) -> tuple[VerifiedMcpIdentity, dict[str, Any]]:
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        payload = {key: copy.deepcopy(value) for key, value in args.items()
+                   if key != "control_resolution_attestation"}
+        self._resolution_attestation_verifier.verify(
+            operation=operation,
+            payload=payload,
+            attestation=args.get("control_resolution_attestation"),
+            context=context,
+        )
+        return identity, payload
+
+    def _read_pre_role(
+        self, identity: VerifiedMcpIdentity, context: McpToolCallContext, generation_ref: str,
+    ) -> dict[str, Any]:
+        state = self._pre_role_state_call(
+            "read_pre_role_generation",
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            generation_ref=generation_ref,
+            principal_ref=identity.principal_ref,
+            scopes={"project_state:read"},
+        )
+        validate_pre_role_generation(state)
+        return state
+
+    def _pre_role_state_call(self, method: str, **kwargs: Any) -> Any:
+        target = getattr(self._state_port, method, None)
+        if not callable(target):
+            raise ControlContextToolError(f"pre-role-state-port-method-required:{method}")
+        parameters = inspect.signature(target).parameters
+        return target(**{key: value for key, value in kwargs.items() if key in parameters})
+
+    def create_pre_role_generation(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity, payload = self._attested_payload("create_pre_role_generation", args, context)
+        required = {
+            "generation_ref", "source_revision", "method_ref", "method_version", "method_fingerprint",
+            "provider_frontier_ref", "provider_revision",
+        }
+        if set(payload) != required:
+            raise ControlContextToolError("create-pre-role-generation-exact-fields-required")
+        state = bootstrap_pre_role_generation(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            generation_ref=_require_text(payload, "generation_ref"),
+            source_revision=_require_text(payload, "source_revision"),
+            method_ref=_require_text(payload, "method_ref"),
+            method_version=_require_text(payload, "method_version"),
+            method_fingerprint=_require_text(payload, "method_fingerprint"),
+            provider_frontier_ref=_require_text(payload, "provider_frontier_ref"),
+            provider_revision=payload.get("provider_revision"),
+        )
+        written = self._pre_role_state_call(
+            "write_pre_role_generation",
+            state=state,
+            expected_revision=0,
+            principal_ref=identity.principal_ref,
+            scopes={"project_state:transition"},
+        )
+        readback = self._read_pre_role(identity, context, state["generation_ref"])
+        if readback != written:
+            raise ControlContextToolError("pre-role-generation-create-readback-mismatch")
+        return self._result({"pre_role_generation": readback,
+                             "repository_permission_required": False}, context)
+
+    def complete_pre_role_generation(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity, payload = self._attested_payload("complete_pre_role_generation", args, context)
+        required = {
+            "generation_ref", "expected_revision", "source_revision", "generic_capability_canaries",
+            "ready_unbound_receipt_ref",
+        }
+        if set(payload) != required:
+            raise ControlContextToolError("complete-pre-role-generation-exact-fields-required")
+        generation_ref = _require_text(payload, "generation_ref")
+        current = self._read_pre_role(identity, context, generation_ref)
+        expected_revision = payload.get("expected_revision")
+        if type(expected_revision) is not int or current["revision"] != expected_revision:
+            raise ControlContextToolError("pre-role-generation-expected-revision-mismatch")
+        canaries = payload.get("generic_capability_canaries")
+        if not isinstance(canaries, list):
+            raise ControlContextToolError("pre-role-generation-generic-capability-canaries-required")
+        candidate = complete_pre_role_generation(
+            current,
+            source_revision=_require_text(payload, "source_revision"),
+            generic_capability_canaries=canaries,
+            receipt_ref=_require_text(payload, "ready_unbound_receipt_ref"),
+        )
+        written = self._pre_role_state_call(
+            "write_pre_role_generation",
+            state=candidate,
+            expected_revision=expected_revision,
+            principal_ref=identity.principal_ref,
+            scopes={"project_state:transition"},
+        )
+        readback = self._read_pre_role(identity, context, generation_ref)
+        if readback != written or readback["lifecycle"] != "READY_UNBOUND":
+            raise ControlContextToolError("pre-role-generation-ready-unbound-readback-mismatch")
+        return self._result({
+            "pre_role_generation": readback,
+            "ready_unbound_receipt": readback["ready_unbound_receipt"],
+            "repository_permission_required": False,
+        }, context)
+
+    def attach_role_overlay(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity, payload = self._attested_payload("attach_role_overlay", args, context)
+        required = {
+            "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+            "actor_generation_ref", "source_revision",
+        }
+        allowed = required | {"principal_continuity_baseline"}
+        if not required.issubset(payload) or set(payload).difference(allowed):
+            raise ControlContextToolError("attach-role-overlay-exact-fields-required")
+        generation_ref = _require_text(payload, "generation_ref")
+        current = self._read_pre_role(identity, context, generation_ref)
+        expected_revision = payload.get("expected_revision")
+        if type(expected_revision) is not int or current["revision"] != expected_revision:
+            raise ControlContextToolError("pre-role-generation-expected-revision-mismatch")
+        pre_role_after, actor_after = build_role_overlay(
+            current,
+            overlay_ref=_require_text(payload, "overlay_ref"),
+            actor_ref=_require_text(payload, "actor_ref"),
+            role=_require_text(payload, "role"),
+            actor_generation_ref=_require_text(payload, "actor_generation_ref"),
+            source_revision=_require_text(payload, "source_revision"),
+            principal_continuity_baseline=copy.deepcopy(payload.get("principal_continuity_baseline")),
+        )
+        committed = self._pre_role_state_call(
+            "attach_role_overlay",
+            pre_role_state=pre_role_after,
+            actor_generation_state=actor_after,
+            expected_revision=expected_revision,
+            principal_ref=identity.principal_ref,
+            scopes={"project_state:transition"},
+        )
+        pre_readback = self._read_pre_role(identity, context, generation_ref)
+        actor_readback = self._pre_role_state_call(
+            "read_actor_generation_shadow",
+            tenant_ref=identity.tenant_ref, workspace_ref=identity.workspace_ref,
+            role=actor_after["role"], generation_ref=actor_after["generation_ref"],
+            principal_ref=identity.principal_ref, scopes={"project_state:read"},
+        )
+        if (pre_readback != committed["pre_role_generation"]
+                or actor_readback != committed["actor_generation_shadow"]):
+            raise ControlContextToolError("pre-role-generation-role-overlay-readback-mismatch")
+        return self._result({
+            "pre_role_generation": pre_readback,
+            "actor_generation_shadow": actor_readback,
+            "repository_permission_required": False,
+        }, context)
 
     def _human_t3(self, operation: str, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         identity = self._identity(context)
