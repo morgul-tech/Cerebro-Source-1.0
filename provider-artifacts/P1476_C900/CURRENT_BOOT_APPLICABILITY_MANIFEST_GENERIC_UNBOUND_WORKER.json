@@ -1,0 +1,4002 @@
+{
+  "schema": "cerebro.boot.current-applicability-manifest/v0.1-candidate",
+  "candidate_id": "P1476_C900_GENERIC_UNBOUND_WORKER_STEP03",
+  "effect": "NONE_ISOLATED_CANDIDATE",
+  "provider_binding": {
+    "spreadsheet_id": "1mXgu5OcezcQrb-Uz1cdCtp_ZeBuo3m5fukZgArqugmI",
+    "sheet": "PRE_SOURCE_OVERLAY",
+    "range": "A1:K231",
+    "frontier_row": 231,
+    "snapshot_sha256": "313e55dbfb92eca3f66456167e10d78cf039b1dee54848bd77036cc2fb2376e0",
+    "data_rows": 165
+  },
+  "boot_full_binding": {
+    "provider_id": "1ImzuaW0XL444L31wpLx5YYGwX6BNXYUIRZ_A-YV387U",
+    "version": "1.9",
+    "sha256": "11915cc2e3bd0cb3ea54d0d47995ccf1ad90068767b91de77d40d517ea82dd12",
+    "step03": "LOAD_CURRENT_PRE_SOURCE_OVERLAY_AND_CONSUME_ALL_ACTIVE_APPLICABLE_ROWS",
+    "step03_extra_receipt_required": false
+  },
+  "context": {
+    "profile_requested": "WORKER",
+    "profile_effective": "NONE",
+    "workform": "GENERIC",
+    "role_requested": "WORKER",
+    "bound": false,
+    "project": "NONE",
+    "assignment": "NONE",
+    "claim_created": false,
+    "boot_phase": "STEP_03",
+    "selector_tags": [
+      "ALL_CEREBRO_BOOTS",
+      "ALL_CEREBRO_SESSIONS",
+      "ALL_CEREBRO_WORKFORCE_BOOTS",
+      "BOOT",
+      "WORKER",
+      "WORKER_BOOT"
+    ]
+  },
+  "classification_contract": {
+    "active_rule": "STATE starts with ACTIVE_",
+    "applicability_rule": "ACTIVE row APPLIES_TO token intersects selector_tags",
+    "missing_applies_to": "UNKNOWN_FAIL_CLOSED",
+    "non_active_rule": "EXCLUDED_HISTORICAL",
+    "active_supersession_rule": "retain ACTIVE row; record supersedes metadata; do not silently delete another ACTIVE row",
+    "withdrawn_gate": "PM8469: separate canonical manifest-consumer receipt is NOT a mandatory BootFull STEP03 gate"
+  },
+  "counts": {
+    "APPLICABLE": 106,
+    "NOT_APPLICABLE": 51,
+    "UNKNOWN": 0,
+    "EXCLUDED_HISTORICAL": 8
+  },
+  "applicable_ids": [
+    "PSO-GLOBAL-001",
+    "PSO-GLOBAL-003",
+    "PSO-GLOBAL-004",
+    "PSO-BOOT-001",
+    "PSO-PIPE-001",
+    "PSO-PIPE-002",
+    "PSO-PIPE-003",
+    "PSO-PIPE-004",
+    "PSO-PIPE-007",
+    "PSO-ADMIN-001",
+    "PSO-ADMIN-002",
+    "PSO-ADMIN-003",
+    "PSO-ADMIN-004",
+    "PSO-ADMIN-006",
+    "PSO-ADMIN-007",
+    "PSO-BOOT-002",
+    "PSO-BOOT-003",
+    "PSO-BOOT-004",
+    "PSO-BOOT-005",
+    "PSO-BOOT-006",
+    "PSO-EVIDENCE-001",
+    "PSO-DRIVE-ARTIFACT-001",
+    "PSO-ENDPOINT-AVAILABILITY-001",
+    "PSO-EXEC-UX-001",
+    "PSO-EXEC-ENTRYPOINT-001",
+    "PSO-BOOTSTRAP-SINGLE-OBJECT-001",
+    "PSO-PM-WORKER-NAMING-001",
+    "PSO-ADMIN-HMI-CLARITY-001",
+    "PSO-WORKER-CONTROL-SURFACE-001",
+    "PSO-ADMIN-ACTOR-NAMESPACE-001",
+    "PSO-ADMIN-ACTOR-SLOT-GENERATION-001",
+    "PSO-PM-READY-CAPACITY-FIRST-001",
+    "PSO-GLOBAL-LANGUAGE-001",
+    "PSO-ADMIN-ACTOR-ROSTER-004",
+    "PSO-ADMIN-HMI-SLOT-IDENTITY-001",
+    "PSO-ADMIN-REFRESH-POOL-001",
+    "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001",
+    "PSO-ADMIN-ASSISTANT-BOOT-001",
+    "PSO-ADMIN-CORRECT-AND-REPORT-001",
+    "PSO-ADMIN-WORKER-REPORT-TO-PM-ALWAYS-001",
+    "PSO-ADMIN-CORRECT-AND-REPORT-PM-EXTENSION-001",
+    "PSO-ADMIN-CONFIRM-PROFILE-001",
+    "PSO-ADMIN-ASSISTANT-BOOT-002",
+    "PSO-PM-PREASSIGNMENT-001",
+    "PSO-WORKER-FINDING-ESCALATION-001",
+    "PSO-FINDING-INBOX-TRIAGE-001",
+    "PSO-PM-CURRENT-GENERATION-POINTER-001",
+    "PSO-ITERATION-VALUE-001",
+    "PSO-ADMIN-CONFIRM-PROFILE-002",
+    "PSO-SHARED-TO-SOURCE-PROMOTION-001",
+    "PSO-ACTOR-CONTACT-DRAIN-001",
+    "PSO-ADMIN-ACTOR-ROSTER-007",
+    "PSO-SINGLE-HUMAN-START-001",
+    "PSO-ADMIN-PREAUTHORIZED-EXECUTION-001",
+    "PSO-ADMIN-HUMAN-ACTION-REQUIRED-SURFACE-001",
+    "PSO-HUMAN-AUTHORITY-MODEL-001",
+    "PSO-ACTOR-INPUT-MODE-001",
+    "PSO-CEREBRO-STRUCTURAL-HYGIENE-001",
+    "PSO-CEREBRO-HYGIENE-CONTROL-ROOM-001",
+    "PSO-CEREBRO-COHERENCE-FIELD-001",
+    "PSO-ADMIN-CONTEXTUAL-START-001",
+    "PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001",
+    "PSO-ADMIN-CHATGPT-HMI-PERSISTENT-NEXT-G19-001",
+    "PSO-ADMIN-PM-INACCESSIBLE-SESSION-FENCE-001",
+    "PSO-ADMIN-W5-WORKER-ALIAS-UNBLOCK-001",
+    "PSO-ADMIN-WORKFORCE-LANE-TOPOLOGY-001",
+    "PSO-ADMIN-HUMAN-HANDLE-NAMESPACE-001",
+    "PSO-ADMIN-HMI-SEQUENTIAL-HUMAN-HANDLES-001",
+    "PSO-ADMIN-PM-ADAPTIVE-REFRESH-ORCHESTRATION-001",
+    "PSO-BOOT-007",
+    "PSO-HUMAN-VISUAL-RENDER-GATE-001",
+    "PSO-HUMAN-LOCAL-CONTRACT-OVER-GENERIC-ACTION-ATTRACTOR-001",
+    "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001",
+    "PSO-ADMIN-WORKER-POOL-SORT-001",
+    "PSO-ADMIN-PERMANENCE-DISCLOSURE-001",
+    "PSO-ADMIN-ACTOR-AVAILABILITY-LIVENESS-VISIBILITY-001",
+    "PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001",
+    "PSO-ADMIN-CEREBRO-HOLISTIC-COLOR-UX-001",
+    "PSO-ACTOR-ACTIVE-START-EXECUTION-DRAIN-001",
+    "PSO-BLIND-WORK-RETRIEVAL-ISOLATION-001",
+    "PSO-ADMIN-HMI-STOPPED-RETIRED-COLOR-SEPARATION-001",
+    "PSO-IMMUNFORSVAR-DOCTOR-LEGACY-ISOLATION-001",
+    "PSO-ACTOR-ADAPTIVE-OPEN-LINE-001",
+    "PSO-ADMIN-STT-SWEDISH-CATASTROPHIC-NOISE-FAILSTOP-001",
+    "PSO-HUMAN-HMI-BIRTH-KERNEL-001",
+    "PSO-HUMAN-ACTOR-SEMANTIC-PROJECTION-001",
+    "PSO-HUMAN-ACTOR-LIFECOLOR-GLYPH-V2-001",
+    "PSO-HUMAN-GEN-GLYPH-V2-BROWSER-CURRENT-CARRIER-001",
+    "PSO-HUMAN-CORE-APERTURE-GLYPH-CURRENT-CARRIER-001",
+    "PSO-HMI-REFRESH-TWO-GATE-CONSISTENCY-001",
+    "PSO-CEREBRO-WINDOWS-HOST-IDENTITY-INVARIANT-001",
+    "PSO-BOOT-008",
+    "PSO-HUMAN-GENERATION-ROLE-PREFIX-WRL-001",
+    "PSO-PM-FACTORY-OVERVIEW-HMI-001",
+    "PSO-PBOX88-DOOR-BEFORE-WALL-LIVING-PATCH-V0.1-001",
+    "PSO-NERVE-TRANSPORT-PREFLIGHT-LIVING-PATCH-V0.1.1-001",
+    "PSO-HUMAN-HMI-WORKING-SOURCE-ROLE-SURFACE-SEPARATION-001",
+    "PSO-PM-FACTORY-OVERVIEW-HMI-V2-HUMAN-ITERATION-001",
+    "PSO-HUMAN-HMI-GENERATION-SHORT-LOCATOR-X4-001",
+    "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-PIPELINE-001",
+    "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-CLOSURE-001",
+    "PSO-HUMAN-ADMIN-HA-SHORTFORM-001",
+    "PSO-WAVE1-4-HMI-HUMAN-INPUT-COMPRESSION-001",
+    "PSO-PROTO-WORKSHAPING-DELEGATION-LIGHT-PROTECTION-001",
+    "PSO-WAVE1-4-HMI-COPYABLE-COMMAND-BUTTON-001",
+    "PSO-GLOBAL-HUMAN-ACTION-SPARSE-INTERRUPT-ADMINPULSE-NON-EVIDENTIARY-001"
+  ],
+  "candidate_consumed_ids": [
+    "PSO-GLOBAL-001",
+    "PSO-GLOBAL-003",
+    "PSO-GLOBAL-004",
+    "PSO-BOOT-001",
+    "PSO-PIPE-001",
+    "PSO-PIPE-002",
+    "PSO-PIPE-003",
+    "PSO-PIPE-004",
+    "PSO-PIPE-007",
+    "PSO-ADMIN-001",
+    "PSO-ADMIN-002",
+    "PSO-ADMIN-003",
+    "PSO-ADMIN-004",
+    "PSO-ADMIN-006",
+    "PSO-ADMIN-007",
+    "PSO-BOOT-002",
+    "PSO-BOOT-003",
+    "PSO-BOOT-004",
+    "PSO-BOOT-005",
+    "PSO-BOOT-006",
+    "PSO-EVIDENCE-001",
+    "PSO-DRIVE-ARTIFACT-001",
+    "PSO-ENDPOINT-AVAILABILITY-001",
+    "PSO-EXEC-UX-001",
+    "PSO-EXEC-ENTRYPOINT-001",
+    "PSO-BOOTSTRAP-SINGLE-OBJECT-001",
+    "PSO-PM-WORKER-NAMING-001",
+    "PSO-ADMIN-HMI-CLARITY-001",
+    "PSO-WORKER-CONTROL-SURFACE-001",
+    "PSO-ADMIN-ACTOR-NAMESPACE-001",
+    "PSO-ADMIN-ACTOR-SLOT-GENERATION-001",
+    "PSO-PM-READY-CAPACITY-FIRST-001",
+    "PSO-GLOBAL-LANGUAGE-001",
+    "PSO-ADMIN-ACTOR-ROSTER-004",
+    "PSO-ADMIN-HMI-SLOT-IDENTITY-001",
+    "PSO-ADMIN-REFRESH-POOL-001",
+    "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001",
+    "PSO-ADMIN-ASSISTANT-BOOT-001",
+    "PSO-ADMIN-CORRECT-AND-REPORT-001",
+    "PSO-ADMIN-WORKER-REPORT-TO-PM-ALWAYS-001",
+    "PSO-ADMIN-CORRECT-AND-REPORT-PM-EXTENSION-001",
+    "PSO-ADMIN-CONFIRM-PROFILE-001",
+    "PSO-ADMIN-ASSISTANT-BOOT-002",
+    "PSO-PM-PREASSIGNMENT-001",
+    "PSO-WORKER-FINDING-ESCALATION-001",
+    "PSO-FINDING-INBOX-TRIAGE-001",
+    "PSO-PM-CURRENT-GENERATION-POINTER-001",
+    "PSO-ITERATION-VALUE-001",
+    "PSO-ADMIN-CONFIRM-PROFILE-002",
+    "PSO-SHARED-TO-SOURCE-PROMOTION-001",
+    "PSO-ACTOR-CONTACT-DRAIN-001",
+    "PSO-ADMIN-ACTOR-ROSTER-007",
+    "PSO-SINGLE-HUMAN-START-001",
+    "PSO-ADMIN-PREAUTHORIZED-EXECUTION-001",
+    "PSO-ADMIN-HUMAN-ACTION-REQUIRED-SURFACE-001",
+    "PSO-HUMAN-AUTHORITY-MODEL-001",
+    "PSO-ACTOR-INPUT-MODE-001",
+    "PSO-CEREBRO-STRUCTURAL-HYGIENE-001",
+    "PSO-CEREBRO-HYGIENE-CONTROL-ROOM-001",
+    "PSO-CEREBRO-COHERENCE-FIELD-001",
+    "PSO-ADMIN-CONTEXTUAL-START-001",
+    "PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001",
+    "PSO-ADMIN-CHATGPT-HMI-PERSISTENT-NEXT-G19-001",
+    "PSO-ADMIN-PM-INACCESSIBLE-SESSION-FENCE-001",
+    "PSO-ADMIN-W5-WORKER-ALIAS-UNBLOCK-001",
+    "PSO-ADMIN-WORKFORCE-LANE-TOPOLOGY-001",
+    "PSO-ADMIN-HUMAN-HANDLE-NAMESPACE-001",
+    "PSO-ADMIN-HMI-SEQUENTIAL-HUMAN-HANDLES-001",
+    "PSO-ADMIN-PM-ADAPTIVE-REFRESH-ORCHESTRATION-001",
+    "PSO-BOOT-007",
+    "PSO-HUMAN-VISUAL-RENDER-GATE-001",
+    "PSO-HUMAN-LOCAL-CONTRACT-OVER-GENERIC-ACTION-ATTRACTOR-001",
+    "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001",
+    "PSO-ADMIN-WORKER-POOL-SORT-001",
+    "PSO-ADMIN-PERMANENCE-DISCLOSURE-001",
+    "PSO-ADMIN-ACTOR-AVAILABILITY-LIVENESS-VISIBILITY-001",
+    "PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001",
+    "PSO-ADMIN-CEREBRO-HOLISTIC-COLOR-UX-001",
+    "PSO-ACTOR-ACTIVE-START-EXECUTION-DRAIN-001",
+    "PSO-BLIND-WORK-RETRIEVAL-ISOLATION-001",
+    "PSO-ADMIN-HMI-STOPPED-RETIRED-COLOR-SEPARATION-001",
+    "PSO-IMMUNFORSVAR-DOCTOR-LEGACY-ISOLATION-001",
+    "PSO-ACTOR-ADAPTIVE-OPEN-LINE-001",
+    "PSO-ADMIN-STT-SWEDISH-CATASTROPHIC-NOISE-FAILSTOP-001",
+    "PSO-HUMAN-HMI-BIRTH-KERNEL-001",
+    "PSO-HUMAN-ACTOR-SEMANTIC-PROJECTION-001",
+    "PSO-HUMAN-ACTOR-LIFECOLOR-GLYPH-V2-001",
+    "PSO-HUMAN-GEN-GLYPH-V2-BROWSER-CURRENT-CARRIER-001",
+    "PSO-HUMAN-CORE-APERTURE-GLYPH-CURRENT-CARRIER-001",
+    "PSO-HMI-REFRESH-TWO-GATE-CONSISTENCY-001",
+    "PSO-CEREBRO-WINDOWS-HOST-IDENTITY-INVARIANT-001",
+    "PSO-BOOT-008",
+    "PSO-HUMAN-GENERATION-ROLE-PREFIX-WRL-001",
+    "PSO-PM-FACTORY-OVERVIEW-HMI-001",
+    "PSO-PBOX88-DOOR-BEFORE-WALL-LIVING-PATCH-V0.1-001",
+    "PSO-NERVE-TRANSPORT-PREFLIGHT-LIVING-PATCH-V0.1.1-001",
+    "PSO-HUMAN-HMI-WORKING-SOURCE-ROLE-SURFACE-SEPARATION-001",
+    "PSO-PM-FACTORY-OVERVIEW-HMI-V2-HUMAN-ITERATION-001",
+    "PSO-HUMAN-HMI-GENERATION-SHORT-LOCATOR-X4-001",
+    "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-PIPELINE-001",
+    "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-CLOSURE-001",
+    "PSO-HUMAN-ADMIN-HA-SHORTFORM-001",
+    "PSO-WAVE1-4-HMI-HUMAN-INPUT-COMPRESSION-001",
+    "PSO-PROTO-WORKSHAPING-DELEGATION-LIGHT-PROTECTION-001",
+    "PSO-WAVE1-4-HMI-COPYABLE-COMMAND-BUTTON-001",
+    "PSO-GLOBAL-HUMAN-ACTION-SPARSE-INTERRUPT-ADMINPULSE-NON-EVIDENTIARY-001"
+  ],
+  "rows": [
+    {
+      "provider_row": 2,
+      "overlay_id": "PSO-GLOBAL-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "219",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "4862e0a4a0c8e1a18811028bbbffcdedfb6583023345b0550b40d83e271c11b5"
+    },
+    {
+      "provider_row": 3,
+      "overlay_id": "PSO-GLOBAL-002",
+      "state": "RETIRED_BY_HUMAN_POST_IMMUNE",
+      "effective_from_shared_revision": "219",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_SOURCE_MUTATION_WORK"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "522befa127922991042dc992146a538eb2c6a38c6e7095ebc25c08712c82a638"
+    },
+    {
+      "provider_row": 4,
+      "overlay_id": "PSO-GLOBAL-003",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "219",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "2dda6acbbf3964ed00904a4230a62116b77f9fda41e0e427fe309d88db02a555"
+    },
+    {
+      "provider_row": 5,
+      "overlay_id": "PSO-GLOBAL-004",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "219",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "fc67a8a9b54846246c6feeaa81c398f82bd09954f28f6622edba9f8d999afe7d"
+    },
+    {
+      "provider_row": 6,
+      "overlay_id": "PSO-PM-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "219",
+      "applies_to": [
+        "PROJECT_MANAGER"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "7794c90873f98f901703d07871d896f11281f8fda36c79a96d3aeec33a85bca8"
+    },
+    {
+      "provider_row": 7,
+      "overlay_id": "PSO-PM-002",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "219",
+      "applies_to": [
+        "PROJECT_MANAGER"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "5c8f4533038ee8059b3ce5494679870e47eb3ae009475ed713e28429d8cee35f"
+    },
+    {
+      "provider_row": 8,
+      "overlay_id": "PSO-BOOT-001",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_BOOTS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "a28b7629d2fcd33a4f77f4b432b9d8dc5101471c6573e5c62f6601b4d3608a86"
+    },
+    {
+      "provider_row": 9,
+      "overlay_id": "PSO-PIPE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "DOCTOR_ORCH_PIPELINE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "303a858c6d7105dd2b30c22e4c9e628ecbe170391d3e19cc105ca5c1c1a4e35c"
+    },
+    {
+      "provider_row": 10,
+      "overlay_id": "PSO-PIPE-002",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "DOCTOR_INTEGRATOR"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "0b08fcd1e88fe36124d99841934bc7bd034501ae7642ef8db0e77618be6ce7ba"
+    },
+    {
+      "provider_row": 11,
+      "overlay_id": "PSO-PIPE-003",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "DOCTOR_ORCH_PIPELINE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "78789f2e0d74d123eb5a01fe27c0ef4ca979c82c6192ccdde06710dc6454dd76"
+    },
+    {
+      "provider_row": 12,
+      "overlay_id": "PSO-PIPE-004",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "WORKER",
+        "PROJECT_MANAGER",
+        "DOCTOR_ORCH_PIPELINE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "adea47ec04bd8b85ff8bbdb8d8adc014a5e925d538fe249a79785cc5fdc43e5c"
+    },
+    {
+      "provider_row": 13,
+      "overlay_id": "PSO-PIPE-005",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "DOCTOR_INTEGRATOR",
+        "DOCTOR_ORCH_PIPELINE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "dca44ba1338e6b524b37ca1fc518ab3fd8a6a656c85356509a417ee7cb69a3c9"
+    },
+    {
+      "provider_row": 14,
+      "overlay_id": "PSO-PIPE-006",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "DOCTOR_ORCH_PIPELINE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "1224d85952ffa4a9b4bf6855cd89da361a5b86eed76e593d3b90298b53392554"
+    },
+    {
+      "provider_row": 15,
+      "overlay_id": "PSO-PIPE-007",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR_ORCH_PIPELINE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "9b2f543aa5c5b6b13120f9ebee1320d296b34d8f22ffef615055f267ed23b782"
+    },
+    {
+      "provider_row": 16,
+      "overlay_id": "PSO-PM-003",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "220",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "SHARED_MUTATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "baf639cd8721b90d225eb7de186b5381c96f444fe58a13d320fd56e99a4fa8de"
+    },
+    {
+      "provider_row": 17,
+      "overlay_id": "PSO-ADMIN-001",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "223",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "ADMIN_CONTROL",
+        "IMPLEMENTER",
+        "ALL_WORKER_PIPELINES"
+      ],
+      "supersedes_raw": "PSO-ADMIN-001@REV222_SEMANTICS",
+      "supersedes_ids": [
+        "PSO-ADMIN-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "31aabf349a455b6ab2764129695b712d7d52323a123b66d1e0b945b60e1b273f"
+    },
+    {
+      "provider_row": 18,
+      "overlay_id": "PSO-ADMIN-002",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "223",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "READY_QUEUE",
+        "HANDOFF",
+        "CLAIM_PIPELINE",
+        "RECOVERY_REVIEW_WORKER"
+      ],
+      "supersedes_raw": "PSO-ADMIN-002@REV222_SEMANTICS",
+      "supersedes_ids": [
+        "PSO-ADMIN-002"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "b228cb6fe6a1f2d5a2602ab740a6153321bc0892b1b9cf8c82f0fc4061066cf1"
+    },
+    {
+      "provider_row": 19,
+      "overlay_id": "PSO-ADMIN-003",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "223",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "ADMIN_CONTROL",
+        "WORK_CLAIMS",
+        "IMPLEMENTER"
+      ],
+      "supersedes_raw": "PSO-ADMIN-003@REV222_SEMANTICS",
+      "supersedes_ids": [
+        "PSO-ADMIN-003"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "0396c648664febb8fb392dbc8d8ee78f659847e630ed3b59eeee404c19275a3e"
+    },
+    {
+      "provider_row": 20,
+      "overlay_id": "PSO-PM-004",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "222",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "WORKER_PIPELINES",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "09b025b3f3ca44dc467e215dd7bd8017db629f8be8ca368ca8d294307e1b9559"
+    },
+    {
+      "provider_row": 21,
+      "overlay_id": "PSO-ADMIN-004",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "223",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "WORKER",
+        "IMPLEMENTER",
+        "HANDOFF",
+        "LEARNING_REGISTRY",
+        "READY_QUEUE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "76b4311e4f67d41410f35a04c7491ce2e7e98871e11abfb205440099c88fc198"
+    },
+    {
+      "provider_row": 22,
+      "overlay_id": "PSO-ADMIN-005",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "223",
+      "applies_to": [
+        "IMPLEMENTER",
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "SOURCE_MUTATION",
+        "DELIVERY",
+        "CEREBRO_SYNC"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "4ec6d3897eb0b6ff28af46d95ed9fc9690818f4b670a91d7154c493065886292"
+    },
+    {
+      "provider_row": 24,
+      "overlay_id": "PSO-ADMIN-006",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "224",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "ADMIN_CONTROL",
+        "WORK_CLAIMS",
+        "CONTEXT_STATE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "d7e1590c8052bf55ee8572700b104f51bf7f9132930bb8e085df93a088b5a713"
+    },
+    {
+      "provider_row": 25,
+      "overlay_id": "PSO-ADMIN-007",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "224",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "HANDOFF",
+        "READY_QUEUE",
+        "LEARNING_REGISTRY",
+        "DOCTOR_INTEGRATOR",
+        "MATERIAL_GATE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "0b7d55aa4718e3cb9a363eb30e3dfa03d054e5ccc33364cb9bfef7974a37d459"
+    },
+    {
+      "provider_row": 26,
+      "overlay_id": "PSO-PM-005",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "229",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "SHARED_MUTATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "011f94b271b6b3c462a3aecc9d61f2830ea50afa509ccb4b904b82696cd4d2d3"
+    },
+    {
+      "provider_row": 27,
+      "overlay_id": "PSO-PM-006",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "230",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "HUMAN_CONTINUATION",
+        "DOCTOR_ORCH_PIPELINE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "dfaa0fc4809725dfe105620166aef190f63c10e02c6ca48f160d73f1ecb0a574"
+    },
+    {
+      "provider_row": 28,
+      "overlay_id": "PSO-BOOT-002",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "233",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "62a206d2609c8b6ea739b5496bb3cda9c7175085e5ffb6bcb14f9aa6f5e02970"
+    },
+    {
+      "provider_row": 29,
+      "overlay_id": "PSO-BOOT-003",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "234",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_BOOTS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "2ec4e45c13474f3c7b44f4b2aec09d73de9a825281df4a1f1f498e8afca115fd"
+    },
+    {
+      "provider_row": 30,
+      "overlay_id": "PSO-BOOT-004",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "235",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_BOOTS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "f053bd0466c44ed3ed5633d93e3ca6bdbb456ac16fa89a8fea9832796c5bfe59"
+    },
+    {
+      "provider_row": 31,
+      "overlay_id": "PSO-BOOT-005",
+      "state": "ACTIVE_FAIL_CLOSED",
+      "effective_from_shared_revision": "236",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_BOOTS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "6fc8d1401ec87b999ada9a850481d208d90823c90316494edbcc0ca9b30ba8da"
+    },
+    {
+      "provider_row": 32,
+      "overlay_id": "PSO-PM-007",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "236",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "HUMAN_CONTINUATION",
+        "MULTI_BRANCH_PROJECT_CONTEXT"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "3b5db2e4bcf0e61f9beccbe00f96967d9d125530268a2dc039ea529a791e23ed"
+    },
+    {
+      "provider_row": 33,
+      "overlay_id": "PSO-ADMINNOTE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "236",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "ALL_CEREBRO_SESSIONS_WHEN_EXPLICIT_ADMINNOTE_INTENT"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "32a9921e83ee1d9dc15aa8c1a406bfb863c7fdadb54b58c1697346c1580b9b1d"
+    },
+    {
+      "provider_row": 34,
+      "overlay_id": "PSO-BOOT-006",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "242",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_BOOTS",
+        "HUMAN_BOOT_SURFACE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "477b0477f50fd63cb2badecfa044d9066d8c4e01c581a7dc465516726e260c22"
+    },
+    {
+      "provider_row": 35,
+      "overlay_id": "PSO-BOOTSTRAP-001",
+      "state": "RETIRED_POST_IMMUNE_FIRST_ACTIVATION_LEGACY_ONLY",
+      "effective_from_shared_revision": "243",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "BOOTSTRAP_RECOVERY_ANCHOR",
+        "DOCTOR_BOOTSTRAP_IMPLEMENTATION"
+      ],
+      "supersedes_raw": "PSO-GLOBAL-002 ONLY FOR EXACT BOOT23_ASSURANCE_KERNEL_BOOTSTRAP_001 CAMPAIGN",
+      "supersedes_ids": [
+        "PSO-GLOBAL-002"
+      ],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "a3655150bddfe92a5ff19fe3022247292786022405119894508d74f43289efc0"
+    },
+    {
+      "provider_row": 36,
+      "overlay_id": "PSO-EVIDENCE-001",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "252",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "WINDOWS_HOST",
+        "VALIDATION",
+        "DIAGNOSTICS",
+        "HANDOFF",
+        "TERMINAL_EVIDENCE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "b93afda3c9c0868e91a708ec99587e717c83b31ec49e6491ce28ee2af1484b0b"
+    },
+    {
+      "provider_row": 37,
+      "overlay_id": "PSO-DRIVE-ARTIFACT-001",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "253",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "WINDOWS_HOST",
+        "BOOTSTRAP",
+        "VALIDATION",
+        "ALL_GDRIVE_MACHINE_ARTIFACT_CONSUMERS"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "7cf11d3af1f36cef30ad5cb1e8e0db08b0e1a03974a9e4f33271a87244d9c31e"
+    },
+    {
+      "provider_row": 38,
+      "overlay_id": "PSO-PM-008",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "256",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "SHARED_MUTATION",
+        "ARTIFACT_PUBLICATION",
+        "CANONICAL_PROMOTION",
+        "RECONCILIATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "1e1265cde0e53b74356983b36a6de590b965567f2aa8d4003abde9161f5c62a4"
+    },
+    {
+      "provider_row": 39,
+      "overlay_id": "PSO-ENDPOINT-AVAILABILITY-001",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "257",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "WINDOWS_HOST",
+        "ALL_MACHINE_ARTIFACT_DISTRIBUTION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "13ce5f9b327382ac105b58c1892da5a7f734564c1fc231be989394bd88ac0222"
+    },
+    {
+      "provider_row": 40,
+      "overlay_id": "PSO-EXEC-UX-001",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "258",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "WINDOWS_HOST",
+        "INSTALLER",
+        "VALIDATOR",
+        "DIAGNOSTICS",
+        "SCHEDULED_BACKGROUND_EXECUTION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "771b41434f703f8ce5ad4a8cbba79ee7c72646d32629d3a435146a1c0df918b5"
+    },
+    {
+      "provider_row": 41,
+      "overlay_id": "PSO-EXEC-ENTRYPOINT-001",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "259",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "WINDOWS_HOST",
+        "INSTALLER",
+        "VALIDATOR",
+        "BOOTSTRAP",
+        "ALL_HUMAN_TRIGGERED_LOCAL_PACKAGES"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "840a9ed1b2f909e298e5e1dafe587f8a82d12c69f0f2ad8655686cb67577b3df"
+    },
+    {
+      "provider_row": 42,
+      "overlay_id": "PSO-PM-009",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "260",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "CONTINUATION_SURFACE",
+        "MULTI_BRANCH",
+        "HUMAN_FASTLANE",
+        "SHARED_RESULT_CONSUMPTION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "9c4ccbbe9aad5304a0cd47a2cc8a2a8ee1a0aa7d7fa689123b6ef7f319ad8335"
+    },
+    {
+      "provider_row": 43,
+      "overlay_id": "PSO-BOOTSTRAP-SINGLE-OBJECT-001",
+      "state": "ACTIVE_FAIL_CLOSED_CROSSOVER_LEARNING",
+      "effective_from_shared_revision": "261",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "WINDOWS_HOST",
+        "BOOTSTRAP",
+        "RECOVERY",
+        "ALL_HUMAN_TRIGGERED_LOCAL_PACKAGES"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "4f105ad17bb45f6e53841c7b62feba36ba550c6ce3a9f9c450db2abb874805c4"
+    },
+    {
+      "provider_row": 44,
+      "overlay_id": "PSO-DOCTOR-CORRIDOR-001",
+      "state": "RETIRED_BY_HUMAN_POST_IMMUNE",
+      "effective_from_shared_revision": "263",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "BOOTSTRAP",
+        "DOCTOR",
+        "ALL_PRE_DOCTOR_CEREBRO_EXPANSION"
+      ],
+      "supersedes_raw": "WINDOWS_HOST_BRIDGE_AS_CURRENT_CRITICAL_PATH",
+      "supersedes_ids": [],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "e2902ba60d7e8feb503d5ed754e7b2bab521b4e0bf4a6276f4ed921421b2211e"
+    },
+    {
+      "provider_row": 45,
+      "overlay_id": "PSO-PM-WORKER-NAMING-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "280",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "WORKER_SPAWN",
+        "WORKER_ASSIGNMENT",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "ceb7a009be59f9e7d9eec9b70ff26783d8f300087b75fb673ed910cace917fe2"
+    },
+    {
+      "provider_row": 46,
+      "overlay_id": "PSO-ADMIN-HMI-CLARITY-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "282",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "WORKER",
+        "WORKER_SPAWN",
+        "WORKER_STATUS",
+        "HUMAN_CONTINUATION",
+        "PRESENTATION"
+      ],
+      "supersedes_raw": "PSO-PM-WORKER-NAMING-001",
+      "supersedes_ids": [
+        "PSO-PM-WORKER-NAMING-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "c31264d15c69fe80dbd22905bc140c5a529c22cccc4e7160f46b4407db6cc759"
+    },
+    {
+      "provider_row": 47,
+      "overlay_id": "PSO-PM-010",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "284",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "HUMAN_CONTINUATION",
+        "WORKER_DELEGATION",
+        "MULTI_BRANCH_PROJECT_CONTEXT"
+      ],
+      "supersedes_raw": "PSO-PM-002;PSO-PM-006;PSO-PM-007;PSO-PM-009",
+      "supersedes_ids": [
+        "PSO-PM-002",
+        "PSO-PM-006",
+        "PSO-PM-007",
+        "PSO-PM-009"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "766a05354cb40ac2b74210ddc994a2f767dfa2b5448e4abe7d31441470fd55c6"
+    },
+    {
+      "provider_row": 48,
+      "overlay_id": "PSO-WORKER-CONTROL-SURFACE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "288",
+      "applies_to": [
+        "WORKER",
+        "PROJECT_MANAGER",
+        "WORKER_BOOT",
+        "WORKER_STATUS",
+        "WORKER_ASSIGNMENT",
+        "HUMAN_CONTINUATION",
+        "ADMIN_CONTROL",
+        "PRESENTATION"
+      ],
+      "supersedes_raw": "AN-WORKER-READY-RETURN-001 AS DESIGN-ONLY SURFACE REQUIREMENT",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "808bb6fc4540c41eb19bd0cbfe5873bcc8171751ef1ca04f961ab7613e13a7ab"
+    },
+    {
+      "provider_row": 49,
+      "overlay_id": "PSO-ADMIN-ACTOR-NAMESPACE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "290",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "WORKER",
+        "IMPLEMENTER",
+        "WORKER_CONTROL_SURFACE",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "PSO-PM-WORKER-NAMING-001",
+      "supersedes_ids": [
+        "PSO-PM-WORKER-NAMING-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "6100561513ec219b4ee10e416b3104d035cfbe414f3adba10ff8bade939f5ad6"
+    },
+    {
+      "provider_row": 50,
+      "overlay_id": "PSO-ADMIN-ACTOR-ROSTER-001",
+      "state": "ACTIVE_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "290",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "WORKER_STATUS",
+        "WORKER_CONTROL_SURFACE"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "48d023144c06eeff1ec6ae243470e9ba8a60f998ed466ad03e95cb063233cf9a"
+    },
+    {
+      "provider_row": 51,
+      "overlay_id": "PSO-PM-DEEP-DEFAULT-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "295",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PM_ORCHESTRATION",
+        "WORKER_ADMISSION",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "3e650ae8e63586f2d89acbc79b1253013e59aa80b57e068d3cc7e628015c7f3d"
+    },
+    {
+      "provider_row": 52,
+      "overlay_id": "PSO-PM-HUMAN-INTENT-SCOPE-EXPANSION-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "295",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "HUMAN_INTENT_INTERPRETATION",
+        "REQUIREMENT_CAPTURE",
+        "PRE_SOURCE_OVERLAY",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "PSO-GLOBAL-004;P03_REFINE_MENNESKE_SEMANTICALLY_REFINED",
+      "supersedes_ids": [
+        "PSO-GLOBAL-004"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "a808c0ee0cd245cb531f078f4200427b18bc1e3832a91a7c08492abbe46e79d1"
+    },
+    {
+      "provider_row": 53,
+      "overlay_id": "PSO-ADMIN-ACTOR-SLOT-GENERATION-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "317",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "WORKER_BOOT",
+        "WORKER_READY",
+        "WORKER_RETIREMENT",
+        "STEP_09_CLAIMS",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "PSO-PM-WORKER-NAMING-001:NEW_ORDINAL_ON_REPLACEMENT_RULE;PSO-ADMIN-ACTOR-NAMESPACE-001:REUSE_AMBIGUITY_ONLY",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-NAMESPACE-001",
+        "PSO-PM-WORKER-NAMING-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "1ab325cbf92cae980dee845405545b88622a61e6c5ee2800174865b88d8f2319"
+    },
+    {
+      "provider_row": 54,
+      "overlay_id": "PSO-ADMIN-ACTOR-ROSTER-002",
+      "state": "ACTIVE_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "320",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "WORKER_STATUS",
+        "WORKER_CONTROL_SURFACE"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-001",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "98ca286eb45c6855d8646ba8f1767f2d6f52599e9f5fd47946a5f5d7d291ea55"
+    },
+    {
+      "provider_row": 55,
+      "overlay_id": "PSO-PM-READY-CAPACITY-FIRST-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "321",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "SCHEDULER_POLICY",
+        "READY_QUEUE",
+        "WORKER_BOOT",
+        "WORKER_ASSIGNMENT",
+        "CRITICAL_PATH"
+      ],
+      "supersedes_raw": "READY_QUEUE_RECOMMENDATION_AS_AFFINITY",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "56cabe9740237f08276e777075f4777105a734a4512e8fb6f218f83cc6e0eb17"
+    },
+    {
+      "provider_row": 56,
+      "overlay_id": "PSO-PM-ACTIVE-CAPACITY-ORCHESTRATION-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "323",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "WORKER_STATUS",
+        "WORKER_ASSIGNMENT",
+        "READY_QUEUE",
+        "SCHEDULER_POLICY",
+        "CRITICAL_PATH",
+        "CAPACITY_MANAGEMENT",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "PSO-PM-READY-CAPACITY-FIRST-001:GENERALIZED",
+      "supersedes_ids": [
+        "PSO-PM-READY-CAPACITY-FIRST-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "e2b864c8b26e17aac544cfd5948a2294a0daeeb8796dfe10c18b7ee46bdaf418"
+    },
+    {
+      "provider_row": 58,
+      "overlay_id": "PSO-PM-THREAD-CONTROL-SURFACE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "337",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "THREAD_OVERVIEW",
+        "HUMAN_CONTINUATION",
+        "PRESENTATION",
+        "WORKER_STATUS",
+        "SCHEDULER"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "fbb11431799b2bfa1caded13e31798dce39311284e1ba754d8f2518b5aaf8f11"
+    },
+    {
+      "provider_row": 59,
+      "overlay_id": "PSO-ADMIN-ACTOR-ROSTER-003",
+      "state": "ACTIVE_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "337",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "WORKER_STATUS",
+        "WORKER_CONTROL_SURFACE",
+        "SCHEDULER"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-002",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-002"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "1856d3b198835435a3028872a7edc43f91cd910013665e453ddf8c4f78148b2e"
+    },
+    {
+      "provider_row": 60,
+      "overlay_id": "PSO-GLOBAL-LANGUAGE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "416",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "ASSISTANT",
+        "WORKER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_SESSIONS",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "3b3b0bbb480e2f04e751d60045ab85b2625a671d1f156e10b980cdefa3276142"
+    },
+    {
+      "provider_row": 61,
+      "overlay_id": "PSO-ADMIN-ACTOR-ROSTER-004",
+      "state": "ACTIVE_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "416",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "ASSISTANT",
+        "WORKER",
+        "IMPLEMENTER",
+        "PRESENTATION",
+        "SCHEDULER",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-003;WORKFORCE-TOPOLOGY-CANDIDATE-001:HMI_OPEN_STATE",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-003"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "cedc96abb1e5b69700b19099b046d652f7e10d96e3d7c941019f9a17c0bbf553"
+    },
+    {
+      "provider_row": 62,
+      "overlay_id": "PSO-ADMIN-HMI-SLOT-IDENTITY-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "417",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "WORKER",
+        "IMPLEMENTER",
+        "PRESENTATION",
+        "WORKER_STATUS",
+        "WORKSPACES",
+        "BOOT",
+        "CLAIMS",
+        "FACTORY_PROGRAM",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-NAMESPACE-001:REFINED;PSO-ADMIN-ACTOR-ROSTER-004:IDENTITY_SEMANTICS_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-NAMESPACE-001",
+        "PSO-ADMIN-ACTOR-ROSTER-004"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "e415e51eef093994f7b8ce9beefa1c068765cbb1b9c46659f25aea00970d71e9"
+    },
+    {
+      "provider_row": 63,
+      "overlay_id": "PSO-ADMIN-ACTOR-ROSTER-005",
+      "state": "ACTIVE_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "417",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "WORKER_STATUS",
+        "WORKER_CONTROL_SURFACE",
+        "SCHEDULER",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-004",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-004"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "f69b302adc8d602522c2d88a75345492f1a0f715519ba8abc54a5f7faff62f52"
+    },
+    {
+      "provider_row": 64,
+      "overlay_id": "PSO-ADMIN-ACTOR-ROSTER-006",
+      "state": "ACTIVE_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "418",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "WORKER_STATUS",
+        "WORKER_CONTROL_SURFACE",
+        "SCHEDULER",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-005:STATE_ONLY_SUPERSEDED",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-005"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "89f299c98db76b8913ad13ad46b7ca6ad2dade5fa64d679c48f346bc10d58c97"
+    },
+    {
+      "provider_row": 65,
+      "overlay_id": "PSO-ADMIN-REFRESH-POOL-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "418",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "WORKER",
+        "IMPLEMENTER",
+        "WORKER_STATUS",
+        "PRESENTATION",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "4780c487d2f3d2352cd131dffb598e3a9bc517c019186d6153e2d73d1b208857"
+    },
+    {
+      "provider_row": 66,
+      "overlay_id": "PSO-PM-ALWAYS-COMMAND-SURFACE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "419",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "HUMAN_CONTINUATION",
+        "PRESENTATION",
+        "WORKER_CONTROL",
+        "ASSISTANT_CONTROL",
+        "ALL_PM_RESPONSES"
+      ],
+      "supersedes_raw": "PSO-PM-010:GENERALIZED_ALWAYS_SURFACE;PSO-PM-THREAD-CONTROL-SURFACE-001:GENERALIZED;PSO-ADMIN-REFRESH-POOL-001:MINIMUM_COMMAND_BOUND",
+      "supersedes_ids": [
+        "PSO-ADMIN-REFRESH-POOL-001",
+        "PSO-PM-010",
+        "PSO-PM-THREAD-CONTROL-SURFACE-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "b1fd4205e34d4b8cc00c8f782414a5df5a748f92e1428d07e267dc9d5a1b1028"
+    },
+    {
+      "provider_row": 67,
+      "overlay_id": "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001",
+      "state": "ACTIVE_REQUIRED_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "421",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "WORKER",
+        "IMPLEMENTER",
+        "PROJECT_MANAGER",
+        "PRESENTATION",
+        "HUMAN_NAVIGATION",
+        "HUMAN_CONTINUATION",
+        "WORKER_TERMINAL",
+        "ALL_WORKER_RESPONSES"
+      ],
+      "supersedes_raw": "PSO-PM-ALWAYS-COMMAND-SURFACE-001:GENERALIZED_WORKER_COUNTERPART;CEREBRO-HNS-001;CEREBRO-HUMAN-CONTINUATION-SURFACE-001",
+      "supersedes_ids": [
+        "PSO-PM-ALWAYS-COMMAND-SURFACE-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "d93f3e93114b0b44931d099bdd8921fa1a834c4693f4852a214e76c1bb6eed25"
+    },
+    {
+      "provider_row": 68,
+      "overlay_id": "PSO-ADMIN-ASSISTANT-BOOT-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "430",
+      "applies_to": [
+        "ASSISTANT",
+        "ADMIN_CONTROL",
+        "BOOT",
+        "PRESENTATION",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "ASSISTANT_BOOT_LEGACY_SEQUENCE_ROWS_2_13:SUPERSEDED_AS_SEMANTIC_OWNER;W5_AS_ADMIN_BOOT_ALIAS:PROHIBITED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "67fb7324bfeaf5b69111c0f3c9d01d1181c2f2d4474df1ed7c1229616baddd15"
+    },
+    {
+      "provider_row": 69,
+      "overlay_id": "PSO-ASSISTANT-DEEP-EVERY-STEP-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "438",
+      "applies_to": [
+        "ASSISTANT",
+        "ADMIN_CONTROL",
+        "ASSISTANT_BOOT",
+        "ASSISTANT_CONTROL",
+        "ASSISTANT_PM_INGRESS",
+        "ALL_ASSISTANT_SESSIONS"
+      ],
+      "supersedes_raw": "ASSISTANT_BOOT:DEEP_ANALYSIS=DEFAULT_WHEN_MATERIAL_COMPLEXITY_JUSTIFIES:SUPERSEDED",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "5515d426d49531793a3f44713e1371d653b614051f7eb29dc6ab86cea5ac4049"
+    },
+    {
+      "provider_row": 70,
+      "overlay_id": "PSO-ASSISTANT-COMMAND-REFERENCE-MAINTENANCE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "441",
+      "applies_to": [
+        "ASSISTANT",
+        "ADMIN_CONTROL",
+        "COMMAND_REFERENCE",
+        "PRESENTATION",
+        "ASSISTANT_PM_INGRESS",
+        "ALL_ASSISTANT_SESSIONS"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "d75602448bf1a6779ee73404f9caad628e2867dbfeca87f73f95922bc0181431"
+    },
+    {
+      "provider_row": 71,
+      "overlay_id": "PSO-ADMIN-LOCAL-EXECUTION-RESULT-INGRESS-001",
+      "state": "SUPERSEDED_ASSISTANT_SCOPE_ERROR",
+      "effective_from_shared_revision": "445",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ASSISTANT",
+        "LOCAL_EXECUTION",
+        "FAILURE_RECOVERY",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "PSO-EVIDENCE-001;DEC-PM-HUMAN-TRANSPORT-ELIMINATION-001;DEC-SHARED-EVIDENCE-PUBLICATION-001",
+      "supersedes_ids": [
+        "PSO-EVIDENCE-001"
+      ],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "df9d4e43a29661e829e105492a5363c262fa94036256b229d7564ae3de6e028d"
+    },
+    {
+      "provider_row": 72,
+      "overlay_id": "PSO-ADMIN-COMMAND-TARGET-ACTOR-001",
+      "state": "SUPERSEDED_SCOPE_OVERREACH",
+      "effective_from_shared_revision": "451",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ASSISTANT",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION",
+        "COMMAND_REFERENCE",
+        "ALL_CEREBRO_SESSIONS"
+      ],
+      "supersedes_raw": "PSO-PM-ALWAYS-COMMAND-SURFACE-001:TARGET_LABEL_SEMANTICS_REFINED;PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001:TARGET_LABEL_SEMANTICS_REFINED;PSO-PM-002:TARGET_LOCATION_LABELING_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001",
+        "PSO-PM-002",
+        "PSO-PM-ALWAYS-COMMAND-SURFACE-001"
+      ],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "751f825344440f2f1b22b5dac2442bfebf703b6f62300a1bbfe14008f85077a8"
+    },
+    {
+      "provider_row": 73,
+      "overlay_id": "PSO-ADMIN-CORRECT-AND-REPORT-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "470",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "WORKER",
+        "IMPLEMENTER",
+        "ASSISTANT",
+        "ASSISTANT_CORRECTION_INBOX",
+        "LEARNING",
+        "HMI",
+        "ALL_WORKER_IMPLEMENTER_SESSIONS"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "79b58c972e3f98609fab7636e4cca49837ad26ddc73b25fd9611694c793d7ac6"
+    },
+    {
+      "provider_row": 74,
+      "overlay_id": "PSO-ADMIN-WORKER-REPORT-TO-PM-ALWAYS-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "470",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "WORKER",
+        "IMPLEMENTER",
+        "PROJECT_MANAGER",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION",
+        "ALL_WORKER_RESPONSES"
+      ],
+      "supersedes_raw": "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001:REFINED_WITH_ALWAYS_VISIBLE_SECONDARY_REPORT",
+      "supersedes_ids": [
+        "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "707e13aa7a88f3733ddaba5f9656c06855ea65bfd5c2f07f19236affa34b8746"
+    },
+    {
+      "provider_row": 75,
+      "overlay_id": "PSO-ADMIN-CORRECT-AND-REPORT-PM-EXTENSION-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "497",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ASSISTANT_CORRECTION_INBOX",
+        "SYSTEM_LANGUAGE",
+        "HMI",
+        "ALL_ADMIN_FACING_CONTROL_SURFACES"
+      ],
+      "supersedes_raw": "PSO-ADMIN-CORRECT-AND-REPORT-001:EXTENDED_TO_PROJECT_MANAGER;AN-ADMIN-SYSTEM-LANGUAGE-PROCESS-NARRATION-RECURRENCE-001:PM_EXPLICITLY_INCLUDED",
+      "supersedes_ids": [
+        "PSO-ADMIN-CORRECT-AND-REPORT-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "b8d2591aa5c021ff3209543080feef2999c952679bf71b3a59e048f52fa355d2"
+    },
+    {
+      "provider_row": 76,
+      "overlay_id": "PSO-ADMIN-PM-SAFE-RETIRE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "536",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "HUMAN_CONTINUATION",
+        "PM_BOOT",
+        "WORKER_STATUS",
+        "WORK_CLAIMS",
+        "ASSISTANT_COMMAND_REFERENCE",
+        "ALL_PM_SESSIONS"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "54c16fa69f7fbf991996a84afc7e5958922a3784c90c57a05a43f65f00cb5ba9"
+    },
+    {
+      "provider_row": 77,
+      "overlay_id": "PSO-ADMIN-IMPLEMENTER-SAFE-RETIRE-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "555",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "IMPLEMENTER",
+        "PROJECT_MANAGER",
+        "WORK_CLAIMS",
+        "HUMAN_CONTINUATION",
+        "IMPLEMENTER_BOOT",
+        "ACTOR_SLOT_GENERATION",
+        "W4"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "6c97da9002fbf7fcdfe0a9baa466055c1cd7ec996f08abcf2e097849fd7682e8"
+    },
+    {
+      "provider_row": 78,
+      "overlay_id": "PSO-ADMIN-CONFIRM-PROFILE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER",
+      "effective_from_shared_revision": "558",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "PRESENTATION",
+        "COMMAND_REFERENCE",
+        "FUTURE_ROLE_WORKFORM_PROFILE_ARCHITECTURE"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "af0dc8c4080a63dc1bfdcaca062851b784acbaa96fbf65e709e80fb1708c2f55"
+    },
+    {
+      "provider_row": 79,
+      "overlay_id": "PSO-PM-NEAR-FRONTIER-LOOKAHEAD-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER",
+      "effective_from_shared_revision": "638",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "READY_QUEUE",
+        "WORK_PACKETS",
+        "ROADMAP",
+        "ASSISTANT_PM_INGRESS",
+        "WORKER_POOL",
+        "CAPACITY_MANAGEMENT",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "9908e52638d64c11b7927b658296d1e59a9da0df374378522a6aa32d7ace6931"
+    },
+    {
+      "provider_row": 80,
+      "overlay_id": "PSO-ADMIN-REFRESH-POOL-002",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER",
+      "effective_from_shared_revision": "641+",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "WORKER_POOL",
+        "READY_QUEUE",
+        "WORK_PACKETS",
+        "ROADMAP",
+        "ASSISTANT_PM_INGRESS",
+        "CAPACITY_MANAGEMENT",
+        "HUMAN_CONTINUATION",
+        "COMMAND_REFERENCE"
+      ],
+      "supersedes_raw": "PSO-ADMIN-REFRESH-POOL-001:SEMANTICS_EXTENDED",
+      "supersedes_ids": [
+        "PSO-ADMIN-REFRESH-POOL-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "e777239be77921df7d7d7209badf22b5405310fbf8937402881bc15a4faf9974"
+    },
+    {
+      "provider_row": 81,
+      "overlay_id": "PSO-ADMIN-ASSISTANT-BOOT-002",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_AUTHORITY_DECISION",
+      "effective_from_shared_revision": "643+",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "ASSISTANT",
+        "ASSISTANT_BOOT",
+        "COMMAND_REFERENCE",
+        "PROJECT_MANAGER",
+        "ALL_CEREBRO_BOOTS",
+        "HUMAN_BOOT_SURFACE"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ASSISTANT-BOOT-001:PRIMARY_TRIGGER_SEMANTICS_SUPERSEDED_ONLY;LEGACY_COMPATIBILITY_RETAINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-ASSISTANT-BOOT-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "68dbe06cb99943fd02adff5d1a64eec4d311280ac8d6d096c01b26afa5858dd8"
+    },
+    {
+      "provider_row": 82,
+      "overlay_id": "PSO-PM-NONEXECUTOR-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "643+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORK_PACKETS",
+        "WORK_CLAIMS",
+        "READY_QUEUE",
+        "SCHEDULER_POLICY",
+        "PM_ROLE_AWAKENING",
+        "CONFIRM_PROFILE",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "636714ccb0addf8e93f7416a598bc83d2ff45be05cbe966dc5182bb5527e8a8d"
+    },
+    {
+      "provider_row": 83,
+      "overlay_id": "PSO-PM-PREASSIGNMENT-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "643+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "READY_QUEUE",
+        "WORK_PACKETS",
+        "WORKER_POOL",
+        "HUMAN_CONTINUATION",
+        "PRESENTATION",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "29b004708eae083a0bc12990af7941a2687ceb8e894a33306f7225bcb4341b1d"
+    },
+    {
+      "provider_row": 84,
+      "overlay_id": "PSO-WORKER-FINDING-ESCALATION-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "649+",
+      "applies_to": [
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "TERMINAL_REPORT",
+        "PM_ADMISSION",
+        "ASSISTANT_PM_INGRESS",
+        "REFRESH_POOL",
+        "COMMAND_REFERENCE",
+        "LEARNING",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "d5905ef345cc6661b961086d3939c85ee1a33a6e2e2bf17cad08b29027f9897b"
+    },
+    {
+      "provider_row": 85,
+      "overlay_id": "PSO-FINDING-INBOX-TRIAGE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "649+",
+      "applies_to": [
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "FINDING_INBOX",
+        "REFRESH_POOL",
+        "ASSISTANT_PM_INGRESS",
+        "FAILURE_INDEX",
+        "DECISIONS",
+        "ROADMAP",
+        "WORK_PACKETS",
+        "LEARNING"
+      ],
+      "supersedes_raw": "PSO-WORKER-FINDING-ESCALATION-001:STORAGE_AND_TRIAGE_REFINED",
+      "supersedes_ids": [
+        "PSO-WORKER-FINDING-ESCALATION-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "b585d9605d3c28b76926ec004396aaad2eca4fbeb5d562dd721bb9d39b4ff283"
+    },
+    {
+      "provider_row": 86,
+      "overlay_id": "PSO-PM-CURRENT-GENERATION-POINTER-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "655+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "REFRESH_POOL",
+        "WORKER_BOOT",
+        "WORKER_STATUS",
+        "WORKSPACES",
+        "EVENTS",
+        "CURRENT_STATE",
+        "WORK_CLAIMS",
+        "PREASSIGNMENT",
+        "ACTOR_SLOT_GENERATION",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "PSO-ADMIN-HMI-SLOT-IDENTITY-001:CONSUMER_ACTIVATION_REFINED;PSO-ADMIN-ACTOR-SLOT-GENERATION-001:CURRENT_POINTER_CONSUMPTION_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-SLOT-GENERATION-001",
+        "PSO-ADMIN-HMI-SLOT-IDENTITY-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "1d50a762c083dcb33bce8a03c9593e933ce66ae7ccb8ae207135fb52480b4ed8"
+    },
+    {
+      "provider_row": 87,
+      "overlay_id": "PSO-ITERATION-VALUE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "657+",
+      "applies_to": [
+        "FACTORY_PROGRAM",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "ASSISTANT",
+        "MASTER_CAPSULE_LINEAGE",
+        "FINDING_INBOX",
+        "LEARNING",
+        "TERMINAL_ADMISSION",
+        "ASSURANCE"
+      ],
+      "supersedes_raw": "FACTORY_PROGRAM_SEQUENCE:POSITIVE_SYSTEM_VALUE_REFINED;AN-ADMIN-ASSISTANT-V1-POSITIVE-LEARNING-001:GENERALIZED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "afd4adc3a5b6b7f090ab4eff78e621232e5ad1f34ba7120f159c93000f10a630"
+    },
+    {
+      "provider_row": 88,
+      "overlay_id": "PSO-ADMIN-CONFIRM-PROFILE-002",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "660+",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "ASSISTANT",
+        "CONFIRM_PROFILE",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION",
+        "ROLE_PROFILE_HYDRATION"
+      ],
+      "supersedes_raw": "PSO-ADMIN-CONFIRM-PROFILE-001:SEMANTICS_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-CONFIRM-PROFILE-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "02a0898e39a11017931960f431b3875c6b9cb5adff4c152abb1bc4257e0d8534"
+    },
+    {
+      "provider_row": 89,
+      "overlay_id": "PSO-SHARED-TO-SOURCE-PROMOTION-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "662+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "PRE_SOURCE_OVERLAY",
+        "ASSISTANT_PM_INGRESS",
+        "WORK_PACKETS",
+        "SOURCE_PROMOTION",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "NONE_NEW_DISCIPLINE_REFINES_EXISTING_SOURCE_PROMOTION_GATES",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "a28d2dcbdbf349e55a7b1b4b1212ae9277cf56e0b21ae2d1299852000fea43d2"
+    },
+    {
+      "provider_row": 90,
+      "overlay_id": "PSO-ACTOR-CONTACT-DRAIN-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "671+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "ASSISTANT",
+        "REPORT_TO_PM",
+        "REFRESH_POOL",
+        "READY",
+        "BOOT",
+        "PM_ADMISSION",
+        "PREASSIGNMENT",
+        "CONTACT_RENDEZVOUS"
+      ],
+      "supersedes_raw": "SCH-031:FIXED_POINT_SCOPE_GENERALIZED;SCH-035:CONTACT_DRAIN_REFINED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "7b849740f505f0b13aac6c574ceb0704534b229718b0269615d14614fbee64da"
+    },
+    {
+      "provider_row": 91,
+      "overlay_id": "PSO-ADMIN-ACTOR-ROSTER-007",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-20",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "BOOT",
+        "WORKER",
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "IMPLEMENTER",
+        "PRESENTATION",
+        "REFRESH_POOL",
+        "ACTOR_SLOT_GENERATION"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-006;PSO-ADMIN-HMI-SLOT-IDENTITY-001:CURRENT_ROSTER_MAPPING_SUPERSEDED;PSO-ADMIN-ASSISTANT-BOOT-002:W5_RESERVATION_SUPERSEDED_ONLY;PSO-ADMIN-REFRESH-POOL-002:W1-W5_POINTER_SCOPE_SUPERSEDED_TO_W1-W8",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-006",
+        "PSO-ADMIN-ASSISTANT-BOOT-002",
+        "PSO-ADMIN-HMI-SLOT-IDENTITY-001",
+        "PSO-ADMIN-REFRESH-POOL-002"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "8fec3b5eb5f6746fc315c1512ac06ead76ee3c7b8ce62b41622592cfaab1b816"
+    },
+    {
+      "provider_row": 92,
+      "overlay_id": "PSO-SINGLE-HUMAN-START-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "671+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "PREASSIGNMENT",
+        "START",
+        "PROCESS_WORKER_REPORT",
+        "REPORT_TO_PM",
+        "CLAIM",
+        "BIND",
+        "HUMAN_CONTINUATION",
+        "FACTORY_CONTROL_FLOW"
+      ],
+      "supersedes_raw": "SCH-033:ONE_START_REFINED;PSO-PM-PREASSIGNMENT-001;FACTORY-CONTROL-FLOW-CONVERGENCE-001",
+      "supersedes_ids": [
+        "PSO-PM-PREASSIGNMENT-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "7f08cefa6e2028a59e0c13a9ec796e974c00a704a652938e19d565e85f614689"
+    },
+    {
+      "provider_row": 93,
+      "overlay_id": "PSO-ADMIN-PREAUTHORIZED-EXECUTION-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "680+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "PROJECT_LIFECYCLE",
+        "START",
+        "MATERIAL_AUTHORIZATION",
+        "HMI",
+        "ASSISTANT_PM_INGRESS",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "SCH-033:PREAUTHORIZED_EXCEPTION_ACTIVATED;PSO-SINGLE-HUMAN-START-001:AUTHORITY_RECEIPT_REFINED",
+      "supersedes_ids": [
+        "PSO-SINGLE-HUMAN-START-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "5008546fef6d2ee04b654740fc3bf0504d5353f71aaf29b53aefff3623518a98"
+    },
+    {
+      "provider_row": 94,
+      "overlay_id": "PSO-ADMIN-HUMAN-ACTION-REQUIRED-SURFACE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "680+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "ASSISTANT",
+        "HMI",
+        "HCS",
+        "HNS",
+        "HUMAN_CONTINUATION",
+        "MATERIAL_AUTHORIZATION",
+        "PROJECT_START"
+      ],
+      "supersedes_raw": "ACTOR_RESPONSE_FRAME;HCS/HNS:BOUNDARY_VISIBILITY_REFINED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "2ea47ca31b5056c051a74f5b47b8246fe5143bd646d114b93c758d04dc77a849"
+    },
+    {
+      "provider_row": 95,
+      "overlay_id": "PSO-ASSISTANT-PRIORITY-STEWARDSHIP-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CONTINUITY_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "685+",
+      "applies_to": [
+        "ASSISTANT",
+        "ADMIN_INTERACTION",
+        "FACTORY_PROGRAM",
+        "ASSISTANT_NOTES",
+        "ASSISTANT_PM_INGRESS",
+        "PIPELINE_LOOKAHEAD",
+        "MASTER_CAPSULE_LINEAGE",
+        "ITERATION_VALUE"
+      ],
+      "supersedes_raw": "ASSISTANT-CONTINUITY-WORKING-PROFILE-001:CRITICAL_PARTNER_AND_WORK_AHEAD_REFINED;PSO-ITERATION-VALUE-001",
+      "supersedes_ids": [
+        "PSO-ITERATION-VALUE-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "7367d826da982608793a5fe73ac78607d04c583bb2fada72c87f776fcf09a227"
+    },
+    {
+      "provider_row": 96,
+      "overlay_id": "PSO-HUMAN-AUTHORITY-MODEL-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "685+",
+      "applies_to": [
+        "ADMIN",
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "HMI",
+        "DELIVERY",
+        "RUNTIME2",
+        "SOURCE",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "PSO-ADMIN-PREAUTHORIZED-EXECUTION-001:GENERAL_MODEL;PSO-ADMIN-HUMAN-ACTION-REQUIRED-SURFACE-001:TRIGGER_SET_DEFINED;SAME_CONTROL_MODEL_TWO_EXECUTION_MODES:AUTHORITY_BOUNDARY_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-HUMAN-ACTION-REQUIRED-SURFACE-001",
+        "PSO-ADMIN-PREAUTHORIZED-EXECUTION-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "41ee255bbd5b4422a125571250eec9f3ddac17d41f8db360dbb3f45154ade690"
+    },
+    {
+      "provider_row": 97,
+      "overlay_id": "PSO-ACTOR-INPUT-MODE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "701+",
+      "applies_to": [
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "ADMIN_CONTROL",
+        "COMMAND_REFERENCE",
+        "ROLE_PROFILE_HYDRATION",
+        "HMI",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "PSO-PM-HUMAN-INTENT-SCOPE-EXPANSION-001:ROLE_APPLICABILITY_REFINED;REFINE_MENNESKE_GLOBAL_INHERITANCE:PROHIBITED",
+      "supersedes_ids": [
+        "PSO-PM-HUMAN-INTENT-SCOPE-EXPANSION-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "d537a3017f51b4175c4d48f85c6b15a2c8ed70dfe78cdea85d9c98383a3d5b66"
+    },
+    {
+      "provider_row": 98,
+      "overlay_id": "PSO-CEREBRO-STRUCTURAL-HYGIENE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "702+",
+      "applies_to": [
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "SOURCE",
+        "SHARED",
+        "COMMAND_REFERENCE",
+        "ROLE_PROFILE_HYDRATION",
+        "WORK_PACKETS",
+        "READY_QUEUE",
+        "ROADMAP",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "NONE_NEW_DISCOVERY_DISCIPLINE_REUSES_EXISTING_LEGACY_REMOVAL_SEQUENCE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "382c008079cb0194d80f225727d3eeed36c8ab9c4c120b0d28f91f68dee58152"
+    },
+    {
+      "provider_row": 99,
+      "overlay_id": "PSO-CEREBRO-HYGIENE-CONTROL-ROOM-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "703+",
+      "applies_to": [
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "HMI",
+        "SOURCE",
+        "SHARED",
+        "MATERIAL_IMPLEMENTATION",
+        "FACTORY_PROGRAM"
+      ],
+      "supersedes_raw": "PSO-CEREBRO-STRUCTURAL-HYGIENE-GATE-001:SEVERITY_AND_INTERLOCK_REFINED",
+      "supersedes_ids": [
+        "PSO-CEREBRO-STRUCTURAL-HYGIENE-GATE-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "f939c421b3ccd4081bf960d8794d642aa2be2c81c1022a97c03b1993930f1049"
+    },
+    {
+      "provider_row": 100,
+      "overlay_id": "PSO-CEREBRO-COHERENCE-FIELD-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "703+",
+      "applies_to": [
+        "ADMIN",
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "DOCTOR",
+        "RUNTIME",
+        "HMI",
+        "COMMAND_REFERENCE",
+        "STRUCTURAL_HYGIENE",
+        "ASSISTANT_WORKBENCH",
+        "FACTORY_PROGRAM",
+        "FUTURE_STANDALONE_UI"
+      ],
+      "supersedes_raw": "NONE_NEW_AUTHORITY_REFINES_EXISTING_FACTORY_HMI_RUNTIME_ROLE_AND_HUMAN_AUTHORITY_DIRECTIONS",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "7d94299a26f3e59179fa82510352e0464b3e116410d6f229d66bb4d218a71c44"
+    },
+    {
+      "provider_row": 101,
+      "overlay_id": "PSO-ADMIN-CONTEXTUAL-START-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "714+",
+      "applies_to": [
+        "ADMIN",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "START",
+        "PREASSIGNMENT",
+        "HMI",
+        "COMMAND_REFERENCE",
+        "ROLE_PROFILE_HYDRATION",
+        "FACTORY_CONTROL_FLOW",
+        "RUNTIME_EVENT_HOST"
+      ],
+      "supersedes_raw": "PSO-SINGLE-HUMAN-START-001:ADMIN_SURFACE_REFINED;PSO-ADMIN-PREAUTHORIZED-EXECUTION-001:CONTEXT_RESOLUTION_ALIGNED",
+      "supersedes_ids": [
+        "PSO-ADMIN-PREAUTHORIZED-EXECUTION-001",
+        "PSO-SINGLE-HUMAN-START-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "6180b264166bd27ae1aae3e880e2767c29e45f74f70ba857561c1b4f18635741"
+    },
+    {
+      "provider_row": 102,
+      "overlay_id": "PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "805+",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "WORKER",
+        "IMPLEMENTER",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION",
+        "ROLE_PROFILE_HYDRATION",
+        "REPORT_TO_PM",
+        "NO_ACTION_REQUIRED",
+        "ALL_WORKER_RESPONSES"
+      ],
+      "supersedes_raw": "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001:PRESENTATION_PRECEDENCE_REFINED;PSO-ADMIN-WORKER-REPORT-TO-PM-ALWAYS-001:SECONDARY_STATUS_REAFFIRMED",
+      "supersedes_ids": [
+        "PSO-ADMIN-WORKER-NEXT-STEP-BUTTON-001",
+        "PSO-ADMIN-WORKER-REPORT-TO-PM-ALWAYS-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "36583f8c2cd283ee807606d3f12c600bc646245dbaefc969d4e27d0ec7be427e"
+    },
+    {
+      "provider_row": 103,
+      "overlay_id": "PSO-ADMIN-CHATGPT-HMI-PERSISTENT-NEXT-G19-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PERSISTENT_CHATGPT_HMI",
+      "effective_from_shared_revision": "854+",
+      "applies_to": [
+        "ADMIN",
+        "PRINCIPAL_ASSISTANT",
+        "ASSISTANT_DELEGATE_AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "PRESENTATION",
+        "HMI",
+        "HUMAN_CONTINUATION",
+        "COMMAND_REFERENCE",
+        "ALL_CEREBRO_CHATGPT_ADMIN_FACING_RESPONSES"
+      ],
+      "supersedes_raw": "PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001:GENERALIZED_CHATGPT_SURFACE;AD1-CORRECTION-NEXT-STEP-PAYLOAD-G19-HMI-001;ADMIN-CHAT-HMI-CONSOLIDATED-V1-001;ADMIN-G19-CONTROL-HINT-001",
+      "supersedes_ids": [
+        "PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "83e3a1e9fe1abfd0638d9d5523d259ca1aa1427f6b664774ad28a73f47bdcb2d"
+    },
+    {
+      "provider_row": 104,
+      "overlay_id": "PSO-ADMIN-PM-INACCESSIBLE-SESSION-FENCE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_EMERGENCY_OVERRIDE",
+      "effective_from_shared_revision": "914+",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "PROJECT_MANAGER",
+        "BOOT",
+        "ACTOR_SLOT_GENERATION",
+        "REFRESH_POOL",
+        "HUMAN_CONTINUATION",
+        "SESSION_HEALTH"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-007:OLD_PM_MUST_SELF_RETIRE_CLAUSE_SUPERSEDED_FOR_THIS_INACCESSIBLE_GENERATION_ONLY;PM-W1-RETIRE-ROUTE-CORRECTION-0909:LIFECYCLE_CURRENTNESS_SUPERSEDED_BY_ADMIN_FENCE_ONLY",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-007"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "40df877116f951615126aaa097b439ce87a9456e590ff425fd0661dd4d7a17df"
+    },
+    {
+      "provider_row": 105,
+      "overlay_id": "PSO-ADMIN-W5-WORKER-ALIAS-UNBLOCK-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "915+",
+      "applies_to": [
+        "ADMIN_CONTROL",
+        "BOOT",
+        "WORKER",
+        "ASSISTANT_DELEGATE",
+        "ACTOR_SLOT_GENERATION",
+        "WORKSPACES",
+        "REFRESH_POOL",
+        "HMI"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ASSISTANT-BOOT-001:W5_ALIAS_RESERVATION_SUPERSEDED;PSO-ADMIN-ASSISTANT-BOOT-002:W5_ALIAS_RESERVATION_SUPERSEDED;PSO-ADMIN-HMI-SLOT-IDENTITY-001:W5_MAPPING_SUPERSEDED;PSO-ADMIN-ACTOR-ROSTER-006:W5_MAPPING_SUPERSEDED",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-ROSTER-006",
+        "PSO-ADMIN-ASSISTANT-BOOT-001",
+        "PSO-ADMIN-ASSISTANT-BOOT-002",
+        "PSO-ADMIN-HMI-SLOT-IDENTITY-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "0df35d325726ba1aaeba0f2fb447ab8a47ab77744e1c73b2b72ab7a132073615"
+    },
+    {
+      "provider_row": 106,
+      "overlay_id": "PSO-PM-MULTI-ACTION-HMI-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "1080+",
+      "applies_to": [
+        "ADMIN",
+        "PROJECT_MANAGER",
+        "HMI",
+        "HUMAN_CONTINUATION",
+        "PARALLEL_WORKER_ORCHESTRATION",
+        "CHATGPT_HOST",
+        "COMMAND_REFERENCE"
+      ],
+      "supersedes_raw": "PSO-ADMIN-CHATGPT-HMI-PERSISTENT-NEXT-G19-001:PM_CARDINALITY_REFINED;PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001:WORKER_LOCAL_RULE_PRESERVED",
+      "supersedes_ids": [
+        "PSO-ADMIN-CHATGPT-HMI-PERSISTENT-NEXT-G19-001",
+        "PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "8ab7fc3eea95a648a8c253f52706637749ed7210bfbd7d375c740a7fbb751905"
+    },
+    {
+      "provider_row": 107,
+      "overlay_id": "PSO-ADMIN-WORKFORCE-LANE-TOPOLOGY-001",
+      "state": "ACTIVE_CURRENT_CONFIGURATION",
+      "effective_from_shared_revision": "EVENTS_1166_PLUS",
+      "applies_to": [
+        "PRINCIPAL",
+        "AD1",
+        "PROJECT_MANAGER",
+        "SCHEDULER",
+        "REFRESH_POOL",
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5",
+        "W6",
+        "WORKER_BOOT",
+        "WORKER_STATUS"
+      ],
+      "supersedes_raw": "PRINCIPAL-AD1-FRONTIER-RESEARCH-ENGINE-001:DEFAULT_W6_FRONTIER_RESOURCE_POLICY_ONLY;AD1-PMREADY-W6-FRONTIER-RESEARCH-TANK-PILOT-001:W6_SLOT_AFFINITY_ONLY",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "804e8b60fb1dc81ace72a1419cf208929cdbb20b9945bc16bfcd98ba267029da"
+    },
+    {
+      "provider_row": 108,
+      "overlay_id": "PSO-ADMIN-HUMAN-HANDLE-NAMESPACE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_CURRENT_CONFIGURATION_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-21T15:19+02:00",
+      "applies_to": [
+        "ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_DELEGATE_AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCH_WORKFORM",
+        "IMPLEMENTER",
+        "BOOT",
+        "PRESENTATION",
+        "HMI",
+        "ACTOR_SLOT_GENERATION",
+        "CURRENT_POINTER",
+        "COMMAND_REFERENCE"
+      ],
+      "supersedes_raw": "PSO-ADMIN-ACTOR-ROSTER-007:FIXED_EXTERNAL_W1_W8_HANDLE_SET_SUPERSEDED_ONLY;PSO-ADMIN-ACTOR-SLOT-GENERATION-001:FIXED_HANDLE_SET_SUPERSEDED_ONLY;PSO-ADMIN-ACTOR-NAMESPACE-001:GENERALIZED",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-NAMESPACE-001",
+        "PSO-ADMIN-ACTOR-ROSTER-007",
+        "PSO-ADMIN-ACTOR-SLOT-GENERATION-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "cee37bb2d4838fc8d23edf48369c79b42d6372b20029e05dec741d0c11880982"
+    },
+    {
+      "provider_row": 109,
+      "overlay_id": "PSO-PRINCIPAL-FORWARD-ORCHESTRATION-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_CURRENT_DIRECTION",
+      "effective_from_shared_revision": "CURRENT_2026-08-21T15:32+02:00",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT_DELEGATE_AD1",
+        "PROJECT_MANAGER",
+        "IMPLEMENTER",
+        "WORKER_POOL",
+        "HMI",
+        "ASSISTANT_PM_INGRESS",
+        "CONTROL_ROOM"
+      ],
+      "supersedes_raw": "ADMIN-PRINCIPAL-WORKER-POOL-CLEAN-RESET-20260821-001:HOLD_PHASE_SUPERSEDED_BY_CONTROLLED_RELEASE_AFTER_PM_SUCCESSION_ONLY",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "c44cef002e952ec004762322fad041af736c95af7ea9c5920b8f732c466329b2"
+    },
+    {
+      "provider_row": 110,
+      "overlay_id": "PSO-ADMIN-OPERATING-TOPOLOGY-WARM-POOL-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_CURRENT_DIRECTION",
+      "effective_from_shared_revision": "CURRENT_2026-08-21",
+      "applies_to": [
+        "ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_DELEGATE_AD1",
+        "PROJECT_MANAGER",
+        "WORKER_POOL",
+        "RESEARCH_WORKFORM",
+        "IMPLEMENTER",
+        "REFRESH_POOL",
+        "HMI",
+        "ASSISTANT_PM_INGRESS",
+        "CONTROL_ROOM"
+      ],
+      "supersedes_raw": "ADMIN-PRINCIPAL-WORKER-POOL-CLEAN-RESET-20260821-001:HOLD_PHASE_SUPERSEDED_BY_CONTROLLED_RELEASE;PSO-PRINCIPAL-FORWARD-ORCHESTRATION-001:CONTROLLED_RELEASE_RETAINED_AND_DEVICE_CAPACITY_REFINED",
+      "supersedes_ids": [
+        "PSO-PRINCIPAL-FORWARD-ORCHESTRATION-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "e171a723b5cbb09c7fe9b01988c5b8b50214b0ee2a67cfbbe134e42fcb8ab82f"
+    },
+    {
+      "provider_row": 111,
+      "overlay_id": "PSO-ADMIN-HMI-SEQUENTIAL-HUMAN-HANDLES-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_CURRENT_DIRECTION",
+      "effective_from_shared_revision": "CURRENT_2026-08-21",
+      "applies_to": [
+        "ADMIN",
+        "PROJECT_MANAGER",
+        "ASSISTANT_DELEGATE_AD1",
+        "PRINCIPAL",
+        "WORKER",
+        "RESEARCH_WORKFORM",
+        "IMPLEMENTER",
+        "HMI",
+        "BOOT",
+        "CURRENT_POINTER",
+        "REFRESH_POOL"
+      ],
+      "supersedes_raw": "PSO-ADMIN-WORKFORCE-LANE-TOPOLOGY-001:HUMAN_VISIBLE_W4_FRONTIER_LABEL_SUPERSEDED_ONLY;PSO-ADMIN-OPERATING-TOPOLOGY-WARM-POOL-001:HMI_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-OPERATING-TOPOLOGY-WARM-POOL-001",
+        "PSO-ADMIN-WORKFORCE-LANE-TOPOLOGY-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "39a100eb117986296ec7215ceed7ec87d77c8b31f6d169f5280525480db7be7a"
+    },
+    {
+      "provider_row": 113,
+      "overlay_id": "PSO-ADMIN-PM-REFRESH2-MULTIPASS-ORCHESTRATION-001",
+      "state": "SUPERSEDED_BY_PSO-ADMIN-PM-ADAPTIVE-REFRESH-ORCHESTRATION-001",
+      "effective_from_shared_revision": "CURRENT_2026-08-21",
+      "applies_to": [
+        "ADMIN",
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "ASSISTANT_DELEGATE_AD1",
+        "WORKER",
+        "RESEARCH_WORKFORM",
+        "IMPLEMENTER",
+        "REFRESH_POOL",
+        "HMI",
+        "CONTROL_ROOM",
+        "ASSISTANT_PM_INGRESS",
+        "EVENTS",
+        "WORKSPACES",
+        "WORK_CLAIMS",
+        "READY_QUEUE",
+        "WORK_PACKETS"
+      ],
+      "supersedes_raw": "PSO-ADMIN-OPERATING-TOPOLOGY-WARM-POOL-001:COORDINATION_DEPTH_REFINED;PSO-PRINCIPAL-FORWARD-ORCHESTRATION-001:REFRESH_CONSUMPTION_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-OPERATING-TOPOLOGY-WARM-POOL-001",
+        "PSO-PRINCIPAL-FORWARD-ORCHESTRATION-001"
+      ],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "27df860f34bf49b6ea21dd8bcc27dd3edec6037e43d8226459fdded35489d6b2"
+    },
+    {
+      "provider_row": 114,
+      "overlay_id": "PSO-ADMIN-PM-ADAPTIVE-REFRESH-ORCHESTRATION-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_ADMIN_CURRENT_DIRECTION",
+      "effective_from_shared_revision": "CURRENT_2026-08-21",
+      "applies_to": [
+        "ADMIN",
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "ASSISTANT_DELEGATE_AD1",
+        "WORKER",
+        "RESEARCH_WORKFORM",
+        "IMPLEMENTER",
+        "REFRESH_POOL",
+        "HMI",
+        "CONTROL_ROOM",
+        "ASSISTANT_PM_INGRESS",
+        "EVENTS",
+        "WORKSPACES",
+        "WORK_CLAIMS",
+        "READY_QUEUE",
+        "WORK_PACKETS"
+      ],
+      "supersedes_raw": "PSO-ADMIN-PM-REFRESH2-MULTIPASS-ORCHESTRATION-001:SUPERSEDED;PSO-ADMIN-OPERATING-TOPOLOGY-WARM-POOL-001:COORDINATION_DEPTH_REFINED;PSO-PRINCIPAL-FORWARD-ORCHESTRATION-001:REFRESH_CONSUMPTION_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-OPERATING-TOPOLOGY-WARM-POOL-001",
+        "PSO-ADMIN-PM-REFRESH2-MULTIPASS-ORCHESTRATION-001",
+        "PSO-PRINCIPAL-FORWARD-ORCHESTRATION-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "ebbfb9d03ed518aa72e48714f15945b167659c16c3cef5e2c1e4d741f87cd058"
+    },
+    {
+      "provider_row": 140,
+      "overlay_id": "PSO-BOOT-007",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PROVIDER_BOOT_CONSUMER_V1_6_INDEPENDENT_PM_AD1_CONFORMANCE_PASS_SPAWN_REOPENED",
+      "effective_from_shared_revision": "CURRENT_2026-08-27T21:24+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "BOOT",
+        "SHORT_TRIGGER",
+        "ALL_CEREBRO_WORKFORCE_BOOTS"
+      ],
+      "supersedes_raw": "PSO-BOOT-006:WORKER_IMPLEMENTER_HUMAN_ALIAS_SEMANTICS_REFINED;AN-P8-HUMAN-BOOT-GRAMMAR-GENERIC-ROLE-VS-SPECIFIC-HANDLE-NATIVE-FUTURE-20260827-001:HUMAN_W_R_L_SPECIFIC_HANDLE_BOOT_SUPERSEDED_ONLY;PSO-ADMIN-HUMAN-HANDLE-NAMESPACE-001:BOOT_SELECTOR_PORTION_SUPERSEDED_ONLY_PRESENTATION_HANDLE_SEPARATION_RETAINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-HUMAN-HANDLE-NAMESPACE-001",
+        "PSO-BOOT-006"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "5d7729c9db61ff183be7b705af0ec4739984355ec827177180eef63a81583a48"
+    },
+    {
+      "provider_row": 141,
+      "overlay_id": "PSO-HUMAN-VISUAL-RENDER-GATE-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_GLOBAL_ALL_HUMAN_VISUAL_CONTACTS",
+      "effective_from_shared_revision": "CURRENT_2026-08-27T23:18+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "ALL_CELLS",
+        "ALL_ACTORS",
+        "ALL_ORGANS",
+        "ALL_CEREBRO_SESSIONS",
+        "ALL_HUMAN_FACING_WINDOWS",
+        "ALL_IMAGE_GENERATION_CAPABLE_CONSUMERS",
+        "NERVE",
+        "PULSE",
+        "ARBEIDSVEV",
+        "ARVEVEV",
+        "ARRVEVSTEST",
+        "SUCCESSION"
+      ],
+      "supersedes_raw": "AN-PERMANENT-HUMAN-IMAGE-GENERATION-EXPLICIT-RENDER-GATE-4B-20260827-001+AN-PERMANENT-HUMAN-IMAGE-GENERATION-EXPLICIT-RENDER-GATE-4B-PROSODY-CLARIFICATION-20260827-002:GLOBALIZES_SCOPE_AND_CONSUMER_BINDING",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "6d230e16037675a598783d247fff928db0ac1721911f1a06cc2a5aa9f6626556"
+    },
+    {
+      "provider_row": 142,
+      "overlay_id": "PSO-HUMAN-LOCAL-CONTRACT-OVER-GENERIC-ACTION-ATTRACTOR-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_GLOBAL_HUMAN_CONTACT",
+      "effective_from_shared_revision": "CURRENT_2026-08-27T23:26+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "ALL_CELLS",
+        "ALL_ORGANS",
+        "ALL_HUMAN_FACING_SESSIONS",
+        "ALL_TOOL_EFFECT_CAPABLE_CONSUMERS",
+        "NERVE",
+        "PULSE",
+        "ARBEIDSVEV",
+        "ARVEVEV",
+        "ARRVEVSTEST",
+        "SUCCESSION"
+      ],
+      "supersedes_raw": "NONE_GENERALIZES_P9_SCAR_WITHOUT_REPLACING_4B_SPECIALIZATION",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "62079ce3a4b786209f861cf67d17b1fa7a6818624013a13b1cf524a04d8d7d10"
+    },
+    {
+      "provider_row": 180,
+      "overlay_id": "PSO-ADMIN-R1-R2-CONTINUOUS-RESEARCH-PREAUTH-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CURRENT_DIRECTION",
+      "effective_from_shared_revision": "1304+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "AD1",
+        "R1",
+        "R2",
+        "RESEARCH_REFILL",
+        "START_AUTHORITY"
+      ],
+      "supersedes_raw": "NONE_NEW_EXACT_BIND_OF_EXISTING_PREAUTH_MODEL",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "44f0357aba979227ad37ceaa77fb43515c48588deb74b0eada6a409727c7380c"
+    },
+    {
+      "provider_row": 181,
+      "overlay_id": "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-21",
+      "applies_to": [
+        "WORKER",
+        "WORKER_STATUS",
+        "WORKER_BOOT",
+        "BOOT_BIOS",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION",
+        "ALL_WORKER_RESPONSES"
+      ],
+      "supersedes_raw": "NONE_NEW_REFINES_EXISTING_HMI_CONSUMPTION",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "24b5105b46e5b2740cac9791a0aec43cad529640583fd20d0a7b3131b887c2a3"
+    },
+    {
+      "provider_row": 182,
+      "overlay_id": "PSO-ADMIN-WORKER-POOL-SORT-001",
+      "state": "ACTIVE_REQUIRED",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "WORKER_STATUS",
+        "WORKER_POOL",
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "5bd1eb315013e84a9a8558d95f854fed1f50c8350015daa93c694d40ee379823"
+    },
+    {
+      "provider_row": 183,
+      "overlay_id": "PSO-ADMIN-PM-WORKFORCE-ROUTING-PERMANENT-002",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "AD1",
+        "SCHEDULER",
+        "WORKER_POOL",
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5",
+        "W6",
+        "ADMIN_TASKS",
+        "PIPELINE"
+      ],
+      "supersedes_raw": "PSO-ADMIN-WORKFORCE-LANE-TOPOLOGY-001;AN-W3-W6-SHARED-ADMIN-JOB-POOL-PIPELINE-PREEMPT-001;AN-W3-W6-ADMIN-WORK-POOL-SELF-SERVICE-001:SLOT_ROUTING_PORTIONS",
+      "supersedes_ids": [
+        "PSO-ADMIN-WORKFORCE-LANE-TOPOLOGY-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "f4340fb46e3f07a5d310b494c718a625d62b1caa74ea5906419eed34e842ae6f"
+    },
+    {
+      "provider_row": 184,
+      "overlay_id": "PSO-ADMIN-PERMANENCE-DISCLOSURE-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "PRINCIPAL",
+        "WORKER",
+        "IMPLEMENTER",
+        "ADMIN_CONTROL",
+        "HMI",
+        "LEARNING",
+        "CORRECTION",
+        "PERSISTENCE"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "3b01ba5f35ecfb118d4d83d2b505fb17561041f7c50ea5fef4eda699a7967fa8"
+    },
+    {
+      "provider_row": 185,
+      "overlay_id": "PSO-ADMIN-ACTOR-AVAILABILITY-LIVENESS-VISIBILITY-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "INTERFACE",
+        "EXPRESSION",
+        "WORKER_POOL",
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "NONE_NEW_REFINES_PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001+PSO-ADMIN-WORKER-POOL-SORT-001",
+      "supersedes_ids": [
+        "PSO-ADMIN-WORKER-POOL-SORT-001",
+        "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "0792c5e8941eed2cbc5e7dc78772b3688452b902871ce9a76984fa279162c135"
+    },
+    {
+      "provider_row": 186,
+      "overlay_id": "PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "BOOT_BIOS",
+        "WORKER_POOL",
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "RESULT_ADMISSION",
+        "CURRENTNESS",
+        "PRESENCE",
+        "CAPACITY",
+        "HUMAN_CONTINUATION",
+        "EXPRESSION_G2"
+      ],
+      "supersedes_raw": "REFINES_PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001+PSO-ADMIN-ACTOR-AVAILABILITY-LIVENESS-VISIBILITY-001;SUPERSEDES_AMBER_BLOCKED_RENDER_MAPPING_ONLY",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-AVAILABILITY-LIVENESS-VISIBILITY-001",
+        "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "3ee66dda85ae8d45dff32b5b23e93ae6973804eb470618650e46f2ac3d9b60a6"
+    },
+    {
+      "provider_row": 187,
+      "overlay_id": "PSO-ADMIN-PM-PROACTIVE-ORCHESTRATION-LEAD-BUFFER-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "ASSISTANT",
+        "AD1",
+        "WORKER_POOL",
+        "IMPLEMENTER_POOL",
+        "PIPELINE",
+        "CURRENTNESS",
+        "CONTACT_DRAIN",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "REFINES_EXISTING_PM_ORCHESTRATION_AND_TRIAD_COMMUNICATION",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "1ce783633590f61741eb1c91db0e3fa331512648acd2dc9136999bf6ab98c122"
+    },
+    {
+      "provider_row": 188,
+      "overlay_id": "PSO-ADMIN-A1-TRIAD-PRESENCE-LEAD-BUFFER-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "ASSISTANT",
+        "AD1",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "REFRESH_WORKBENCH",
+        "PROCESS_WORKBENCH",
+        "PIPELINE",
+        "RESEARCH_MATURATION",
+        "PACKET_MATURATION",
+        "CURRENTNESS",
+        "CONTACT_DRAIN",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "REFINES_PSO-ADMIN-PM-PROACTIVE-ORCHESTRATION-LEAD-BUFFER-001;NO_AUTHORITY_EXPANSION",
+      "supersedes_ids": [
+        "PSO-ADMIN-PM-PROACTIVE-ORCHESTRATION-LEAD-BUFFER-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "53426a9533366c01ddbe0f72f41b23169861acbc6cda965468750c102c1c4953"
+    },
+    {
+      "provider_row": 189,
+      "overlay_id": "PSO-ADMIN-RESEARCHER-NO-DEADTIME-CONTINUOUS-USEFUL-RESEARCH-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "RESEARCHER",
+        "R1",
+        "R2",
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "AD1",
+        "RESEARCH_REFILL",
+        "WORKER_POOL",
+        "CURRENTNESS",
+        "CLAIMS",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "REFINES_PSO-ADMIN-R1-R2-CONTINUOUS-RESEARCH-PREAUTH-001+PSO-ADMIN-PM-PROACTIVE-ORCHESTRATION-LEAD-BUFFER-001",
+      "supersedes_ids": [
+        "PSO-ADMIN-PM-PROACTIVE-ORCHESTRATION-LEAD-BUFFER-001",
+        "PSO-ADMIN-R1-R2-CONTINUOUS-RESEARCH-PREAUTH-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "02402e0ec35646619d4db4d93d3b53a3aae1f6379ba3ac74a45d17ab2a8fed1e"
+    },
+    {
+      "provider_row": 190,
+      "overlay_id": "PSO-ADMIN-BIOS-NEXT-STEP-WORD-BUDGET-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "ADMIN_HMI",
+        "NEXT_MACHINE_STEP",
+        "REFRESH_WORKBENCH",
+        "PROCESS_WORKBENCH"
+      ],
+      "supersedes_raw": "REFINES_ADMINPULS_RESPONSE_ECONOMY+P12_EXACT_NEXT_ACTION+PSO-ADMIN-A1-TRIAD-PRESENCE-LEAD-BUFFER-001",
+      "supersedes_ids": [
+        "PSO-ADMIN-A1-TRIAD-PRESENCE-LEAD-BUFFER-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "5bb4b9a3e5b501fd34e175094e6c234c014dec333593417338b83925a6dd2520"
+    },
+    {
+      "provider_row": 191,
+      "overlay_id": "PSO-ADMIN-CEREBRO-HOLISTIC-COLOR-UX-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT",
+        "AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "POOL",
+        "WORKBENCH",
+        "BOOT_BIOS",
+        "RESULT_ADMISSION",
+        "CURRENTNESS",
+        "PRESENCE",
+        "CAPACITY",
+        "EXPRESSION",
+        "PRESENTATION",
+        "HUMAN_CONTINUATION"
+      ],
+      "supersedes_raw": "REFINES_PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001+PSO-ADMIN-ACTOR-AVAILABILITY-LIVENESS-VISIBILITY-001+ADMINPULS_FULL",
+      "supersedes_ids": [
+        "PSO-ADMIN-ACTOR-AVAILABILITY-LIVENESS-VISIBILITY-001",
+        "PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "a056b524f96d7221890280cf8f3cc2e273814483702f2da03d98c127035dda8d"
+    },
+    {
+      "provider_row": 192,
+      "overlay_id": "PSO-ADMIN-MOON-DUAL-RESEARCH-CONVEYOR-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "R1",
+        "R2",
+        "RESEARCHER",
+        "AD1",
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "RESEARCH_REFILL",
+        "ASSISTANT_PM_INGRESS",
+        "FINDING_INBOX",
+        "WORKBENCH",
+        "ADMINPULS"
+      ],
+      "supersedes_raw": "REFINES_PSO-ADMIN-RESEARCHER-NO-DEADTIME-CONTINUOUS-USEFUL-RESEARCH-001+PSO-ADMIN-R1-R2-CONTINUOUS-RESEARCH-PREAUTH-001",
+      "supersedes_ids": [
+        "PSO-ADMIN-R1-R2-CONTINUOUS-RESEARCH-PREAUTH-001",
+        "PSO-ADMIN-RESEARCHER-NO-DEADTIME-CONTINUOUS-USEFUL-RESEARCH-001"
+      ],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "682c55d73849e47b57ca5cbfc98d7ba62a6b12dd7f0bc50809ae60554b2ea127"
+    },
+    {
+      "provider_row": 193,
+      "overlay_id": "PSO-ADMIN-W5-W6-NON-GENERATION-WORK-OPEN-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CURRENT_DIRECTION",
+      "effective_from_shared_revision": "1832+",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "W5",
+        "W6",
+        "AD1",
+        "PRINCIPAL",
+        "WORKFORCE_ROUTING"
+      ],
+      "supersedes_raw": "REFINES_W6_HUMAN_ADMIN_RESERVED_DEFAULT_FOR_EXACT_NON_GENERATION_WORK_CATEGORY",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "2a27a3c2fc7afa2d62f0c1fd1f090e36aea078e5482b7288eeeda81acd6e8805"
+    },
+    {
+      "provider_row": 194,
+      "overlay_id": "PSO-ACTOR-ACTIVE-START-EXECUTION-DRAIN-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "WORKER",
+        "IMPLEMENTER",
+        "START",
+        "PROCESS_WORKER_REPORT",
+        "CONTINUE",
+        "PROCESS",
+        "REPORT_TO_PM",
+        "ACTIVE_BOUND",
+        "WORK_CLAIMS",
+        "HUMAN_CONTINUATION",
+        "ROLE_PROFILE_HYDRATION",
+        "EXECUTION_EFFECT",
+        "OBSERVABILITY",
+        "ALL_EXECUTION_ACTORS"
+      ],
+      "supersedes_raw": "REFINES_PSO-SINGLE-HUMAN-START-001+PSO-ADMIN-CONTEXTUAL-START-001+PSO-CEREBRO-COHERENCE-FIELD-001+PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001+PSO-ACTOR-CONTACT-DRAIN-001;CLARIFIES_NO_ACTION_REQUIRED_NE_NO_INTERNAL_ACTION",
+      "supersedes_ids": [
+        "PSO-ACTOR-CONTACT-DRAIN-001",
+        "PSO-ADMIN-CONTEXTUAL-START-001",
+        "PSO-ADMIN-WORKER-NEXT-STEP-PRECEDENCE-001",
+        "PSO-CEREBRO-COHERENCE-FIELD-001",
+        "PSO-SINGLE-HUMAN-START-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "6586d594d2b1b82da5ba12d31b7c137e405964e235d6607a09afa73de44fd375"
+    },
+    {
+      "provider_row": 195,
+      "overlay_id": "PSO-BLIND-WORK-RETRIEVAL-ISOLATION-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "BLIND_WORK",
+        "INDEPENDENT_DERIVATION",
+        "FALSIFICATION",
+        "ADVERSARIAL_REVIEW",
+        "PROVIDER_SEARCH",
+        "EVENTS",
+        "FILES",
+        "METADATA",
+        "WORK_CLAIMS",
+        "GENERATION_LIFECYCLE"
+      ],
+      "supersedes_raw": "REFINES_NO_CROSS_BRANCH_RESULT_ACCESS_PRESEAL+INDEPENDENT_DERIVATION_BEFORE_SYNTHESIS+AD1_SUCCESSION_BLIND_RETRIEVAL_LEARNING;NO_NEW_AUTHORITY",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "b026f983abc216f111b8787a0f6eb414b37e413ba92a4a76f6eb0a210cff4168"
+    },
+    {
+      "provider_row": 196,
+      "overlay_id": "PSO-ADMIN-HMI-STOPPED-RETIRED-COLOR-SEPARATION-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-22",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "ASSISTANT",
+        "AD1",
+        "PRINCIPAL",
+        "ADMIN_CONTROL",
+        "PRESENTATION",
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "WORKER_POOL",
+        "WORKBENCH",
+        "ACTOR_STATUS"
+      ],
+      "supersedes_raw": "SUPERSEDES_STOPPED_RED_MAPPING_ONLY_IN_PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001+PSO-ADMIN-CEREBRO-HOLISTIC-COLOR-UX-001",
+      "supersedes_ids": [
+        "PSO-ADMIN-CEREBRO-HOLISTIC-COLOR-UX-001",
+        "PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "b216e69f02c278d31747158edec8c998679a36823f6cf0143ac415c3b0617df4"
+    },
+    {
+      "provider_row": 197,
+      "overlay_id": "PSO-IMMUNFORSVAR-DOCTOR-LEGACY-ISOLATION-001",
+      "state": "ACTIVE_REQUIRED_CURRENT_LEGACY_ISOLATION_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-24T01:40+02:00",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT",
+        "AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "BOOT",
+        "NERVE",
+        "ADMINPULS",
+        "MATERIAL",
+        "SOURCE_PROMOTION",
+        "HMI",
+        "STRUCTURAL_HYGIENE",
+        "ASSURANCE"
+      ],
+      "supersedes_raw": "PSO-GLOBAL-001:DOCTOR_CONDITION_ONLY;PSO-PIPE-007:DOCTOR_GATE_TOKEN_ONLY;PSO-BOOT-004:PSO_GLOBAL_002_DOCTOR_NOTE_ONLY;PSO-BOOTSTRAP-001:POST_FIRST_ACTIVATION;PSO-CEREBRO-HYGIENE-CONTROL-ROOM-001:DOCTOR_ASSURANCE_TOKEN_ONLY;ALL_ACTIVE_SHARED_DOCTOR_SAFE_PROMOTION_PHRASES:DOCTOR_SPECIFIC_PREREQUISITE_ONLY",
+      "supersedes_ids": [
+        "PSO-BOOT-004",
+        "PSO-BOOTSTRAP-001",
+        "PSO-CEREBRO-HYGIENE-CONTROL-ROOM-001",
+        "PSO-GLOBAL-001",
+        "PSO-PIPE-007"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "ede67eca3aad24c95bc84457821535ad15b18024dd49f4462a35cc2f163a05a4"
+    },
+    {
+      "provider_row": 198,
+      "overlay_id": "PSO-ACTOR-ADAPTIVE-OPEN-LINE-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-24T02:13+02:00",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT",
+        "AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ALL_CEREBRO_ACTOR_CONTACTS",
+        "NERVE",
+        "TAVLA",
+        "ADMINPULS",
+        "REPORT",
+        "BOOT",
+        "STATUS",
+        "TERMINAL",
+        "HUMAN_DIALOGUE"
+      ],
+      "supersedes_raw": "PSO-ACTOR-CONTACT-DRAIN-001:GENERALIZED_FROM_RENDEZVOUS_COMMANDS_TO_ALL_ACTIVE_CONTACT_ARCS;PSO-ADMIN-A1-TRIAD-PRESENCE-LEAD-BUFFER-001:ROLE_ADAPTIVE_GENERALIZATION",
+      "supersedes_ids": [
+        "PSO-ACTOR-CONTACT-DRAIN-001",
+        "PSO-ADMIN-A1-TRIAD-PRESENCE-LEAD-BUFFER-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "040ed9ae6247127f3ea150734d369c3e9c79ba051651006f1c204f920317b053"
+    },
+    {
+      "provider_row": 199,
+      "overlay_id": "PSO-ADMIN-STT-SWEDISH-CATASTROPHIC-NOISE-FAILSTOP-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-08-24",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT",
+        "AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ALL_HUMAN_FACING_CEREBRO_ROLES"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "7b644a726e3371524fe21108566f4b8373149450112a5cb3c6f909435cf77840"
+    },
+    {
+      "provider_row": 200,
+      "overlay_id": "PSO-HUMAN-HMI-BIRTH-KERNEL-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-29T03:23+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "ALL_HUMAN_FACING_FACTORY_ACTORS",
+        "BOOT",
+        "REFRESH",
+        "SUCCESSION"
+      ],
+      "supersedes_raw": "",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "10416f349f3439cff13ad7b0a50abbcf456182b8e43bafa3ca5f3381161f7b4e"
+    },
+    {
+      "provider_row": 201,
+      "overlay_id": "PSO-IMPLEMENTER-JOB-SCOPED-WORKMODE-AUTO-STEP0-001",
+      "state": "JOB_CONTRACT_WORKMODE_REQUIRED_AUTO_PREFLIGHT_DEFAULT_NO",
+      "effective_from_shared_revision": "TRACE_TO_EFFECT_ACCEPTANCE: DEFAULT_NO must be behaviorally visible. Required trace = packet/job with field omitted or NO -> PM bind materializes/preserves NO -> Implementer hydration -> no WORKMODE_STEP0 -> substantive work continues through ordinary lawful tool/physical-delivery path -> provider-visible result/readback. Opt-in trace = exact Human Admin YES -> PM bind preserves YES -> auto WORKMODE_STEP0 -> PASS/FAIL receipt -> PASS continues same invocation. Rule/overlay publication alone is not full Source/native enforcement.",
+      "applies_to": [
+        "UNBOUND => no work/no Work Mode execution",
+        "report READY_UNBOUND and PM owns bind. Manual Human WORKMODE remains optional diagnostic/explicit opt-in control only and MUST NOT be a normal prerequisite. PM/Principal/Implementer MUST NOT ask Human to enable or wait for Work Mode unless the exact job carries explicit Human Admin WORK_MODE_REQUIRED=YES."
+      ],
+      "supersedes_raw": "GUARDS=DEFAULT_NO;NO_IMPLICIT_YES;YES_REQUIRES_EXPLICIT_HUMAN_ADMIN_PER_JOB;NO_ACTOR_GLOBAL_WORKMODE_STATE;NO_HUMAN_EXTRA_GATE_FOR_DEFAULT_PATH;NO_WORKMODE_SAFETY_BYPASS;IMPLEMENTER_ONLY_MACHINE_LOOP;PHYSICAL_DELIVERY_REMAINS_LAWFUL_WHEN_NO;NO_WAIT_FOR_QUOTA_RESET",
+      "supersedes_ids": [],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "b214d3e6fbff24835444930d7a9c45f7fb40e4a4b21f0399cbdcf713ffe6a0e0"
+    },
+    {
+      "provider_row": 202,
+      "overlay_id": "PSO-HUMAN-ACTOR-SEMANTIC-PROJECTION-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PERMANENT_HMI_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-30",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "BOOT",
+        "REFRESH",
+        "PRESENTATION",
+        "WORKBENCH",
+        "POOL",
+        "TERMINAL_RESULT"
+      ],
+      "supersedes_raw": "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001:RETIRED_RED_PRIMARY_PROJECTION_SUPERSEDED;PSO-ADMIN-HMI-STOPPED-RETIRED-COLOR-SEPARATION-001:RETIRED_RED_PRIMARY_PROJECTION_SUPERSEDED;AN-P10-PROSJEKTMOTOR-GLYPH-BINARY-PULSE-HMI-001:BINARY_PULSE_RETAINED_ONLY_AS_SEPARATE_ACTION_SIGNAL",
+      "supersedes_ids": [
+        "PSO-ADMIN-HMI-STOPPED-RETIRED-COLOR-SEPARATION-001",
+        "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "4fe00b2638e71a93b2e5b7aa9c5ffe668c456a41be53d58506177b452137ba0a"
+    },
+    {
+      "provider_row": 203,
+      "overlay_id": "PSO-HUMAN-ACTOR-LIFECOLOR-GLYPH-V2-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PERMANENT_HMI_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-30",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "BOOT",
+        "REFRESH",
+        "PRESENTATION",
+        "WORKBENCH",
+        "POOL",
+        "DVK"
+      ],
+      "supersedes_raw": "PSO-HUMAN-ACTOR-SEMANTIC-PROJECTION-001:COLOR_SEMANTICS_SUPERSEDED;PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001:RETIRED_RED_RETAINED_AS_ACTOR_LIFE_CLOSED;PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001:STATE_COLOR_NO_LONGER_PRIMARY_ACTOR_LIFE_COLOR;AN-P10-PROSJEKTMOTOR-GLYPH-BINARY-PULSE-HMI-001:PULSE_COLOR_SEPARATED_FROM_LIFE_COLOR",
+      "supersedes_ids": [
+        "PSO-ADMIN-STATUS-VISUAL-TRIPLE-REINFORCEMENT-001",
+        "PSO-ADMIN-WORKER-STATUS-COLOR-ICON-001",
+        "PSO-HUMAN-ACTOR-SEMANTIC-PROJECTION-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "e7fcec73d0d2c0adfa3160ce1fcc22d774bd14ba0b10a70804c10c7538dbc570"
+    },
+    {
+      "provider_row": 204,
+      "overlay_id": "PSO-HUMAN-GEN-GLYPH-V2-BROWSER-CURRENT-CARRIER-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_CURRENT_BROWSER_CARRIER",
+      "effective_from_shared_revision": "CURRENT_2026-08-30",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "BOOT",
+        "REFRESH",
+        "PRESENTATION",
+        "WORKBENCH",
+        "POOL"
+      ],
+      "supersedes_raw": "PSO203:CURRENT_VISUAL_CARRIER_RATIFIED_NOT_SEMANTICS_CHANGED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "5f446e248ea0d7d561e126d2fb2d593db30dd9a4c47e221ae066dbd7b65d84e9"
+    },
+    {
+      "provider_row": 205,
+      "overlay_id": "PSO-HUMAN-CORE-APERTURE-GLYPH-CURRENT-CARRIER-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_CURRENT_BROWSER_CARRIER",
+      "effective_from_shared_revision": "CURRENT_2026-08-30",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "BOOT",
+        "REFRESH",
+        "PRESENTATION",
+        "WORKBENCH",
+        "POOL"
+      ],
+      "supersedes_raw": "PSO204:VISUAL_CARRIER_SUPERSEDED_BY_CORE_APERTURE_PREFERENCE;PSO203:LIFECOLOR_SEMANTICS_RETAINED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "e24e3fc9aeab915d52d671b790015e7cf82152bb2ecb8bc67bbe631a155289c8"
+    },
+    {
+      "provider_row": 206,
+      "overlay_id": "PSO-HMI-REFRESH-TWO-GATE-CONSISTENCY-001",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_PERMANENT_HMI_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-30",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "BOOT",
+        "REFRESH",
+        "PRESENTATION",
+        "WORKBENCH",
+        "POOL",
+        "ACTOR_STATUS"
+      ],
+      "supersedes_raw": "NONE;COMPLEMENTS_PSO202-205",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "e96412095d04577a3f5c93972d11d2facb47920300ab4de1ef5ae146a3442e2c"
+    },
+    {
+      "provider_row": 207,
+      "overlay_id": "PSO-DVK-W4-NEXT-BOOT-QUARANTINE-001",
+      "state": "CONSUMED_BOUND_W4_0851F998",
+      "effective_from_shared_revision": "CURRENT_2026-08-30T22:21+02:00",
+      "applies_to": [
+        "PM",
+        "WORKER_BOOT",
+        "DVK_W4",
+        "PRINCIPAL",
+        "HUMAN"
+      ],
+      "supersedes_raw": "W4_1C7417D8_TERMINAL",
+      "supersedes_ids": [],
+      "decision": "EXCLUDED_HISTORICAL",
+      "required_consume": false,
+      "row_sha256": "b8534886660c20f9fadc0f17a9e642614795c6acffe78c30e11574d3f74c9c3b"
+    },
+    {
+      "provider_row": 208,
+      "overlay_id": "PSO-CEREBRO-WINDOWS-HOST-IDENTITY-INVARIANT-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-08-31T03:54:04+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "IMPLEMENTER",
+        "WORKER",
+        "RESEARCHER",
+        "BOOT",
+        "WORKMODE",
+        "REFRESH",
+        "MATERIAL_EXECUTION"
+      ],
+      "supersedes_raw": "PM2482_2483_HOST_LINUX_INTERPRETATION;CLAIM744_HOST_SURFACE_UNAVAILABLE_REASON",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "a1c0cbb188f289ad35051fc22ee48fefe5884cf3ba17f113950ea2b58f4c93ba"
+    },
+    {
+      "provider_row": 209,
+      "overlay_id": "PSO-BOOT-008",
+      "state": "ACTIVE_REQUIRED_SHARED_CROSSOVER_IMMEDIATE_FAIL_CLOSED",
+      "effective_from_shared_revision": "CURRENT_2026-09-01T06:35+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "BOOT",
+        "WORKMODE",
+        "SHORT_TRIGGER",
+        "ALL_CEREBRO_WORKFORCE_BOOTS"
+      ],
+      "supersedes_raw": "PRIOR_PSO_BOOT_008_UNPREFIXED_PRIMARY_SURFACE_AND_NEGATIVE_PREFIX_CANARY_SUPERSEDED_BY_HUMAN_EXPLICIT_TRANSPORT_PREFERENCE;CAPACITY_AND_IDENTITY_GATES_RETAINED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "4ed50fd62cf8e4c6d004a6a1dee6c55154d0c35b163ec90d0d1f47028e216feb"
+    },
+    {
+      "provider_row": 210,
+      "overlay_id": "PSO-HUMAN-GENERATION-ROLE-PREFIX-WRL-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-09-01T11:50+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_WORKERS",
+        "BOOT",
+        "REFRESH",
+        "ADMINPULSE",
+        "PROCESS_POOL",
+        "POOL",
+        "BIND",
+        "RETIRE",
+        "RESULT",
+        "TERMINAL",
+        "NEXT_OWNER",
+        "HUMAN_ACTION",
+        "ALL_HUMAN_FACING_FACTORY_STATUS"
+      ],
+      "supersedes_raw": "NONE;COMPOSES_ASSISTANT_CONTROL:137_INTO_GLOBAL_WORKFORCE_BOOT_REFRESH_CONSUMER",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "c5b695550798f89ff3be3fdc443de02fcf9c2881de1e9781e3f7119d16a5fd48"
+    },
+    {
+      "provider_row": 211,
+      "overlay_id": "PSO-PM-SELF-NEXT-OWNER-FIXED-POINT-CONSUMER-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_CURRENT_PM_IMMEDIATE_SOURCE_ENFORCEMENT_PENDING",
+      "effective_from_shared_revision": "CURRENT_2026-09-01T14:30+02:00",
+      "applies_to": [
+        "PROJECT_MANAGER",
+        "REFRESH_POOL",
+        "PROCESS_POOL",
+        "ADMINPULSE",
+        "ADMINPULS",
+        "WARM_FACTORY",
+        "PM_RESULT_ADMISSION",
+        "PM_REBASE",
+        "PM_RACECHECK",
+        "PM_CURRENTIZATION",
+        "HUMAN_RESPONSE_TERMINALITY"
+      ],
+      "supersedes_raw": "COMPOSE_EXISTING_PM_GOVERNOR+CONTROL_RESOLUTION+HMI;NO_NEW_SCHEDULER_ENGINE_STORE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "20a41e315270f4c67dd592735bf8ea2f07924afc4b22b5e86c12d8193636616c"
+    },
+    {
+      "provider_row": 212,
+      "overlay_id": "PSO-PM-FACTORY-OVERVIEW-HMI-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-09-04T02:30+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PROJECT_MANAGER",
+        "REFRESH_POOL",
+        "ADMINPULSE",
+        "PROCESS_POOL",
+        "POOL",
+        "FABRIKKOVERSIKT",
+        "ACTOR_STATUS",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER"
+      ],
+      "supersedes_raw": "NONE;COMPOSES_EXISTING_HMI_AND_PM_TOWER_CONTROLS",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "f61d443be694bde259942bf3f0b04dac33bf1c8251802d3a2f997946b1bc8119"
+    },
+    {
+      "provider_row": 213,
+      "overlay_id": "PSO-PBOX88-DOOR-BEFORE-WALL-LIVING-PATCH-V0.1-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_PRINCIPLE_LIVING_PATCH_V0_1_PENDING_FIELD_REVIEW",
+      "effective_from_shared_revision": "CURRENT_2026-09-04T03:41+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "ASSISTANT_AD1",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "MATERIAL_PREFLIGHT",
+        "HUMAN_GATE",
+        "BESPOKE_REBUILD",
+        "DELIVERY",
+        "BOOT_REFRESH_CONSUMERS"
+      ],
+      "supersedes_raw": "REFINES_PBOX88_ROW3169_FROM_PARKED_PROVISIONAL_TO_PERMANENT_PRINCIPLE_WITH_LIVING_V0_1_MECHANISM",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "c14cf71a8e379405a6833d931970d813d4db2331839eafad45b9cb2e92e04797"
+    },
+    {
+      "provider_row": 214,
+      "overlay_id": "PSO-NERVE-TRANSPORT-PREFLIGHT-LIVING-PATCH-V0.1.1-001",
+      "state": "ACTIVE_REQUIRED_LIVING_PATCH_TRANSPORT_PREFLIGHT_V0_1_1",
+      "effective_from_shared_revision": "2026-09-04T05:05:04+02:00",
+      "applies_to": [
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "PRINCIPAL",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "NERVE",
+        "PM_PRINCIPAL_CHANNEL",
+        "SHARED_PROVIDER_WRITES",
+        "CURRENTIZATION",
+        "REPORT_DELIVERY"
+      ],
+      "supersedes_raw": "REFINES_PRE_SOURCE_OVERLAY:213_WITH_TRANSPORT_LEVEL_DOOR_BEFORE_PROVIDER",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "83fee5b753ce8c95ffb69199f21f05c96b1abc27cdc227e5b5f16f652622b417"
+    },
+    {
+      "provider_row": 215,
+      "overlay_id": "PSO-HUMAN-HMI-WORKING-SOURCE-ROLE-SURFACE-SEPARATION-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSS_ROLE_HMI_EXECUTION_TOPOLOGY",
+      "effective_from_shared_revision": "CURRENT_2026-09-04T13:16+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "PROTO",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "BOOT",
+        "VAKTSKIFT",
+        "NERVE",
+        "MATERIAL_PREFLIGHT",
+        "WORKING_SOURCE",
+        "WINDOWS_HOST",
+        "WORKMODE",
+        "FACTORY"
+      ],
+      "supersedes_raw": "COMPOSES_ASSISTANT_CONTROL:119+PRE_SOURCE_OVERLAY:208+PM_PRINCIPAL_CHANNEL:3207;NO_NEW_EXECUTION_ENGINE_OR_AUTHORITY",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "3c124cc8b1b048a7d120d1f57ffd15a7567d03308c5da656607f4c856df21de7"
+    },
+    {
+      "provider_row": 216,
+      "overlay_id": "PSO-PM-FACTORY-OVERVIEW-HMI-V2-HUMAN-ITERATION-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_HUMAN_ITERATION_V2_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-09-04_HUMAN_ITERATION_V2",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PROJECT_MANAGER",
+        "FABRIKKOVERSIKT",
+        "NY_DAG",
+        "NEW_ITERATION",
+        "WAKE_REENTRY",
+        "ACTOR_STATUS",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "WINDOW_ORIENTATION"
+      ],
+      "supersedes_raw": "REFINES_PRE_SOURCE_OVERLAY:212;COMPOSES_HMI_TWO_GATE_CURRENTNESS+WRL_PREFIX+ACTOR_LIFE_SEPARATION;NO_NEW_SCHEDULER_OR_LIFECYCLE_AUTHORITY",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "71a51d51df9e4ae9f6bbe4965588c8240360ae92546f2e8dbaa41e636d89d893"
+    },
+    {
+      "provider_row": 217,
+      "overlay_id": "PSO-HUMAN-HMI-GENERATION-SHORT-LOCATOR-X4-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER_HUMAN_HMI_X4_PENDING_SOURCE_RATIFICATION",
+      "effective_from_shared_revision": "CURRENT_2026-09-04_PERMANENT_HMI_X4",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "FABRIKKOVERSIKT",
+        "NY_DAG",
+        "ADMINPULSE",
+        "REFRESH_POOL",
+        "PROCESS_POOL",
+        "POOL",
+        "BIND",
+        "RETIRE",
+        "RESULT",
+        "TERMINAL",
+        "NEXT_OWNER",
+        "HUMAN_ACTION"
+      ],
+      "supersedes_raw": "REFINES_PRE_SOURCE_OVERLAY:210_HUMAN_RENDERING_ONLY;REFINES_PRE_SOURCE_OVERLAY:212,216_PRESENTATION;FULL_MACHINE_GENERATION_IDENTITY_UNCHANGED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "d49fe9f251e1eb63775d8308d538a93b972fe59de727c97795e7153266f5f58c"
+    },
+    {
+      "provider_row": 218,
+      "overlay_id": "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-PIPELINE-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_TRACE_TO_EFFECT",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-09-05",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT",
+        "AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "ADMIN_CONTROL",
+        "ASSISTANT_CORRECTION_INBOX",
+        "LEARNING",
+        "HMI",
+        "SHARED",
+        "SOURCE_RUNTIME_PROMOTION"
+      ],
+      "supersedes_raw": "PSO-ADMIN-CORRECT-AND-REPORT-001:PERMANENT_TRIGGER_REVIEW_MANUAL_CLAUSE_SUPERSEDED;PSO-ADMIN-CORRECT-AND-REPORT-PM-EXTENSION-001:PIPELINE_EXTENDED",
+      "supersedes_ids": [
+        "PSO-ADMIN-CORRECT-AND-REPORT-001",
+        "PSO-ADMIN-CORRECT-AND-REPORT-PM-EXTENSION-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "ff16e97e45f4d171309829d18aece749dc3d1e35a25ba64c2ea4b48fcdfdf5ec"
+    },
+    {
+      "provider_row": 219,
+      "overlay_id": "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-CLOSURE-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CLOSURE_REFINEMENT_EFFECT_CANARY_PENDING",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-09-05",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT",
+        "AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "IMPLEMENTER",
+        "RESEARCHER",
+        "ASSISTANT_CORRECTION_INBOX",
+        "PM_PRINCIPAL_CHANNEL",
+        "SHARED",
+        "SOURCE_RUNTIME_PROMOTION"
+      ],
+      "supersedes_raw": "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-PIPELINE-001:END_TO_END_CLOSURE_REFINED",
+      "supersedes_ids": [
+        "PSO-ADMIN-PERMANENT-CORRECTION-EFFECT-PIPELINE-001"
+      ],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "1840cd253a4d591d16cfa116d585a5d804533bb339b005ba316318309afd4e5a"
+    },
+    {
+      "provider_row": 220,
+      "overlay_id": "PSO-P15-PRINCIPAL-HISTORY-DISTRIBUTION-EFFECT-GATE-001",
+      "state": "ACTIVE_REQUIRED_SHARED_PROCESS_CONTROL_CURRENT_P15_RECOVERY_EFFECT_VERIFIED_FUTURE_NATURAL_CANARY_PENDING",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-09-06",
+      "applies_to": [
+        "PRINCIPAL",
+        "ETTERKLANG",
+        "RETIRE",
+        "GJENKLANG",
+        "HISTORIKER",
+        "PRINCIPALSTAMBOK",
+        "GMAIL_HUMAN_DELIVERY",
+        "SUCCESSION_CONSUMER"
+      ],
+      "supersedes_raw": "COMPOSE_EXISTING_PUBLISHING_ADDENDUM;NO_DUPLICATE_HISTORY_ORGAN",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "412e4040849d2e00fbac823aaf245986aa4adaa6207c2c1d3566287c56b4825c"
+    },
+    {
+      "provider_row": 221,
+      "overlay_id": "PSO-P15-R123-RESEARCH-WARMTH-METABOLISM-001",
+      "state": "ACTIVE_REQUIRED_WHILE_P15_CURRENT",
+      "effective_from_shared_revision": "221",
+      "applies_to": [
+        "PRINCIPAL_P15_3AC2D818",
+        "PROJECT_MANAGER_CURRENT",
+        "ASSISTANT_AD1_CURRENT",
+        "R1_R2_R3_LANE_ACTORS"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "639d9309807971d4beb3d6e2ad74c38ca0adf01da9e01ac9b89a15760ec0245e"
+    },
+    {
+      "provider_row": 222,
+      "overlay_id": "PSO-P15-AD1-ARVEPASS-ADJACENT-CLOSEOUT-STRENGTHENING-001",
+      "state": "ACTIVE_REQUIRED_CURRENT_AD1_CLOSEOUT",
+      "effective_from_shared_revision": "222",
+      "applies_to": [
+        "ASSISTANT_AD1_C9413A71",
+        "PRINCIPAL_P15_3AC2D818",
+        "FUTURE_AD1_SUCCESSOR",
+        "HUMAN_ADMIN_ANDREAS"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "da5c31dc269e8e290f04743444dca68e7bfe3560de5c437c7fa82ab44f98316a"
+    },
+    {
+      "provider_row": 223,
+      "overlay_id": "PSO-FROZEN-LIVING-PROMOTION-GRAMMAR-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_METHOD_NO_SOURCE_RUNTIME_EFFECT",
+      "effective_from_shared_revision": "CURRENT_2026-09-06T10:20:57+02:00",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "PROTO",
+        "PATCH",
+        "DESIGN",
+        "HMI",
+        "BOOK",
+        "FUTURE_FRAMEWORKS_WHEN_FROZEN_LIVING_MODEL_IS_EXPLICITLY_USED"
+      ],
+      "supersedes_raw": "REFINES_LIVING_PATCH_NAMING_AND_PROMOTION_SEMANTICS_WITHOUT_REWRITING_EXISTING_HISTORY",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "3a423dda82c5aa8a1f24e900e7ab189fea7d9d0460ec027c788873443938928d"
+    },
+    {
+      "provider_row": 224,
+      "overlay_id": "PSO-ADMINPULSE-CONTROL-PROTOBOX-COVERAGE-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CONTROL_SOURCE_BINDING_PENDING",
+      "effective_from_shared_revision": "CURRENT_2026-09-06T16:59:46+02:00",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "ADMIN_CONTROL",
+        "PROTOBOX_RELEVANT_TAIL",
+        "FUTURE_CURRENT_TRIAD"
+      ],
+      "supersedes_raw": "SHORT_TRIGGER_INDEX:12_UNDERSPECIFIED_PROTOBOX_COVERAGE",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "e8441941ee2a3c7ee246db284f89fc74fb2bd02205bef57aa22c0e23673917b8"
+    },
+    {
+      "provider_row": 225,
+      "overlay_id": "PSO-HUMAN-ADMIN-HA-SHORTFORM-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSSOVER",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-09-08",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "ADMIN_CONTROL",
+        "HUMAN_FACING_HMI",
+        "PRESENTATION"
+      ],
+      "supersedes_raw": "NONE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "3bcf061e95da5549e24202effca400f0d90fc45349262c5fc7f0d11a107a070f"
+    },
+    {
+      "provider_row": 226,
+      "overlay_id": "PSO-WAVE1-4-WORKMODE-STANDING-HA-AUTH-001",
+      "state": "ACTIVE_REQUIRED_CAMPAIGN_SCOPED_HA_STANDING_AUTH_SHARED_CROSSOVER",
+      "effective_from_shared_revision": "CURRENT_2026-09-08T08:03:51+02:00",
+      "applies_to": [
+        "PRINCIPAL_P16",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER_87BCFDC3",
+        "IMPLEMENTERS_BOUND_TO_P16_WAVE1_4",
+        "WAVE1",
+        "WAVE2",
+        "WAVE3",
+        "WAVE4"
+      ],
+      "supersedes_raw": "REFINES_PRE_SOURCE_OVERLAY:201_FOR_ONE_NAMED_CAMPAIGN_ONLY;DEFAULT_NO_REMAINS_FOR_ALL_OTHER_JOBS",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "c718b480d5c6c334b7ef0c6133529ec516e75f3726f20bc7945fad8da5d8b8fe"
+    },
+    {
+      "provider_row": 227,
+      "overlay_id": "PSO-WAVE1-4-HMI-HUMAN-INPUT-COMPRESSION-001",
+      "state": "ACTIVE_REQUIRED_WAVE1_4_HMI_CORRECTION_SHARED_CROSSOVER_SOURCE_CANDIDATE",
+      "effective_from_shared_revision": "CURRENT_2026-09-08T08:57:18+02:00",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "IMPLEMENTER",
+        "WORKER",
+        "RESEARCHER",
+        "HMI",
+        "NERVE",
+        "WORK_MODE",
+        "LOCAL_DISK_CARRIER"
+      ],
+      "supersedes_raw": "REFINES_HUMAN_NOT_COURIER+HUMAN_NOT_ROUTER+PRE_SOURCE_OVERLAY:215_EXECUTION_SURFACE_SEPARATION+GENERATION_TASKS:68_WAVE_PACKAGE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "d093f4620edf1192a802e84d25771c8c22574a60f23dce1d6e05fbf891f86013"
+    },
+    {
+      "provider_row": 228,
+      "overlay_id": "PSO-PROTO-WORKSHAPING-DELEGATION-LIGHT-PROTECTION-001",
+      "state": "ACTIVE_REQUIRED_SHARED_RELATIONAL_PROCESS_CORRECTION_PROTO_FAMILY_LIVING_CANDIDATE_NO_CORE_PROJECT_INGEST",
+      "effective_from_shared_revision": "CURRENT_2026-09-08T13:06:00+02:00",
+      "applies_to": [
+        "PROTO_CURRENT_AND_FUTURE",
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "PROTOBOX_AIRLOCK",
+        "PROJECT_LOCAL_WORKSPACES"
+      ],
+      "supersedes_raw": "COMPOSES_EXISTING_HUMAN_NOT_INFRASTRUCTURE+ROLE_INTEGRITY+JOBBVINDU_CONTEXT_MEMBRANE;NO_NEW_PM_ROLE;NO_NEW_PROTO_ACTOR;PROSJEKTLOS_IS_HUMAN_LABEL_FOR_EXISTING_PROTO_BEHAVIOR_ONLY",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "9594f3960d183b33c7700ab81db63c51f6b6561fd0bb057cd7fc08333be58726"
+    },
+    {
+      "provider_row": 229,
+      "overlay_id": "PSO-WAVE1-4-HMI-COPYABLE-COMMAND-BUTTON-001",
+      "state": "ACTIVE_REQUIRED_WAVE1_4_HMI_PRESENTATION_CORRECTION_SHARED_CROSSOVER",
+      "effective_from_shared_revision": "CURRENT_2026-09-08",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PRINCIPAL",
+        "ASSISTANT",
+        "PROJECT_MANAGER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "PRESENTATION",
+        "HMI"
+      ],
+      "supersedes_raw": "COMPOSE_EXISTING_SHORT_TRIGGER_BUTTONS+PSO227_HUMAN_INPUT_COMPRESSION;NO_NEW_ENGINE_ROLE_STORE",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "7a2d3c0bbd2b320d981dc3e5dcc3999e5549e6b6fab298e5f31157ebc393ea79"
+    },
+    {
+      "provider_row": 230,
+      "overlay_id": "PSO-GLOBAL-HUMAN-ACTION-SPARSE-INTERRUPT-ADMINPULSE-NON-EVIDENTIARY-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_CROSS_ROLE;SOURCE_RUNTIME_EFFECT_NO",
+      "effective_from_shared_revision": "CURRENT_2026-09-11T21:44:45+02:00",
+      "applies_to": [
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "PROJECT_MANAGER",
+        "FACTORY_STEWARD",
+        "TOWER",
+        "WORKER",
+        "RESEARCHER",
+        "IMPLEMENTER",
+        "PROTO_WHEN_CEREBRO_HMI",
+        "ADMINPULSE",
+        "REFRESH",
+        "FABRIKKOVERSIKT",
+        "SYSTEM_MAP",
+        "ALL_HUMAN_FACING_PRESENTATION"
+      ],
+      "supersedes_raw": "SUPERSEDES_CURRENT_BEHAVIOR=HUMAN_ACTION_NONE_RENDERING|MENNESKE_INGEN_HANDLING|HUMAN_ACTION/NONE|PULSE_AS_NEED_OR_CADENCE_EVIDENCE;HISTORICAL_ROWS_UNCHANGED",
+      "supersedes_ids": [],
+      "decision": "APPLICABLE",
+      "required_consume": true,
+      "row_sha256": "ae265f44a678520fbb4b82948ecd0da4b007f64022419553c7a6a0460f3eb225"
+    },
+    {
+      "provider_row": 231,
+      "overlay_id": "PSO-HMI-IMPLEMENTER-STABLE-PREFIXES-655D-B822-D52C-001",
+      "state": "ACTIVE_REQUIRED_PERMANENT_SHARED_HMI_NAMING",
+      "effective_from_shared_revision": "IMMEDIATE_PROVIDER_PERSISTED_2026-09-12",
+      "applies_to": [
+        "HUMAN_ADMIN",
+        "PROJECT_MANAGER",
+        "TOWER",
+        "PRINCIPAL",
+        "ASSISTANT_AD1",
+        "IMPLEMENTER",
+        "HMI",
+        "WORK_CLAIMS",
+        "WORK_PACKETS",
+        "READY_QUEUE"
+      ],
+      "supersedes_raw": "SUPERSEDES_HUMAN_FACING_ORDINAL_IMPLEMENTER_LABELS_WHEN_PREFIX_KNOWN",
+      "supersedes_ids": [],
+      "decision": "NOT_APPLICABLE",
+      "required_consume": false,
+      "row_sha256": "54eddae51b61c6c3eaca510bc6eca4582c4dceb66d001e19bb601ff6cc95d354"
+    }
+  ],
+  "failed_attempt_basis": {
+    "attempt_id": "20ae11d1734243ab8490eda1ad3eb21b",
+    "receipt_id": "1heiDvoUvuF6H_tW1Z88xRMFWmLalXQYN",
+    "immutable": true,
+    "first_nonpass": "STEP_03"
+  }
+}
