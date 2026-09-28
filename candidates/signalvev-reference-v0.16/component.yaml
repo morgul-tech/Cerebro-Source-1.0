@@ -1,0 +1,67 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.16
+  name: Signalvev Reference Implementation Candidate v0.16 (state delta truth-boundary guard)
+  type: candidate
+  version: 0.16.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build a testable reference implementation of the "EVENT != STATE_
+    TRUTH" negative law from the Human text's own Section 5 -- one of
+    ten named invariants explicitly required to be "testbare
+    invariants, ikke bare dokumentasjon." A STATE_DELTA's own payload
+    can never be treated as canonical truth; only an independent reread
+    from the declared state owner establishes it, matching the
+    already-merged Subject Registry entry's own authority_requirement
+    ("source_attribution_and_canonical_state_reread").
+  explicitly_not:
+    - Ikke en erstatning for v0.1s validate_envelope.
+    - Ikke et duplikat av v0.8s stale-revision-admission-guard (annen
+      meldingsklasse, annet sporsmal).
+    - Ikke en implementasjon av selve reread-mekanismen.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke en endring av v0.1s faktiske registerfil.
+    - Ikke et duplikat av noen tidligere kandidat (v0.1 til -v0.15).
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1  # read-only import of load_registry() as a test-time canary (ET8)
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.4
+    - signalvev-reference-v0.5
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7
+    - signalvev-reference-v0.8
+    - signalvev-reference-v0.9
+    - signalvev-reference-v0.10
+    - signalvev-reference-v0.11
+    - signalvev-reference-v0.12
+    - signalvev-reference-v0.13
+    - signalvev-reference-v0.14
+    - signalvev-reference-v0.15
+interfaces:
+  input:
+  - >-
+    message_type (str, must equal "STATE_DELTA"), declared_state_owner_ref
+    (str), delta_payload (dict or None), reread (dict with source_ref
+    and content keys, or None)
+  output:
+  - >-
+    TRUTH_ESTABLISHED / DELTA_NOT_TRUTH with a named reason and the
+    established truth content, or None (in-process only in this
+    candidate; pure stdlib plus a read-only import of v0.1's
+    load_registry())
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport, state
+    storage, or Drive at all -- it proves an offline truth-boundary
+    classification property over caller-supplied dicts, a narrower
+    claim than "this works against a real canonical state store."

@@ -1,0 +1,81 @@
+schema: cerebro-signalvev-state-delta-truth-boundary-guard/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 5. Viktige negative regler -> EVENT != STATE_TRUTH"
+    - "1. Human text -> 3. Communication classes v0.1 -> STATE_DELTA"
+    - "4. Subject Registry v0.1 draft JSON -> entries[cerebro.v1.state.delta].authority_requirement"
+    - "2. X4 runtime-fagpass -> XREF mot eksisterende Cerebro -> LiveWire row"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, 5. Viktige negative regler): "EVENT != STATE_
+# TRUTH" ... "Dette skal vaere testbare invariants, ikke bare
+# dokumentasjon."
+#
+# Verbatim (Human text, 3. Communication classes v0.1): "STATE_DELTA --
+# Informerer om endring; state-owner er fortsatt sannhetskilden."
+#
+# Verbatim (Subject Registry v0.1 draft JSON, cerebro.v1.state.delta
+# entry, already merged into main as part of signalvev-reference-v0.1):
+# "authority_requirement": "source_attribution_and_canonical_state_
+# reread".
+#
+# Verbatim (X4 runtime-fagpass, XREF section): "LiveWire -> signal ->
+# canonical reread bridge." (the parallel L2 principle: a signal must
+# cause a reread, never supply truth or authority on its own.)
+mandate: >
+  Build a testable reference implementation of the "EVENT != STATE_
+  TRUTH" negative law from the Human text's own Section 5 -- one of ten
+  named invariants the Human text explicitly says "skal vaere testbare
+  invariants, ikke bare dokumentasjon" (shall be testable invariants,
+  not just documentation). No prior candidate (v0.1-v0.15) tests this
+  specific pairing: v0.1's validate_envelope accepts STATE_DELTA as a
+  valid message_type enum value and stops there: no candidate proves
+  that a STATE_DELTA's own carried payload is barred from being treated
+  as canonical truth, or that only an actual reread from the declared
+  state owner can establish it. The registry entry for
+  cerebro.v1.state.delta already names this exact requirement
+  ("source_attribution_and_canonical_state_reread") but no candidate
+  before this one gives it runtime meaning.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    v0.1 validates STATE_DELTA's envelope shape only. v0.8's stale
+    -revision-admission-guard governs a different question (whether a
+    stale route/claim revision may admit DURABLE_COMMAND work); it does
+    not touch STATE_DELTA or the truth-boundary question at all. No
+    candidate reads the cerebro.v1.state.delta registry entry's
+    authority_requirement field before this one (test ET8 is the first
+    to do so, read-only, as a cross-version consistency canary).
+
+truth_boundary_contract:
+  - step: 1
+    text: "A STATE_DELTA message's own delta_payload is an assertion about a change -- never truth on its own, however plausible or internally consistent it looks."
+  - step: 2
+    text: "Truth can only be established by an independent reread actually taken from the declared canonical state owner -- not merely claimed, not inferred from the delta's own content."
+  - step: 3
+    text: "A reread whose source does not match the declared state_owner_ref establishes nothing, even if its content happens to agree with the delta."
+  - step: 4
+    text: "When an established truth (from a real reread) disagrees with the delta that prompted it, the reread always wins -- the delta is discarded as evidence, never blended with or preferred over the fresher read."
+  - step: 5
+    text: "This guard is scoped to STATE_DELTA only and fails closed on any other message_type -- it does not silently extend truth-boundary logic to classes it was not built for."
+
+explicitly_not:
+  - Not a replacement for or import of v0.1's validate_envelope -- envelope shape validation stays exactly where v0.1 already does it.
+  - Not a duplicate of v0.8's stale-revision-admission-guard -- that governs DURABLE_COMMAND admission against a stale route/claim revision, a different message class and a different question.
+  - Not an implementation of the canonical reread mechanism itself -- `reread` is taken as a plain caller-supplied input; how a real reread against a live state owner is performed is out of scope, matching every other candidate's treatment of inputs it consumes rather than produces.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a modification of v0.1's actual subject-registry-v0.1-candidate.json -- read only, as a test-time canary.
+  - Not authority: a TRUTH_ESTABLISHED result is an identity/content fact about what the state owner currently holds, never a work claim, occupancy grant, or effect authorization.
+  - Not a replacement for or import of any prior signalvev-reference candidate (v0.1 through v0.15).
