@@ -1,0 +1,52 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.4
+  name: Signalvev Reference Implementation Candidate v0.4 (end-to-end reference stack)
+  type: candidate
+  version: 0.4.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Bevise at MESSAGE -> SIGNAL -> REQUEST/REPLY -> RECEIPT -> TRACE ->
+    ARTIFACT POINTER -- primitivene levert isolert i
+    signalvev-reference-v0.1 og -v0.2 -- faktisk komponerer til én
+    sammenhengende kjede, slik Communication Stack v0.1s eget WAY HOME-
+    avsnitt krever før noe i "senere"-bølgen forsøkes.
+  explicitly_not:
+    - Ikke en ny primitiv -- gjenbruker v0.1/v0.2-kode uendret (TRACE
+      reimplementert lokalt, se begrunnelse i
+      end-to-end-scenario-candidate.yaml).
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et krav om produksjonsklarhet.
+    - Ikke en automatisk frigivelse av "senere"-bølgen (Durable Workflow,
+      federation, store-scale routing) -- kun evidensen WAY HOME ber om
+      før PRINCIPAL vurderer det.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (validate_envelope, STAGE_PREDECESSORS,
+      ReceiptTrail -- importert, ikke duplisert)
+    - signalvev-reference-v0.2 (RequestReplyMatcher, make_pointer,
+      verify_and_consume -- importert, ikke duplisert)
+  explicitly_no_dependency_on:
+    - >-
+      signalvev-reference-v0.3 (PR nr. 7, ikke merget da denne
+      kandidaten ble forberedt -- TRACE-leddet er derfor reimplementert
+      lokalt i stedet for a importere FlightRecorder)
+interfaces:
+  input:
+  - cerebro-message-v1-candidate envelopes across all message_types used
+    in the chain (STATE_DELTA, EPHEMERAL_SIGNAL, DURABLE_COMMAND,
+    REQUEST, RESPONSE, ARTIFACT_POINTER)
+  output:
+  - end-to-end scenario pass/fail (in-process only)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves the offline reference primitives compose with each other, a
+    distinct and narrower claim than "this works on real Signalvev".
