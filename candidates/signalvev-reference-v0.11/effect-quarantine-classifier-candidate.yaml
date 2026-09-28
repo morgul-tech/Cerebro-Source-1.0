@@ -1,0 +1,83 @@
+schema: cerebro-signalvev-effect-quarantine-classifier/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 5)"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Receipts"
+    - "1. Human text -> 2. Felles primitive verktoy -> QUARANTINE + IDEMPOTENCY"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, QUARANTINE + IDEMPOTENCY):
+# "Ukjent effekt skal ikke replayes automatisk. Hvis systemet vet:
+# 'for effekt' -> NO_EFFECT kan vaere sikkert. 'effektgrensen kan ha
+# blitt krysset' -> UNKNOWN + quarantine."
+#
+# Verbatim (X4 first-wave normative contract draft, Receipts):
+# "NO_RECEIPT remains UNKNOWN unless an independent pre-effect proof
+# establishes NO_EFFECT."
+#
+# Verbatim (Falsifiers, item 5): "A timeout after possible effect is
+# labeled NO_EFFECT or triggers replay."
+mandate: >
+  Build a fuller, standalone effect-quarantine classification contract
+  extending falsifier 5's coverage. CORRECTION on re-reading v0.1:
+  ReceiptTrail.emit() already enforces the core rule as real, reusable
+  code -- emitting NO_EFFECT without no_effect_proof=True raises
+  ReceiptError -- so falsifier 5 was NOT a thin single-hardcoded-
+  closure gap the way falsifiers 6, 9 and 11 were; this candidate's
+  earlier drafts overstated that gap and this file has been corrected
+  in place before any delivery. What v0.1's rule genuinely does not do:
+  model UNKNOWN_QUARANTINED as a first-class, inspectable
+  classification in its own right; reject an unverified caller
+  *belief* that the boundary was not crossed as distinct from actual
+  proof; detect the logical contradiction of "proof exists" plus
+  "boundary possibly crossed"; or expose an advisory replay-safety
+  signal usable independently of holding a live ReceiptTrail instance
+  (e.g. for pre-admission planning before any attempt exists). This
+  candidate builds that classification layer -- a genuine but more
+  modest extension of existing reusable enforcement, not a
+  from-scratch closure of an unaddressed gap.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    signalvev-reference-v0.7's IdempotencyScope answers whether two
+    attempts are "the same" attempt. signalvev-reference-v0.8's
+    RevisionGuardedAdmitter answers whether a caller's snapshot revision
+    is still current for work admission. signalvev-reference-v0.10's
+    reply-currentness guard answers whether a REQUEST/REPLY timeout
+    makes a read-only retry safe. This candidate answers a fourth,
+    independent question: after a timeout on a potentially-effectful
+    DURABLE_COMMAND, may the outcome be labeled NO_EFFECT at all, or
+    must it quarantine as UNKNOWN -- a strictly narrower and distinct
+    decision from all three. None of the four import or duplicate each
+    other.
+
+quarantine_contract:
+  - step: 1
+    text: "A timeout or missing receipt on a potentially-effectful command is UNKNOWN by default -- never NO_EFFECT by default."
+  - step: 2
+    text: "NO_EFFECT may only be asserted when the caller supplies independent pre-effect proof -- proof that establishes, independently of the missing receipt itself, that the effect boundary was never crossed."
+  - step: 3
+    text: "An unverified caller claim that the boundary was not crossed is not a substitute for independent proof -- without proof, the classification stays UNKNOWN_QUARANTINED regardless of what the caller believes."
+  - step: 4
+    text: "Independent pre-effect proof and 'the boundary was possibly crossed' cannot both be true -- that combination is a contradiction, not a valid classifiable state, and must raise rather than silently resolve one way or the other."
+  - step: 5
+    text: "Automatic replay is only ever advisable when the classification is NO_EFFECT with independent proof; an UNKNOWN_QUARANTINED classification must never carry replay_may_be_safe = true, per the Human text's 'Ukjent effekt skal ikke replayes automatisk.'"
+
+explicitly_not:
+  - Not an authorization to actually execute a replay -- replay_may_be_safe is advisory classification only, per the same pattern as signalvev-reference-v0.10's safe_to_retry_as_read_only.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a replacement for or import of signalvev-reference-v0.7, -v0.8, or -v0.10 -- see non-duplication note above.
+  - Not authority: a NO_EFFECT classification proves reconstruction from supplied proof, not canonical state truth -- state-owner remains the sannhetskilde per the Human text's own grunnlov-kandidat.
+  - Not a source of independent pre-effect proof itself -- this candidate only classifies given proof a caller already holds; it does not generate, verify, or attest to that proof.

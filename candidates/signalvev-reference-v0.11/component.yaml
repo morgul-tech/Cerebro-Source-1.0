@@ -1,0 +1,56 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.11
+  name: Signalvev Reference Implementation Candidate v0.11 (effect quarantine classifier)
+  type: candidate
+  version: 0.11.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build a standalone effect-quarantine classification contract for
+    falsifier 5 ("A timeout after possible effect is labeled NO_EFFECT
+    or triggers replay"). CORRECTION: v0.1's ReceiptTrail.emit()
+    already enforces the core "NO_EFFECT requires independent proof"
+    rule as real, reusable code, not a thin closure -- this candidate's
+    genuine contribution is the fuller classification layer around it
+    (first-class UNKNOWN_QUARANTINED status, rejection of unverified
+    caller belief, contradiction detection, and an advisory
+    replay-safety signal usable without a live ReceiptTrail instance),
+    not a from-scratch closure of an unaddressed gap. See
+    effect-quarantine-classifier-candidate.yaml mandate for the full
+    correction note.
+  explicitly_not:
+    - Ikke en autorisasjon til a faktisk kjore en replay.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et duplikat av signalvev-reference-v0.7, -v0.8 eller -v0.10
+      -- se non-duplication note i
+      effect-quarantine-classifier-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate: []
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.5
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7 (IdempotencyScope -- see non-duplication note)
+    - signalvev-reference-v0.8 (RevisionGuardedAdmitter -- see non-duplication note)
+    - signalvev-reference-v0.9
+    - signalvev-reference-v0.10 (reply currentness guard -- see non-duplication note)
+interfaces:
+  input:
+  - has_independent_pre_effect_proof (bool), effect_boundary_possibly_crossed (bool)
+  output:
+  - status (NO_EFFECT / UNKNOWN_QUARANTINED), quarantined (bool),
+    replay_may_be_safe (bool) (in-process only in this candidate)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline classification property over a timeout situation a
+    caller already holds evidence about, a narrower claim than "this
+    works against a real live provider."
