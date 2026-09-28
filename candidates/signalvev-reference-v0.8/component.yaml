@@ -1,0 +1,52 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.8
+  name: Signalvev Reference Implementation Candidate v0.8 (stale revision admission guard)
+  type: candidate
+  version: 0.8.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build the "atomic compare-and-bind/admit" primitive X4's own
+    crosswalk names as a material L4 gap, closing the last of the
+    twelve falsifiers (item 7: "A stale snapshot or route revision
+    admits work") that did not yet have a real, reusable reference
+    implementation -- v0.1's own test is a single hardcoded closure.
+  explicitly_not:
+    - Ikke en claim/occupancy-tildelingsmekanisme i seg selv.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en live provider-integrasjon -- PM8290/PM8306s live provider
+      HOLD (referert av X4) forblir uadressert.
+    - Ikke et duplikat av signalvev-reference-v0.5 eller -v0.7 -- se
+      non-duplication note i
+      stale-revision-admission-guard-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (ReceiptTrail, ReceiptError -- importert,
+      ikke duplisert)
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.5 (DurableCommandOutbox -- se
+      non-duplication note)
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7 (IdempotencyScope -- se non-duplication
+      note)
+interfaces:
+  input:
+  - a referent_id (state or route) plus a caller-presented
+    snapshot_revision
+  output:
+  - ADMITTED / HOLD_STALE_REVISION outcomes (in-process only)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline currentness-guard property of one reference
+    primitive, a narrower claim than "this works against a real live
+    provider" (X4's own PM8290/PM8306 live provider HOLD remains
+    unaddressed).
