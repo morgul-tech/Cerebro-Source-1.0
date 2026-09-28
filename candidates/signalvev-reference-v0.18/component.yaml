@@ -1,0 +1,70 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.18
+  name: Signalvev Reference Implementation Candidate v0.18 (attested work-consumption gate)
+  type: candidate
+  version: 0.18.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Compose v0.1's ReceiptTrail with v0.14's workload identity
+    attestation binder for the two receipt stages X4's own text ties to
+    actor/workload identity: WORK_CONSUMED and WORK_STARTED. An
+    unattested or mismatched claimed identity blocks the emission
+    entirely, without mutating the trail; v0.1's own structural rules
+    remain fully in force underneath this gate. The first candidate to
+    wire these two already-merged, independently-built primitives
+    together.
+  explicitly_not:
+    - Ikke en endring av v0.1s ReceiptTrail eller v0.14s
+      bind_source_identity -- begge importeres uendret.
+    - Ikke en utvidelse av identitets-gating til flere receipt-stadier
+      enn WORK_CONSUMED/WORK_STARTED.
+    - Ikke en implementasjon av selve attestasjonsmekanismen.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et duplikat av noen tidligere kandidat (v0.1 til -v0.17)
+      utover a komponere v0.1 og v0.14 via import.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1  # imports ReceiptTrail, ReceiptError unmodified
+    - signalvev-reference-v0.14  # imports bind_source_identity unmodified
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.4
+    - signalvev-reference-v0.5
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7
+    - signalvev-reference-v0.8
+    - signalvev-reference-v0.9
+    - signalvev-reference-v0.10
+    - signalvev-reference-v0.11
+    - signalvev-reference-v0.12
+    - signalvev-reference-v0.13
+    - signalvev-reference-v0.15
+    - signalvev-reference-v0.16
+    - signalvev-reference-v0.17
+interfaces:
+  input:
+  - >-
+    trail (a v0.1 ReceiptTrail instance), stage (str, WORK_CONSUMED or
+    WORK_STARTED), claimed_source (dict, v0.14's six-field source
+    object), attestation (dict or None)
+  output:
+  - >-
+    EMITTED / REJECTED with a named reason (in-process only in this
+    candidate; pure stdlib plus v0.1's ReceiptTrail and v0.14's
+    bind_source_identity)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport, identity
+    infrastructure, or Drive at all -- it proves an offline composition
+    property between two already-independently-tested primitives, a
+    narrower claim than "this works against a real receipt-emitting
+    worker and a real attestation system."

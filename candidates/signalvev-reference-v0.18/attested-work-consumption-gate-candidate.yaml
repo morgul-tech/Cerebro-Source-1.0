@@ -1,0 +1,74 @@
+schema: cerebro-signalvev-attested-work-consumption-gate/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Receipts"
+    - "1. Human text -> L1 IDENTITY"
+    - "1. Human text -> WORKLOAD IDENTITY / ATTESTATION"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (X4 normative draft, Receipts): "WORK_CONSUMED requires the
+# exact actor/workload to claim the item. WORK_STARTED requires
+# worker-owned evidence."
+#
+# This candidate composes two already-merged, independently-built
+# candidates rather than closing a new named gap on its own: v0.1's
+# ReceiptTrail enforces the receipt partial order but never checks
+# whether the actor_id claiming WORK_CONSUMED/WORK_STARTED is actually
+# who it says it is; v0.14's bind_source_identity proves whether a
+# claimed identity is attested, but was never wired into any receipt
+# -emission decision. Nothing in the merged project today stops an
+# unattested actor_id from claiming WORK_CONSUMED.
+mandate: >
+  Prove that v0.1's ReceiptTrail and v0.14's workload identity
+  attestation binder compose correctly for the two receipt stages X4's
+  own text explicitly ties to actor/workload identity: WORK_CONSUMED
+  and WORK_STARTED. An unattested (ASSERTED_ONLY) or mismatched
+  identity must block the emission entirely, without mutating the
+  trail; a trusted-bound identity for the wrong actor must also be
+  rejected; and v0.1's own structural rules (predecessor satisfaction,
+  etc.) must remain fully in force underneath this gate, not relaxed by
+  it.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    Neither v0.1 nor v0.14 tests this composition. v0.1's own
+    ReceiptTrail.emit() takes actor_id/generation as plain, unverified
+    parameters for RELEASED only (falsifier 8) and never checks them
+    for WORK_CONSUMED/WORK_STARTED at all. v0.14's bind_source_identity
+    is a pure classifier with no receipt-trail awareness whatsoever.
+    This candidate is the first to wire the two together, in the same
+    spirit as v0.4's end-to-end composition of v0.1 and v0.2 -- it
+    imports both unmodified and proves they combine without either one
+    silently relaxing the other's own rules.
+
+gate_contract:
+  - step: 1
+    text: "This gate governs exactly two receipt stages: WORK_CONSUMED and WORK_STARTED -- the only two stages X4's own text ties to actor/workload identity. Any other stage is out of scope and fails closed if attempted through this gate."
+  - step: 2
+    text: "An emission attempt for a gated stage first requires bind_source_identity to report TRUSTED_BOUND for the claimed source. ASSERTED_ONLY or MISMATCH blocks the emission entirely, and the underlying trail is never mutated."
+  - step: 3
+    text: "A TRUSTED_BOUND identity is not automatically the RIGHT identity for this attempt -- its actor_id/generation must also match the trail's own attempt owner, or the emission is rejected."
+  - step: 4
+    text: "Once identity is confirmed, v0.1's own ReceiptTrail.emit() is called unmodified -- its predecessor-satisfaction rule and every other structural rule still apply in full. A trusted identity never bypasses them."
+  - step: 5
+    text: "Rejection is not a poisoned state -- a later call on the same trail, with a real attestation supplied, can still legitimately succeed."
+
+explicitly_not:
+  - Not a modification of v0.1's ReceiptTrail or v0.14's bind_source_identity -- both are imported unmodified.
+  - Not an extension of identity-gating to any receipt stage beyond WORK_CONSUMED/WORK_STARTED -- X4's own text ties only these two to actor/workload identity.
+  - Not an implementation of the underlying attestation mechanism -- that stays exactly where v0.14 already scopes it (a caller-supplied input).
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not authority in the broader sense -- an EMITTED result proves the receipt-trail transition is now recorded with an attested actor, never a work claim/occupancy grant beyond what v0.1's own ReceiptTrail already represents.
+  - Not a replacement for or duplicate of any prior signalvev-reference candidate (v0.1 through v0.17) other than composing v0.1 and v0.14 by import.
