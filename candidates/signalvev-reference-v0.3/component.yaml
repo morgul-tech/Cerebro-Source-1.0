@@ -1,0 +1,59 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.3
+  name: Signalvev Reference Implementation Candidate v0.3 (third wave)
+  type: candidate
+  version: 0.3.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Gi kjorbare, offline-verifiserbare referanseimplementasjoner av
+    Communication Stack v0.1's "tredje bolge" (Communication Flight
+    Recorder, Workload Identity/Attestation, Schema/version
+    compatibility) -- uten a aktivere, erstatte eller konkurrere med
+    noen eksisterende sannhetsflate, transportbinding eller autoritet.
+  explicitly_not:
+    - Ikke en ny konkurrerende protokoll eller sannhetsflate.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et krav om produksjonsklarhet.
+    - Ikke en erstatning eller redefinering av signalvev-reference-v0.1
+      eller -v0.2 sitt schema/registry/receipt-taksonomi/primitiv-
+      innhold -- dette er et tillegg som bygger videre pa samme grunnlag.
+    - Ikke en levende attestasjonsmekanisme (ingen PKI, ingen signering,
+      ingen TPM-integrasjon) -- kun kontrakten for hva attestasjon ma
+      tilfredsstille.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (STAGE_PREDECESSORS fra
+      tooling/validator/signalvev_reference_v01_validation.py, importert
+      read-only for a bygge FlightRecorder pa samme stadie-vokabular --
+      ikke duplisert eller redefinert)
+    - signalvev-reference-v0.1 (subject-registry-v0.1-candidate.json,
+      lest for kompatibilitetsverdier -- ikke endret)
+    - signalvev-reference-v0.2 (request-reply-candidate.yaml sitt
+      SCHEMA_MISMATCH-utfall, referert for kontinuitet -- ikke endret)
+interfaces:
+  input:
+  - receipt stage trails produced by signalvev-reference-v0.1's ReceiptTrail
+  - cerebro-message-v1-candidate envelopes (source object, schema_version)
+  output:
+  - flight-recorder-candidate.yaml first-broken-edge / evidence reports (in-process only)
+  - workload-identity-attestation-candidate.yaml bind/unbind decisions (in-process only)
+  - schema-version-compatibility-candidate.yaml HOLD/ADMIT decisions (in-process only)
+relationship_to_prior_evidence:
+  note: >
+    S0 (private NATS roundtrip, LEDGER row 179) and S1 (pointer +
+    authenticated Drive reread + ACK_READ, LEDGER row 181) remain the
+    prior, independent, behavior-real implementation evidence on the
+    actual EDGE-01 transport. This candidate, like v0.1 and v0.2, does
+    not supersede, repeat, or invalidate that evidence and takes no
+    position on PM_PRINCIPAL_CHANNEL (PM8628) having or not having
+    currentized it. What this candidate specifically adds beyond v0.1/
+    v0.2 is a reference model for the "tredje bolge" primitives named in
+    Communication Stack v0.1 section 7, none of which had an executable
+    Source representation prior to this branch either.

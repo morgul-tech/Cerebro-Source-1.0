@@ -1,0 +1,71 @@
+schema: cerebro-signalvev-workload-identity-attestation/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 2. Felles primitive verktoy -> WORKLOAD IDENTITY / ATTESTATION"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Envelope (paragraph 2)"
+    - "2. X4 runtime-fagpass -> Current runtime crosswalk -> L1 Identity row"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pins as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text): "Langsiktig identitet skal folge workload/actor,
+# ikke bare: PC-navn / vindustittel / credentials-fil / eller chatnavn."
+rejected_identity_sources:
+  - PC_NAME
+  - WINDOW_TITLE
+  - CREDENTIALS_FILE
+  - CHAT_NAME
+
+# Verbatim (Human text): "Malet er attestert: actor + generation +
+# workload + machine/session + current custody."
+required_attestation_components:
+  - actor
+  - generation
+  - workload
+  - machine_session
+  - current_custody
+
+# Verbatim (X4, Envelope paragraph): "source and authority_class are
+# asserted metadata. A separate trusted identity/authority check must
+# bind source actor, generation, workload and custody to the current
+# state owner. The envelope may carry an authority reference; it may not
+# mint one."
+binding_rule:
+  id: ENVELOPE_SOURCE_IS_CLAIM_NOT_ATTESTATION
+  rule: >
+    CEREBRO_MESSAGE_V1's `source` object (principal_ref, actor_id,
+    generation, workload_ref, machine_ref, session_ref, custody_ref) is
+    asserted metadata about who sent a message. It becomes attested
+    identity only when a separate, independent attestation record with
+    all five required_attestation_components matches it field-for-field.
+    An envelope carrying a plausible-looking `source` block, with no
+    matching attestation, remains an unattested claim.
+
+# Verbatim (X4, L1 Identity crosswalk row): "No trusted workload
+# attestation joining actor/generation to current machine/session/
+# custody. Envelope `source` alone must remain a claim."
+current_gap_acknowledged: >
+  This candidate supplies the binding *contract* (what fields must match,
+  what counts as attested vs. claimed) and an offline reference binder.
+  It does not supply, and does not claim to supply, a live attestation
+  mechanism (no TPM/OS-level attestation, no signed workload identity,
+  no PKI). The X4-identified gap -- "no trusted workload attestation" --
+  remains open after this candidate; what closes here is only the
+  absence of an executable *contract* for what attestation would need to
+  satisfy.
+
+explicitly_not:
+  - Not a credential store, PKI, or signing implementation.
+  - Not a claim that any current Cerebro actor is presently attested by
+    this definition -- it states the target contract, not an audit
+    finding about current actors.

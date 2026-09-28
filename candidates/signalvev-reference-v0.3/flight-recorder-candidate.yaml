@@ -1,0 +1,57 @@
+schema: cerebro-signalvev-flight-recorder/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 2. Felles primitive verktoy -> COMMUNICATION FLIGHT RECORDER"
+    - "2. X4 runtime-fagpass -> Trace (paragraph)"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pins as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1 (same caveat as v0.1/v0.2).
+
+# Verbatim (Human text): "Ett verktoy skal kunne svare: Hva skjedde med
+# melding X?"
+question_answered: "Hva skjedde med melding X?"
+
+# Verbatim example ladder (Human text): "produced -> accepted -> routed ->
+# delivered -> read -> command admitted -> worker started -> effect ->
+# terminal." This candidate maps that illustrative ladder onto the exact
+# stage vocabulary already delivered in
+# candidates/signalvev-reference-v0.1/receipt-taxonomy-candidate.yaml
+# (PRODUCED, TRANSPORT_ACCEPTED, DELIVERED, READ, WORK_CONSUMED,
+# WORK_STARTED, EFFECT_ACCEPTED|EFFECT_UNKNOWN|NO_EFFECT, TERMINAL,
+# RELEASED) rather than inventing a second, parallel ladder.
+stage_source: ../signalvev-reference-v0.1/receipt-taxonomy-candidate.yaml
+
+# Verbatim (Human text): "Skal vise forste brutte edge og UNKNOWN uten a
+# gjette."
+required_behavior:
+  - id: SHOW_FIRST_BROKEN_EDGE
+    rule: "The recorder must report the first stage whose predecessor is not satisfied, not merely 'incomplete'."
+  - id: UNKNOWN_WITHOUT_GUESSING
+    rule: "A gap must be reported as UNKNOWN evidence, never filled in with a plausible-looking guess."
+
+# Verbatim (X4, Trace paragraph): "The flight recorder should produce a
+# read-only first-broken-edge view and show both evidence and
+# uncertainty. It must not generate missing receipts or override
+# canonical state."
+negative_rules:
+  - id: READ_ONLY
+    rule: "The flight recorder is read-only. It has no method that emits, mutates, or backfills a receipt."
+  - id: NO_FABRICATED_RECEIPTS
+    rule: "It must never generate a missing receipt to make a trail look complete."
+  - id: NO_CANONICAL_OVERRIDE
+    rule: "It must never override or supersede canonical state -- it explains a trail, it does not become one."
+
+explicitly_not:
+  - Not a receipt issuer (see ReceiptTrail in signalvev_reference_v01_validation.py -- issuing stays there).
+  - Not a scheduler, admission authority, or retry mechanism.
+  - Not wired to any live transport, VPS, NATS, or WireGuard signal in this candidate.
