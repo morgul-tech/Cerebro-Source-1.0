@@ -1,0 +1,80 @@
+schema: cerebro-signalvev-durable-command-outbox/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> One sequencing correction"
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 3)"
+    - "1. Human text -> 2. Felles primitive verktoy -> L2 SIGNAL / REFLEX"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (X4 runtime-fagpass, "One sequencing correction"):
+# "Move a minimal durable command handoff into the first reference wave.
+# The full selective durable inbox can remain second-wave infrastructure,
+# but the first reference stack cannot prove autonomous work consumption
+# if its only wake edge is an ephemeral signal. A tiny local, restart-safe
+# command/outbox fixture is enough to test semantics without activating
+# JetStream:
+# 1. A state owner commits the exact command identity and current claim
+#    reference.
+# 2. A signal carries only a pointer that work may exist.
+# 3. A consumer wakes, rereads the authoritative inbox/claim, and emits
+#    WORK_CONSUMED only after it has accepted that exact item.
+# 4. Worker start, effect, terminal and release remain separate receipts.
+# 5. Losing the signal must not lose the command; redelivery must not
+#    create a second effect.
+# This does not make the directory a scheduler or NATS a workflow engine.
+# It gives the reference implementation a falsifiable liveness boundary."
+mandate: >
+  Build the specific fixture X4 named and recommended moving into the
+  first reference wave, and was never actually built as a stateful
+  fixture: v0.1's receipt-taxonomy-candidate.yaml already lists falsifier
+  3 ("Ephemeral wake is lost and the committed durable command becomes
+  unreachable") and has a corresponding test, but that test only checks
+  that a Python dict copy preserves a field -- it does not model
+  signal-loss, redelivery, or a restart at all. This candidate builds the
+  real fixture: a local, offline, restart-safe outbox, exercised through
+  the five sequencing steps above.
+
+why_not_a_duplicate_of_v02_selective_durable_inbox:
+  note: >
+    signalvev-reference-v0.2/selective-durable-inbox-candidate.yaml
+    answers a different question: WHICH messages qualify for durable
+    storage (should_store/admit policy). This candidate assumes a
+    message has already qualified and answers a different question: does
+    a command SURVIVE losing its wake signal and a process restart, and
+    is redelivery of that wake SAFE (does not create a second effect).
+    The two are complementary, not overlapping -- this candidate does not
+    import or duplicate DurableInboxPolicy, and does not decide storage
+    admission policy.
+
+sequencing_steps:
+  - step: 1
+    text: "State owner commits the exact command identity and current claim reference."
+    implemented_by: "DurableCommandOutbox.commit(command_identity, claim_ref, envelope)"
+  - step: 2
+    text: "A signal carries only a pointer that work may exist."
+    implemented_by: "WakeSignal(command_identity) -- structurally carries no authority/claim/payload field"
+  - step: 3
+    text: "A consumer wakes, rereads the authoritative inbox/claim, and emits WORK_CONSUMED only after it has accepted that exact item."
+    implemented_by: "consume_via_wake() -- always rereads outbox.reread(), never trusts wake payload"
+  - step: 4
+    text: "Worker start, effect, terminal and release remain separate receipts."
+    implemented_by: "signalvev-reference-v0.1 ReceiptTrail (imported, not duplicated) -- WORK_STARTED/EFFECT_ACCEPTED/TERMINAL/RELEASED stages"
+  - step: 5
+    text: "Losing the signal must not lose the command; redelivery must not create a second effect."
+    implemented_by: "outbox.all_pending_identities() poll path (wake=None case) + outbox.mark_consumed() idempotent no-op on redelivery"
+
+explicitly_not:
+  - Not a scheduler -- the outbox never decides when or whether work runs, only whether a committed command remains reachable and is consumed at most once.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a deployment recommendation -- the reference outbox is process-local and offline; "restart-safe" is proven via a serialize/deserialize snapshot round-trip into a fresh instance, not via real disk I/O or a real process restart.
+  - Not a replacement for or import of v0.2's selective-durable-inbox-candidate.yaml (storage admission policy) -- see non-duplication note above.
+  - Not authority: commit() requires a claim_ref be present, but does not itself adjudicate who is allowed to hold that claim.

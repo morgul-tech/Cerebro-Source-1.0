@@ -1,0 +1,58 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.5
+  name: Signalvev Reference Implementation Candidate v0.5 (durable command outbox)
+  type: candidate
+  version: 0.5.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build the "tiny local, restart-safe command/outbox fixture" that X4
+    runtime-fagpass explicitly named and recommended moving into the
+    first reference wave ("One sequencing correction"), and which no
+    prior candidate actually built as a stateful fixture -- v0.1's own
+    falsifier 3 test only checks that a dict copy preserves a field.
+    Proves, offline: a committed durable command is reachable even if
+    its wake signal is lost, survives a simulated restart, and is
+    consumed at most once even under wake redelivery.
+  explicitly_not:
+    - Ikke en ny primitiv i seg selv -- bruker v0.1s ReceiptTrail og
+      STAGE_PREDECESSORS uendret (importert, ikke duplisert) for alle
+      steg etter WORK_CONSUMED.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et krav om produksjonsklarhet -- "restart-safe" er bevist via
+      en serialize/deserialize-snapshot inn i en fersk instans, ikke ekte
+      disk-I/O eller en ekte prosess-restart.
+    - Ikke et duplikat av signalvev-reference-v0.2s
+      selective-durable-inbox-candidate.yaml -- se non-duplication note i
+      durable-command-outbox-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (validate_envelope, STAGE_PREDECESSORS,
+      ReceiptTrail, ReceiptError, _base_msg -- importert, ikke duplisert)
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2 (denne kandidaten trenger verken
+      RequestReplyMatcher, presence-directory eller
+      selective-durable-inbox -- omfanget er bevisst smalere enn v0.2s)
+    - >-
+      signalvev-reference-v0.3 (PR nr. 7, ikke merget da denne
+      kandidaten ble forberedt -- samme isolasjonsdisiplin som v0.4
+      brukte)
+interfaces:
+  input:
+  - cerebro-message-v1-candidate DURABLE_COMMAND envelopes, committed to
+    the outbox by a state owner
+  output:
+  - WORK_CONSUMED_NEW / WORK_CONSUMED_ALREADY / NO_SUCH_COMMAND outcomes
+    (in-process only)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline liveness/idempotency property of a single reference
+    primitive, a narrower claim than "this works on real Signalvev".
