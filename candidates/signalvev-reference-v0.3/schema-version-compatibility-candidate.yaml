@@ -1,0 +1,52 @@
+schema: cerebro-signalvev-schema-version-compatibility/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 2. Felles primitive verktoy -> SUBJECT / CHANNEL REGISTRY"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Registry"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pins as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# These seven strings are copied verbatim from the `compatibility` field
+# of each entry in
+# candidates/signalvev-reference-v0.1/subject-registry-v0.1-candidate.json
+# (5 unique values across 7 entries). This candidate does not invent new
+# policy names; it gives the v0.1 registry's own vocabulary an offline
+# enforcement policy.
+compatibility_policies_from_registry:
+  - policy: exact_schema_version_or_typed_hold
+    used_by_subjects: [cerebro.v1.state.delta, cerebro.v1.signal.wake]
+  - policy: version_negotiated_before_reply
+    used_by_subjects: [cerebro.v1.status.request, cerebro.v1.status.response]
+  - policy: no_implicit_upgrade;unknown_version_holds
+    used_by_subjects: [cerebro.v1.work.command]
+  - policy: unknown_stage_holds
+    used_by_subjects: [cerebro.v1.lifecycle.receipt]
+  - policy: content_type_and_schema_version_checked
+    used_by_subjects: [cerebro.v1.artifact.pointer]
+
+# Verbatim (X4, Registry paragraph): "Unknown subject/version/producer is
+# a typed HOLD or quarantine, not an improvised fallback."
+negative_rules:
+  - id: UNKNOWN_IS_TYPED_HOLD_NOT_IMPROVISED_FALLBACK
+    rule: "An unrecognized subject, schema_version, or producer_role must resolve to an explicit, typed HOLD/quarantine outcome -- never to a guessed or best-effort handling path."
+  - id: NO_IMPLICIT_UPGRADE
+    rule: "A message declaring an older schema_version must never be silently treated as if it conformed to a newer one. (no_implicit_upgrade, cerebro.v1.work.command)"
+  - id: VERSION_NEGOTIATED_BEFORE_REPLY
+    rule: "A REQUEST/RESPONSE exchange must confirm schema_version compatibility before a RESPONSE is treated as valid; a version mismatch surfaces as SCHEMA_MISMATCH (see request-reply-candidate.yaml, signalvev-reference-v0.2), not a best-effort parse."
+
+explicitly_not:
+  - Not a schema migration tool or version-upgrade mechanism.
+  - Not a change to CEREBRO_MESSAGE_V1's own schema_version const
+    ("1.0.0-draft", unchanged since v0.1) or to the subject registry file.
+  - Not wired to any live transport, VPS, NATS, or WireGuard signal in this candidate.
