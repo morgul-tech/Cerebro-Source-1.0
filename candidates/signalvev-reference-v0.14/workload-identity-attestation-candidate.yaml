@@ -1,0 +1,90 @@
+schema: cerebro-signalvev-workload-identity-attestation-binder/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 1. Hovedmodell -> L1 IDENTITY"
+    - "1. Human text -> 2. Felles primitive verktoy -> WORKLOAD IDENTITY / ATTESTATION"
+    - "2. X4 runtime-fagpass -> Current runtime crosswalk (L1 Identity row)"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Envelope"
+    - "3. CEREBRO_MESSAGE_V1 draft JSON Schema -> properties.source"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, L1 IDENTITY):
+# "Fastslar hvem avsender og mottaker faktisk er. Workload/actor/
+# generation/machine/custody ma kunne skilles."
+#
+# Verbatim (Human text, WORKLOAD IDENTITY / ATTESTATION):
+# "Langsiktig identitet skal folge workload/actor, ikke bare: PC-navn,
+# vindustittel, credentials-fil, eller chatnavn. Malet er attestert:
+# actor + generation + workload + machine/session + current custody."
+#
+# Verbatim (X4 crosswalk, L1 Identity row): "PFR work_identity carries
+# claim, actor, generation, route, target and effect domain. X3 carries
+# process/session/window checks. Material gap: No trusted workload
+# attestation joining actor/generation to current machine/session/
+# custody. Envelope source alone must remain a claim."
+#
+# Verbatim (X4 normative draft, Envelope): "source and authority_class
+# are asserted metadata. A separate trusted identity/authority check
+# must bind source actor, generation, workload and custody to the
+# current state owner. The envelope may carry an authority reference;
+# it may not mint one."
+mandate: >
+  Build the workload identity attestation binder that X4's own crosswalk
+  names as a material L1 gap. This is not one of the 12 numbered
+  falsifiers from the X4 falsifiers list (all 12 now have reference
+  coverage across v0.1 and v0.5-v0.13) -- it is a separately named
+  material gap in the same crosswalk table's L1 row, explicitly called
+  out as unaddressed second/third-wave scope in the Human text's own
+  "Nahvaerende modningsrekkefolge" (Workload Identity/Attestation is
+  listed under "Tredje bolge"). v0.1's own validate_envelope requires
+  only that source.principal_ref be a non-empty string; every other
+  source field (actor_id, generation, workload_ref, machine_ref,
+  session_ref, custody_ref) is schema-typed as nullable and completely
+  unchecked for truthfulness. This candidate builds the missing binder
+  that keeps a bare envelope claim and an independently-obtained
+  attestation record distinct, and never reports a claim as trusted on
+  its own.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    No prior candidate (v0.1-v0.13) touches L1 Identity at all -- every
+    one of them takes the envelope's source object as given, schema
+    -valid input, and none of them attempt to verify that the claimed
+    actor/generation/workload/machine/session/custody combination is
+    currently true. This candidate does not re-validate envelope shape
+    (that stays v0.1's validate_envelope's job, imported not duplicated
+    by every other candidate) -- it answers a distinct, prior question:
+    is the claim itself backed by anything, and if so, does it still
+    match.
+
+binding_contract:
+  - step: 1
+    text: "An envelope's source object is asserted metadata written by the sender about itself -- CEREBRO_MESSAGE_V1's own schema leaves actor_id, generation, workload_ref, machine_ref, session_ref and custody_ref nullable and unverified."
+  - step: 2
+    text: "A separate, independently-obtained attestation record (X4's own phrasing: 'a separate trusted identity/authority check') is the only thing that can upgrade a claim from asserted to bound. No attestation supplied means the claim stays ASSERTED_ONLY -- never silently treated as trusted."
+  - step: 3
+    text: "Binding requires exact agreement on all six attestable fields (actor_id, generation, workload_ref, machine_ref, session_ref, custody_ref). A null claimed field is an absent assertion, not a verifiable one, and can never count as bound even if the attestation record happens to hold a value."
+  - step: 4
+    text: "Every mismatched field is reported by name, not just the first one found, so a caller can see the complete picture of why a claim failed to bind."
+  - step: 5
+    text: "A TRUSTED_BOUND result is an identity fact only -- it proves the claimed workload/actor/generation/machine/session/custody combination currently matches an independent attestation. It is never itself an authority grant, a claim/occupancy decision, or an effect permission, mirroring the project's own MESSAGE != AUTHORITY and PRESENCE != OCCUPANCY invariants."
+
+explicitly_not:
+  - Not an implementation of the attestation check itself -- this candidate takes the attestation record as a plain caller-supplied input; how machine/session/custody are actually verified (OS-level attestation, a session token, a custody ledger) is out of scope, same as every other candidate's treatment of inputs it consumes rather than produces.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a modification of v0.1's validate_envelope or MESSAGE_V1 schema -- principal_ref validation stays exactly where v0.1 already does it; this binder does not read or duplicate that check.
+  - Not authority: a TRUSTED_BOUND result is an identity fact, not a work claim/occupancy grant, not an effect authorization, and not a statement that the bound actor is permitted to do anything against a given referent.
+  - Not one of the 12 originally-numbered X4 falsifiers -- this closes a separately-named L1 crosswalk gap, explicitly flagged as new scope in the README.
+  - Not a replacement for or import of any prior signalvev-reference candidate (v0.1 through v0.13).
