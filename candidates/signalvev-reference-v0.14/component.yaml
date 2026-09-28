@@ -1,0 +1,66 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.14
+  name: Signalvev Reference Implementation Candidate v0.14 (workload identity attestation binder)
+  type: candidate
+  version: 0.14.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build the workload identity attestation binder X4's own crosswalk
+    names as a material L1 Identity gap: "No trusted workload
+    attestation joining actor/generation to current machine/session/
+    custody. Envelope source alone must remain a claim." Not one of the
+    12 originally-numbered falsifiers -- all 12 now have coverage across
+    v0.1 and v0.5-v0.13 -- but a separately named, still-unaddressed
+    material gap in the same crosswalk table, explicitly listed as
+    "Tredje bolge" (third wave) scope in the Human text's own
+    maturation ordering.
+  explicitly_not:
+    - Ikke en implementasjon av selve attestasjons-sjekken (maskin
+      -/sesjons-/custody-verifikasjon).
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke en endring av v0.1s validate_envelope eller MESSAGE_V1-schema.
+    - Ikke en av de 12 opprinnelig nummererte falsifikatorene -- lukker
+      et separat navngitt L1-crosswalk-gap.
+    - Ikke et duplikat av noen tidligere kandidat (v0.1 til -v0.13).
+dependencies:
+  build: []
+  runtime: []
+  candidate: []
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.1
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.4
+    - signalvev-reference-v0.5
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7
+    - signalvev-reference-v0.8
+    - signalvev-reference-v0.9
+    - signalvev-reference-v0.10
+    - signalvev-reference-v0.11
+    - signalvev-reference-v0.12
+    - signalvev-reference-v0.13
+interfaces:
+  input:
+  - >-
+    claimed_source (dict with keys actor_id, generation, workload_ref,
+    machine_ref, session_ref, custody_ref -- as carried in
+    CEREBRO_MESSAGE_V1's source object), attestation (dict with the
+    same six keys, or None)
+  output:
+  - >-
+    TRUSTED_BOUND / ASSERTED_ONLY / MISMATCH with named mismatched and
+    bound fields (in-process only in this candidate; pure stdlib)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport, identity
+    infrastructure, or any real attestation mechanism -- it proves an
+    offline claim-vs-attestation binding property over two caller
+    -supplied dicts, a narrower claim than "this works against a real
+    OS-level or session-level attestation system."
