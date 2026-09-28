@@ -1,0 +1,72 @@
+schema: cerebro-signalvev-first-broken-edge-flight-recorder/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> Current runtime crosswalk (L6 Causality/observability row)"
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 11)"
+    - "1. Human text -> 2. Felles primitive verktoy -> COMMUNICATION FLIGHT RECORDER"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (X4 crosswalk, L6 Causality/observability row):
+# "Current evidence: PFR stores attempt and lifecycle audit; PM and
+# verifier rows pin exact artifacts. Material gap: No common
+# trace/correlation/causation across PM -> transport -> worker ->
+# effect. First broken edge still requires manual reconstruction."
+#
+# Verbatim (Falsifiers, item 11): "Trace reports a continuous chain
+# where a receipt edge is absent."
+#
+# Verbatim (Human text, COMMUNICATION FLIGHT RECORDER):
+# "Ett verktoy skal kunne svare: Hva skjedde med melding X? ... Skal
+# vise forste brutte edge og UNKNOWN uten a gjette."
+mandate: >
+  Build the read-only "first broken edge" reconstruction the Human text
+  names and X4's own crosswalk marks as a material L6 gap, closing
+  falsifier 11. v0.1's test_falsifier_11_no_skipped_edge_in_trace is a
+  single inline closure with one hardcoded observed-set -- it proves the
+  concept once, but is not a reusable reconstructor, does not
+  distinguish "naturally still in progress" from "a real gap with later
+  evidence", does not handle the EFFECT stage's three-way branch, and
+  does not test that it never fabricates the missing receipt it reports.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    signalvev-reference-v0.7's IdempotencyScope answers whether two
+    attempts are the same attempt. signalvev-reference-v0.8's
+    RevisionGuardedAdmitter answers whether a caller's view of a
+    referent's revision is still current. This candidate answers a
+    third, independent, read-only question: given the receipts one
+    attempt actually has, where -- if anywhere -- is the chain broken,
+    without inventing evidence for what is simply not yet reached. None
+    of the three import or duplicate each other, and this candidate
+    performs no admission or idempotency decision of its own.
+
+flight_recorder_contract:
+  - step: 1
+    text: "The full causal ladder is PRODUCED -> TRANSPORT_ACCEPTED -> DELIVERED -> READ -> WORK_CONSUMED -> WORK_STARTED -> EFFECT (branches to EFFECT_ACCEPTED | EFFECT_UNKNOWN | NO_EFFECT) -> TERMINAL -> RELEASED, per the Human text's Receipt Model and X4's causal ladder."
+  - step: 2
+    text: "A stage counts as reached only if a receipt for it was actually observed -- the recorder never assumes, infers, or fabricates one."
+  - step: 3
+    text: "A gap is a BROKEN edge only when a later stage in the ladder IS present -- proving the chain moved past the gap without leaving evidence there. A gap with nothing later present is simply IN_PROGRESS, not broken."
+  - step: 4
+    text: "Only the earliest broken edge is reported, matching the Human text's 'forste brutte edge' (first broken edge) wording -- later gaps are not separately claimed until the first one is resolved."
+  - step: 5
+    text: "The report is read-only: it never writes a receipt, never overrides canonical state, and never claims COMPLETE unless every ladder position, including the EFFECT branch, was actually observed."
+
+explicitly_not:
+  - Not a trace/correlation/causation ID generator -- this candidate reconstructs from receipts a caller already holds, per one attempt.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a replacement for or import of signalvev-reference-v0.7 or -v0.8 -- see non-duplication note above.
+  - Not authority: a BROKEN or COMPLETE report proves reconstruction from held evidence, not canonical state truth (state-owner remains the sannhetskilde per the Human text's grunnlov-kandidat).
+  - Not a fan-out/causation-tree resolver -- this candidate is scoped to one attempt's single ladder, not multi-child causation trees.
