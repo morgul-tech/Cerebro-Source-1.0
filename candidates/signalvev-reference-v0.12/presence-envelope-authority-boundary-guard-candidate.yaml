@@ -1,0 +1,74 @@
+schema: cerebro-signalvev-presence-envelope-authority-boundary-guard/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 6)"
+    - "1. Human text -> 2. Felles primitive verktoy -> PRESENCE / SERVICE DIRECTORY"
+    - "1. Human text -> 5. Viktige negative regler (ONLINE != READY; READY != AUTHORIZED; PRESENCE != OCCUPANCY)"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, PRESENCE / SERVICE DIRECTORY):
+# "Et eget system for: ONLINE, OFFLINE, READY, ARMED, DEGRADED, UNKNOWN.
+# Presence er ikke: authority, claim, work_started, consumed, effect.
+# Service directory skal aldri brukes som skjult scheduler."
+#
+# Verbatim (Falsifiers, item 6): "Presence READY or ARMED supplies
+# command authority or occupancy."
+#
+# Verbatim (Human text, negative rules): "ONLINE != READY", "READY !=
+# AUTHORIZED", "PRESENCE != OCCUPANCY".
+mandate: >
+  Build the structural guard that keeps a PRESENCE message from
+  carrying authority, claim, occupancy, work-started, consumed or
+  effect semantics, closing falsifier 6. v0.1's
+  test_falsifier_06_presence_not_authority is a single inline closure
+  with one hardcoded scenario -- it proves the concept once, but does
+  not check the envelope's own authority_ref/effect_class fields, does
+  not name all four claim types the Human text lists (claim,
+  work_started, consumed, effect), and does not specifically exercise
+  READY and ARMED as the falsifier itself names them.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    signalvev-reference-v0.7's IdempotencyScope, -v0.8's
+    RevisionGuardedAdmitter, -v0.10's reply-currentness guard, and
+    -v0.11's effect-quarantine classifier all answer questions about
+    DURABLE_COMMAND or REQUEST/RESPONSE messages. This candidate
+    answers an independent, structural question scoped to PRESENCE
+    messages only: does this presence message improperly carry
+    authority-, claim-, or effect-bearing fields. None of the five
+    import or duplicate each other, and this candidate makes no
+    admission, currentness, or replay-safety decision of its own.
+
+presence_boundary_contract:
+  - step: 1
+    text: "presence_state must be exactly one of ONLINE, OFFLINE, READY, ARMED, DEGRADED, UNKNOWN -- the Human text's own closed list."
+  - step: 2
+    text: "A PRESENCE message's effect_class must always be NONE -- presence carries no effect, regardless of presence_state."
+  - step: 3
+    text: "A PRESENCE message must never carry a non-null authority_ref -- presence is not authority, per the Human text's own explicit list."
+  - step: 4
+    text: "A PRESENCE message must never assert claims_occupancy, claims_work_started, claims_consumed, or claims_effect -- each of the four is named individually in the Human text's 'Presence er ikke' list."
+  - step: 5
+    text: "READY and ARMED receive no special exemption from steps 2-4 -- the falsifier names them specifically because they are the states most likely to be mistaken for authorization, so the guard must reject violations on them exactly as it does for any other presence_state."
+
+explicitly_not:
+  - >-
+      Not a presence/service-directory transport or scheduler implementation
+      -- Human text's own line: "Service directory skal aldri brukes som
+      skjult scheduler." This candidate does not implement one at all.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a replacement for or import of signalvev-reference-v0.7, -v0.8, -v0.10, or -v0.11 -- see non-duplication note above.
+  - Not authority: a validated presence message proves structural absence of authority-bearing fields, not that the sender is online, ready, or armed in fact -- that remains a live transport concern outside this candidate.
+  - Not an occupancy/claim ledger -- this candidate only rejects a presence message that tries to smuggle those concepts in, it does not track or grant occupancy itself.
