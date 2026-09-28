@@ -1,0 +1,88 @@
+schema: cerebro-signalvev-schema-version-compatibility-gate/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 7. Naavaerende modningsrekkefolge -> Tredje bolge"
+    - "1. Human text -> 2. Felles primitive verktoy -> SUBJECT / CHANNEL REGISTRY"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Registry"
+    - "4. Subject Registry v0.1 draft JSON -> entries[*].compatibility"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, 7. Naavaerende modningsrekkefolge, Tredje bolge):
+# "Communication Flight Recorder / Workload Identity/Attestation /
+# Schema/version compatibility"
+#
+# Verbatim (X4 normative draft, Registry): "One machine-readable
+# registry row per subject/channel + message type should name schema
+# version, producer/consumer role, authoritative state owner, permitted
+# transport, durability class, ack ladder, idempotency scope, TTL policy
+# and compatibility window. Registry publication is contract governance,
+# not actor assignment. Unknown subject/version/producer is a typed HOLD
+# or quarantine, not an improvised fallback."
+#
+# Verbatim (Subject Registry v0.1 draft JSON, real compatibility values
+# already present on every one of the seven entries): "exact_schema_
+# version_or_typed_hold", "version_negotiated_before_reply",
+# "no_implicit_upgrade;unknown_version_holds", "unknown_stage_holds",
+# "content_type_and_schema_version_checked".
+mandate: >
+  Build the schema/version compatibility gate that is the last of the
+  three items the Human text's own "Tredje bolge" (third wave) names --
+  the other two (Communication Flight Recorder, Workload Identity/
+  Attestation) already have reference coverage from v0.3/v0.9 and
+  v0.14 respectively. The real Subject Registry v0.1 draft, already
+  merged into main as part of signalvev-reference-v0.1, carries a
+  `compatibility` string on every one of its seven entries -- but no
+  candidate before this one ever reads or dispatches on that field.
+  v0.1's own validate_envelope enforces exactly one hardcoded
+  schema_version const ("1.0.0-draft") and nothing else; it never
+  implements a typed HOLD for an unknown version, never distinguishes
+  the five different compatibility policies the registry itself already
+  declares, and never proves X4's own "no implicit upgrade" rule against
+  a version string that merely looks newer.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    No prior candidate reads the `compatibility` field of any registry
+    entry at all -- v0.1's validate_envelope checks schema_version
+    against a single const and stops. This candidate is the first to
+    give that field runtime meaning. It imports (does not copy) v0.1's
+    own load_registry() as a read-only cross-version consistency canary
+    -- proving its dispatch logic actually covers all five real
+    compatibility strings already present in the merged registry file --
+    but does not modify that file or duplicate validate_envelope's
+    schema-shape checks.
+
+compatibility_contract:
+  - step: 1
+    text: "A declared schema_version not present in the receiver's known set is always a typed HOLD, regardless of which compatibility policy the subject declares -- direct implementation of X4's own 'Unknown subject/version/producer is a typed HOLD or quarantine, not an improvised fallback.'"
+  - step: 2
+    text: "No implicit upgrade: an unrecognized version string that happens to look numerically newer receives exactly the same TYPED_HOLD as any other unknown string. There is no version-ordering heuristic that silently treats a plausible-looking newer version as probably compatible."
+  - step: 3
+    text: "version_negotiated_before_reply requires an explicit negotiation flag in addition to a known version -- a matching schema_version alone is not sufficient for status.request/status.response."
+  - step: 4
+    text: "content_type_and_schema_version_checked requires both a known version and a declared content type -- artifact.pointer's own named conjunction, distinct from v0.13's separate bytes-and-custody guard."
+  - step: 5
+    text: "unknown_stage_holds is recognized as a different axis entirely (receipt-stage compatibility, already owned by v0.1's STAGE_PREDECESSORS/ReceiptTrail) and returns NOT_APPLICABLE rather than being misjudged as a version-compatibility policy."
+  - step: 6
+    text: "An unrecognized compatibility policy string (a typo, or a future policy this gate does not yet know) fails closed with an explicit error -- never silently treated as any existing policy."
+
+explicitly_not:
+  - Not a replacement for or import of v0.1's validate_envelope -- schema shape validation (required fields, field types, message_type enum) stays exactly where v0.1 already does it.
+  - Not a duplicate of v0.9's FirstBrokenEdgeRecorder or v0.14's workload identity binder -- the other two "Tredje bolge" items, already covered on separate branches.
+  - Not a duplicate of v0.1's STAGE_PREDECESSORS/ReceiptTrail -- receipt-stage compatibility (the unknown_stage_holds policy) is explicitly recognized as out of this gate's scope, not reimplemented here.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a modification of v0.1's actual subject-registry-v0.1-candidate.json -- read only, as a test-time canary.
+  - Not authority: an ACCEPTED result proves version/negotiation/content-type compatibility only, never work authority, claim/occupancy, or effect permission.
+  - Not a replacement for or import of any prior signalvev-reference candidate (v0.1 through v0.14).
