@@ -1,0 +1,66 @@
+schema: cerebro-signalvev-stale-revision-admission-guard/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> Current runtime crosswalk (L4 Command/work row)"
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 7)"
+    - "1. Human text -> 5. Viktige negative regler (EVENT != STATE_TRUTH)"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (X4 crosswalk, L4 Command/work row):
+# "Current evidence: PFR Runtime/Ledger enforce attempts, occupancy, no
+# replay, unknown quarantine and exact release in offline simulation.
+# Material gap: Supported live provider atomic compare-and-bind/admit
+# remains absent. PM8290 and PM8306 keep live provider HOLD."
+#
+# Verbatim (Falsifiers, item 7): "A stale snapshot or route revision
+# admits work."
+mandate: >
+  Build the "atomic compare-and-bind/admit" primitive X4's own crosswalk
+  names as a material L4 gap, closing the last of the twelve falsifiers
+  (item 7) that did not yet have a real, reusable reference
+  implementation. v0.1's falsifier-7 test is a single inline closure
+  with one hardcoded scenario (current_revision=5, snapshot_revision=3)
+  -- it proves the concept once, but is not a reusable guard, does not
+  track a referent's revision over time, does not cover the "route
+  revision" half of the falsifier's own wording, and does not test
+  what happens when a previously-valid snapshot is invalidated by a
+  later state change (the case that actually matters operationally).
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    signalvev-reference-v0.5's DurableCommandOutbox answers whether a
+    committed command survives signal loss and a restart.
+    signalvev-reference-v0.7's IdempotencyScope answers whether two
+    attempts are "the same" attempt. This candidate answers a third,
+    independent question: is the caller's view of a referent's current
+    revision still current at the moment of admission, or has the world
+    moved on underneath it. None of the three import or duplicate each
+    other.
+
+compare_and_bind_contract:
+  - step: 1
+    text: "A state owner maintains a monotonically increasing current_revision per referent (state or route)."
+  - step: 2
+    text: "A caller presents a snapshot_revision it believes is current, alongside the work it wants admitted."
+  - step: 3
+    text: "Admission succeeds only if snapshot_revision exactly equals the referent's current_revision at the moment of admission -- not at the moment the snapshot was taken."
+  - step: 4
+    text: "Any mismatch -- snapshot behind current (classic staleness) or snapshot ahead of current (an invalid claim about a revision that does not yet exist) -- is HOLD_STALE_REVISION, never silently admitted and never silently dropped."
+  - step: 5
+    text: "A snapshot that was valid when read can become stale later if the referent's revision changes before admission is attempted -- currentness is evaluated live, not cached from read time."
+
+explicitly_not:
+  - Not a claim/occupancy grant mechanism by itself -- admission here only proves the caller's view was current, not that it is authorized to act.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a live provider integration -- PM8290/PM8306's live provider HOLD referenced by X4 remains unaddressed; this is an offline reference guard only.
+  - Not a replacement for or import of signalvev-reference-v0.5 or -v0.7 -- see non-duplication note above.
+  - Not authority: a successful admission proves currentness, not that the caller is allowed to hold the resulting claim.
