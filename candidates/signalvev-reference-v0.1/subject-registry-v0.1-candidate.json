@@ -1,0 +1,101 @@
+{
+  "schema": "cerebro.communication.subject-registry/v0.1-draft",
+  "status": "ARCHITECTURE_ONLY_NO_AUTHORITY",
+  "transport_binding": "NONE",
+  "activation": "NONE",
+  "note": "These subjects are candidate semantic names, not live NATS subjects or actor assignments. A signal never substitutes for a canonical reread or durable work receipt.",
+  "_provenance": {
+    "source_document": "CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md",
+    "source_drive_id": "1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU",
+    "source_section": "4. Subject Registry v0.1 draft JSON -- complete source",
+    "pinned_size_bytes": 4617,
+    "pinned_sha256": "5399a94b98dcbf5dc583c73bd293cbbb2dcbad8bddc2af67d36209b9f9d28343",
+    "reconstruction_note": "Transcribed from a Markdown-rendered extraction of the source document, not the raw file bytes. Field-for-field content preserved; byte-exact hash equality against the pinned SHA256 has NOT been independently verified. See README.md."
+  },
+  "entries": [
+    {
+      "subject": "cerebro.v1.state.delta",
+      "message_type": "STATE_DELTA",
+      "schema_ref": "cerebro-message-v1-candidate.schema.json",
+      "producer_role": "canonical_state_owner",
+      "consumer_role": "interested_reader",
+      "authority_requirement": "source_attribution_and_canonical_state_reread",
+      "durability_class": "EPHEMERAL_RECONSTRUCTIBLE",
+      "ack_semantics": ["TRANSPORT_ACCEPTED_OPTIONAL"],
+      "idempotency_scope": "referent_plus_state_revision",
+      "compatibility": "exact_schema_version_or_typed_hold"
+    },
+    {
+      "subject": "cerebro.v1.signal.wake",
+      "message_type": "EPHEMERAL_SIGNAL",
+      "schema_ref": "cerebro-message-v1-candidate.schema.json",
+      "producer_role": "state_owner_or_registered_notifier",
+      "consumer_role": "registered_consumer",
+      "authority_requirement": "none_for_work;consumer_must_reread_durable_inbox_and_current_claim",
+      "durability_class": "EPHEMERAL_RECONSTRUCTIBLE",
+      "ack_semantics": ["TRANSPORT_ACCEPTED_OPTIONAL", "DELIVERED_NE_WORK_CONSUMED"],
+      "idempotency_scope": "referent_plus_state_revision",
+      "compatibility": "exact_schema_version_or_typed_hold"
+    },
+    {
+      "subject": "cerebro.v1.status.request",
+      "message_type": "REQUEST",
+      "schema_ref": "cerebro-message-v1-candidate.schema.json",
+      "producer_role": "authorized_reader",
+      "consumer_role": "referent_state_owner",
+      "authority_requirement": "read_access_for_referent",
+      "durability_class": "BOUNDED_TRANSIENT",
+      "ack_semantics": ["RESPONSE", "NO_RESPONDER", "TIMEOUT_UNKNOWN"],
+      "idempotency_scope": "correlation_id_plus_request_hash",
+      "compatibility": "version_negotiated_before_reply"
+    },
+    {
+      "subject": "cerebro.v1.status.response",
+      "message_type": "RESPONSE",
+      "schema_ref": "cerebro-message-v1-candidate.schema.json",
+      "producer_role": "referent_state_owner",
+      "consumer_role": "requester",
+      "authority_requirement": "current_state_owner_at_response_revision",
+      "durability_class": "BOUNDED_TRANSIENT",
+      "ack_semantics": ["RESPONSE_NE_CANONICAL_STATE;REQUESTER_REREAD_IF_EFFECTFUL"],
+      "idempotency_scope": "correlation_id_plus_response_revision",
+      "compatibility": "version_negotiated_before_reply"
+    },
+    {
+      "subject": "cerebro.v1.work.command",
+      "message_type": "DURABLE_COMMAND",
+      "schema_ref": "cerebro-message-v1-candidate.schema.json",
+      "producer_role": "authorized_work_state_owner",
+      "consumer_role": "exact_bound_actor_workload",
+      "authority_requirement": "separate_current_claim_grant_owner_and_atomic_admission",
+      "durability_class": "MINIMAL_DURABLE_HANDOFF_FIRST_WAVE",
+      "ack_semantics": ["PRODUCED", "TRANSPORT_ACCEPTED", "DELIVERED", "WORK_CONSUMED", "WORK_STARTED", "TERMINAL", "RELEASED"],
+      "idempotency_scope": "owner_plus_effect_domain_plus_claim_plus_attempt_plus_payload_fingerprint",
+      "compatibility": "no_implicit_upgrade;unknown_version_holds"
+    },
+    {
+      "subject": "cerebro.v1.lifecycle.receipt",
+      "message_type": "RECEIPT",
+      "schema_ref": "cerebro-message-v1-candidate.schema.json",
+      "producer_role": "stage_specific_attributable_issuer",
+      "consumer_role": "canonical_state_owner_and_read_only_observers",
+      "authority_requirement": "stage_specific_issuer_and_exact_parent_attempt_evidence",
+      "durability_class": "SELECTIVE_DURABLE",
+      "ack_semantics": ["RECEIPT_STAGE_NE_STRONGER_STAGE", "NO_RECEIPT_NE_NO_EFFECT"],
+      "idempotency_scope": "issuer_plus_stage_plus_attempt_plus_receipt_identity",
+      "compatibility": "unknown_stage_holds"
+    },
+    {
+      "subject": "cerebro.v1.artifact.pointer",
+      "message_type": "ARTIFACT_POINTER",
+      "schema_ref": "cerebro-message-v1-candidate.schema.json",
+      "producer_role": "artifact_state_owner",
+      "consumer_role": "authorized_artifact_reader",
+      "authority_requirement": "current_access_custody_and_byte_hash_verification",
+      "durability_class": "SELECTIVE_DURABLE",
+      "ack_semantics": ["POINTER_DELIVERED_NE_ARTIFACT_READ_OR_VERIFIED"],
+      "idempotency_scope": "artifact_identity_plus_content_hash",
+      "compatibility": "content_type_and_schema_version_checked"
+    }
+  ]
+}

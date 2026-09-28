@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:cerebro:communication:message:v1:draft-no-authority",
+  "$comment": "SOURCE PROVENANCE: transcribed verbatim (structure and field-for-field content, not byte-identical rendering) from the CEREBRO_MESSAGE_V1 draft JSON Schema pinned inside 'CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md' (Google Drive file ID 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU), section 3. That document pins this schema's complete source at 3666 bytes / SHA256 432bd83d36c34f81d6875f47931e0d89c5ec3206315c474b7d091982c3f409d1. This candidate file was reconstructed from a Markdown-rendered extraction of that document (pandoc-style escaping of underscores/brackets/bold-markers), not from the raw file bytes, so byte-exact hash equality against the pinned SHA256 has NOT been independently verified here -- see README.md 'Open deviations and assumptions'. STATUS: isolated implementation candidate, no authority, no runtime activation implied.",
+  "title": "CEREBRO_MESSAGE_V1 architecture draft",
+  "description": "Transport-neutral descriptive envelope. Validation is not identity, authority, admission, effect or canonical state proof.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "message_id",
+    "message_type",
+    "schema_version",
+    "subject",
+    "source",
+    "target",
+    "issued_at",
+    "ttl_seconds",
+    "trace_id",
+    "correlation_id",
+    "causation_id",
+    "idempotency_key",
+    "authority_class",
+    "authority_ref",
+    "effect_class",
+    "reply_to",
+    "requires_ack",
+    "payload_ref",
+    "payload_hash"
+  ],
+  "properties": {
+    "message_id": { "type": "string", "minLength": 1 },
+    "message_type": {
+      "enum": [
+        "EPHEMERAL_SIGNAL",
+        "REQUEST",
+        "RESPONSE",
+        "DURABLE_COMMAND",
+        "STATE_DELTA",
+        "ARTIFACT_POINTER",
+        "PRESENCE",
+        "RECEIPT",
+        "HUMAN_NOTICE"
+      ]
+    },
+    "schema_version": { "const": "1.0.0-draft" },
+    "subject": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "principal_ref",
+        "actor_id",
+        "generation",
+        "workload_ref",
+        "machine_ref",
+        "session_ref",
+        "custody_ref"
+      ],
+      "properties": {
+        "principal_ref": { "type": "string", "minLength": 1 },
+        "actor_id": { "type": ["string", "null"] },
+        "generation": { "type": ["string", "null"] },
+        "workload_ref": { "type": ["string", "null"] },
+        "machine_ref": { "type": ["string", "null"] },
+        "session_ref": { "type": ["string", "null"] },
+        "custody_ref": { "type": ["string", "null"] }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["referent_type", "referent_id", "state_owner_ref"],
+      "properties": {
+        "referent_type": { "type": "string", "minLength": 1 },
+        "referent_id": { "type": "string", "minLength": 1 },
+        "state_owner_ref": { "type": ["string", "null"] }
+      }
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "ttl_seconds": { "type": "integer", "minimum": 1 },
+    "trace_id": { "type": "string", "minLength": 1 },
+    "correlation_id": { "type": "string", "minLength": 1 },
+    "causation_id": { "type": ["string", "null"] },
+    "idempotency_key": { "type": ["string", "null"] },
+    "authority_class": { "type": "string", "minLength": 1 },
+    "authority_ref": { "type": ["string", "null"] },
+    "effect_class": { "enum": ["NONE", "READ_ONLY", "WRITE_POSSIBLE", "UNKNOWN"] },
+    "reply_to": { "type": ["string", "null"] },
+    "requires_ack": { "type": "boolean" },
+    "payload_ref": { "type": ["string", "null"] },
+    "payload_hash": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-fA-F]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "message_type": { "const": "DURABLE_COMMAND" } },
+        "required": ["message_type"]
+      },
+      "then": {
+        "properties": {
+          "idempotency_key": { "type": "string", "minLength": 1 },
+          "authority_ref": { "type": "string", "minLength": 1 },
+          "requires_ack": { "const": true }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "payload_ref": { "type": "string" } },
+        "required": ["payload_ref"]
+      },
+      "then": {
+        "properties": { "payload_hash": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "payload_hash": { "type": "string" } },
+        "required": ["payload_hash"]
+      },
+      "then": {
+        "properties": { "payload_ref": { "type": "string", "minLength": 1 } }
+      }
+    }
+  ]
+}

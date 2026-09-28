@@ -1,0 +1,43 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.1
+  name: Signalvev Reference Implementation Candidate v0.1
+  type: candidate
+  version: 0.1.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Gi en kjorbar, offline-verifiserbar referanseimplementasjon av de
+    arkitekturprimitivene Communication Stack v0.1 og Signalvev-doktrinen
+    allerede har spesifisert (CEREBRO_MESSAGE_V1, Subject Registry,
+    Receipt-taksonomi, negative regler, falsifikatorer) -- uten a
+    aktivere, erstatte eller konkurrere med noen eksisterende
+    sannhetsflate, transportbinding eller autoritet.
+  explicitly_not:
+    - Ikke en ny konkurrerende protokoll eller sannhetsflate.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et krav om produksjonsklarhet.
+dependencies:
+  build: []
+  runtime: []
+interfaces:
+  input:
+  - cerebro-message-v1-candidate (any message_type in subject-registry-v0.1-candidate.json)
+  output:
+  - receipt-taxonomy-candidate transitions (offline, in-process only in this candidate)
+relationship_to_prior_evidence:
+  note: >
+    S0 (private NATS roundtrip, LEDGER row 179) and S1 (pointer +
+    authenticated Drive reread + ACK_READ, LEDGER row 181) are prior,
+    independent, behavior-real implementation evidence on the actual
+    EDGE-01 transport, produced by a separate non-canonical candidate
+    (the ephemeral nats-py CLI-based client referenced at PM8448-8452 /
+    PM8571). This component does not supersede, repeat, or invalidate
+    that evidence. What was previously missing, and what this component
+    supplies, is a canonical, schema-validated, offline-testable Source
+    reference for the message envelope, subject registry and receipt
+    state machine that S0/S1-class work should eventually be re-validated
+    against.
