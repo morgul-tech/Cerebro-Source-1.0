@@ -1,0 +1,57 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.6
+  name: Signalvev Reference Implementation Candidate v0.6 (human notice projection)
+  type: candidate
+  version: 0.6.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build the L7 "shared rule for projecting uncertain machine state"
+    that X4 runtime-fagpass's own crosswalk names as a material gap, and
+    which no prior candidate actually built -- v0.1's falsifier-12 test
+    is a single inline closure, not a reusable primitive, and only
+    covers half of the material gap (fabricated success; not the
+    "invented Human gate" half at all). This is the first L7 primitive
+    in the project.
+  explicitly_not:
+    - Ikke en Tower-, HMI- eller Postkasse-implementasjon -- dette er
+      projeksjonsregelen slike overflater ville kalt, ikke en UI.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en autoritets- eller Human Gate-godkjenningsmekanisme -- GATE
+      betyr her "en Human-beslutning etterspørres", aldri "en
+      Human-beslutning er gitt".
+    - Ikke en endring av signalvev-reference-v0.1s
+      subject-registry-v0.1-candidate.json -- se registry_gap_noted i
+      human-notice-projection-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (validate_envelope, ReceiptTrail,
+      _base_msg -- importert, ikke duplisert)
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2 (denne kandidaten trenger verken
+      RequestReplyMatcher, presence-directory eller
+      selective-durable-inbox)
+    - signalvev-reference-v0.3 (Flight Recorder / Workload Identity /
+      schema-compatibility -- ikke relevant for L7-projeksjon)
+    - signalvev-reference-v0.5 (durable command outbox -- ikke relevant
+      for L7-projeksjon)
+interfaces:
+  input:
+  - a machine-side state string (a v0.1 receipt stage, a v0.2
+    request/reply outcome, or any other named machine state) plus an
+    optional explicit notice kind (NOTICE or GATE)
+  output:
+  - a HUMAN_NOTICE-compatible projection dict (in-process only; not
+    wired to any real Tower/HMI/Postkasse surface)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline projection-safety property (uncertainty never
+    silently becomes success or an invented Human gate), a narrower
+    claim than "this works on a real Tower/HMI surface".
