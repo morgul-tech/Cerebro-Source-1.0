@@ -1,0 +1,55 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.12
+  name: Signalvev Reference Implementation Candidate v0.12 (presence envelope authority-boundary guard)
+  type: candidate
+  version: 0.12.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build the structural guard that keeps a PRESENCE message from
+    carrying authority, claim, occupancy, work-started, consumed or
+    effect semantics, per the Human text's own PRESENCE / SERVICE
+    DIRECTORY section, closing falsifier 6 ("Presence READY or ARMED
+    supplies command authority or occupancy") -- v0.1's own test is a
+    single hardcoded closure that does not check the envelope's actual
+    authority_ref/effect_class fields or the four named claim flags.
+  explicitly_not:
+    - Ikke en presence/service-directory-transportimplementasjon.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et duplikat av signalvev-reference-v0.7, -v0.8, -v0.10 eller
+      -v0.11 -- se non-duplication note i
+      presence-envelope-authority-boundary-guard-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate: []
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.5
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7
+    - signalvev-reference-v0.8
+    - signalvev-reference-v0.9
+    - signalvev-reference-v0.10
+    - signalvev-reference-v0.11
+interfaces:
+  input:
+  - a presence_state (ONLINE/OFFLINE/READY/ARMED/DEGRADED/UNKNOWN) plus
+    the envelope's effect_class, authority_ref, and four claim flags
+    (claims_occupancy, claims_work_started, claims_consumed, claims_effect)
+  output:
+  - a validated presence classification, or a raised violation naming
+    every offending field (in-process only in this candidate)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline structural-boundary property over a presence
+    message a caller already constructed, a narrower claim than "this
+    works against a real live provider" or "this is a service directory
+    implementation."
