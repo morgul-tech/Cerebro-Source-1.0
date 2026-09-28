@@ -1,0 +1,54 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.10
+  name: Signalvev Reference Implementation Candidate v0.10 (reply currentness and effectful-timeout guard)
+  type: candidate
+  version: 0.10.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build the request/reply currentness and effectful-timeout-retry
+    guard X4's own crosswalk names as a material L3 gap, closing
+    falsifier 9 ("A reply lacking current referent/version is treated
+    as canonical status") -- v0.1's own test is a single hardcoded
+    closure that does not cover NO_RESPONDER, TIMEOUT_UNKNOWN, or the
+    effect_class-dependent retry-safety rule X4's own text states.
+  explicitly_not:
+    - Ikke en request/reply-transportimplementasjon.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et duplikat av signalvev-reference-v0.8 eller -v0.9 -- se
+      non-duplication note i
+      reply-currentness-effectful-timeout-guard-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate: []
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.5
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7
+    - signalvev-reference-v0.8 (RevisionGuardedAdmitter -- see
+      non-duplication note; this candidate takes current_revision as a
+      plain input, it does not import or maintain a ledger)
+    - signalvev-reference-v0.9
+interfaces:
+  input:
+  - a reply outcome (RESPONSE / NO_RESPONDER / TIMEOUT_UNKNOWN), the
+    response_revision it carried (if any), the referent's current
+    revision, and the original request's effect_class
+  output:
+  - CURRENT / STALE / UNKNOWN classification plus a
+    safe_to_retry_as_read_only boolean (in-process only in this
+    candidate)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline currentness-and-retry-safety classification over
+    a reply a caller already holds, a narrower claim than "this works
+    against a real live provider."

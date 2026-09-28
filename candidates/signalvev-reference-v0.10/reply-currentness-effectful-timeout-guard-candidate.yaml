@@ -1,0 +1,72 @@
+schema: cerebro-signalvev-reply-currentness-effectful-timeout-guard/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> Current runtime crosswalk (L3 Request/reply row)"
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 9)"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Request/reply and pointers"
+    - "1. Human text -> 2. Felles primitive verktoy -> REQUEST / REPLY PRIMITIVE"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (X4 crosswalk, L3 Request/reply row):
+# "Current evidence: Ad hoc status reads exist. Material gap: No common
+# timeout, NO_RESPONDER, correlation, bounded reply or currentness
+# contract."
+#
+# Verbatim (Falsifiers, item 9): "A reply lacking current referent/
+# version is treated as canonical status."
+#
+# Verbatim (X4 first-wave normative contract draft, Request/reply and
+# pointers): "Request/reply must distinguish RESPONSE, NO_RESPONDER,
+# TIMEOUT_UNKNOWN, stale answer and schema mismatch. A timed-out
+# request that could have crossed an effect boundary cannot be retried
+# as if it were a read-only question."
+mandate: >
+  Build the reply currentness and effectful-timeout-retry guard X4's
+  own crosswalk names as a material L3 gap, closing falsifier 9.
+  v0.1's test_falsifier_09_stale_reply_not_canonical is a single inline
+  closure with one hardcoded scenario -- it proves the concept once,
+  but does not cover NO_RESPONDER, does not cover TIMEOUT_UNKNOWN, and
+  critically does not implement X4's own explicit retry-safety rule
+  that a timed-out request which could have crossed an effect boundary
+  must never be retried as if it were merely a read-only question.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    signalvev-reference-v0.8's RevisionGuardedAdmitter answers whether a
+    caller may ADMIT WORK given a snapshot revision -- a write-path
+    admission gate. signalvev-reference-v0.9's FirstBrokenEdgeRecorder
+    reconstructs, read-only, where a receipt chain is broken. This
+    candidate answers a third, independent, read-path question: given a
+    reply a requester already received, may it be treated as canonical
+    current status, and if the request instead timed out, is a
+    read-only retry even safe. It takes current_revision as a plain
+    input rather than importing or maintaining a ledger, so it neither
+    imports nor duplicates v0.8's ledger-holding admitter.
+
+reply_currentness_contract:
+  - step: 1
+    text: "A reply outcome is exactly one of RESPONSE, NO_RESPONDER, or TIMEOUT_UNKNOWN, per the Human text's REQUEST/REPLY PRIMITIVE and X4's own normative draft."
+  - step: 2
+    text: "NO_RESPONDER and TIMEOUT_UNKNOWN are never treated as canonical status -- both classify as UNKNOWN, never CURRENT."
+  - step: 3
+    text: "A RESPONSE is CURRENT only if its response_revision exactly equals the referent's current_revision at evaluation time; any mismatch is STALE, never silently accepted as canonical."
+  - step: 4
+    text: "A RESPONSE with no response_revision is malformed and must raise, never be treated as current by default."
+  - step: 5
+    text: "A TIMEOUT_UNKNOWN is safe to retry as a read-only question only if the original request's effect_class was NONE or READ_ONLY. WRITE_POSSIBLE or UNKNOWN effect_class means the request may have crossed an effect boundary, so a retry must never be treated as merely re-asking a read-only question."
+
+explicitly_not:
+  - Not a request/reply transport implementation -- this candidate classifies a reply a caller already holds.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a replacement for or import of signalvev-reference-v0.8 or -v0.9 -- see non-duplication note above.
+  - Not authority: a CURRENT classification proves currentness against a supplied revision, not canonical truth -- state-owner remains the sannhetskilde per the Human text's own grunnlov-kandidat.
+  - Not a decision about whether to actually retry -- only whether a retry, if attempted, may safely be treated as read-only.
