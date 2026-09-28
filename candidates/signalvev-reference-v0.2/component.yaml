@@ -1,0 +1,53 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.2
+  name: Signalvev Reference Implementation Candidate v0.2 (second wave)
+  type: candidate
+  version: 0.2.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Gi kjorbare, offline-verifiserbare referanseimplementasjoner av
+    Communication Stack v0.1's "andre bolge" (Presence/Service Directory,
+    Request/Reply-primitiv, Selective Durable Inbox, Artifact
+    Pointer/File Transfer) -- uten a aktivere, erstatte eller konkurrere
+    med noen eksisterende sannhetsflate, transportbinding eller autoritet.
+  explicitly_not:
+    - Ikke en ny konkurrerende protokoll eller sannhetsflate.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et krav om produksjonsklarhet.
+    - Ikke en erstatning eller redefinering av
+      signalvev-reference-v0.1's schema/registry/receipt-taksonomi --
+      dette er et tillegg som bygger videre pa samme grunnlag.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (subject-registry-v0.1-candidate.json, read
+      as reference data only -- not modified)
+interfaces:
+  input:
+  - cerebro-message-v1-candidate (message_type PRESENCE, REQUEST, RESPONSE,
+    DURABLE_COMMAND, ARTIFACT_POINTER, as defined in
+    signalvev-reference-v0.1)
+  output:
+  - presence-directory-candidate.yaml state transitions (in-process only)
+  - request-reply-candidate.yaml outcomes (in-process only)
+  - selective-durable-inbox-candidate.yaml classification decisions (in-process only)
+  - artifact-pointer-transfer-candidate.yaml verify/consume decisions (in-process only)
+relationship_to_prior_evidence:
+  note: >
+    S0 (private NATS roundtrip, LEDGER row 179) and S1 (pointer +
+    authenticated Drive reread + ACK_READ, LEDGER row 181) remain the
+    prior, independent, behavior-real implementation evidence on the
+    actual EDGE-01 transport. This candidate, like signalvev-reference-v0.1,
+    does not supersede, repeat, or invalidate that evidence and takes no
+    position on PM_PRINCIPAL_CHANNEL (PM8628) having or not having
+    currentized it. What this candidate specifically adds beyond v0.1 is
+    a reference model for the "andre bolge" primitives named in
+    Communication Stack v0.1 section 7 (Presence, Request/Reply, Selective
+    Durable Inbox, Artifact Pointer/File Transfer), none of which had an
+    executable Source representation prior to this branch either.

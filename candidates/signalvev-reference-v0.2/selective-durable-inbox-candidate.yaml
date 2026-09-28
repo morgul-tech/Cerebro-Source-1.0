@@ -1,0 +1,87 @@
+schema: cerebro-signalvev-selective-durable-inbox/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 2. Felles primitive verktoy -> SELECTIVE DURABLE INBOX"
+    - "2. X4 runtime-fagpass -> One sequencing correction"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pins as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text): "Ikke alle signaler skal lagres. Durable brukes
+# for meldinger som: ikke kan mistes / maa overleve restart/offline /
+# krever acknowledgement / eller maa behandles en/logisk en gang."
+durability_criteria:
+  - id: CANNOT_BE_LOST
+    text_no: "ikke kan mistes"
+  - id: MUST_SURVIVE_RESTART_OR_OFFLINE
+    text_no: "maa overleve restart/offline"
+  - id: REQUIRES_ACKNOWLEDGEMENT
+    text_no: "krever acknowledgement"
+  - id: MUST_BE_PROCESSED_ONCE_OR_LOGICALLY_ONCE
+    text_no: "maa behandles en/logisk en gang"
+
+# Durability classes reused verbatim from
+# candidates/signalvev-reference-v0.1/subject-registry-v0.1-candidate.json
+# (durability_class field) -- this candidate does not invent a new class
+# vocabulary, it gives the vocabulary an offline reference policy.
+durability_classes:
+  - EPHEMERAL_RECONSTRUCTIBLE   # cerebro.v1.state.delta, cerebro.v1.signal.wake
+  - BOUNDED_TRANSIENT           # cerebro.v1.status.request, cerebro.v1.status.response
+  - MINIMAL_DURABLE_HANDOFF_FIRST_WAVE  # cerebro.v1.work.command
+  - SELECTIVE_DURABLE           # cerebro.v1.lifecycle.receipt, cerebro.v1.artifact.pointer
+
+classification_policy:
+  # This candidate's own encoding of a decision rule that satisfies the
+  # four criteria above without inventing new classes.
+  EPHEMERAL_RECONSTRUCTIBLE:
+    meets_any_criterion: false
+    store: false
+    dedup_enforced: false
+  BOUNDED_TRANSIENT:
+    meets_any_criterion: false
+    store: false
+    dedup_enforced: false
+    note: "Transient by design -- REQUEST/RESPONSE correlation lives in request-reply-candidate.yaml, not the inbox."
+  MINIMAL_DURABLE_HANDOFF_FIRST_WAVE:
+    meets_any_criterion: [CANNOT_BE_LOST, MUST_SURVIVE_RESTART_OR_OFFLINE, MUST_BE_PROCESSED_ONCE_OR_LOGICALLY_ONCE]
+    store: true
+    dedup_enforced: true
+    note: >
+      This is the class X4's "One sequencing correction" names explicitly:
+      a minimal, restart-safe local command/outbox fixture, pulled into
+      the first reference wave precisely so the reference stack is not
+      testing autonomous work consumption against an ephemeral-only wake
+      edge. subject-registry-v0.1-candidate.json already carries this
+      class on cerebro.v1.work.command; this candidate supplies the
+      storage/dedup policy that class implies.
+  SELECTIVE_DURABLE:
+    meets_any_criterion: [REQUIRES_ACKNOWLEDGEMENT, MUST_BE_PROCESSED_ONCE_OR_LOGICALLY_ONCE]
+    store: true
+    dedup_enforced: true
+
+# Verbatim (Human text): "Dette kan realiseres med JetStream-klassen av
+# mekanismer, men durability er en Cerebro-semantikk, ikke en
+# NATS-detalj."
+implementation_note: >
+  Durability here is a Cerebro-level semantic classification, independent
+  of transport. This candidate's reference implementation
+  (tooling/validator/signalvev_reference_v02_validation.py ->
+  DurableInboxPolicy) stores nothing outside an in-process dict for the
+  duration of a single test run. No JetStream, filesystem persistence, or
+  transport durability is activated, configured, or implied by this file.
+
+explicitly_not:
+  - Not a JetStream activation or configuration.
+  - Not a claim that every DURABLE_COMMAND-class message is currently
+    durable in any live system -- this is a policy an inbox
+    implementation should satisfy, not a report that one does yet.
