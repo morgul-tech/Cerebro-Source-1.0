@@ -1,0 +1,55 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.13
+  name: Signalvev Reference Implementation Candidate v0.13 (artifact pointer bytes-and-custody consumption guard)
+  type: candidate
+  version: 0.13.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build the artifact pointer consumption guard X4's own crosswalk
+    names as a material L5 gap, closing falsifier 10 ("An artifact
+    pointer with wrong bytes/hash is consumed"). v0.1's own test is a
+    single hardcoded closure that checks hash alone; it does not check
+    size, does not check the separate custody/access-verification gate
+    X4's own text requires alongside bytes verification, and does not
+    test that correct bytes with unverified custody are still rejected.
+  explicitly_not:
+    - Ikke en fil-transport- eller Drive-implementasjon.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et duplikat av signalvev-reference-v0.7, -v0.8, -v0.10,
+      -v0.11 eller -v0.12 -- se non-duplication note i
+      artifact-pointer-consumption-guard-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate: []
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.5
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7
+    - signalvev-reference-v0.8
+    - signalvev-reference-v0.9
+    - signalvev-reference-v0.10
+    - signalvev-reference-v0.11
+    - signalvev-reference-v0.12
+interfaces:
+  input:
+  - declared_hash (sha256 hex), declared_size (int), actual_bytes,
+    custody_verified (bool)
+  output:
+  - CONSUMED / REJECTED with named violation reasons (in-process only
+    in this candidate; uses only Python's stdlib hashlib)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport, Drive, or
+    file delivery at all -- it proves an offline verify-before-consume
+    property over bytes and a custody flag a caller already holds, a
+    narrower claim than "this works against a real live provider" or
+    "this is a file-transfer implementation."
