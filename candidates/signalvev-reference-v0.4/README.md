@@ -17,17 +17,18 @@ re-testing any single primitive's own internal correctness again.
 ## Base commit
 
 ```
-01a24d3 (main, after PR #5 + PR #8 + PR #9 + PR #7 -- rebased per PRINCIPAL HOLD)
+b1109b8 (main, after PR #5 + #8 + #9 + #7 + #10-#15 -- second rebase)
 ```
 
 Originally prepared against `4e756e7` (before PR #7/PR #9 merged) and
 delivered on branch `claude/signalvev-reference-v0.4`. PRINCIPAL's
 review returned **HOLD: rebase after PR #9 and document that the
-canonical validator runs without error.** Rebased here onto `01a24d3`
-(PR #9 and PR #7 both merged) via a clean cherry-pick of the original
-commit -- file content is unchanged, only the base moved forward. See
-"Mandatory pre-delivery gate" below for the updated, honest result of
-that re-verification.
+canonical validator runs without error.** First rebased onto `01a24d3`
+(PR #9 and PR #7 both merged) -- see the "original rebase" gate run
+below. **Rebased a second time** onto `b1109b8` (after PR #10-#15
+merged v0.8-v0.13) via another clean cherry-pick of the same original
+commit -- file content is again unchanged, only the base moved forward.
+See "Mandatory pre-delivery gate" below for the current, honest result.
 
 ## Branch
 
@@ -121,7 +122,7 @@ wrapping in a folded block scalar (`>-`). At that time,
 already-known, separately-fixed `request-reply-candidate.yaml` bug (PR
 #9, not yet merged) -- not from anything in this candidate.
 
-**Re-run after rebase onto `01a24d3`** (PR #9 and PR #7 both merged),
+**Original rebase run**, onto `01a24d3` (PR #9 and PR #7 both merged),
 per PRINCIPAL's HOLD instruction to document the result honestly:
 
 ```
@@ -134,24 +135,41 @@ result: FAIL
 errors: ['README_METADATA_COUNT_DRIFT:components:DECLARED=19:DERIVED=23']
 ```
 
-**The crash is gone.** The full-repo YAML scan is completely clean (0
+**The crash is gone.** The full-repo YAML scan was completely clean (0
 failures) -- PR #9's fix resolved it, confirmed independently here.
-`canonical_foundation.py` itself no longer raises an unhandled
-`yaml.scanner.ScannerError`; it now runs to completion and returns a
+`canonical_foundation.py` itself no longer raised an unhandled
+`yaml.scanner.ScannerError`; it ran to completion and returned a
 structured result.
 
+**Second rebase run**, onto `b1109b8` (after PR #10-#15 merged
+v0.8-v0.13), same YAML scan and gate re-run against the actually
+fetched remote content:
+
+```
+$ python3 -c "... yaml.safe_load() every *.yaml in repo ..."
+0 failing file(s)
+
+$ PYTHONDONTWRITEBYTECODE=1 python3 tooling/validator/canonical_foundation.py validate --source-root .
+exit code: 1
+result: FAIL
+errors: ['README_METADATA_COUNT_DRIFT:components:DECLARED=19:DERIVED=29']
+```
+
+Still no crash, still no new failure introduced by this candidate.
+
 **One error remains, and this candidate is transparent that it is not
-fully clean:** `README_METADATA_COUNT_DRIFT:components:DECLARED=19:DERIVED=23`.
+fully clean:** `README_METADATA_COUNT_DRIFT:components:DECLARED=19:DERIVED=29`.
 This is the *same* pre-existing drift first surfaced during the PR #9
 work (then `DECLARED=19:DERIVED=21`), which was deliberately left as a
 separate, PRINCIPAL-scoped judgment call rather than silently fixed --
 matching this project's own established precedent for the original
-421->422 rule-count issue. The count has grown by exactly one for each
-of PR #9's merge (no change), PR #7's merge (+1, v0.3's own
-`component.yaml`), and now this candidate's own `component.yaml` (+1
-more, from 22 to 23 on this branch). Independently verified by counting
-`component.yaml` files directly (`find . -name component.yaml | wc -l`),
-not just trusting the validator's derived number.
+421->422 rule-count issue. The count has grown with each subsequent
+merge (PR #7: +1 for v0.3's `component.yaml`; PR #10-#15: +6 for
+v0.8-v0.13's `component.yaml` files) and now by one more for this
+candidate's own `component.yaml` (29 on this branch). Independently
+verified by counting `component.yaml` files directly
+(`find . -name component.yaml | wc -l`), not just trusting the
+validator's derived number.
 
 The open question -- whether `candidates/*/component.yaml` files should
 count toward the root README's "Komponenter" total at all, or whether
