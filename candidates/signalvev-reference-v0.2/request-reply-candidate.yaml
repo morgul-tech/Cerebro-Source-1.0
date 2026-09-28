@@ -61,7 +61,8 @@ correlation:
 
 explicitly_not:
   - Not a claim/occupancy or work-admission primitive (L3, not L4).
-  - Not authority: a RESPONSE is "current state owner at response revision"
+  - >-
+    Not authority: a RESPONSE is "current state owner at response revision"
     only, never canonical state itself (subject registry
     cerebro.v1.status.response, ack_semantics
     RESPONSE_NE_CANONICAL_STATE;REQUESTER_REREAD_IF_EFFECTFUL).
