@@ -1,0 +1,50 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.7
+  name: Signalvev Reference Implementation Candidate v0.7 (durable command idempotency scope)
+  type: candidate
+  version: 0.7.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build and test the five-part composite idempotency identity the
+    Subject Registry names for DURABLE_COMMAND
+    (owner+effect_domain+claim+attempt+payload_fingerprint), proving
+    each part is independently load-bearing and that a new message_id
+    alone never creates a new lawful attempt. v0.1's falsifier 4 test
+    collapses this to one opaque key string and never tests the five
+    parts separately or the message_id claim at all.
+  explicitly_not:
+    - Ikke en claim/occupancy-tildelingsmekanisme.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke et duplikat av signalvev-reference-v0.5s
+      DurableCommandOutbox -- se non-duplication note i
+      durable-command-idempotency-scope-candidate.yaml.
+    - Ikke et krav om produksjonsklarhet.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (validate_envelope, ReceiptTrail,
+      _base_msg -- importert, ikke duplisert)
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.5 (DurableCommandOutbox -- se
+      non-duplication note)
+    - signalvev-reference-v0.6 (human notice projection -- ikke
+      relevant for idempotency)
+interfaces:
+  input:
+  - an IdempotencyScope (owner, effect_domain, claim, attempt) plus a
+    payload_fingerprint
+  output:
+  - ADMITTED_NEW / ADMITTED_DUPLICATE / CONFLICT outcomes (in-process only)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline identity-composition property of one reference
+    primitive, a narrower claim than "this works on real Signalvev".

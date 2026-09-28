@@ -1,0 +1,73 @@
+schema: cerebro-signalvev-durable-command-idempotency-scope/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 2. Felles primitive verktoy -> QUARANTINE + IDEMPOTENCY"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Envelope (idempotency scope paragraph)"
+    - "4. Subject Registry v0.1 draft JSON -> cerebro.v1.work.command entry (idempotency_scope field)"
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 4)"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Subject Registry v0.1 draft JSON -- complete source"
+      bytes: 4617
+      sha256: 5399a94b98dcbf5dc583c73bd293cbbb2dcbad8bddc2af67d36209b9f9d28343
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (X4 runtime-fagpass, Envelope):
+# "The idempotency scope must be specified per command as authority
+# owner + effect domain + claim + attempt + payload fingerprint. Exact
+# duplicate means same identity and same canonical payload. Same key
+# with changed payload is CONFLICT, never a cached success. A new
+# message ID does not create a new lawful attempt."
+#
+# Verbatim (Subject Registry v0.1 draft, cerebro.v1.work.command entry):
+# "idempotency_scope": "owner_plus_effect_domain_plus_claim_plus_attempt_plus_payload_fingerprint"
+mandate: >
+  Build the actual five-part composite idempotency identity the
+  Subject Registry names for DURABLE_COMMAND, and prove each named part
+  matters independently. v0.1's falsifier 4 test has a passing check,
+  but it collapses the entire identity into one opaque "key" string
+  compared against one "payload_fingerprint" string -- it never
+  constructs or tests the five named components
+  (owner/effect_domain/claim/attempt/payload_fingerprint) separately,
+  so it cannot show whether the reference logic actually treats all
+  five as load-bearing, or would silently ignore four of them. It also
+  does not test the X4 sentence "a new message ID does not create a new
+  lawful attempt" at all. This candidate builds and tests the real
+  five-part scope.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    signalvev-reference-v0.5's DurableCommandOutbox answers a different
+    question: does a committed command survive signal loss and a
+    restart, and is redelivery safe (keyed by a single opaque
+    command_identity it is handed). This candidate answers: what makes
+    two DURABLE_COMMAND attempts the "same" attempt in the first place,
+    and what happens when only one part of that five-part identity
+    changes. This candidate does not import or duplicate
+    DurableCommandOutbox, and v0.5 does not decide idempotency-scope
+    composition -- it is handed an already-formed identity string.
+
+five_part_scope:
+  - part: owner
+    text: "authority owner -- who is allowed to admit this command at all"
+  - part: effect_domain
+    text: "which effect boundary this command's effect belongs to"
+  - part: claim
+    text: "the specific claim/occupancy this command operates under"
+  - part: attempt
+    text: "the specific attempt identity -- distinct from message_id"
+  - part: payload_fingerprint
+    text: "a stable fingerprint of the canonical payload -- the only part allowed to legitimately differ between an ADMITTED_DUPLICATE and a CONFLICT"
+
+explicitly_not:
+  - Not a claim/occupancy grant mechanism -- this candidate decides ADMITTED/CONFLICT/DUPLICATE outcomes for a command identity, not who is allowed to hold a claim.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a replacement for or import of signalvev-reference-v0.5's DurableCommandOutbox -- see non-duplication note above.
+  - Not authority: admitting a command here does not itself grant effect authority; it only decides whether this specific attempt is new, a safe replay, or a conflict.
