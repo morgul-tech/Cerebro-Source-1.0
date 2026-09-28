@@ -1,0 +1,69 @@
+schema: cerebro-signalvev-artifact-pointer-transfer/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 2. Felles primitive verktoy -> ARTIFACT POINTER / FILE TRANSFER"
+    - "2. X4 runtime-fagpass -> Request/reply and pointers"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pins as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text): "Store objekter skal normalt bo hos
+# state/artifact owner. Kommunikasjonen sender: artifact identity,
+# location/reference, hash, content type, size, provenance, access/custody
+# requirements."
+required_pointer_fields:
+  - artifact_identity
+  - location_reference
+  - hash
+  - content_type
+  - size
+  - provenance
+  - access_custody_requirements
+
+# Verbatim (Human text, capitalized in source): "STATE STAYS HOME; DELTA
+# TRAVELS."
+law: "STATE STAYS HOME; DELTA TRAVELS."
+
+# Verbatim (Human text): "File transfer maa vaere en eksplisitt primitive
+# -- ikke tilfeldige Drive-links eller chatvedlegg som skjult
+# transportlag."
+negative_rules:
+  - id: NO_HIDDEN_TRANSPORT_VIA_LINKS_OR_ATTACHMENTS
+    rule: "File transfer must be an explicit primitive, not an ad hoc Drive link or chat attachment used as a hidden transport layer."
+  - id: POINTER_NE_BYTES
+    rule: >
+      An ARTIFACT_POINTER message must carry a location/reference and a
+      hash, never the artifact's actual payload bytes inline. Carrying
+      bytes inline would make the message itself the state, violating
+      "state stays home".
+  - id: VERIFY_BEFORE_USE
+    # Verbatim (X4): "Receiver verifies bytes and current access before
+    # use."
+    rule: "A receiver must verify the byte hash and current access/custody before treating a fetched artifact as usable."
+
+# Cross-references subject-registry-v0.1-candidate.json
+# (candidates/signalvev-reference-v0.1/) entry cerebro.v1.artifact.pointer:
+# ack_semantics ["POINTER_DELIVERED_NE_ARTIFACT_READ_OR_VERIFIED"],
+# idempotency_scope "artifact_identity_plus_content_hash". This candidate
+# does not redefine that registry entry; it supplies the reference
+# verify-then-consume implementation the registry entry presumes exists.
+registry_cross_reference:
+  subject: cerebro.v1.artifact.pointer
+  source_file: ../signalvev-reference-v0.1/subject-registry-v0.1-candidate.json
+
+explicitly_not:
+  - Not a file storage or Drive-write implementation -- no write to Google
+    Drive happens anywhere in this candidate.
+  - Not a claim that any current Drive link or chat attachment in the
+    wider Cerebro documentation set violates this rule; this file states
+    the target contract, not an audit finding.

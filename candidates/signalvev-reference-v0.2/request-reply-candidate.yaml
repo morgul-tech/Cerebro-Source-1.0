@@ -1,0 +1,70 @@
+schema: cerebro-signalvev-request-reply/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 2. Felles primitive verktoy -> REQUEST / REPLY PRIMITIVE"
+    - "2. X4 runtime-fagpass -> Request/reply and pointers"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pins as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+message_classes: [REQUEST, RESPONSE]
+
+# Verbatim (Human text): "Request/reply skal ha timeout og eksplisitt
+# UNKNOWN/NO_RESPONDER."
+required_outcomes:
+  - RESPONSE
+  - NO_RESPONDER
+  - TIMEOUT_UNKNOWN
+  # Added per X4 refinement paragraph ("Request/reply and pointers"):
+  # "Request/reply must distinguish RESPONSE, NO_RESPONDER,
+  # TIMEOUT_UNKNOWN, stale answer and schema mismatch."
+  - STALE_RESPONSE
+  - SCHEMA_MISMATCH
+
+# Verbatim (X4): "A timed-out request that could have crossed an effect
+# boundary cannot be retried as if it were a read-only question."
+effect_boundary_rule:
+  id: TIMEOUT_AFTER_POSSIBLE_EFFECT_NE_RETRYABLE_READ
+  rule: >
+    If a request's effect_class is not READ_ONLY (i.e. it could have
+    crossed an effect boundary before timing out), a timeout must not be
+    silently retried as a fresh, ordinary read-only request. The caller
+    must instead be given an explicit reconciliation-needed outcome
+    (NEEDS_UNKNOWN_RECONCILIATION in this candidate's implementation)
+    rather than a transparent retry.
+
+timeout_policy:
+  # This candidate's own encoding: the source text mandates that a timeout
+  # and NO_RESPONDER/UNKNOWN outcome must exist, but does not specify a
+  # numeric default. No default is asserted as authoritative here.
+  requires_explicit_timeout_seconds: true
+  default_timeout_seconds: null
+  on_expiry_with_no_response: TIMEOUT_UNKNOWN
+  on_response_after_expiry: STALE_RESPONSE
+
+correlation:
+  # From CEREBRO_MESSAGE_V1: correlation_id groups messages of the same
+  # request/reply transaction (Communication Stack v0.1 section 2, TRACE /
+  # CORRELATION / CAUSATION).
+  match_field: correlation_id
+  duplicate_correlation_id_policy: "reject as CONFLICT unless payload is byte-identical to the pending request"
+
+explicitly_not:
+  - Not a claim/occupancy or work-admission primitive (L3, not L4).
+  - Not authority: a RESPONSE is "current state owner at response revision"
+    only, never canonical state itself (subject registry
+    cerebro.v1.status.response, ack_semantics
+    RESPONSE_NE_CANONICAL_STATE;REQUESTER_REREAD_IF_EFFECTFUL).
+  - Not a retry/backoff policy for effectful commands -- that remains
+    DURABLE_COMMAND/idempotency territory (receipt-taxonomy-candidate.yaml
+    from signalvev-reference-v0.1).

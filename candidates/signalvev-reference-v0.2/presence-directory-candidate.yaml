@@ -1,0 +1,61 @@
+schema: cerebro-signalvev-presence-directory/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  section: "1. Human-supplied Communication Stack v0.1 -> 2. Felles primitive verktoy -> PRESENCE / SERVICE DIRECTORY"
+  component_pin:
+    label: "Human-supplied Communication Stack v0.1 -- complete original text"
+    bytes: 8905
+    sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+    note: >
+      Pin as stated by the upstream handoff document itself. Not
+      independently re-verified in this candidate -- see README open
+      deviation #1 (same caveat as signalvev-reference-v0.1).
+
+states:
+  - ONLINE
+  - OFFLINE
+  - READY
+  - ARMED
+  - DEGRADED
+  - UNKNOWN
+
+# Verbatim from source: "Presence er ikke: authority / claim / work_started
+# / consumed / effect."
+presence_is_not:
+  - AUTHORITY
+  - CLAIM
+  - WORK_STARTED
+  - CONSUMED
+  - EFFECT
+
+# Verbatim from source: "Service directory skal aldri brukes som skjult
+# scheduler."
+negative_rules:
+  - id: PRESENCE_NE_AUTHORITY
+    rule: "A presence state (ONLINE/READY/ARMED/DEGRADED) must never itself grant command authority or claim occupancy."
+  - id: PRESENCE_NE_OCCUPANCY
+    rule: "PRESENCE != OCCUPANCY (repeats Communication Stack v0.1 section 5 negative rule, scoped to this directory)."
+  - id: SERVICE_DIRECTORY_NE_SCHEDULER
+    rule: "The presence/service directory must never be used as a hidden scheduler that selects or admits a worker for a claim."
+
+# Transition table is this candidate's own encoding (not verbatim source
+# text -- the upstream document names the six states and the two negative
+# rules above, but does not itself specify a transition graph). Kept
+# deliberately permissive/non-authoritative: presence transitions carry no
+# side effects on any other primitive in this candidate set.
+transitions:
+  UNKNOWN: [ONLINE, OFFLINE, DEGRADED]
+  ONLINE: [READY, DEGRADED, OFFLINE, UNKNOWN]
+  READY: [ARMED, DEGRADED, OFFLINE, UNKNOWN]
+  ARMED: [READY, DEGRADED, OFFLINE, UNKNOWN]
+  DEGRADED: [ONLINE, OFFLINE, UNKNOWN]
+  OFFLINE: [ONLINE, UNKNOWN]
+
+explicitly_not:
+  - Not a claim/occupancy system.
+  - Not a scheduler or worker-selection mechanism.
+  - Not a substitute for WORK_CONSUMED or any receipt stage.
+  - Not wired to any live transport, VPS, NATS, or WireGuard signal in
+    this candidate.
