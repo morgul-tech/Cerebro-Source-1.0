@@ -1,0 +1,93 @@
+schema: cerebro-signalvev-human-notice-projection/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 1. Hovedmodell -> L7 HUMAN COMMUNICATION"
+    - "1. Human text -> 3. Communication classes v0.1 -> HUMAN_NOTICE"
+    - "2. X4 runtime-fagpass -> Current runtime crosswalk (L7 Human communication row)"
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 12)"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, L7):
+# "L7 · HUMAN COMMUNICATION -- Oversetter maskinell tilstand til det
+# Human faktisk trenger a vite, velge eller godkjenne. Tower, HMI,
+# varsler, Postkasse og Human Gates er projeksjoner her."
+#
+# Verbatim (Human text, communication classes v0.1):
+# "HUMAN_NOTICE -- Human-relevant projeksjon; ikke maskin-authority."
+#
+# Verbatim (X4 crosswalk, L7 row):
+# "Current evidence: PM/Tower/HMI project status, and Human gates are
+# explicit. Material gap: No shared rule for projecting uncertain
+# machine state without translating UNKNOWN into an apparent Human gate
+# or success."
+mandate: >
+  Build the "shared rule for projecting uncertain machine state" that
+  X4's own crosswalk names as a material gap in L7, and which v0.1's
+  falsifier 12 only tests via a thin, inline local closure (a nested
+  function defined inside the test itself, never a reusable candidate).
+  No prior candidate (v0.1-v0.5) has an L7 primitive at all -- this is
+  the first one.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    v0.1's receipt-taxonomy-candidate.yaml already lists falsifier 12
+    ("A Human notice turns machine HOLD/UNKNOWN into an invented
+    approval request") and has a passing test for it. On inspection
+    (same pattern as falsifier 3, closed by v0.5) that test is a single
+    inline closure checking that three specific machine states don't
+    contain the substring "APPROVAL"/"HUMAN_GATE" -- it is not a real,
+    reusable HumanNoticeProjector, does not distinguish NOTICE from
+    GATE, does not cover the "invented Human gate" half of the material
+    gap at all (only the "apparent success" half), and is not its own
+    candidate with source citations. This candidate builds the real
+    thing.
+
+registry_gap_noted:
+  note: >
+    The Subject Registry v0.1 draft (same upstream document, section 4)
+    has seven entries covering eight of the nine CEREBRO_MESSAGE_V1
+    message_type values -- HUMAN_NOTICE has no registry entry at all,
+    despite being a first-class message_type in the schema since v0.1.
+    This candidate proposes an eighth, architecture-only registry entry
+    below, consistent with the existing seven. It does not modify
+    signalvev-reference-v0.1/subject-registry-v0.1-candidate.json --
+    the proposal lives only in this candidate's own file.
+proposed_registry_entry:
+  subject: cerebro.v1.human.notice
+  message_type: HUMAN_NOTICE
+  schema_ref: CEREBRO_MESSAGE_V1.draft.schema.json
+  producer_role: any_state_owner_or_receipt_issuer_projecting_to_a_human
+  consumer_role: human_via_tower_hmi_postkasse_or_equivalent_projection_surface
+  authority_requirement: none;a_human_notice_is_never_machine_authority
+  durability_class: BOUNDED_TRANSIENT
+  ack_semantics: ["NOTICE_READ_NE_HUMAN_DECISION", "GATE_MUST_BE_EXPLICIT_NEVER_INFERRED"]
+  idempotency_scope: source_referent_plus_underlying_machine_state_plus_issued_at
+  compatibility: unknown_stage_holds
+
+projection_invariants:
+  - id: NEVER_UNCERTAIN_AS_SUCCESS
+    text: "A machine state classified UNCERTAIN (HOLD, UNKNOWN, EFFECT_UNKNOWN, NO_RESPONDER, TIMEOUT_UNKNOWN, or any unrecognized state) must never project to a label implying success or approval."
+  - id: NEVER_SILENT_GATE
+    text: "Uncertainty must never, on its own, escalate into a Human Gate request. GATE is only ever produced when explicitly requested by the caller -- never inferred from the machine state alone."
+  - id: PROJECTION_IS_NOT_AUTHORITY
+    text: "A HUMAN_NOTICE projection always reports authority: NONE, regardless of what authority_class/authority_ref the underlying envelope happens to carry."
+  - id: FAIL_CLOSED_ON_UNKNOWN_INPUT
+    text: "A machine state this projector does not recognize defaults to UNCERTAIN, never to SUCCESS."
+  - id: CONFIRMED_SUCCESS_STILL_ALLOWED
+    text: "This is not a rule that nothing may ever read as success -- a genuinely confirmed state (EFFECT_ACCEPTED, RELEASED, NO_EFFECT) is still allowed to project as CONFIRMED. The invariant is about not fabricating certainty, not about suppressing it."
+
+explicitly_not:
+  - Not a Tower/HMI/Postkasse implementation -- this is the projection rule those surfaces would call, not a UI.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not an authority or Human Gate approval mechanism -- GATE here means "a Human decision is being requested," never "a Human decision has been granted."
+  - Not a modification of signalvev-reference-v0.1/subject-registry-v0.1-candidate.json -- see registry_gap_noted above.
+  - Not a claim that v0.1's own falsifier-12 test is wrong or should be removed -- it remains a valid, narrower check; this candidate is a strictly stronger proof of the same claim, built as its own reusable primitive.
