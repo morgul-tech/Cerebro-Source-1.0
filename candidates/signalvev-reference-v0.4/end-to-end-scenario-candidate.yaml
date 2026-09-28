@@ -1,0 +1,82 @@
+schema: cerebro-signalvev-end-to-end-scenario/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> WAY HOME"
+    - "1. Human text -> 4. Grunnlov-kandidat"
+    - "1. Human text -> 7. Naaverende modningsrekkefolge"
+  component_pins:
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517b
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, WAY HOME):
+# "Modne forst selve communication semantics og primitive contracts.
+# Deretter bygge en liten reference-stack med:
+# MESSAGE -> SIGNAL -> REQUEST/REPLY -> RECEIPT -> TRACE -> ARTIFACT
+# POINTER.
+# Forst naar denne fungerer ende-til-ende bor durability, service
+# discovery og workflow utvides bredt."
+mandate: >
+  Build one small reference stack chaining MESSAGE -> SIGNAL ->
+  REQUEST/REPLY -> RECEIPT -> TRACE -> ARTIFACT POINTER, and prove it
+  works end-to-end, before anything in the "senere" wave (Durable
+  Workflow, multi-node federation, store-scale routing) is attempted.
+  v0.1-v0.3 each delivered and offline-tested one primitive in
+  isolation; none of them, individually or together, proved the chain
+  composes. This candidate is that proof.
+
+chain_links:
+  - link: MESSAGE
+    implemented_by: "signalvev-reference-v0.1/cerebro-message-v1-candidate.schema.json (validate_envelope)"
+    status: reused_unmodified
+  - link: SIGNAL
+    implemented_by: "signalvev-reference-v0.1 subject cerebro.v1.signal.wake (EPHEMERAL_SIGNAL message_type)"
+    status: reused_unmodified
+  - link: REQUEST/REPLY
+    implemented_by: "signalvev-reference-v0.2/request-reply-candidate.yaml (RequestReplyMatcher)"
+    status: reused_unmodified
+  - link: RECEIPT
+    implemented_by: "signalvev-reference-v0.1/receipt-taxonomy-candidate.yaml (ReceiptTrail, STAGE_PREDECESSORS)"
+    status: reused_unmodified
+  - link: TRACE
+    implemented_by: "this candidate's own EndToEndTrace.first_broken_edge()"
+    status: reimplemented_locally
+    reimplementation_reason: >
+      candidates/signalvev-reference-v0.3 already built a FlightRecorder
+      with this exact algorithm, but v0.3 (PR #7) was still open and
+      unmerged when this candidate was prepared. To keep this candidate
+      independent of an unmerged PR (same isolation discipline v0.3 used
+      toward v0.2), TRACE is reimplemented here directly against v0.1's
+      merged STAGE_PREDECESSORS. Once PR #7 merges, a follow-up could
+      point this candidate at v0.3's FlightRecorder instead -- not done
+      here to avoid scope creep.
+  - link: ARTIFACT POINTER
+    implemented_by: "signalvev-reference-v0.2/artifact-pointer-transfer-candidate.yaml (make_pointer, verify_and_consume)"
+    status: reused_unmodified
+
+# Verbatim (Human text, Grunnlov-kandidat, section 4): "Ingen av disse
+# lagene faar implisitt overta funksjonen til et annet lag."
+layer_non_substitution_rule: >
+  Across the composed chain, no link may stand in for another: a SIGNAL
+  is not a RECEIPT, a REQUEST/REPLY RESPONSE is not a RECEIPT stage, an
+  envelope's asserted `source` is not attested identity, and TRACE
+  evidence never mutates or invents a RECEIPT. This candidate's
+  falsifiers test exactly this non-substitution property ACROSS
+  primitives, which no single-primitive candidate (v0.1/v0.2/v0.3) could
+  test on its own.
+
+explicitly_not:
+  - Not a new primitive -- every link is either v0.1/v0.2 code reused
+    unmodified, or (TRACE only) a local reimplementation of v0.3's
+    already-designed algorithm.
+  - Not a claim that the "senere" wave (Durable Workflow, federation,
+    store-scale routing) is now unblocked -- WAY HOME's own text makes
+    that a PRINCIPAL decision after reviewing this evidence, not an
+    automatic consequence of this candidate existing.
+  - Not wired to any live transport, VPS, NATS, or WireGuard signal.
