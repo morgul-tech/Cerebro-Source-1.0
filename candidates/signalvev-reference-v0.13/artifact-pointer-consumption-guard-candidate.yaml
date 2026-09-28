@@ -1,0 +1,75 @@
+schema: cerebro-signalvev-artifact-pointer-consumption-guard/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "2. X4 runtime-fagpass -> Current runtime crosswalk (L5 State/artifact row)"
+    - "2. X4 runtime-fagpass -> Falsifiers for one offline reference arc (item 10)"
+    - "2. X4 runtime-fagpass -> First-wave normative contract draft -> Request/reply and pointers"
+    - "1. Human text -> 2. Felles primitive verktoy -> ARTIFACT POINTER / FILE TRANSFER"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (X4 crosswalk, L5 State/artifact row):
+# "Current evidence: Provider snapshots, Drive ZIPs/hashes and local
+# manifests exist. Material gap: No standard artifact pointer with
+# owner, hash, size, MIME, custody and expiry. A Drive link is a
+# location, not a file-transfer contract."
+#
+# Verbatim (Falsifiers, item 10): "An artifact pointer with wrong
+# bytes/hash is consumed."
+#
+# Verbatim (X4 first-wave normative contract draft, Request/reply and
+# pointers): "An artifact pointer names immutable artifact identity,
+# owner, content hash, size, MIME/schema, provenance, access/custody
+# requirement and location hint. Receiver verifies bytes and current
+# access before use. STATE STAYS HOME; DELTA TRAVELS."
+mandate: >
+  Build the artifact pointer consumption guard X4's own crosswalk names
+  as a material L5 gap, closing falsifier 10. v0.1's
+  test_falsifier_10_artifact_hash_mismatch_blocks_consumption is a
+  single inline closure that checks hash alone -- it does not check
+  declared size, and critically does not implement X4's own "verifies
+  bytes AND current access" conjunction: a pointer with byte-perfect
+  content but unverified custody/access must still be rejected, which
+  v0.1's test never exercises.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    signalvev-reference-v0.7 through -v0.12 all classify DURABLE_COMMAND,
+    REQUEST/RESPONSE, or PRESENCE messages, or reconstruct a receipt
+    chain. This candidate answers an independent question scoped to
+    ARTIFACT_POINTER consumption only: given declared identity fields
+    (hash, size) and a custody-verification flag, may the actual bytes
+    be consumed. None of the six import or duplicate each other, and
+    this candidate makes no admission, currentness, replay-safety, or
+    presence-structural decision of its own.
+
+consumption_contract:
+  - step: 1
+    text: "An artifact pointer names, at minimum, a declared content hash and a declared size, per the Human text's own required-fields list."
+  - step: 2
+    text: "The receiver computes the actual hash and size of the bytes it holds and compares both against the declared values -- any mismatch on either is a violation, not just a hash mismatch."
+  - step: 3
+    text: "Access/custody verification is a separate, mandatory gate alongside bytes verification -- X4's own text pairs them with 'and': 'Receiver verifies bytes and current access before use.' Byte-perfect content with unverified custody must still be REJECTED."
+  - step: 4
+    text: "All violations found are reported together, not just the first one encountered, so a caller can see the complete picture of why consumption was refused."
+  - step: 5
+    text: "Consumption is all-or-nothing: there is no partial-consume or best-effort path. A single violation of any kind blocks consumption entirely."
+
+explicitly_not:
+  - Not a file-transport or Drive-download implementation -- this candidate verifies bytes and a custody flag a caller already holds.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not a replacement for or import of signalvev-reference-v0.7, -v0.8, -v0.10, -v0.11, or -v0.12 -- see non-duplication note above.
+  - Not authority: a CONSUMED result proves verification against supplied declarations, not that the pointer's declared owner or provenance is itself trustworthy -- state-owner remains the sannhetskilde per the Human text's own grunnlov-kandidat.
+  - Not a custody/access verification mechanism itself -- this candidate takes custody_verified as a plain input; it does not perform or attest to that verification.
+  - Not a MIME/content-type or expiry checker -- scoped to the bytes-and-custody gate the falsifier and normative text name explicitly; MIME and expiry are noted as a future candidate in Open deviations.
