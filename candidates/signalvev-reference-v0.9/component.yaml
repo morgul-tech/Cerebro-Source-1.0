@@ -1,0 +1,56 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-reference-v0.9
+  name: Signalvev Reference Implementation Candidate v0.9 (first-broken-edge flight recorder)
+  type: candidate
+  version: 0.9.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Build a read-only reconstruction of one attempt's receipt ladder
+    that reports the first broken edge in a causal chain without ever
+    fabricating a missing receipt or claiming a continuous chain past a
+    gap -- closing falsifier 11 ("Trace reports a continuous chain
+    where a receipt edge is absent"), which v0.1's own test is a single
+    hardcoded closure for and does not generalize.
+  explicitly_not:
+    - Ikke en ny trace/correlation/causation-generator -- leser kun
+      observerte kvitteringer, oppfinner aldri en manglende en.
+    - Ikke en NATS-, WireGuard- eller tunnel-implementasjon.
+    - Ikke en JetStream-aktivering.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke et duplikat av signalvev-reference-v0.7 eller -v0.8 -- se
+      non-duplication note i
+      first-broken-edge-flight-recorder-candidate.yaml.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1 (ReceiptTrail, ReceiptError -- importert,
+      ikke duplisert)
+  explicitly_no_dependency_on:
+    - signalvev-reference-v0.2
+    - signalvev-reference-v0.3
+    - signalvev-reference-v0.5 (DurableCommandOutbox -- se
+      non-duplication note)
+    - signalvev-reference-v0.6
+    - signalvev-reference-v0.7 (IdempotencyScope -- se non-duplication
+      note)
+    - signalvev-reference-v0.8 (RevisionGuardedAdmitter -- se
+      non-duplication note)
+interfaces:
+  input:
+  - the set of receipt stages actually observed for one attempt
+    (a subset of the PRODUCED..RELEASED ladder, including the
+    EFFECT_ACCEPTED|EFFECT_UNKNOWN|NO_EFFECT branch)
+  output:
+  - a read-only reconstruction report -- status, first_broken_edge
+    (or null), reached_stages (in-process only in this candidate)
+relationship_to_prior_evidence:
+  note: >
+    S0/S1 remain the only behavior-real transport evidence, unrelated to
+    this candidate. This candidate does not touch transport at all -- it
+    proves an offline reconstruction property over receipts a caller
+    already holds, a narrower claim than "this works against a real live
+    provider" or "this generates trace data from a live system."
