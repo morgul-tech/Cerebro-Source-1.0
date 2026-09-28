@@ -1,0 +1,104 @@
+schema: cerebro-signalvev-receipt-taxonomy/v0.1-candidate
+status: ISOLATED_IMPLEMENTATION_CANDIDATE
+authority: NONE
+provenance:
+  source_documents:
+    - title: "CEREBRO COMMUNICATION STACK v0.1 (Human-supplied text)"
+      drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+      sections_used:
+        - "2. Felles primitive verktoy -> RECEIPT MODEL (stage list)"
+        - "5. Viktige negative regler (negative_rules below, verbatim)"
+    - title: "CEREBRO COMMUNICATION STACK v0.1 -- X4 runtime-fagpass"
+      drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+      sections_used:
+        - "Receipts (minimum causal ladder / partial order)"
+        - "Falsifiers for one offline reference arc (falsifiers below, verbatim, numbered 1-12 as in source)"
+  reconstruction_note: >
+    Stage list and both rule lists are transcribed from the sections above.
+    The explicit state-machine encoding (allowed predecessor/successor
+    edges per stage, and the enforcement functions in
+    tooling/validator/signalvev_reference_v01_validation.py that test each
+    of the 12 falsifiers) is new work produced for this candidate branch --
+    it did not exist as executable logic anywhere in the Source repository
+    prior to this branch.
+
+# PARTIAL ORDER, not a promise every message reaches every stage, and not
+# a total ordering across stages. A message may terminate, or be
+# quarantined as EFFECT_UNKNOWN, at any reachable stage.
+stages:
+  - id: PRODUCED
+    allowed_predecessors: []
+    meaning: "Producer committed the message locally. No transport involvement yet."
+  - id: TRANSPORT_ACCEPTED
+    allowed_predecessors: [PRODUCED]
+    meaning: "Carrier accepted the bytes. This is a transport ACK only."
+  - id: DELIVERED
+    allowed_predecessors: [TRANSPORT_ACCEPTED]
+    meaning: "Bytes reached a consumer process. Not consumption, not authority."
+  - id: READ
+    allowed_predecessors: [DELIVERED]
+    meaning: "A UI/consumer observation. Not acceptance, not work admission."
+  - id: WORK_CONSUMED
+    allowed_predecessors: [DELIVERED]
+    meaning: "The exact bound actor/workload claimed this exact item. Requires worker-owned evidence, not merely DELIVERED."
+  - id: WORK_STARTED
+    allowed_predecessors: [WORK_CONSUMED]
+    meaning: "Worker-owned evidence that execution began."
+  - id: EFFECT_ACCEPTED
+    allowed_predecessors: [WORK_STARTED]
+    meaning: "Effect authority acknowledged the effect occurred."
+  - id: EFFECT_UNKNOWN
+    allowed_predecessors: [WORK_STARTED]
+    meaning: "Effect boundary may have been crossed but cannot be confirmed. Quarantine; do not auto-replay."
+  - id: NO_EFFECT
+    allowed_predecessors: [WORK_STARTED]
+    meaning: "Reachable ONLY with independent pre-effect proof that no effect occurred. Never assumed from silence, absence of receipt, or timeout."
+  - id: TERMINAL
+    allowed_predecessors: [EFFECT_ACCEPTED, EFFECT_UNKNOWN, NO_EFFECT]
+    meaning: "Attempt reached a terminal state for this message/attempt."
+  - id: RELEASED
+    allowed_predecessors: [TERMINAL]
+    meaning: "Canonical state owner linked an admitted terminal to the exact attempt and released the claim."
+
+# Verbatim from Human-supplied text, section 5.
+negative_rules:
+  - "DELIVERED ≠ CONSUMED"
+  - "ACK ≠ EFFECT"
+  - "ONLINE ≠ READY"
+  - "READY ≠ AUTHORIZED"
+  - "SEND_ACCEPTED ≠ WORK_STARTED"
+  - "NO_RECEIPT ≠ NO_EFFECT"
+  - "TRANSPORT_AVAILABLE ≠ WORK_ALLOWED"
+  - "EVENT ≠ STATE_TRUTH"
+  - "PRESENCE ≠ OCCUPANCY"
+  - "MESSAGE ≠ AUTHORITY"
+
+# Verbatim (paraphrase-preserving) from X4 runtime-fagpass, "Falsifiers for
+# one offline reference arc", numbered 1-12 as in the source. Each id below
+# has a corresponding test function test_falsifier_<n>_... in
+# tooling/validator/signalvev_reference_v01_validation.py.
+falsifiers:
+  - id: 1
+    rule: "DELIVERED is reported as WORK_CONSUMED without worker-owned acceptance."
+  - id: 2
+    rule: "A transport ACK becomes EFFECT_ACCEPTED, or SEND_ACCEPTED becomes WORK_STARTED."
+  - id: 3
+    rule: "Ephemeral wake is lost and the committed durable command becomes unreachable."
+  - id: 4
+    rule: "Same idempotency key with altered payload reuses an admission or effect receipt."
+  - id: 5
+    rule: "A timeout after possible effect is labeled NO_EFFECT or triggers replay."
+  - id: 6
+    rule: "Presence READY or ARMED supplies command authority or occupancy."
+  - id: 7
+    rule: "A stale snapshot or route revision admits work."
+  - id: 8
+    rule: "A terminal for another attempt/actor/generation frees a claim."
+  - id: 9
+    rule: "A reply lacking current referent/version is treated as canonical status."
+  - id: 10
+    rule: "An artifact pointer with wrong bytes/hash is consumed."
+  - id: 11
+    rule: "Trace reports a continuous chain where a receipt edge is absent."
+  - id: 12
+    rule: "A Human notice turns machine HOLD/UNKNOWN into an invented approval request."
