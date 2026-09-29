@@ -1,0 +1,75 @@
+schema: cerebro-signalvev-readiness-non-conflation-guard/v0.1-candidate
+status: ARCHITECTURE_ONLY_NO_AUTHORITY
+_provenance:
+  upstream_document: CEREBRO-Communication-Stack-v01-FULL-HANDOFF.md
+  drive_id: 1qoQ0O53D5QVosQLo3-x2wsY8tGhQxXCU
+  sections:
+    - "1. Human text -> 5. Viktige negative regler -> ONLINE != READY"
+    - "1. Human text -> 5. Viktige negative regler -> TRANSPORT_AVAILABLE != WORK_ALLOWED"
+    - "1. Human text -> 2. Felles primitive verktoy -> PRESENCE / SERVICE DIRECTORY"
+    - "2. X4 runtime-fagpass -> Falsifiers (item 6, for the READY/ARMED pairing)"
+  component_pins:
+    - label: "X4 runtime-fagpass -- complete text"
+      bytes: 10397
+      sha256: 0bfd76bb045f3610d9fd04d2ecb3389d9514f23a19b1bc27cb1597a7d3c4b8de
+    - label: "Human-supplied Communication Stack v0.1 -- complete original text"
+      bytes: 8905
+      sha256: 4431987c22dd2d4bada0ea4762e7373adebd4ee568868de79cbd203fb381517
+  note: >
+    Pin as stated by the upstream handoff document. Not independently
+    re-verified -- see README open deviation #1.
+
+# Verbatim (Human text, 5. Viktige negative regler): "ONLINE != READY"
+# ... "TRANSPORT_AVAILABLE != WORK_ALLOWED" ... "Dette skal vaere
+# testbare invariants, ikke bare dokumentasjon."
+#
+# Verbatim (Human text, PRESENCE / SERVICE DIRECTORY): six presence
+# states are ONLINE, OFFLINE, READY, ARMED, DEGRADED, UNKNOWN.
+#
+# Verbatim (X4 falsifiers, item 6): "Presence READY or ARMED supplies
+# command authority or occupancy." (already closed by
+# signalvev-reference-v0.12 -- cited here only to justify why READY and
+# ARMED, specifically, are this candidate's two work-candidate states.)
+mandate: >
+  Build testable reference implementations of two more of the ten
+  Section 5 negative laws that the Human text explicitly demands be
+  "testbare invariants, ikke bare dokumentasjon": "ONLINE != READY" and
+  "TRANSPORT_AVAILABLE != WORK_ALLOWED". Neither is tested by any prior
+  candidate. signalvev-reference-v0.12's PresenceEnvelopeGuard proves a
+  different, related thing -- that presence states never carry
+  authority/occupancy/effect *claims* -- but never proves that a caller
+  must not conflate a weaker presence signal (ONLINE) with the stronger
+  "candidate for work" signal (READY/ARMED) in the first place, and
+  never touches the transport-availability axis at all.
+
+why_this_is_new_scope_not_a_duplicate:
+  note: >
+    v0.12 answers "does this presence envelope illegally claim
+    authority/occupancy/work_started/consumed/effect?" This candidate
+    answers a prior, different question: "does merely being reachable
+    (ONLINE), or having transport available, by itself qualify as a
+    signal that work should even be considered?" The answer is always
+    no for ONLINE/OFFLINE/DEGRADED/UNKNOWN and always no for transport
+    availability regardless of value -- a state-conflation failure mode,
+    not a claim-injection one. The two candidates compose: a caller
+    would use this guard's work_candidate=True as a pre-filter, then
+    still need v0.12's guard (or real authority machinery) before
+    treating anything as permission to act.
+
+readiness_contract:
+  - step: 1
+    text: "Only READY and ARMED -- the same pair X4's falsifier 6 names together -- ever classify as work-candidate presence states. ONLINE, OFFLINE, DEGRADED and UNKNOWN never do, however plausible ONLINE might look as a stand-in for readiness."
+  - step: 2
+    text: "A work-candidate classification is a pre-filter fact only -- never an authority grant, occupancy claim, or effect permission. That boundary stays v0.12's own, separate responsibility."
+  - step: 3
+    text: "Transport availability (a boolean fact about whether bytes can currently move between endpoints, L0) never by itself establishes that work is allowed (L4) -- true or false, the answer is always work_allowed=False from this module alone."
+  - step: 4
+    text: "An unrecognized presence state, or a non-boolean transport_available value, fails closed with an explicit error rather than defaulting to either classification."
+
+explicitly_not:
+  - Not a replacement for or import of signalvev-reference-v0.12's PresenceEnvelopeGuard -- a different failure mode (state conflation vs. claim injection), and this candidate does not duplicate v0.12's own claims_* validation.
+  - Not an enumeration of transport status values -- the Human text defines no such enum (unlike the six presence states, which it does name explicitly), so this candidate deliberately uses a plain boolean (transport_available) rather than inventing a transport-status vocabulary the source document does not define.
+  - Not NATS, JetStream, or any transport/durability activation.
+  - Not an implementation of a real presence or transport observation mechanism -- both inputs are plain caller-supplied values.
+  - Not authority: work_candidate=True and work_allowed are pre-filter/negative facts only, never a claim/occupancy/effect grant.
+  - Not a replacement for or import of any prior signalvev-reference candidate (v0.1 through v0.16).
