@@ -13,10 +13,16 @@ responsibility:
     golden-path receipt trail declared in fixed_test_set.py over one
     real NATS subject (cerebro.v1.lifecycle.receipt) and replay the
     received stages through v0.1's own, unmodified ReceiptTrail to prove
-    the offline-verified partial order survives real transport. Offline
-    self-test (4/4 scenarios) already run and passing; live execution
-    has not happened and does not happen without the Human explicitly
-    handing over scoped NATS_URL/credentials.
+    the offline-verified partial order survives real transport. Uses a
+    hand-rolled, stdlib-only core-NATS client (nats_stdlib_client.py) --
+    nats-py could not be installed in either execution environment tried
+    (this project's cloud sandbox or the linked machine's device_bash
+    VM; both proxy PyPI with 403 Forbidden). Verified across three
+    self-test layers (offline logic, real-socket protocol framing,
+    full end-to-end against a hand-rolled fake server) -- 4/4 + 1/1 +
+    1/1 PASS. Live execution has not happened and does not happen
+    without the Human explicitly handing over the connection address
+    and, if required, credentials.
   explicitly_not:
     - Ikke en JetStream-aktivering -- kjerne pub/sub kun.
     - Ikke varig lagring eller en resident tjeneste.

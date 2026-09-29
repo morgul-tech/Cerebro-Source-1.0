@@ -44,16 +44,19 @@ import signalvev_reference_v01_validation as v01  # noqa: E402
 
 def run(nats_url: str, creds_path: str | None, evidence_dir: Path,
         max_seconds: int, per_message_timeout: float,
-        transport: Transport | None = None) -> int:
+        transport: Transport | None = None, user: str | None = None,
+        password: str | None = None, auth_token: str | None = None) -> int:
     """transport: injectable for offline_selftest.py (InMemoryTransport).
-    Defaults to a real NatsTransport when not supplied."""
+    Defaults to a real NatsTransport when not supplied. nats_url is
+    'host:port' (no scheme) when transport is not supplied."""
     run_id = f"canary-v0.1-consumer-{uuid.uuid4().hex[:12]}"
     deadline = Deadline(max_seconds=max_seconds)
     expected = {m["message_id"]: m for m in build_fixed_test_set()}
     seen: set[str] = set()
 
     if transport is None:
-        transport = NatsTransport(nats_url, creds_path=creds_path)
+        transport = NatsTransport(nats_url, creds_path=creds_path, user=user,
+                                   password=password, auth_token=auth_token)
     evidence_path = evidence_dir / f"{run_id}.jsonl"
     trail: v01.ReceiptTrail | None = None
     failures: list[str] = []
@@ -151,8 +154,13 @@ def run(nats_url: str, creds_path: str | None, evidence_dir: Path,
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--nats-url", default=os.environ.get("NATS_URL"))
-    parser.add_argument("--creds", default=os.environ.get("NATS_CREDS_PATH"))
+    parser.add_argument("--nats-url", default=os.environ.get("NATS_URL"),
+                         help="Required. 'host:port', no scheme.")
+    parser.add_argument("--creds", default=os.environ.get("NATS_CREDS_PATH"),
+                         help="NOT IMPLEMENTED -- use --user/--password or --auth-token.")
+    parser.add_argument("--user", default=os.environ.get("NATS_USER"))
+    parser.add_argument("--password", default=os.environ.get("NATS_PASSWORD"))
+    parser.add_argument("--auth-token", default=os.environ.get("NATS_AUTH_TOKEN"))
     parser.add_argument("--evidence-dir", default="tooling/canary/v0.1-lifecycle-receipt/evidence-log",
                          type=Path)
     parser.add_argument("--max-seconds", type=int, default=3600)
@@ -164,7 +172,8 @@ def main() -> int:
         return 2
 
     return run(args.nats_url, args.creds, args.evidence_dir, args.max_seconds,
-               args.per_message_timeout)
+               args.per_message_timeout, user=args.user, password=args.password,
+               auth_token=args.auth_token)
 
 
 if __name__ == "__main__":

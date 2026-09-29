@@ -85,13 +85,33 @@ $ python3 tooling/canary/v0.1-lifecycle-receipt/fixed_test_set.py
 | File | Purpose |
 |---|---|
 | `fixed_test_set.py` | The pre-declared 9-message golden path. Self-validates against v0.1's real `validate_envelope()` at import time. |
-| `transport.py` | `Transport` interface. `InMemoryTransport` (fake, for self-test) and `NatsTransport` (real, lazy-imports `nats`, never connects anywhere by default). |
+| `nats_stdlib_client.py` | A minimal, hand-rolled core-NATS client using only `socket`+`json` from the stdlib — see "Why no `nats-py`" below. |
+| `transport.py` | `Transport` interface. `InMemoryTransport` (fake, for logic self-test) and `NatsTransport` (real, wraps `nats_stdlib_client.py`, never connects anywhere by default). |
 | `evidence.py` | Append-only JSON-lines evidence logging, canonical byte-hashing, and the hard 60-minute deadline kill switch. |
-| `producer.py` | Publishes the fixed set, in order, and stops. Refuses to run without an explicit `--nats-url`/`NATS_URL`. |
+| `producer.py` | Publishes the fixed set, in order, and stops. Refuses to run without an explicit `--nats-url`/`NATS_URL` (`host:port`, no scheme). |
 | `consumer.py` | Subscribes, validates, deep-equality-checks, and replays stages through a real, unmodified v0.1 `ReceiptTrail`. Refuses to run without an explicit `--nats-url`/`NATS_URL`. |
-| `offline_selftest.py` | Proves all of the above is correct using an in-memory fake transport — no network, no broker, runnable right now. |
+| `fake_nats_server.py` | TEST-ONLY minimal NATS server (loopback, ephemeral port) for the two self-tests below — never used in the live run. |
+| `offline_selftest.py` | Proves producer/consumer logic (construction, validation, hashing, evidence) is correct using an in-memory fake transport — no socket at all. |
+| `protocol_selftest.py` | Proves `nats_stdlib_client.py`'s wire framing is correct over a real (loopback) TCP socket against `fake_nats_server.py`. |
+| `end_to_end_selftest.py` | Runs the actual `producer.run()`/`consumer.run()` entry points, with the real `NatsTransport`, over a real loopback socket against `fake_nats_server.py` — the strongest offline verification available: the exact code path the live run uses, with only the real NATS server itself swapped out. |
 
-## Offline self-test (already run, in this sandbox, 2026-09-29)
+## Why no `nats-py`
+
+`nats-py` could not be installed in either execution environment tried
+for this canary: this project's cloud sandbox, and the isolated Linux
+VM `device_bash` runs in on the linked Windows machine (`win-ang8i0nu5t8`)
+— both proxy PyPI access and return `403 Forbidden` (confirmed
+2026-09-29 against several unrelated packages too, e.g. `cowsay`,
+`setuptools`, so this is a general PyPI-egress restriction in both
+environments, not specific to `nats-py`). Rather than block on that,
+`nats_stdlib_client.py` implements just enough of the NATS core wire
+protocol (CONNECT/INFO handshake, PUB, SUB, MSG framing, PING/PONG) —
+no JetStream, no TLS, no clustering — using only `socket` and `json`.
+This also matches the project's own established convention (see
+`signalvev_reference_v01_validation.py`'s own docstring): *"pure
+Python, no third-party dependencies."*
+
+## Self-tests (all run, in this sandbox, 2026-09-29 — 3 independent layers)
 
 ```
 $ python3 tooling/canary/v0.1-lifecycle-receipt/offline_selftest.py
@@ -100,39 +120,63 @@ PASS: dropped message -> reported FAIL, no crash
 PASS: reordered message -> ReceiptTrail rejects, reported FAIL
 PASS: mutated-in-transit message -> reported FAIL
 canary_v01_lifecycle_receipt_offline_selftest: 4/4 PASS
+
+$ python3 tooling/canary/v0.1-lifecycle-receipt/protocol_selftest.py
+PASS: real-socket (127.0.0.1) CONNECT/SUB/PUB/MSG round trip, 9/9 messages, byte-identical, in order
+canary_v01_nats_stdlib_client_protocol_selftest: 1/1 PASS
+
+$ python3 tooling/canary/v0.1-lifecycle-receipt/end_to_end_selftest.py
+PASS: real producer.run()/consumer.run() (real NatsTransport + nats_stdlib_client) over a real loopback TCP socket, golden path -> PASS
+canary_v01_end_to_end_selftest: 1/1 PASS
 ```
 
-Four scenarios: the golden path succeeds; a dropped message times out
-and is correctly reported as FAIL (not a crash, not a silent PASS); a
-reordered message is caught by `ReceiptTrail`'s own partial-order check;
-a message mutated in transit is caught by the consumer's deep-equality
-check. This is the maximum verification possible **without** a real
-broker — it proves the logic; it cannot and does not prove anything
-about real NATS delivery behavior itself.
+Layer 1 (`offline_selftest.py`, 4 scenarios): proves the message
+construction, schema validation, `ReceiptTrail` replay, and
+evidence-logging logic is correct, including three injected failure
+modes (dropped/reordered/mutated message) each correctly reported as
+FAIL rather than crashing or silently passing. No socket at all.
 
-## What could not be tested here, and why
+Layer 2 (`protocol_selftest.py`): proves `nats_stdlib_client.py`'s own
+wire-level framing — CONNECT handshake, PUB/SUB headers, MSG parsing —
+is correct against a real TCP connection, not a mock.
 
-`nats-py` is not installable in this sandbox — confirmed 2026-09-29
-(`pip install nats-py` and `pip install --index-url https://pypi.org/simple/
-nats-py` both fail to resolve, while `pip install requests` succeeds, so
-this is specific to that package, not a general network outage). This
-means the `NatsTransport` class in `transport.py` has never made a real
-connection anywhere from this session — it has been written to the
-documented `nats-py` API and is otherwise identical in shape to
-`InMemoryTransport`, but its correctness against a real server is
-unverified until the live run. This is stated plainly, not glossed over.
+Layer 3 (`end_to_end_selftest.py`): runs the literal `producer.py`/
+`consumer.py` CLI entry points, unmodified, with the real `NatsTransport`
+(not `InMemoryTransport`), against a real loopback socket. This is the
+exact code path the live run will execute, with only the far end
+(`fake_nats_server.py` instead of a real `nats-server`) different.
+
+## What remains genuinely untested until the live run, and why
+
+The one thing these three layers cannot verify is **a real `nats-server`
+binary's own behavior** — its exact delivery/ordering guarantees under
+real network conditions, and its own auth enforcement. `fake_nats_server.py`
+implements exact-subject PUB/SUB routing and CONNECT/+OK handshaking
+only, faithfully enough to validate this canary's own logic and wire
+framing, but it is not a NATS reimplementation and was never intended
+to substitute for testing against the genuine server. This is the
+honest boundary of offline preparation; closing it is what the live run
+is for.
 
 ## Live-run procedure (does not happen until the Human grants access)
 
 1. Human stands up the isolated, non-production NATS context and
-   generates ACL/credentials scoped to **publish+subscribe on
+   generates a scope limited to **publish+subscribe on
    `cerebro.v1.lifecycle.receipt` only** — no other subject, no
-   JetStream, no admin scope.
-2. Human hands Claude the connection URL and credentials path through
-   this session (env vars `NATS_URL`, `NATS_CREDS_PATH`, or the
-   `--nats-url`/`--creds` flags) — this handoff **is** the live-start
-   trigger. Claude does not seek these out proactively.
-3. Claude runs, in order, from the repo root:
+   JetStream, no admin scope. (The stdlib client supports NATS
+   username/password or a bearer auth_token; it does not support
+   `.creds`/decentralized-JWT auth — see `nats_stdlib_client.py`.)
+2. Human hands Claude the connection address (`host:port`, no scheme)
+   and, if the server requires it, `NATS_USER`/`NATS_PASSWORD` or
+   `NATS_AUTH_TOKEN` — this handoff **is** the live-start trigger.
+   Claude does not seek these out proactively. Note: a server bound only
+   to `127.0.0.1`/`localhost` on the target machine is not reachable
+   from `device_bash`'s isolated VM as "localhost" — it needs a real
+   network-visible bind (the machine's LAN address, or `0.0.0.0`).
+3. Claude runs, in order, from the repo root (wherever the run
+   actually executes — the cloud sandbox, or `device_bash` on a linked
+   machine, whichever can reach the given address; see "Execution
+   environment" below):
    ```
    python3 tooling/canary/v0.1-lifecycle-receipt/consumer.py &
    python3 tooling/canary/v0.1-lifecycle-receipt/producer.py
@@ -176,7 +220,28 @@ unverified until the live run. This is stated plainly, not glossed over.
    `RELEASED`-mismatch scenario over real transport — those remain
    offline-only falsifiers for now. A future, separate bounded canary
    could extend coverage if this one passes.
-4. **`NatsTransport` is unverified against a real server** — see above.
+4. **`NatsTransport`/`nats_stdlib_client.py` is verified against a
+   hand-rolled fake server (three self-test layers, see above), but
+   never against a real `nats-server` binary.** Its wire framing
+   follows the documented core NATS protocol and is simple by
+   construction (no JetStream, no TLS, no clustering), which bounds
+   the risk, but the live run is still the first time it will speak to
+   genuine NATS server software.
+5. **Execution environment.** This canary can run from wherever a
+   Python 3.10+ process can reach the given `host:port`: the cloud
+   sandbox, or `device_bash` on a linked computer. Both proxy PyPI
+   through an allowlist that returned `403 Forbidden` for `nats-py`
+   (confirmed 2026-09-29, not package-specific — unrelated packages
+   failed the same way) — which is exactly why `nats_stdlib_client.py`
+   has no third-party dependency at all and needs nothing installed.
+   What is NOT yet confirmed is whether either environment's egress
+   allowlist permits a raw TCP connection to an arbitrary `host:port`
+   at all (`device_bash`'s own tool description warns that "a plain
+   ssh, a database client, or any other direct TCP connection fails at
+   once" unless the linked account allows all domains) — this is
+   untested until a real target address is given and a plain
+   connectivity probe is run against it, before any canary message is
+   sent.
 
 ## Explicitly not claimed
 
@@ -184,7 +249,11 @@ unverified until the live run. This is stated plainly, not glossed over.
 - Not a JetStream activation.
 - Not a change to Boot, Context State, or any authority layer.
 - Not durable/persistent messaging of any kind.
-- Not a claim about `NatsTransport`'s correctness beyond "written to the
-  documented API, untested against a real server."
+- Not a claim about `NatsTransport`/`nats_stdlib_client.py`'s
+  correctness beyond "verified against a hand-rolled fake server across
+  three self-test layers; never against real `nats-server` software."
+- Not a claim that this environment's network can even reach an
+  arbitrary `host:port` — that is untested until a real target is given.
 - Not an autonomous live-start — this runbook executes only after the
-  Human hands over the scoped `NATS_URL`/credentials described above.
+  Human hands over the connection address and, if required, credentials
+  as described above.

@@ -1,27 +1,33 @@
 #!/usr/bin/env python3
 """Transport abstraction for the v0.1 bounded canary.
 
-STATUS: canary preparation artifact. authority: NONE. Not yet executed.
+STATUS: canary preparation artifact. authority: NONE. Not yet executed
+against a real NATS server.
 
 Two implementations:
 
   InMemoryTransport -- a plain in-process queue. Used by
   offline_selftest.py to prove producer.py/consumer.py's message
   construction, validation, hashing and evidence logic is correct
-  WITHOUT any real network or broker. This is what "prepared and
-  self-tested now" means for this canary.
+  WITHOUT any real network or broker.
 
-  NatsTransport -- a thin wrapper over the real nats-py client. It is
-  ONLY ever instantiated when NATS_URL is explicitly set in the
-  environment; nothing in this module or in producer.py/consumer.py
-  connects anywhere by default. Importing this module never opens a
-  socket; `nats` itself is imported lazily inside NatsTransport.connect()
-  so a machine without nats-py installed (this sandbox, notably -- see
-  RUNBOOK.md) can still import and unit-test everything else here.
+  NatsTransport -- a thin wrapper over nats_stdlib_client.py, a
+  hand-rolled, stdlib-only (socket + json) core NATS client. nats-py
+  could not be installed in either execution environment tried for this
+  canary (this project's cloud sandbox, and the isolated Linux VM
+  device_bash runs in on the linked Windows machine) -- both proxy
+  PyPI access with 403 Forbidden. Writing a minimal client instead also
+  matches this project's own established convention (see
+  signalvev_reference_v01_validation.py's docstring): "pure Python, no
+  third-party dependencies." The client's wire-level framing is
+  verified over a real (loopback) TCP socket by protocol_selftest.py;
+  it has never connected to an actual NATS server.
 
-  NatsTransport carries no default server URL, no embedded credentials,
-  and no JetStream context -- core NATS pub/sub only, matching PRINCIPAL
-  DECISION scope ("Ingen JetStream, varig lagring").
+  NatsTransport carries no default server, no embedded credentials, and
+  no JetStream context -- core NATS pub/sub only, matching PRINCIPAL
+  DECISION scope ("Ingen JetStream, varig lagring"). Importing this
+  module never opens a socket; the client is only constructed inside
+  NatsTransport.connect().
 """
 from __future__ import annotations
 
@@ -66,57 +72,55 @@ class InMemoryTransport:
 
 
 class NatsTransport:
-    """Real NATS transport. Not exercised in this sandbox (nats-py is
-    not installable here -- confirmed 2026-09-29, see RUNBOOK.md).
-    Requires an explicit, scoped NATS_URL; never guesses or defaults to
-    a server. Core pub/sub only -- no JetStream context is created."""
+    """Real NATS transport, using the hand-rolled, dependency-free
+    nats_stdlib_client.py. Requires an explicit `host:port` url (no
+    scheme); never guesses or defaults to a server. Core pub/sub only
+    -- no JetStream, no TLS, no clustering. One subscription (sid "1")
+    at a time, which is all this bounded canary needs."""
 
-    def __init__(self, url: str, *, creds_path: str | None = None) -> None:
+    def __init__(self, url: str, *, creds_path: str | None = None,
+                 user: str | None = None, password: str | None = None,
+                 auth_token: str | None = None) -> None:
         if not url:
             raise ValueError("NatsTransport requires a non-empty url (no implicit default)")
-        self._url = url
-        self._creds_path = creds_path
-        self._nc = None
-        self._sub = None
+        if creds_path is not None:
+            raise NotImplementedError(
+                ".creds (decentralized JWT) auth is not implemented in the stdlib "
+                "client -- use user/password or auth_token, or deliberately extend "
+                "nats_stdlib_client.py before relying on this."
+            )
+        host, _, port_str = url.partition(":")
+        if not host or not port_str:
+            raise ValueError(f"NatsTransport url must be 'host:port', got {url!r}")
+        self._host = host
+        self._port = int(port_str)
+        self._user = user
+        self._password = password
+        self._auth_token = auth_token
+        self._client = None
 
     def connect(self) -> None:
-        import nats  # lazy import: only required when actually connecting
-        import asyncio
+        import socket as _socket
+        from nats_stdlib_client import NatsClient
 
-        async def _connect():
-            kwargs = {"servers": [self._url]}
-            if self._creds_path:
-                kwargs["user_credentials"] = self._creds_path
-            return await nats.connect(**kwargs)
-
-        self._loop = asyncio.new_event_loop()
-        self._nc = self._loop.run_until_complete(_connect())
+        sock = _socket.create_connection((self._host, self._port), timeout=10.0)
+        self._client = NatsClient(
+            sock, timeout_seconds=10.0, name="cerebro-canary-v0.1",
+            user=self._user, password=self._password, auth_token=self._auth_token,
+        )
 
     def publish(self, subject: str, payload: bytes) -> None:
-        assert self._nc is not None, "publish() before connect()"
+        assert self._client is not None, "publish() before connect()"
+        self._client.publish(subject, payload)
 
-        async def _pub():
-            await self._nc.publish(subject, payload)
-            await self._nc.flush()
-
-        self._loop.run_until_complete(_pub())
-
-    def next_message(self, subject: str, timeout_seconds: float):
-        assert self._nc is not None, "next_message() before connect()"
-
-        async def _sub_once():
-            sub = await self._nc.subscribe(subject)
-            try:
-                msg = await sub.next_msg(timeout=timeout_seconds)
-                return msg.data
-            except TimeoutError:
-                return None
-            finally:
-                await sub.unsubscribe()
-
-        return self._loop.run_until_complete(_sub_once())
+    def next_message(self, subject: str, timeout_seconds: float) -> bytes | None:
+        assert self._client is not None, "next_message() before connect()"
+        if getattr(self, "_subscribed", None) != subject:
+            self._client.subscribe(subject, sid="1")
+            self._subscribed = subject
+        return self._client.next_msg(timeout_seconds=timeout_seconds)
 
     def close(self) -> None:
-        if self._nc is not None:
-            self._loop.run_until_complete(self._nc.close())
-        self._nc = None
+        if self._client is not None:
+            self._client.close()
+        self._client = None

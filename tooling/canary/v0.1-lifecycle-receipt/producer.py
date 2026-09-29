@@ -32,16 +32,19 @@ from transport import NatsTransport, Transport  # noqa: E402
 
 
 def run(nats_url: str, creds_path: str | None, evidence_dir: Path, max_seconds: int,
-        transport: Transport | None = None) -> int:
+        transport: Transport | None = None, user: str | None = None,
+        password: str | None = None, auth_token: str | None = None) -> int:
     """transport: injectable for offline_selftest.py (InMemoryTransport).
     Defaults to a real NatsTransport when not supplied -- production
-    callers (main() below) never pass this argument."""
+    callers (main() below) never pass this argument. nats_url is
+    'host:port' (no scheme) when transport is not supplied."""
     run_id = f"canary-v0.1-producer-{uuid.uuid4().hex[:12]}"
     deadline = Deadline(max_seconds=max_seconds)
     messages = build_fixed_test_set()
 
     if transport is None:
-        transport = NatsTransport(nats_url, creds_path=creds_path)
+        transport = NatsTransport(nats_url, creds_path=creds_path, user=user,
+                                   password=password, auth_token=auth_token)
     evidence_path = evidence_dir / f"{run_id}.jsonl"
 
     with EvidenceWriter(evidence_path, role="producer", run_id=run_id) as ev:
@@ -79,9 +82,14 @@ def run(nats_url: str, creds_path: str | None, evidence_dir: Path, max_seconds: 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--nats-url", default=os.environ.get("NATS_URL"),
-                         help="Required. No default. Also settable via NATS_URL env var.")
+                         help="Required. 'host:port', no scheme. No default. "
+                              "Also settable via NATS_URL env var.")
     parser.add_argument("--creds", default=os.environ.get("NATS_CREDS_PATH"),
-                         help="Optional path to a scoped .creds file. Also settable via NATS_CREDS_PATH.")
+                         help="NOT IMPLEMENTED (stdlib client has no .creds/JWT support). "
+                              "Use --user/--password or --auth-token instead.")
+    parser.add_argument("--user", default=os.environ.get("NATS_USER"))
+    parser.add_argument("--password", default=os.environ.get("NATS_PASSWORD"))
+    parser.add_argument("--auth-token", default=os.environ.get("NATS_AUTH_TOKEN"))
     parser.add_argument("--evidence-dir", default="tooling/canary/v0.1-lifecycle-receipt/evidence-log",
                          type=Path)
     parser.add_argument("--max-seconds", type=int, default=3600,
@@ -93,7 +101,8 @@ def main() -> int:
               "This is deliberate: there is no implicit target.", file=sys.stderr)
         return 2
 
-    return run(args.nats_url, args.creds, args.evidence_dir, args.max_seconds)
+    return run(args.nats_url, args.creds, args.evidence_dir, args.max_seconds,
+               user=args.user, password=args.password, auth_token=args.auth_token)
 
 
 if __name__ == "__main__":
