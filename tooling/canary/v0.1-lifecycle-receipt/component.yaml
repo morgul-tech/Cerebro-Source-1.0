@@ -1,0 +1,60 @@
+schema: cerebro-component/v1
+component:
+  id: canary-v0.1-lifecycle-receipt
+  name: Bounded Canary Runbook — signalvev-reference-v0.1 (cerebro.v1.lifecycle.receipt)
+  type: tooling
+  version: 0.1.0-prepared-not-executed
+  status: prepared-awaiting-live-start
+  authority: NONE
+responsibility:
+  primary: >-
+    Prepared runbook and implementation for the bounded canary
+    authorized by PRINCIPAL DECISION (2026-09-29): send the nine-message
+    golden-path receipt trail declared in fixed_test_set.py over one
+    real NATS subject (cerebro.v1.lifecycle.receipt) and replay the
+    received stages through v0.1's own, unmodified ReceiptTrail to prove
+    the offline-verified partial order survives real transport. Offline
+    self-test (4/4 scenarios) already run and passing; live execution
+    has not happened and does not happen without the Human explicitly
+    handing over scoped NATS_URL/credentials.
+  explicitly_not:
+    - Ikke en JetStream-aktivering -- kjerne pub/sub kun.
+    - Ikke varig lagring eller en resident tjeneste.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke produksjonstilgang eller -konsumenter.
+    - Ikke en modifikasjon av signalvev-reference-v0.1 -- ReceiptTrail,
+      ReceiptError og validate_envelope importeres uendret.
+    - Ikke en autonom live-start -- krever eksplisitt Human-tildelt,
+      avgrenset NATS-tilgang per RUNBOOK.md.
+governance:
+  principal_decision_date: "2026-09-29"
+  scope_owner: PRINCIPAL
+  execution_lead: Claude
+  access_grantor: Human (Andreas)
+  independent_verifier: separate party, not Claude, not whoever executed the run
+  max_run_seconds: 3600
+  subject: cerebro.v1.lifecycle.receipt
+  on_failure: "stop, HOLD, revoke credentials/ACL, preserve all evidence"
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1  # imports ReceiptTrail, ReceiptError, validate_envelope, STAGE_PREDECESSORS unmodified
+interfaces:
+  input:
+  - >-
+    NATS_URL / --nats-url (required, no default), NATS_CREDS_PATH /
+    --creds (optional), scoped to publish+subscribe on
+    cerebro.v1.lifecycle.receipt only
+  output:
+  - >-
+    Two append-only JSON-lines evidence files (producer + consumer,
+    kept separate), a PASS/FAIL process exit code, and console summary.
+    See EVIDENCE_SCHEMA.md.
+relationship_to_prior_evidence:
+  note: >
+    This is the first candidate-adjacent artifact in this project to
+    touch real transport at all. It does not supersede or modify any of
+    the 18 offline signalvev-reference candidates; it is a bounded,
+    time-boxed, revocable probe of whether v0.1's already-proven offline
+    logic holds under one real NATS round trip.
