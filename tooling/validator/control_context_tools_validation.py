@@ -1221,6 +1221,8 @@ def selftest() -> dict[str, Any]:
             "create_pre_role_generation",
             "complete_pre_role_generation",
             "attach_role_overlay",
+            "read_boot_generation_state",
+            "resume_ready_unbound_assistant_overlay",
             "read_project_control_state",
             "begin_project_control_event",
             "complete_project_control_event",

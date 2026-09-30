@@ -21,7 +21,7 @@ from control_context_tools import (  # noqa: E402
 )
 
 
-HEAD = "b3a0e4abfe7862fcbe41ebade42bbf1261824e73"
+HEAD = "fc62b1336ef86459a87b96b88f11441a207284e7"
 ATTEMPT = "CEREBRO-BOOT-20260930004220Z-2B852369"
 
 
@@ -100,7 +100,7 @@ def main() -> int:
         return (ROOT / url[len(prefix):]).read_bytes().replace(bytes([13, 10]), bytes([10]))
     verified = verify_current_method(HEAD, fetch=pinned_fetch)
     checks["pinned-method-fingerprint-matches-source-contract"] = (
-        verified["method_fingerprint"] == "3c52a799cd392bdcdb60b130e9aa027ef0d5ad32468ee5cff09f506a0c237e12"
+        verified["method_fingerprint"] == "38399b476b252c7bbb7f167199119af744b65811aaedba362136901649a60176"
     )
     atom = (
         '<feed xmlns="http://www.w3.org/2005/Atom">'

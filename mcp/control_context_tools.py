@@ -48,7 +48,7 @@ from human_navigation_surface_validation import (  # noqa: E402
     validate_navigation_options,
     validate_navigation_options_candidate,
 )
-from boot_birth_source import verify_current_method
+from boot_birth_source import verify_current_method, verify_existing_birth_method_continuity
 
 
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
@@ -1070,6 +1070,67 @@ def tool_definitions() -> list[dict[str, Any]]:
             "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
         },
         {
+            "name": "read_boot_generation_state",
+            "title": "Read an existing Boot generation",
+            "description": (
+                "Read the exact current pre-role generation and its durable receipt without "
+                "creating, completing, or attaching any role."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "authenticated_binding", "repository_permission_required"),
+                properties={
+                    "pre_role_generation": {"type": "object"},
+                    "authenticated_binding": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref"],
+                        "properties": {
+                            field: {"type": "string", "minLength": 1}
+                            for field in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref")
+                        },
+                    },
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "resume_ready_unbound_assistant_overlay",
+            "title": "Resume a READY_UNBOUND Assistant overlay",
+            "description": (
+                "Read back an existing READY_UNBOUND generation, obtain the exact Assistant overlay "
+                "from a trusted server-bound control resolver, and attach it with a server-held "
+                "attestation. Never creates or replays a Boot generation or exposes a signature."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref", "expected_revision", "source_revision"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                    "expected_revision": {"type": "integer", "minimum": 1},
+                    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "actor_generation_shadow", "control_decision_ref", "repository_permission_required"),
+                properties={
+                    "pre_role_generation": {"type": "object"},
+                    "actor_generation_shadow": {"type": "object"},
+                    "control_decision_ref": {"type": "string"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
             "name": "read_project_control_state",
             "title": "Read project control state",
             "description": "Use this when the user needs the authenticated workspace's current project-control snapshot.",
@@ -1269,6 +1330,9 @@ class ControlContextMcpTools:
         human_t3_host: HumanT3BreakGlassHost | None = None,
         boot_birth_source_verifier: Any = verify_current_method,
         boot_birth_attestation_issuer: Any | None = None,
+        assistant_overlay_control_resolver: Any | None = None,
+        assistant_overlay_attestation_issuer: Any | None = None,
+        assistant_overlay_source_continuity_verifier: Any = verify_existing_birth_method_continuity,
     ):
         self._state_port = state_port
         if not callable(getattr(resolution_attestation_verifier, "verify", None)):
@@ -1289,6 +1353,9 @@ class ControlContextMcpTools:
         self._human_t3_host = human_t3_host
         self._boot_birth_source_verifier = boot_birth_source_verifier
         self._boot_birth_attestation_issuer = boot_birth_attestation_issuer
+        self._assistant_overlay_control_resolver = assistant_overlay_control_resolver
+        self._assistant_overlay_attestation_issuer = assistant_overlay_attestation_issuer
+        self._assistant_overlay_source_continuity_verifier = assistant_overlay_source_continuity_verifier
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -1312,6 +1379,8 @@ class ControlContextMcpTools:
             "create_pre_role_generation": self.create_pre_role_generation,
             "complete_pre_role_generation": self.complete_pre_role_generation,
             "attach_role_overlay": self.attach_role_overlay,
+            "read_boot_generation_state": self.read_boot_generation_state,
+            "resume_ready_unbound_assistant_overlay": self.resume_ready_unbound_assistant_overlay,
             "read_project_control_state": self.read_project_control_state,
             "begin_project_control_event": self.begin_project_control_event,
             "complete_project_control_event": self.complete_project_control_event,
@@ -1559,6 +1628,105 @@ class ControlContextMcpTools:
             "actor_generation_shadow": actor_readback,
             "repository_permission_required": False,
         }, context)
+
+    def read_boot_generation_state(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity = self._identity(context)
+        if "project_state:read" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:read")
+        if set(args) != {"generation_ref"}:
+            raise ControlContextToolError("boot-generation-read-exact-fields-required")
+        generation_ref = _require_text(args, "generation_ref")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", generation_ref) is None:
+            raise ControlContextToolError("boot-generation-read-boot-ref-required")
+        return self._result({
+            "pre_role_generation": self._read_pre_role(identity, context, generation_ref),
+            "authenticated_binding": {
+                "tenant_ref": identity.tenant_ref,
+                "workspace_ref": identity.workspace_ref,
+                "principal_ref": identity.principal_ref,
+                "consumer_ref": identity.consumer_ref,
+                "session_ref": context.session_ref(),
+            },
+            "repository_permission_required": False,
+        }, context)
+
+    def resume_ready_unbound_assistant_overlay(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        """Resolve and seal one existing Assistant overlay entirely inside the MCP host."""
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        if set(args) != {"generation_ref", "expected_revision", "source_revision"}:
+            raise ControlContextToolError("assistant-overlay-resume-exact-fields-required")
+        generation_ref = _require_text(args, "generation_ref")
+        source_revision = _require_text(args, "source_revision")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", generation_ref) is None:
+            raise ControlContextToolError("assistant-overlay-resume-boot-generation-required")
+        expected_revision = args.get("expected_revision")
+        if type(expected_revision) is not int or expected_revision < 1:
+            raise ControlContextToolError("assistant-overlay-resume-expected-revision-invalid")
+        resolver = self._assistant_overlay_control_resolver
+        issuer = self._assistant_overlay_attestation_issuer
+        if not callable(getattr(resolver, "resolve", None)) or not callable(getattr(issuer, "seal", None)):
+            raise ControlContextToolAuthorizationError("trusted-assistant-overlay-resolution-owner-not-bound")
+        current = self._read_pre_role(identity, context, generation_ref)
+        if current["lifecycle"] != "READY_UNBOUND":
+            raise ControlContextToolError("assistant-overlay-resume-ready-unbound-required")
+        if current["revision"] != expected_revision:
+            raise ControlContextToolError("assistant-overlay-resume-expected-revision-mismatch")
+        if current["source_revision"] != source_revision:
+            raise ControlContextToolError("assistant-overlay-resume-source-mismatch")
+        source = self._assistant_overlay_source_continuity_verifier(
+            source_revision, current["civilization_method_attestation"]["method_fingerprint"],
+        )
+        if (
+            not isinstance(source, dict)
+            or source.get("source_revision") != source_revision
+            or source.get("method_fingerprint") != current["civilization_method_attestation"]["method_fingerprint"]
+            or source.get("method_unchanged") is not True
+            or source.get("ancestry_verified") is not True
+        ):
+            raise ControlContextToolAuthorizationError("assistant-overlay-resume-current-method-mismatch")
+        decision = resolver.resolve(
+            pre_role_generation=copy.deepcopy(current),
+            verified_source=copy.deepcopy(source),
+            identity=identity,
+            session_ref=context.session_ref(),
+        )
+        if not isinstance(decision, dict) or set(decision) != {
+            "result", "decision_ref", "pre_role_fingerprint", "ready_unbound_receipt_fingerprint", "overlay_payload",
+        } or decision.get("result") != "ALLOW":
+            raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-denied")
+        if (
+            decision["pre_role_fingerprint"] != current["fingerprint"]
+            or decision["ready_unbound_receipt_fingerprint"] != current["ready_unbound_receipt"]["receipt_fingerprint"]
+        ):
+            raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-stale")
+        decision_ref = _require_text(decision, "decision_ref")
+        payload = decision["overlay_payload"]
+        required = {
+            "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+            "actor_generation_ref", "source_revision",
+        }
+        if not isinstance(payload, dict) or set(payload) != required:
+            raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-invalid")
+        if (
+            payload["generation_ref"] != generation_ref
+            or payload["expected_revision"] != expected_revision
+            or payload["source_revision"] != source_revision
+            or payload["role"] != "ASSISTANT"
+        ):
+            raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-mismatch")
+        attestation = issuer.seal(
+            operation="attach_role_overlay", payload=copy.deepcopy(payload), context=context,
+        )
+        attached = self.attach_role_overlay(
+            {**copy.deepcopy(payload), "control_resolution_attestation": attestation}, context,
+        )["structuredContent"]
+        return self._result({**attached, "control_decision_ref": decision_ref}, context)
 
     def _human_t3(self, operation: str, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         identity = self._identity(context)
