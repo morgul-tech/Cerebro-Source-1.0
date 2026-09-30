@@ -1217,6 +1217,7 @@ def selftest() -> dict[str, Any]:
         [item["name"] for item in tool_definitions()] == [
             "arm_human_t3_break_glass",
             "confirm_human_t3_break_glass",
+            "create_ready_unbound_boot_generation",
             "create_pre_role_generation",
             "complete_pre_role_generation",
             "attach_role_overlay",

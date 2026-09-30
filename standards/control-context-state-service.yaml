@@ -152,6 +152,15 @@ control_context_state_service:
         mutation: ATOMIC_ROLE_NEUTRAL_BIRTH_CREATION
         required_scope: project_state:transition
         output: BIRTH_PENDING_WITH_UNBOUND_AUTHORITY_ENVELOPE
+      create_ready_unbound_boot_generation:
+        mutation: MCP_OWNED_ROLE_NEUTRAL_BOOT_BIRTH
+        required_scope: project_state:transition
+        input: [BOOT_ATTEMPT_ID, CURRENT_SOURCE_HEAD]
+        source_check: INDEPENDENT_MAIN_HEAD_AND_PINNED_CIVILIZATION_METHOD_BLOBS
+        attestation_issuer: CONSTRUCTOR_BOUND_SERVICE_SECRET_NEVER_RETURNED_TO_CALLER
+        composition: EXISTING_ATTESTED_CREATE_THEN_COMPLETE_WITH_DURABLE_READBACK
+        output: READY_UNBOUND_RECEIPT_WITHOUT_ROLE_CLAIM_OR_WORK_AUTHORITY
+        shared_event_workspace_publication: SEPARATE_BOOT_GATE
       complete_pre_role_generation:
         mutation: ATOMIC_READY_UNBOUND_COMPLETION
         required_scope: project_state:transition

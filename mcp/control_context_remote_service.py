@@ -34,6 +34,7 @@ MCP_PATH = "/mcp"
 HEALTH_PATH = "/healthz"
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
 TOOL_REQUIRED_SCOPES = {
+    "create_ready_unbound_boot_generation": "project_state:transition",
     "create_pre_role_generation": "project_state:transition",
     "complete_pre_role_generation": "project_state:transition",
     "attach_role_overlay": "project_state:transition",

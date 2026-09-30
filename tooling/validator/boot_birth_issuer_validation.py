@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+"""Targeted regression checks for the bounded Boot birth bridge."""
+
+from __future__ import annotations
+
+import sys
+import json
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path[:0] = [str(ROOT / "mcp"), str(ROOT / "tooling" / "context")]
+
+from boot_birth_source import BootBirthSourceError, verify_current_method  # noqa: E402
+from control_context_state_port import InMemoryControlContextStatePort  # noqa: E402
+from control_context_tools import (  # noqa: E402
+    ControlContextMcpTools, ControlContextToolAuthorizationError,
+    ControlContextToolError, HmacControlResolutionAttestor, McpToolCallContext,
+    VerifiedMcpIdentity,
+)
+
+
+HEAD = "b3a0e4abfe7862fcbe41ebade42bbf1261824e73"
+ATTEMPT = "CEREBRO-BOOT-20260930004220Z-2B852369"
+
+
+def source(_head: str) -> dict[str, str | int]:
+    if _head != HEAD:
+        raise BootBirthSourceError("source-main-head-changed")
+    return {
+        "source_revision": HEAD,
+        "method_ref": "CURRENT_CIVILIZATION_METHOD_PROFILE",
+        "method_version": "1.0",
+        "method_fingerprint": "a" * 64,
+        "provider_frontier_ref": "GITHUB_SOURCE_MAIN_" + HEAD,
+        "provider_revision": 1790668580,
+    }
+
+
+def context(scope: str = "project_state:transition", *, verified: bool = True) -> McpToolCallContext:
+    return McpToolCallContext(
+        identity=VerifiedMcpIdentity(
+            tenant_ref="TENANT", workspace_ref="WORKSPACE", principal_ref="HUMAN",
+            scopes=frozenset({scope}), token_verified=verified,
+        ),
+        request_meta={"openai/session": "BOOT-SESSION"},
+    )
+
+
+def denied(call, error: type[Exception]) -> bool:
+    try:
+        call()
+    except error:
+        return True
+    return False
+
+
+def main() -> int:
+    attestor = HmacControlResolutionAttestor(key_id="TEST", secret=b"not-a-production-secret-at-least-32-bytes")
+    state = InMemoryControlContextStatePort()
+    tools = ControlContextMcpTools(
+        state, attestor, boot_birth_source_verifier=source,
+        boot_birth_attestation_issuer=attestor,
+    )
+    args = {"boot_attempt_id": ATTEMPT, "source_revision": HEAD}
+    checks = {
+        "missing-server-issuer-denies": denied(
+            lambda: ControlContextMcpTools(state, attestor, boot_birth_source_verifier=source).dispatch(
+                "create_ready_unbound_boot_generation", args, context()),
+            ControlContextToolAuthorizationError,
+        ),
+        "read-only-token-denies": denied(
+            lambda: tools.dispatch("create_ready_unbound_boot_generation", args, context("project_state:read")),
+            ControlContextToolAuthorizationError,
+        ),
+        "unverified-token-denies": denied(
+            lambda: tools.dispatch("create_ready_unbound_boot_generation", args, context(verified=False)),
+            ControlContextToolAuthorizationError,
+        ),
+        "identity-injection-denies": denied(
+            lambda: tools.dispatch("create_ready_unbound_boot_generation", {**args, "principal_ref": "AI"}, context()),
+            ControlContextToolAuthorizationError,
+        ),
+        "extra-control-field-denies": denied(
+            lambda: tools.dispatch("create_ready_unbound_boot_generation", {**args, "authority": "MCP"}, context()),
+            ControlContextToolError,
+        ),
+        "stale-source-denies": denied(
+            lambda: tools.dispatch("create_ready_unbound_boot_generation", {**args, "source_revision": "0" * 40}, context()),
+            BootBirthSourceError,
+        ),
+    }
+    def pinned_fetch(url: str) -> bytes:
+        if url.endswith("/commits/main"):
+            return json.dumps({"sha": HEAD, "commit": {"committer": {"date": "2026-09-29T00:00:00Z"}}}).encode()
+        prefix = f"https://raw.githubusercontent.com/morgul-tech/Cerebro-Source-1.0/{HEAD}/"
+        if not url.startswith(prefix):
+            raise AssertionError("unexpected-provider-url")
+        return (ROOT / url[len(prefix):]).read_bytes().replace(bytes([13, 10]), bytes([10]))
+    verified = verify_current_method(HEAD, fetch=pinned_fetch)
+    checks["pinned-method-fingerprint-matches-source-contract"] = (
+        verified["method_fingerprint"] == "3c52a799cd392bdcdb60b130e9aa027ef0d5ad32468ee5cff09f506a0c237e12"
+    )
+    first = tools.dispatch("create_ready_unbound_boot_generation", args, context())["structuredContent"]
+    second = tools.dispatch("create_ready_unbound_boot_generation", args, context())["structuredContent"]
+    generation = first["pre_role_generation"]
+    checks["durable-ready-unbound-no-role-or-authority"] = (
+        generation["lifecycle"] == "READY_UNBOUND"
+        and generation["authority_envelope"]["role"] is None
+        and generation["authority_envelope"]["grants_live_authority"] is False
+        and generation["ready_unbound_receipt"]["post_state_readback_verified"] is True
+    )
+    checks["same-attempt-idempotent"] = (
+        first["ready_unbound_receipt"] == second["ready_unbound_receipt"]
+        and second["pre_role_generation"]["revision"] == 2
+    )
+    checks["no-secret-or-attestation-in-output"] = (
+        "control_resolution_attestation" not in str(first)
+        and "not-a-production-secret" not in str(first)
+    )
+    for name, passed in checks.items():
+        print(("PASS" if passed else "FAIL") + " " + name)
+    return 0 if all(checks.values()) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
