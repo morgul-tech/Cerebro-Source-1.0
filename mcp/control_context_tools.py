@@ -949,7 +949,7 @@ def tool_definitions() -> list[dict[str, Any]]:
             "name": "create_ready_unbound_boot_generation",
             "title": "Create READY_UNBOUND Boot generation",
             "description": (
-                "For one authenticated BOOT CEREBRO attempt, independently verify current Source "
+                "For one OAuth-scoped BOOT CEREBRO attempt candidate, independently verify current Source "
                 "and method, then create and read back a role-neutral generation. "
                 "Returns no role, claim, scheduler or work authority."
             ),
@@ -1329,9 +1329,10 @@ class ControlContextMcpTools:
     ) -> dict[str, Any]:
         """MCP-owned, source-verified role-neutral birth; never exposes the HMAC seal.
 
-        This is a deliberately narrow bridge for an authenticated BOOT CEREBRO
-        attempt. It uses the existing attested create/complete tools and returns
-        their durable readback. Role attachment remains a separate operation.
+        This is a deliberately narrow bridge for an OAuth-scoped birth candidate.
+        The Boot controller separately proves the Human trigger and its 15 steps.
+        The existing attested create/complete tools return durable readback;
+        role attachment remains a separate operation.
         """
         identity = self._identity(context)
         if "project_state:transition" not in identity.state_scopes:

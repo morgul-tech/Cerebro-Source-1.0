@@ -161,6 +161,7 @@ control_context_state_service:
         composition: EXISTING_ATTESTED_CREATE_THEN_COMPLETE_WITH_DURABLE_READBACK
         output: READY_UNBOUND_RECEIPT_WITHOUT_ROLE_CLAIM_OR_WORK_AUTHORITY
         shared_event_workspace_publication: SEPARATE_BOOT_GATE
+        human_trigger_and_15_boot_steps: SEPARATE_BOOT_GATE_NOT_PROVEN_BY_BIRTH_TOOL
       complete_pre_role_generation:
         mutation: ATOMIC_READY_UNBOUND_COMPLETION
         required_scope: project_state:transition
