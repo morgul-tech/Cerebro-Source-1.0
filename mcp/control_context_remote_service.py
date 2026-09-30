@@ -38,6 +38,7 @@ TOOL_REQUIRED_SCOPES = {
     "create_pre_role_generation": "project_state:transition",
     "complete_pre_role_generation": "project_state:transition",
     "attach_role_overlay": "project_state:transition",
+    "resume_ready_unbound_assistant_overlay": "project_state:transition",
     "read_project_control_state": "project_state:read",
     "begin_project_control_event": "project_state:transition",
     "complete_project_control_event": "project_state:transition",
