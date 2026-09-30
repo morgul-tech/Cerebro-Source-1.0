@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sys
+import json
 from pathlib import Path
 
 
@@ -11,6 +12,10 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT / "mcp"), str(ROOT / "tooling" / "context")]
 
 from control_context_state_port import InMemoryControlContextStatePort, StateBindingError  # noqa: E402
+from boot_birth_source import (  # noqa: E402
+    BootBirthSourceError, HEAD_URL, COMPARE_URL, REPOSITORY,
+    verify_current_method, verify_existing_birth_method_continuity,
+)
 from control_context_tools import (  # noqa: E402
     ControlContextMcpTools, ControlContextToolAuthorizationError,
     ControlContextToolError, HmacControlResolutionAttestor, McpToolCallContext,
@@ -19,6 +24,7 @@ from control_context_tools import (  # noqa: E402
 
 
 HEAD = "f" * 40
+ADVANCED_HEAD = "e" * 40
 ATTEMPT = "CEREBRO-BOOT-ASS-20260930T2206-GJENKLANG"
 TOOL = "resume_ready_unbound_assistant_overlay"
 
@@ -26,14 +32,50 @@ TOOL = "resume_ready_unbound_assistant_overlay"
 def source(head: str) -> dict[str, str | int]:
     if head != HEAD:
         raise ValueError("source-main-head-changed")
+    fingerprint = verify_current_method(HEAD, fetch=provider(HEAD))["method_fingerprint"]
     return {
         "source_revision": HEAD,
         "method_ref": "CURRENT_CIVILIZATION_METHOD_PROFILE",
         "method_version": "1.0",
-        "method_fingerprint": "a" * 64,
+        "method_fingerprint": fingerprint,
         "provider_frontier_ref": "GITHUB_SOURCE_MAIN_" + HEAD,
         "provider_revision": 1,
     }
+
+
+def continuity(head: str, method_fingerprint: str) -> dict[str, str | int | bool]:
+    return verify_existing_birth_method_continuity(
+        head, method_fingerprint, fetch=provider(ADVANCED_HEAD),
+    )
+
+
+def provider(current_head: str, *, changed_method: bool = False, ancestor: bool = True):
+    raw_prefix = f"https://raw.githubusercontent.com/{REPOSITORY}/"
+
+    def fetch(url: str) -> bytes:
+        if url == HEAD_URL:
+            return json.dumps({
+                "sha": current_head,
+                "commit": {"committer": {"date": "2026-09-30T00:00:00Z"}},
+            }).encode()
+        if url == f"{COMPARE_URL}/{HEAD}...{ADVANCED_HEAD}":
+            return json.dumps({
+                "status": "ahead" if ancestor else "diverged",
+                "base_commit": {"sha": HEAD},
+                "merge_base_commit": {"sha": HEAD if ancestor else "0" * 40},
+                "head_commit": {"sha": ADVANCED_HEAD},
+            }).encode()
+        if url.startswith(raw_prefix):
+            revision, path = url[len(raw_prefix):].split("/", 1)
+            if revision not in {HEAD, ADVANCED_HEAD}:
+                raise AssertionError("unexpected-source-revision")
+            data = (ROOT / path).read_bytes().replace(b"\r\n", b"\n")
+            if changed_method and revision == ADVANCED_HEAD and path == "mcp/constitution.yaml":
+                data += b"\n# changed method contract\n"
+            return data
+        raise AssertionError("unexpected-provider-url")
+
+    return fetch
 
 
 def context(scope: str = "project_state:transition") -> McpToolCallContext:
@@ -54,6 +96,7 @@ class BoundAssistantResolver:
         assert identity.principal_ref == "HUMAN"
         assert session_ref == context().session_ref()
         assert verified_source["source_revision"] == HEAD
+        assert verified_source["current_source_revision"] == ADVANCED_HEAD
         return {
             "result": "ALLOW",
             "decision_ref": "AD1-GJENKLANG-CONTROL-001",
@@ -104,6 +147,7 @@ def main() -> int:
         boot_birth_attestation_issuer=attestor,
         assistant_overlay_control_resolver=resolver,
         assistant_overlay_attestation_issuer=attestor,
+        assistant_overlay_source_continuity_verifier=continuity,
     )
     birth = tools.dispatch(
         "create_ready_unbound_boot_generation",
@@ -127,6 +171,7 @@ def main() -> int:
                 context("project_state:read"),
             ), ControlContextToolError,
         ),
+        "main-advance-after-birth-keeps-method-continuity": False,
         "missing-resolver-denies": denied(
             lambda: ControlContextMcpTools(
                 state, attestor, boot_birth_source_verifier=source,
@@ -156,6 +201,28 @@ def main() -> int:
             StateBindingError,
         ),
     }
+    birth_method = verify_current_method(HEAD, fetch=provider(HEAD))
+    continued = verify_existing_birth_method_continuity(
+        HEAD, birth_method["method_fingerprint"], fetch=provider(ADVANCED_HEAD),
+    )
+    checks["main-advance-after-birth-keeps-method-continuity"] = (
+        continued["source_revision"] == HEAD
+        and continued["current_source_revision"] == ADVANCED_HEAD
+        and continued["method_unchanged"] is True
+        and continued["ancestry_verified"] is True
+    )
+    checks["diverged-source-denies"] = denied(
+        lambda: verify_existing_birth_method_continuity(
+            HEAD, birth_method["method_fingerprint"],
+            fetch=provider(ADVANCED_HEAD, ancestor=False),
+        ), BootBirthSourceError,
+    )
+    checks["changed-method-denies"] = denied(
+        lambda: verify_existing_birth_method_continuity(
+            HEAD, birth_method["method_fingerprint"],
+            fetch=provider(ADVANCED_HEAD, changed_method=True),
+        ), BootBirthSourceError,
+    )
     for label, field, value in (
         ("non-assistant-role-denies", "role", "PRINCIPAL"),
         ("stale-control-decision-denies", "pre_role_fingerprint", "0" * 64),
@@ -164,6 +231,7 @@ def main() -> int:
             state, attestor, boot_birth_source_verifier=source,
             assistant_overlay_control_resolver=BadResolver(field, value),
             assistant_overlay_attestation_issuer=attestor,
+            assistant_overlay_source_continuity_verifier=continuity,
         )
         checks[label] = denied(
             lambda owner=untrusted: owner.dispatch(TOOL, args, context()),

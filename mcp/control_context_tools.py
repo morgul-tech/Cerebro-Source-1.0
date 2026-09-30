@@ -48,7 +48,7 @@ from human_navigation_surface_validation import (  # noqa: E402
     validate_navigation_options,
     validate_navigation_options_candidate,
 )
-from boot_birth_source import verify_current_method
+from boot_birth_source import verify_current_method, verify_existing_birth_method_continuity
 
 
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
@@ -1324,6 +1324,7 @@ class ControlContextMcpTools:
         boot_birth_attestation_issuer: Any | None = None,
         assistant_overlay_control_resolver: Any | None = None,
         assistant_overlay_attestation_issuer: Any | None = None,
+        assistant_overlay_source_continuity_verifier: Any = verify_existing_birth_method_continuity,
     ):
         self._state_port = state_port
         if not callable(getattr(resolution_attestation_verifier, "verify", None)):
@@ -1346,6 +1347,7 @@ class ControlContextMcpTools:
         self._boot_birth_attestation_issuer = boot_birth_attestation_issuer
         self._assistant_overlay_control_resolver = assistant_overlay_control_resolver
         self._assistant_overlay_attestation_issuer = assistant_overlay_attestation_issuer
+        self._assistant_overlay_source_continuity_verifier = assistant_overlay_source_continuity_verifier
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -1662,11 +1664,15 @@ class ControlContextMcpTools:
             raise ControlContextToolError("assistant-overlay-resume-expected-revision-mismatch")
         if current["source_revision"] != source_revision:
             raise ControlContextToolError("assistant-overlay-resume-source-mismatch")
-        source = self._boot_birth_source_verifier(source_revision)
+        source = self._assistant_overlay_source_continuity_verifier(
+            source_revision, current["civilization_method_attestation"]["method_fingerprint"],
+        )
         if (
             not isinstance(source, dict)
             or source.get("source_revision") != source_revision
             or source.get("method_fingerprint") != current["civilization_method_attestation"]["method_fingerprint"]
+            or source.get("method_unchanged") is not True
+            or source.get("ancestry_verified") is not True
         ):
             raise ControlContextToolAuthorizationError("assistant-overlay-resume-current-method-mismatch")
         decision = resolver.resolve(
