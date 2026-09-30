@@ -109,6 +109,10 @@ def main() -> int:
         "create_ready_unbound_boot_generation",
         {"boot_attempt_id": ATTEMPT, "source_revision": HEAD}, context(),
     )["structuredContent"]["pre_role_generation"]
+    before = tools.dispatch(
+        "read_boot_generation_state", {"generation_ref": ATTEMPT},
+        context("project_state:read"),
+    )["structuredContent"]["pre_role_generation"]
     args = {
         "generation_ref": ATTEMPT,
         "expected_revision": birth["revision"],
@@ -116,6 +120,13 @@ def main() -> int:
     }
     checks = {
         "existing-ready-unbound-before-resume": birth["lifecycle"] == "READY_UNBOUND",
+        "read-only-provider-state-before-resume": before == birth,
+        "read-tool-rejects-non-boot-ref": denied(
+            lambda: tools.dispatch(
+                "read_boot_generation_state", {"generation_ref": "OTHER"},
+                context("project_state:read"),
+            ), ControlContextToolError,
+        ),
         "missing-resolver-denies": denied(
             lambda: ControlContextMcpTools(
                 state, attestor, boot_birth_source_verifier=source,
@@ -159,6 +170,10 @@ def main() -> int:
             ControlContextToolAuthorizationError,
         )
     result = tools.dispatch(TOOL, args, context())["structuredContent"]
+    after = tools.dispatch(
+        "read_boot_generation_state", {"generation_ref": ATTEMPT},
+        context("project_state:read"),
+    )["structuredContent"]["pre_role_generation"]
     checks["same-generation-role-attached"] = (
         result["pre_role_generation"]["generation_ref"] == ATTEMPT
         and result["pre_role_generation"]["lifecycle"] == "ROLE_ATTACHED"
@@ -176,6 +191,7 @@ def main() -> int:
     checks["birth-receipt-still-same"] = (
         result["pre_role_generation"]["ready_unbound_receipt"] == birth["ready_unbound_receipt"]
     )
+    checks["read-only-provider-state-after-resume"] = after == result["pre_role_generation"]
     for name, passed in checks.items():
         print(("PASS" if passed else "FAIL") + " " + name)
     return 0 if all(checks.values()) else 1

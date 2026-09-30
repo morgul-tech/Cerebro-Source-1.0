@@ -1070,6 +1070,30 @@ def tool_definitions() -> list[dict[str, Any]]:
             "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
         },
         {
+            "name": "read_boot_generation_state",
+            "title": "Read an existing Boot generation",
+            "description": (
+                "Read the exact current pre-role generation and its durable receipt without "
+                "creating, completing, or attaching any role."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "repository_permission_required"),
+                properties={
+                    "pre_role_generation": {"type": "object"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
             "name": "resume_ready_unbound_assistant_overlay",
             "title": "Resume a READY_UNBOUND Assistant overlay",
             "description": (
@@ -1345,6 +1369,7 @@ class ControlContextMcpTools:
             "create_pre_role_generation": self.create_pre_role_generation,
             "complete_pre_role_generation": self.complete_pre_role_generation,
             "attach_role_overlay": self.attach_role_overlay,
+            "read_boot_generation_state": self.read_boot_generation_state,
             "resume_ready_unbound_assistant_overlay": self.resume_ready_unbound_assistant_overlay,
             "read_project_control_state": self.read_project_control_state,
             "begin_project_control_event": self.begin_project_control_event,
@@ -1591,6 +1616,22 @@ class ControlContextMcpTools:
         return self._result({
             "pre_role_generation": pre_readback,
             "actor_generation_shadow": actor_readback,
+            "repository_permission_required": False,
+        }, context)
+
+    def read_boot_generation_state(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity = self._identity(context)
+        if "project_state:read" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:read")
+        if set(args) != {"generation_ref"}:
+            raise ControlContextToolError("boot-generation-read-exact-fields-required")
+        generation_ref = _require_text(args, "generation_ref")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", generation_ref) is None:
+            raise ControlContextToolError("boot-generation-read-boot-ref-required")
+        return self._result({
+            "pre_role_generation": self._read_pre_role(identity, context, generation_ref),
             "repository_permission_required": False,
         }, context)
 
