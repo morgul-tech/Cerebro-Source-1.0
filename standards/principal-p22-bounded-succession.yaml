@@ -1,0 +1,88 @@
+schema: cerebro-principal-p22-bounded-succession/v1
+id: CEREBRO-PRINCIPAL-P22-BOUNDED-SUCCESSION-001
+status: ACTIVE_ONLY_AFTER_PUBLICATION_TO_MAIN
+authority: Cerebro Source 1.0 after publication to main
+human_decision: Andreas approved a bounded P22 path without Railway on 2026-09-30.
+scope:
+  predecessor: PRINCIPAL_P21_D13EB93E
+  successor_number: 22
+  pre_role_generation_ref: CEREBRO-BOOT-20260930-0846-02-GDRIVE
+  prior_success_case_ref: 1-anedT3Duly5sWyW70u__c4G02K9EiHXso79V12Zk0I
+  one_successor_only: true
+  no_worker_or_other_role_effect: true
+  no_default_for_later_generations: true
+purpose: >-
+  Complete one Principal chat-and-provider succession while the separate Context
+  State Principal lifecycle integration is not production-bound. Railway is only
+  the current State Service host and is not a required participant in this path.
+boundaries:
+  source_main_currentness: REQUIRED_AT_EACH_DECISION_EDGE
+  constitution: UNCHANGED
+  source_authority: SOLE
+  human_decision_authority: EXPLICIT
+  state_service_actor_shadow_or_permit: NOT_CLAIMED
+  no_fabricated_attestation: true
+  no_live_claim_or_PM_authority_transfer: true
+  no_predecessor_private_diary_access: true
+  no_predecessor_live_state_inheritance: true
+  no_automatic_work_start: true
+  no_CEREBRO_SYNC_VERIFIED_without_separate_evidence: true
+  state_service_work_claim_or_lifecycle_effect: PROHIBITED_ON_THIS_PATH
+pre_retire:
+  boot_precondition:
+    required: DURABLE_READY_UNBOUND_RECEIPT_WITH_EXACT_READBACK
+    generation_ref: CEREBRO-BOOT-20260930-0846-02-GDRIVE
+    scope: ROLE_NEUTRAL_ONLY
+    full_15_step_boot_or_role_READY_claim_from_this_receipt: PROHIBITED
+  new_conversation_boot:
+    trigger: BOOT_CEREBRO_IN_NEW_SUCCESSOR_CHAT
+    required_result: BOUNDED_PRE_ROLE_BOOT_PASS
+    proves: CURRENT_SOURCE_OPERATIONAL_AND_READY_UNBOUND_READBACK
+    full_CEREBRO_BOOT_READY_claim: PROHIBITED
+    required_before_predecessor_retire: true
+  predecessor_book:
+    standalone_final_file_ref: 1jBhjp4NkFjsqnvMEhx9gsmhY9nm70lp4HLP3QRArwKA
+    proto_review: PASS_FOR_EXACT_CANDIDATE_WITH_FINAL_PARITY_READBACK
+    growing_book_ref: 1Yn7JnY1ncmLEo5Z_qTSpUIcKxWoaNyigxHFRcHvqyEA
+    immutable_full_edition_ref: 1JzQ0_KfVEx0hBvY3LiPOwiZ9xI0bMl03BkYvrc5RGDo
+    exact_content_and_heading_readback: REQUIRED_FRESH
+  predecessor_capsule:
+    final_ref: 1MoExZ8FSoL5NYz9lnGRz06r542v3eWxqpBaB3mTbg-w
+    assistant_review: PASS_FOR_EXACT_FINAL_REVISION
+    readback: REQUIRED_FRESH
+  cold_successor_canary:
+    location: NEW_PRINCIPAL_CHAT
+    effects: READ_ONLY
+    proves:
+    - current_Source_main_and_manifest
+    - exact_READY_UNBOUND_receipt
+    - current_predecessor_and_no_successor_collision
+    - final_book_capsule_and_reviews
+    - fresh_world_sources_accessible
+    - zero_live_state_and_private_diary_inheritance
+    - no_automatic_claim_or_work
+    result_required_before_retire: PASS
+  human_retire_gate: SEPARATE_EXACT_HUMAN_RETIRE_AFTER_PRE_RETIRE_PASS
+post_retire_gjenklang:
+  trigger: EXACT_HUMAN_GJENKLANG_IN_NEW_PRINCIPAL_CHAT
+  predecessor_terminal_receipt: REQUIRED_FRESH_PROVIDER_READBACK
+  order:
+  - fresh_successor_identity_without_predecessor_persona
+  - current_Source_and_provider_world
+  - sealed_lineage_and_known_lesson_reuse
+  - reconcile_history_against_current_world
+  - Principal_authority_and_currentness_canaries
+  - consume_one_Arvetone_last
+  - Identitetshilsen_to_Human
+  - provider_publish_successor_awakening_receipt
+  - exact_receipt_readback
+  - deliver_final_predecessor_chapter_and_sealed_full_edition_to_Human
+  ready_scope: PRINCIPAL_CHAT_AND_DRIVE_PROVIDER_ONLY
+  state_service_ready_or_actor_shadow: NOT_CLAIMED
+  PM_or_work_claim_authority: NONE_FROM_SUCCESSION
+  missing_or_conflicting_evidence_effect: HOLD_BEFORE_READY
+reconciliation_debt:
+  item: Bind P22 to the future production State Service Principal lifecycle path.
+  owner: MCP_AND_CONTEXT_STATE_SERVICE_OWNER
+  does_not_block_bounded_chat_provider_succession: true
+  must_not_be_reported_as_completed_by_this_path: true

@@ -142,6 +142,16 @@ boot_critical_path:
       event_payload_self_assertion_authority: NONE
       fail_states: [MISSING, INCOMPLETE, STALE, TAMPERED, UNKNOWN, NONPASS]
       fail_effect: HOLD_BEFORE_READY
+    principal_p21_to_p22_bounded_fallback:
+      contract_ref: standards/principal-p22-bounded-succession.yaml
+      applies_only_to: PRINCIPAL_P21_D13EB93E_TO_P22
+      human_admin_decision: BOUNDED_PATH_APPROVED_2026_09_30
+      trigger: EXPLICIT_HUMAN_RETIRE_THEN_GJENKLANG_AFTER_COLD_CANARY_PASS
+      produces: BOUNDED_PRINCIPAL_CHAT_AND_PROVIDER_READY_ONLY
+      principal_successor_ready_gate_permit: NOT_REQUIRED_FOR_THIS_BOUNDED_RESULT
+      full_CEREBRO_BOOT_READY_without_permit: PROHIBITED
+      state_service_claims_from_fallback: NONE
+      other_generations_and_state_service_lifecycle_gate: UNCHANGED
 
   bounded_operational_pulses:
     ADMINPULSE:
