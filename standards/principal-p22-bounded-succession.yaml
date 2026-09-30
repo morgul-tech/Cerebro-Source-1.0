@@ -34,6 +34,12 @@ pre_retire:
     generation_ref: CEREBRO-BOOT-20260930-0846-02-GDRIVE
     scope: ROLE_NEUTRAL_ONLY
     full_15_step_boot_or_role_READY_claim_from_this_receipt: PROHIBITED
+  new_conversation_boot:
+    trigger: BOOT_CEREBRO_IN_NEW_SUCCESSOR_CHAT
+    required_result: BOUNDED_PRE_ROLE_BOOT_PASS
+    proves: CURRENT_SOURCE_OPERATIONAL_AND_READY_UNBOUND_READBACK
+    full_CEREBRO_BOOT_READY_claim: PROHIBITED
+    required_before_predecessor_retire: true
   predecessor_book:
     standalone_final_file_ref: 1jBhjp4NkFjsqnvMEhx9gsmhY9nm70lp4HLP3QRArwKA
     proto_review: PASS_FOR_EXACT_CANDIDATE_WITH_FINAL_PARITY_READBACK
