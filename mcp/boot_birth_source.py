@@ -12,7 +12,9 @@ import json
 import re
 from datetime import datetime
 from typing import Callable
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
+from xml.etree import ElementTree
 
 
 REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
@@ -26,6 +28,9 @@ REFS = (
     "engines/presentation/component.yaml", "engines/presentation/rules.yaml",
 )
 HEX40 = re.compile(r"[0-9a-f]{40}\Z")
+ATOM_NS = "{http://www.w3.org/2005/Atom}"
+HEAD_URL = f"https://api.github.com/repos/{REPOSITORY}/commits/main"
+ATOM_URL = f"https://github.com/{REPOSITORY}/commits/main.atom"
 
 
 class BootBirthSourceError(ValueError):
@@ -38,6 +43,29 @@ def _http_get(url: str) -> bytes:
         return response.read(2_000_001)
 
 
+def _source_head(fetch: Callable[[str], bytes], *, atom_only: bool = False) -> tuple[str, str, bool]:
+    """Read GitHub's current main; use its public Atom feed on API rate limiting."""
+    if not atom_only:
+        try:
+            data = json.loads(fetch(HEAD_URL))
+            return data["sha"], data["commit"]["committer"]["date"], False
+        except HTTPError as exc:
+            if exc.code != 403:
+                raise
+    feed = ElementTree.fromstring(fetch(ATOM_URL))
+    if feed.findtext(f"{ATOM_NS}id") != f"tag:github.com,2008:/{REPOSITORY}/commits/main":
+        raise BootBirthSourceError("source-atom-feed-mismatch")
+    entry = feed.find(f"{ATOM_NS}entry")
+    if entry is None:
+        raise BootBirthSourceError("source-atom-entry-missing")
+    entry_id = entry.findtext(f"{ATOM_NS}id", "")
+    match = re.fullmatch(r"tag:github\.com,2008:Grit::Commit/([0-9a-f]{40})", entry_id)
+    if match is None:
+        raise BootBirthSourceError("source-atom-commit-invalid")
+    committed_at = entry.findtext(f"{ATOM_NS}updated", "")
+    return match.group(1), committed_at, True
+
+
 def verify_current_method(
     requested_source_head: str,
     *,
@@ -46,13 +74,8 @@ def verify_current_method(
     """Verify current main and reproduce Resolve-CerebroCivilizationMethod's hash."""
     if not isinstance(requested_source_head, str) or not HEX40.fullmatch(requested_source_head):
         raise BootBirthSourceError("source-head-invalid")
-    head_url = f"https://api.github.com/repos/{REPOSITORY}/commits/main"
     try:
-        head_data = json.loads(fetch(
-            head_url
-        ))
-        actual_head = head_data["sha"]
-        committed_at = head_data["commit"]["committer"]["date"]
+        actual_head, committed_at, used_atom = _source_head(fetch)
     except Exception as exc:
         raise BootBirthSourceError("source-head-provider-response-invalid") from exc
     if actual_head != requested_source_head:
@@ -98,7 +121,7 @@ def verify_current_method(
     for ref in REFS:
         material.append(f"{ref}|{hashlib.sha256(pinned(ref)).hexdigest()}")
     try:
-        if json.loads(fetch(head_url))["sha"] != actual_head:
+        if _source_head(fetch, atom_only=used_atom)[0] != actual_head:
             raise BootBirthSourceError("source-main-head-changed-during-verification")
     except BootBirthSourceError:
         raise

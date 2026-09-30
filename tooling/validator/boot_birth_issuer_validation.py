@@ -6,6 +6,7 @@ from __future__ import annotations
 import sys
 import json
 from pathlib import Path
+from urllib.error import HTTPError
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -100,6 +101,21 @@ def main() -> int:
     verified = verify_current_method(HEAD, fetch=pinned_fetch)
     checks["pinned-method-fingerprint-matches-source-contract"] = (
         verified["method_fingerprint"] == "3c52a799cd392bdcdb60b130e9aa027ef0d5ad32468ee5cff09f506a0c237e12"
+    )
+    atom = (
+        '<feed xmlns="http://www.w3.org/2005/Atom">'
+        '<id>tag:github.com,2008:/morgul-tech/Cerebro-Source-1.0/commits/main</id>'
+        f'<entry><id>tag:github.com,2008:Grit::Commit/{HEAD}</id>'
+        '<updated>2026-09-29T00:00:00Z</updated></entry></feed>'
+    ).encode()
+    def rate_limited_fetch(url: str) -> bytes:
+        if url.endswith("/commits/main"):
+            raise HTTPError(url, 403, "rate limit exceeded", {}, None)
+        if url.endswith("/commits/main.atom"):
+            return atom
+        return pinned_fetch(url)
+    checks["github-api-rate-limit-uses-current-atom-head"] = (
+        verify_current_method(HEAD, fetch=rate_limited_fetch) == verified
     )
     first = tools.dispatch("create_ready_unbound_boot_generation", args, context())["structuredContent"]
     second = tools.dispatch("create_ready_unbound_boot_generation", args, context())["structuredContent"]
