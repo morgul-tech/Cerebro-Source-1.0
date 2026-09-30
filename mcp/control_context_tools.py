@@ -1084,9 +1084,17 @@ def tool_definitions() -> list[dict[str, Any]]:
                 },
             },
             "outputSchema": _object_output_schema(
-                required=("pre_role_generation", "repository_permission_required"),
+                required=("pre_role_generation", "authenticated_binding", "repository_permission_required"),
                 properties={
                     "pre_role_generation": {"type": "object"},
+                    "authenticated_binding": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref"],
+                        "properties": {
+                            field: {"type": "string", "minLength": 1}
+                            for field in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref")
+                        },
+                    },
                     "repository_permission_required": {"const": False},
                 },
             ),
@@ -1634,6 +1642,13 @@ class ControlContextMcpTools:
             raise ControlContextToolError("boot-generation-read-boot-ref-required")
         return self._result({
             "pre_role_generation": self._read_pre_role(identity, context, generation_ref),
+            "authenticated_binding": {
+                "tenant_ref": identity.tenant_ref,
+                "workspace_ref": identity.workspace_ref,
+                "principal_ref": identity.principal_ref,
+                "consumer_ref": identity.consumer_ref,
+                "session_ref": context.session_ref(),
+            },
             "repository_permission_required": False,
         }, context)
 

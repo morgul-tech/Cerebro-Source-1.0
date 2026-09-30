@@ -153,10 +153,11 @@ def main() -> int:
         "create_ready_unbound_boot_generation",
         {"boot_attempt_id": ATTEMPT, "source_revision": HEAD}, context(),
     )["structuredContent"]["pre_role_generation"]
-    before = tools.dispatch(
+    before_read = tools.dispatch(
         "read_boot_generation_state", {"generation_ref": ATTEMPT},
         context("project_state:read"),
-    )["structuredContent"]["pre_role_generation"]
+    )["structuredContent"]
+    before = before_read["pre_role_generation"]
     args = {
         "generation_ref": ATTEMPT,
         "expected_revision": birth["revision"],
@@ -165,6 +166,13 @@ def main() -> int:
     checks = {
         "existing-ready-unbound-before-resume": birth["lifecycle"] == "READY_UNBOUND",
         "read-only-provider-state-before-resume": before == birth,
+        "readback-carries-verified-session-binding": (
+            before_read["authenticated_binding"] == {
+                "tenant_ref": "TENANT", "workspace_ref": "WORKSPACE",
+                "principal_ref": "HUMAN", "consumer_ref": "CHATGPT_REMOTE_MCP",
+                "session_ref": context().session_ref(),
+            }
+        ),
         "read-tool-rejects-non-boot-ref": denied(
             lambda: tools.dispatch(
                 "read_boot_generation_state", {"generation_ref": "OTHER"},
