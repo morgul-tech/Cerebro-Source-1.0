@@ -48,6 +48,7 @@ from human_navigation_surface_validation import (  # noqa: E402
     validate_navigation_options,
     validate_navigation_options_candidate,
 )
+from boot_birth_source import verify_current_method
 
 
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
@@ -945,6 +946,33 @@ def tool_definitions() -> list[dict[str, Any]]:
 
     return human_t3_tool_definitions() + [
         {
+            "name": "create_ready_unbound_boot_generation",
+            "title": "Create READY_UNBOUND Boot generation",
+            "description": (
+                "For one OAuth-scoped BOOT CEREBRO attempt candidate, independently verify current Source "
+                "and method, then create and read back a role-neutral generation. "
+                "Returns no role, claim, scheduler or work authority."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["boot_attempt_id", "source_revision"],
+                "properties": {
+                    "boot_attempt_id": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "ready_unbound_receipt", "repository_permission_required"),
+                properties={
+                    "pre_role_generation": {"type": "object"},
+                    "ready_unbound_receipt": {"type": "object"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
             "name": "create_pre_role_generation",
             "title": "Create pre-role generation",
             "description": "Create one attested Fresh World generation with no role, claim, scheduler authority or predecessor live state.",
@@ -1239,6 +1267,8 @@ class ControlContextMcpTools:
         lifecycle_effect_adapter: Any | None = None,
         provider_tail_reader: Any | None = None,
         human_t3_host: HumanT3BreakGlassHost | None = None,
+        boot_birth_source_verifier: Any = verify_current_method,
+        boot_birth_attestation_issuer: Any | None = None,
     ):
         self._state_port = state_port
         if not callable(getattr(resolution_attestation_verifier, "verify", None)):
@@ -1257,6 +1287,8 @@ class ControlContextMcpTools:
         if human_t3_host is not None and not isinstance(human_t3_host, HumanT3BreakGlassHost):
             raise ControlContextToolAuthorizationError("constructor-bound-Human-T3-host-required")
         self._human_t3_host = human_t3_host
+        self._boot_birth_source_verifier = boot_birth_source_verifier
+        self._boot_birth_attestation_issuer = boot_birth_attestation_issuer
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -1276,6 +1308,7 @@ class ControlContextMcpTools:
 
     def dispatch(self, tool_name: str, args: Any, context: McpToolCallContext) -> dict[str, Any]:
         handlers = {
+            "create_ready_unbound_boot_generation": self.create_ready_unbound_boot_generation,
             "create_pre_role_generation": self.create_pre_role_generation,
             "complete_pre_role_generation": self.complete_pre_role_generation,
             "attach_role_overlay": self.attach_role_overlay,
@@ -1290,6 +1323,82 @@ class ControlContextMcpTools:
         if tool_name not in handlers:
             raise ControlContextToolError(f"unknown-control-context-tool:{tool_name}")
         return handlers[tool_name](_require_args(args), context)
+
+    def create_ready_unbound_boot_generation(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        """MCP-owned, source-verified role-neutral birth; never exposes the HMAC seal.
+
+        This is a deliberately narrow bridge for an OAuth-scoped birth candidate.
+        The Boot controller separately proves the Human trigger and its 15 steps.
+        The existing attested create/complete tools return durable readback;
+        role attachment remains a separate operation.
+        """
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        if set(args) != {"boot_attempt_id", "source_revision"}:
+            raise ControlContextToolError("boot-birth-exact-fields-required")
+        attempt_id = _require_text(args, "boot_attempt_id")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", attempt_id) is None:
+            raise ControlContextToolError("boot-birth-attempt-id-invalid")
+        source_revision = _require_text(args, "source_revision")
+        verifier = self._boot_birth_source_verifier
+        issuer = self._boot_birth_attestation_issuer
+        if not callable(verifier) or not callable(getattr(issuer, "seal", None)):
+            raise ControlContextToolAuthorizationError("trusted-boot-birth-owner-not-bound")
+        source = verifier(source_revision)
+        required_source = {
+            "source_revision", "method_ref", "method_version", "method_fingerprint",
+            "provider_frontier_ref", "provider_revision",
+        }
+        if not isinstance(source, dict) or set(source) != required_source:
+            raise ControlContextToolError("boot-birth-source-verification-invalid")
+        if source["source_revision"] != source_revision:
+            raise ControlContextToolError("boot-birth-source-head-mismatch")
+        generation_ref = attempt_id
+        try:
+            current = self._read_pre_role(identity, context, generation_ref)
+        except StateBindingError as exc:
+            if str(exc) != "pre-role-generation-not-found":
+                raise
+            create_payload = {"generation_ref": generation_ref, **source}
+            create_args = dict(create_payload)
+            create_args["control_resolution_attestation"] = issuer.seal(
+                operation="create_pre_role_generation", payload=create_payload, context=context,
+            )
+            current = self.create_pre_role_generation(create_args, context)["structuredContent"]["pre_role_generation"]
+        if (
+            current["source_revision"] != source_revision
+            or current["civilization_method_attestation"]["method_fingerprint"] != source["method_fingerprint"]
+        ):
+            raise ControlContextToolError("boot-birth-existing-generation-mismatch")
+        if current["lifecycle"] == "BIRTH_PENDING":
+            evidence = hashlib.sha256((attempt_id + ":" + source_revision).encode("utf-8")).hexdigest()[:20]
+            canaries = [
+                {"canary_ref": "AUTHENTICATED_TRANSITION_SCOPE", "result": "PASS", "evidence_ref": "OAUTH_" + evidence},
+                {"canary_ref": "CURRENT_SOURCE_AND_METHOD", "result": "PASS", "evidence_ref": "SOURCE_" + source_revision},
+                {"canary_ref": "STATE_CREATE_READBACK", "result": "PASS", "evidence_ref": "STATE_" + evidence},
+            ]
+            complete_payload = {
+                "generation_ref": generation_ref,
+                "expected_revision": current["revision"],
+                "source_revision": source_revision,
+                "generic_capability_canaries": canaries,
+                "ready_unbound_receipt_ref": "READY_" + attempt_id,
+            }
+            complete_args = dict(complete_payload)
+            complete_args["control_resolution_attestation"] = issuer.seal(
+                operation="complete_pre_role_generation", payload=complete_payload, context=context,
+            )
+            current = self.complete_pre_role_generation(complete_args, context)["structuredContent"]["pre_role_generation"]
+        if current["lifecycle"] != "READY_UNBOUND":
+            raise ControlContextToolError("boot-birth-generation-not-ready-unbound")
+        return self._result({
+            "pre_role_generation": current,
+            "ready_unbound_receipt": current["ready_unbound_receipt"],
+            "repository_permission_required": False,
+        }, context)
 
     def _attested_payload(
         self, operation: str, args: dict[str, Any], context: McpToolCallContext,

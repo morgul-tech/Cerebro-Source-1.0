@@ -151,6 +151,7 @@ control_adapters:
     context_owner_persistence_ref: tooling/context/control_context_owner_persistence.py
     normal_host_binding_ref: mcp/control_resolution_host.py
     MCP_tool_adapter_ref: mcp/control_context_tools.py
+    boot_birth_source_verifier_ref: mcp/boot_birth_source.py
     remote_MCP_service_boundary_ref: mcp/control_context_remote_service.py
     official_MCP_SDK_binding_ref: mcp/control_context_mcp_sdk.py
     official_MCP_SDK_requirements_ref: mcp/control-context-mcp-sdk-requirements.txt
