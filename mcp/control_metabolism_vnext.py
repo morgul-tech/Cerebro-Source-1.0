@@ -98,7 +98,8 @@ def _validate_lease(lease: Mapping[str, Any], intent: Mapping[str, Any], allowed
 
 
 def _result(route: str, intent: Mapping[str, Any], *, reason: str,
-            target_capability: str | None = None) -> dict[str, Any]:
+            target_capability: str | None = None,
+            attempt_ref: str | None = None) -> dict[str, Any]:
     result = {
         "schema": SCHEMA, "authority": "NONE", "effect_authorized": False,
         "route": route, "reason": reason, "intent_ref": intent["intent_id"],
@@ -106,7 +107,8 @@ def _result(route: str, intent: Mapping[str, Any], *, reason: str,
     }
     if route == "PM_NOT_NEEDED_DISPATCH_GRANT":
         result["dispatch_grant_candidate"] = {
-            "intent_ref": intent["intent_id"], "target_capability": target_capability,
+            "intent_ref": intent["intent_id"], "attempt_ref": attempt_ref,
+            "target_capability": target_capability,
             "transport_owner": "DIRIGENT", "host_currentness_required": True,
             "send_once_required": True, "authority": "NONE",
         }
@@ -170,8 +172,38 @@ def compile_candidate(intent: Mapping[str, Any], lease: Mapping[str, Any] | None
     target = facts.get("target_capability")
     if not _nonempty(target) or facts.get("target_available") is not True:
         return _result("HOLD_EXACT", intent, reason="TARGET_CAPABILITY_UNAVAILABLE")
+    _require(_nonempty(facts.get("attempt_ref")), "dispatch-attempt-ref-required")
     return _result("PM_NOT_NEEDED_DISPATCH_GRANT", intent,
-                   reason="OWNER_CLEAR_WITHIN_LEASE", target_capability=target)
+                   reason="OWNER_CLEAR_WITHIN_LEASE", target_capability=target,
+                   attempt_ref=facts["attempt_ref"])
+
+
+def classify_transport_receipt_candidate(grant: Mapping[str, Any],
+                                         receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """Keep provider submission and worker consumption as separate evidence axes."""
+    _require(isinstance(grant, Mapping) and isinstance(receipt, Mapping),
+             "transport-grant-and-receipt-objects-required")
+    _require(grant.get("authority") == "NONE", "transport-grant-candidate-required")
+    for key in ("intent_ref", "attempt_ref"):
+        _require(_nonempty(grant.get(key)) and receipt.get(key) == grant[key],
+                 f"transport-{key}-mismatch")
+    _require(_nonempty(receipt.get("target_thread_ref")), "transport-target-thread-required")
+    submission = receipt.get("provider_submission")
+    consumption = receipt.get("worker_consumption")
+    _require(submission in {"ACCEPTED", "REJECTED", "UNKNOWN"},
+             "transport-submission-invalid")
+    _require(consumption in {"CONFIRMED", "UNCONFIRMED", "UNKNOWN"},
+             "transport-consumption-invalid")
+    _require(consumption != "CONFIRMED" or
+             (submission == "ACCEPTED" and _nonempty(receipt.get("consumption_proof_ref"))),
+             "transport-consumption-proof-required")
+    return {
+        "schema": SCHEMA, "authority": "NONE", "effect_authorized": False,
+        "intent_ref": grant["intent_ref"], "attempt_ref": grant["attempt_ref"],
+        "provider_submission": submission, "worker_consumption": consumption,
+        "work_consumed_proven": consumption == "CONFIRMED",
+        "live_transport_qualification": "UNPROVEN_BY_THIS_CLASSIFIER",
+    }
 
 
 def classify_terminal_candidate(terminal: Mapping[str, Any],
@@ -179,21 +211,37 @@ def classify_terminal_candidate(terminal: Mapping[str, Any],
     """Classify one exact terminal without admitting effect or releasing a lease."""
     _require(isinstance(terminal, Mapping) and isinstance(expected, Mapping),
              "terminal-and-expected-objects-required")
-    for key in ("attempt_ref", "claim_ref", "generation_ref"):
+    for key in ("attempt_ref", "claim_ref", "packet_ref", "generation_ref"):
         _require(_nonempty(expected.get(key)), f"expected-{key}-required")
         _require(terminal.get(key) == expected[key], f"terminal-{key}-mismatch")
     _require(terminal.get("terminal_state") in {"PASS", "REFINE", "HOLD", "UNKNOWN"},
              "terminal-state-invalid")
     for key in ("delivery", "start", "admission", "effect"):
         _require(key in terminal, f"terminal-{key}-axis-required")
-    ambiguous = terminal["terminal_state"] == "UNKNOWN" or terminal.get("semantic_novelty") is True
+    uncertain = (terminal.get("provider_visible") is not True
+                 or terminal.get("work_complete") is not True
+                 or not _nonempty(terminal.get("provider_revision"))
+                 or terminal.get("currentness_conflict") is True)
+    ambiguous = (terminal["terminal_state"] == "UNKNOWN"
+                 or terminal.get("semantic_novelty") is True
+                 or terminal.get("human_gate_required") is True
+                 or terminal.get("writer_collision") is True
+                 or terminal.get("ambiguous_next") is True)
+    deterministic = terminal.get("single_deterministic_transition") is True
+    if uncertain:
+        route, reason = "HOLD_EXACT", "TERMINAL_PROVIDER_PROOF_INCOMPLETE"
+    elif ambiguous:
+        route, reason = "PM_NEEDED", "AMBIGUOUS_TERMINAL"
+    elif not deterministic:
+        route, reason = "HOLD_EXACT", "DETERMINISTIC_TRANSITION_UNPROVEN"
+    else:
+        route, reason = "TERMINALSLUSE_LOCAL_DRAIN_CANDIDATE", "KNOWN_TERMINAL"
     result = {
         "schema": SCHEMA, "authority": "NONE", "effect_authorized": False,
         "terminal_state": terminal["terminal_state"],
-        "route": "PM_NEEDED" if ambiguous else "TERMINALSLUSE_LOCAL_DRAIN_CANDIDATE",
-        "reason": "AMBIGUOUS_TERMINAL" if ambiguous else "KNOWN_TERMINAL",
+        "route": route, "reason": reason,
         "release_performed": False, "admission_performed": False,
-        "attempt_ref": terminal["attempt_ref"],
+        "attempt_ref": terminal["attempt_ref"], "packet_ref": terminal["packet_ref"],
         "axes": {key: terminal[key] for key in ("delivery", "start", "admission", "effect")},
     }
     result["fingerprint"] = _fingerprint(result)

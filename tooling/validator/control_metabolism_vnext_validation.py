@@ -53,6 +53,7 @@ def facts() -> dict:
     return {"intent_ref": "V-NEXT-CANARY", "work_requested": True,
             "work_class": "PING", "lease_current": True,
             "proven_qualifications": ["EXACT_ATTEMPT"],
+            "attempt_ref": "PING-ATTEMPT-1",
             "target_capability": "PING_WORKER", "target_available": True}
 
 
@@ -85,14 +86,25 @@ def run() -> dict:
           effect_distance_advanced=False, stagnation_count=1)["reason"] == "STOP_AND_REFRAME")
     check("C8_SIGNALVEV_BASELINE_CONTRACT", c2["route"] == "PM_NOT_NEEDED_DISPATCH_GRANT"
           and c2["reason"] == "OWNER_CLEAR_WITHIN_LEASE")
-    check("C9_DIRIGENT_USE_CONTRACT", c2["dispatch_grant_candidate"]["transport_owner"] == "DIRIGENT"
-          and c2["dispatch_grant_candidate"]["host_currentness_required"])
-    terminal = {"attempt_ref": "A", "claim_ref": "C", "generation_ref": "G", "terminal_state": "PASS",
-                "delivery": "DELIVERED", "start": "STARTED", "admission": "NOT_REQUIRED", "effect": "NONE"}
-    expected = {key: terminal[key] for key in ("attempt_ref", "claim_ref", "generation_ref")}
+    grant = c2["dispatch_grant_candidate"]
+    transport = mod.classify_transport_receipt_candidate(grant, {
+        "intent_ref": grant["intent_ref"], "attempt_ref": grant["attempt_ref"],
+        "target_thread_ref": "EXISTING-THREAD", "provider_submission": "ACCEPTED",
+        "worker_consumption": "UNCONFIRMED"})
+    check("C9_DIRIGENT_USE_CONTRACT", grant["transport_owner"] == "DIRIGENT"
+          and grant["host_currentness_required"] and transport["work_consumed_proven"] is False
+          and transport["provider_submission"] == "ACCEPTED")
+    terminal = {"attempt_ref": "A", "claim_ref": "C", "packet_ref": "P",
+                "generation_ref": "G", "terminal_state": "PASS",
+                "delivery": "DELIVERED", "start": "STARTED", "admission": "NOT_REQUIRED", "effect": "NONE",
+                "provider_visible": True, "provider_revision": "R1", "work_complete": True,
+                "single_deterministic_transition": True}
+    expected = {key: terminal[key] for key in ("attempt_ref", "claim_ref", "packet_ref", "generation_ref")}
     drain = mod.classify_terminal_candidate(terminal, expected)
     check("C10_TERMINALSLUSE_DRAIN_CONTRACT", drain["route"] == "TERMINALSLUSE_LOCAL_DRAIN_CANDIDATE"
           and drain["release_performed"] is False and drain["admission_performed"] is False)
+    check("C10_MISSING_PROVIDER_PROOF_HOLDS", mod.classify_terminal_candidate(
+          {**terminal, "provider_visible": False}, expected)["route"] == "HOLD_EXACT")
     offer = mod.optional_human_accelerator(i, action="one optional click",
                                            expected_saved_machine_work="three provider turns",
                                            continuation="continue machine route")
