@@ -1,0 +1,77 @@
+schema: cerebro-component/v1
+component:
+  id: canary-v0.1-lifecycle-receipt
+  name: Bounded Canary Runbook — signalvev-reference-v0.1 (cerebro.v1.lifecycle.receipt)
+  type: tooling
+  version: 0.1.0-executed-reported
+  status: executed-reported-pass-bounded-closure-open
+  authority: NONE
+responsibility:
+  primary: >-
+    Bounded canary runbook and implementation for the canary authorized
+    by PRINCIPAL DECISION (2026-09-29): send the nine-message
+    golden-path receipt trail declared in fixed_test_set.py over one
+    real NATS subject (cerebro.v1.lifecycle.receipt) and replay the
+    received stages through v0.1's own, unmodified ReceiptTrail to prove
+    the offline-verified partial order survives real transport. Uses a
+    hand-rolled, stdlib-only core-NATS client (nats_stdlib_client.py) --
+    nats-py could not be installed in either execution environment tried
+    (both proxy PyPI with 403 Forbidden). Verified across three offline
+    self-test layers (4/4 + 1/1 + 1/1 PASS). EXECUTED on 2026-09-29, two
+    attempts (reported): attempt 1 0/9 execution failure with nothing
+    published; attempt 2 9/9 PASS. A distinct-verifier verdict
+    PASS_BOUNDED is reported but its original receipt is not located.
+    Credential closure is UNKNOWN. Raw live evidence is not in this
+    branch; see EXECUTION_RECORD.md for attempt history, evidence
+    pointers (MISSING_REF where unlocated), open deviations and the
+    LIVING_READINESS candidate paragraph. A further run needs its own
+    decision.
+  explicitly_not:
+    - Ikke en JetStream-aktivering -- kjerne pub/sub kun.
+    - Ikke varig lagring eller en resident tjeneste.
+    - Ikke en endring av Boot-, Context State- eller authority-lag.
+    - Ikke produksjonstilgang eller -konsumenter.
+    - Ikke en modifikasjon av signalvev-reference-v0.1 -- ReceiptTrail,
+      ReceiptError og validate_envelope importeres uendret.
+    - Ikke en autonom live-start -- krever eksplisitt Human-tildelt,
+      avgrenset NATS-tilgang per RUNBOOK.md. Gjelder også en eventuell
+      ny kjøring.
+    - Ikke en Living-promotion -- parkert i påvente av assimilering og
+      closure (credential closure og verifier provenance er UNKNOWN).
+governance:
+  principal_decision_date: "2026-09-29"
+  scope_owner: PRINCIPAL
+  execution_lead: Claude
+  access_grantor: Human (Andreas)
+  independent_verifier: separate party, not Claude, not whoever executed the run
+  verifier_provenance: UNKNOWN
+  max_run_seconds: 3600
+  subject: cerebro.v1.lifecycle.receipt
+  on_failure: "stop, HOLD, revoke credentials/ACL, preserve all evidence"
+  completion_owner: X1_KODEMESTER_W40D6
+  credential_closure: UNKNOWN
+  living_promotion: PARKED_PENDING_ASSIMILATION_CLOSURE
+  open_local_deviation: "stage encoded as message_id suffix; LOCAL_DEVIATION_NE_GLOBAL_SCHEMA_REQUIREMENT"
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1  # imports ReceiptTrail, ReceiptError, validate_envelope, STAGE_PREDECESSORS unmodified
+interfaces:
+  input:
+  - >-
+    NATS_URL / --nats-url (required, no default), NATS_CREDS_PATH /
+    --creds (optional), scoped to publish+subscribe on
+    cerebro.v1.lifecycle.receipt only
+  output:
+  - >-
+    Two append-only JSON-lines evidence files (producer + consumer,
+    kept separate), a PASS/FAIL process exit code, and console summary.
+    See EVIDENCE_SCHEMA.md.
+relationship_to_prior_evidence:
+  note: >
+    This is the first candidate-adjacent artifact in this project to
+    touch real transport at all. It does not supersede or modify any of
+    the 18 offline signalvev-reference candidates; it is a bounded,
+    time-boxed, revocable probe of whether v0.1's already-proven offline
+    logic holds under one real NATS round trip.
