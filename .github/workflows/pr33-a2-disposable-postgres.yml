@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - candidate/project-engine-commissioning-a2-v01
+    paths:
+      - tooling/context/control_context_state_postgres.py
+      - tooling/context/control_context_state_postgres_0006_project_commissioning_session.sql
+      - tooling/validator/project_commissioning_postgres_integration.py
+      - tooling/validator/project_commissioning_full_chain_postgres_integration.py
 
 permissions:
   contents: read
@@ -57,5 +62,6 @@ jobs:
           CEREBRO_A2_TEST_DISPOSABLE: YES
           CEREBRO_A2_CANDIDATE_ROOT: ${{ github.workspace }}/harness
         run: python -B harness/tooling/validator/project_commissioning_full_chain_postgres_integration.py
+
 
 
