@@ -390,12 +390,52 @@ Check 'K157-well-formed-unknown-role-rejected-before-projection' {
 } 'CIVILIZATION_METHOD_ROLE_NOT_IN_SOURCE_ENUM'
 Check 'K157-pre-role-sentinel-requires-verification-context' {
     Binding 'PRE_ROLE_UNBOUND' | Out-Null
-} 'CIVILIZATION_METHOD_PRE_ROLE_CONTEXT_REQUIRED'
-Check 'K157-pre-role-verifier-may-resolve-unbound-method' {
+} 'CIVILIZATION_METHOD_PRE_ROLE_PROJECTION_PROHIBITED'
+Check 'K157-direct-profile-only-call-cannot-issue-role-projection' {
     $unbound = Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead `
-        -ActorRole 'PRE_ROLE_UNBOUND' -AllowPreRoleUnbound
-    if ($unbound.role_method_projection.role -cne 'PRE_ROLE_UNBOUND' -or
-        $unbound.role_method_projection.authority -cne 'NONE') { throw 'PRE_ROLE_METHOD_MISMATCH' }
+        -ActorRole 'PRE_ROLE_UNBOUND' -MethodProfileOnly
+    if ($unbound.Contains('role_method_projection') -or
+        $unbound.method_profile.authority -cne 'NONE' -or
+        $unbound.method_profile.fingerprint -cne (Binding).method_profile.fingerprint) {
+        throw 'PRE_ROLE_PROJECTION_OR_METHOD_MISMATCH'
+    }
+}
+Check 'K157-profile-only-call-rejects-concrete-role' {
+    Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead `
+        -ActorRole 'IMPLEMENTER' -MethodProfileOnly | Out-Null
+} 'CIVILIZATION_METHOD_PROFILE_ONLY_REQUIRES_PRE_ROLE_UNBOUND'
+Check 'K157-profile-only-result-cannot-become-awakening-receipt' {
+    $unbound = Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead `
+        -ActorRole 'PRE_ROLE_UNBOUND' -MethodProfileOnly
+    New-CerebroAwakeningReceipt -Binding $unbound -SourceRoot $fixture -SourceHead $sourceHead `
+        -ActorRole 'IMPLEMENTER' | Out-Null
+} 'CIVILIZATION_METHOD_BINDING_MISMATCH'
+Check 'K157-ready-unbound-verifier-consumes-profile-only' {
+    $profileOnly = Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead `
+        -ActorRole 'PRE_ROLE_UNBOUND' -MethodProfileOnly
+    $preRoleState = [ordered]@{
+        schema='cerebro-pre-role-generation/v1'; lifecycle='READY_UNBOUND'; source_revision=$sourceHead
+        generation_ref='GENERATION-UNBOUND'
+        authority_envelope=[ordered]@{state='UNBOUND';role=$null;grants_live_authority=$false;
+            grants_claim=$false;grants_scheduler_authority=$false}
+        identity_envelope=[ordered]@{predecessor_generation_ref=$null;
+            predecessor_live_state_inherited=$false;predecessor_claims_inherited=$false;
+            private_state_inherited=$false}
+        civilization_method_attestation=[ordered]@{method_fingerprint=$profileOnly.method_profile.fingerprint;
+            currentness='CURRENT';attested=$true}
+        fresh_world=[ordered]@{currentness='CURRENT';verified=$true;source_revision=$sourceHead}
+        generic_capability_canaries=@([ordered]@{result='PASS'})
+        ready_unbound_receipt=[ordered]@{schema='cerebro-ready-unbound-receipt/v1';
+            generation_ref='GENERATION-UNBOUND';source_revision=$sourceHead;
+            method_fingerprint=$profileOnly.method_profile.fingerprint;durable=$true;
+            post_state_readback_verified=$true;receipt_ref='RECEIPT-UNBOUND'}
+    }
+    $verified = Test-CerebroPreRoleReadyUnbound -PreRoleState $preRoleState `
+        -SourceRoot $fixture -SourceHead $sourceHead
+    if ($verified.result -cne 'PASS' -or $null -ne $verified.role -or
+        $verified.method_profile_fingerprint -cne $profileOnly.method_profile.fingerprint) {
+        throw 'READY_UNBOUND_PROFILE_ONLY_VERIFICATION_MISMATCH'
+    }
 }
 Check 'K157-tampered-pinned-role-enum-rejected' {
     $roleSchemaPath = Join-Path $fixture 'engines/context/control-context-state.schema.json'

@@ -513,7 +513,7 @@ function Resolve-CerebroCivilizationMethod {
         [Parameter(Mandatory)][string]$SourceRoot,
         [Parameter(Mandatory)][string]$SourceHead,
         [Parameter(Mandatory)][string]$ActorRole,
-        [switch]$AllowPreRoleUnbound
+        [switch]$MethodProfileOnly
     )
     if ($SourceHead -cnotmatch '^[0-9a-f]{40}$' -or $ActorRole -cnotmatch '^[A-Z][A-Z0-9_]{0,63}$') {
         throw 'CIVILIZATION_METHOD_EXACT_SOURCE_AND_ROLE_REQUIRED'
@@ -555,7 +555,9 @@ function Resolve-CerebroCivilizationMethod {
         throw 'CIVILIZATION_METHOD_SOURCE_ROLE_ENUM_INVALID'
     }
     if ($ActorRole -ceq 'PRE_ROLE_UNBOUND') {
-        if (-not $AllowPreRoleUnbound) { throw 'CIVILIZATION_METHOD_PRE_ROLE_CONTEXT_REQUIRED' }
+        if (-not $MethodProfileOnly) { throw 'CIVILIZATION_METHOD_PRE_ROLE_PROJECTION_PROHIBITED' }
+    } elseif ($MethodProfileOnly) {
+        throw 'CIVILIZATION_METHOD_PROFILE_ONLY_REQUIRES_PRE_ROLE_UNBOUND'
     } elseif ($actorRoles -cnotcontains $ActorRole) {
         throw 'CIVILIZATION_METHOD_ROLE_NOT_IN_SOURCE_ENUM'
     }
@@ -599,6 +601,7 @@ function Resolve-CerebroCivilizationMethod {
         id=$profile.id; version=$profile.version; source_head=$SourceHead; fingerprint=$fingerprint
         authority='NONE'; durable_method=$methods; contract_refs=$refs; verified=$true; loaded=$true
     }
+    if ($MethodProfileOnly) { return [ordered]@{ method_profile=$current } }
     $projection = [ordered]@{
         id='ROLE_METHOD_PROJECTION'; role=$ActorRole; source_head=$SourceHead
         method_profile_fingerprint=$fingerprint; durable_method=$methods; authority='NONE'
@@ -652,7 +655,7 @@ function Test-CerebroPreRoleReadyUnbound {
         $PreRoleState.identity_envelope.private_state_inherited -ne $false) {
         throw 'PRE_ROLE_FRESH_WORLD_ZERO_INHERITANCE_REQUIRED'
     }
-    $method = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole 'PRE_ROLE_UNBOUND' -AllowPreRoleUnbound
+    $method = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole 'PRE_ROLE_UNBOUND' -MethodProfileOnly
     if ($PreRoleState.civilization_method_attestation.method_fingerprint -cne
         $method.method_profile.fingerprint -or
         $PreRoleState.civilization_method_attestation.currentness -cne 'CURRENT' -or
