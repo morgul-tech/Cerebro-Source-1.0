@@ -51,4 +51,11 @@ jobs:
           CEREBRO_A2_TEST_DISPOSABLE: YES
           CEREBRO_A2_CANDIDATE_ROOT: ${{ github.workspace }}/candidate
         run: python -B harness/tooling/validator/project_commissioning_postgres_integration.py
+      - name: Exercise full migrations and current-head bridge
+        env:
+          CEREBRO_A2_TEST_POSTGRES_DSN: postgresql://postgres:disposable_ci_only@127.0.0.1:5432/test_cerebro_a2
+          CEREBRO_A2_TEST_DISPOSABLE: YES
+          CEREBRO_A2_CANDIDATE_ROOT: ${{ github.workspace }}/harness
+        run: python -B harness/tooling/validator/project_commissioning_full_chain_postgres_integration.py
+
 
