@@ -9,6 +9,7 @@ README_COUNT_LABELS = {
     'rules': 'Regler',
     'terms': 'Autoritative begreper',
 }
+COMPONENT_INVENTORY = 'standards/source-component-inventory.yaml'
 
 def active_yaml_paths(root:Path):
     return [
@@ -16,15 +17,60 @@ def active_yaml_paths(root:Path):
         if 'history' not in {part.lower() for part in path.relative_to(root).parts}
     ]
 
+def classify_components(root:Path):
+    errors=[]
+    inventory_path=root/COMPONENT_INVENTORY
+    try:
+        inventory=yaml.safe_load(inventory_path.read_text(encoding='utf-8-sig'))
+    except (OSError,yaml.YAMLError) as exc:
+        return {'stable':[],'candidates':[],'bounded_canaries':[],'all':[]},[
+            'SOURCE_COMPONENT_INVENTORY_UNREADABLE:'+type(exc).__name__]
+    if not isinstance(inventory,dict) or inventory.get('schema')!='cerebro-source-component-inventory/v1':
+        return {'stable':[],'candidates':[],'bounded_canaries':[],'all':[]},['SOURCE_COMPONENT_INVENTORY_SCHEMA_INVALID']
+    stable=inventory.get('stable_components')
+    candidate=inventory.get('isolated_candidate_manifest')
+    canaries=inventory.get('bounded_canaries')
+    if (not isinstance(stable,dict) or not isinstance(candidate,dict) or not isinstance(canaries,dict)
+            or set(candidate)!={'type','status','authority'}):
+        return {'stable':[],'candidates':[],'bounded_canaries':[],'all':[]},['SOURCE_COMPONENT_INVENTORY_SHAPE_INVALID']
+    if set(stable)&set(canaries): errors.append('SOURCE_COMPONENT_INVENTORY_CLASS_OVERLAP')
+    paths=[p for p in sorted(root.rglob('component.yaml'))
+           if 'history' not in {part.lower() for part in p.relative_to(root).parts}]
+    found={p.relative_to(root).as_posix():p for p in paths}
+    for rel in sorted((set(stable)|set(canaries))-set(found)):
+        errors.append('SOURCE_COMPONENT_INVENTORY_MISSING:'+rel)
+    classified={'stable':[],'candidates':[],'bounded_canaries':[],'all':sorted(found)}
+    for rel,path in found.items():
+        try:
+            document=yaml.safe_load(path.read_text(encoding='utf-8-sig'))
+        except (OSError,yaml.YAMLError):
+            errors.append('SOURCE_COMPONENT_MANIFEST_UNREADABLE:'+rel); continue
+        component=document.get('component') if isinstance(document,dict) else None
+        if (not isinstance(document,dict) or document.get('schema')!='cerebro-component/v1'
+                or not isinstance(component,dict) or not isinstance(component.get('id'),str)):
+            errors.append('SOURCE_COMPONENT_MANIFEST_INVALID:'+rel); continue
+        if rel in stable:
+            if component['id']!=stable[rel]: errors.append('SOURCE_COMPONENT_INVENTORY_ID_DRIFT:'+rel)
+            classified['stable'].append(rel)
+        elif rel in canaries:
+            expected=canaries[rel]
+            if not isinstance(expected,dict) or any(component.get(k)!=v for k,v in expected.items()):
+                errors.append('SOURCE_BOUNDED_CANARY_CLASS_DRIFT:'+rel)
+            classified['bounded_canaries'].append(rel)
+        elif all(component.get(k)==v for k,v in candidate.items()):
+            classified['candidates'].append(rel)
+        else:
+            errors.append('SOURCE_COMPONENT_UNCLASSIFIED:'+rel)
+    return classified,errors
+
 def derive_source_counts(root:Path):
     errors=[]
-    component_paths=[
-        path for path in sorted(root.rglob('component.yaml'))
-        if 'history' not in {part.lower() for part in path.relative_to(root).parts}
-    ]
+    classified,component_errors=classify_components(root); errors.extend(component_errors)
     rule_count=0; rule_paths=[]
     for path in active_yaml_paths(root):
-        document=yaml.safe_load(path.read_text(encoding='utf-8-sig'))
+        try: document=yaml.safe_load(path.read_text(encoding='utf-8-sig'))
+        except (OSError,yaml.YAMLError):
+            errors.append('SOURCE_YAML_UNREADABLE:'+path.relative_to(root).as_posix()); continue
         if not isinstance(document,dict) or not isinstance(document.get('rules'),list): continue
         relative=path.relative_to(root).as_posix()
         rule_count+=len(document['rules']); rule_paths.append(relative)
@@ -32,11 +78,15 @@ def derive_source_counts(root:Path):
     terms=terms_document.get('terms') if isinstance(terms_document,dict) else None
     if not isinstance(terms,dict): errors.append('TERMINOLOGY_TERMS_NOT_MAPPING')
     return {
-        'components':len(component_paths),
+        'components':len(classified['stable']),
         'rules':rule_count,
         'terms':len(terms) if isinstance(terms,dict) else 0,
     },errors,{
-        'component_paths':[path.relative_to(root).as_posix() for path in component_paths],
+        'component_inventory':COMPONENT_INVENTORY,
+        'component_paths':classified['all'],
+        'stable_component_paths':classified['stable'],
+        'candidate_component_paths':classified['candidates'],
+        'bounded_canary_component_paths':classified['bounded_canaries'],
         'rule_paths':rule_paths,
         'terms_path':'modules/terminology/terms.yaml',
     }

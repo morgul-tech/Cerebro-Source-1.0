@@ -1,0 +1,35 @@
+schema: cerebro-source-component-inventory/v1
+meaning: >-
+  Root README Komponenter counts these stabilized Source components only.
+  Candidate and bounded-canary manifests remain present and are validated
+  separately; their presence does not promote them into the root inventory.
+stable_components:
+  engines/context/component.yaml: context
+  engines/convergence/component.yaml: convergence
+  engines/interaction/component.yaml: interaction
+  engines/presentation/component.yaml: presentation
+  engines/project/component.yaml: project
+  engines/quality/component.yaml: quality
+  modules/terminology/component.yaml: terminology
+  modules/visual-language/component.yaml: visual-language
+  tooling/assurance/component.yaml: assurance-kernel
+  tooling/builder/component.yaml: builder
+  tooling/change/component.yaml: change
+  tooling/closure/component.yaml: closure
+  tooling/delivery/component.yaml: delivery
+  tooling/doctor/component.yaml: doctor
+  tooling/host/component.yaml: host
+  tooling/owner_state/component.yaml: owner-state-persistence
+  tooling/publisher/component.yaml: publisher
+  tooling/runtime-host/component.yaml: runtime-host
+  tooling/validator/component.yaml: validator
+isolated_candidate_manifest:
+  type: candidate
+  status: isolated-implementation-candidate
+  authority: NONE
+bounded_canaries:
+  tooling/canary/v0.1-lifecycle-receipt/component.yaml:
+    id: canary-v0.1-lifecycle-receipt
+    type: tooling
+    status: executed-reported-pass-bounded-closure-open
+    authority: NONE

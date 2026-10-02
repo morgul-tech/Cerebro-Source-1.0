@@ -12,6 +12,8 @@ Cerebro Source v1.0 er den stabiliserte autoritative kildekoden for Cerebro.
 - Autoritative begreper: 45
 - Cerebro Release: Ikke bygget
 
+`Komponenter` teller den stabiliserte Source-listen i `standards/source-component-inventory.yaml`. Isolerte kandidater og avgrensede canaries valideres separat og inngår ikke i tallet.
+
 ## Arkitektur
 
 - MCP
