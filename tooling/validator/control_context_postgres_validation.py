@@ -431,13 +431,16 @@ def selftest() -> dict[str, Any]:
     checksum = hashlib.sha256(sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     shadow_checksum = hashlib.sha256(shadow_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     pre_role_checksum = hashlib.sha256(pre_role_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    commissioning_sql_path = CONTEXT_ROOT / "control_context_state_postgres_0006_project_commissioning_session.sql"
+    commissioning_checksum = hashlib.sha256(
+        commissioning_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     check(
         "migration-manifest-checksum-matches-candidate-SQL",
         manifest["migrations"][0]["checksum_sha256"] == checksum,
     )
     check(
         "B1-additive-0002-migration-manifest-checksum-matches-candidate-SQL",
-        len(manifest["migrations"]) == 5
+        len(manifest["migrations"]) == 6
         and manifest["migrations"][1]["migration_id"] == "0002-actor-generation-work-claim-shadow"
         and manifest["migrations"][1]["checksum_sha256"] == shadow_checksum,
     )
@@ -445,6 +448,12 @@ def selftest() -> dict[str, Any]:
         "P1099-additive-0005-migration-manifest-checksum-matches-candidate-SQL",
         manifest["migrations"][4]["migration_id"] == "0005-pre-role-generation"
         and manifest["migrations"][4]["checksum_sha256"] == pre_role_checksum,
+    )
+    check(
+        "A2-additive-0006-project-unique-index-checksum-matches-candidate-SQL",
+        manifest["migrations"][5]["migration_id"] == "0006-project-commissioning-session"
+        and manifest["migrations"][5]["checksum_sha256"] == commissioning_checksum
+        and "CREATE UNIQUE INDEX cerebro_one_project_commissioning_session" in commissioning_sql_path.read_text(encoding="utf-8"),
     )
     check(
         "runtime-role-is-explicitly-barred-from-migrations",
@@ -469,6 +478,9 @@ def selftest() -> dict[str, Any]:
         {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
         {"contains": "CREATE TABLE IF NOT EXISTS cerebro_pre_role_generation_heads"},
         {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
+        {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
+        {"contains": "CREATE UNIQUE INDEX cerebro_one_project_commissioning_session"},
+        {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
     ]
     migration_connection = ScriptedConnection(migration_steps)
     migration_result = apply_postgres_migrations(lambda: migration_connection)
@@ -480,6 +492,7 @@ def selftest() -> dict[str, Any]:
             "0003-human-t3-break-glass",
             "0004-principal-succession-permit",
             "0005-pre-role-generation",
+            "0006-project-commissioning-session",
         ]
         and migration_connection.commit_called
         and not migration_connection.cursor_instance.steps,

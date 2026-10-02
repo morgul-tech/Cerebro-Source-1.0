@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping
@@ -163,6 +164,8 @@ def _sqlstate(exc: BaseException) -> str | None:
 
 def _mapped_database_error(exc: BaseException) -> StatePortError:
     code = _sqlstate(exc)
+    if code == "23505" and getattr(getattr(exc, "diag", None), "constraint_name", None) == "cerebro_one_project_commissioning_session":
+        return StateConflict("commissioning-project-session-conflict")
     if code is not None and code.startswith("08"):
         return StateServiceUnavailable("control-context-state-service-unavailable")
     if code in {"40001", "40P01", "23503", "23505", "23514", "23P01"}:
@@ -1014,31 +1017,35 @@ class PostgresControlContextStatePort:
         return {"status": "PRESENT", "active_project_ref": project_ref,
                 "binding_revision": revision, "binding_fingerprint": expected}
 
-    def has_project_commissioning_session(
-        self, *, tenant_ref: str, workspace_ref: str, principal_ref: str,
-        consumer_ref: str, project_ref: str, scopes: set[str],
-    ) -> bool:
-        """Prevent partial-bootstrap recovery from minting a second bound handle."""
-        self._require_scope(scopes, "project_state:read")
-        self._validate_text_fields(
-            {"tenant_ref": tenant_ref, "workspace_ref": workspace_ref,
-             "principal_ref": principal_ref, "consumer_ref": consumer_ref,
-             "project_ref": project_ref},
-            "commissioning-session",
-            ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "project_ref"),
+    @staticmethod
+    def _assert_project_commissioning_index(cursor: Any) -> None:
+        cursor.execute(
+            """SELECT i.indisunique, i.indisvalid, i.indislive,
+                      pg_get_indexdef(i.indexrelid) AS index_definition
+                 FROM pg_index i
+                WHERE i.indexrelid = to_regclass('cerebro_one_project_commissioning_session')
+                  AND i.indrelid = to_regclass('cerebro_control_session_bindings')"""
         )
+        index = _fetchone(cursor)
+        definition = str(index.get("index_definition")) if index else ""
+        _require(index is not None and index.get("indisunique") is True
+                 and index.get("indisvalid") is True and index.get("indislive") is True
+                 and "(tenant_ref, workspace_ref, project_ref)" in definition
+                 and "project_ref IS NOT NULL" in definition
+                 and "project-commissioning:" in definition,
+                 "commissioning-project-unique-index-unproven", StateBindingError)
+
+    def require_project_commissioning_index(
+        self, *, tenant_ref: str, workspace_ref: str, principal_ref: str,
+        scopes: set[str],
+    ) -> None:
+        """Fail before bootstrap when the project-wide DB arbiter is absent."""
+        self._require_scope(scopes, "project_state:read")
         with self._transaction(
             tenant_ref=tenant_ref, workspace_ref=workspace_ref,
             principal_ref=principal_ref, read_only=True,
         ) as cursor:
-            cursor.execute(
-                """SELECT session_ref FROM cerebro_control_session_bindings
-                    WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s
-                      AND consumer_ref=%s AND project_ref=%s
-                      AND left(session_ref, 22)='project-commissioning:' LIMIT 1""",
-                (tenant_ref, workspace_ref, principal_ref, consumer_ref, project_ref),
-            )
-            return _fetchone(cursor) is not None
+            self._assert_project_commissioning_index(cursor)
 
     def _set_default_project(
         self,
@@ -1311,17 +1318,19 @@ class PostgresControlContextStatePort:
         ) as cursor:
             if reject_project_commissioning_existing:
                 _require(isinstance(project_ref, str) and bool(project_ref)
-                         and session_ref.startswith("project-commissioning:"),
+                         and re.fullmatch(r"project-commissioning:[A-Za-z0-9_-]{43}", session_ref)
+                         is not None,
                          "commissioning-exclusive-bind-scope-invalid", StateBindingError)
-                guard = (tenant_ref, workspace_ref, principal_ref,
-                         consumer_ref, project_ref)
+                self._assert_project_commissioning_index(cursor)
+                guard = (tenant_ref, workspace_ref, project_ref)
                 cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
                                (_canonical_text(guard),))
+                # RLS may hide another principal's row. This read is only a
+                # fast conflict path; the verified UNIQUE index is decisive.
                 cursor.execute(
                     """SELECT session_ref FROM cerebro_control_session_bindings
-                        WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s
-                          AND consumer_ref=%s AND project_ref=%s
-                          AND left(session_ref, 22)='project-commissioning:'
+                        WHERE tenant_ref=%s AND workspace_ref=%s AND project_ref=%s
+                          AND session_ref ~ '^project-commissioning:[A-Za-z0-9_-]{43}$'
                         LIMIT 1 FOR UPDATE""", guard,
                 )
                 if _fetchone(cursor) is not None:

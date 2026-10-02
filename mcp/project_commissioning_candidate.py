@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from control_context_tools import ControlContextMcpTools, VerifiedMcpIdentity
-from control_context_state_postgres import StateBindingError
+from control_context_state_postgres import StateBindingError, StateConflict
 
 
 class ProjectCommissioningHold(ValueError):
@@ -163,12 +163,10 @@ class ProjectCommissioningBridge:
             _require(isinstance(existing_project, dict)
                      and existing_project.get("aggregate_id") == args["aggregate_id"],
                      "partial-context-recovery-project-required")
-            _require(self._state_port.has_project_commissioning_session(
-                **self._scope(identity), consumer_ref=identity.consumer_ref,
-                project_ref=args["project_ref"], scopes=identity.state_scopes) is False,
-                "partial-context-recovery-session-already-bound")
         else:
             _require(existing_project is None, "project-ref-collision")
+        self._state_port.require_project_commissioning_index(
+            **self._scope(identity), scopes=identity.state_scopes)
         before_default = self._default(identity)
         handle = secrets.token_urlsafe(32)
         session_ref = self._session_ref(handle)
@@ -211,6 +209,8 @@ class ProjectCommissioningBridge:
                      "context-session-readback-mismatch")
             after_default = self._default(identity)
             _require(before_default == after_default, "default-binding-changed")
+        except StateConflict as exc:
+            raise ProjectCommissioningHold("commissioning-project-session-conflict") from exc
         except Exception as exc:
             raise ProjectCommissioningHold("PARTIAL_CONTEXT_ONLY:readback-or-binding-failed") from exc
         return {"result": "PASS", "phase": "RECOVERED_CONTEXT_ONLY" if recovery else "CONTEXT_ONLY",

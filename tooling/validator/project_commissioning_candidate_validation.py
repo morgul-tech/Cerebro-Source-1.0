@@ -16,7 +16,8 @@ for path in (ROOT / "mcp", ROOT / "tooling" / "context"):
         sys.path.insert(0, str(path))
 
 from control_context_state_postgres import (  # noqa: E402
-    PostgresControlContextStatePort, StateBindingError, StatePortError,
+    PostgresControlContextStatePort, StateBindingError, StateConflict,
+    StatePortError, _mapped_database_error,
 )
 from control_context_tools import (  # noqa: E402
     ControlContextToolAuthorizationError, VerifiedMcpIdentity, tool_definitions,
@@ -53,18 +54,18 @@ class FixtureState:
         self.stale_session = False
         self.project_drift = False
         self.bootstrap_payload = None
+        self.index_installed = True
+        self.hidden_bind_conflict = False
+
+    def require_project_commissioning_index(self, **kw):
+        if not self.index_installed:
+            raise StateBindingError("commissioning-project-unique-index-unproven")
 
     def read_principal_default_binding(self, **kw):
         if self.default_mutates and self.project is not None:
             return {"status": "PRESENT", "active_project_ref": "OTHER",
                     "binding_revision": 1, "binding_fingerprint": "f" * 64}
         return copy.deepcopy(self.default)
-
-    def has_project_commissioning_session(self, **kw):
-        return any(value.get("project_ref") == kw["project_ref"]
-                   and value.get("principal_ref") == kw["principal_ref"]
-                   and value.get("session_ref", "").startswith("project-commissioning:")
-                   for value in self.sessions.values())
 
     def read_project(self, **kw):
         if self.project is None or kw["project_ref"] != self.project["project_ref"]:
@@ -85,9 +86,13 @@ class FixtureState:
 
     def bind_session(self, **kw):
         key = (kw["principal_ref"], kw["session_ref"])
-        if kw["reject_project_commissioning_existing"] and self.has_project_commissioning_session(
-                principal_ref=kw["principal_ref"], project_ref=kw["project_ref"]):
-            raise StateBindingError("commissioning-project-session-already-bound")
+        if self.hidden_bind_conflict:
+            raise StateConflict("commissioning-project-session-conflict")
+        if kw["reject_project_commissioning_existing"] and any(
+                value.get("project_ref") == kw["project_ref"]
+                and value.get("session_ref", "").startswith("project-commissioning:")
+                for value in self.sessions.values()):
+            raise StateConflict("commissioning-project-session-already-bound")
         if key in self.sessions and kw["reject_existing"]:
             raise StateBindingError("commissioning-session-collision")
         self.sessions[key] = {
@@ -223,9 +228,22 @@ class ProjectCommissioningCandidateTests(unittest.TestCase):
         with self.assertRaisesRegex(ProjectCommissioningHold, "project-ref-collision"):
             self.bridge.start(identity=identity(), args=start_args())
 
+    def test_missing_project_index_holds_before_bootstrap(self):
+        self.state.index_installed = False
+        with self.assertRaisesRegex(StateBindingError, "unique-index-unproven"):
+            self.bridge.start(identity=identity(), args=start_args())
+        self.assertIsNone(self.state.project)
+
+    def test_hidden_db_unique_conflict_returns_no_handle(self):
+        self.state.hidden_bind_conflict = True
+        with self.assertRaisesRegex(ProjectCommissioningHold, "session-conflict"):
+            self.bridge.start(identity=identity(), args=start_args())
+        self.assertIsNotNone(self.state.project)  # Context-only partial state
+        self.assertEqual(self.state.sessions, {})
+
     def test_recovery_requires_exact_existing_bootstrap(self):
         result = self.bridge.start(identity=identity(), args=start_args())
-        with self.assertRaisesRegex(ProjectCommissioningHold, "session-already-bound"):
+        with self.assertRaisesRegex(ProjectCommissioningHold, "session-conflict"):
             self.bridge.start(identity=identity(), args={
                 **start_args(), "recover_partial": True})
         self.state.sessions.clear()  # offline simulation: bootstrap committed, bind did not
@@ -245,6 +263,41 @@ class ProjectCommissioningCandidateTests(unittest.TestCase):
             with self.assertRaises(ProjectCommissioningHold):
                 self.bridge.start(identity=identity(), args=start_args())
         self.assertIsNone(self.state.project)
+
+    def test_second_principal_consumer_conflicts_for_same_project(self):
+        self.bridge.start(identity=identity(), args=start_args())
+        with self.assertRaisesRegex(StateConflict, "session-already-bound"):
+            self.state.bind_session(
+                tenant_ref="T", workspace_ref="W", principal_ref="OTHER",
+                consumer_ref="OTHER_CONSUMER", session_ref="project-commissioning:" + "B" * 43,
+                session_binding_id="OTHER-BINDING", project_ref="PROJECT",
+                reject_existing=True, reject_project_commissioning_existing=True,
+            )
+        self.state.project = {"project_ref": "OTHER_PROJECT", "aggregate_id": "OTHER_AGG",
+                              "revision": 1, "fingerprint": "OTHER_FP"}
+        other = self.state.bind_session(
+            tenant_ref="T", workspace_ref="W", principal_ref="OTHER",
+            consumer_ref="OTHER_CONSUMER", session_ref="project-commissioning:" + "C" * 43,
+            session_binding_id="OTHER-BINDING-2", project_ref="OTHER_PROJECT",
+            reject_existing=True, reject_project_commissioning_existing=True,
+        )
+        self.assertEqual(other["project_ref"], "OTHER_PROJECT")
+        normal = self.state.bind_session(
+            tenant_ref="T", workspace_ref="W", principal_ref="OTHER",
+            consumer_ref="OTHER_CONSUMER", session_ref="ordinary-session",
+            session_binding_id="ORDINARY-BINDING", project_ref="PROJECT",
+            reject_existing=False, reject_project_commissioning_existing=False,
+        )
+        self.assertEqual(normal["project_ref"], "PROJECT")
+
+    def test_unique_index_violation_is_typed(self):
+        class Diagnostic:
+            constraint_name = "cerebro_one_project_commissioning_session"
+        class UniqueError(Exception):
+            sqlstate = "23505"
+            diag = Diagnostic()
+        self.assertEqual(str(_mapped_database_error(UniqueError())),
+                         "commissioning-project-session-conflict")
 
     def test_default_mutation_holds(self):
         self.state.default_mutates = True

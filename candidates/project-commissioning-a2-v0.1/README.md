@@ -28,12 +28,13 @@ by this candidate. This proves a reuse path, not a deployed Project bridge.
 | Private operation-scoped attestation | Same issuer/verifier object; only `create_project_control_instance` sealed internally |
 | Explicit non-default Context bootstrap | `make_default=False`; provider before/after binding reads including absence and fingerprint validation |
 | Server-minted session | 256-bit CSPRNG selector; separate binding ID; exact scoped bind and provider readback |
-| Prior/duplicate session | Pre-read plus PostgreSQL transaction advisory lock and project-scoped exclusive check |
-| Partial Context recovery | Explicit exact-request replay through existing event ID and request fingerprint; only if prior project exists and no commissioning session is bound |
+| Prior/duplicate session | Proposed 0006 partial UNIQUE index on `(tenant_ref,workspace_ref,project_ref)` in the exact commissioning namespace; project-tuple advisory lock and index-validity check. Index is **unapplied**. RLS-filtered precheck never proves global absence. |
+| Partial Context recovery | Explicit exact-request replay through existing event ID and request fingerprint; prior project required. Project-wide unique index decides any hidden concurrent/other-identity bind; no second PASS handle. |
 | Project Basis rev1 and INITIALIZE receipt | Not implemented; Gate B only after separate proof |
 | Project executor/capability | Not implemented; requires X4/X5 next review |
 | Project-owned selected closure ReturnSink | Not implemented; ACK_READ with HOLD_RETURN remains NOT_CLOSED |
 | DB role exclusivity, deployed signer injection, independent live readback | Unproven; X3/host evidence required before Gate B |
+| Actual PostgreSQL two-identity negatives | Integration script added, **UNRUN** here because no disposable PostgreSQL server/DSN exists. Fixture tests are not a DB proof. |
 
 ## Stop rules
 
@@ -43,5 +44,15 @@ retried automatically. A bootstrap success followed by bind/readback failure
 returns `PARTIAL_CONTEXT_ONLY`; Project Basis must not advance. All fixture
 attestations in offline tests are test-only and prove no production authority.
 
-Test entry: `python tooling/validator/project_commissioning_candidate_validation.py`.
-Writer-distinct next owner: X5. Gate B remains reserved.
+Test entries:
+
+- `python tooling/validator/project_commissioning_candidate_validation.py`
+- `python tooling/validator/control_context_postgres_validation.py selftest`
+- In an explicitly disposable `test_` PostgreSQL database only, set
+  `CEREBRO_A2_TEST_POSTGRES_DSN` and `CEREBRO_A2_TEST_DISPOSABLE=YES`, then run
+  `python tooling/validator/project_commissioning_postgres_integration.py`.
+
+The 0006 migration's privileged preflight rejects duplicate/unknown-visibility
+states before index creation. No database migration was applied in Gate A2.
+PR33 is REFINE until X5 independently checks the corrected candidate and the
+actual PostgreSQL/RLS test is run. Gate B remains reserved.

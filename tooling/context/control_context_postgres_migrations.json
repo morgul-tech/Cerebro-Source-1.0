@@ -32,6 +32,12 @@
       "schema_version": "1.4.0-pre-role-generation-candidate",
       "path": "control_context_state_postgres_0005_pre_role_generation.sql",
       "checksum_sha256": "6465fec59b0ae07e43408fbc3d3394efe1ca6d4537f1c57bb35d06f6517207dd"
+    },
+    {
+      "migration_id": "0006-project-commissioning-session",
+      "schema_version": "1.5.0-project-commissioning-a2-candidate",
+      "path": "control_context_state_postgres_0006_project_commissioning_session.sql",
+      "checksum_sha256": "2fc3e4319d3faa0558879c4ca7e94741ff004d41479623e460fbe51d3857956e"
     }
   ]
 }
