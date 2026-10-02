@@ -46,6 +46,20 @@ def main() -> int:
                 sql.Identifier(schema), sql.Identifier(role)))
             cursor.execute(sql.SQL("GRANT SELECT, INSERT ON {}.cerebro_project_d1_closure_ledger TO {}").format(
                 sql.Identifier(schema), sql.Identifier(role)))
+            cursor.execute(sql.SQL("GRANT SELECT, UPDATE ON {}.cerebro_owner_state_heads TO {}").format(
+                sql.Identifier(schema), sql.Identifier(role)))
+            cursor.execute("""INSERT INTO cerebro_project_instances
+                (tenant_ref,workspace_ref,project_ref,aggregate_id,source_revision,
+                 project_status,aggregate_revision,aggregate_fingerprint)
+                VALUES ('T','W','PROJECT','SYNTHETIC-AGGREGATE','TEST','ACTIVE',1,%s)""",
+                ("a" * 64,))
+            cursor.execute("""INSERT INTO cerebro_owner_state_heads
+                (tenant_ref,workspace_ref,project_ref,owner,aggregate_ref,
+                 current_state_ref,owner_revision,state_schema,state_payload,
+                 state_fingerprint,last_event_ref)
+                VALUES ('T','W','PROJECT','project','PROJECT',%s,1,%s,'{}'::jsonb,%s,%s)""",
+                ("SYNTHETIC-STATE-N", "synthetic-fixture/v1", "a" * 64,
+                 "SYNTHETIC-FIXTURE-OWNER-EVENT"))
 
         def connect():
             connection = psycopg.connect(dsn)
@@ -65,7 +79,11 @@ def main() -> int:
                         "event_state": "OWNER_EFFECT_COMMITTED",
                         "owner_event_key": owner_event_key,
                         "owner_event_fingerprint": "e" * 64,
-                        "provider_readback_verified": True}
+                        "provider_readback_verified": True,
+                        "authenticated_same_owner_readback": True,
+                        "currentness": "CURRENT", "owner_revision": 1,
+                        "owner_state_ref": "SYNTHETIC-STATE-N",
+                        "owner_state_fingerprint": "a" * 64}
 
         reader = SyntheticOwnerReader()
         port = PostgresProjectD1ClosureReturnPort(
@@ -99,6 +117,36 @@ def main() -> int:
         denied = PostgresProjectD1ClosureReturnPort(
             connection_factory=connect, owner_commit_reader=DenyOwner())
         assert denied.append_and_confirm(**args("DENIED"))["closure_state"] == "NOT_CLOSED"
+
+        class CountingConnection:
+            calls = 0
+            def __call__(self):
+                self.calls += 1
+                raise AssertionError("invalid-owner-proof-reached-connection-factory")
+
+        class AlteredOwner:
+            def __init__(self, change):
+                self.change = change
+            def read_committed_owner_event(self, **kwargs):
+                proof = reader.read_committed_owner_event(**kwargs)
+                proof.update(self.change)
+                return proof
+
+        for index, change in enumerate((
+            {"currentness": "STALE"},
+            {"authenticated_same_owner_readback": False},
+            {"owner_revision": None},
+            {"owner_state_fingerprint": "f" * 64, "currentness": "UNKNOWN"},
+            {"owner": "quality"},
+            {"provider_readback_verified": False},
+        )):
+            no_connection = CountingConnection()
+            invalid = PostgresProjectD1ClosureReturnPort(
+                connection_factory=no_connection, owner_commit_reader=AlteredOwner(change))
+            rejected = invalid.append_and_confirm(**args(f"INVALID-{index}"))
+            assert rejected == {"result": "HOLD", "closure_state": "NOT_CLOSED",
+                                "mutated": False, "reason": "project-owner-commit-not-proven"}
+            assert no_connection.calls == 0
 
         def race(closure_id, fingerprints):
             barrier = threading.Barrier(2)
@@ -148,6 +196,21 @@ def main() -> int:
         assert recovered["result"] == "PASS" and recovered["mutated"] is False
         assert recovered["closure_state"] == "CLOSED"
 
+        # Reader captured N; the authoritative owner head moved to N+1 before append.
+        with admin.cursor() as cursor:
+            cursor.execute("""UPDATE cerebro_owner_state_heads
+                SET owner_revision=2,current_state_ref='SYNTHETIC-STATE-N1',
+                    state_fingerprint=%s,last_event_ref='SYNTHETIC-REASSIGN-EVENT'
+                WHERE tenant_ref='T' AND workspace_ref='W' AND project_ref='PROJECT'
+                  AND owner='project' AND aggregate_ref='PROJECT'""", ("b" * 64,))
+        stale = restarted.append_and_confirm(**args("REASSIGNED-BEFORE-APPEND"))
+        assert stale == {"result": "HOLD", "closure_state": "NOT_CLOSED",
+                         "mutated": False, "reason": "project-owner-head-revision-or-event-changed"}, stale
+        with admin.cursor() as cursor:
+            cursor.execute("""SELECT count(*) FROM cerebro_project_d1_closure_ledger
+                WHERE closure_id='REASSIGNED-BEFORE-APPEND'""")
+            assert cursor.fetchone()[0] == 0, "stale-owner-must-not-write"
+
         with admin.cursor() as cursor:
             cursor.execute("SELECT closure_id, count(*) FROM cerebro_project_d1_closure_ledger GROUP BY closure_id")
             assert dict(cursor.fetchall()) == {
@@ -169,7 +232,8 @@ def main() -> int:
                 assert cursor.fetchone()[0] == 0, "cross-project-RLS-visibility"
         print("PASS: disposable Project owner-state sibling ledger; exact replay/conflict, "
               "four same/changed concurrent race pairs, restart/redelivery, readback HOLD then recovery, "
-              "append-only and cross-project RLS; no natural event", flush=True)
+              "append-only and cross-project RLS; stale/unauthenticated owner proof and "
+              "N-to-N+1 pre-append fence; no natural event", flush=True)
         return 0
     finally:
         with admin.cursor() as cursor:

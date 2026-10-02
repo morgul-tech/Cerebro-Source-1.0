@@ -83,8 +83,23 @@ class PostgresProjectD1ClosureReturnPort:
             owner.get("owner_event_key") != owner_event_key,
             owner.get("owner_event_fingerprint") != owner_event_fingerprint,
             owner.get("provider_readback_verified") is not True,
+            owner.get("authenticated_same_owner_readback") is not True,
+            owner.get("currentness") != "CURRENT",
+            type(owner.get("owner_revision")) is not int,
+            not isinstance(owner.get("owner_revision"), int) or owner.get("owner_revision", 0) < 1,
+            not isinstance(owner.get("owner_state_ref"), str) or not owner["owner_state_ref"].strip(),
+            not isinstance(owner.get("owner_state_fingerprint"), str)
+            or _FINGERPRINT.fullmatch(owner["owner_state_fingerprint"]) is None,
         )):
             return _hold("project-owner-commit-not-proven")
+
+        head_key = (tenant_ref, workspace_ref, project_ref, "project", project_ref)
+        expected_head = {
+            "current_state_ref": owner["owner_state_ref"],
+            "owner_revision": owner["owner_revision"],
+            "state_fingerprint": owner["owner_state_fingerprint"],
+            "last_event_ref": owner_event_key,
+        }
 
         receipt = {
             "schema": "cerebro-project-d1-closure-receipt/v1",
@@ -113,6 +128,14 @@ class PostgresProjectD1ClosureReturnPort:
             with connection.cursor() as cursor:
                 self._scope(cursor, tenant_ref=tenant_ref, workspace_ref=workspace_ref,
                             project_ref=project_ref)
+                cursor.execute(
+                    """SELECT current_state_ref,owner_revision,state_fingerprint,last_event_ref
+                         FROM cerebro_owner_state_heads
+                        WHERE tenant_ref=%s AND workspace_ref=%s AND project_ref=%s
+                          AND owner=%s AND aggregate_ref=%s FOR SHARE""", head_key)
+                if _fetchone(cursor) != expected_head:
+                    connection.rollback()
+                    return _hold("project-owner-head-revision-or-event-changed")
                 cursor.execute(
                     """INSERT INTO cerebro_project_d1_closure_ledger
                        (tenant_ref,workspace_ref,project_ref,receiver_ref,closure_id,
@@ -158,9 +181,15 @@ class PostgresProjectD1ClosureReturnPort:
             if read_connection is connection:
                 return _hold("closure-independent-readback-required", mutation=inserted)
             with read_connection.cursor() as cursor:
-                cursor.execute("SET TRANSACTION READ ONLY")
+                cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
                 self._scope(cursor, tenant_ref=tenant_ref, workspace_ref=workspace_ref,
                             project_ref=project_ref)
+                cursor.execute(
+                    """SELECT current_state_ref,owner_revision,state_fingerprint,last_event_ref
+                         FROM cerebro_owner_state_heads
+                        WHERE tenant_ref=%s AND workspace_ref=%s AND project_ref=%s
+                          AND owner=%s AND aggregate_ref=%s""", head_key)
+                head = _fetchone(cursor)
                 cursor.execute(
                     """SELECT closure_revision,closure_fingerprint,owner_event_key,
                               owner_event_fingerprint,receipt_ref,receipt_fingerprint,
@@ -170,7 +199,7 @@ class PostgresProjectD1ClosureReturnPort:
                           AND receiver_ref=%s AND closure_id=%s""", identity)
                 row = _fetchone(cursor)
             read_connection.commit()
-            if row != expected:
+            if row != expected or head != expected_head:
                 return _hold("closure-exact-provider-readback-mismatch", mutation=inserted)
         except Exception:
             if read_connection is not None:
