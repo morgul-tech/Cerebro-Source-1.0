@@ -1,0 +1,50 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-sensing-runtime-v0.1
+  name: Signalvev Sensing Runtime Candidate v0.1 (owner event to typed closure, offline)
+  type: candidate
+  version: 0.1.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Compose the already-merged Signalvev reference semantics (v0.1 envelope/registry/ReceiptTrail, v0.9 first-broken-edge
+    recorder, v0.15 version gate, v0.16 EVENT-is-not-STATE_TRUTH guard) into one small runnable sensing chain, offline:
+    owner event accepted only after commit+readback -> lowest-sufficient D0 frame (inline small delta or pointer) ->
+    transport abstraction (offline fake + Core NATS adapter over an injected client) -> receiver ingress (schema/version,
+    TTL, identity, dedupe/idempotency, local staleness) -> typed applicability (APPLIES / NOT_APPLICABLE / HOLD) -> exactly
+    one injected owner resolver call for APPLIES -> typed disposition (ACK_READ, STALE_SUPERSEDED, EXPIRED, DUPLICATE,
+    HOLD_UNREADABLE, HOLD_IDENTITY, CONFLICT_HOLD, plus HOLD_APPLICABILITY and HOLD_SCHEMA) -> typed model-activation
+    decision (DETERMINISTIC_DISPOSITION_COMPLETE or JUDGMENT_REQUIRED, never a chosen answer) -> selected return through
+    an injected sink. Local cursor/flight-recorder/send-ledger keep evidence only (ids, hashes, codes), never state text.
+  explicitly_not:
+    - Ikke en ny protokoll: envelope, subjects, versjonsgate, truth-guard og receipt-stadier importeres uendret fra v0.1/v0.9/v0.15/v0.16.
+    - Ikke live NATS, ingen credentials, ingen WireGuard, ingen JetStream, ingen daemon, ingen scheduler/PM, ingen deploy.
+    - Ikke et modellkall og ikke en wake-mekanisme; JUDGMENT_REQUIRED er kun en typet markering.
+    - Ikke et nytt sannhetslager; cursor, recorder og send-ledger er evidens for gjenoppretting, aldri kanonisk sannhet.
+    - Ikke en ny ReceiptTrail eller authority-logikk; sender-siden bruker v0.1 ReceiptTrail, mottakeren overskrider aldri stadiet READ.
+    - Ikke skriving til Drive eller annen kanonisk tilstand; retur skjer kun via en injisert ReturnSink.
+    - Ikke en feltkanari og ikke et produksjonsklarhetskrav.
+dependencies:
+  build: []
+  runtime: []
+  candidate:
+    - signalvev-reference-v0.1   # imports envelope validation, registry, ReceiptTrail unmodified
+    - signalvev-reference-v0.9   # imports FirstBrokenEdgeRecorder unmodified
+    - signalvev-reference-v0.15  # imports evaluate_schema_compatibility unmodified
+    - signalvev-reference-v0.16  # imports resolve_state_delta_truth unmodified
+  explicitly_no_dependency_on:
+    - signalvev-fast-transport-shadow-v0.1  # not on main; overlap flagged, nothing imported or vendored
+interfaces:
+  input:
+  - >-
+    owner event mapping (commit state COMMITTED_READBACK required), raw frame bytes from a Transport, an applicability
+    policy, an OwnerResolver, a ReturnSink, a clock
+  output:
+  - >-
+    SendOutcome (ACCEPTED | NOT_SENT | UNKNOWN_SEND, replay_refused), IngressResult (typed disposition + applicability +
+    activation decision + resolver_calls), ClosureRecord to the injected sink, evidence-only JSONL stores
+relationship_to_prior_evidence:
+  note: >
+    S0/S1/R10C remain the only behavior-real transport evidence and are not touched here. This candidate proves an offline
+    composition property only; it does not prove the real owner-resolver edge, real Core NATS binding or sender authenticity.
