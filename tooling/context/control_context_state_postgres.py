@@ -975,6 +975,71 @@ class PostgresControlContextStatePort:
             }
         )
 
+    def read_principal_default_binding(
+        self, *, tenant_ref: str, workspace_ref: str, principal_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """Read only the authenticated principal's default binding, including absence."""
+        self._require_scope(scopes, "project_state:read")
+        self._validate_text_fields(
+            {"tenant_ref": tenant_ref, "workspace_ref": workspace_ref,
+             "principal_ref": principal_ref},
+            "default-binding", ("tenant_ref", "workspace_ref", "principal_ref"),
+        )
+        with self._transaction(
+            tenant_ref=tenant_ref, workspace_ref=workspace_ref,
+            principal_ref=principal_ref, read_only=True,
+        ) as cursor:
+            cursor.execute(
+                """SELECT active_project_ref, binding_revision, binding_fingerprint
+                     FROM cerebro_principal_project_bindings
+                    WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s""",
+                (tenant_ref, workspace_ref, principal_ref),
+            )
+            row = _fetchone(cursor)
+        if row is None:
+            return {"status": "ABSENT"}
+        project_ref = row.get("active_project_ref")
+        revision = row.get("binding_revision")
+        _require(isinstance(project_ref, str) and bool(project_ref),
+                 "default-binding-project-invalid", StatePortError)
+        _require(type(revision) is int and revision >= 1,
+                 "default-binding-revision-invalid", StatePortError)
+        expected = self._binding_fingerprint(
+            tenant_ref=tenant_ref, workspace_ref=workspace_ref,
+            principal_ref=principal_ref, project_ref=project_ref, revision=revision,
+        )
+        _require(row.get("binding_fingerprint") == expected,
+                 "default-binding-fingerprint-mismatch", StatePortError)
+        return {"status": "PRESENT", "active_project_ref": project_ref,
+                "binding_revision": revision, "binding_fingerprint": expected}
+
+    def has_project_commissioning_session(
+        self, *, tenant_ref: str, workspace_ref: str, principal_ref: str,
+        consumer_ref: str, project_ref: str, scopes: set[str],
+    ) -> bool:
+        """Prevent partial-bootstrap recovery from minting a second bound handle."""
+        self._require_scope(scopes, "project_state:read")
+        self._validate_text_fields(
+            {"tenant_ref": tenant_ref, "workspace_ref": workspace_ref,
+             "principal_ref": principal_ref, "consumer_ref": consumer_ref,
+             "project_ref": project_ref},
+            "commissioning-session",
+            ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "project_ref"),
+        )
+        with self._transaction(
+            tenant_ref=tenant_ref, workspace_ref=workspace_ref,
+            principal_ref=principal_ref, read_only=True,
+        ) as cursor:
+            cursor.execute(
+                """SELECT session_ref FROM cerebro_control_session_bindings
+                    WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s
+                      AND consumer_ref=%s AND project_ref=%s
+                      AND left(session_ref, 22)='project-commissioning:' LIMIT 1""",
+                (tenant_ref, workspace_ref, principal_ref, consumer_ref, project_ref),
+            )
+            return _fetchone(cursor) is not None
+
     def _set_default_project(
         self,
         cursor: Any,
@@ -1219,6 +1284,8 @@ class PostgresControlContextStatePort:
         session_binding_id: str,
         scopes: set[str],
         project_ref: str | None = None,
+        reject_existing: bool = False,
+        reject_project_commissioning_existing: bool = False,
     ) -> dict[str, Any]:
         self._require_scope(scopes, "project_state:transition")
         self._validate_text_fields(
@@ -1242,6 +1309,23 @@ class PostgresControlContextStatePort:
             workspace_ref=workspace_ref,
             principal_ref=principal_ref,
         ) as cursor:
+            if reject_project_commissioning_existing:
+                _require(isinstance(project_ref, str) and bool(project_ref)
+                         and session_ref.startswith("project-commissioning:"),
+                         "commissioning-exclusive-bind-scope-invalid", StateBindingError)
+                guard = (tenant_ref, workspace_ref, principal_ref,
+                         consumer_ref, project_ref)
+                cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                               (_canonical_text(guard),))
+                cursor.execute(
+                    """SELECT session_ref FROM cerebro_control_session_bindings
+                        WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s
+                          AND consumer_ref=%s AND project_ref=%s
+                          AND left(session_ref, 22)='project-commissioning:'
+                        LIMIT 1 FOR UPDATE""", guard,
+                )
+                if _fetchone(cursor) is not None:
+                    raise StateConflict("commissioning-project-session-already-bound")
             existing = self._load_session(
                 cursor,
                 tenant_ref=tenant_ref,
@@ -1253,6 +1337,8 @@ class PostgresControlContextStatePort:
                 required=False,
             )
             if existing is not None:
+                if reject_existing:
+                    raise StateConflict("commissioning-session-collision")
                 if project_ref is not None and existing["project_ref"] != project_ref:
                     raise StateBindingError("control-session-already-bound-to-different-project")
                 result = existing

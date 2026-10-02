@@ -432,6 +432,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     connection_factory: Callable[[], Any],
     token_verifier: Any,
     resolution_attestation_verifier: Any,
+    project_commissioning_issuer: Any | None = None,
+    project_lineage_authorizer: Any | None = None,
     boot_birth_attestation_issuer: Any | None = None,
     assistant_overlay_control_resolver: Any | None = None,
     assistant_overlay_attestation_issuer: Any | None = None,
@@ -493,12 +495,22 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         provider_tail_reader=provider_tail_reader,
         human_t3_host=human_t3_host,
     )
+    project_bridge = None
+    if project_commissioning_issuer is not None or project_lineage_authorizer is not None:
+        from project_commissioning_candidate import ProjectCommissioningBridge
+        project_bridge = ProjectCommissioningBridge(
+            state_port=state_port, tools=tools,
+            verifier=resolution_attestation_verifier,
+            issuer=project_commissioning_issuer,
+            lineage_authorizer=project_lineage_authorizer,
+        )
     service = ControlContextRemoteMcpService(
         config=config.service,
         tools=tools,
         token_verifier=token_verifier,
         readiness_probe=readiness_probe,
         clock=clock,
+        project_commissioning_bridge=project_bridge,
     )
     app = create_streamable_http_app(
         service,
@@ -526,6 +538,8 @@ def assemble_postgres_control_context_remote_runtime(
     postgres_dsn: str,
     token_verifier: Any,
     resolution_attestation_verifier: Any,
+    project_commissioning_issuer: Any | None = None,
+    project_lineage_authorizer: Any | None = None,
     boot_birth_attestation_issuer: Any | None = None,
     assistant_overlay_control_resolver: Any | None = None,
     assistant_overlay_attestation_issuer: Any | None = None,
@@ -553,6 +567,8 @@ def assemble_postgres_control_context_remote_runtime(
         connection_factory=connection_factory,
         token_verifier=token_verifier,
         resolution_attestation_verifier=resolution_attestation_verifier,
+        project_commissioning_issuer=project_commissioning_issuer,
+        project_lineage_authorizer=project_lineage_authorizer,
         boot_birth_attestation_issuer=boot_birth_attestation_issuer,
         assistant_overlay_control_resolver=assistant_overlay_control_resolver,
         assistant_overlay_attestation_issuer=assistant_overlay_attestation_issuer,
