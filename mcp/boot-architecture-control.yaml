@@ -180,7 +180,10 @@ mcp_extension:
       fingerprint, and loads its durable method before ROLE_METHOD_PROJECTION
       and Fresh World. Missing, duplicate, stale or tampered bindings block READY.
       A method projection grants no authority and carries no task, specialty,
-      private or predecessor live state.
+      private or predecessor live state. It may carry only Source-pinned,
+      role-scoped contract refs declared by the current boot architecture;
+      those refs grant no authority and must be included in durable role-attach
+      readback for the concrete role.
   - id: MCP-080
     authority: normative
     constitutional_article_ref: C-05

@@ -587,6 +587,37 @@ function Resolve-CerebroCivilizationMethod {
         'VERIFY_LOAD_CONSUME_READBACK','TASK_SEMANTICS_ON_DEMAND')
     $refs = @('mcp/constitution.yaml','mcp/boot-architecture-control.yaml',
         'engines/presentation/component.yaml','engines/presentation/rules.yaml')
+    $roleContractOwners = [regex]::Matches($text, '(?m)^  role_method_contract_profile:\s*([^\r\n]+)\r?$')
+    if ($roleContractOwners.Count -ne 1) { throw 'CIVILIZATION_ROLE_CONTRACT_SINGLE_OWNER_REQUIRED' }
+    $roleContractProfile = $roleContractOwners[0].Groups[1].Value | ConvertFrom-Json
+    $roleContractKeys = @('version','authority','roles')
+    if (@($roleContractProfile.PSObject.Properties).Count -ne $roleContractKeys.Count) {
+        throw 'CIVILIZATION_ROLE_CONTRACT_PROFILE_INVALID'
+    }
+    foreach ($key in $roleContractKeys) {
+        if ($null -eq $roleContractProfile.PSObject.Properties[$key]) {
+            throw 'CIVILIZATION_ROLE_CONTRACT_PROFILE_INVALID'
+        }
+    }
+    if ($roleContractProfile.version -cne '1.0' -or $roleContractProfile.authority -cne 'NONE') {
+        throw 'CIVILIZATION_ROLE_CONTRACT_PROFILE_INVALID'
+    }
+    $roleProperties = @($roleContractProfile.roles.PSObject.Properties)
+    if (($roleProperties.Name | ConvertTo-Json -Compress) -cne ($actorRoles | ConvertTo-Json -Compress)) {
+        throw 'CIVILIZATION_ROLE_CONTRACT_ROLE_SET_INVALID'
+    }
+    foreach ($property in $roleProperties) {
+        $roleRefs = @($property.Value)
+        if (@($roleRefs | Sort-Object -Unique).Count -ne $roleRefs.Count) {
+            throw 'CIVILIZATION_ROLE_CONTRACT_REFS_INVALID'
+        }
+        foreach ($ref in $roleRefs) {
+            if ($ref -isnot [string] -or -not $ref -or $ref.StartsWith('/') -or
+                $ref.Contains('\') -or @($ref.Split('/') | Where-Object { $_ -eq '..' }).Count) {
+                throw 'CIVILIZATION_ROLE_CONTRACT_REFS_INVALID'
+            }
+        }
+    }
     # A closed durable vocabulary prevents task/private data hiding in free text.
     if (($profile.durable_method | ConvertTo-Json -Compress) -cne ($methods | ConvertTo-Json -Compress) -or
         ($profile.contract_refs | ConvertTo-Json -Compress) -cne ($refs | ConvertTo-Json -Compress)) {
@@ -602,9 +633,16 @@ function Resolve-CerebroCivilizationMethod {
         authority='NONE'; durable_method=$methods; contract_refs=$refs; verified=$true; loaded=$true
     }
     if ($MethodProfileOnly) { return [ordered]@{ method_profile=$current } }
+    $roleRefs = @($roleContractProfile.roles.PSObject.Properties[$ActorRole].Value)
+    $roleMaterial = @()
+    foreach ($ref in $roleRefs) { $roleMaterial += $ref + '|' + (Get-PinnedMethodFile $ref) }
+    $roleContractFingerprint = Get-CerebroBootSha256Text (
+        @('cerebro-role-method-projection/v1',$SourceHead,$fingerprint,$ActorRole,($roleMaterial -join '|')) -join '|'
+    )
     $projection = [ordered]@{
         id='ROLE_METHOD_PROJECTION'; role=$ActorRole; source_head=$SourceHead
-        method_profile_fingerprint=$fingerprint; durable_method=$methods; authority='NONE'
+        method_profile_fingerprint=$fingerprint; durable_method=$methods
+        role_contract_refs=$roleRefs; role_contract_fingerprint=$roleContractFingerprint; authority='NONE'
     }
     $projection.fingerprint = Get-CerebroBootSha256Text ($projection | ConvertTo-Json -Compress -Depth 8)
     return [ordered]@{ method_profile=$current; role_method_projection=$projection }

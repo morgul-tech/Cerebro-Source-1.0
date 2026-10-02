@@ -101,7 +101,20 @@
               "overlay_ref": {"type": "string", "minLength": 1}, "actor_ref": {"type": "string", "minLength": 1},
               "role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"]},
               "actor_generation_ref": {"type": "string", "minLength": 1},
-              "ready_unbound_receipt_ref": {"type": "string", "minLength": 1}
+              "ready_unbound_receipt_ref": {"type": "string", "minLength": 1},
+              "method_projection": {
+                "type": "object", "additionalProperties": false,
+                "required": ["schema", "role", "source_revision", "method_profile_fingerprint", "contract_refs", "contract_fingerprint", "authority"],
+                "properties": {
+                  "schema": {"const": "cerebro-role-method-projection/v1"},
+                  "role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"]},
+                  "source_revision": {"type": "string", "minLength": 1},
+                  "method_profile_fingerprint": {"$ref": "#/$defs/sha256"},
+                  "contract_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+                  "contract_fingerprint": {"$ref": "#/$defs/sha256"},
+                  "authority": {"const": "NONE"}
+                }
+              }
             }
           }]
         },

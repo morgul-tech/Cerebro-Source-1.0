@@ -27,6 +27,8 @@ REFS = (
     "mcp/constitution.yaml", "mcp/boot-architecture-control.yaml",
     "engines/presentation/component.yaml", "engines/presentation/rules.yaml",
 )
+ROLE_NAMES = ("PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER")
+ROLE_PROJECTION_SCHEMA = "cerebro-role-method-projection/v1"
 HEX40 = re.compile(r"[0-9a-f]{40}\Z")
 ATOM_NS = "{http://www.w3.org/2005/Atom}"
 HEAD_URL = f"https://api.github.com/repos/{REPOSITORY}/commits/main"
@@ -114,6 +116,105 @@ def _method_contract_at_head(
     ))
     fingerprint = hashlib.sha256(subject.encode("utf-8")).hexdigest()
     return profile, tuple(material), fingerprint
+
+
+def _role_contract_profile_at_head(
+    head: str, fetch: Callable[[str], bytes],
+) -> tuple[dict[str, object], dict[str, tuple[str, ...]]]:
+    """Resolve role-scoped Source refs without granting role or authority."""
+
+    def pinned(path: str) -> bytes:
+        try:
+            data = fetch(f"https://raw.githubusercontent.com/{REPOSITORY}/{head}/{path}")
+        except Exception as exc:
+            raise BootBirthSourceError(f"source-blob-unavailable:{path}") from exc
+        if not data or len(data) > 2_000_000:
+            raise BootBirthSourceError(f"source-blob-size-invalid:{path}")
+        return data
+
+    try:
+        owner_text = pinned(OWNER).decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise BootBirthSourceError("method-owner-utf8-invalid") from exc
+    matches = re.findall(r"(?m)^  role_method_contract_profile:\s*([^\r\n]+)$", owner_text)
+    if len(matches) != 1:
+        raise BootBirthSourceError("role-method-contract-profile-single-owner-required")
+    try:
+        profile = json.loads(matches[0])
+    except ValueError as exc:
+        raise BootBirthSourceError("role-method-contract-profile-json-invalid") from exc
+    if (
+        not isinstance(profile, dict)
+        or set(profile) != {"version", "authority", "roles"}
+        or profile["version"] != "1.0"
+        or profile["authority"] != "NONE"
+        or not isinstance(profile["roles"], dict)
+        or tuple(profile["roles"]) != ROLE_NAMES
+    ):
+        raise BootBirthSourceError("role-method-contract-profile-invalid")
+    normalized: dict[str, tuple[str, ...]] = {}
+    for role in ROLE_NAMES:
+        refs = profile["roles"].get(role)
+        if (
+            not isinstance(refs, list)
+            or any(
+                not isinstance(ref, str)
+                or not ref
+                or ref.startswith("/")
+                or "\\" in ref
+                or ".." in ref.split("/")
+                for ref in refs
+            )
+            or len(refs) != len(set(refs))
+        ):
+            raise BootBirthSourceError("role-method-contract-refs-invalid")
+        normalized[role] = tuple(refs)
+    return profile, normalized
+
+
+def verify_role_method_projection(
+    source_revision: str,
+    role: str,
+    *,
+    fetch: Callable[[str], bytes] = _http_get,
+) -> dict[str, object]:
+    """Verify one role projection against exact Source bytes at the birth revision.
+
+    Currentness/authorization belong to the already-attested pre-role generation and
+    role-attach owner. This function adds no role or authority; it only proves that
+    the projected contract refs are exact bytes under that Source commit.
+    """
+    if not isinstance(source_revision, str) or not HEX40.fullmatch(source_revision):
+        raise BootBirthSourceError("role-method-projection-source-invalid")
+    if role not in ROLE_NAMES:
+        raise BootBirthSourceError("role-method-projection-role-invalid")
+    _, _, method_fingerprint = _method_contract_at_head(source_revision, fetch)
+    _, role_map = _role_contract_profile_at_head(source_revision, fetch)
+    refs = role_map[role]
+    material: list[str] = []
+    for ref in refs:
+        try:
+            data = fetch(f"https://raw.githubusercontent.com/{REPOSITORY}/{source_revision}/{ref}")
+        except Exception as exc:
+            raise BootBirthSourceError(f"source-blob-unavailable:{ref}") from exc
+        if not data or len(data) > 2_000_000:
+            raise BootBirthSourceError(f"source-blob-size-invalid:{ref}")
+        material.append(f"{ref}|{hashlib.sha256(data).hexdigest()}")
+    contract_fingerprint = hashlib.sha256(
+        "|".join((
+            ROLE_PROJECTION_SCHEMA, source_revision, method_fingerprint, role,
+            "|".join(material),
+        )).encode("utf-8")
+    ).hexdigest()
+    return {
+        "schema": ROLE_PROJECTION_SCHEMA,
+        "role": role,
+        "source_revision": source_revision,
+        "method_profile_fingerprint": method_fingerprint,
+        "contract_refs": list(refs),
+        "contract_fingerprint": contract_fingerprint,
+        "authority": "NONE",
+    }
 
 
 def _verify_current_method_details(

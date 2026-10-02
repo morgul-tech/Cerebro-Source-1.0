@@ -48,7 +48,10 @@ from human_navigation_surface_validation import (  # noqa: E402
     validate_navigation_options,
     validate_navigation_options_candidate,
 )
-from boot_birth_source import verify_current_method, verify_existing_birth_method_continuity
+from boot_birth_source import (
+    verify_current_method, verify_existing_birth_method_continuity,
+    verify_role_method_projection,
+)
 
 
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
@@ -1333,6 +1336,7 @@ class ControlContextMcpTools:
         assistant_overlay_control_resolver: Any | None = None,
         assistant_overlay_attestation_issuer: Any | None = None,
         assistant_overlay_source_continuity_verifier: Any = verify_existing_birth_method_continuity,
+        role_method_source_verifier: Any = verify_role_method_projection,
     ):
         self._state_port = state_port
         if not callable(getattr(resolution_attestation_verifier, "verify", None)):
@@ -1356,6 +1360,7 @@ class ControlContextMcpTools:
         self._assistant_overlay_control_resolver = assistant_overlay_control_resolver
         self._assistant_overlay_attestation_issuer = assistant_overlay_attestation_issuer
         self._assistant_overlay_source_continuity_verifier = assistant_overlay_source_continuity_verifier
+        self._role_method_source_verifier = role_method_source_verifier
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -1596,13 +1601,37 @@ class ControlContextMcpTools:
         expected_revision = payload.get("expected_revision")
         if type(expected_revision) is not int or current["revision"] != expected_revision:
             raise ControlContextToolError("pre-role-generation-expected-revision-mismatch")
+        role = _require_text(payload, "role")
+        source_revision = _require_text(payload, "source_revision")
+        if source_revision != current["source_revision"]:
+            raise ControlContextToolError("pre-role-generation-role-overlay-source-mismatch")
+        verifier = self._role_method_source_verifier
+        if not callable(verifier):
+            raise ControlContextToolAuthorizationError("trusted-role-method-source-verifier-not-bound")
+        method_projection = verifier(source_revision, role)
+        required_projection = {
+            "schema", "role", "source_revision", "method_profile_fingerprint",
+            "contract_refs", "contract_fingerprint", "authority",
+        }
+        if (
+            not isinstance(method_projection, dict)
+            or set(method_projection) != required_projection
+            or method_projection.get("schema") != "cerebro-role-method-projection/v1"
+            or method_projection.get("role") != role
+            or method_projection.get("source_revision") != source_revision
+            or method_projection.get("method_profile_fingerprint")
+                != current["civilization_method_attestation"]["method_fingerprint"]
+            or method_projection.get("authority") != "NONE"
+        ):
+            raise ControlContextToolAuthorizationError("role-method-source-verification-invalid")
         pre_role_after, actor_after = build_role_overlay(
             current,
             overlay_ref=_require_text(payload, "overlay_ref"),
             actor_ref=_require_text(payload, "actor_ref"),
-            role=_require_text(payload, "role"),
+            role=role,
             actor_generation_ref=_require_text(payload, "actor_generation_ref"),
-            source_revision=_require_text(payload, "source_revision"),
+            source_revision=source_revision,
+            method_projection=copy.deepcopy(method_projection),
             principal_continuity_baseline=copy.deepcopy(payload.get("principal_continuity_baseline")),
         )
         committed = self._pre_role_state_call(

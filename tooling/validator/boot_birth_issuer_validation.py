@@ -12,7 +12,9 @@ from urllib.error import HTTPError
 ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT / "mcp"), str(ROOT / "tooling" / "context")]
 
-from boot_birth_source import BootBirthSourceError, verify_current_method  # noqa: E402
+from boot_birth_source import (  # noqa: E402
+    BootBirthSourceError, verify_current_method, verify_role_method_projection,
+)
 from control_context_state_port import InMemoryControlContextStatePort  # noqa: E402
 from control_context_tools import (  # noqa: E402
     ControlContextMcpTools, ControlContextToolAuthorizationError,
@@ -100,7 +102,33 @@ def main() -> int:
         return (ROOT / url[len(prefix):]).read_bytes().replace(bytes([13, 10]), bytes([10]))
     verified = verify_current_method(HEAD, fetch=pinned_fetch)
     checks["pinned-method-fingerprint-matches-source-contract"] = (
-        verified["method_fingerprint"] == "38399b476b252c7bbb7f167199119af744b65811aaedba362136901649a60176"
+        verified["method_fingerprint"] == "a3b606f741356be75c2b00ab9ffc67b3a2298acd3156cd9e2a6d86332f88e64d"
+    )
+    principal_projection = verify_role_method_projection(HEAD, "PRINCIPAL", fetch=pinned_fetch)
+    checks["principal-role-projection-binds-stambok-source-ref"] = (
+        principal_projection["method_profile_fingerprint"] == verified["method_fingerprint"]
+        and principal_projection["contract_refs"] == ["standards/principalstambok.yaml"]
+        and principal_projection["authority"] == "NONE"
+    )
+    worker_fetches: list[str] = []
+    def tracked_worker_fetch(url: str) -> bytes:
+        worker_fetches.append(url)
+        return pinned_fetch(url)
+    worker_projection = verify_role_method_projection(HEAD, "WORKER", fetch=tracked_worker_fetch)
+    checks["worker-role-projection-does-not-inherit-principal-contract"] = (
+        worker_projection["contract_refs"] == []
+        and worker_projection["method_profile_fingerprint"] == verified["method_fingerprint"]
+    )
+    checks["worker-role-projection-performs-zero-principalstambok-reads"] = (
+        not any(url.endswith("/standards/principalstambok.yaml") for url in worker_fetches)
+    )
+    def missing_principal_contract_fetch(url: str) -> bytes:
+        if url.endswith("/standards/principalstambok.yaml"):
+            raise FileNotFoundError("principalstambok-unavailable")
+        return pinned_fetch(url)
+    checks["principal-role-projection-rejects-unavailable-principalstambok"] = denied(
+        lambda: verify_role_method_projection(HEAD, "PRINCIPAL", fetch=missing_principal_contract_fetch),
+        BootBirthSourceError,
     )
     atom = (
         '<feed xmlns="http://www.w3.org/2005/Atom">'
