@@ -512,7 +512,8 @@ function Resolve-CerebroCivilizationMethod {
     param(
         [Parameter(Mandatory)][string]$SourceRoot,
         [Parameter(Mandatory)][string]$SourceHead,
-        [Parameter(Mandatory)][string]$ActorRole
+        [Parameter(Mandatory)][string]$ActorRole,
+        [switch]$MethodProfileOnly
     )
     if ($SourceHead -cnotmatch '^[0-9a-f]{40}$' -or $ActorRole -cnotmatch '^[A-Z][A-Z0-9_]{0,63}$') {
         throw 'CIVILIZATION_METHOD_EXACT_SOURCE_AND_ROLE_REQUIRED'
@@ -530,16 +531,40 @@ function Resolve-CerebroCivilizationMethod {
         if ($LASTEXITCODE -ne 0 -or $blob.Count -ne 1 -or $blob[0] -cnotmatch '^[0-9a-f]{40}$') {
             throw 'CIVILIZATION_METHOD_PINNED_BLOB_REQUIRED'
         }
-        $actual = @(& git -C $SourceRoot hash-object --no-filters -- $path)
+        $actual = @(& git -C $SourceRoot hash-object ("--path=" + $RelativePath) -- $path)
         if ($LASTEXITCODE -ne 0 -or $actual.Count -ne 1 -or $actual[0] -cne $blob[0]) {
             throw ('CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH:' + $RelativePath)
         }
-        return (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+        # Git's text checkout may use CRLF on Windows. Hash the pinned blob's
+        # canonical LF bytes so the independent Source verifier agrees.
+        $utf8 = [Text.UTF8Encoding]::new($false, $true)
+        $canonicalText = $utf8.GetString([IO.File]::ReadAllBytes($path)).Replace("`r`n", "`n")
+        $canonical = $utf8.GetBytes($canonicalText)
+        $sha = [Security.Cryptography.SHA256]::Create()
+        try {
+            return ([BitConverter]::ToString($sha.ComputeHash($canonical)) -replace '-', '').ToLowerInvariant()
+        } finally { $sha.Dispose() }
+    }
+    $roleSchemaRef = 'engines/context/control-context-state.schema.json'
+    $null = Get-PinnedMethodFile $roleSchemaRef
+    $roleSchema = [IO.File]::ReadAllText((Join-Path $SourceRoot $roleSchemaRef)) | ConvertFrom-Json
+    $actorRoles = @($roleSchema.'$defs'.actor_generation_shadow.properties.role.enum)
+    $overlayRoles = @($roleSchema.'$defs'.pre_role_generation.properties.role_overlay.anyOf[1].properties.role.enum)
+    if ($actorRoles.Count -eq 0 -or @($actorRoles | Sort-Object -Unique).Count -ne $actorRoles.Count -or
+        ($actorRoles | ConvertTo-Json -Compress) -cne ($overlayRoles | ConvertTo-Json -Compress)) {
+        throw 'CIVILIZATION_METHOD_SOURCE_ROLE_ENUM_INVALID'
+    }
+    if ($ActorRole -ceq 'PRE_ROLE_UNBOUND') {
+        if (-not $MethodProfileOnly) { throw 'CIVILIZATION_METHOD_PRE_ROLE_PROJECTION_PROHIBITED' }
+    } elseif ($MethodProfileOnly) {
+        throw 'CIVILIZATION_METHOD_PROFILE_ONLY_REQUIRES_PRE_ROLE_UNBOUND'
+    } elseif ($actorRoles -cnotcontains $ActorRole) {
+        throw 'CIVILIZATION_METHOD_ROLE_NOT_IN_SOURCE_ENUM'
     }
     $owner = 'standards/boot-critical-path-architecture.yaml'
     $ownerHash = Get-PinnedMethodFile $owner
     $text = [IO.File]::ReadAllText((Join-Path $SourceRoot $owner))
-    $owners = [regex]::Matches($text, '(?m)^  current_civilization_method_profile:\s*([^\r\n]+)$')
+    $owners = [regex]::Matches($text, '(?m)^  current_civilization_method_profile:\s*([^\r\n]+)\r?$')
     if ($owners.Count -ne 1) { throw 'CIVILIZATION_METHOD_SINGLE_OWNER_REQUIRED' }
     $profileText = $owners[0].Groups[1].Value
     $profile = $profileText | ConvertFrom-Json
@@ -576,6 +601,7 @@ function Resolve-CerebroCivilizationMethod {
         id=$profile.id; version=$profile.version; source_head=$SourceHead; fingerprint=$fingerprint
         authority='NONE'; durable_method=$methods; contract_refs=$refs; verified=$true; loaded=$true
     }
+    if ($MethodProfileOnly) { return [ordered]@{ method_profile=$current } }
     $projection = [ordered]@{
         id='ROLE_METHOD_PROJECTION'; role=$ActorRole; source_head=$SourceHead
         method_profile_fingerprint=$fingerprint; durable_method=$methods; authority='NONE'
@@ -629,7 +655,7 @@ function Test-CerebroPreRoleReadyUnbound {
         $PreRoleState.identity_envelope.private_state_inherited -ne $false) {
         throw 'PRE_ROLE_FRESH_WORLD_ZERO_INHERITANCE_REQUIRED'
     }
-    $method = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole 'PRE_ROLE_UNBOUND'
+    $method = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole 'PRE_ROLE_UNBOUND' -MethodProfileOnly
     if ($PreRoleState.civilization_method_attestation.method_fingerprint -cne
         $method.method_profile.fingerprint -or
         $PreRoleState.civilization_method_attestation.currentness -cne 'CURRENT' -or
