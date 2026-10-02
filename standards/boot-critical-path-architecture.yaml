@@ -45,6 +45,9 @@ boot_critical_path:
     profile_fingerprint: SHA256_ID_VERSION_METHOD_REFS_SOURCE_HEAD_AND_BOOT_CONTRACT
     role_projection: ROLE_METHOD_PROJECTION
     role_projection_inputs: [current_method, role_identity]
+    role_identity_contract_ref: engines/context/control-context-state.schema.json
+    role_projection_role_membership: PINNED_ACTOR_AND_OVERLAY_ENUMS_AGREE
+    pre_role_method_profile_read: PROFILE_ONLY_WITHOUT_ROLE_PROJECTION
     excluded_inputs: [claims, tasks, specialty_state, private_state, predecessor_live_state]
     method_authority: NONE
     receipt_kind: AWAKENING_RECEIPT
