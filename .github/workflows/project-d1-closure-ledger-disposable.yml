@@ -1,0 +1,48 @@
+name: Project D1 closure ledger disposable PostgreSQL
+
+on:
+  push:
+    branches:
+      - candidate/project-engine-d1-closure-ledger-v01
+    paths:
+      - .github/workflows/project-d1-closure-ledger-disposable.yml
+      - tooling/owner_state/project_d1_closure_ledger_candidate.sql
+      - tooling/owner_state/project_d1_closure_return.py
+      - tooling/validator/project_d1_closure_postgres_integration.py
+
+permissions:
+  contents: read
+
+jobs:
+  append-readback-races:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: test_cerebro_d1
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_cerebro_d1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pin isolated source
+        run: |
+          echo "CANDIDATE_COMMIT=$(git rev-parse HEAD)"
+          echo "CANDIDATE_TREE=$(git rev-parse HEAD^{tree})"
+          sha256sum tooling/owner_state/project_d1_closure_ledger_candidate.sql
+      - name: Install PostgreSQL client
+        run: python -m pip install 'psycopg[binary]==3.3.6'
+      - name: Exercise durable append and exact readback
+        env:
+          CEREBRO_D1_TEST_POSTGRES_DSN: postgresql://postgres:disposable_ci_only@127.0.0.1:5432/test_cerebro_d1
+          CEREBRO_D1_TEST_DISPOSABLE: YES
+        run: python -B tooling/validator/project_d1_closure_postgres_integration.py
+
