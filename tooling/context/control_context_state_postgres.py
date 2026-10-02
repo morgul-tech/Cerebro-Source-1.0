@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping
@@ -163,6 +164,8 @@ def _sqlstate(exc: BaseException) -> str | None:
 
 def _mapped_database_error(exc: BaseException) -> StatePortError:
     code = _sqlstate(exc)
+    if code == "23505" and getattr(getattr(exc, "diag", None), "constraint_name", None) == "cerebro_one_project_commissioning_session":
+        return StateConflict("commissioning-project-session-conflict")
     if code is not None and code.startswith("08"):
         return StateServiceUnavailable("control-context-state-service-unavailable")
     if code in {"40001", "40P01", "23503", "23505", "23514", "23P01"}:
@@ -975,6 +978,90 @@ class PostgresControlContextStatePort:
             }
         )
 
+    def read_principal_default_binding(
+        self, *, tenant_ref: str, workspace_ref: str, principal_ref: str,
+        scopes: set[str],
+    ) -> dict[str, Any]:
+        """Read only the authenticated principal's default binding, including absence."""
+        self._require_scope(scopes, "project_state:read")
+        self._validate_text_fields(
+            {"tenant_ref": tenant_ref, "workspace_ref": workspace_ref,
+             "principal_ref": principal_ref},
+            "default-binding", ("tenant_ref", "workspace_ref", "principal_ref"),
+        )
+        with self._transaction(
+            tenant_ref=tenant_ref, workspace_ref=workspace_ref,
+            principal_ref=principal_ref, read_only=True,
+        ) as cursor:
+            cursor.execute(
+                """SELECT active_project_ref, binding_revision, binding_fingerprint
+                     FROM cerebro_principal_project_bindings
+                    WHERE tenant_ref=%s AND workspace_ref=%s AND principal_ref=%s""",
+                (tenant_ref, workspace_ref, principal_ref),
+            )
+            row = _fetchone(cursor)
+        if row is None:
+            return {"status": "ABSENT"}
+        project_ref = row.get("active_project_ref")
+        revision = row.get("binding_revision")
+        _require(isinstance(project_ref, str) and bool(project_ref),
+                 "default-binding-project-invalid", StatePortError)
+        _require(type(revision) is int and revision >= 1,
+                 "default-binding-revision-invalid", StatePortError)
+        expected = self._binding_fingerprint(
+            tenant_ref=tenant_ref, workspace_ref=workspace_ref,
+            principal_ref=principal_ref, project_ref=project_ref, revision=revision,
+        )
+        _require(row.get("binding_fingerprint") == expected,
+                 "default-binding-fingerprint-mismatch", StatePortError)
+        return {"status": "PRESENT", "active_project_ref": project_ref,
+                "binding_revision": revision, "binding_fingerprint": expected}
+
+    @staticmethod
+    def _assert_project_commissioning_index(cursor: Any) -> None:
+        cursor.execute(
+            """SELECT i.indisunique, i.indisvalid, i.indislive, i.indisready,
+                      i.indnkeyatts, i.indnatts, am.amname,
+                      ARRAY(SELECT pg_get_indexdef(i.indexrelid, key_number, true)
+                              FROM generate_series(1, i.indnkeyatts) AS key_number
+                             ORDER BY key_number) AS key_columns,
+                      pg_get_expr(i.indpred, i.indrelid) AS predicate
+                 FROM pg_index i
+                 JOIN pg_class index_class ON index_class.oid = i.indexrelid
+                 JOIN pg_am am ON am.oid = index_class.relam
+                WHERE i.indexrelid = to_regclass('cerebro_one_project_commissioning_session')
+                  AND i.indrelid = to_regclass('cerebro_control_session_bindings')"""
+        )
+        index = _fetchone(cursor)
+        predicate = str(index.get("predicate")) if index else ""
+        normalized_predicate = "".join(
+            character for character in predicate if character not in "() \t\r\n"
+        )
+        expected_predicate = (
+            "project_refISNOTNULLANDsession_ref~"
+            "'^project-commissioning:[A-Za-z0-9_-]{43}$'"
+        )
+        _require(index is not None and index.get("indisunique") is True
+                 and index.get("indisvalid") is True and index.get("indislive") is True
+                 and index.get("indisready") is True
+                 and index.get("indnkeyatts") == 3 and index.get("indnatts") == 3
+                 and index.get("amname") == "btree"
+                 and index.get("key_columns") == ["tenant_ref", "workspace_ref", "project_ref"]
+                 and normalized_predicate in (expected_predicate, expected_predicate + "::text"),
+                 "commissioning-project-unique-index-unproven", StateBindingError)
+
+    def require_project_commissioning_index(
+        self, *, tenant_ref: str, workspace_ref: str, principal_ref: str,
+        scopes: set[str],
+    ) -> None:
+        """Fail before bootstrap when the project-wide DB arbiter is absent."""
+        self._require_scope(scopes, "project_state:read")
+        with self._transaction(
+            tenant_ref=tenant_ref, workspace_ref=workspace_ref,
+            principal_ref=principal_ref, read_only=True,
+        ) as cursor:
+            self._assert_project_commissioning_index(cursor)
+
     def _set_default_project(
         self,
         cursor: Any,
@@ -1219,6 +1306,8 @@ class PostgresControlContextStatePort:
         session_binding_id: str,
         scopes: set[str],
         project_ref: str | None = None,
+        reject_existing: bool = False,
+        reject_project_commissioning_existing: bool = False,
     ) -> dict[str, Any]:
         self._require_scope(scopes, "project_state:transition")
         self._validate_text_fields(
@@ -1242,6 +1331,25 @@ class PostgresControlContextStatePort:
             workspace_ref=workspace_ref,
             principal_ref=principal_ref,
         ) as cursor:
+            if reject_project_commissioning_existing:
+                _require(isinstance(project_ref, str) and bool(project_ref)
+                         and re.fullmatch(r"project-commissioning:[A-Za-z0-9_-]{43}", session_ref)
+                         is not None,
+                         "commissioning-exclusive-bind-scope-invalid", StateBindingError)
+                self._assert_project_commissioning_index(cursor)
+                guard = (tenant_ref, workspace_ref, project_ref)
+                cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+                               (_canonical_text(guard),))
+                # RLS may hide another principal's row. This read is only a
+                # fast conflict path; the verified UNIQUE index is decisive.
+                cursor.execute(
+                    """SELECT session_ref FROM cerebro_control_session_bindings
+                        WHERE tenant_ref=%s AND workspace_ref=%s AND project_ref=%s
+                          AND session_ref ~ '^project-commissioning:[A-Za-z0-9_-]{43}$'
+                        LIMIT 1 FOR UPDATE""", guard,
+                )
+                if _fetchone(cursor) is not None:
+                    raise StateConflict("commissioning-project-session-already-bound")
             existing = self._load_session(
                 cursor,
                 tenant_ref=tenant_ref,
@@ -1253,6 +1361,8 @@ class PostgresControlContextStatePort:
                 required=False,
             )
             if existing is not None:
+                if reject_existing:
+                    raise StateConflict("commissioning-session-collision")
                 if project_ref is not None and existing["project_ref"] != project_ref:
                     raise StateBindingError("control-session-already-bound-to-different-project")
                 result = existing
