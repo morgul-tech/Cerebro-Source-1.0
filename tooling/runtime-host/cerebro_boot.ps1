@@ -531,11 +531,19 @@ function Resolve-CerebroCivilizationMethod {
         if ($LASTEXITCODE -ne 0 -or $blob.Count -ne 1 -or $blob[0] -cnotmatch '^[0-9a-f]{40}$') {
             throw 'CIVILIZATION_METHOD_PINNED_BLOB_REQUIRED'
         }
-        $actual = @(& git -C $SourceRoot hash-object --no-filters -- $path)
+        $actual = @(& git -C $SourceRoot hash-object ("--path=" + $RelativePath) -- $path)
         if ($LASTEXITCODE -ne 0 -or $actual.Count -ne 1 -or $actual[0] -cne $blob[0]) {
             throw ('CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH:' + $RelativePath)
         }
-        return (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+        # Git's text checkout may use CRLF on Windows. Hash the pinned blob's
+        # canonical LF bytes so the independent Source verifier agrees.
+        $utf8 = [Text.UTF8Encoding]::new($false, $true)
+        $canonicalText = $utf8.GetString([IO.File]::ReadAllBytes($path)).Replace("`r`n", "`n")
+        $canonical = $utf8.GetBytes($canonicalText)
+        $sha = [Security.Cryptography.SHA256]::Create()
+        try {
+            return ([BitConverter]::ToString($sha.ComputeHash($canonical)) -replace '-', '').ToLowerInvariant()
+        } finally { $sha.Dispose() }
     }
     $roleSchemaRef = 'engines/context/control-context-state.schema.json'
     $null = Get-PinnedMethodFile $roleSchemaRef
