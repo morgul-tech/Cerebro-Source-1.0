@@ -278,7 +278,7 @@ def civilization_method_runtime_canaries(root: Path) -> list[dict[str, object]]:
     import shutil
     import subprocess
     import tempfile
-    executable = shutil.which("powershell") or shutil.which("pwsh")
+    executable = shutil.which("pwsh") or shutil.which("powershell")
     if executable is None:
         return [{"name": "K157-runtime", "result": "HOLD_CAPABILITY",
                  "detail": "PowerShell unavailable; behavior not verified"}]
@@ -297,6 +297,7 @@ $paths=@('cerebro.yaml','mcp/activation.yaml','mcp/constitution.yaml',
 'tooling/runtime-host/cerebro_boot.ps1','tooling/runtime-host/cerebro_machine_proof.ps1',
 'tooling/validator/checks.yaml','standards/human-continuation-surface.yaml',
 'standards/continuation-surface-system-policy.yaml','engines/presentation/human-admin-projection.schema.json',
+'engines/context/control-context-state.schema.json',
 'engines/presentation/component.yaml','engines/presentation/rules.yaml')
 foreach($p in $paths){
     $dest=Join-Path $fixture $p
@@ -384,6 +385,38 @@ Check 'K157-stale-head' {
     Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead ('6'*40) -ActorRole 'IMPLEMENTER' | Out-Null
 } 'CIVILIZATION_METHOD_STALE_SOURCE'
 Check 'K157-invalid-role' {Binding 'task/private' | Out-Null} 'CIVILIZATION_METHOD_EXACT_SOURCE_AND_ROLE_REQUIRED'
+Check 'K157-well-formed-unknown-role-rejected-before-projection' {
+    Binding 'UNKNOWN_ROLE' | Out-Null
+} 'CIVILIZATION_METHOD_ROLE_NOT_IN_SOURCE_ENUM'
+Check 'K157-pre-role-sentinel-requires-verification-context' {
+    Binding 'PRE_ROLE_UNBOUND' | Out-Null
+} 'CIVILIZATION_METHOD_PRE_ROLE_CONTEXT_REQUIRED'
+Check 'K157-pre-role-verifier-may-resolve-unbound-method' {
+    $unbound = Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead `
+        -ActorRole 'PRE_ROLE_UNBOUND' -AllowPreRoleUnbound
+    if ($unbound.role_method_projection.role -cne 'PRE_ROLE_UNBOUND' -or
+        $unbound.role_method_projection.authority -cne 'NONE') { throw 'PRE_ROLE_METHOD_MISMATCH' }
+}
+Check 'K157-tampered-pinned-role-enum-rejected' {
+    $roleSchemaPath = Join-Path $fixture 'engines/context/control-context-state.schema.json'
+    [IO.File]::AppendAllText($roleSchemaPath,' ')
+    try { Binding | Out-Null } finally {
+        [IO.File]::WriteAllBytes($roleSchemaPath,[IO.File]::ReadAllBytes((Join-Path $SourceRoot 'engines/context/control-context-state.schema.json')))
+    }
+} 'CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH'
+Check 'K157-divergent-actor-overlay-role-enums-rejected' {
+    $roleSchemaPath = Join-Path $fixture 'engines/context/control-context-state.schema.json'
+    $originalRoleSchema = [IO.File]::ReadAllText($roleSchemaPath)
+    $changedRoleSchema = $originalRoleSchema.Replace('"role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER"]}',
+        '"role": {"enum": ["PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER"]}')
+    if ($changedRoleSchema -ceq $originalRoleSchema) { throw 'FIXTURE_ROLE_ENUM_CHANGE_MISSING' }
+    [IO.File]::WriteAllText($roleSchemaPath,$changedRoleSchema)
+    $blobs['engines/context/control-context-state.schema.json']=(Get-FileHash -Algorithm SHA1 $roleSchemaPath).Hash.ToLowerInvariant()
+    try { Binding | Out-Null } finally {
+        [IO.File]::WriteAllText($roleSchemaPath,$originalRoleSchema)
+        $blobs['engines/context/control-context-state.schema.json']=(Get-FileHash -Algorithm SHA1 $roleSchemaPath).Hash.ToLowerInvariant()
+    }
+} 'CIVILIZATION_METHOD_SOURCE_ROLE_ENUM_INVALID'
 foreach($case in @('missing','duplicate','version','authority','private','durable-leak','duplicate-key')){
     $caseText=switch($case){
         'missing' {$originalOwner -replace '(?m)^  current_civilization_method_profile:[^\r\n]+\r?\n',''}
@@ -441,9 +474,9 @@ Check 'K157-readback-stale-currentness' {
 } 'CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH'
 [IO.File]::WriteAllText($owner,$originalOwner)
 $script:pulseObserved=$false
-function Run-Boot([string]$suffix,[switch]$Principal){
+function Run-Boot([string]$suffix,[switch]$Principal,[string]$ActorRole='IMPLEMENTER'){
     $params=@{WorkingSourcePath=$fixture;RuntimeStatePath=(Join-Path $RunRoot ($suffix+'/state.json'));
-        HandoffPath=(Join-Path $RunRoot 'absent-handoff.json');SkipHandoff=$true;OperationalPulseActorRole='IMPLEMENTER';
+        HandoffPath=(Join-Path $RunRoot 'absent-handoff.json');SkipHandoff=$true;OperationalPulseActorRole=$ActorRole;
         OperationalPulseReader={
             $script:pulseObserved=$true
             return @{control=@{currentness='CURRENT';carrier_ref='FIXTURE';provider_revision=1;event_frontier=77};
@@ -456,6 +489,15 @@ Check 'K157-core-normal-path-ready-after-readback' {
     $result=Run-Boot 'normal'
     if($result.state -ne 'ACTIVE_CONTROL_TRANSFERRED' -or $result.succession.final_state -ne 'READY' -or
        $result.awakening_readback.result -ne 'PASS' -or -not $script:pulseObserved){throw 'CORE_NOT_READY'}
+}
+Check 'K157-core-unknown-role-holds-before-fresh-world' {
+    $script:pulseObserved=$false
+    Run-Boot 'unknown-role' -ActorRole 'UNKNOWN_ROLE' | Out-Null
+} 'CIVILIZATION_METHOD_ROLE_NOT_IN_SOURCE_ENUM'
+Check 'K157-core-unknown-role-inactive-terminal' {
+    $saved=[IO.File]::ReadAllText((Join-Path $RunRoot 'unknown-role/state.json')) | ConvertFrom-Json
+    if($saved.runtime.operational -or $saved.runtime.state -ne 'INACTIVE_CONTROL_RETAINED' -or
+       $script:pulseObserved){throw 'UNKNOWN_ROLE_REACHED_OPERATIONAL_STATE'}
 }
 foreach($mode in @('MISSING','TAMPER','FINAL_TAMPER')){
     $writeMode=$mode;$writtenStates.Clear()

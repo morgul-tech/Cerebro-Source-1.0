@@ -512,7 +512,8 @@ function Resolve-CerebroCivilizationMethod {
     param(
         [Parameter(Mandatory)][string]$SourceRoot,
         [Parameter(Mandatory)][string]$SourceHead,
-        [Parameter(Mandatory)][string]$ActorRole
+        [Parameter(Mandatory)][string]$ActorRole,
+        [switch]$AllowPreRoleUnbound
     )
     if ($SourceHead -cnotmatch '^[0-9a-f]{40}$' -or $ActorRole -cnotmatch '^[A-Z][A-Z0-9_]{0,63}$') {
         throw 'CIVILIZATION_METHOD_EXACT_SOURCE_AND_ROLE_REQUIRED'
@@ -536,10 +537,24 @@ function Resolve-CerebroCivilizationMethod {
         }
         return (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
     }
+    $roleSchemaRef = 'engines/context/control-context-state.schema.json'
+    $null = Get-PinnedMethodFile $roleSchemaRef
+    $roleSchema = [IO.File]::ReadAllText((Join-Path $SourceRoot $roleSchemaRef)) | ConvertFrom-Json
+    $actorRoles = @($roleSchema.'$defs'.actor_generation_shadow.properties.role.enum)
+    $overlayRoles = @($roleSchema.'$defs'.pre_role_generation.properties.role_overlay.anyOf[1].properties.role.enum)
+    if ($actorRoles.Count -eq 0 -or @($actorRoles | Sort-Object -Unique).Count -ne $actorRoles.Count -or
+        ($actorRoles | ConvertTo-Json -Compress) -cne ($overlayRoles | ConvertTo-Json -Compress)) {
+        throw 'CIVILIZATION_METHOD_SOURCE_ROLE_ENUM_INVALID'
+    }
+    if ($ActorRole -ceq 'PRE_ROLE_UNBOUND') {
+        if (-not $AllowPreRoleUnbound) { throw 'CIVILIZATION_METHOD_PRE_ROLE_CONTEXT_REQUIRED' }
+    } elseif ($actorRoles -cnotcontains $ActorRole) {
+        throw 'CIVILIZATION_METHOD_ROLE_NOT_IN_SOURCE_ENUM'
+    }
     $owner = 'standards/boot-critical-path-architecture.yaml'
     $ownerHash = Get-PinnedMethodFile $owner
     $text = [IO.File]::ReadAllText((Join-Path $SourceRoot $owner))
-    $owners = [regex]::Matches($text, '(?m)^  current_civilization_method_profile:\s*([^\r\n]+)$')
+    $owners = [regex]::Matches($text, '(?m)^  current_civilization_method_profile:\s*([^\r\n]+)\r?$')
     if ($owners.Count -ne 1) { throw 'CIVILIZATION_METHOD_SINGLE_OWNER_REQUIRED' }
     $profileText = $owners[0].Groups[1].Value
     $profile = $profileText | ConvertFrom-Json
@@ -629,7 +644,7 @@ function Test-CerebroPreRoleReadyUnbound {
         $PreRoleState.identity_envelope.private_state_inherited -ne $false) {
         throw 'PRE_ROLE_FRESH_WORLD_ZERO_INHERITANCE_REQUIRED'
     }
-    $method = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole 'PRE_ROLE_UNBOUND'
+    $method = Resolve-CerebroCivilizationMethod -SourceRoot $SourceRoot -SourceHead $SourceHead -ActorRole 'PRE_ROLE_UNBOUND' -AllowPreRoleUnbound
     if ($PreRoleState.civilization_method_attestation.method_fingerprint -cne
         $method.method_profile.fingerprint -or
         $PreRoleState.civilization_method_attestation.currentness -cne 'CURRENT' -or
