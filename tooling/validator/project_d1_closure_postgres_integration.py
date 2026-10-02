@@ -160,9 +160,16 @@ def main() -> int:
                 pass
             else:
                 raise AssertionError("append-only-trigger-not-enforced")
+        with connect() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT set_config('cerebro.tenant_ref','T',true)")
+                cursor.execute("SELECT set_config('cerebro.workspace_ref','W',true)")
+                cursor.execute("SELECT set_config('cerebro.project_ref','OTHER',true)")
+                cursor.execute("SELECT count(*) FROM cerebro_project_d1_closure_ledger")
+                assert cursor.fetchone()[0] == 0, "cross-project-RLS-visibility"
         print("PASS: disposable Project owner-state sibling ledger; exact replay/conflict, "
               "four same/changed concurrent race pairs, restart/redelivery, readback HOLD then recovery, "
-              "append-only/RLS role; no natural event", flush=True)
+              "append-only and cross-project RLS; no natural event", flush=True)
         return 0
     finally:
         with admin.cursor() as cursor:
