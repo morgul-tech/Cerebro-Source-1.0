@@ -15,6 +15,10 @@ import threading
 from pathlib import Path
 
 
+def candidate_root() -> Path:
+    return Path(os.environ.get("CEREBRO_A2_CANDIDATE_ROOT", Path(__file__).resolve().parents[2]))
+
+
 def main() -> int:
     dsn = os.environ.get("CEREBRO_A2_TEST_POSTGRES_DSN")
     if not dsn or os.environ.get("CEREBRO_A2_TEST_DISPOSABLE") != "YES":
@@ -25,7 +29,10 @@ def main() -> int:
 
     schema = "cerebro_a2_it_" + secrets.token_hex(5)
     role = schema + "_role"
-    migration = (Path(__file__).resolve().parents[1] / "context" /
+    root = candidate_root()
+    sys.path.insert(0, str(root / "tooling" / "context"))
+    from control_context_state_postgres import PostgresControlContextStatePort
+    migration = (root / "tooling" / "context" /
                  "control_context_state_postgres_0006_project_commissioning_session.sql").read_text(
                      encoding="utf-8")
     admin = psycopg.connect(dsn, autocommit=True)
@@ -56,6 +63,24 @@ def main() -> int:
                 sql.Identifier(schema), sql.Identifier(role)))
             cursor.execute(sql.SQL("GRANT SELECT,INSERT ON {}.cerebro_control_session_bindings TO {}").format(
                 sql.Identifier(schema), sql.Identifier(role)))
+            cursor.execute("""CREATE TABLE cerebro_principal_project_bindings (
+                tenant_ref text NOT NULL, workspace_ref text NOT NULL,
+                principal_ref text NOT NULL, active_project_ref text NOT NULL,
+                binding_revision bigint NOT NULL, binding_fingerprint text NOT NULL,
+                PRIMARY KEY (tenant_ref, workspace_ref, principal_ref))""")
+            cursor.execute("ALTER TABLE cerebro_principal_project_bindings ENABLE ROW LEVEL SECURITY")
+            cursor.execute("ALTER TABLE cerebro_principal_project_bindings FORCE ROW LEVEL SECURITY")
+            cursor.execute("""CREATE POLICY default_principal_scope ON cerebro_principal_project_bindings
+                USING (tenant_ref=current_setting('cerebro.tenant_ref',true)
+                   AND workspace_ref=current_setting('cerebro.workspace_ref',true)
+                   AND principal_ref=current_setting('cerebro.principal_ref',true))""")
+            cursor.execute(sql.SQL("GRANT SELECT ON {}.cerebro_principal_project_bindings TO {}").format(
+                sql.Identifier(schema), sql.Identifier(role)))
+            fingerprint = PostgresControlContextStatePort._binding_fingerprint(
+                tenant_ref="T", workspace_ref="W", principal_ref="P1",
+                project_ref="DEFAULT", revision=1)
+            cursor.execute("""INSERT INTO cerebro_principal_project_bindings VALUES
+                ('T','W','P1','DEFAULT',1,%s)""", (fingerprint,))
             cursor.execute("""INSERT INTO cerebro_control_session_bindings
                 (tenant_ref,workspace_ref,principal_ref,consumer_ref,project_ref,session_ref)
                 VALUES ('T','W','P1','C1','PREFLIGHT',%s),
@@ -79,6 +104,25 @@ def main() -> int:
             finally:
                 cursor.execute("RESET ROLE")
             cursor.execute(migration)
+
+        def port(principal: str):
+            def connection_factory():
+                connection = psycopg.connect(dsn)
+                with connection.cursor() as cursor:
+                    cursor.execute(sql.SQL("SET ROLE {}").format(sql.Identifier(role)))
+                    cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier(schema)))
+                connection.commit()
+                return connection
+            return PostgresControlContextStatePort(connection_factory)
+
+        first_port, second_port = port("P1"), port("P2")
+        scope = {"tenant_ref": "T", "workspace_ref": "W", "scopes": {"project_state:read"}}
+        for principal, state_port in (("P1", first_port), ("P2", second_port)):
+            state_port.require_project_commissioning_index(principal_ref=principal, **scope)
+        expected_default = first_port.read_principal_default_binding(principal_ref="P1", **scope)
+        assert expected_default == {"status": "PRESENT", "active_project_ref": "DEFAULT",
+                                    "binding_revision": 1, "binding_fingerprint": fingerprint}
+        assert second_port.read_principal_default_binding(principal_ref="P2", **scope) == {"status": "ABSENT"}
 
         def connect(principal: str):
             connection = psycopg.connect(dsn)
@@ -159,7 +203,9 @@ def main() -> int:
         a.start(); b.start(); a.join(timeout=20); b.join(timeout=20)
         assert not a.is_alive() and not b.is_alive()
         assert sorted(outcomes) == ["CONFLICT", "PASS"], outcomes
-        print("PASS: RLS-hidden sequential and concurrent cross-identity unique index, other project, ordinary session, read-only resume")
+        assert first_port.read_principal_default_binding(principal_ref="P1", **scope) == expected_default
+        assert second_port.read_principal_default_binding(principal_ref="P2", **scope) == {"status": "ABSENT"}
+        print("PASS: exact catalog index, RLS-hidden sequential and concurrent cross-identity conflict, other project, ordinary session, read-only visibility, unchanged default readback")
         return 0
     finally:
         with admin.cursor() as cursor:
