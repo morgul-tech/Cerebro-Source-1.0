@@ -297,7 +297,7 @@ $paths=@('cerebro.yaml','mcp/activation.yaml','mcp/constitution.yaml',
 'tooling/runtime-host/cerebro_boot.ps1','tooling/runtime-host/cerebro_machine_proof.ps1',
 'tooling/validator/checks.yaml','standards/human-continuation-surface.yaml',
 'standards/continuation-surface-system-policy.yaml','engines/presentation/human-admin-projection.schema.json',
-'engines/context/control-context-state.schema.json',
+'engines/context/control-context-state.schema.json','standards/principalstambok.yaml',
 'engines/presentation/component.yaml','engines/presentation/rules.yaml')
 foreach($p in $paths){
     $dest=Join-Path $fixture $p
@@ -381,6 +381,29 @@ Check 'K157-cross-role-profile-shared-projection-distinct' {
     if($one.method_profile.fingerprint -cne $two.method_profile.fingerprint -or
        $one.role_method_projection.fingerprint -ceq $two.role_method_projection.fingerprint){throw 'CROSS_ROLE_MISMATCH'}
 }
+Check 'K157-principal-role-contract-ref-projected' {
+    $principal=Binding 'PRINCIPAL'
+    $principalRefs=@($principal.role_method_projection.role_contract_refs)
+    if ($principalRefs.Count -ne 1 -or
+        $principalRefs[0] -cne 'standards/principalstambok.yaml' -or
+        $principal.role_method_projection.authority -cne 'NONE' -or
+        $principal.role_method_projection.role_contract_fingerprint -notmatch '^[0-9a-f]{64}$') {
+        throw 'PRINCIPAL_ROLE_CONTRACT_PROJECTION_MISMATCH'
+    }
+}
+Check 'K157-nonprincipal-role-contract-ref-empty' {
+    $worker=Binding 'WORKER'
+    if (@($worker.role_method_projection.role_contract_refs).Count -ne 0) {
+        throw 'NONPRINCIPAL_ROLE_CONTRACT_LEAK'
+    }
+}
+Check 'K157-tampered-principal-contract-ref-rejected' {
+    $path=Join-Path $fixture 'standards/principalstambok.yaml'
+    [IO.File]::AppendAllText($path,' ')
+    try { Binding 'PRINCIPAL' | Out-Null } finally {
+        [IO.File]::WriteAllBytes($path,[IO.File]::ReadAllBytes((Join-Path $SourceRoot 'standards/principalstambok.yaml')))
+    }
+} 'CIVILIZATION_METHOD_SOURCE_BLOB_MISMATCH'
 Check 'K157-stale-head' {
     Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead ('6'*40) -ActorRole 'IMPLEMENTER' | Out-Null
 } 'CIVILIZATION_METHOD_STALE_SOURCE'

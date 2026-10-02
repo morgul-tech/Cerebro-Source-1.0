@@ -15,6 +15,7 @@ from control_context_state_port import InMemoryControlContextStatePort, StateBin
 from boot_birth_source import (  # noqa: E402
     BootBirthSourceError, HEAD_URL, COMPARE_URL, REPOSITORY,
     verify_current_method, verify_existing_birth_method_continuity,
+    verify_role_method_projection,
 )
 from control_context_tools import (  # noqa: E402
     ControlContextMcpTools, ControlContextToolAuthorizationError,
@@ -148,6 +149,9 @@ def main() -> int:
         assistant_overlay_control_resolver=resolver,
         assistant_overlay_attestation_issuer=attestor,
         assistant_overlay_source_continuity_verifier=continuity,
+        role_method_source_verifier=lambda head, role: verify_role_method_projection(
+            head, role, fetch=provider(head)
+        ),
     )
     birth = tools.dispatch(
         "create_ready_unbound_boot_generation",
@@ -240,6 +244,9 @@ def main() -> int:
             assistant_overlay_control_resolver=BadResolver(field, value),
             assistant_overlay_attestation_issuer=attestor,
             assistant_overlay_source_continuity_verifier=continuity,
+            role_method_source_verifier=lambda head, role: verify_role_method_projection(
+                head, role, fetch=provider(head)
+            ),
         )
         checks[label] = denied(
             lambda owner=untrusted: owner.dispatch(TOOL, args, context()),
@@ -255,6 +262,8 @@ def main() -> int:
         and result["pre_role_generation"]["lifecycle"] == "ROLE_ATTACHED"
         and result["actor_generation_shadow"]["generation_ref"] == "ASSISTANT_AD1_076EAE0F"
         and result["actor_generation_shadow"]["role"] == "ASSISTANT"
+        and result["pre_role_generation"]["role_overlay"]["method_projection"]["contract_refs"] == []
+        and result["pre_role_generation"]["role_overlay"]["method_projection"]["authority"] == "NONE"
         and result["control_decision_ref"] == "AD1-GJENKLANG-CONTROL-001"
     )
     checks["no-signature-or-secret-returned"] = (

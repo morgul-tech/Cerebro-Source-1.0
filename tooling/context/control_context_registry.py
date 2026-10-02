@@ -203,6 +203,41 @@ def validate_ready_unbound_receipt(receipt: dict[str, Any], *, state: dict[str, 
     return copy.deepcopy(receipt)
 
 
+def validate_role_method_projection(
+    value: dict[str, Any], *, expected_role: str,
+    expected_source_revision: str, expected_method_fingerprint: str,
+) -> dict[str, Any]:
+    required = {
+        "schema", "role", "source_revision", "method_profile_fingerprint",
+        "contract_refs", "contract_fingerprint", "authority",
+    }
+    _require(isinstance(value, dict) and set(value) == required,
+             "role-method-projection-fields-mismatch")
+    _require(value.get("schema") == "cerebro-role-method-projection/v1",
+             "role-method-projection-schema-mismatch")
+    _require(value.get("role") == expected_role, "role-method-projection-role-mismatch")
+    _require(value.get("source_revision") == expected_source_revision,
+             "role-method-projection-source-mismatch")
+    _require(value.get("method_profile_fingerprint") == expected_method_fingerprint,
+             "role-method-projection-method-mismatch")
+    refs = value.get("contract_refs")
+    _require(
+        isinstance(refs, list)
+        and all(
+            isinstance(ref, str) and bool(ref)
+            and not ref.startswith("/") and "\\" not in ref and ".." not in ref.split("/")
+            for ref in refs
+        )
+        and len(refs) == len(set(refs)),
+        "role-method-projection-contract-refs-invalid",
+    )
+    _require(isinstance(value.get("contract_fingerprint"), str)
+             and SHA256.fullmatch(value["contract_fingerprint"]) is not None,
+             "role-method-projection-contract-fingerprint-invalid")
+    _require(value.get("authority") == "NONE", "role-method-projection-authority-prohibited")
+    return copy.deepcopy(value)
+
+
 def validate_pre_role_generation(state: dict[str, Any]) -> dict[str, Any]:
     required = {
         "schema", "tenant_ref", "workspace_ref", "generation_ref", "lifecycle", "source_revision",
@@ -222,9 +257,14 @@ def validate_pre_role_generation(state: dict[str, Any]) -> dict[str, Any]:
         _require(receipt is None and not state["generic_capability_canaries"],
                  "pre-role-generation-birth-pending-evidence-prohibited")
     if state["lifecycle"] == "ROLE_ATTACHED":
-        _require(isinstance(overlay, dict) and set(overlay) == {
+        legacy_fields = {
             "overlay_ref", "actor_ref", "role", "actor_generation_ref", "ready_unbound_receipt_ref",
-        }, "pre-role-generation-role-overlay-fields-mismatch")
+        }
+        current_fields = legacy_fields | {"method_projection"}
+        _require(
+            isinstance(overlay, dict) and set(overlay) in (legacy_fields, current_fields),
+            "pre-role-generation-role-overlay-fields-mismatch",
+        )
         _validate_pre_role_ref(overlay.get("overlay_ref"), "role-overlay-ref")
         _validate_pre_role_ref(overlay.get("actor_ref"), "role-overlay-actor-ref")
         _require(overlay.get("role") in ACTOR_ROLES, "pre-role-generation-role-overlay-role-invalid")
@@ -313,12 +353,18 @@ def complete_pre_role_generation(
 
 def attach_role_overlay(
     state: dict[str, Any], *, overlay_ref: str, actor_ref: str, role: str,
-    actor_generation_ref: str, source_revision: str,
+    actor_generation_ref: str, source_revision: str, method_projection: dict[str, Any],
     principal_continuity_baseline: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     validate_pre_role_generation(state)
     _require(state["lifecycle"] == "READY_UNBOUND", "pre-role-generation-ready-unbound-required")
     _require(source_revision == state["source_revision"], "pre-role-generation-role-overlay-source-mismatch")
+    projection = validate_role_method_projection(
+        method_projection,
+        expected_role=role,
+        expected_source_revision=source_revision,
+        expected_method_fingerprint=state["civilization_method_attestation"]["method_fingerprint"],
+    )
     actor = bootstrap_actor_generation_shadow(
         tenant_ref=state["tenant_ref"], workspace_ref=state["workspace_ref"], actor_ref=actor_ref,
         role=role, generation_ref=actor_generation_ref, source_revision=source_revision,
@@ -333,6 +379,7 @@ def attach_role_overlay(
         "role": role,
         "actor_generation_ref": actor_generation_ref,
         "ready_unbound_receipt_ref": state["ready_unbound_receipt"]["receipt_ref"],
+        "method_projection": projection,
     }
     candidate["fingerprint"] = pre_role_generation_fingerprint(candidate)
     validate_pre_role_generation(candidate)

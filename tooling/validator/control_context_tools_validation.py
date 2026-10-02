@@ -17,7 +17,10 @@ for path in (SOURCE_ROOT / "mcp", SOURCE_ROOT / "tooling" / "context"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from control_context_registry import DIRECTIVE_SCHEMA, validate_transition_receipt  # noqa: E402
+from control_context_registry import (  # noqa: E402
+    DIRECTIVE_SCHEMA, pre_role_generation_fingerprint,
+    validate_pre_role_generation, validate_transition_receipt,
+)
 from control_context_state_port import (  # noqa: E402
     InMemoryControlContextStatePort,
     StateAuthorizationError,
@@ -447,7 +450,22 @@ def selftest() -> dict[str, Any]:
 
     port = InMemoryControlContextStatePort()
     attestor = HmacControlResolutionAttestor(key_id="SELFTEST-KEY", secret=b"cerebro-selftest-attestation-key-0001")
-    tools = ControlContextMcpTools(port, attestor)
+    def role_method_source(source_revision: str, role: str) -> dict[str, Any]:
+        refs = ["standards/principalstambok.yaml"] if role == "PRINCIPAL" else []
+        subject = "|".join((
+            "cerebro-role-method-projection/v1", source_revision, "6" * 64, role,
+            "|".join(refs),
+        ))
+        return {
+            "schema": "cerebro-role-method-projection/v1",
+            "role": role,
+            "source_revision": source_revision,
+            "method_profile_fingerprint": "6" * 64,
+            "contract_refs": refs,
+            "contract_fingerprint": hashlib.sha256(subject.encode("utf-8")).hexdigest(),
+            "authority": "NONE",
+        }
+    tools = ControlContextMcpTools(port, attestor, role_method_source_verifier=role_method_source)
     context = _context()
     definitions = tool_definitions()
     serialized_definitions = json.dumps(definitions, sort_keys=True).lower()
@@ -1277,10 +1295,29 @@ def selftest() -> dict[str, Any]:
         "expected_revision": 2,
         "overlay_ref": "ROLE-OVERLAY-SELFTEST-1",
         "actor_ref": "ACTOR-SELFTEST-1",
-        "role": "IMPLEMENTER",
+        "role": "PRINCIPAL",
         "actor_generation_ref": "ACTOR-GENERATION-SELFTEST-1",
         "source_revision": pre_create["source_revision"],
     }
+    check(
+        "P1494-role-overlay-missing-trusted-source-verifier-denies-before-mutation",
+        _expect_error(
+            lambda: ControlContextMcpTools(
+                port, attestor, role_method_source_verifier=None,
+            ).dispatch(
+                "attach_role_overlay",
+                _signed_args(attestor, "attach_role_overlay", pre_overlay, context),
+                context,
+            ),
+            ControlContextToolAuthorizationError,
+        )
+        and port.read_pre_role_generation(
+            tenant_ref=context.identity.tenant_ref,
+            workspace_ref=context.identity.workspace_ref,
+            generation_ref=pre_create["generation_ref"],
+            scopes={"project_state:read"},
+        )["lifecycle"] == "READY_UNBOUND",
+    )
     attached_pre = tools.dispatch(
         "attach_role_overlay",
         _signed_args(attestor, "attach_role_overlay", pre_overlay, context),
@@ -1290,8 +1327,18 @@ def selftest() -> dict[str, Any]:
         "P1099-role-overlay-consumes-ready-unbound-and-preserves-existing-role-shadow",
         attached_pre["pre_role_generation"]["lifecycle"] == "ROLE_ATTACHED"
         and attached_pre["actor_generation_shadow"]["schema"] == "cerebro-actor-generation-shadow/v1"
-        and attached_pre["actor_generation_shadow"]["role"] == "IMPLEMENTER"
-        and attached_pre["actor_generation_shadow"]["authority"] == "SHADOW_ONLY",
+        and attached_pre["actor_generation_shadow"]["role"] == "PRINCIPAL"
+        and attached_pre["actor_generation_shadow"]["authority"] == "SHADOW_ONLY"
+        and attached_pre["pre_role_generation"]["role_overlay"]["method_projection"]["contract_refs"]
+            == ["standards/principalstambok.yaml"]
+        and attached_pre["pre_role_generation"]["role_overlay"]["method_projection"]["authority"] == "NONE",
+    )
+    legacy_role_attached = copy.deepcopy(attached_pre["pre_role_generation"])
+    legacy_role_attached["role_overlay"].pop("method_projection")
+    legacy_role_attached["fingerprint"] = pre_role_generation_fingerprint(legacy_role_attached)
+    check(
+        "P1494-legacy-persisted-role-overlay-without-projection-remains-readable",
+        validate_pre_role_generation(legacy_role_attached)["result"] == "PASS",
     )
 
     manifest = yaml.safe_load((SOURCE_ROOT / "mcp/manifest.yaml").read_text(encoding="utf-8"))
