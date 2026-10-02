@@ -1020,19 +1020,34 @@ class PostgresControlContextStatePort:
     @staticmethod
     def _assert_project_commissioning_index(cursor: Any) -> None:
         cursor.execute(
-            """SELECT i.indisunique, i.indisvalid, i.indislive,
-                      pg_get_indexdef(i.indexrelid) AS index_definition
+            """SELECT i.indisunique, i.indisvalid, i.indislive, i.indisready,
+                      i.indnkeyatts, i.indnatts, am.amname,
+                      ARRAY(SELECT pg_get_indexdef(i.indexrelid, key_number, true)
+                              FROM generate_series(1, i.indnkeyatts) AS key_number
+                             ORDER BY key_number) AS key_columns,
+                      pg_get_expr(i.indpred, i.indrelid) AS predicate
                  FROM pg_index i
+                 JOIN pg_class index_class ON index_class.oid = i.indexrelid
+                 JOIN pg_am am ON am.oid = index_class.relam
                 WHERE i.indexrelid = to_regclass('cerebro_one_project_commissioning_session')
                   AND i.indrelid = to_regclass('cerebro_control_session_bindings')"""
         )
         index = _fetchone(cursor)
-        definition = str(index.get("index_definition")) if index else ""
+        predicate = str(index.get("predicate")) if index else ""
+        normalized_predicate = "".join(
+            character for character in predicate if character not in "() \t\r\n"
+        )
+        expected_predicate = (
+            "project_refISNOTNULLANDsession_ref~"
+            "'^project-commissioning:[A-Za-z0-9_-]{43}$'"
+        )
         _require(index is not None and index.get("indisunique") is True
                  and index.get("indisvalid") is True and index.get("indislive") is True
-                 and "(tenant_ref, workspace_ref, project_ref)" in definition
-                 and "project_ref IS NOT NULL" in definition
-                 and "project-commissioning:" in definition,
+                 and index.get("indisready") is True
+                 and index.get("indnkeyatts") == 3 and index.get("indnatts") == 3
+                 and index.get("amname") == "btree"
+                 and index.get("key_columns") == ["tenant_ref", "workspace_ref", "project_ref"]
+                 and normalized_predicate in (expected_predicate, expected_predicate + "::text"),
                  "commissioning-project-unique-index-unproven", StateBindingError)
 
     def require_project_commissioning_index(
