@@ -48,6 +48,7 @@ relevance_retrieval:
       - ledger-lifecycle-is-ACTIVE
       - record-role-is-EVENT-CORRECTION-or-RETRACTION
       - record-lifecycle-is-HISTORICAL-by-definition
+    inactive_history_ledger_effect: FAILED_RETRIEVAL_AND_MATERIAL_PREFLIGHT_BLOCK
 
   ranking:
     deterministic: true

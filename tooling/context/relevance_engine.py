@@ -159,6 +159,8 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
     context = load_yaml(root / "engines/context/working-context.yaml")
     evidence = load_yaml(root / "engines/context/wisdom-evidence.yaml")
     history = load_yaml(root / "engines/context/development-history.yaml")
+    history_ledger = history.get("development_history")
+    history_active = isinstance(history_ledger, dict) and history_ledger.get("lifecycle") == "ACTIVE"
     current_refs = current_wisdom_refs(context)
     fingerprints = source_fingerprints(root)
 
@@ -193,16 +195,19 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
             continue
         accepted["wisdom"].append({"ref": str(item["id"]), "score": score, "dimensions": dimensions})
 
-    for item in history_records(history):
-        eligible, reason = history_eligible(item)
-        if not eligible:
-            rejected.append({"ref": str(item.get("id")), "reason": reason})
-            continue
-        score, dimensions = rank(item, request, friction)
-        if score < 3:
-            rejected.append({"ref": str(item.get("id")), "reason": "below-relevance-threshold"})
-            continue
-        accepted["history"].append({"ref": str(item["id"]), "score": score, "dimensions": dimensions})
+    if history_active:
+        for item in history_records(history):
+            eligible, reason = history_eligible(item)
+            if not eligible:
+                rejected.append({"ref": str(item.get("id")), "reason": reason})
+                continue
+            score, dimensions = rank(item, request, friction)
+            if score < 3:
+                rejected.append({"ref": str(item.get("id")), "reason": "below-relevance-threshold"})
+                continue
+            accepted["history"].append({"ref": str(item["id"]), "score": score, "dimensions": dimensions})
+    else:
+        rejected.append({"ref": "engines/context/development-history.yaml", "reason": "ledger-lifecycle-not-ACTIVE"})
 
     for kind, limit in (("knowledge", 5), ("wisdom", 5), ("history", 3)):
         accepted[kind] = sorted(accepted[kind], key=lambda row: (-row["score"], row["ref"]))[:limit]
@@ -215,12 +220,12 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
     expected_prior_learning = bool(request.get("expected_prior_learning"))
     coverage_audit_complete = bool(request.get("coverage_audit_complete"))
     coverage_audit_refs = sorted(str(value) for value in request.get("coverage_audit_refs", []))
-    coverage_state = "COMPLETE"
-    coverage_reason = "NORMAL_RETRIEVAL_COMPLETE"
-    if expected_prior_learning and not basis_refs and not coverage_audit_complete:
+    coverage_state = "COMPLETE" if history_active else "FAILED"
+    coverage_reason = "NORMAL_RETRIEVAL_COMPLETE" if history_active else "DEVELOPMENT_HISTORY_LEDGER_NOT_ACTIVE"
+    if history_active and expected_prior_learning and not basis_refs and not coverage_audit_complete:
         coverage_state = "INCOMPLETE"
         coverage_reason = "EXPECTED_PRIOR_LEARNING_MISSING_NORMAL_RESULT"
-    elif expected_prior_learning and not basis_refs and coverage_audit_complete:
+    elif history_active and expected_prior_learning and not basis_refs and coverage_audit_complete:
         coverage_reason = "BOUNDED_COVERAGE_AUDIT_COMPLETE"
 
     basis_value = {
@@ -240,7 +245,7 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
     ).hexdigest()
     checkpoint = material_insight(request)
 
-    if checkpoint:
+    if not history_active or checkpoint:
         next_event = "RE_RESOLVE_CONTROL"
     elif coverage_state != "COMPLETE":
         next_event = "COVERAGE_AUDIT_REQUIRED"
@@ -252,11 +257,11 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
         "assessment_id": "REL-" + fingerprint[:16].upper(),
         "objective_ref": basis_value["objective_ref"],
         "semantic_normalization": "DETERMINISTIC_SURFACE_ONLY_NO_AUTHORITY",
-        "retrieval_state": "COMPLETE",
+        "retrieval_state": "COMPLETE" if history_active else "FAILED",
         "coverage_state": coverage_state,
         "coverage_reason": coverage_reason,
         "expected_prior_learning": expected_prior_learning,
-        "no_relevant_prior_learning": coverage_state == "COMPLETE" and not basis_refs,
+        "no_relevant_prior_learning": history_active and coverage_state == "COMPLETE" and not basis_refs,
         "current_wisdom_boundary": "working_context.current_index.current_wisdom_refs",
         "applicable_knowledge_refs": knowledge_refs,
         "applicable_wisdom_refs": wisdom_refs,
@@ -293,7 +298,7 @@ def feedback(value: dict[str, Any]) -> dict[str, Any]:
 
 
 def _fixture(root: Path) -> None:
-    (root / "engines/context").mkdir(parents=True)
+    (root / "engines/context").mkdir(parents=True, exist_ok=True)
     knowledge = {"knowledge": {"records": [
         {"id": "K1", "claim": "PowerShell runner requires hash verification", "scope": "delivery runner", "tags": ["powershell"], "status": "ACTIVE", "verification": {"state": "VERIFIED"}, "contradiction": {"state": "NONE"}, "validity": {"state": "CURRENT"}},
         {"id": "K2", "claim": "PowerShell runner old unverified rule", "scope": "delivery runner", "status": "ACTIVE", "verification": {"state": "FAILED"}, "contradiction": {"state": "NONE"}},
@@ -307,7 +312,7 @@ def _fixture(root: Path) -> None:
         "current_index": {"current_wisdom_refs": ["W1", "WREV"]},
     }}
     evidence = {"wisdom_evidence": {"profiles": [{"subject_ref": "W1", "friction_state": "NORMAL"}]}}
-    history = {"development_history": {"records": [
+    history = {"development_history": {"lifecycle": "ACTIVE", "records": [
         {"id": "H1", "event_class": "LEARNING_EVENT", "significance": "MAJOR", "role": "EVENT", "title": "PowerShell delivery learning", "fact": "PowerShell runner hash verification prevented repeat delivery failure", "impact": {}, "relations": {}, "provenance": {}}
     ]}}
     for name, value in (("knowledge.yaml", knowledge), ("working-context.yaml", context), ("wisdom-evidence.yaml", evidence), ("development-history.yaml", history)):
@@ -328,6 +333,23 @@ def selftest() -> dict[str, Any]:
         check("non-current-wisdom-rejected", any(x["ref"] == "WOLD" and x["reason"] == "not-current-wisdom" for x in first["rejected_refs"]))
         check("revoked-current-wisdom-rejected", any(x["ref"] == "WREV" and x["reason"] == "revoked-or-superseded" for x in first["rejected_refs"]))
         check("relevant-history-retrieved", first["applicable_history_refs"] == ["H1"])
+        history_path = root / "engines/context/development-history.yaml"
+        inactive = load_yaml(history_path)
+        inactive["development_history"]["lifecycle"] = "INACTIVE"
+        history_path.write_text(yaml.safe_dump(inactive, sort_keys=False), encoding="utf-8")
+        failed = retrieve({**req, "expected_prior_learning": True, "coverage_audit_complete": True,
+                           "coverage_audit_refs": ["AUDIT-1"]}, root)
+        check("inactive-history-ledger-fails-closed-despite-other-results-and-audit-claim",
+              failed["retrieval_state"] == "FAILED" and failed["coverage_state"] == "FAILED"
+              and failed["applicable_history_refs"] == [] and not failed["no_relevant_prior_learning"]
+              and failed["next_control_event"] == "RE_RESOLVE_CONTROL")
+        del inactive["development_history"]["lifecycle"]
+        history_path.write_text(yaml.safe_dump(inactive, sort_keys=False), encoding="utf-8")
+        missing_lifecycle = retrieve(req, root)
+        check("missing-history-ledger-lifecycle-fails-closed",
+              missing_lifecycle["retrieval_state"] == "FAILED"
+              and missing_lifecycle["coverage_state"] == "FAILED")
+        _fixture(root)
         check("basis-fingerprint-deterministic", first["basis_fingerprint"] == second["basis_fingerprint"])
         missing = retrieve({"current_objective": "unmatched subject", "current_scope": "unmatched scope", "expected_prior_learning": True}, root)
         check("expected-prior-learning-empty-result-incomplete", missing["coverage_state"] == "INCOMPLETE" and not missing["no_relevant_prior_learning"])

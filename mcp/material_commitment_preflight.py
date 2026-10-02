@@ -595,7 +595,7 @@ def _write_fixture(root: Path) -> None:
             {"id": "WREV", "type": "WISDOM_RECORD", "scope": "delivery", "statement": "Revoked delivery guidance", "payload": {}, "relations": {"revoked_by_ref": "W1"}},
         ], "current_index": {"current_wisdom_refs": ["W1"]}}},
         "wisdom-evidence.yaml": {"wisdom_evidence": {"profiles": []}},
-        "development-history.yaml": {"development_history": {"records": [
+        "development-history.yaml": {"development_history": {"lifecycle": "ACTIVE", "records": [
             {"id": "H1", "role": "EVENT", "event_class": "LEARNING_EVENT", "significance": "MAJOR", "title": "Delivery hash learning", "fact": "Exact hash verification prevented repeat failure", "impact": {}, "relations": {}, "provenance": {}}
         ]}},
     }
@@ -633,6 +633,21 @@ def selftest(root: Path = SOURCE_ROOT) -> dict[str, Any]:
         check("context-invoked", first.get("context_invoked") is True)
         check("mcp-consumed-retrieval", first.get("mcp_consumed") is True and first["mcp_control_decision"]["basis_fingerprint"] == first["control_state"]["basis_fingerprint"])
         check("current-wisdom-only", first["retrieval"]["applicable_wisdom_refs"] == ["W1"])
+        history_path = fixture / "engines/context/development-history.yaml"
+        history_doc = yaml.safe_load(history_path.read_text(encoding="utf-8"))
+        history_doc["development_history"]["lifecycle"] = "INACTIVE"
+        history_path.write_text(yaml.safe_dump(history_doc, sort_keys=False), encoding="utf-8")
+        inactive_history = resolve(request, fixture)
+        check("inactive-history-ledger-blocks-material-preflight-with-receipt",
+              inactive_history["result"] == "BLOCKED"
+              and inactive_history["retrieval"]["retrieval_state"] == "FAILED"
+              and inactive_history["control_state"]["coverage_state"] == "FAILED"
+              and inactive_history["retrieval"]["applicable_history_refs"] == []
+              and "RETRIEVAL_NOT_COMPLETE" in inactive_history["mcp_control_decision"]["invalidates"])
+        inactive_readback = consume(request, first["receipt"], fixture)
+        check("inactive-history-ledger-invalidates-earlier-material-receipt",
+              inactive_readback["result"] == "BLOCK" and not inactive_readback["freshness_verified"])
+        _write_fixture(fixture)
         # Deterministic current-context integrity must override a caller's NONE_FOUND claim.
         conflict_doc = yaml.safe_load((fixture / "engines/context/working-context.yaml").read_text(encoding="utf-8"))
         conflict_doc["working_context"]["current_index"]["current_wisdom_refs"] = ["W1", "WREV"]
