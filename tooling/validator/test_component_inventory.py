@@ -32,11 +32,11 @@ class ComponentInventoryTests(unittest.TestCase):
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(SOURCE_ROOT / INVENTORY, dest)
 
-    def test_current_inventory_is_19_stable_18_candidates_1_canary(self) -> None:
+    def test_current_inventory_is_19_stable_19_candidates_1_canary(self) -> None:
         classes, errors = classify_components(self.root)
         self.assertEqual(errors, [])
         self.assertEqual((len(classes["stable"]), len(classes["candidates"]),
-                          len(classes["bounded_canaries"])), (19, 18, 1))
+                          len(classes["bounded_canaries"])), (19, 19, 1))
 
     def test_candidate_classification_uses_manifest_semantics_not_path_prefix(self) -> None:
         path = self.root / "tooling/experimental/component.yaml"
@@ -46,7 +46,7 @@ class ComponentInventoryTests(unittest.TestCase):
             "authority": "NONE"}}), encoding="utf-8")
         classes, errors = classify_components(self.root)
         self.assertEqual(errors, [])
-        self.assertEqual((len(classes["stable"]), len(classes["candidates"])), (19, 19))
+        self.assertEqual((len(classes["stable"]), len(classes["candidates"])), (19, 20))
         self.assertIn("tooling/experimental/component.yaml", classes["candidates"])
         path.write_text(yaml.safe_dump({"schema": "cerebro-component/v1", "component": {
             "id": "experimental", "type": "tooling", "status": "active-source"}}), encoding="utf-8")
