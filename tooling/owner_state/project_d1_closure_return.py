@@ -119,8 +119,7 @@ class PostgresProjectD1ClosureReturnPort:
                         closure_fingerprint,owner_event_key,owner_event_fingerprint,
                         receipt_ref,receipt_fingerprint,receipt_payload)
                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)
-                       ON CONFLICT (tenant_ref,workspace_ref,project_ref,receiver_ref,closure_id)
-                       DO NOTHING RETURNING closure_revision""",
+                       ON CONFLICT DO NOTHING RETURNING closure_revision""",
                     identity + (closure_fingerprint, owner_event_key,
                                 owner_event_fingerprint, receipt_ref,
                                 receipt_fingerprint, payload),
