@@ -122,13 +122,14 @@ def main() -> int:
             assert all(not thread.is_alive() for thread in threads), "race-hung"
             return results
 
-        same = race("SAME-RACE", ("c" * 64, "c" * 64))
-        assert len(same) == 2 and all(value["result"] == "PASS" for value in same), same
-        assert sorted(value["mutated"] for value in same) == [False, True]
-        assert same[0]["receipt_ref"] == same[1]["receipt_ref"]
-        changed = race("CHANGED-RACE", ("d" * 64, "f" * 64))
-        assert sorted(value["result"] for value in changed) == ["CONFLICT_HOLD", "PASS"], changed
-        assert next(value for value in changed if value["result"] == "CONFLICT_HOLD")["mutated"] is False
+        for index in range(4):
+            same = race(f"SAME-RACE-{index}", ("c" * 64, "c" * 64))
+            assert len(same) == 2 and all(value["result"] == "PASS" for value in same), same
+            assert sorted(value["mutated"] for value in same) == [False, True]
+            assert same[0]["receipt_ref"] == same[1]["receipt_ref"]
+            changed = race(f"CHANGED-RACE-{index}", ("d" * 64, "f" * 64))
+            assert sorted(value["result"] for value in changed) == ["CONFLICT_HOLD", "PASS"], changed
+            assert next(value for value in changed if value["result"] == "CONFLICT_HOLD")["mutated"] is False
 
         class FailSecondConnection:
             calls = 0
@@ -150,8 +151,9 @@ def main() -> int:
         with admin.cursor() as cursor:
             cursor.execute("SELECT closure_id, count(*) FROM cerebro_project_d1_closure_ledger GROUP BY closure_id")
             assert dict(cursor.fetchall()) == {
-                "SEQUENTIAL": 1, "SAME-RACE": 1, "CHANGED-RACE": 1,
-                "READBACK-FAIL": 1}
+                **{"SEQUENTIAL": 1, "READBACK-FAIL": 1},
+                **{f"SAME-RACE-{index}": 1 for index in range(4)},
+                **{f"CHANGED-RACE-{index}": 1 for index in range(4)}}
             try:
                 cursor.execute("UPDATE cerebro_project_d1_closure_ledger SET closure_revision=1")
             except psycopg.errors.ObjectNotInPrerequisiteState:
@@ -159,7 +161,7 @@ def main() -> int:
             else:
                 raise AssertionError("append-only-trigger-not-enforced")
         print("PASS: disposable Project owner-state sibling ledger; exact replay/conflict, "
-              "same/changed concurrent races, restart/redelivery, readback HOLD then recovery, "
+              "four same/changed concurrent race pairs, restart/redelivery, readback HOLD then recovery, "
               "append-only/RLS role; no natural event", flush=True)
         return 0
     finally:
