@@ -22,7 +22,8 @@ def main() -> int:
 
     sys.path[:0] = [str(root / "mcp"), str(root / "tooling" / "context")]
     from control_context_state_postgres import (  # noqa: E402
-        PostgresControlContextStatePort, StateConflict, apply_postgres_migrations,
+        PostgresControlContextStatePort, StateBindingError, StateConflict,
+        apply_postgres_migrations,
     )
     from control_context_tools import (  # noqa: E402
         ControlContextMcpTools, HmacControlResolutionAttestor, VerifiedMcpIdentity,
@@ -132,8 +133,8 @@ def main() -> int:
             bridge.resume(identity=p2, args={
                 "project_ref": "PROJECT", "aggregate_id": "AGG-PROJECT",
                 "session_handle": first["session_handle"]})
-        except Exception:
-            pass
+        except StateBindingError as exc:
+            assert str(exc) == "control-session-not-bound", str(exc)
         else:
             raise AssertionError("foreign-session-resume-accepted")
         assert bridge.start(identity=p2, args=args("OTHER"))["phase"] == "CONTEXT_ONLY"
@@ -173,6 +174,8 @@ def main() -> int:
             thread.join(timeout=20)
         assert all(not thread.is_alive() for thread in threads), "race-thread-hung"
         assert sorted(item[0] for item in outcomes) == ["HOLD", "PASS"], outcomes
+        loser = next(item[1] for item in outcomes if item[0] == "HOLD")
+        assert loser in {"project-ref-collision", "context-bootstrap-unknown-no-auto-retry"}, outcomes
         with admin.cursor() as cursor:
             cursor.execute(sql.SQL("SET search_path TO {}").format(sql.Identifier(schema)))
             cursor.execute("SELECT count(*) FROM cerebro_project_instances WHERE project_ref='RACE'")
@@ -184,6 +187,7 @@ def main() -> int:
         assert port.read_principal_default_binding(
             tenant_ref="T", workspace_ref="W", principal_ref="P2",
             scopes=p2.state_scopes) == {"status": "ABSENT"}
+        print(f"TWO_IDENTITY_RACE=ONE_PASS_ONE_{loser}", flush=True)
         print("PASS: full migration chain, actual bridge start/resume/repeat/two-identity race, "
               "RLS-hidden port conflict, exact default readback", flush=True)
         return 0
