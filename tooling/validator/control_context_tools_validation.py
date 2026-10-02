@@ -31,6 +31,7 @@ from control_context_tools import (  # noqa: E402
     ContextLifecycleEffectAdapter,
     ControlContextMcpTools,
     ControlContextToolAuthorizationError,
+    ControlContextToolError,
     HmacControlResolutionAttestor,
     McpToolCallContext,
     VerifiedMcpIdentity,
@@ -450,7 +451,9 @@ def selftest() -> dict[str, Any]:
 
     port = InMemoryControlContextStatePort()
     attestor = HmacControlResolutionAttestor(key_id="SELFTEST-KEY", secret=b"cerebro-selftest-attestation-key-0001")
+    role_method_source_calls: list[tuple[str, str]] = []
     def role_method_source(source_revision: str, role: str) -> dict[str, Any]:
+        role_method_source_calls.append((source_revision, role))
         refs = ["standards/principalstambok.yaml"] if role == "PRINCIPAL" else []
         subject = "|".join((
             "cerebro-role-method-projection/v1", source_revision, "6" * 64, role,
@@ -1299,6 +1302,27 @@ def selftest() -> dict[str, Any]:
         "actor_generation_ref": "ACTOR-GENERATION-SELFTEST-1",
         "source_revision": pre_create["source_revision"],
     }
+    stale_pre_overlay = copy.deepcopy(pre_overlay)
+    stale_pre_overlay["source_revision"] = "7" * 40
+    verifier_calls_before_stale = len(role_method_source_calls)
+    check(
+        "P1494-role-overlay-stale-source-fenced-before-role-source-verifier",
+        _expect_error(
+            lambda: tools.dispatch(
+                "attach_role_overlay",
+                _signed_args(attestor, "attach_role_overlay", stale_pre_overlay, context),
+                context,
+            ),
+            ControlContextToolError,
+        )
+        and len(role_method_source_calls) == verifier_calls_before_stale
+        and port.read_pre_role_generation(
+            tenant_ref=context.identity.tenant_ref,
+            workspace_ref=context.identity.workspace_ref,
+            generation_ref=pre_create["generation_ref"],
+            scopes={"project_state:read"},
+        )["lifecycle"] == "READY_UNBOUND",
+    )
     check(
         "P1494-role-overlay-missing-trusted-source-verifier-denies-before-mutation",
         _expect_error(

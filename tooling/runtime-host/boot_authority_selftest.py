@@ -373,9 +373,45 @@ function Binding([string]$role='IMPLEMENTER'){
 function Receipt($binding){
     New-CerebroAwakeningReceipt -Binding $binding -SourceRoot $fixture -SourceHead $sourceHead -ActorRole 'IMPLEMENTER'
 }
+$principalContractPath=Join-Path $fixture 'standards/principalstambok.yaml'
+$principalContractBytes=[IO.File]::ReadAllBytes($principalContractPath)
+function Restore-PrincipalContract {
+    [IO.File]::WriteAllBytes($principalContractPath,$principalContractBytes)
+}
 function Readback($state,[string]$path){
     Test-CerebroAwakeningReadback -Path $path -RuntimeState $state -SourceRoot $fixture -SourceHead $sourceHead -ActorRole 'IMPLEMENTER'
 }
+Check 'K157-pre-role-profile-only-survives-missing-principal-contract-ref' {
+    Remove-Item -LiteralPath $principalContractPath -Force
+    try {
+        $unbound=Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead -ActorRole 'PRE_ROLE_UNBOUND' -MethodProfileOnly
+        if ($unbound.method_profile.authority -cne 'NONE' -or $unbound.Contains('role_method_projection')) {
+            throw 'PRE_ROLE_PROFILE_ONLY_CHANGED_BY_MISSING_ROLE_REF'
+        }
+    } finally { Restore-PrincipalContract }
+}
+Check 'K157-pre-role-profile-only-survives-tampered-principal-contract-ref' {
+    [IO.File]::AppendAllText($principalContractPath,' ')
+    try {
+        $unbound=Resolve-CerebroCivilizationMethod -SourceRoot $fixture -SourceHead $sourceHead -ActorRole 'PRE_ROLE_UNBOUND' -MethodProfileOnly
+        if ($unbound.method_profile.authority -cne 'NONE' -or $unbound.Contains('role_method_projection')) {
+            throw 'PRE_ROLE_PROFILE_ONLY_CHANGED_BY_TAMPERED_ROLE_REF'
+        }
+    } finally { Restore-PrincipalContract }
+}
+Check 'K157-worker-performs-zero-principal-contract-read' {
+    Remove-Item -LiteralPath $principalContractPath -Force
+    try {
+        $worker=Binding 'WORKER'
+        if (@($worker.role_method_projection.role_contract_refs).Count -ne 0) {
+            throw 'WORKER_ROLE_CONTRACT_REFS_NOT_EMPTY'
+        }
+    } finally { Restore-PrincipalContract }
+}
+Check 'K157-principal-missing-contract-ref-rejected' {
+    Remove-Item -LiteralPath $principalContractPath -Force
+    try { Binding 'PRINCIPAL' | Out-Null } finally { Restore-PrincipalContract }
+} 'CIVILIZATION_METHOD_FILE_MISSING'
 Check 'K157-cross-role-profile-shared-projection-distinct' {
     $one=Binding 'IMPLEMENTER';$two=Binding 'PROJECT_MANAGER'
     if($one.method_profile.fingerprint -cne $two.method_profile.fingerprint -or

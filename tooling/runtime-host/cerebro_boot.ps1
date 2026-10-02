@@ -616,7 +616,6 @@ function Resolve-CerebroCivilizationMethod {
                 $ref.Contains('\') -or @($ref.Split('/') | Where-Object { $_ -eq '..' }).Count) {
                 throw 'CIVILIZATION_ROLE_CONTRACT_REFS_INVALID'
             }
-            $null = Get-PinnedMethodFile $ref
         }
     }
     # A closed durable vocabulary prevents task/private data hiding in free text.

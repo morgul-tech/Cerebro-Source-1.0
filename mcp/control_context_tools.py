@@ -1603,6 +1603,8 @@ class ControlContextMcpTools:
             raise ControlContextToolError("pre-role-generation-expected-revision-mismatch")
         role = _require_text(payload, "role")
         source_revision = _require_text(payload, "source_revision")
+        if source_revision != current["source_revision"]:
+            raise ControlContextToolError("pre-role-generation-role-overlay-source-mismatch")
         verifier = self._role_method_source_verifier
         if not callable(verifier):
             raise ControlContextToolAuthorizationError("trusted-role-method-source-verifier-not-bound")

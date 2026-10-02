@@ -168,8 +168,6 @@ def _role_contract_profile_at_head(
             or len(refs) != len(set(refs))
         ):
             raise BootBirthSourceError("role-method-contract-refs-invalid")
-        for ref in refs:
-            pinned(ref)
         normalized[role] = tuple(refs)
     return profile, normalized
 
@@ -195,7 +193,10 @@ def verify_role_method_projection(
     refs = role_map[role]
     material: list[str] = []
     for ref in refs:
-        data = fetch(f"https://raw.githubusercontent.com/{REPOSITORY}/{source_revision}/{ref}")
+        try:
+            data = fetch(f"https://raw.githubusercontent.com/{REPOSITORY}/{source_revision}/{ref}")
+        except Exception as exc:
+            raise BootBirthSourceError(f"source-blob-unavailable:{ref}") from exc
         if not data or len(data) > 2_000_000:
             raise BootBirthSourceError(f"source-blob-size-invalid:{ref}")
         material.append(f"{ref}|{hashlib.sha256(data).hexdigest()}")

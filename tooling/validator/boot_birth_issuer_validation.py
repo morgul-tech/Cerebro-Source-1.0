@@ -110,10 +110,25 @@ def main() -> int:
         and principal_projection["contract_refs"] == ["standards/principalstambok.yaml"]
         and principal_projection["authority"] == "NONE"
     )
-    worker_projection = verify_role_method_projection(HEAD, "WORKER", fetch=pinned_fetch)
+    worker_fetches: list[str] = []
+    def tracked_worker_fetch(url: str) -> bytes:
+        worker_fetches.append(url)
+        return pinned_fetch(url)
+    worker_projection = verify_role_method_projection(HEAD, "WORKER", fetch=tracked_worker_fetch)
     checks["worker-role-projection-does-not-inherit-principal-contract"] = (
         worker_projection["contract_refs"] == []
         and worker_projection["method_profile_fingerprint"] == verified["method_fingerprint"]
+    )
+    checks["worker-role-projection-performs-zero-principalstambok-reads"] = (
+        not any(url.endswith("/standards/principalstambok.yaml") for url in worker_fetches)
+    )
+    def missing_principal_contract_fetch(url: str) -> bytes:
+        if url.endswith("/standards/principalstambok.yaml"):
+            raise FileNotFoundError("principalstambok-unavailable")
+        return pinned_fetch(url)
+    checks["principal-role-projection-rejects-unavailable-principalstambok"] = denied(
+        lambda: verify_role_method_projection(HEAD, "PRINCIPAL", fetch=missing_principal_contract_fetch),
+        BootBirthSourceError,
     )
     atom = (
         '<feed xmlns="http://www.w3.org/2005/Atom">'
