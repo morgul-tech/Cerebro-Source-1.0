@@ -26,6 +26,7 @@ from .model import (
 )
 
 LEARNING_COMMITTED = "LEARNING_COMMITTED"
+LEARNING_COMMIT_UNKNOWN = "LEARNING_COMMIT_UNKNOWN"
 NOT_APPLICABLE = "NOT_APPLICABLE"
 HOLD_APPLICABILITY = "HOLD_APPLICABILITY"
 OUTCOMES = frozenset({"POSITIVE", "NEGATIVE", "UNKNOWN"})
@@ -215,7 +216,42 @@ class A7LearningBridge:
             owner_receipt_fingerprint=trusted.receipt_fingerprint,
             provider_revision=trusted.provider_revision,
         )
-        receipt = self._sink.append_and_readback(record)
+        # Once the persistence port is invoked, a malformed/missing result cannot
+        # prove either durable commit or no-write. Fail closed as UNKNOWN_COMMIT.
+        # A semantic conflict is already a typed, known outcome and keeps its
+        # existing exception contract.
+        try:
+            receipt = self._sink.append_and_readback(record)
+        except LearningConflict:
+            raise
+        except Exception:
+            return A7ProcessResult(
+                LEARNING_COMMIT_UNKNOWN,
+                event.event_id,
+                APPLIES,
+                reason="CONTEXT_LEARNING_APPEND_OUTCOME_UNKNOWN",
+            )
+
+        invalid_reason = None
+        if not isinstance(receipt, LearningReceipt):
+            invalid_reason = "LEARNING_RECEIPT_MISSING_OR_WRONG_TYPE"
+        elif receipt.readback_verified is not True:
+            invalid_reason = "LEARNING_RECEIPT_READBACK_UNVERIFIED"
+        elif receipt.learning_key != record.learning_key:
+            invalid_reason = "LEARNING_RECEIPT_KEY_MISMATCH"
+        elif receipt.record_fingerprint != record.payload_fingerprint:
+            invalid_reason = "LEARNING_RECEIPT_FINGERPRINT_MISMATCH"
+        elif not is_id(receipt.pending_id):
+            invalid_reason = "LEARNING_RECEIPT_PENDING_ID_INVALID"
+
+        if invalid_reason is not None:
+            return A7ProcessResult(
+                LEARNING_COMMIT_UNKNOWN,
+                event.event_id,
+                APPLIES,
+                reason=invalid_reason,
+            )
+
         return A7ProcessResult(
             LEARNING_COMMITTED,
             event.event_id,
