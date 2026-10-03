@@ -284,6 +284,31 @@ class A7LearningBridgeTests(unittest.TestCase):
         self.assertEqual(sink.pending_count(), 1)
         sink.close()
 
+    def test_replay_after_ack_does_not_recreate_encounter_obligation(self):
+        reader = FakeReceiptReader({"receipt:1": receipt()})
+        bridge, sink = self.bridge(reader)
+        first = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(sink.dispatch_pending(Encounter(accept=True)), 1)
+        self.assertEqual(sink.pending_count(), 0)
+
+        replay = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertTrue(replay.learning_receipt.idempotent_replay)
+        self.assertEqual(replay.learning_receipt.learning_key, first.learning_receipt.learning_key)
+        self.assertEqual(sink.pending_count(), 0)
+        sink.close()
+
     def test_positive_negative_unknown_and_human_origin_are_preserved(self):
         mapping = {
             "receipt:1": receipt("receipt:1", event_id="event:1", seq=1),
