@@ -78,8 +78,10 @@ function Get-CacSha256Text {
 
 function Get-CacEvidenceBasisFingerprint {
     param([string]$Root,[object[]]$RelativePaths)
+    $ordered=[string[]]@($RelativePaths)
+    [Array]::Sort($ordered,[StringComparer]::Ordinal)
     $rows=@()
-    foreach($relative in @($RelativePaths | Sort-Object)){
+    foreach($relative in $ordered){
         $path=Join-Path $Root (([string]$relative) -replace '/','\\')
         if(-not(Test-Path -LiteralPath $path -PathType Leaf)){
             throw ('CAC_RUNTIME_EVIDENCE_BASIS_FILE_MISSING:{0}' -f [string]$relative)
