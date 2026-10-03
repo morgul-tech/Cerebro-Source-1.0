@@ -4,12 +4,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from a7_sqlite_learning_sink import SqliteContextLearningSink
 from signalvev_sensing.a7_learning import (
     A7LearningBridge,
     LEARNING_COMMITTED,
     NOT_APPLICABLE,
     LearningConflict,
-    SqliteContextLearningSink,
 )
 from signalvev_sensing.a7_owner_receipt import VerifiedOwnerCommitReceipt
 from signalvev_sensing.applicability import Interest, InterestTable
