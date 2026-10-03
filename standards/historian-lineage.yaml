@@ -1,0 +1,111 @@
+schema: cerebro-historian-lineage/v1
+historian_lineage:
+  id: CEREBRO-HISTORIAN-LINEAGE-001
+  status: CANDIDATE_NONCANONICAL
+  kind: READ_ONLY_HISTORY_ORGAN_CONTRACT
+  definitional_authority: Cerebro Source 1.0
+  control_authority: NONE
+  scheduling_authority: NONE
+  assurance_authority: NONE
+  current_state_authority: NONE
+  purpose: >
+    Preserve a contiguous, evidence-linked history of Principal generations and major
+    Cerebro development without allowing history to become current truth or authority.
+    The Historiker preserves broad history; successor capsules preserve selective inheritance.
+
+  invariants:
+    HISTORY_IS_NOT_CURRENT_TRUTH: true
+    PRINCIPAL_SEQUENCE_CONTIGUOUS_1_TO_N: true
+    UNKNOWN_IS_LEGAL: true
+    NO_INVENTED_DIALOGUE: true
+    NO_PARAPHRASE_AS_VERBATIM: true
+    NO_EAGER_FULL_ARCHIVE_HYDRATION: true
+    NO_PRIVATE_PERSONAL_ASSISTANT_CAPSULE_READ: true
+    NO_AUTHORITY_FROM_HISTORY: true
+
+  evidence_classes:
+    - ORIGINAL_VERBATIM
+    - HUMAN_ADMIN_TESTIMONY_ACCEPTED
+    - HUMAN_ADMIN_MEMOIR_STRUCTURED
+    - EVIDENCE_BACKED_RECONSTRUCTION
+    - UNKNOWN
+
+  principal_generation_record:
+    required_fields:
+      - principal_generation_id
+      - lineage_sequence_number
+      - predecessor_pointer
+      - successor_pointer
+      - awakening_timestamp
+      - first_identity_answer
+      - first_identity_answer_evidence_class
+      - who_principal_said_he_was
+      - who_andreas_was_for_him
+      - what_cerebro_was_to_him
+      - major_events
+      - signature_contributions
+      - one_proudest_contribution
+      - one_proudest_contribution_evidence_class
+      - final_etterklang
+      - final_etterklang_evidence_class
+      - unknown_ledger
+      - evidence_refs
+
+  awakening_capture:
+    trigger: IMMEDIATELY_AFTER_FIRST_POST_AWAKENING_IDENTITY_ANSWER
+    semantic_scope:
+      - WHO_PRINCIPAL_IS
+      - WHO_ANDREAS_IS_TO_PRINCIPAL
+      - WHAT_CEREBRO_IS
+    storage_rule: STORE_EXACT_TEXT_VERBATIM
+    rewrite_allowed: false
+    normalization_allowed: false
+    missing_original: STORE_UNKNOWN_NOT_RECONSTRUCTED_QUOTE
+
+  retirement_capture:
+    trigger: BEFORE_PRINCIPAL_RETIREMENT
+    proudest_contribution_count: 1
+    proudest_contribution_selector: CURRENT_PRINCIPAL_SELF_SELECTION
+    storage_rule: STORE_EXACT_TEXT_VERBATIM
+    final_etterklang_verbatim: REQUIRED_WHEN_AVAILABLE
+
+  human_memoir:
+    enabled: true
+    source: HUMAN_ADMIN
+    workflow:
+      - HUMAN_SPEAKS_FREELY
+      - ASSISTANT_EXTRACTS_KEY_POINTS_WITHOUT_CHANGING_MEANING
+      - STRUCTURED_MEMOIR_MARKED_HUMAN_ADMIN_MEMOIR_STRUCTURED
+      - LINK_TO_SOURCE_TESTIMONY_WHERE_AVAILABLE
+      - MERGE_WITH_RECOVERED_ARTIFACTS_WITHOUT_OVERWRITING_ORIGINALS
+    human_testimony_may_fill_history: true
+    human_testimony_may_be_labeled_original_verbatim: false
+
+  early_generation_reconstruction:
+    minimum_required_sequences: [1, 2, 3]
+    no_missing_generation_rows: true
+    source_priority:
+      - RECOVERED_ORIGINAL_TRANSCRIPT_OR_CAPSULE
+      - SOURCE_GIT_HISTORY
+      - DURABLE_HANDOFFS_AND_ARCHIVES
+      - HUMAN_ADMIN_TESTIMONY
+      - EVIDENCE_BACKED_RECONSTRUCTION
+      - UNKNOWN
+
+  retrieval:
+    human_query_examples:
+      - WHO_WAS_PRINCIPAL_N
+      - SHOW_PRINCIPAL_N_FIRST_WORDS
+      - SHOW_PRINCIPAL_N_PROUDEST_CONTRIBUTION
+      - SHOW_PRINCIPAL_N_MAJOR_EVENTS
+    currentness_rule: ALWAYS_FRESH_READ_CURRENT_WORLD_SEPARATELY
+
+  boundaries:
+    may_not:
+      - schedule_work
+      - bind_claims
+      - admit_results
+      - mutate_current_state
+      - override_source
+      - infer_current_truth_from_history
+      - read_private_personal_assistant_capsules

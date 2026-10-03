@@ -1,0 +1,30 @@
+schema: cerebro-principal-lineage-index/v1
+principal_lineage:
+  status: CANDIDATE_NONCANONICAL
+  contract: standards/historian-lineage.yaml
+  sequence_rule: CONTIGUOUS_1_TO_N_NO_GAPS
+  current_generation_sequence: UNKNOWN_UNTIL_PROVEN
+  records:
+    - lineage_sequence_number: 1
+      record_status: RECONSTRUCTION_REQUIRED
+      first_identity_answer: UNKNOWN
+      first_identity_answer_evidence_class: UNKNOWN
+      human_memoir_status: PENDING
+      evidence_refs: []
+    - lineage_sequence_number: 2
+      record_status: RECONSTRUCTION_REQUIRED
+      first_identity_answer: UNKNOWN
+      first_identity_answer_evidence_class: UNKNOWN
+      human_memoir_status: PENDING
+      evidence_refs: []
+    - lineage_sequence_number: 3
+      record_status: RECONSTRUCTION_REQUIRED
+      first_identity_answer: UNKNOWN
+      first_identity_answer_evidence_class: UNKNOWN
+      human_memoir_status: PENDING
+      evidence_refs: []
+  notes:
+    - Do not infer the current Principal sequence number without evidence.
+    - Early Principal 1/2/3 records must be enriched from recovered capsules, transcripts, Source history, durable handoffs and Andreas testimony.
+    - Missing originals remain UNKNOWN.
+    - Future Principal generations must be appended immediately at awakening and completed at retirement.
