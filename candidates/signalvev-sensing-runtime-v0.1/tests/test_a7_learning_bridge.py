@@ -8,8 +8,10 @@ from a7_sqlite_learning_sink import SqliteContextLearningSink
 from signalvev_sensing.a7_learning import (
     A7LearningBridge,
     LEARNING_COMMITTED,
+    LEARNING_COMMIT_UNKNOWN,
     NOT_APPLICABLE,
     LearningConflict,
+    LearningReceipt,
 )
 from signalvev_sensing.a7_owner_receipt import VerifiedOwnerCommitReceipt
 from signalvev_sensing.applicability import Interest, InterestTable
@@ -83,6 +85,33 @@ class Encounter:
     def encounter(self, record, *, idempotency_key: str) -> bool:
         self.calls.append((record, idempotency_key))
         return self.accept
+
+
+class ReceiptProbeSink:
+    """Port double for malformed/ambiguous persistence receipts."""
+
+    def __init__(self, mode):
+        self.mode = mode
+        self.calls = []
+
+    def append_and_readback(self, record):
+        self.calls.append(record)
+        if self.mode == "raise":
+            raise OSError("injected after-port-invocation failure")
+        if self.mode == "none":
+            return None
+        key = record.learning_key if self.mode != "wrong_key" else "0" * 64
+        fingerprint = (
+            record.payload_fingerprint if self.mode != "wrong_fingerprint" else "1" * 64
+        )
+        return LearningReceipt(
+            learning_key=key,
+            record_fingerprint=fingerprint,
+            provider_revision=record.provider_revision,
+            readback_verified=self.mode != "false_readback",
+            idempotent_replay=False,
+            pending_id="bad pending id" if self.mode == "invalid_pending" else "pending:valid",
+        )
 
 
 class A7LearningBridgeTests(unittest.TestCase):
@@ -308,6 +337,93 @@ class A7LearningBridgeTests(unittest.TestCase):
         self.assertEqual(replay.learning_receipt.learning_key, first.learning_receipt.learning_key)
         self.assertEqual(sink.pending_count(), 0)
         sink.close()
+
+    def _bridge_with_probe_sink(self, mode):
+        reader = FakeReceiptReader({"receipt:1": receipt()})
+        sink = ReceiptProbeSink(mode)
+        bridge = A7LearningBridge(
+            receipt_reader=reader,
+            interests=InterestTable([Interest(OWNER, "doc", None)]),
+            sink=sink,
+            classifier_revision="a7-classifier:v1",
+        )
+        return bridge, sink
+
+    def test_none_receipt_is_unknown_commit_not_committed(self):
+        bridge, sink = self._bridge_with_probe_sink("none")
+        result = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(result.disposition, LEARNING_COMMIT_UNKNOWN)
+        self.assertIsNone(result.learning_receipt)
+        self.assertEqual(result.reason, "LEARNING_RECEIPT_MISSING_OR_WRONG_TYPE")
+        self.assertEqual(len(sink.calls), 1)
+
+    def test_false_readback_receipt_is_unknown_commit(self):
+        bridge, sink = self._bridge_with_probe_sink("false_readback")
+        result = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(result.disposition, LEARNING_COMMIT_UNKNOWN)
+        self.assertEqual(result.reason, "LEARNING_RECEIPT_READBACK_UNVERIFIED")
+        self.assertEqual(len(sink.calls), 1)
+
+    def test_wrong_learning_key_receipt_is_unknown_commit(self):
+        bridge, _ = self._bridge_with_probe_sink("wrong_key")
+        result = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(result.disposition, LEARNING_COMMIT_UNKNOWN)
+        self.assertEqual(result.reason, "LEARNING_RECEIPT_KEY_MISMATCH")
+
+    def test_wrong_fingerprint_receipt_is_unknown_commit(self):
+        bridge, _ = self._bridge_with_probe_sink("wrong_fingerprint")
+        result = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(result.disposition, LEARNING_COMMIT_UNKNOWN)
+        self.assertEqual(result.reason, "LEARNING_RECEIPT_FINGERPRINT_MISMATCH")
+
+    def test_invalid_pending_identity_receipt_is_unknown_commit(self):
+        bridge, _ = self._bridge_with_probe_sink("invalid_pending")
+        result = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(result.disposition, LEARNING_COMMIT_UNKNOWN)
+        self.assertEqual(result.reason, "LEARNING_RECEIPT_PENDING_ID_INVALID")
+
+    def test_sink_exception_after_invocation_is_unknown_commit(self):
+        bridge, sink = self._bridge_with_probe_sink("raise")
+        result = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(result.disposition, LEARNING_COMMIT_UNKNOWN)
+        self.assertEqual(result.reason, "CONTEXT_LEARNING_APPEND_OUTCOME_UNKNOWN")
+        self.assertEqual(len(sink.calls), 1)
 
     def test_positive_negative_unknown_and_human_origin_are_preserved(self):
         mapping = {
