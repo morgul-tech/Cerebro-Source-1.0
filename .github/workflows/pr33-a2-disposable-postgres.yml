@@ -1,0 +1,64 @@
+name: PR33 A2 disposable PostgreSQL
+
+on:
+  push:
+    branches:
+      - candidate/project-engine-commissioning-a2-v01
+    paths:
+      - tooling/context/control_context_state_postgres.py
+      - tooling/context/control_context_state_postgres_0006_project_commissioning_session.sql
+      - tooling/validator/project_commissioning_postgres_integration.py
+      - tooling/validator/project_commissioning_full_chain_postgres_integration.py
+
+permissions:
+  contents: read
+
+jobs:
+  two-identity-rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: test_cerebro_a2
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: disposable_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d test_cerebro_a2"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Check out verification harness
+        uses: actions/checkout@v4
+        with:
+          path: harness
+      - name: Check out exact event candidate source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: candidate
+      - name: Confirm exact source basis
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "${{ github.sha }}"
+          echo "CANDIDATE_COMMIT=$(git -C candidate rev-parse HEAD)"
+          echo "CANDIDATE_TREE=$(git -C candidate rev-parse HEAD^{tree})"
+          echo "HARNESS_COMMIT=$(git -C harness rev-parse HEAD)"
+          sha256sum candidate/tooling/context/control_context_state_postgres_0006_project_commissioning_session.sql candidate/tooling/context/control_context_state_postgres.py
+      - name: Install PostgreSQL client
+        run: python -m pip install 'psycopg[binary]==3.3.6'
+      - name: Exercise isolated RLS and migration 0006
+        env:
+          CEREBRO_A2_TEST_POSTGRES_DSN: postgresql://postgres:disposable_ci_only@127.0.0.1:5432/test_cerebro_a2
+          CEREBRO_A2_TEST_DISPOSABLE: YES
+          CEREBRO_A2_CANDIDATE_ROOT: ${{ github.workspace }}/candidate
+        run: python -B harness/tooling/validator/project_commissioning_postgres_integration.py
+      - name: Exercise full migrations and current-head bridge
+        env:
+          CEREBRO_A2_TEST_POSTGRES_DSN: postgresql://postgres:disposable_ci_only@127.0.0.1:5432/test_cerebro_a2
+          CEREBRO_A2_TEST_DISPOSABLE: YES
+          CEREBRO_A2_CANDIDATE_ROOT: ${{ github.workspace }}/harness
+        run: python -B harness/tooling/validator/project_commissioning_full_chain_postgres_integration.py

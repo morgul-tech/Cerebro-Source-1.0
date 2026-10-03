@@ -239,6 +239,7 @@ def selftest() -> dict[str, Any]:
     check(
         "readiness-requires-all-relations-and-exact-applied-migration",
         probe() is True
+        and all(migration_id != "0006-project-commissioning-session" for migration_id, _, _ in MIGRATIONS)
         and len(ready_factory.connections) == 1
         and ready_factory.connections[0].cursor_instance.statement_count == 2,
     )

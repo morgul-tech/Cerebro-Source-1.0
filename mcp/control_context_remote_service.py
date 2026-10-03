@@ -379,12 +379,14 @@ class ControlContextRemoteMcpService:
         token_verifier: BearerTokenVerifier,
         readiness_probe: Callable[[], bool],
         clock: Callable[[], float] = time.time,
+        project_commissioning_bridge: Any | None = None,
     ) -> None:
         _require(callable(getattr(tools, "dispatch", None)), "control-context-tools-required")
         _require(callable(readiness_probe), "readiness-probe-required")
         self._config = config
         self._tools = tools
         self._readiness_probe = readiness_probe
+        self._project_commissioning_bridge = project_commissioning_bridge
         self._authenticator = OAuthBearerAuthenticator(
             config=config,
             token_verifier=token_verifier,
@@ -495,6 +497,19 @@ class ControlContextRemoteMcpService:
             request_meta=self._request_meta(request_meta),
         )
         return self._tools.dispatch(tool_name, args, context)
+
+    def commission_project_engine_v01(
+        self, *, args: dict[str, Any], headers: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Internal, default-off bridge; deliberately absent from MCP tools/routes."""
+        bridge = self._project_commissioning_bridge
+        if bridge is None:
+            raise ControlContextToolError("project-commissioning-bridge-unbound")
+        identity = self._authenticator.authenticate(
+            headers, required_scope="project_state:transition")
+        if isinstance(args, dict) and "session_handle" in args:
+            return bridge.resume(identity=identity, args=args)
+        return bridge.start(identity=identity, args=args)
 
     def readiness(self) -> dict[str, Any]:
         ready = False
