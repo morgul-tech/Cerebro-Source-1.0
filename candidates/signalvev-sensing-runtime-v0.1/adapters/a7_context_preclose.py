@@ -21,7 +21,13 @@ from signalvev_sensing.model import canonical, is_id, sha256_hex
 PRE_CLOSE = "PRE_CLOSE"
 POINTER_READY = "POINTER_READY"
 HOLD_TARGET_SCOPE_UNVERIFIED = "HOLD_TARGET_SCOPE_UNVERIFIED"
+HOLD_OWNER_UNAVAILABLE_OR_STALE = "HOLD_OWNER_UNAVAILABLE_OR_STALE"
 NO_PENDING = "NO_PENDING"
+
+OPEN = "OPEN"
+CONSUMED = "CONSUMED"
+REVOKED = "REVOKED"
+OBLIGATION_STATES = frozenset({OPEN, CONSUMED, REVOKED})
 
 APPLIED = "APPLIED"
 NO_CHANGE = "NO_CHANGE"
@@ -73,6 +79,12 @@ class PendingLearningReadback:
     scope_ref: str
     interest_ref: str
     visibility_ref: str
+    obligation_id: str
+    provenance_ref: str
+    binding_ref: str
+    owner_head_ref: str
+    owner_head_revision: int
+    owner_fence: int
     current: bool = True
 
 
@@ -86,6 +98,7 @@ class ConsumerExpectation:
     interest_ref: str
     owner_revision: int
     visibility_ref: str
+    binding_ref: str
 
 
 @dataclass(frozen=True)
@@ -98,8 +111,28 @@ class ConsumerReadback:
     interest_ref: str
     owner_revision: int
     visibility_ref: str
+    binding_ref: str
     pointer_visible: bool
     current: bool
+
+
+@dataclass(frozen=True)
+class CurrentObligationReadback:
+    obligation_id: str
+    provenance_ref: str
+    status: str
+    actor_ref: str
+    generation_ref: str
+    scope_ref: str
+    binding_ref: str
+    owner_head_ref: str
+    owner_head_revision: int
+    owner_revision: int
+    owner_fence: int
+    disposition_ref: str | None
+    tombstone_ref: str | None
+    readback_ref: str
+    readback_verified: bool
 
 
 @dataclass(frozen=True)
@@ -113,6 +146,12 @@ class PendingPointer:
     machine_attempt_state: str
     machine_liveness_credit: bool
     visibility_ref: str
+    obligation_id: str
+    provenance_ref: str
+    binding_ref: str
+    owner_head_ref: str
+    owner_head_revision: int
+    owner_fence: int
     authority: str = "NONE"
 
 
@@ -169,6 +208,10 @@ class ContextLearningOwnerPort(Protocol):
     def read_learning(self, learning_key: str) -> OwnerLearningReadback: ...
 
     def read_pending(self, pending_id: str) -> PendingLearningReadback | None: ...
+
+    def read_current_obligation(
+        self, obligation_id: str
+    ) -> CurrentObligationReadback | None: ...
 
     def read_consumer(
         self, actor_ref: str, generation_ref: str
@@ -270,6 +313,46 @@ def _pulse_current_pre_close(pulse: object) -> bool:
     )
 
 
+def _owner_obligation_open_current(
+    pending: PendingLearningReadback,
+    obligation: object,
+    expected_consumer: ConsumerExpectation,
+) -> tuple[bool, str]:
+    """Fresh owner truth must prove OPEN; local pending/current/ACK never can."""
+
+    if not isinstance(obligation, CurrentObligationReadback):
+        return False, "CURRENT_OBLIGATION_READBACK_MISSING_OR_INVALID"
+    if obligation.readback_verified is not True:
+        return False, "CURRENT_OBLIGATION_READBACK_UNVERIFIED"
+    if obligation.status not in OBLIGATION_STATES:
+        return False, "CURRENT_OBLIGATION_STATUS_UNKNOWN"
+    if obligation.status != OPEN:
+        return False, "CURRENT_OBLIGATION_NOT_OPEN"
+    if not (
+        is_id(obligation.obligation_id)
+        and obligation.obligation_id == pending.obligation_id
+        and is_id(obligation.provenance_ref)
+        and obligation.provenance_ref == pending.provenance_ref
+        and obligation.actor_ref == expected_consumer.actor_ref
+        and obligation.generation_ref == expected_consumer.generation_ref
+        and obligation.scope_ref == expected_consumer.scope_ref
+        and obligation.binding_ref == expected_consumer.binding_ref
+        and is_id(obligation.owner_head_ref)
+        and type(obligation.owner_head_revision) is int
+        and obligation.owner_head_revision >= pending.owner_head_revision
+        and type(obligation.owner_revision) is int
+        and obligation.owner_revision >= pending.owner_revision
+        and obligation.owner_revision >= expected_consumer.owner_revision
+        and type(obligation.owner_fence) is int
+        and obligation.owner_fence >= pending.owner_fence
+        and is_id(obligation.readback_ref)
+        and obligation.disposition_ref is None
+        and obligation.tombstone_ref is None
+    ):
+        return False, "CURRENT_OBLIGATION_BINDING_OR_FENCE_STALE"
+    return True, "CURRENT_OBLIGATION_OPEN_VERIFIED"
+
+
 def prepare_pre_close_projection(
     port: ContextLearningOwnerPort,
     *,
@@ -277,7 +360,7 @@ def prepare_pre_close_projection(
     pending_id: str,
     expected_consumer: ConsumerExpectation,
 ) -> ProjectionResult:
-    """Return a minimal pointer only after exact owner pre-emission readback."""
+    """Return a minimal pointer only after owner obligation + target readback."""
 
     if not _pulse_current_pre_close(pulse):
         return ProjectionResult(
@@ -294,8 +377,73 @@ def prepare_pre_close_projection(
             False,
         )
 
+    # Phase 1: local pending only identifies which authoritative obligation to ask
+    # about. It can never prove that the obligation is still OPEN.
     try:
         pending = port.read_pending(pending_id)
+    except Exception:
+        return ProjectionResult(
+            HOLD_OWNER_UNAVAILABLE_OR_STALE,
+            None,
+            "PENDING_READ_FAILED",
+            False,
+        )
+    if pending is None:
+        return ProjectionResult(NO_PENDING, None, "PENDING_NOT_FOUND", False)
+    if not isinstance(pending, PendingLearningReadback):
+        return ProjectionResult(
+            HOLD_OWNER_UNAVAILABLE_OR_STALE,
+            None,
+            "PENDING_READBACK_INVALID",
+            False,
+        )
+    if not (
+        _valid_pending_id(pending.pending_id)
+        and pending.pending_id == pending_id
+        and is_id(pending.learning_key)
+        and is_id(pending.obligation_id)
+        and is_id(pending.provenance_ref)
+        and is_id(pending.binding_ref)
+        and is_id(pending.owner_head_ref)
+        and type(pending.owner_head_revision) is int
+        and pending.owner_head_revision >= 0
+        and type(pending.owner_revision) is int
+        and pending.owner_revision >= 0
+        and type(pending.owner_fence) is int
+        and pending.owner_fence >= 0
+    ):
+        return ProjectionResult(
+            HOLD_OWNER_UNAVAILABLE_OR_STALE,
+            None,
+            "PENDING_OWNER_BASIS_INVALID",
+            False,
+        )
+
+    # Phase 2: authoritative fresh owner obligation state. This is the recovery
+    # cut: OPEN cannot be inferred from local current=True, pending, old ACK or
+    # absence of a tombstone in the restored local snapshot.
+    try:
+        obligation = port.read_current_obligation(pending.obligation_id)
+    except Exception:
+        return ProjectionResult(
+            HOLD_OWNER_UNAVAILABLE_OR_STALE,
+            None,
+            "CURRENT_OBLIGATION_READ_FAILED",
+            False,
+        )
+    owner_ok, owner_reason = _owner_obligation_open_current(
+        pending, obligation, expected_consumer
+    )
+    if not owner_ok:
+        return ProjectionResult(
+            HOLD_OWNER_UNAVAILABLE_OR_STALE,
+            None,
+            owner_reason,
+            False,
+        )
+
+    # Phase 3: independent pre-emission consumer/privacy readback.
+    try:
         consumer = port.read_consumer(
             expected_consumer.actor_ref, expected_consumer.generation_ref
         )
@@ -303,42 +451,34 @@ def prepare_pre_close_projection(
         return ProjectionResult(
             HOLD_TARGET_SCOPE_UNVERIFIED,
             None,
-            "OWNER_PREEMISSION_READBACK_FAILED",
+            "OWNER_CONSUMER_READBACK_FAILED",
             False,
         )
-
-    if pending is None:
-        return ProjectionResult(NO_PENDING, None, "PENDING_NOT_FOUND", False)
-    if not isinstance(pending, PendingLearningReadback) or not isinstance(
-        consumer, ConsumerReadback
-    ):
+    if not isinstance(consumer, ConsumerReadback):
         return ProjectionResult(
             HOLD_TARGET_SCOPE_UNVERIFIED,
             None,
-            "OWNER_PREEMISSION_READBACK_INVALID",
+            "OWNER_CONSUMER_READBACK_INVALID",
             False,
         )
 
     exact = (
-        pending.current is True
-        and consumer.current is True
+        consumer.current is True
         and consumer.actor_ref == expected_consumer.actor_ref
         and consumer.generation_ref == expected_consumer.generation_ref
         and consumer.role == expected_consumer.role
         and consumer.objective_ref == expected_consumer.objective_ref
         and consumer.scope_ref == expected_consumer.scope_ref
         and consumer.interest_ref == expected_consumer.interest_ref
-        and consumer.owner_revision == expected_consumer.owner_revision
+        and consumer.owner_revision >= expected_consumer.owner_revision
         and consumer.visibility_ref == expected_consumer.visibility_ref
+        and consumer.binding_ref == expected_consumer.binding_ref
         and consumer.pointer_visible is True
-        and pending.owner_revision == expected_consumer.owner_revision
         and pending.scope_ref == expected_consumer.scope_ref
         and pending.interest_ref == expected_consumer.interest_ref
         and pending.visibility_ref == expected_consumer.visibility_ref
+        and pending.binding_ref == expected_consumer.binding_ref
         and pending.machine_liveness_credit is False
-        and _valid_pending_id(pending.pending_id)
-        and pending.pending_id == pending_id
-        and is_id(pending.learning_key)
         and is_id(pending.visibility_ref)
     )
     if not exact:
@@ -349,14 +489,22 @@ def prepare_pre_close_projection(
             False,
         )
 
+    current_obligation = obligation
+    assert isinstance(current_obligation, CurrentObligationReadback)
     pointer_material = {
         "learning_key": pending.learning_key,
         "record_fingerprint": pending.record_fingerprint,
         "pending_id": pending.pending_id,
-        "owner_revision": pending.owner_revision,
+        "obligation_id": pending.obligation_id,
+        "provenance_ref": pending.provenance_ref,
+        "owner_revision": current_obligation.owner_revision,
+        "owner_fence": current_obligation.owner_fence,
+        "owner_head_ref": current_obligation.owner_head_ref,
+        "owner_head_revision": current_obligation.owner_head_revision,
         "actor_ref": expected_consumer.actor_ref,
         "generation_ref": expected_consumer.generation_ref,
         "scope_ref": expected_consumer.scope_ref,
+        "binding_ref": expected_consumer.binding_ref,
         "visibility_ref": expected_consumer.visibility_ref,
     }
     pointer = PendingPointer(
@@ -364,13 +512,21 @@ def prepare_pre_close_projection(
         learning_key=pending.learning_key,
         record_fingerprint=pending.record_fingerprint,
         pending_id=pending.pending_id,
-        owner_revision=pending.owner_revision,
+        owner_revision=current_obligation.owner_revision,
         origin=pending.origin,
         machine_attempt_state=pending.machine_attempt_state,
         machine_liveness_credit=False,
         visibility_ref=pending.visibility_ref,
+        obligation_id=pending.obligation_id,
+        provenance_ref=pending.provenance_ref,
+        binding_ref=pending.binding_ref,
+        owner_head_ref=current_obligation.owner_head_ref,
+        owner_head_revision=current_obligation.owner_head_revision,
+        owner_fence=current_obligation.owner_fence,
     )
-    return ProjectionResult(POINTER_READY, pointer, "EXACT_TARGET_VERIFIED", True)
+    return ProjectionResult(
+        POINTER_READY, pointer, "CURRENT_OWNER_AND_TARGET_VERIFIED", True
+    )
 
 
 def observe_transport_ack(*, delivered: bool) -> TransportObservation:
@@ -407,7 +563,7 @@ def apply_actor_disposition(
         and receipt.pending_id == pointer.pending_id
         and receipt.actor_ref == expected_consumer.actor_ref
         and receipt.generation_ref == expected_consumer.generation_ref
-        and receipt.owner_revision == expected_consumer.owner_revision
+        and receipt.owner_revision == pointer.owner_revision
         and receipt.currentness_readback_verified is True
         and receipt.disposition in ACTOR_DISPOSITIONS
     )

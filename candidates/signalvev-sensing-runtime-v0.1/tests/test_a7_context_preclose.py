@@ -13,6 +13,10 @@ from a7_context_preclose import (  # noqa: E402
     DEFER_BUSY,
     HOLD_STALE,
     HOLD_TARGET_SCOPE_UNVERIFIED,
+    HOLD_OWNER_UNAVAILABLE_OR_STALE,
+    OPEN,
+    CONSUMED,
+    REVOKED,
     NO_CHANGE,
     NO_PENDING,
     NOT_APPLICABLE,
@@ -20,6 +24,7 @@ from a7_context_preclose import (  # noqa: E402
     ActorDispositionReceipt,
     ConsumerExpectation,
     ConsumerReadback,
+    CurrentObligationReadback,
     OwnerAppendReceipt,
     OwnerContextLearningSink,
     OwnerLearningReadback,
@@ -49,6 +54,13 @@ SCOPE = "scope:p22"
 INTEREST = "interest:terminal-next-question"
 VISIBILITY = "visibility:scope-p22"
 PENDING = "pending:c1001"
+OBLIGATION = "obligation:c1001-next-question"
+PROVENANCE = "provenance:pm9455-pm9457"
+BINDING = "binding:r1-c1001"
+OWNER_HEAD = "owner-head:10"
+OWNER_REV = 10
+OWNER_HEAD_REV = 10
+OWNER_FENCE = 10
 SHA = "a" * 64
 RECEIPT_SHA = "b" * 64
 
@@ -100,11 +112,13 @@ class FakeContextOwnerPort:
             objective_ref=OBJECTIVE,
             scope_ref=SCOPE,
             interest_ref=INTEREST,
-            owner_revision=1,
+            owner_revision=OWNER_REV,
             visibility_ref=VISIBILITY,
+            binding_ref=BINDING,
             pointer_visible=True,
             current=True,
         )
+        self.obligations = {}
         self.dispositions = {}
         self.acks = []
         self.false_learning_readback = False
@@ -130,14 +144,37 @@ class FakeContextOwnerPort:
                 learning_key=record.learning_key,
                 record_fingerprint=record.payload_fingerprint,
                 pending_id=pending_id,
-                owner_revision=1,
+                owner_revision=OWNER_REV,
                 origin=record.origin,
                 machine_attempt_state="UNKNOWN_SEND",
                 machine_liveness_credit=machine_liveness_credit,
                 scope_ref=SCOPE,
                 interest_ref=INTEREST,
                 visibility_ref=VISIBILITY,
+                obligation_id=OBLIGATION,
+                provenance_ref=PROVENANCE,
+                binding_ref=BINDING,
+                owner_head_ref=OWNER_HEAD,
+                owner_head_revision=OWNER_HEAD_REV,
+                owner_fence=OWNER_FENCE,
                 current=True,
+            )
+            self.obligations[OBLIGATION] = CurrentObligationReadback(
+                obligation_id=OBLIGATION,
+                provenance_ref=PROVENANCE,
+                status=OPEN,
+                actor_ref=ACTOR,
+                generation_ref=GEN,
+                scope_ref=SCOPE,
+                binding_ref=BINDING,
+                owner_head_ref=OWNER_HEAD,
+                owner_head_revision=OWNER_HEAD_REV,
+                owner_revision=OWNER_REV,
+                owner_fence=OWNER_FENCE,
+                disposition_ref=None,
+                tombstone_ref=None,
+                readback_ref="obligation-readback:10",
+                readback_verified=True,
             )
         return OwnerAppendReceipt(
             learning_key=record.learning_key,
@@ -145,7 +182,7 @@ class FakeContextOwnerPort:
                 "0" * 64 if self.false_append_receipt else record.payload_fingerprint
             ),
             pending_id=pending_id,
-            owner_revision=1,
+            owner_revision=OWNER_REV,
             receipt_ref="owner-receipt:1",
             committed=True,
             duplicate=duplicate,
@@ -159,7 +196,7 @@ class FakeContextOwnerPort:
             learning_key=learning_key,
             record_fingerprint=record.payload_fingerprint,
             pending_id=row["pending_id"],
-            owner_revision=row["revision"],
+            owner_revision=OWNER_REV,
             readback_ref="owner-readback:1",
             readback_verified=not self.false_learning_readback,
             machine_liveness_credit=False,
@@ -167,6 +204,9 @@ class FakeContextOwnerPort:
 
     def read_pending(self, pending_id: str):
         return self.pending.get(pending_id)
+
+    def read_current_obligation(self, obligation_id: str):
+        return self.obligations.get(obligation_id)
 
     def read_consumer(self, actor_ref: str, generation_ref: str):
         return self.consumer
@@ -200,8 +240,9 @@ def expected(**overrides):
         objective_ref=OBJECTIVE,
         scope_ref=SCOPE,
         interest_ref=INTEREST,
-        owner_revision=1,
+        owner_revision=OWNER_REV,
         visibility_ref=VISIBILITY,
+        binding_ref=BINDING,
     )
     values.update(overrides)
     return ConsumerExpectation(**values)
@@ -262,6 +303,113 @@ class A7ContextPreCloseTests(unittest.TestCase):
         self.assertEqual(first.learning_receipt.pending_id, second.learning_receipt.pending_id)
         self.assertTrue(second.learning_receipt.idempotent_replay)
         self.assertEqual(len(port.pending), 1)
+
+    def test_missing_current_obligation_holds_zero_emission(self):
+        port = FakeContextOwnerPort()
+        build_learning(port)
+        port.obligations.clear()
+        res = project(port)
+        self.assertEqual(res.result, HOLD_OWNER_UNAVAILABLE_OR_STALE)
+        self.assertFalse(res.emitted)
+        self.assertIsNone(res.pointer)
+        self.assertEqual(port.acks, [])
+
+    def test_unknown_current_obligation_status_holds_zero_emission(self):
+        port = FakeContextOwnerPort()
+        build_learning(port)
+        current = port.obligations[OBLIGATION]
+        port.obligations[OBLIGATION] = CurrentObligationReadback(
+            **{**current.__dict__, "status": "UNKNOWN"}
+        )
+        res = project(port)
+        self.assertEqual(res.result, HOLD_OWNER_UNAVAILABLE_OR_STALE)
+        self.assertFalse(res.emitted)
+
+    def test_owner_revision_or_fence_behind_pending_holds(self):
+        port = FakeContextOwnerPort()
+        build_learning(port)
+        current = port.obligations[OBLIGATION]
+        port.obligations[OBLIGATION] = CurrentObligationReadback(
+            **{
+                **current.__dict__,
+                "owner_revision": OWNER_REV - 1,
+                "owner_head_revision": OWNER_HEAD_REV - 1,
+                "owner_fence": OWNER_FENCE - 1,
+            }
+        )
+        res = project(port)
+        self.assertEqual(res.result, HOLD_OWNER_UNAVAILABLE_OR_STALE)
+        self.assertFalse(res.emitted)
+
+    def test_owner_provenance_mismatch_holds(self):
+        port = FakeContextOwnerPort()
+        build_learning(port)
+        current = port.obligations[OBLIGATION]
+        port.obligations[OBLIGATION] = CurrentObligationReadback(
+            **{**current.__dict__, "provenance_ref": "provenance:other"}
+        )
+        res = project(port)
+        self.assertEqual(res.result, HOLD_OWNER_UNAVAILABLE_OR_STALE)
+        self.assertFalse(res.emitted)
+
+    def test_identical_restored_rev10_histories_diverge_only_on_fresh_owner_readback(self):
+        open_port = FakeContextOwnerPort()
+        consumed_port = FakeContextOwnerPort()
+        build_learning(open_port)
+        build_learning(consumed_port)
+
+        # Local restored history is byte-equivalent at rev10.
+        self.assertEqual(open_port.pending[PENDING], consumed_port.pending[PENDING])
+        self.assertTrue(consumed_port.pending[PENDING].current)
+        consumed_port.acks.append((PENDING, "old-ack:rev10"))
+
+        consumed_port.obligations[OBLIGATION] = CurrentObligationReadback(
+            obligation_id=OBLIGATION,
+            provenance_ref=PROVENANCE,
+            status=CONSUMED,
+            actor_ref=ACTOR,
+            generation_ref="generation:r1-rev12",
+            scope_ref=SCOPE,
+            binding_ref="binding:r1-rev12",
+            owner_head_ref="owner-head:11",
+            owner_head_revision=11,
+            owner_revision=11,
+            owner_fence=11,
+            disposition_ref="disposition:rev11",
+            tombstone_ref="tombstone:rev11",
+            readback_ref="obligation-readback:12",
+            readback_verified=True,
+        )
+
+        open_result = project(open_port)
+        consumed_result = project(consumed_port)
+        self.assertEqual(open_result.result, POINTER_READY)
+        self.assertTrue(open_result.emitted)
+        self.assertEqual(consumed_result.result, HOLD_OWNER_UNAVAILABLE_OR_STALE)
+        self.assertFalse(consumed_result.emitted)
+        self.assertIsNone(consumed_result.pointer)
+
+    def test_local_current_true_or_old_ack_never_infers_open(self):
+        port = FakeContextOwnerPort()
+        build_learning(port)
+        self.assertTrue(port.pending[PENDING].current)
+        port.acks.append((PENDING, "old-ack:rev10"))
+        current = port.obligations[OBLIGATION]
+        port.obligations[OBLIGATION] = CurrentObligationReadback(
+            **{
+                **current.__dict__,
+                "status": REVOKED,
+                "owner_revision": 11,
+                "owner_head_revision": 11,
+                "owner_head_ref": "owner-head:11",
+                "owner_fence": 11,
+                "disposition_ref": "disposition:revoke11",
+                "tombstone_ref": "tombstone:revoke11",
+            }
+        )
+        res = project(port)
+        self.assertEqual(res.result, HOLD_OWNER_UNAVAILABLE_OR_STALE)
+        self.assertFalse(res.emitted)
 
     def test_wrong_generation_holds_before_pointer_emission(self):
         port = FakeContextOwnerPort()
@@ -334,7 +482,7 @@ class A7ContextPreCloseTests(unittest.TestCase):
             pending_id=ptr.pending_id,
             actor_ref=ACTOR,
             generation_ref=generation,
-            owner_revision=1,
+            owner_revision=ptr.owner_revision,
             disposition=disposition,
             currentness_readback_verified=True,
         )

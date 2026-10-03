@@ -45,3 +45,38 @@ test_a7_context_preclose.py covers owner append/readback, false receipt, duplica
 Local contract candidate only.
 First production gap remains CURRENT_CONTEXT_PRODUCTION_CUSTODIAN_ACTOR_REF: no verified current actor_ref + generation + delegation/readback for production Context configuration, issuer and storage is bound here.
 No C4, Room B, Claude, live provider/storage/key/deploy/global watcher.
+## Recovery-cut authoritative obligation currentness
+
+PRE_CLOSE projection now has a mandatory owner-currentness phase before the
+existing consumer/privacy phase.
+
+The local pending row identifies only which obligation must be reread. It is
+not evidence that the obligation is still open. The injected owner port must
+return a fresh CurrentObligationReadback bound to:
+
+- stable obligation_id,
+- stable provenance_ref,
+- authoritative status OPEN|CONSUMED|REVOKED,
+- current actor_ref + generation_ref + scope_ref + binding_ref,
+- owner head ref + monotonic head revision,
+- owner revision,
+- owner fence,
+- durable disposition/tombstone state,
+- verified owner readback reference.
+
+Projection is allowed only for authoritative OPEN and only when owner
+head/revision/fence are at least the pending-pointer basis. Any missing,
+unverified, unknown, consumed, revoked, changed binding/provenance or stale
+head/revision/fence yields HOLD_OWNER_UNAVAILABLE_OR_STALE with zero pointer,
+zero consumption and zero effect.
+
+The recovery falsifier uses two byte-equivalent restored rev10 local pending
+histories. In one history fresh owner truth is still OPEN rev10. In the other,
+the owner records CONSUMED rev11 and a generation/binding change at rev12.
+Only the fresh owner readback may distinguish them. Local pending,
+transport ACK, old snapshot absence and current=true are explicitly
+non-authoritative for OPEN.
+
+This closes the A4 P1589 PM9497 recovery-cut finding locally. It does not prove
+that a production CurrentObligationReader or production Context custodian is
+deployed or authorized.
