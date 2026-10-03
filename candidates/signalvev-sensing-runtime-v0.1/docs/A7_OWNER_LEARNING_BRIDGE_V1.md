@@ -45,7 +45,7 @@ Receipt/provider-evidensen lagres på første commit, men er ikke en del av sema
 - \`learning_record\`,
 - \`pending_encounter\`.
 
-Learning + pending encounter-intent committes atomisk. En restart etter learning commit men før senere encounter beholder pending-obligasjonen. \`dispatch_pending()\` er eksplisitt og oppretter ingen watcher eller global polling. Pending slettes først etter consumer ACK.
+Learning + pending encounter-intent committes atomisk. En restart etter learning commit men før senere encounter beholder pending-obligasjonen. \`dispatch_pending()\` er eksplisitt og oppretter ingen watcher eller global polling. Consumer ACK lagres som varig \`ACKED\`-status; raden beholdes slik at senere replay ikke kan gjenopprette en allerede konsumert encounter-obligasjon.
 
 Dette beviser ikke produksjons-Context-DB, server custody eller live currentness.
 
