@@ -139,7 +139,8 @@ class SqliteContextLearningSink:
                 pending_id TEXT PRIMARY KEY,
                 learning_key TEXT NOT NULL UNIQUE
                     REFERENCES learning_record(learning_key) ON DELETE CASCADE,
-                record_json TEXT NOT NULL
+                record_json TEXT NOT NULL,
+                state TEXT NOT NULL CHECK(state IN ('PENDING','ACKED')) DEFAULT 'PENDING'
             );
             """
         )
@@ -234,11 +235,18 @@ class SqliteContextLearningSink:
         return int(self._conn.execute("SELECT COUNT(*) FROM learning_record").fetchone()[0])
 
     def pending_count(self) -> int:
-        return int(self._conn.execute("SELECT COUNT(*) FROM pending_encounter").fetchone()[0])
+        return int(
+            self._conn.execute(
+                "SELECT COUNT(*) FROM pending_encounter WHERE state='PENDING'"
+            ).fetchone()[0]
+        )
 
     def pending(self) -> tuple[PendingEncounter, ...]:
         rows = self._conn.execute(
-            "SELECT pending_id,learning_key,record_json FROM pending_encounter ORDER BY pending_id"
+            """SELECT pending_id,learning_key,record_json
+               FROM pending_encounter
+               WHERE state='PENDING'
+               ORDER BY pending_id"""
         ).fetchall()
         return tuple(
             PendingEncounter(
@@ -255,7 +263,10 @@ class SqliteContextLearningSink:
         self._conn.execute("BEGIN IMMEDIATE")
         try:
             cur = self._conn.execute(
-                "DELETE FROM pending_encounter WHERE pending_id=?", (pending_id,)
+                """UPDATE pending_encounter
+                   SET state='ACKED'
+                   WHERE pending_id=? AND state='PENDING'""",
+                (pending_id,),
             )
             if cur.rowcount != 1:
                 raise SensingError("A7_PENDING_NOT_FOUND")
