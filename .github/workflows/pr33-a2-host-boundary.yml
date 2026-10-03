@@ -25,3 +25,7 @@ jobs:
         run: python -m pip install PyYAML==6.0.2
       - name: Verify authenticated in-process Project entry
         run: python -B tooling/validator/project_commissioning_host_boundary_validation.py
+      - name: Install governed official MCP SDK runtime
+        run: python -m pip install -r mcp/control-context-mcp-sdk-requirements.txt
+      - name: Verify official MCP SDK composition
+        run: python -B tooling/validator/control_context_mcp_sdk_validation.py selftest
