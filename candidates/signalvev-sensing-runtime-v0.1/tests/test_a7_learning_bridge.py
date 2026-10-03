@@ -100,6 +100,8 @@ class ReceiptProbeSink:
             raise OSError("injected after-port-invocation failure")
         if self.mode == "none":
             return None
+        if self.mode == "wrong_type":
+            return {"learning_key": record.learning_key}
         key = record.learning_key if self.mode != "wrong_key" else "0" * 64
         fingerprint = (
             record.payload_fingerprint if self.mode != "wrong_fingerprint" else "1" * 64
@@ -351,6 +353,20 @@ class A7LearningBridgeTests(unittest.TestCase):
 
     def test_none_receipt_is_unknown_commit_not_committed(self):
         bridge, sink = self._bridge_with_probe_sink("none")
+        result = bridge.process(
+            receipt_ref="receipt:1",
+            expected_owner_ref=OWNER,
+            outcome="NEGATIVE",
+            origin="HUMAN",
+            evidence_refs=["pm:9310"],
+        )
+        self.assertEqual(result.disposition, LEARNING_COMMIT_UNKNOWN)
+        self.assertIsNone(result.learning_receipt)
+        self.assertEqual(result.reason, "LEARNING_RECEIPT_MISSING_OR_WRONG_TYPE")
+        self.assertEqual(len(sink.calls), 1)
+
+    def test_wrong_receipt_type_is_unknown_commit_not_committed(self):
+        bridge, sink = self._bridge_with_probe_sink("wrong_type")
         result = bridge.process(
             receipt_ref="receipt:1",
             expected_owner_ref=OWNER,
