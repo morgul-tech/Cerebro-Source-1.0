@@ -29,6 +29,17 @@ Den konkrete `SqliteContextLearningSink` ligger i `tests/a7_sqlite_learning_sink
 
 Eksisterende `StaticGuards` er uendret; `sqlite3` er fortsatt forbudt i `src/signalvev_sensing/*.py`.
 
+## Learning receipt boundary
+
+`A7LearningBridge` claims `LEARNING_COMMITTED` only after the injected persistence port returns a valid `LearningReceipt` that proves:
+
+- exact `learning_key`,
+- exact semantic `record_fingerprint`,
+- `readback_verified is True`,
+- valid `pending_id`.
+
+A missing/malformed receipt, false readback, mismatched key/fingerprint, invalid pending identity, or an exception after the persistence port is invoked returns typed `LEARNING_COMMIT_UNKNOWN`. That state deliberately does **not** claim either durable commit or proven no-write, because the provider may have written before the bad/missing proof. Pre-port owner/auth/applicability failures remain the proven no-write paths.
+
 ## Learning identity
 
 Learning key bindes til owner, event_id, owner revision_after og classifier revision. Semantic payload binder referent, expected hash, outcome, origin, evidence refs og Way Home.
