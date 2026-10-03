@@ -7,6 +7,7 @@ on:
     paths:
       - tooling/validator/project_commissioning_host_boundary_validation.py
 
+      - .github/workflows/pr33-a2-host-boundary.yml
 permissions:
   contents: read
 

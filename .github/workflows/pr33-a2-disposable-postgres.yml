@@ -10,6 +10,7 @@ on:
       - tooling/validator/project_commissioning_postgres_integration.py
       - tooling/validator/project_commissioning_full_chain_postgres_integration.py
 
+      - .github/workflows/pr33-a2-disposable-postgres.yml
 permissions:
   contents: read
 
