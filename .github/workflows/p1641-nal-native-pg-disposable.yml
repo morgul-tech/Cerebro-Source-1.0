@@ -1,0 +1,220 @@
+name: P1641 NAL native PostgreSQL disposable
+
+on:
+  push:
+    branches:
+      - p22/test-p1641-native-pg-09f7351-v1
+    paths:
+      - .github/workflows/p1641-nal-native-pg-disposable.yml
+      - .github/p1641-native-pg/**
+
+permissions:
+  contents: read
+
+jobs:
+  native7:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out temporary transport ref
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: route
+
+      - name: Verify transport and reconstruct immutable original
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C route rev-parse HEAD^)" = "3ac1fe9d4e24a86bce311f6a34893bb4ffe3ce15"
+          mapfile -t changed < <(git -C route diff-tree --no-commit-id --name-only -r HEAD)
+          test "${#changed[@]}" -eq 4
+          for p in "${changed[@]}"; do
+            case "$p" in
+              .github/workflows/p1641-nal-native-pg-disposable.yml|.github/p1641-native-pg/*) ;;
+              *) echo "FORBIDDEN_ROUTE_PATH=$p"; exit 21 ;;
+            esac
+          done
+          printf '%s  %s\n' \
+            "2d0a28fae5c0e2f6f2b3adf13674353354990d72e4ebd0a439bd39b1a208ac99" \
+            "route/.github/p1641-native-pg/P1638_NAL22_09f7351.bundle" | sha256sum -c -
+          printf '%s  %s\n' \
+            "5d7dab2ca5a0225cae1326623cd4eec8da2103f314d28195fcac6c43dd9b3eb9" \
+            "route/.github/p1641-native-pg/P1638_NAL22_manifest.txt" | sha256sum -c -
+          git clone --no-checkout route candidate
+          git -C candidate bundle unbundle "$GITHUB_WORKSPACE/route/.github/p1641-native-pg/P1638_NAL22_09f7351.bundle"
+          git -C candidate checkout --detach 09f7351d3c28b6fe50ddfccad4119413145b7820
+          test "$(git -C candidate rev-parse HEAD)" = "09f7351d3c28b6fe50ddfccad4119413145b7820"
+          test "$(git -C candidate rev-parse 'HEAD^{tree}')" = "0d848aab9e3a82b9ad7f0e5e2c94102d0f477062"
+          test "$(git -C candidate rev-parse 'HEAD^')" = "3ac1fe9d4e24a86bce311f6a34893bb4ffe3ce15"
+          printf '%s  %s\n' \
+            "c6db56c15dcc6ac91ba56275bb5e317113873dfcc18de95f6e4d566be4f366ed" \
+            "candidate/candidates/natural-actor-lifecycle-v0.1/schema_v1.sql" | sha256sum -c -
+          printf '%s  %s\n' \
+            "ee90b549cb1b49e1133d7db388c9453e20c292578e44ca6317e1b0dc4c28c06e" \
+            "candidate/candidates/natural-actor-lifecycle-v0.1/schema_owner_binding_local_v1.sql" | sha256sum -c -
+          printf '%s  %s\n' \
+            "44ab9ec5d0f4bb3c6e0073d194291065d6283e14180d1f6eadcdbf8f96b56153" \
+            "candidate/candidates/natural-actor-lifecycle-v0.1/schema_parent_authority_local_v1.sql" | sha256sum -c -
+          python -m py_compile route/.github/p1641-native-pg/p1641_native7.py
+
+      - name: Install ephemeral PostgreSQL client dependency
+        shell: bash
+        run: python -m pip install 'psycopg[binary]==3.3.6'
+
+      - name: Setup disposable PostgreSQL and execute frozen native7
+        id: native7
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +x
+          ART="$RUNNER_TEMP/p1641-native7-artifact"
+          mkdir -p "$ART"
+          CTR="p1641-pg-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          NET="p1641-net-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          IMAGE="postgres:16@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54"
+          cleanup() {
+            set +e
+            docker rm -f "$CTR" >/dev/null 2>&1
+            ctr_rc=$?
+            docker network rm "$NET" >/dev/null 2>&1
+            net_rc=$?
+            if [ "$ctr_rc" -eq 0 ] && [ "$net_rc" -eq 0 ]; then
+              printf 'CLEANUP=PASS\n' > "$ART/cleanup.txt"
+            else
+              printf 'CLEANUP=FAIL container_rc=%s network_rc=%s\n' "$ctr_rc" "$net_rc" > "$ART/cleanup.txt"
+            fi
+          }
+          trap cleanup EXIT
+
+          BOOTPW="$(openssl rand -hex 24)"
+          WORKERPW="$(openssl rand -hex 24)"
+          RIGHTSPW="$(openssl rand -hex 24)"
+          ADMINPW="$(openssl rand -hex 24)"
+          DECISIONPW="$(openssl rand -hex 24)"
+          for v in "$BOOTPW" "$WORKERPW" "$RIGHTSPW" "$ADMINPW" "$DECISIONPW"; do
+            echo "::add-mask::$v"
+          done
+
+          docker pull "$IMAGE" >/dev/null
+          REPO_DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE")"
+          test "$REPO_DIGEST" = "postgres@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54"
+          docker network create "$NET" >/dev/null
+          docker run -d --name "$CTR" --network "$NET" \
+            -e POSTGRES_PASSWORD="$BOOTPW" \
+            -p 127.0.0.1::5432 "$IMAGE" >/dev/null
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if docker exec "$CTR" pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+
+          SERVER_VERSION="$(docker exec "$CTR" psql -U postgres -d postgres -Atqc 'SHOW server_version;')"
+          test "$SERVER_VERSION" = "16.15"
+          PORT="$(docker port "$CTR" 5432/tcp | sed -E 's/.*:([0-9]+)$/\1/')"
+          test -n "$PORT"
+
+          docker exec -i "$CTR" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -v worker_pw="$WORKERPW" -v rights_pw="$RIGHTSPW" \
+            -v admin_pw="$ADMINPW" -v decision_pw="$DECISIONPW" <<'SQL'
+          CREATE DATABASE cerebro_p1641_native_qg;
+          CREATE ROLE cerebro_nal_owner NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE cerebro_pm_binding_owner NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE cerebro_pm_binding_issuer NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE cerebro_pm_authority_owner NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE cerebro_human_rights_issuer NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE cerebro_pm_admin_issuer NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE cerebro_pm_decision_issuer NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE p1641_worker LOGIN PASSWORD :'worker_pw' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE p1641_rights LOGIN PASSWORD :'rights_pw' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE p1641_admin LOGIN PASSWORD :'admin_pw' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          CREATE ROLE p1641_decision LOGIN PASSWORD :'decision_pw' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
+          GRANT cerebro_nal_owner TO p1641_worker;
+          GRANT cerebro_human_rights_issuer TO p1641_rights;
+          GRANT cerebro_pm_admin_issuer TO p1641_admin;
+          GRANT cerebro_pm_decision_issuer TO p1641_decision;
+          SQL
+
+          for schema in \
+            schema_v1.sql \
+            schema_owner_binding_local_v1.sql \
+            schema_parent_authority_local_v1.sql; do
+            docker exec -i "$CTR" psql -U postgres -d cerebro_p1641_native_qg -v ON_ERROR_STOP=1 \
+              < "$GITHUB_WORKSPACE/candidate/candidates/natural-actor-lifecycle-v0.1/$schema"
+          done
+
+          WORKER_DSN="postgresql://p1641_worker:${WORKERPW}@127.0.0.1:${PORT}/cerebro_p1641_native_qg?options=-c%20role%3Dcerebro_nal_owner"
+          RIGHTS_DSN="postgresql://p1641_rights:${RIGHTSPW}@127.0.0.1:${PORT}/cerebro_p1641_native_qg?options=-c%20role%3Dcerebro_human_rights_issuer"
+          ADMIN_DSN="postgresql://p1641_admin:${ADMINPW}@127.0.0.1:${PORT}/cerebro_p1641_native_qg?options=-c%20role%3Dcerebro_pm_admin_issuer"
+          DECISION_DSN="postgresql://p1641_decision:${DECISIONPW}@127.0.0.1:${PORT}/cerebro_p1641_native_qg?options=-c%20role%3Dcerebro_pm_decision_issuer"
+          printf 'NATIVE7_ASSERTIONS_BEGIN\n'
+          printf 'STARTED\n' > "$ART/native_assertion_started.txt"
+          set +e
+          P1625_WORKER_DSN="$WORKER_DSN" \
+          P1625_RIGHTS_DSN="$RIGHTS_DSN" \
+          P1625_ADMIN_DSN="$ADMIN_DSN" \
+          P1625_DECISION_DSN="$DECISION_DSN" \
+          P1641_CANDIDATE_ROOT="$GITHUB_WORKSPACE/candidate" \
+          P1641_RESULT_PATH="$ART/native7_result.json" \
+            python -B "$GITHUB_WORKSPACE/route/.github/p1641-native-pg/p1641_native7.py"
+          TEST_RC=$?
+          set -e
+
+          python - "$ART/runtime_meta.json" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$REPO_DIGEST" "$SERVER_VERSION" <<'PY'
+          import json, sys
+          path, route_sha, run_id, attempt, digest, version = sys.argv[1:]
+          data = {
+              "schema": "cerebro-p1641-native7-runtime-meta/v1",
+              "route_commit": route_sha,
+              "run_id": run_id,
+              "run_attempt": attempt,
+              "runner_image": "ubuntu-24.04",
+              "postgres_repo_digest": digest,
+              "server_version": version,
+              "candidate_head": "09f7351d3c28b6fe50ddfccad4119413145b7820",
+              "candidate_tree": "0d848aab9e3a82b9ad7f0e5e2c94102d0f477062",
+              "candidate_parent": "3ac1fe9d4e24a86bce311f6a34893bb4ffe3ce15",
+              "schema_sha256": {
+                  "schema_v1.sql": "c6db56c15dcc6ac91ba56275bb5e317113873dfcc18de95f6e4d566be4f366ed",
+                  "schema_owner_binding_local_v1.sql": "ee90b549cb1b49e1133d7db388c9453e20c292578e44ca6317e1b0dc4c28c06e",
+                  "schema_parent_authority_local_v1.sql": "44ab9ec5d0f4bb3c6e0073d194291065d6283e14180d1f6eadcdbf8f96b56153",
+              },
+          }
+          with open(path, "w", encoding="utf-8") as f:
+              json.dump(data, f, sort_keys=True, indent=2)
+              f.write("\n")
+          PY
+
+          cleanup
+          trap - EXIT
+          grep -qx 'CLEANUP=PASS' "$ART/cleanup.txt"
+          exit "$TEST_RC"
+
+      - name: Build redacted evidence receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          ART="$RUNNER_TEMP/p1641-native7-artifact"
+          mkdir -p "$ART"
+          if compgen -G "$ART/*" >/dev/null; then
+            sha256sum "$ART"/* | sort > "$ART/SHA256SUMS.txt"
+          else
+            : > "$ART/SHA256SUMS.txt"
+          fi
+          printf 'ROUTE_COMMIT=%s\nRUN_ID=%s\nRUN_ATTEMPT=%s\n' \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$ART/run_identity.txt"
+
+      - name: Upload redacted native7 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p1641-native7-redacted-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/p1641-native7-artifact/
+          if-no-files-found: error
+          retention-days: 7
