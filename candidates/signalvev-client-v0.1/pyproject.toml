@@ -1,0 +1,38 @@
+# Metadata source for the distribution. packaging/build_dist.py reads this file and writes the wheel from a STAGED tree
+# (client package + the UNCHANGED core + hash-pinned reference modules); see README.md > "Build".
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "signalvev-client"
+version = "0.1.0"
+description = "Private Core NATS client (send/listen) for the existing Signalvev D0 implementation. Isolated candidate, authority NONE."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["nats-py>=2.16.0,<3"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: Other/Proprietary License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+]
+
+[project.optional-dependencies]
+# Needed only when nats.credentials_file is configured (nats-py signs the server nonce with nkeys).
+credentials = ["nkeys>=0.2.1"]
+
+[project.scripts]
+signalvev-client = "signalvev_client.cli:main"
+
+[tool.setuptools]
+packages = ["signalvev_client", "signalvev_sensing"]
+include-package-data = false
+
+[tool.setuptools.package-data]
+signalvev_client = [
+    "_reference_resources/RESOURCE_MANIFEST.json",
+    "_reference_resources/tooling/validator/*.py",
+    "_reference_resources/candidates/signalvev-reference-v0.1/*.json",
+]

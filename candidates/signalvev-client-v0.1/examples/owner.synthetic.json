@@ -1,0 +1,13 @@
+{
+  "label": "SYNTHETIC_OWNER_FIXTURE_NOT_PRODUCTION",
+  "entries": [
+    {
+      "owner_ref": "owner:example-synthetic",
+      "referent_type": "doc",
+      "referent_id": "example-doc",
+      "current_revision": "rev-5",
+      "owner_seq": 5,
+      "sha256": "bb1bb77934a4249dedda4b0895a8596f29a4390b9f6cf88000b93b38df337e0a"
+    }
+  ]
+}
