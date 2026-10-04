@@ -26,8 +26,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C route rev-parse HEAD^)" = "3ac1fe9d4e24a86bce311f6a34893bb4ffe3ce15"
-          mapfile -t changed < <(git -C route diff-tree --no-commit-id --name-only -r HEAD)
+          BASE="3ac1fe9d4e24a86bce311f6a34893bb4ffe3ce15"
+          test "$(git -C route merge-base HEAD "$BASE")" = "$BASE"
+          mapfile -t changed < <(git -C route diff --name-only "$BASE"..HEAD)
           test "${#changed[@]}" -eq 4
           for p in "${changed[@]}"; do
             case "$p" in
