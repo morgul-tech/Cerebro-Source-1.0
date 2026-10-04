@@ -98,7 +98,11 @@ jobs:
 
           docker pull "$IMAGE" >/dev/null
           REPO_DIGEST="$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE")"
-          test "$REPO_DIGEST" = "postgres@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54"
+          printf 'POSTGRES_REPO_DIGEST=%s\n' "$REPO_DIGEST"
+          case "$REPO_DIGEST" in
+            postgres@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54|docker.io/library/postgres@sha256:1a6ab3f5345eb6dbe04a1349529caabdb0ab09293a09590fad07b2246bfa4b54) ;;
+            *) echo "::error::POSTGRES_DIGEST_MISMATCH"; exit 31 ;;
+          esac
           docker network create "$NET" >/dev/null
           docker run -d --name "$CTR" --network "$NET" \
             -e POSTGRES_PASSWORD="$BOOTPW" \
@@ -112,12 +116,24 @@ jobs:
             fi
             sleep 1
           done
-          test "$ready" -eq 1
+          if [ "$ready" -ne 1 ]; then
+            echo "::error::POSTGRES_NOT_READY"
+            exit 32
+          fi
 
           SERVER_VERSION="$(docker exec "$CTR" psql -U postgres -d postgres -Atqc 'SHOW server_version;')"
-          test "$SERVER_VERSION" = "16.15"
+          printf 'POSTGRES_SERVER_VERSION=%s\n' "$SERVER_VERSION"
+          if [ "$SERVER_VERSION" != "16.15" ]; then
+            echo "::error::POSTGRES_SERVER_VERSION_MISMATCH"
+            exit 33
+          fi
           PORT="$(docker port "$CTR" 5432/tcp | sed -E 's/.*:([0-9]+)$/\1/')"
-          test -n "$PORT"
+          if [ -z "$PORT" ]; then
+            echo "::error::POSTGRES_LOOPBACK_PORT_UNBOUND"
+            exit 34
+          fi
+          printf '{"postgres_repo_digest":"%s","server_version":"%s","loopback_port_bound":true}\n' \
+            "$REPO_DIGEST" "$SERVER_VERSION" > "$ART/preassert_runtime.json"
 
           docker exec -i "$CTR" psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -v worker_pw="$WORKERPW" -v rights_pw="$RIGHTSPW" \
