@@ -1244,6 +1244,8 @@ def selftest() -> dict[str, Any]:
             "attach_role_overlay",
             "read_boot_generation_state",
             "resume_ready_unbound_assistant_overlay",
+            "resume_ready_unbound_worker_overlay",
+            "read_worker_operative_task",
             "read_project_control_state",
             "begin_project_control_event",
             "complete_project_control_event",
