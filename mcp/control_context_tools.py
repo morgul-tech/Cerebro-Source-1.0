@@ -52,6 +52,7 @@ from boot_birth_source import (
     verify_current_method, verify_existing_birth_method_continuity,
     verify_role_method_projection,
 )
+from worker_context_auth import WorkerContextAuthError
 
 
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
@@ -1134,6 +1135,62 @@ def tool_definitions() -> list[dict[str, Any]]:
             "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
         },
         {
+            "name": "resume_ready_unbound_worker_overlay",
+            "title": "Resume a READY_UNBOUND Worker overlay",
+            "description": (
+                "Default-off server-held WORKER policy and attestation path. Requires trusted "
+                "Human intent, current parent PM mandate, and a fenced generation-scoped "
+                "zero-claim owner read. Never accepts a client attestation."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref", "expected_revision", "source_revision"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                    "expected_revision": {"type": "integer", "minimum": 1},
+                    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "actor_generation_shadow", "control_decision_ref",
+                          "zero_claim_owner_revision", "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "actor_generation_shadow": {"type": "object"},
+                            "control_decision_ref": {"type": "string"},
+                            "zero_claim_owner_revision": {"type": "integer"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "read_worker_operative_task",
+            "title": "Read a current Worker task decision",
+            "description": (
+                "Read an already-issued PM task only for an attached WORKER generation "
+                "under its current pre-existing Human-granted PM mandate. Read only; no START."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref", "actor_generation_ref", "task_ref"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                    "actor_generation_ref": {"type": "string", "minLength": 1},
+                    "task_ref": {"type": "string", "minLength": 1},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("task_decision", "pre_role_generation_fingerprint",
+                          "actor_generation_fingerprint", "repository_permission_required"),
+                properties={"task_decision": {"type": "object"},
+                            "pre_role_generation_fingerprint": {"type": "string"},
+                            "actor_generation_fingerprint": {"type": "string"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
             "name": "read_project_control_state",
             "title": "Read project control state",
             "description": "Use this when the user needs the authenticated workspace's current project-control snapshot.",
@@ -1336,6 +1393,9 @@ class ControlContextMcpTools:
         assistant_overlay_control_resolver: Any | None = None,
         assistant_overlay_attestation_issuer: Any | None = None,
         assistant_overlay_source_continuity_verifier: Any = verify_existing_birth_method_continuity,
+        worker_overlay_control_resolver: Any | None = None,
+        worker_overlay_attestation_issuer: Any | None = None,
+        worker_overlay_source_continuity_verifier: Any = verify_existing_birth_method_continuity,
         role_method_source_verifier: Any = verify_role_method_projection,
     ):
         self._state_port = state_port
@@ -1360,6 +1420,9 @@ class ControlContextMcpTools:
         self._assistant_overlay_control_resolver = assistant_overlay_control_resolver
         self._assistant_overlay_attestation_issuer = assistant_overlay_attestation_issuer
         self._assistant_overlay_source_continuity_verifier = assistant_overlay_source_continuity_verifier
+        self._worker_overlay_control_resolver = worker_overlay_control_resolver
+        self._worker_overlay_attestation_issuer = worker_overlay_attestation_issuer
+        self._worker_overlay_source_continuity_verifier = worker_overlay_source_continuity_verifier
         self._role_method_source_verifier = role_method_source_verifier
 
     @staticmethod
@@ -1386,6 +1449,8 @@ class ControlContextMcpTools:
             "attach_role_overlay": self.attach_role_overlay,
             "read_boot_generation_state": self.read_boot_generation_state,
             "resume_ready_unbound_assistant_overlay": self.resume_ready_unbound_assistant_overlay,
+            "resume_ready_unbound_worker_overlay": self.resume_ready_unbound_worker_overlay,
+            "read_worker_operative_task": self.read_worker_operative_task,
             "read_project_control_state": self.read_project_control_state,
             "begin_project_control_event": self.begin_project_control_event,
             "complete_project_control_event": self.complete_project_control_event,
@@ -1756,6 +1821,170 @@ class ControlContextMcpTools:
             {**copy.deepcopy(payload), "control_resolution_attestation": attestation}, context,
         )["structuredContent"]
         return self._result({**attached, "control_decision_ref": decision_ref}, context)
+
+    def resume_ready_unbound_worker_overlay(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        """Attach WORKER only from server-held owner readers and a private seal."""
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        if set(args) != {"generation_ref", "expected_revision", "source_revision"}:
+            raise ControlContextToolError("worker-overlay-resume-exact-fields-required")
+        generation_ref = _require_text(args, "generation_ref")
+        source_revision = _require_text(args, "source_revision")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", generation_ref) is None:
+            raise ControlContextToolError("worker-overlay-resume-boot-generation-required")
+        expected_revision = args["expected_revision"]
+        if type(expected_revision) is not int or expected_revision < 1:
+            raise ControlContextToolError("worker-overlay-resume-expected-revision-invalid")
+        resolver = self._worker_overlay_control_resolver
+        issuer = self._worker_overlay_attestation_issuer
+        if not callable(getattr(resolver, "resolve", None)) or not callable(
+            getattr(resolver, "hold_zero_claim", None)
+        ) or not callable(getattr(issuer, "seal", None)):
+            raise ControlContextToolAuthorizationError("trusted-worker-overlay-owners-not-bound")
+        current = self._read_pre_role(identity, context, generation_ref)
+        if current["lifecycle"] != "READY_UNBOUND":
+            raise ControlContextToolError("worker-overlay-resume-ready-unbound-required")
+        if current["revision"] != expected_revision:
+            raise ControlContextToolError("worker-overlay-resume-expected-revision-mismatch")
+        if current["source_revision"] != source_revision:
+            raise ControlContextToolError("worker-overlay-resume-source-mismatch")
+        continuity = self._worker_overlay_source_continuity_verifier
+        if not callable(continuity):
+            raise ControlContextToolAuthorizationError("worker-overlay-source-verifier-not-bound")
+        source = continuity(
+            source_revision, current["civilization_method_attestation"]["method_fingerprint"],
+        )
+        if (
+            not isinstance(source, dict)
+            or source.get("source_revision") != source_revision
+            or source.get("method_fingerprint") != current["civilization_method_attestation"]["method_fingerprint"]
+            or source.get("method_unchanged") is not True
+            or source.get("ancestry_verified") is not True
+        ):
+            raise ControlContextToolAuthorizationError("worker-overlay-resume-current-method-mismatch")
+        try:
+            decision = resolver.resolve(
+                pre_role_generation=copy.deepcopy(current), verified_source=copy.deepcopy(source),
+                identity=identity, session_ref=context.session_ref(),
+            )
+        except WorkerContextAuthError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from exc
+        if not isinstance(decision, dict) or set(decision) != {
+            "result", "decision_ref", "pre_role_fingerprint", "ready_unbound_receipt_fingerprint",
+            "zero_claim_revision", "mandate_ref", "overlay_payload",
+        } or decision.get("result") != "ALLOW":
+            raise ControlContextToolAuthorizationError("worker-overlay-control-resolution-denied")
+        if decision["pre_role_fingerprint"] != current["fingerprint"] or \
+                decision["ready_unbound_receipt_fingerprint"] != current["ready_unbound_receipt"]["receipt_fingerprint"]:
+            raise ControlContextToolAuthorizationError("worker-overlay-control-resolution-stale")
+        decision_ref = _require_text(decision, "decision_ref")
+        if type(decision["zero_claim_revision"]) is not int or decision["zero_claim_revision"] < 1:
+            raise ControlContextToolAuthorizationError("worker-zero-claim-owner-revision-invalid")
+        _require_text(decision, "mandate_ref")
+        payload = decision["overlay_payload"]
+        required = {"generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+                    "actor_generation_ref", "source_revision"}
+        if not isinstance(payload, dict) or set(payload) != required or \
+                payload["generation_ref"] != generation_ref or \
+                payload["expected_revision"] != expected_revision or \
+                payload["source_revision"] != source_revision or payload["role"] != "WORKER":
+            raise ControlContextToolAuthorizationError("worker-overlay-control-payload-mismatch")
+        if any(not isinstance(payload[k], str) or not payload[k].strip()
+               for k in ("overlay_ref", "actor_ref", "actor_generation_ref")):
+            raise ControlContextToolAuthorizationError("worker-overlay-control-payload-invalid")
+        attached = None
+        try:
+            fence = resolver.hold_zero_claim(decision)
+            with fence:
+                fence.assert_current()
+                attestation = issuer.seal(
+                    operation="attach_role_overlay", payload=copy.deepcopy(payload), context=context,
+                )
+                attached = self.attach_role_overlay(
+                    {**copy.deepcopy(payload), "control_resolution_attestation": attestation}, context,
+                )["structuredContent"]
+                fence.assert_current()
+        except WorkerContextAuthError as exc:
+            if attached is not None:
+                raise ControlContextToolError("worker-overlay-postattach-zero-claim-unknown") from exc
+            raise ControlContextToolAuthorizationError(str(exc)) from exc
+        pre, actor = attached["pre_role_generation"], attached["actor_generation_shadow"]
+        if pre["generation_ref"] != generation_ref or pre["lifecycle"] != "ROLE_ATTACHED" or \
+                pre["ready_unbound_receipt"] != current["ready_unbound_receipt"] or \
+                pre["role_overlay"]["role"] != "WORKER" or \
+                pre["role_overlay"]["actor_ref"] != payload["actor_ref"] or \
+                pre["role_overlay"]["actor_generation_ref"] != payload["actor_generation_ref"] or \
+                pre["role_overlay"]["method_projection"]["authority"] != "NONE" or \
+                actor["actor_ref"] != payload["actor_ref"] or \
+                actor["generation_ref"] != payload["actor_generation_ref"] or \
+                actor["role"] != "WORKER" or actor["lifecycle"] != "READY" or \
+                actor["authority"] != "SHADOW_ONLY" or actor["source_revision"] != source_revision:
+            raise ControlContextToolError("worker-overlay-postattach-readback-unknown")
+        return self._result({**attached, "control_decision_ref": decision_ref,
+                             "zero_claim_owner_revision": decision["zero_claim_revision"]}, context)
+
+    def read_worker_operative_task(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        """Read an issued task; this does not attach a role or start work."""
+        identity = self._identity(context)
+        if "project_state:read" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:read")
+        if set(args) != {"generation_ref", "actor_generation_ref", "task_ref"}:
+            raise ControlContextToolError("worker-task-read-exact-fields-required")
+        generation_ref = _require_text(args, "generation_ref")
+        actor_generation_ref = _require_text(args, "actor_generation_ref")
+        task_ref = _require_text(args, "task_ref")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", generation_ref) is None:
+            raise ControlContextToolError("worker-task-read-boot-generation-required")
+        resolver = self._worker_overlay_control_resolver
+        if not callable(getattr(resolver, "read_current_task", None)):
+            raise ControlContextToolAuthorizationError("trusted-worker-task-owner-reader-not-bound")
+        pre = self._read_pre_role(identity, context, generation_ref)
+        overlay = pre.get("role_overlay") or {}
+        if pre["lifecycle"] != "ROLE_ATTACHED" or overlay.get("role") != "WORKER" or \
+                overlay.get("actor_generation_ref") != actor_generation_ref:
+            raise ControlContextToolAuthorizationError("worker-task-generation-not-attached")
+        actor = self._pre_role_state_call(
+            "read_actor_generation_shadow", tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref, role="WORKER",
+            generation_ref=actor_generation_ref, principal_ref=identity.principal_ref,
+            scopes={"project_state:read"},
+        )
+        validate_actor_generation_shadow(actor)
+        if actor["role"] != "WORKER" or actor["actor_ref"] != overlay.get("actor_ref") or \
+                actor["generation_ref"] != actor_generation_ref or actor["lifecycle"] != "READY" or \
+                actor["authority"] != "SHADOW_ONLY" or actor["source_revision"] != pre["source_revision"] or \
+                overlay["method_projection"]["method_profile_fingerprint"] != \
+                pre["civilization_method_attestation"]["method_fingerprint"]:
+            raise ControlContextToolAuthorizationError("worker-task-actor-or-method-readback-mismatch")
+        continuity = self._worker_overlay_source_continuity_verifier
+        if not callable(continuity):
+            raise ControlContextToolAuthorizationError("worker-task-source-verifier-not-bound")
+        source = continuity(
+            pre["source_revision"], pre["civilization_method_attestation"]["method_fingerprint"],
+        )
+        if not isinstance(source, dict) or \
+                source.get("source_revision") != pre["source_revision"] or \
+                source.get("method_fingerprint") != pre["civilization_method_attestation"]["method_fingerprint"] or \
+                source.get("method_unchanged") is not True or source.get("ancestry_verified") is not True:
+            raise ControlContextToolAuthorizationError("worker-task-current-method-mismatch")
+        try:
+            task = resolver.read_current_task(
+                generation_ref=generation_ref, actor_ref=actor["actor_ref"],
+                source_revision=pre["source_revision"],
+                method_fingerprint=pre["civilization_method_attestation"]["method_fingerprint"],
+                task_ref=task_ref,
+            )
+        except WorkerContextAuthError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from exc
+        return self._result({"task_decision": task,
+                             "pre_role_generation_fingerprint": pre["fingerprint"],
+                             "actor_generation_fingerprint": actor["fingerprint"],
+                             "repository_permission_required": False}, context)
 
     def _human_t3(self, operation: str, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         identity = self._identity(context)
