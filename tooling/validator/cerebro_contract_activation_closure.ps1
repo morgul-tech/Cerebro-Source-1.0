@@ -231,8 +231,18 @@ function Test-CacRuntime2CurrentConformance {
     if($evidenceRoot -ne $rootFull){
         $findings += New-CacFinding -Code 'RUNTIME2_SOURCE_ROOT_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 evidence source_root does not equal evaluated Source.' -Blocking $true
     }
-    $head=(& git -C $Root rev-parse HEAD 2>$null | Select-Object -First 1).Trim().ToLowerInvariant()
-    if($LASTEXITCODE -ne 0 -or [string](Get-CacProperty $Evidence 'base_head' '').ToLowerInvariant() -ne $head){
+    $gitHeadLines=@()
+    $gitHeadExit=-1
+    try {
+        $gitHeadLines=@(& git -C $Root rev-parse HEAD 2>$null)
+        $gitHeadExit=$LASTEXITCODE
+    }
+    catch {
+        $gitHeadLines=@()
+        $gitHeadExit=-1
+    }
+    $head=if($gitHeadExit -eq 0 -and $gitHeadLines.Count -eq 1){([string]$gitHeadLines[0]).Trim().ToLowerInvariant()}else{''}
+    if($gitHeadExit -ne 0 -or $head -cnotmatch '^[0-9a-f]{40}$' -or [string](Get-CacProperty $Evidence 'base_head' '').ToLowerInvariant() -cne $head){
         $findings += New-CacFinding -Code 'RUNTIME2_SOURCE_HEAD_MISMATCH' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 evidence base_head is not current.' -Blocking $true
     }
     $before=Get-CacProperty $Evidence 'snapshot_before' $null
@@ -240,7 +250,20 @@ function Test-CacRuntime2CurrentConformance {
     if($null -eq $before -or $null -eq $after -or ($before|ConvertTo-Json -Depth 32 -Compress) -cne ($after|ConvertTo-Json -Depth 32 -Compress)){
         $findings += New-CacFinding -Code 'RUNTIME2_SNAPSHOT_NOT_IMMUTABLE' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 before/after whole-source snapshots must be byte-equivalent JSON values.' -Blocking $true
     }
-    $livePaths=@(& git -C $Root status --porcelain=v1 --untracked-files=all 2>$null | ForEach-Object { if($_.Length -ge 4){($_.Substring(3) -replace '\\','/')} } | Sort-Object -Unique)
+    $gitStatusLines=@()
+    $gitStatusExit=-1
+    try {
+        $gitStatusLines=@(& git -C $Root status --porcelain=v1 --untracked-files=all 2>$null)
+        $gitStatusExit=$LASTEXITCODE
+    }
+    catch {
+        $gitStatusLines=@()
+        $gitStatusExit=-1
+    }
+    $livePaths=@($gitStatusLines | ForEach-Object { if($_.Length -ge 4){($_.Substring(3) -replace '\\','/')} } | Sort-Object -Unique)
+    if($gitStatusExit -ne 0){
+        $findings += New-CacFinding -Code 'RUNTIME2_LIVE_SNAPSHOT_DRIFT' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Live Source Git status could not be verified.' -Blocking $true
+    }
     $proofPaths=@(Get-CacOptionalValues $after 'changed_paths' | ForEach-Object {[string]$_} | Sort-Object -Unique)
     if(($livePaths -join "`n") -cne ($proofPaths -join "`n")){
         $findings += New-CacFinding -Code 'RUNTIME2_LIVE_SNAPSHOT_DRIFT' -Scope 'RUNTIME_EVIDENCE' -Subject $id -Message 'Runtime2 proof dirty pathset differs from the live Source snapshot.' -Blocking $true
