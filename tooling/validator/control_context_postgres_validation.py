@@ -29,6 +29,7 @@ from control_context_registry import (  # noqa: E402
 )
 from control_context_state_port import (  # noqa: E402
     StateAuthorizationError,
+    StateBindingError,
     StateConflict,
     StateServiceUnavailable,
 )
@@ -428,9 +429,14 @@ def selftest() -> dict[str, Any]:
     )
 
     manifest = json.loads(DEFAULT_MANIFEST.read_text(encoding="utf-8"))
+    commissioning_manifest_path = CONTEXT_ROOT / "control_context_project_commissioning_migrations.json"
+    commissioning_manifest = json.loads(commissioning_manifest_path.read_text(encoding="utf-8"))
     checksum = hashlib.sha256(sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     shadow_checksum = hashlib.sha256(shadow_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     pre_role_checksum = hashlib.sha256(pre_role_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    commissioning_sql_path = CONTEXT_ROOT / "control_context_state_postgres_0006_project_commissioning_session.sql"
+    commissioning_checksum = hashlib.sha256(
+        commissioning_sql_path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
     check(
         "migration-manifest-checksum-matches-candidate-SQL",
         manifest["migrations"][0]["checksum_sha256"] == checksum,
@@ -445,6 +451,14 @@ def selftest() -> dict[str, Any]:
         "P1099-additive-0005-migration-manifest-checksum-matches-candidate-SQL",
         manifest["migrations"][4]["migration_id"] == "0005-pre-role-generation"
         and manifest["migrations"][4]["checksum_sha256"] == pre_role_checksum,
+    )
+    check(
+        "A2-additive-0006-project-unique-index-checksum-matches-candidate-SQL",
+        commissioning_manifest["migrations"][:5] == manifest["migrations"]
+        and len(commissioning_manifest["migrations"]) == 6
+        and commissioning_manifest["migrations"][5]["migration_id"] == "0006-project-commissioning-session"
+        and commissioning_manifest["migrations"][5]["checksum_sha256"] == commissioning_checksum
+        and "CREATE UNIQUE INDEX cerebro_one_project_commissioning_session" in commissioning_sql_path.read_text(encoding="utf-8"),
     )
     check(
         "runtime-role-is-explicitly-barred-from-migrations",
@@ -484,6 +498,37 @@ def selftest() -> dict[str, Any]:
         and migration_connection.commit_called
         and not migration_connection.cursor_instance.steps,
     )
+    candidate_steps = migration_steps + [
+        {"contains": "SELECT schema_version, checksum_sha256", "rows": []},
+        {"contains": "CREATE UNIQUE INDEX cerebro_one_project_commissioning_session"},
+        {"contains": "INSERT INTO cerebro_schema_migrations", "rowcount": 1},
+    ]
+    candidate_connection = ScriptedConnection(candidate_steps)
+    candidate_result = apply_postgres_migrations(
+        lambda: candidate_connection, manifest_path=commissioning_manifest_path)
+    check("A2-0006-only-in-explicit-candidate-manifest",
+          candidate_result["applied"][-1] == "0006-project-commissioning-session"
+          and len(candidate_result["applied"]) == 6
+          and candidate_connection.commit_called
+          and not candidate_connection.cursor_instance.steps)
+
+    index_row = {
+        "indisunique": True, "indisvalid": True, "indislive": True,
+        "indisready": True, "indnkeyatts": 3, "indnatts": 3,
+        "amname": "btree",
+        "key_columns": ["tenant_ref", "workspace_ref", "project_ref"],
+        "predicate": "((project_ref IS NOT NULL) AND (session_ref ~ '^project-commissioning:[A-Za-z0-9_-]{43}$'::text))",
+    }
+    valid_index = ScriptedCursor([{"contains": "pg_get_expr(i.indpred", "rows": [index_row]}])
+    PostgresControlContextStatePort._assert_project_commissioning_index(valid_index)
+    check("A2-exact-governed-index-accepted", not valid_index.steps)
+    false_predicate = ScriptedCursor([{"contains": "pg_get_expr(i.indpred", "rows": [
+        {**index_row, "predicate": index_row["predicate"][:-1] + " AND false)"}
+    ]}])
+    check("A2-index-and-false-falsifier-rejected",
+          _expect_error(
+              lambda: PostgresControlContextStatePort._assert_project_commissioning_index(false_predicate),
+              StateBindingError))
     drift_steps = [
         {"contains": "pg_advisory_xact_lock"},
         {"contains": "CREATE TABLE IF NOT EXISTS cerebro_schema_migrations"},

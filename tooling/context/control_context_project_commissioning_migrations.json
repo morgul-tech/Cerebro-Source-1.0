@@ -1,0 +1,43 @@
+{
+  "schema": "cerebro-control-context-postgres-migrations/v1",
+  "backend": "POSTGRESQL",
+  "runtime_role_may_apply_migrations": false,
+  "migrations": [
+    {
+      "migration_id": "0001-control-context-state-service",
+      "schema_version": "1.0.0-candidate",
+      "path": "control_context_state_postgres.sql",
+      "checksum_sha256": "6312ab6d5fae58cfa52bfb1d13b1d361ebe73e3a4b37bb34f4875e480afc420d"
+    },
+    {
+      "migration_id": "0002-actor-generation-work-claim-shadow",
+      "schema_version": "1.1.0-shadow-candidate",
+      "path": "control_context_state_postgres_0002_actor_claim_shadow.sql",
+      "checksum_sha256": "9b51fa1cb0b46618f5677670a7ad48411ceb50febb05503c8948df8844e02b0c"
+    },
+    {
+      "migration_id": "0003-human-t3-break-glass",
+      "schema_version": "1.2.0-human-t3-custody-candidate",
+      "path": "control_context_state_postgres_0003_human_t3_break_glass.sql",
+      "checksum_sha256": "5c83038f88d7946554ee6cc7a01cdb703d23da739cd0734bd6c50b5e51a34167"
+    },
+    {
+      "migration_id": "0004-principal-succession-permit",
+      "schema_version": "1.3.0-principal-succession-custody-candidate",
+      "path": "control_context_state_postgres_0004_principal_succession_permit.sql",
+      "checksum_sha256": "71c64f0caca37fa116a68e8c05bb9b08c63671e80b132c1f85f34177f5fdfde6"
+    },
+    {
+      "migration_id": "0005-pre-role-generation",
+      "schema_version": "1.4.0-pre-role-generation-candidate",
+      "path": "control_context_state_postgres_0005_pre_role_generation.sql",
+      "checksum_sha256": "6465fec59b0ae07e43408fbc3d3394efe1ca6d4537f1c57bb35d06f6517207dd"
+    },
+    {
+      "migration_id": "0006-project-commissioning-session",
+      "schema_version": "1.5.0-project-commissioning-a2-candidate",
+      "path": "control_context_state_postgres_0006_project_commissioning_session.sql",
+      "checksum_sha256": "2fc3e4319d3faa0558879c4ca7e94741ff004d41479623e460fbe51d3857956e"
+    }
+  ]
+}

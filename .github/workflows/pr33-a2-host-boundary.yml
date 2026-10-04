@@ -1,0 +1,31 @@
+name: PR33 A2 authenticated host boundary
+
+on:
+  push:
+    branches:
+      - candidate/project-engine-commissioning-a2-v01
+    paths:
+      - tooling/validator/project_commissioning_host_boundary_validation.py
+
+      - .github/workflows/pr33-a2-host-boundary.yml
+permissions:
+  contents: read
+
+jobs:
+  in-process-host-custody:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pin tested source
+        run: |
+          echo "HOST_FIXTURE_COMMIT=$(git rev-parse HEAD)"
+          echo "HOST_FIXTURE_TREE=$(git rev-parse HEAD^{tree})"
+      - name: Install import dependency
+        run: python -m pip install PyYAML==6.0.2
+      - name: Verify authenticated in-process Project entry
+        run: python -B tooling/validator/project_commissioning_host_boundary_validation.py
+      - name: Install governed official MCP SDK runtime
+        run: python -m pip install -r mcp/control-context-mcp-sdk-requirements.txt
+      - name: Verify official MCP SDK composition
+        run: python -B tooling/validator/control_context_mcp_sdk_validation.py selftest
