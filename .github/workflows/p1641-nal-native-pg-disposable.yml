@@ -123,8 +123,10 @@ jobs:
           fi
 
           SERVER_VERSION="$(docker exec "$CTR" psql -U postgres -d postgres -Atqc 'SHOW server_version;')"
+          SERVER_VERSION_NUM="$(docker exec "$CTR" psql -U postgres -d postgres -Atqc 'SHOW server_version_num;')"
           printf 'POSTGRES_SERVER_VERSION=%s\n' "$SERVER_VERSION"
-          if [ "$SERVER_VERSION" != "16.15" ]; then
+          printf 'POSTGRES_SERVER_VERSION_NUM=%s\n' "$SERVER_VERSION_NUM"
+          if [ "$SERVER_VERSION_NUM" != "160015" ]; then
             echo "::error::POSTGRES_SERVER_VERSION_MISMATCH"
             exit 33
           fi
