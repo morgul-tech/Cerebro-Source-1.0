@@ -75,6 +75,7 @@ class FakeChannel:
         self.drop_unknown_pointer = False
         self.bad_readback = False
         self.disposition_readback = True
+        self.disposition_readback_override = None
 
     def identity(self):
         return x9.ChannelIdentity(x9.CHANNEL, self.principal, self.authenticated,
@@ -99,6 +100,8 @@ class FakeChannel:
         return "ACCEPTED"
 
     def read_disposition_by_event_id(self, event_id):
+        if self.disposition_readback_override is not None:
+            return self.disposition_readback_override
         if not self.disposition_readback or self.disposition is None or self.disposition.event_id != event_id:
             return None
         return x9.Readback(self.disposition, self.disposition.content_sha256, X9, "sheet:rev2")
@@ -213,6 +216,55 @@ class X9ChannelIngressTests(unittest.TestCase):
         material = self.bridge.consume(self.ctx.event_id, now=NOW)
         self.assertEqual(material.disposition.disposition, x9.MATERIAL)
         self.assertEqual(material.state, "DISPOSITION_READBACK")
+
+    def test_preexisting_disposition_requires_exact_no_effect_readback(self):
+        self.deposited()
+        valid = x9.X9Disposition(
+            x9.DISPOSITION_SCHEMA, self.ctx.event_id, self.ctx.attempt_id,
+            self.channel.pointer.content_sha256, "rev:1", MATERIAL_SHA, x9.MATERIAL,
+            "NEW_CURRENT_PM_MATERIAL")
+
+        invalid_records = (
+            replace(valid, event_id="event:foreign"),
+            replace(valid, schema="signalvev.x9.channel.disposition/v9"),
+            replace(valid, attempt_id="attempt:foreign"),
+            replace(valid, pointer_sha256="d" * 64),
+            replace(valid, disposition="UNRECOGNIZED"),
+            replace(valid, owner_revision="invalid revision"),
+            replace(valid, owner_material_sha256="not-a-sha256"),
+            replace(valid, reason=""),
+            replace(valid, work_consumed=True),
+            replace(valid, effect="APPLIED"),
+        )
+        for record in invalid_records:
+            with self.subTest(record=record):
+                self.channel.disposition_readback_override = x9.Readback(
+                    record, record.content_sha256, X9, "sheet:rev2")
+                result = self.bridge.consume(self.ctx.event_id, now=NOW)
+                self.assertEqual(result.state, x9.COLLISION)
+                self.assertEqual(self.pm.calls, 0)
+                self.assertEqual(self.channel.disposition_sends, 0)
+
+        bad_provenance = (
+            x9.Readback(valid, "f" * 64, X9, "sheet:rev2"),
+            x9.Readback(valid, valid.content_sha256, PM, "sheet:rev2"),
+            x9.Readback(valid, valid.content_sha256, X9, ""),
+        )
+        for readback in bad_provenance:
+            with self.subTest(readback=readback):
+                self.channel.disposition_readback_override = readback
+                result = self.bridge.consume(self.ctx.event_id, now=NOW)
+                self.assertEqual(result.state, x9.COLLISION)
+                self.assertEqual(self.pm.calls, 0)
+                self.assertEqual(self.channel.disposition_sends, 0)
+
+        self.channel.disposition_readback_override = x9.Readback(
+            valid, valid.content_sha256, X9, "sheet:rev2")
+        same = self.bridge.consume(self.ctx.event_id, now=NOW)
+        self.assertEqual(same.state, "ALREADY_DISPOSED")
+        self.assertEqual(same.disposition, valid)
+        self.assertEqual(self.pm.calls, 0)
+        self.assertEqual(self.channel.disposition_sends, 0)
 
     def test_pm_collision_or_missing_disposition_readback_never_routes(self):
         self.deposited()

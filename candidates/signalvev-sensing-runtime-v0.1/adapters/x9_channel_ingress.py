@@ -300,10 +300,22 @@ class X9ChannelIngress:
         except Exception:
             return Result(HOLD, "DISPOSITION_LOOKUP_UNAVAILABLE", event_id)
         if prior is not None:
-            if (isinstance(prior.record, X9Disposition) and prior.record.pointer_sha256 == pointer.content_sha256
-                    and self._disposition_readback(prior, prior.record, self.x9_principal)):
+            disposition = prior.record if isinstance(prior, Readback) else None
+            if (isinstance(disposition, X9Disposition)
+                    and disposition.schema == DISPOSITION_SCHEMA
+                    and disposition.event_id == event_id
+                    and disposition.attempt_id == pointer.attempt_id
+                    and disposition.pointer_sha256 == pointer.content_sha256
+                    and disposition.disposition in {STALE, NO_DELTA, MATERIAL}
+                    and _id(disposition.owner_revision)
+                    and isinstance(disposition.owner_material_sha256, str)
+                    and HEX64.fullmatch(disposition.owner_material_sha256) is not None
+                    and _id(disposition.reason)
+                    and disposition.work_consumed is False
+                    and disposition.effect == "NONE_CLAIMED"
+                    and self._disposition_readback(prior, disposition, self.x9_principal)):
                 return Result("ALREADY_DISPOSED", "SAME_EVENT_DISPOSITION", event_id, pointer.content_sha256,
-                              prior.record)
+                              disposition)
             return Result(COLLISION, "DISPOSITION_EVENT_ID_CONFLICT", event_id)
         try:
             cut = self.pm_reader.read_current(pointer.claim_ref, pointer.packet_ref, pointer.queue_ref)
