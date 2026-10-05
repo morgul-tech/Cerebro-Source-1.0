@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """BK04-CLAUDE-V1 -- offline, read-only classifier for bounded historical PM episode evidence.
 
-Usage:  python3 bk04_verify.py PATH_TO_rev2_SNAPSHOT.json
+Usage:  python3 bk04_verify.py PATH_TO_PINNED_SNAPSHOT.json
 
 Reads exactly one local file (raw bytes), verifies its SHA-256 BEFORE parsing (fail closed), and writes one
 UTF-8 JSON object ``bk04-result-v1`` to stdout.  Standard library only.  No network, no filesystem write
@@ -23,6 +23,8 @@ WORK_ORDER_ID = "BK04-CLAUDE-V1"
 SCHEMA_VERSION = "bk04-result-v1"
 EXPECTED_INPUT_BYTES = 4447
 EXPECTED_INPUT_SHA256 = "c4211172ef7406256bc840e1d5baf30a7537eb2a7a0f5243ddc13946118bb6f3"
+# PM P1776 designates these exact X2 bytes for consumption, not owner approval.
+REV3_INPUT_SHA256 = "f6f6fcdf1ed5c1cb9de4b6852a2fa28c8fb4ee8f81070e2dc4278ee6f4625d8b"
 
 PASS, CONFLICT, UNKNOWN = "PASS", "CONFLICT", "UNKNOWN"
 
@@ -77,7 +79,7 @@ def load_verified(raw, expected_sha256=EXPECTED_INPUT_SHA256, expected_bytes=EXP
     if len(raw) != expected_bytes or digest != expected_sha256:
         raise InputError(
             "DIGEST_MISMATCH",
-            "input is not the approved rev2 snapshot: got %d bytes sha256=%s; expected %d bytes sha256=%s"
+            "input differs from the designated byte basis: got %d bytes sha256=%s; expected %d bytes sha256=%s"
             % (len(raw), digest, expected_bytes, expected_sha256))
     try:
         text = raw.decode("utf-8")
@@ -90,6 +92,72 @@ def load_verified(raw, expected_sha256=EXPECTED_INPUT_SHA256, expected_bytes=EXP
     except ValueError as exc:
         raise InputError("MALFORMED_INPUT", "input is not valid JSON: %s" % exc)
     return doc, digest
+
+
+class _HashBoundDocument(dict):
+    """Internal raw-gate evidence; an input field or digest argument is insufficient."""
+    def __init__(self, doc, digest):
+        super().__init__(doc)
+        self.digest = digest
+        self.parsed_bytes = json.dumps(doc, sort_keys=True, ensure_ascii=False)
+
+
+def load_consumer_input(raw):
+    """CLI pins: historical rev2 or PM-designated current rev3. No caller digest flag.
+
+    Acceptance proves byte identity only. The X2 rev3 draft is not owner-approved;
+    typed structural consistency and qualified usability are separate below.
+    """
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest == REV3_INPUT_SHA256:
+        doc, digest = load_verified(raw, REV3_INPUT_SHA256, len(raw))
+        if doc.get("revision") != "3.0":
+            raise InputError("REVISION_MISMATCH", "designated rev3 input must declare revision 3.0")
+        return _HashBoundDocument(doc, digest), digest
+    return load_verified(raw)
+
+
+def _rev3_completeness(case, result):
+    """Do not let unlinked carry flags or empty publication lists look complete.
+
+    This adds structural checks only; source references still need independent
+    qualified owner evidence. No flag in this document can supply that evidence.
+    """
+    if case.get("shape") != "CI_PLUS_LOCAL_LIMIT":
+        return
+    ci = case.get("ci_evidence")
+    carry = ci.get("carried_to") if isinstance(ci, dict) else None
+    orders = case.get("publication_orders")
+    coverage = case.get("coverage_assertions")
+    def missing(path):
+        if path not in result["missing_fields"]:
+            result["missing_fields"].append(path)
+        if result["status"] == PASS:
+            result["status"] = UNKNOWN
+            result["reason"] = "typed carry/publication linkage incomplete"
+    if isinstance(carry, list):
+        episodes = case.get("episodes")
+        targets = {ep["episode_id"] for ep in episodes if isinstance(ep, dict)
+                   and isinstance(ep.get("episode_id"), str)} if isinstance(episodes, list) else set()
+        for item in carry:
+            if (not isinstance(item, dict) or not isinstance(item.get("target"), str)
+                    or item["target"] not in targets):
+                missing("$.typed_carry.target_episode")
+    if isinstance(orders, list):
+        for item in orders:
+            if not isinstance(item, dict) or _head(item.get("head")) is None:
+                missing("$.publication_orders.exact_head")
+    if isinstance(coverage, list):
+        for item in coverage:
+            if isinstance(item, dict) and item.get("complete_for_scope") is True:
+                ref = item.get("source_ref")
+                episodes = case.get("episodes")
+                cuts = {ep.get("source_cut") for ep in episodes if isinstance(ep, dict)
+                        and isinstance(ep.get("source_cut"), str)} if isinstance(episodes, list) else set()
+                if item.get("cut") not in cuts:
+                    missing("$.coverage_assertions.episode_cut")
+                if not isinstance(ref, dict) or ref.get("source_cut") != item.get("cut"):
+                    missing("$.coverage_assertions.owner_source_cut")
 
 
 # --------------------------------------------------------------------------------------------- parsers
@@ -553,6 +621,9 @@ def classify_document(doc, input_sha256):
     if meta["revision"] == "3.0":
         from bk04_rev3 import classify_rev3_case
         results = [classify_rev3_case(c, i, ctx.cut_row) for i, c in enumerate(cases)]
+        for case, result in zip(cases, results):
+            if isinstance(case, dict):
+                _rev3_completeness(case, result)
         for field in ("owner_projection_cut", "supersedes"):
             if _text(doc.get(field)) is None:
                 for result in results:
@@ -561,6 +632,7 @@ def classify_document(doc, input_sha256):
                         result["status"] = UNKNOWN
                         result["reason"] = "rev3 provenance metadata incomplete"
         for result in results:
+            result["structural_status"] = result["status"]
             if result["status"] == PASS:
                 result["status"] = UNKNOWN
                 result["missing_fields"].append("$.owner_approved_rev3_digest")
@@ -581,6 +653,13 @@ def classify_document(doc, input_sha256):
     }
     if meta["revision"] == "3.0":
         result["authority"] = "NONE"
+        bound = (type(doc) is _HashBoundDocument and doc.digest == input_sha256 == REV3_INPUT_SHA256
+                 and doc.parsed_bytes == json.dumps(doc, sort_keys=True, ensure_ascii=False))
+        result["input_acceptance"] = "HASH_BOUND_X2_DRAFT" if bound else "UNQUALIFIED_INPUT"
+        result["qualification"] = "OWNER_BASIS_NOT_QUALIFIED"
+        result["structural_overall_status"] = (CONFLICT if any(r["structural_status"] == CONFLICT for r in results)
+                                                else UNKNOWN if any(r["structural_status"] == UNKNOWN for r in results)
+                                                else PASS)
     return result
 
 
@@ -598,13 +677,13 @@ def main(argv=None, stdout=None, stderr=None):
     err = stderr if stderr is not None else sys.stderr.buffer
     try:
         if len(argv) != 1:
-            raise InputError("USAGE", "expected exactly one positional argument: path to the rev2 snapshot JSON")
+            raise InputError("USAGE", "expected exactly one positional argument: pinned rev2 or current rev3 snapshot JSON")
         try:
             with open(argv[0], "rb") as fh:
                 raw = fh.read()
         except OSError as exc:
             raise InputError("INPUT_UNREADABLE", "cannot read %r: %s" % (argv[0], exc.strerror or exc))
-        doc, digest = load_verified(raw)
+        doc, digest = load_consumer_input(raw)
         result = classify_document(doc, digest)
         payload = (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     except InputError as exc:
