@@ -98,9 +98,17 @@ def _episode(ep, index, check):
             check.unknown(path + "." + field + ".status", "status absent")
         if not isinstance(item["scope"], str) or not item["scope"].strip():
             check.unknown(path + "." + field + ".scope", "scope absent")
-    if isinstance(ep["admission"], dict) and ep["admission"].get("release_count") != 1:
+    if isinstance(ep["admission"], dict) and (
+            type(ep["admission"].get("release_count")) is not int
+            or ep["admission"]["release_count"] != 1):
         check.conflict(path + ".admission.release_count", "exactly one release required")
     return ep if complete and valid else None
+
+
+def _row_hint(item):
+    ref = item.get("source_ref") if isinstance(item, dict) else None
+    row = ref.get("row_hint") if isinstance(ref, dict) else None
+    return row if type(row) is int and row > 0 else None
 
 
 def _links(case, episodes, check):
@@ -129,8 +137,8 @@ def _links(case, episodes, check):
         expected = {"TASK_UNDER_CLAIM": (ep["claim_id"], ep["claim_row"]),
                     "PACKET_FOR_TASK": (ep["packet_id"], ep["packet_row"]),
                     "QUEUE_FOR_PACKET": (ep["queue_id"], ep["queue_row"]),
-                    "TERMINAL_FOR_TASK": (ep["task_id"], ep["terminal"].get("source_ref", {}).get("row_hint")),
-                    "ADMISSION_FOR_TERMINAL": (ep["task_id"], ep["admission"].get("source_ref", {}).get("row_hint"))}
+                    "TERMINAL_FOR_TASK": (ep["task_id"], _row_hint(ep["terminal"])),
+                    "ADMISSION_FOR_TERMINAL": (ep["task_id"], _row_hint(ep["admission"]))}
         if relation in expected:
             target, row = expected[relation]
             if link["object_episode_or_artifact"] != target:
@@ -223,9 +231,9 @@ def classify_rev3_case(case, index, global_cut):
         claims = [ep["claim_id"] for ep in ids]
         if len(set(claims)) != len(claims) and case.get("claim_scope") != "standing":
             check.conflict(base + ".episodes", "distinct episodes share claim without standing scope")
-        terminal_rows = [ep["terminal"].get("source_ref", {}).get("row_hint") for ep in ids]
-        admission_rows = [ep["admission"].get("source_ref", {}).get("row_hint") for ep in ids]
-        if len(set(terminal_rows + admission_rows)) != len(terminal_rows + admission_rows):
+        rows = [_row_hint(ep[field]) for ep in ids for field in ("terminal", "admission")]
+        rows = [row for row in rows if row is not None]
+        if len(set(rows)) != len(rows):
             check.conflict(base + ".episodes", "author/verifier terminal or admission row collapsed")
     expected_roles = ({"builder", "distinct_verifier"} if shape == "LOCAL_WORK_PLUS_OWNER_HOLD"
                       else {"author", "distinct_verifier"} if shape == "DISTINCT_AUTHOR_VERIFIER"

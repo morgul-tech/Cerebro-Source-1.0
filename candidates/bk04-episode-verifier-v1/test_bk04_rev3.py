@@ -129,6 +129,26 @@ class Rev3Rules(unittest.TestCase):
             doc["cases"][0]["evidence_links"][0]["source_ref"]["row_hint"] += 1
             self.assertEqual(structural(doc)["status"], "CONFLICT")
 
+    def test_boolean_release_count_is_conflict(self):
+        doc = fixture("B")
+        doc["cases"][0]["episodes"][0]["admission"]["release_count"] = True
+        self.assertEqual(structural(doc)["status"], "CONFLICT")
+
+    def test_malformed_outcome_source_ref_is_unknown_in_single_and_multi_episode(self):
+        for field in ("terminal", "admission"):
+            for single in (False, True):
+                for bad_ref in (None, []):
+                    with self.subTest(field=field, single=single, bad_ref=bad_ref):
+                        doc = fixture("B")
+                        case = doc["cases"][0]
+                        if single:
+                            case["episodes"] = case["episodes"][:1]
+                            case["evidence_links"] = case["evidence_links"][:5]
+                            case["artifact_relations"] = []
+                        for ep in case["episodes"]:
+                            ep[field]["source_ref"] = bad_ref
+                        self.assertEqual(structural(doc)["status"], "UNKNOWN")
+
     def test_a_without_carry_and_publication_is_unknown(self):
         doc = fixture("B")
         doc["cases"][0]["shape"] = "CI_PLUS_LOCAL_LIMIT"
