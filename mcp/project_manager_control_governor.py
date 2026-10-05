@@ -506,6 +506,93 @@ def _lifecycle_mutation_gate(
 
 
 
+def _qualified_evidence_finalization(raw: dict[str, Any]) -> dict[str, Any]:
+    evidence = raw.get("qualified_evidence")
+    if evidence is None:
+        return {
+            "applicable": False,
+            "reuse_approved_evidence": False,
+            "delta_reanalysis_required": False,
+            "affected_delta_refs": [],
+        }
+    _require(isinstance(evidence, dict), "qualified-evidence-object-required")
+    required = {
+        "approved_evidence_ref",
+        "approved_artifact_ref",
+        "approved_artifact_sha256",
+        "approved_targetset_sha256",
+        "approved_currentness_ref",
+        "current_artifact_ref",
+        "current_artifact_sha256",
+        "current_targetset_sha256",
+        "current_currentness_ref",
+    }
+    _require(required.issubset(evidence), "qualified-evidence-required-fields-missing")
+    for field in (
+        "approved_evidence_ref", "approved_artifact_ref", "approved_currentness_ref",
+        "current_artifact_ref", "current_currentness_ref",
+    ):
+        _require(
+            isinstance(evidence.get(field), str) and bool(evidence[field].strip()),
+            f"qualified-evidence-{field}-required",
+        )
+    for field in (
+        "approved_artifact_sha256", "approved_targetset_sha256",
+        "current_artifact_sha256", "current_targetset_sha256",
+    ):
+        _require_hex(evidence.get(field), 64, f"qualified-evidence-{field}-invalid")
+
+    changes: list[str] = []
+    if (
+        evidence["approved_artifact_ref"] != evidence["current_artifact_ref"]
+        or evidence["approved_artifact_sha256"] != evidence["current_artifact_sha256"]
+    ):
+        changes.append("ARTIFACT_CHANGED")
+    if evidence["approved_targetset_sha256"] != evidence["current_targetset_sha256"]:
+        changes.append("TARGETSET_CHANGED")
+    if evidence["approved_currentness_ref"] != evidence["current_currentness_ref"]:
+        changes.append("CURRENTNESS_CHANGED")
+
+    named_defect = str(evidence.get("named_new_defect_ref") or "").strip()
+    counterevidence = str(evidence.get("counterevidence_ref") or "").strip()
+    if named_defect:
+        changes.append("NAMED_NEW_DEFECT")
+    if counterevidence:
+        changes.append("COUNTEREVIDENCE")
+
+    delta_refs = evidence.get("affected_delta_refs", [])
+    _require(
+        isinstance(delta_refs, list)
+        and len(delta_refs) == len(set(delta_refs))
+        and all(isinstance(ref, str) and bool(ref.strip()) for ref in delta_refs),
+        "qualified-evidence-affected-delta-refs-invalid",
+    )
+    if changes:
+        _require(bool(delta_refs), "qualified-evidence-change-requires-affected-delta")
+        return {
+            "applicable": True,
+            "result": "OPEN_AFFECTED_DELTA_ONLY",
+            "reuse_approved_evidence": True,
+            "delta_reanalysis_required": True,
+            "delta_triggers": changes,
+            "affected_delta_refs": list(delta_refs),
+            "approved_evidence_ref": evidence["approved_evidence_ref"],
+            "unrelated_approved_evidence_preserved": True,
+        }
+
+    _require(not delta_refs, "qualified-evidence-same-identity-cannot-open-delta")
+    return {
+        "applicable": True,
+        "result": "REUSE_APPROVED_EVIDENCE",
+        "reuse_approved_evidence": True,
+        "delta_reanalysis_required": False,
+        "delta_triggers": [],
+        "affected_delta_refs": [],
+        "approved_evidence_ref": evidence["approved_evidence_ref"],
+        "unrelated_approved_evidence_preserved": True,
+    }
+
+
 def _executor_terminal_reconciliation_gate(candidate: dict[str, Any]) -> dict[str, Any]:
     raw = candidate.get("executor_terminal_reconciliation")
     if raw is None:
@@ -521,6 +608,7 @@ def _executor_terminal_reconciliation_gate(candidate: dict[str, Any]) -> dict[st
     _require(admission_state in ADMISSION_STATES, f"executor-terminal-admission-state-invalid:{admission_state}")
 
     defect_verified = raw.get("new_execution_defect_verified") is True
+    qualified = _qualified_evidence_finalization(raw)
     carrier = raw.get("evidence_carrier")
     if carrier is None:
         carrier = {"status": "NOT_APPLICABLE"}
@@ -545,15 +633,28 @@ def _executor_terminal_reconciliation_gate(candidate: dict[str, Any]) -> dict[st
 
     next_edge = "NONE"
     reactivation_allowed = False
+    effective_verification_state = verification_state
+    if qualified.get("applicable") is True:
+        if qualified["delta_reanalysis_required"] is True:
+            effective_verification_state = "PENDING"
+        else:
+            _require(
+                verification_state != "FAIL",
+                "qualified-approved-evidence-cannot-reuse-verification-fail",
+            )
+            effective_verification_state = "PASS"
+
     if execution_state == "TERMINAL_REPORTED":
         if defect_verified:
             next_edge = "REMEDIATE_EXECUTION"
             reactivation_allowed = True
-        elif verification_state in {"PENDING", "UNAVAILABLE", "UNKNOWN"}:
+        elif qualified.get("delta_reanalysis_required") is True:
+            next_edge = "VERIFY_DELTA"
+        elif effective_verification_state in {"PENDING", "UNAVAILABLE", "UNKNOWN"}:
             next_edge = "VERIFY"
-        elif verification_state in {"PASS", "NOT_REQUIRED"} and admission_state == "PENDING":
+        elif effective_verification_state in {"PASS", "NOT_REQUIRED"} and admission_state == "PENDING":
             next_edge = "ADMIT"
-        elif verification_state in {"PASS", "NOT_REQUIRED"} and admission_state in {"ADMITTED", "NOT_REQUIRED"}:
+        elif effective_verification_state in {"PASS", "NOT_REQUIRED"} and admission_state in {"ADMITTED", "NOT_REQUIRED"}:
             next_edge = "CLOSE"
         elif admission_state == "REJECTED":
             next_edge = "REVIEW_ADMISSION"
@@ -565,7 +666,9 @@ def _executor_terminal_reconciliation_gate(candidate: dict[str, Any]) -> dict[st
     return {
         "applicable": True, "result": "PASS", "executor_ref": executor_ref,
         "execution_state": execution_state, "verification_state": verification_state,
+        "effective_verification_state": effective_verification_state,
         "admission_state": admission_state, "evidence_carrier_status": carrier_status,
+        "qualified_evidence_finalization": qualified,
         "evidence_result": "UNKNOWN" if uncertain_carrier else verification_state,
         "capable_carrier_ref": capable_carrier_ref or None,
         "new_execution_defect_verified": defect_verified,

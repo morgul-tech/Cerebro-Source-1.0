@@ -378,6 +378,85 @@ def anti_loop_canaries(mod: Any) -> dict[str, Any]:
     passed = sum(1 for item in tests if item["result"] == "PASS")
     return {"schema": "cerebro-project-manager-anti-loop-canaries/v1", "result": "PASS" if passed == 8 and len(tests) == 8 else "FAIL", "passed": passed, "total": len(tests), "tests": tests}
 
+def p22_hold_successor_canaries(mod) -> dict:
+    tests=[]
+
+    def check(name, fn):
+        ok=False
+        detail=None
+        try:
+            ok=bool(fn())
+        except Exception as exc:
+            detail=str(exc)
+        tests.append({"name":name,"result":"PASS" if ok else "FAIL","detail":detail})
+
+    def base_reconciliation():
+        return {
+            "executor_terminal_reconciliation": {
+                "executor_ref":"EXEC-P22",
+                "execution_state":"TERMINAL_REPORTED",
+                "verification_state":"PENDING",
+                "admission_state":"PENDING",
+                "new_execution_defect_verified":False,
+                "executor_reactivated":False,
+                "evidence_carrier":{"status":"AVAILABLE"},
+                "qualified_evidence":{
+                    "approved_evidence_ref":"EVIDENCE-APPROVED-1",
+                    "approved_artifact_ref":"ARTIFACT-1",
+                    "approved_artifact_sha256":"a"*64,
+                    "approved_targetset_sha256":"b"*64,
+                    "approved_currentness_ref":"MAIN-2757",
+                    "current_artifact_ref":"ARTIFACT-1",
+                    "current_artifact_sha256":"a"*64,
+                    "current_targetset_sha256":"b"*64,
+                    "current_currentness_ref":"MAIN-2757",
+                    "affected_delta_refs":[],
+                },
+            }
+        }
+
+    check(
+        "P22-QUALIFIED-01-same-approved-evidence-reused-without-broad-verify",
+        lambda: (
+            (out:=mod._executor_terminal_reconciliation_gate(base_reconciliation()))
+            ["qualified_evidence_finalization"]["result"]=="REUSE_APPROVED_EVIDENCE"
+            and out["effective_verification_state"]=="PASS"
+            and out["next_edge_class"]=="ADMIT"
+            and out["qualified_evidence_finalization"]["delta_reanalysis_required"] is False
+        ),
+    )
+
+    def named_delta():
+        c=base_reconciliation()
+        q=c["executor_terminal_reconciliation"]["qualified_evidence"]
+        q["named_new_defect_ref"]="DEFECT-NEW-1"
+        q["affected_delta_refs"]=["DEFECT-NEW-1"]
+        out=mod._executor_terminal_reconciliation_gate(c)
+        return (
+            out["next_edge_class"]=="VERIFY_DELTA"
+            and out["executor_reactivation_allowed"] is False
+            and out["qualified_evidence_finalization"]["unrelated_approved_evidence_preserved"] is True
+            and out["qualified_evidence_finalization"]["affected_delta_refs"]==["DEFECT-NEW-1"]
+        )
+    check("P22-QUALIFIED-02-named-new-defect-opens-delta-only",named_delta)
+
+    def changed_identity_without_delta_blocks():
+        c=base_reconciliation()
+        q=c["executor_terminal_reconciliation"]["qualified_evidence"]
+        q["current_targetset_sha256"]="c"*64
+        try:
+            mod._executor_terminal_reconciliation_gate(c)
+        except mod.ProjectManagerGovernorError as exc:
+            return "change-requires-affected-delta" in str(exc)
+        return False
+    check("P22-QUALIFIED-03-changed-targetset-cannot-trigger-broad-reanalysis",changed_identity_without_delta_blocks)
+
+    passed=sum(1 for x in tests if x["result"]=="PASS")
+    return {"schema":"cerebro-p22-hold-successor-governor-canaries/v1",
+            "result":"PASS" if passed==len(tests) else "FAIL",
+            "passed":passed,"total":len(tests),"tests":tests}
+
+
 def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> dict:
     contract=root/"mcp/project-manager-control-governor.yaml"
     implementation=root/"mcp/project_manager_control_governor.py"
@@ -423,6 +502,12 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "content_blind_refs_and_fingerprints_only: true",
         "missing_incomplete_stale_tampered_or_nonpass_effect: BLOCK",
         "nonprincipal_lifecycle_semantics: UNCHANGED",
+        "active_hold_action:",
+        "due_or_orphan_same_basis_effect: ACTION_OR_ESCALATE_NOT_REPARK",
+        "qualified_evidence_finalization:",
+        "exact_same_identity_effect: REUSE_APPROVED_EVIDENCE",
+        "broad_reanalysis_on_same_identity: PROHIBITED",
+        "unrelated_approved_evidence_preserved: true",
     ]
     missing_tokens=[x for x in required_contract_tokens if x not in text]
     if missing_tokens:
@@ -509,6 +594,13 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
             "anti_loop_canaries":anti_loop
         }
 
+    p22_successor=p22_hold_successor_canaries(mod)
+    if p22_successor.get("result")!="PASS":
+        return {
+            "schema":"cerebro-project-manager-control-governor-validation/v1",
+            "result":"FAIL","p22_hold_successor_canaries":p22_successor
+        }
+
     integration=integration_test(root)
     if require_integration and integration.get("result")!="PASS":
         return {
@@ -524,6 +616,7 @@ def validate(root: Path = SOURCE_ROOT, *, require_integration: bool=False) -> di
         "unresolved_relevant_debt_blocks_terminal":True,
         "persisted_current_pulse_required":True,
         "anti_loop_canaries":anti_loop,
+        "p22_hold_successor_canaries":p22_successor,
         "executor_terminal_reconciliation_effect":True,
         "self_next_owner_same_cycle_progress_effect":True,
         "same_turn_fixed_point_contract_bound":True,
