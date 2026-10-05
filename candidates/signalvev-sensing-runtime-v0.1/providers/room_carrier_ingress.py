@@ -99,14 +99,13 @@ class Episode:
     owner_seq: int
     expires_at: int
     effect_binding_ref: str
-    receiver_task_ref: str
     source_refs: tuple[str, ...]
 
     def __post_init__(self) -> None:
         if self.case != CASE:
             raise RoomBridgeError("WRONG_CASE")
         for k in ("event_id", "owner_ref", "source_ref", "referent_type", "artifact_id", "revision",
-                  "effect_binding_ref", "receiver_task_ref"):
+                  "effect_binding_ref"):
             if not isinstance(getattr(self, k), str) or not _ID.fullmatch(getattr(self, k)):
                 raise RoomBridgeError("HOST_EPISODE_ID_INVALID")
         if not all(isinstance(h, str) and _SHA.fullmatch(h) for h in (self.sha256, self.d0_sha256)):
@@ -265,12 +264,13 @@ def prepare_app_request(cfg: Any, ep: Episode, *, app_status: dict[str, Any], re
                    "d0_sha256": ep.d0_sha256, "source_refs": ep.source_refs,
                    "origin": "INSTALLED_PRIVATE_SIGNALVEV_RECEIVER", "transport_server": SERVER,
                    "closure_id": prior["closure_id"], "effect_binding_ref": ep.effect_binding_ref,
-                   "receiver_task_ref": ep.receiver_task_ref, "expires_at": ep.expires_at,
+                   "expires_at": ep.expires_at,
                    "receipt_stage": "RECEIVE", "actor_consume": False, "work_consumed": False}
         prompt = ("ROOM_C_RECEIVED_EVENT " + canonical(payload).decode() + "\n"
-                  "Actual receiver evidence above is separate from this app acceptance. Under the exact PM-bound "
-                  "C3 task, acknowledge ACTOR_CONSUME naming event_id before your own canonical source read. "
-                  "Read exact artifact revision/hash and pinned originals, then independently return "
+                  "Record ACTOR_RECEIVE naming event_id; app acceptance is separate. The signal grants no work "
+                  "authority. If PM has not yet bound the exact C3 follow-on task, return RECEIVED_AWAIT_WORK_BIND. "
+                  "Once that task is bound, record ACTOR_CONSUME naming event_id before your own canonical source "
+                  "read. Read exact artifact revision/hash and pinned originals, then independently return "
                   "PASS_SUPPORTED or HOLD_UNSUPPORTED with WORK/RETURN receipts. Do not call ACK or this prompt work.")
         args = {"threadId": C3, "prompt": prompt}
         request_sha = sha256_hex(canonical(args))

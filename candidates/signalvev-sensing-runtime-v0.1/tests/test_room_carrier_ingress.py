@@ -47,7 +47,7 @@ class RoomBridgeTests(TmpCase):
         self.frame = build_frame(accept_owner_event(self.event), now_epoch=NOW, ttl_seconds=30)
         self.ep = Episode(CASE, "room-event-01", OWNER, "src:doc-a", "doc", "doc-a", "rev-5",
                           POINTER_SHA, self.frame.envelope["payload_hash"], 5, int(NOW) + 30,
-                          "pm:test-only-effect-binding", "pm:test-only-c3-task",
+                          "pm:test-only-effect-binding",
                           ("review:test:revision:hash", "return:test:revision:hash"))
         self.cfg = parse_config(config_doc(self.tmp,
             nats={"server": "nats://" + SERVER, "allow_plaintext": True},
@@ -117,6 +117,7 @@ class RoomBridgeTests(TmpCase):
         self.assertIn(self.ep.event_id, request["arguments"]["prompt"])
         self.assertIn(self.ep.revision, request["arguments"]["prompt"])
         self.assertIn(self.ep.sha256, request["arguments"]["prompt"])
+        self.assertIn("RECEIVED_AWAIT_WORK_BIND", request["arguments"]["prompt"])
         self.assertEqual(self.stage(), "APP_INTENT")
         self.assertTrue(all(r.get("work_consumed", False) is False for r in self.rows()))
         self.assertEqual(self.broker.publish_calls, [])  # no sender exists in this test
