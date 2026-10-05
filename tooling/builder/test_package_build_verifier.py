@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 for path in (ROOT / "mcp", ROOT / "tooling/context"):
@@ -173,6 +173,41 @@ class PortTests(unittest.TestCase):
         with patch.object(builder, "command", side_effect=command), self.assertRaisesRegex(
                 builder.BuilderError, "main currentness mismatch"):
             builder.exact35_candidate(declared)
+
+    def test_exact15_final_authority_refusal_prevents_move(self):
+        declared = copy.deepcopy(self.declared)
+        declared["identity"]["profile"] = "EXACT15"
+        allowed = {"result": "PASS", "effect": "RUN_ONLY_PACKAGE_BUILD", "currentness": "CURRENT",
+                   "revoked": False, "request_sha256": hashlib.sha256(canonical(declared)).hexdigest(),
+                   **{key: declared["authorization"][key] for key in ("claim", "packet", "queue", "actor")}}
+        for final in (VerifierError("revoked"), {**allowed, "revoked": True},
+                      {**allowed, "currentness": "STALE"}, {**allowed, "request_sha256": "d" * 64},
+                      {**allowed, "claim": "other"}, None, allowed):
+            with self.subTest(final=final):
+                callback = Mock(side_effect=[allowed, final])
+                # First allowed read models the normal CLI's pre-preparation check.
+                self.assertEqual(callback(declared), allowed)
+                bound = None if final is None else callback
+                root, temporary = MagicMock(), MagicMock()
+                root.exists.return_value = False
+                temporary.exists.return_value = True
+                with patch.object(builder, "output_path", return_value=root), \
+                     patch.object(builder.tempfile, "mkdtemp", return_value="synthetic-scratch"), \
+                     patch.object(builder, "Path", return_value=temporary), \
+                     patch.object(builder, "build_standard_manifest", return_value={}), \
+                     patch.object(builder, "build_change_capsule", return_value={}), \
+                     patch.object(builder, "verify_bundle_cross_binding", return_value={"fixture": True}), \
+                     patch.object(builder.shutil, "rmtree"), patch.object(builder.os, "replace") as move:
+                    if final == allowed:
+                        builder.write_bundle_atomically_outside_source(
+                            declared, root, [], "c" * 64, trusted_authority_check=bound)
+                        move.assert_called_once_with(temporary, root)
+                    else:
+                        with self.assertRaises((builder.BuilderError, VerifierError)):
+                            builder.write_bundle_atomically_outside_source(
+                                declared, root, [], "c" * 64, trusted_authority_check=bound)
+                        move.assert_not_called()
+                self.assertEqual(callback.call_count, 1 if final is None else 2)
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Any, Callable
-from package_build_verifier import PackageBuildVerifier, VerifierError
+from package_build_verifier import PackageBuildVerifier, VerifierError, canonical
 
 
 INPUT_SCHEMA = "cerebro-standard-delivery-package-input/v1"
@@ -599,9 +599,20 @@ def write_bundle_atomically_outside_source(declared: dict[str, Any], source_root
         (bundle / "manifest.json").write_bytes(json_bytes(build_standard_manifest(declared, files)))
         (bundle / "capsule" / "capsule.json").write_bytes(json_bytes(build_change_capsule(declared, files)))
         result = verify_bundle_cross_binding(bundle, declared, files, target_digest)
+        require(not root.exists(), "output raced with another writer")
         if declared["identity"].get("profile") == EXACT35_PROFILE:
             exact35_authority(declared, trusted_authority_check)
-        require(not root.exists(), "output raced with another writer")
+        elif not disposable:
+            require(callable(trusted_authority_check), "PACKAGE_AUTHORITY_VERIFIER_UNBOUND")
+            receipt = trusted_authority_check(declared)
+            auth = declared["authorization"]
+            require(isinstance(receipt, dict) and receipt.get("result") == "PASS"
+                    and receipt.get("effect") == "RUN_ONLY_PACKAGE_BUILD"
+                    and receipt.get("currentness") == "CURRENT" and receipt.get("revoked") is False
+                    and all(isinstance(auth.get(key), str) and bool(auth[key].strip())
+                            and receipt.get(key) == auth[key] for key in ("claim", "packet", "queue", "actor"))
+                    and receipt.get("request_sha256") == digest(canonical(declared)),
+                    "PACKAGE_AUTHORITY_VERIFIER_REJECTED")
         os.replace(temporary, root)
         temporary = root
         readback = verify_bundle_cross_binding(root / "bundle", declared, files, target_digest)
