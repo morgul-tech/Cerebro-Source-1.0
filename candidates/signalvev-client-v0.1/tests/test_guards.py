@@ -80,7 +80,8 @@ class StaticGuards(unittest.TestCase):
     def test_importlib_only_for_the_operator_named_resolver_factory(self):
         for f in FILES:
             if "import_module" in f.read_text(encoding="utf-8"):
-                self.assertEqual(f.name, "session.py")
+                # session.py: operator-named resolver factory; pm_x9.py: operator-named ports_factory (same pattern)
+                self.assertIn(f.name, {"session.py", "pm_x9.py"})
 
     def test_out_of_scope_capabilities_are_absent_from_executable_code(self):
         banned = ("jetstream", "js.", "request_many", "wildcard", "daemon", "systemd", "scheduler", "autowake", "bind_worker",

@@ -1,0 +1,16 @@
+# BK07 PM-to-X9 binding -- SYNTHETIC_TEST_ONLY configuration (self-created fixture, no real PM/channel/broker).
+# signalvev-pm-x9 diagnose --config examples/pm_x9/synthetic.toml   -> BOUND_NOT_STARTED (no I/O)
+[pm_x9]
+mode = "SYNTHETIC_TEST_ONLY"
+owner_ref = "CURRENT_PM_SYNTHETIC"
+claim_ref = "WORK_CLAIMS:synthetic-1"
+packet_ref = "WORK_PACKETS:synthetic-1"
+queue_ref = "READY_QUEUE:synthetic-1"
+packet_sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+producer_principal = "pm:producer-synthetic"
+x9_principal = "x9:consumer-synthetic"
+x9_session_ref = "x9:session-synthetic"
+attempt_ref = "attempt:synthetic-1"
+pointer_ttl_seconds = 900
+max_pending_ingress = 16
+ports_factory = "signalvev_client.pm_x9_synthetic:make_ports"

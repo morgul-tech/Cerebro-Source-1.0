@@ -32,6 +32,11 @@ CANDIDATE = HERE.parent
 REPO = CANDIDATE.parents[1]
 CORE_SRC = REPO / "candidates" / "signalvev-sensing-runtime-v0.1" / "src" / "signalvev_sensing"
 CLIENT_SRC = CANDIDATE / "src" / "signalvev_client"
+# BK07: the two existing adapters ride in the SAME wheel, byte-identical and pinned, as package signalvev_adapters.
+ADAPTERS_SRC = REPO / "candidates" / "signalvev-sensing-runtime-v0.1" / "adapters"
+ADAPTERS = ["pm_owner_commit.py", "x9_channel_ingress.py"]
+ADAPTERS_INIT = (b'"""Signalvev adapters, bundled byte-identical from candidates/signalvev-sensing-runtime-v0.1/adapters '
+                 b'and pinned by signalvev_client/_reference_resources/RESOURCE_MANIFEST.json."""\n')
 REFERENCE_PY = ["signalvev_reference_v01_validation.py", "signalvev_reference_v09_validation.py",
                 "signalvev_reference_v15_validation.py", "signalvev_reference_v16_validation.py"]
 REFERENCE_DATA = ["cerebro-message-v1-candidate.schema.json", "subject-registry-v0.1-candidate.json"]
@@ -108,6 +113,12 @@ def stage(dest: Path) -> dict:
         put(REPO / "candidates" / "signalvev-reference-v0.1" / f, f"{RES}/candidates/signalvev-reference-v0.1/{f}")
     for f in committed_python_sources(CLIENT_SRC):                # the client package itself is also pinned (tamper evidence)
         put(f, f"signalvev_client/{f.name}")
+    for f in ADAPTERS:                                            # BK07: one canonical adapter implementation
+        put(ADAPTERS_SRC / f, f"signalvev_adapters/{f}")
+    init = dest / "signalvev_adapters" / "__init__.py"
+    init.write_bytes(ADAPTERS_INIT)
+    files["signalvev_adapters/__init__.py"] = hashlib.sha256(ADAPTERS_INIT).hexdigest()
+    sources["signalvev_adapters/__init__.py"] = "GENERATED_BY_build_dist.py"
     manifest = {"schema": "signalvev-client-resource-manifest/v0.1", "authority": "NONE",
                 "source_repository": "morgul-tech/Cerebro-Source-1.0", "source_commit": git("rev-parse", "HEAD") or "NOT_AVAILABLE",
                 "files": dict(sorted(files.items())), "sources": dict(sorted(sources.items()))}

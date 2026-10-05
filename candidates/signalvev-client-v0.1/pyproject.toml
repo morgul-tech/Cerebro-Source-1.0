@@ -25,9 +25,10 @@ credentials = ["nkeys>=0.2.1"]
 
 [project.scripts]
 signalvev-client = "signalvev_client.cli:main"
+signalvev-pm-x9 = "signalvev_client.pm_x9_cli:main"
 
 [tool.setuptools]
-packages = ["signalvev_client", "signalvev_sensing"]
+packages = ["signalvev_client", "signalvev_sensing", "signalvev_adapters"]
 include-package-data = false
 
 [tool.setuptools.package-data]
