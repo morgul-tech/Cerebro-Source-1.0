@@ -380,6 +380,8 @@ class ControlContextRemoteRuntime:
     readiness_probe: PostgresStateServiceReadinessProbe = field(repr=False)
     app: Any = field(repr=False)
     pm_lifecycle_verifier: Any | None = field(default=None, repr=False)
+    pm_prepublication_basis_reader: Any | None = field(default=None, repr=False)
+    pm_disposition_publisher_port: Any | None = field(default=None, repr=False)
     provider_tail_reader: Any | None = field(default=None, repr=False)
     principal_succession_reader: Any | None = field(default=None, repr=False)
     machine_diary_effect_verifier: Any | None = field(default=None, repr=False)
@@ -401,6 +403,12 @@ class ControlContextRemoteRuntime:
             "repository_credentials": "NONE",
             "identity_provider_selected": False,
             "pm_lifecycle_verifier_bound": self.pm_lifecycle_verifier is not None,
+            "pm_prepublication_basis_reader_bound": self.pm_prepublication_basis_reader is not None,
+            "pm_disposition_publisher_port_bound": self.pm_disposition_publisher_port is not None,
+            "pm_durable_disposition_guard_bound": (
+                self.pm_prepublication_basis_reader is not None
+                and self.pm_disposition_publisher_port is not None
+            ),
             "provider_tail_reader_bound": self.provider_tail_reader is not None,
             "principal_succession_reader_bound": self.principal_succession_reader is not None,
             "principal_succession_custody_provider_bound": isinstance(self.principal_succession_reader, PrincipalSuccessionPermitProvider),
@@ -418,11 +426,24 @@ class ControlContextRemoteRuntime:
         capability_resolver: Any,
     ) -> Any:
         _require(self.pm_lifecycle_verifier is not None, "runtime-pm-lifecycle-verifier-unbound")
-        from control_resolution_host import BoundControlResolutionHost
+        _require(
+            (self.pm_prepublication_basis_reader is None)
+            == (self.pm_disposition_publisher_port is None),
+            "runtime-pm-durable-disposition-ports-must-bind-together",
+        )
+        from control_resolution_host import BoundControlResolutionHost, BoundPmDispositionPublisher
+        guarded_publisher = None
+        if self.pm_prepublication_basis_reader is not None:
+            guarded_publisher = BoundPmDispositionPublisher(
+                basis_reader=self.pm_prepublication_basis_reader,
+                publisher_port=self.pm_disposition_publisher_port,
+                enabled=True,
+            )
         return BoundControlResolutionHost(
             persistence_verifier=persistence_verifier,
             capability_resolver=capability_resolver,
             pm_profile_verifier=self.pm_lifecycle_verifier,
+            pm_disposition_publisher=guarded_publisher,
         )
 
 
@@ -442,6 +463,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     worker_overlay_attestation_issuer: Any | None = None,
     worker_overlay_source_continuity_verifier: Any | None = None,
     pm_profile_verifier: Any | None = None,
+    pm_prepublication_basis_reader: Any | None = None,
+    pm_disposition_publisher_port: Any | None = None,
     provider_tail_reader: Any | None = None,
     principal_succession_reader: Any | None = None,
     machine_diary_effect_verifier: Any | None = None,
@@ -472,6 +495,11 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
             machine_diary_effect_verifier=machine_diary_effect_verifier)
     _require(human_t3_effect_capability is None or human_t3_current_reader is not None,
              "T3-effect-capability-requires-trusted-current-reader")
+    _require(
+        (pm_prepublication_basis_reader is None)
+        == (pm_disposition_publisher_port is None),
+        "runtime-pm-durable-disposition-ports-must-bind-together",
+    )
     human_t3_host = (HumanT3BreakGlassHost(state_port=state_port, current_reader=human_t3_current_reader,
                                         effect_capability=human_t3_effect_capability)
                      if human_t3_current_reader is not None else None)
@@ -533,6 +561,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         app=app,
         human_t3_host=human_t3_host,
         pm_lifecycle_verifier=pm_lifecycle_verifier,
+        pm_prepublication_basis_reader=pm_prepublication_basis_reader,
+        pm_disposition_publisher_port=pm_disposition_publisher_port,
         provider_tail_reader=provider_tail_reader,
         principal_succession_reader=principal_succession_reader,
         machine_diary_effect_verifier=machine_diary_effect_verifier,
@@ -555,6 +585,8 @@ def assemble_postgres_control_context_remote_runtime(
     worker_overlay_attestation_issuer: Any | None = None,
     worker_overlay_source_continuity_verifier: Any | None = None,
     pm_profile_verifier: Any | None = None,
+    pm_prepublication_basis_reader: Any | None = None,
+    pm_disposition_publisher_port: Any | None = None,
     provider_tail_reader: Any | None = None,
     principal_succession_reader: Any | None = None,
     machine_diary_effect_verifier: Any | None = None,
@@ -587,6 +619,8 @@ def assemble_postgres_control_context_remote_runtime(
         worker_overlay_attestation_issuer=worker_overlay_attestation_issuer,
         worker_overlay_source_continuity_verifier=worker_overlay_source_continuity_verifier,
         pm_profile_verifier=pm_profile_verifier,
+        pm_prepublication_basis_reader=pm_prepublication_basis_reader,
+        pm_disposition_publisher_port=pm_disposition_publisher_port,
         provider_tail_reader=provider_tail_reader,
         principal_succession_reader=principal_succession_reader,
         machine_diary_effect_verifier=machine_diary_effect_verifier,

@@ -1080,6 +1080,96 @@ def selftest() -> dict[str, Any]:
     )
     check("W2-stale-precondition-is-conflict-fixed-point", conflict_fixed["stop_reason"] == "CONFLICT")
 
+    # Room A Issue41 post-merge: normal fixed-point consumer owns durable publication.
+    class DurableDispositionPublisherFixture:
+        def __init__(self):
+            self.calls: list[dict[str, Any]] = []
+
+        def publish(self, proposal: dict[str, Any]) -> dict[str, Any]:
+            self.calls.append(copy.deepcopy(proposal))
+            return {
+                "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                "result": "PASS_GUARDED_PUBLICATION_READBACK",
+                "published": True,
+                "live_effect": True,
+                "retry_allowed": False,
+                "decision_receipt": {"decision": "CORRECT_FALSE_SAME_BASIS_STOP"},
+                "publisher_receipt": {
+                    "receipt_ref": "ROOMA-NORMAL-CONSUMER-RB-1",
+                    "readback_verified": True,
+                },
+            }
+
+    durable_request = {
+        "schema": PM_DISPOSITION_REQUEST_SCHEMA,
+        "disposition_ref": "ROMA-DISPOSITION-1",
+        "requested_disposition": "HOLD",
+        "expected_referent_ref": "ROMA-REF-1",
+        "expected_referent_revision": 1,
+        "requested_scope_ref": "ROMA-SCOPE-1",
+    }
+    durable_fixture = DurableDispositionPublisherFixture()
+    durable_host = BoundControlResolutionHost(
+        persistence_verifier=composite,
+        capability_resolver=capability,
+        canonical_resolver=chain_resolver,
+        pm_disposition_publisher=durable_fixture,
+    )
+    durable_fixed = consume_pm_authorized_command_chain(
+        durable_host,
+        governance={"next_action": {}},
+        command_state=None,
+        carrier=carrier,
+        command_executor=None,
+        current_state_reader=PMCurrentStateReaderFixture([]),
+        durable_disposition_request=durable_request,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "ROMA-I41-normal-fixed-point-consumer-invokes-bound-guarded-publisher",
+        durable_fixed["stop_reason"] == "QUIESCENT"
+        and durable_fixed["durable_disposition_consumer_exercised"] is True
+        and durable_fixed["durable_disposition_publication"]["result"]
+            == "PASS_GUARDED_PUBLICATION_READBACK"
+        and durable_fixture.calls == [durable_request],
+    )
+    unbound_fixed = consume_pm_authorized_command_chain(
+        chain_host,
+        governance={"next_action": {}},
+        command_state=None,
+        carrier=carrier,
+        command_executor=None,
+        current_state_reader=PMCurrentStateReaderFixture([]),
+        durable_disposition_request=durable_request,
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "ROMA-I41-normal-fixed-point-consumer-fails-closed-without-publisher-binding",
+        unbound_fixed["stop_reason"] == "QUIESCENT"
+        and unbound_fixed["durable_disposition_consumer_exercised"] is True
+        and unbound_fixed["durable_disposition_publication"]["result"]
+            == "BLOCK_EXACT_PUBLISHER_PORT"
+        and unbound_fixed["durable_disposition_publication"]["published"] is False,
+    )
+    legacy_fixed = consume_pm_authorized_command_chain(
+        chain_host,
+        governance={"next_action": {}},
+        command_state=None,
+        carrier=carrier,
+        command_executor=None,
+        current_state_reader=PMCurrentStateReaderFixture([]),
+        root=SOURCE_ROOT,
+        require_git_ancestry=False,
+    )
+    check(
+        "ROMA-I41-normal-consumer-without-durable-request-preserves-old-fixed-point",
+        legacy_fixed["stop_reason"] == "QUIESCENT"
+        and legacy_fixed["durable_disposition_consumer_exercised"] is False
+        and "durable_disposition_publication" not in legacy_fixed,
+    )
+
     # P659 Wave2: executable ADMINPULSE/debt consumer with exact provider watermarks.
     class PulseReader:
         def __init__(self, observed: dict[str, Any]):
