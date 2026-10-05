@@ -38,6 +38,8 @@ Ingenting er flyttet/refaktorert i den eksisterende kjernen. `_reference.py` er 
 
 - **nats-py `>=2.16.0,<3`** (`REAL_CORE_NATS_BINDING`). Valgt fordi oppdraget peker på nats-py som vanlig klientbinding, og ingen annen egnet NATS-avhengighet fantes i Source. Testet versjon: **2.16.0** (upstream-tag `v2.16.0`, commit `3547a63b2658db4596928668d75fab7c673f6fe6`). Se «Kjente grenser» for hvordan den ble installert her.
 - **nkeys `>=0.2.1`** kun hvis `nats.credentials_file` brukes: `pip install "signalvev-client[credentials]"`. Uten nkeys feiler klienten tidlig med typet `NKEYS_NOT_INSTALLED` (ingen stille degradering).
+- **Google Drive-eierresolver:** installer hjulet med `[drive]` for runtime-avhengighetene `google-auth` og `requests`. Standardinstallasjonen for NATS trekker dem ikke inn. Ved behov kan `[credentials,drive]` brukes sammen.
+- **Lokal OAuth-hjelper:** `google-auth-oauthlib` er en separat oppsettsavhengighet i miljøet som utfører lokal samtykke-/tokenopprettelse; den er ikke nødvendig for resolverens runtime og inngår ikke i `[drive]`. Installer den eksplisitt der oppsettet utføres. Pakkeinstallasjon alene beviser ikke API-tilgang, innlogging eller gyldig konfigurasjon på målverten.
 - Python **≥ 3.11** (stdlib `tomllib`).
 
 ## Installasjon
@@ -57,6 +59,15 @@ py -3.11 -m venv C:\signalvev\venv
 C:\signalvev\venv\Scripts\pip install signalvev_client-0.1.0-py3-none-any.whl
 C:\signalvev\venv\Scripts\signalvev-client.exe --version
 ```
+
+**Google Drive-resolver (på den aktuelle målverten)**
+```bash
+python3 -m pip install './signalvev_client-0.1.0-py3-none-any.whl[drive]'
+# For separat lokalt OAuth-oppsett, i oppsettsmiljøet:
+python3 -m pip install google-auth-oauthlib
+```
+
+På Windows brukes tilsvarende `py -3.11 -m pip install '.\signalvev_client-0.1.0-py3-none-any.whl[drive]'` og, bare ved lokalt OAuth-oppsett, `py -3.11 -m pip install google-auth-oauthlib`. Kontroller interpreter, installerte avhengigheter, API-/programtilgang og de konkrete filene og innstillingene på hver målvert før den aktuelle integrasjonen startes; en vellykket offline wheel-bygging er ikke et bevis på dette.
 
 Støttet importsti er `signalvev_client` (den binder de pinnede referansene før kjernen importeres). `import signalvev_sensing` alene i en installert miljø er ikke en støttet inngang.
 
