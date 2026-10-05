@@ -17,8 +17,8 @@ sys.path.insert(0, str(HERE.parent / "providers"))
 sys.path.insert(0, str(HERE.parents[1] / "signalvev-client-v0.1" / "tests"))
 from _support import FakeBroker, NOW, OWNER, POINTER_SHA, TmpCase, config_doc, raw_event
 from signalvev_client import EvidenceBusyError, parse_config
-from signalvev_sensing import ResolverResult, accept_owner_event, build_frame
-from room_carrier_ingress import (CASE, C3, SERVER, Episode, RoomBridgeError, _RoomSink, _latest,
+from signalvev_sensing import JsonlStore, ResolverResult, accept_owner_event, build_frame
+from room_carrier_ingress import (CASE, C3, SERVER, Episode, RoomBridgeError, _RoomSink, _append, _entry, _latest,
                                  _records, finish_app_request, make_room_listener, prepare_app_request)
 
 
@@ -225,6 +225,88 @@ class RoomBridgeTests(TmpCase):
             finish_app_request(self.cfg, self.ep, request_sha256=request["request_sha256"], outcome="ACTOR_CONSUME",
                                tool_result_sha256="a" * 64, enabled=True)
         self.assertEqual(self.stage(), "APP_INTENT")
+
+    def test_manual_pending_without_cursor_or_closure_never_creates_app_intent(self):
+        # Reproduces X5's uncovered path with checksum-valid evidence and NO broker.
+        _append(self.cfg.evidence_dir / "closures.jsonl", _entry(self.ep, "RECEIVE_PENDING",
+                closure_id="manual-no-broker", origin="INSTALLED_LISTEN_CALLBACK", transport_server=SERVER,
+                receiver_owner_read=True, actor_source_read=False))
+        with self.assertRaisesRegex(RoomBridgeError, "RECEIVER_READBACK_INCOMPLETE"):
+            self.prepare()
+        self.assertEqual(self.broker.delivered, [])
+        self.assertEqual(self.broker.connects, [])
+        self.assertEqual(self.resolver.calls, [])
+        self.assertFalse(any(r.get("stage") == "APP_INTENT" for r in self.rows()))
+
+    def test_pending_revalidates_original_receiver_chain_under_lock(self):
+        self.pending()  # genuine installed-client callback via the OFFLINE broker double
+        cursor_path = self.cfg.evidence_dir / "cursor.jsonl"
+        closure_path = self.cfg.evidence_dir / "closures.jsonl"
+        original_cursor = cursor_path.read_bytes()
+        original_closures = closure_path.read_bytes()
+        calls_before = len(self.resolver.calls)
+
+        def rewrite(path, name, records):
+            path.unlink()  # only this test's disposable temporary file
+            store = JsonlStore(path, name=name)
+            try:
+                for row in records:
+                    if row.get("kind") != "HEADER":
+                        store.append(row)
+            finally:
+                store.close()
+
+        cases = ("missing_cursor", "missing_final", "missing_closure", "claim_hash", "claim_seq",
+                 "latest_final", "latest_closure", "closure_revision", "closure_hash", "closure_authority",
+                 "pending_origin", "pending_source", "pending_closure")
+        for case in cases:
+            with self.subTest(case=case):
+                cursor_path.write_bytes(original_cursor)
+                closure_path.write_bytes(original_closures)
+                cursor = _records(cursor_path, "receiver-cursor")
+                closures = self.rows()
+                claim = next(r for r in cursor if r.get("kind") == "CLAIM")
+                final = next(r for r in cursor if r.get("kind") == "FINAL")
+                closure = next(r for r in closures if r.get("kind") == "CLOSURE")
+                pending = _latest(closures, self.ep.event_id)
+                if case == "missing_final":
+                    cursor = [r for r in cursor if r.get("kind") != "FINAL"]
+                elif case == "missing_closure":
+                    closures = [r for r in closures if r.get("kind") != "CLOSURE"]
+                elif case == "claim_hash":
+                    claim["d0_hash"] = "0" * 64
+                elif case == "claim_seq":
+                    claim["owner_seq"] += 1
+                elif case == "latest_final":
+                    cursor.append({**final, "disposition": "HOLD_UNREADABLE", "reason": "LATER_OWNER_HOLD"})
+                elif case == "latest_closure":
+                    closures.append({**closure, "closure_id": "later-conflict", "disposition": "CONFLICT_HOLD",
+                                     "reason": "SAME_EVENT_ID_CHANGED_FINGERPRINT", "receipt_stage": "DELIVERED"})
+                elif case == "closure_revision":
+                    closure["revision_after"] = "other-revision"
+                elif case == "closure_hash":
+                    closure["observed_sha256"] = "0" * 64
+                elif case == "closure_authority":
+                    closure["authority"] = "SOURCE_WRITE"
+                elif case == "pending_origin":
+                    pending["origin"] = "MANUAL"
+                elif case == "pending_source":
+                    pending["source_ref"] = "src:other"
+                elif case == "pending_closure":
+                    pending["closure_id"] = "manual-no-broker"
+                rewrite(cursor_path, "receiver-cursor", cursor)
+                rewrite(closure_path, "closure-log", closures)
+                if case == "missing_cursor":
+                    cursor_path.unlink()
+                with self.assertRaisesRegex(RoomBridgeError, "RECEIVER_READBACK_(INCOMPLETE|CONFLICT)"):
+                    self.prepare()
+                self.assertFalse(any(r.get("stage") == "APP_INTENT" for r in self.rows()))
+                self.assertEqual(len(self.resolver.calls), calls_before)
+        # Restore the authentic chain: the correction must retain the matching path.
+        cursor_path.write_bytes(original_cursor)
+        closure_path.write_bytes(original_closures)
+        self.assertEqual(self.prepare()["result"], "APP_REQUEST")
+        self.assertEqual(self.prepare(), {"result": "NO_REPLAY", "stage": "APP_INTENT"})
 
 
 if __name__ == "__main__":

@@ -152,6 +152,43 @@ def _entry(ep: Episode, stage: str, **extra: Any) -> dict[str, Any]:
             "d0_sha256": ep.d0_sha256, "work_consumed": False, "effect": "NONE_CLAIMED", **extra}
 
 
+def _receiver_readback(cfg: Any, ep: Episode, closure_id: str | None,
+                       rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Shared callback/reconcile guard. Checksums require qualified HOST custody.
+
+    Caller holds the existing receiver lock (core callback or stopped listener).
+    A ROOM_RECEIPT alone is never receiver proof. Re-read original cursor and
+    closure evidence before app intent; missing or conflicting chains refuse.
+    """
+    try:
+        cursor = _records(cfg.evidence_dir / "cursor.jsonl", "receiver-cursor")
+    except OSError:
+        raise RoomBridgeError("RECEIVER_READBACK_INCOMPLETE") from None
+    claims = [r for r in cursor if r.get("kind") == "CLAIM" and r.get("event_id") == ep.event_id]
+    final = next((r for r in reversed(cursor) if r.get("kind") == "FINAL"
+                  and r.get("event_id") == ep.event_id), None)
+    logged = next((r for r in reversed(rows) if r.get("kind") == "CLOSURE"
+                   and r.get("closure_id") == closure_id), None)
+    latest_closure = next((r for r in reversed(rows) if r.get("kind") == "CLOSURE"
+                           and r.get("event_id") == ep.event_id), None)
+    if len(claims) != 1 or not final or not logged:
+        raise RoomBridgeError("RECEIVER_READBACK_INCOMPLETE")
+    claim = claims[0]
+    if not (logged == latest_closure
+            and claim.get("d0_hash") == ep.d0_sha256 and claim.get("owner_seq") == ep.owner_seq
+            and final.get("disposition") == "ACK_READ" and final.get("reason") == "OWNER_READ_MATCHES_EVENT"
+            and logged.get("event_id") == ep.event_id and logged.get("owner_ref") == ep.owner_ref
+            and logged.get("referent_type") == ep.referent_type and logged.get("referent_id") == ep.artifact_id
+            and logged.get("revision_after") == ep.revision and logged.get("observed_sha256") == ep.sha256
+            and logged.get("disposition") == "ACK_READ" and logged.get("reason") == final.get("reason")
+            and logged.get("receipt_stage") == "READ" and logged.get("authority") == "NONE"
+            and logged.get("effect") == "NONE_CLAIMED" and logged.get("work_consumed") is False
+            and logged.get("is_truth_store") is False and ep.case in logged.get("way_home", ())):
+        return None
+    expected_id = sha256_hex(f"{ep.event_id}|ACK_READ|OWNER_READ_MATCHES_EVENT".encode())[:32]
+    return logged if closure_id == expected_id else None
+
+
 class _RoomSink:
     """Installed-client callback only; not a manual enqueue or transport API."""
 
@@ -168,27 +205,18 @@ class _RoomSink:
         status = self.client.status()
         if (status.get("role"), status.get("state"), status.get("server")) != ("LISTEN", "CONNECTED", SERVER):
             raise RoomBridgeError("PRIVATE_RECEIVER_ORIGIN_UNPROVEN")
-        cursor = _records(cfg.evidence_dir / "cursor.jsonl", "receiver-cursor")
-        claim = next((r for r in cursor if r.get("kind") == "CLAIM" and r.get("event_id") == ep.event_id), None)
-        final = next((r for r in reversed(cursor) if r.get("kind") == "FINAL" and r.get("event_id") == ep.event_id), None)
         path = cfg.evidence_dir / "closures.jsonl"
         rows = _records(path, "closure-log")  # built-in sink fsyncs BEFORE this sink
-        logged = next((r for r in reversed(rows) if r.get("kind") == "CLOSURE"
-                       and r.get("closure_id") == closure.closure_id), None)
-        if not claim or not final or not logged:
-            raise RoomBridgeError("RECEIVER_READBACK_INCOMPLETE")
+        logged = _receiver_readback(cfg, ep, closure.closure_id, rows)
         prior = _latest(rows, ep.event_id)
         if prior and prior.get("episode_sha256") != ep.digest:
             raise RoomBridgeError("HOST_EPISODE_CHANGED")
-        valid = (claim.get("d0_hash") == ep.d0_sha256 and claim.get("owner_seq") == ep.owner_seq
-                 and final.get("disposition") == "ACK_READ" and closure.disposition == "ACK_READ"
+        valid = (logged is not None and closure.disposition == "ACK_READ"
                  and closure.receipt_stage == "READ" and not closure.work_consumed
                  and closure.authority == "NONE" and closure.effect == "NONE_CLAIMED"
                  and (closure.owner_ref, closure.referent_type, closure.referent_id,
                       closure.revision_after, closure.observed_sha256)
                  == (ep.owner_ref, ep.referent_type, ep.artifact_id, ep.revision, ep.sha256)
-                 and (logged.get("event_id"), logged.get("observed_sha256"), logged.get("disposition"))
-                 == (ep.event_id, ep.sha256, "ACK_READ")
                  and ep.case in closure.way_home)
         if not valid:
             if not prior or prior.get("stage") == "RECEIVE_PENDING":
@@ -229,13 +257,19 @@ def prepare_app_request(cfg: Any, ep: Episode, *, app_status: dict[str, Any], re
     lock = EvidenceLock(cfg.evidence_dir, "receiver").acquire()
     try:
         path = cfg.evidence_dir / "closures.jsonl"
-        prior = _latest(_records(path, "closure-log"), ep.event_id)
+        rows = _records(path, "closure-log")
+        prior = _latest(rows, ep.event_id)
         if not prior:
             return {"result": "NO_RECEIVED_EVENT"}
         if prior.get("episode_sha256") != ep.digest or prior.get("carrier_ref") != C3:
             raise RoomBridgeError("HOST_BINDING_CHANGED")
         if prior.get("stage") != "RECEIVE_PENDING":
             return {"result": "NO_REPLAY", "stage": prior.get("stage")}
+        logged = _receiver_readback(cfg, ep, prior.get("closure_id"), rows)
+        if (logged is None or any(prior.get(k) != v for k, v in _entry(ep, "RECEIVE_PENDING").items())
+                or prior.get("origin") != "INSTALLED_LISTEN_CALLBACK" or prior.get("transport_server") != SERVER
+                or prior.get("receiver_owner_read") is not True or prior.get("actor_source_read") is not False):
+            raise RoomBridgeError("RECEIVER_READBACK_CONFLICT")
         if now >= ep.expires_at:
             _append(path, _entry(ep, "HOLD_EXPIRED"))
             return {"result": "HOLD_EXPIRED"}
