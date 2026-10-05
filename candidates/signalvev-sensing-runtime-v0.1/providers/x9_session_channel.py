@@ -1,0 +1,214 @@
+"""Fail-closed adapter for the existing X9 receiver-session channel port.
+
+This file defines the narrow host API the receiver still needs. It is not a
+Google Sheets client, credential store, pulse scheduler, or live binding. The
+current source checkout has no X9 session executor or pulse registration.
+Production qualification requires the host to implement
+``AuthenticatedX9SessionAPI`` with provider-authenticated identity, atomic
+append-once by event ID, and fresh readback (including provider revision).
+
+The one supported receiver is pinned here. A caller cannot supply a different
+principal or session. ``enabled`` is false by default. A test double can check
+the interface contract, but cannot establish provider custody or live effect.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Protocol
+
+from adapters.x9_channel_ingress import (
+    CHANNEL,
+    DISPOSITION_SCHEMA,
+    HEX64,
+    ID,
+    MATERIAL,
+    NO_DELTA,
+    SCHEMA,
+    STALE,
+    ChannelIdentity,
+    PointerRecord,
+    Readback,
+    X9Disposition,
+)
+
+X9_PRINCIPAL = "X9_PROSJEKTMANN_8F7290F3"
+X9_SESSION_REF = "codex:local01a0e1b4-eb38-7e80-83cb-fff0f30a253e"
+NOT_SENT = "NOT_SENT"
+UNKNOWN_SEND = "UNKNOWN_SEND"
+ACCEPTED = "ACCEPTED"
+
+REQUIRED_SCOPES = frozenset({"pointer:read", "disposition:append", "disposition:read"})
+
+
+@dataclass(frozen=True)
+class ProviderSessionIdentity:
+    """Must come from a host-authenticated identity endpoint, never request data."""
+
+    channel: str
+    principal: str
+    session_ref: str
+    authenticated: bool
+    current: bool
+    scopes: frozenset[str]
+
+
+class AuthenticatedX9SessionAPI(Protocol):
+    """Missing host-owned execution port required for production qualification.
+
+    Append methods must enforce event-ID uniqueness atomically across processes.
+    Read methods must perform a fresh authenticated provider read and return
+    the canonical content hash, authenticated writer principal, and revision
+    token. Returning an append response is never a readback receipt.
+    """
+
+    def identity(self) -> ProviderSessionIdentity: ...
+
+    def current_pulse_event_id(self) -> str | None: ...
+
+    def read_pointer_by_event_id(self, event_id: str) -> Readback | None: ...
+
+    def append_disposition_once(self, event_id: str, content_sha256: str, record: X9Disposition) -> str: ...
+
+    def read_disposition_by_event_id(self, event_id: str) -> Readback | None: ...
+
+
+class X9SessionChannelPort:
+    """X9-role adapter implementing the existing ``ChannelPort`` shape."""
+
+    def __init__(self, *, api: AuthenticatedX9SessionAPI | None = None, enabled: bool = False) -> None:
+        self._api = api
+        self._enabled = enabled is True
+
+    def _session(self) -> ProviderSessionIdentity | None:
+        if not self._enabled or self._api is None:
+            return None
+        try:
+            identity = self._api.identity()
+        except Exception:  # noqa: BLE001 - provider unavailability is a closed gate
+            return None
+        if not isinstance(identity, ProviderSessionIdentity):
+            return None
+        if (identity.channel != CHANNEL or identity.principal != X9_PRINCIPAL
+                or identity.session_ref != X9_SESSION_REF or identity.authenticated is not True
+                or identity.current is not True or not isinstance(identity.scopes, frozenset)
+                or any(not isinstance(scope, str) for scope in identity.scopes)
+                or not REQUIRED_SCOPES.issubset(identity.scopes)):
+            return None
+        return identity
+
+    def identity(self) -> ChannelIdentity:
+        current = self._session()
+        return ChannelIdentity(
+            CHANNEL,
+            X9_PRINCIPAL,
+            authenticated=current is not None,
+            append_allowed=current is not None and "disposition:append" in current.scopes,
+            read_allowed=current is not None and "pointer:read" in current.scopes
+            and "disposition:read" in current.scopes,
+        )
+
+    def current_pulse_event_id(self) -> str | None:
+        """Read the pulse's event binding from server custody, never its caller."""
+
+        if self._session() is None:
+            return None
+        try:
+            event_id = self._api.current_pulse_event_id()  # type: ignore[union-attr]
+        except Exception:  # noqa: BLE001
+            return None
+        return event_id if isinstance(event_id, str) and ID.fullmatch(event_id) else None
+
+    def append_pointer_once(self, record: PointerRecord) -> str:
+        """Refuse producer writes from X9's receiver-only session.
+
+        The bound PM/Claude producer port owns ``append_pointer_once``. A
+        receiver session may not impersonate that principal; a shared provider
+        API still has to qualify the independent PM sender and X9 reader ACLs.
+        """
+
+        return NOT_SENT
+
+    def read_pointer_by_event_id(self, event_id: str) -> Readback | None:
+        if self._session() is None or not isinstance(event_id, str) or not ID.fullmatch(event_id):
+            return None
+        try:
+            readback = self._api.read_pointer_by_event_id(event_id)  # type: ignore[union-attr]
+        except Exception:  # noqa: BLE001
+            return None
+        if readback is None:
+            return None
+        if (not isinstance(readback, Readback) or not isinstance(readback.record, PointerRecord)
+                or readback.record.schema != SCHEMA or readback.record.event_id != event_id
+                or readback.record.receiver_ref != X9_SESSION_REF
+                or readback.producer_principal != readback.record.producer_id
+                or readback.content_sha256 != readback.record.content_sha256
+                or not isinstance(readback.revision_token, str) or not ID.fullmatch(readback.revision_token)):
+            return None
+        return readback
+
+    def append_disposition_once(self, record: X9Disposition) -> str:
+        identity = self._session()
+        if (identity is None or not isinstance(record, X9Disposition)
+                or record.schema != DISPOSITION_SCHEMA or record.work_consumed is not False
+                or record.effect != "NONE_CLAIMED" or record.disposition not in {STALE, NO_DELTA, MATERIAL}
+                or not ID.fullmatch(record.event_id) or not ID.fullmatch(record.attempt_id)
+                or not HEX64.fullmatch(record.pointer_sha256)
+                or not HEX64.fullmatch(record.owner_material_sha256)
+                or not ID.fullmatch(record.owner_revision) or not ID.fullmatch(record.reason)):
+            return NOT_SENT
+        pointer = self.read_pointer_by_event_id(record.event_id)
+        if (pointer is None or not isinstance(pointer.record, PointerRecord)
+                or pointer.record.attempt_id != record.attempt_id
+                or pointer.record.content_sha256 != record.pointer_sha256
+                or pointer.record.receiver_ref != X9_SESSION_REF):
+            return NOT_SENT
+        try:
+            result = self._api.append_disposition_once(  # type: ignore[union-attr]
+                record.event_id, record.content_sha256, record
+            )
+        except Exception:  # noqa: BLE001 - the ingress reconciles once; no retry
+            return UNKNOWN_SEND
+        return result if result in {ACCEPTED, NOT_SENT, UNKNOWN_SEND} else UNKNOWN_SEND
+
+    def read_disposition_by_event_id(self, event_id: str) -> Readback | None:
+        if self._session() is None or not isinstance(event_id, str) or not ID.fullmatch(event_id):
+            return None
+        try:
+            readback = self._api.read_disposition_by_event_id(event_id)  # type: ignore[union-attr]
+        except Exception:  # noqa: BLE001
+            return None
+        if readback is None:
+            return None
+        if (not isinstance(readback, Readback) or not isinstance(readback.record, X9Disposition)
+                or readback.record.schema != DISPOSITION_SCHEMA or readback.record.event_id != event_id
+                or readback.record.work_consumed is not False or readback.record.effect != "NONE_CLAIMED"
+                or readback.record.disposition not in {STALE, NO_DELTA, MATERIAL}
+                or not ID.fullmatch(readback.record.attempt_id)
+                or not HEX64.fullmatch(readback.record.pointer_sha256)
+                or not HEX64.fullmatch(readback.record.owner_material_sha256)
+                or not ID.fullmatch(readback.record.owner_revision)
+                or not ID.fullmatch(readback.record.reason)
+                or readback.producer_principal != X9_PRINCIPAL
+                or readback.content_sha256 != readback.record.content_sha256
+                or not isinstance(readback.revision_token, str) or not ID.fullmatch(readback.revision_token)):
+            return None
+        return readback
+
+
+class X9PulseIngress(Protocol):
+    def consume(self, event_id: str | None, *, now: datetime,
+                prior_material_sha256: str | None = None) -> object: ...
+
+
+def consume_current_x9_pulse(ingress: X9PulseIngress, channel: X9SessionChannelPort, *, now: datetime,
+                             prior_material_sha256: str | None = None) -> object:
+    """Minimal call target for an existing X9 pulse after host wiring is known.
+
+    No event ID is accepted from the caller. Missed/invalid pulse evidence is
+    passed as ``None`` so the existing ingress returns its typed missed-D0
+    HOLD without channel disposition or semantic consumption.
+    """
+
+    event_id = channel.current_pulse_event_id()
+    return ingress.consume(event_id, now=now, prior_material_sha256=prior_material_sha256)
