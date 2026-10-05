@@ -5,6 +5,7 @@ grant and revocation store. No request field or local digest authenticates it.
 The port decides permission for these exact bytes only; it performs no build.
 """
 import math
+import re
 import time
 
 
@@ -29,6 +30,13 @@ class PackageBuildVerifierPort:
                 or any(not isinstance(request[k], str) or not request[k].strip()
                        for k in ("grant_ref", "grant_revision", "nonce", "request_sha256"))):
             raise PackageBuildPortError("REQUEST_INVALID")
+        fields = {"effect", "claim", "packet", "queue", "actor", "source_base", "current_main_commit",
+                  "candidate_commit", "candidate_tree", "target_bytes_sha256", "qualification_report_sha256"}
+        if (set(request["binding"]) != fields
+                or any(not isinstance(v, str) or not v.strip() for v in request["binding"].values())
+                or not re.fullmatch(r"[0-9a-f]{64}", request["request_sha256"])
+                or not re.fullmatch(r"[0-9a-f]{48}", request["nonce"])):
+            raise PackageBuildPortError("EXACT_EXECUTION_BINDING_REQUIRED")
         grant = self.reader(request["grant_ref"], identity)
         now = self.clock()
         if not isinstance(grant, dict):
