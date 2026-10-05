@@ -124,6 +124,49 @@ def owner_binding(doc):
 
 
 class NormalOwnerContract(unittest.TestCase):
+    def test_code_complete_admitted_retains_matching_active_owner_proof_carry(self):
+        # C1169: genuine rev1.1 shape; synthetic refs do not authenticate PM.
+        doc = owner_fixture("1.1")
+        doc["integration_source"] = doc["owner_source_cut"]
+        active, code = doc["records"]
+        code.update(actor="X1_SYNTHETIC", record_status="CODE_COMPLETE_ADMITTED_NO_EFFECT")
+        code["typed_carry"].update(causal_equality="CODE_RECEIPT_IS_NOT_PROVIDER_EXECUTION",
+            live_host_read="UNKNOWN", code_integration={"status": "MERGED_DEFAULT_OFF",
+            "head": "a"*40, "merge": "b"*40, "source_ref": doc["integration_source"]})
+        active["typed_carry"].update(kind="CONTINUE_SAME_TASK_PENDING_OAUTH_AND_OWNER_PROOF",
+            x1_dependency_status="CODE_COMPLETE_ADMITTED", x1_terminal=code["terminal"],
+            x1_admission=code["admission"])
+        raw, binding = owner_binding(doc)
+        parsed, digest = v.load_consumer_input(raw, binding)
+        result = v.classify_document(parsed, digest)
+        self.assertEqual(result["input_acceptance"], "HASH_BOUND_OWNER_FACTS")
+        self.assertEqual(result["structural_overall_status"], "PASS")
+        self.assertEqual((result["overall_status"], result["authority"]), ("UNKNOWN", "NONE"))
+        self.assertEqual(result["records"][1]["record_status"], "CODE_COMPLETE_ADMITTED_NO_EFFECT")
+        self.assertIsNone(result["records"][0]["terminal"])
+        self.assertIsNone(result["records"][0]["admission"])
+        self.assertTrue(all(r["provider_action_status"] == "OPEN" for r in result["records"]))
+        for change in ("missing_admission", "wrong_order", "mismatched_carry", "stale_carry", "missing_dependency",
+                       "false_read_label", "live_read", "live_merge", "wrong_integration", "false_closed_active",
+                       "provider_effect", "original_binding"):
+            altered = copy.deepcopy(doc); a, c = altered["records"]
+            if change == "missing_admission": c["admission"] = None
+            elif change == "wrong_order": c["admission"] = c["actor_start"]
+            elif change == "mismatched_carry": a["typed_carry"]["x1_admission"] = a["actor_start"]
+            elif change == "stale_carry": a["typed_carry"]["kind"] = "CONTINUE_SAME_TASK_PENDING_OAUTH_AND_X1_TERMINAL"
+            elif change == "missing_dependency": altered["records"].pop()
+            elif change == "false_read_label": c["typed_carry"]["causal_equality"] = "READ_RECEIPT_IS_NOT_PROVIDER_EXECUTION"
+            elif change == "live_read": c["typed_carry"]["live_host_read"] = "PASS"
+            elif change == "live_merge": c["typed_carry"]["code_integration"]["status"] = "MERGED_LIVE"
+            elif change == "wrong_integration": c["typed_carry"]["code_integration"]["source_ref"] = c["admission"]
+            elif change == "false_closed_active": a["admission"] = c["admission"]
+            elif change == "provider_effect": a["typed_carry"]["provider_effect"] = "PASS"
+            else: c["original_sha256"] = "e"*64
+            changed_raw, changed_binding = owner_binding(altered)
+            if change == "original_binding": changed_binding["provenance"] = binding["provenance"]
+            with self.subTest(change=change), self.assertRaises(v.InputError):
+                v.load_consumer_input(changed_raw, changed_binding)
+
     def test_two_successive_snapshots_same_contract_no_digest_code_change(self):
         digests = []
         for doc in (owner_fixture(), owner_fixture("2.0", 200)):

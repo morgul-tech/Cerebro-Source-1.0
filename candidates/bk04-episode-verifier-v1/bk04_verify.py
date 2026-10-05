@@ -190,15 +190,29 @@ def _validate_owner_facts(doc):
                  "unsupported provider effect/publication assertion")
         if record["record_status"] == "ACTIVE_SAME_CLAIM_SAME_ORIGINAL":
             _require(record["terminal"] is None and record["admission"] is None
-                     and carry.get("kind") == "CONTINUE_SAME_TASK_PENDING_OAUTH_AND_X1_TERMINAL"
+                     and carry.get("kind") in ("CONTINUE_SAME_TASK_PENDING_OAUTH_AND_X1_TERMINAL",
+                                              "CONTINUE_SAME_TASK_PENDING_OAUTH_AND_OWNER_PROOF")
                      and carry.get("causal_equality") == "SAME_CLAIM_TASK_AND_ORIGINAL_HASH_CORROBORATED_BY_OWNER",
                      "active carry cannot close or change original claim")
-        elif record["record_status"] == "READ_COMPLETE_ADMITTED_NO_EFFECT":
+            if carry["kind"] == "CONTINUE_SAME_TASK_PENDING_OAUTH_AND_X1_TERMINAL":
+                _require(not any(k in carry for k in ("x1_dependency_status", "x1_terminal", "x1_admission")),
+                         "pending-X1 carry cannot also assert an admitted X1 dependency")
+        elif record["record_status"] in ("READ_COMPLETE_ADMITTED_NO_EFFECT", "CODE_COMPLETE_ADMITTED_NO_EFFECT"):
             terminal, admission = _source_ref(record["terminal"]), _source_ref(record["admission"])
+            code_complete = record["record_status"] == "CODE_COMPLETE_ADMITTED_NO_EFFECT"
             _require(start < terminal < admission <= cut
                      and carry.get("kind") == "SEPARATE_PROVIDER_ACTION_PENDING"
-                     and carry.get("causal_equality") == "READ_RECEIPT_IS_NOT_PROVIDER_EXECUTION",
-                     "read receipt order/carry inconsistent")
+                     and carry.get("causal_equality") == ("CODE_RECEIPT_IS_NOT_PROVIDER_EXECUTION"
+                                                          if code_complete else "READ_RECEIPT_IS_NOT_PROVIDER_EXECUTION"),
+                     "terminal/admission order/carry inconsistent")
+            if code_complete:
+                integration = carry.get("code_integration")
+                _require(isinstance(integration, dict) and integration.get("status") == "MERGED_DEFAULT_OFF"
+                         and _head(integration.get("head")) and _head(integration.get("merge"))
+                         and integration.get("source_ref") == projection["integration_source"]
+                         and admission < _source_ref(integration["source_ref"]) <= cut
+                         and carry.get("live_host_read") == UNKNOWN,
+                         "code integration must retain exact default-off receipt and unknown live read")
         else:
             raise InputError("OWNER_BINDING_MISMATCH", "unsupported record status")
         action = carry.get("provider_action_source")
@@ -211,6 +225,16 @@ def _validate_owner_facts(doc):
                      "corroborated action must retain its unresolved exact row/hash")
         else:
             _require(_source_ref(action) <= cut, "provider action after owner cut")
+    for record in projection["records"]:
+        carry = record["typed_carry"]
+        if carry.get("kind") == "CONTINUE_SAME_TASK_PENDING_OAUTH_AND_OWNER_PROOF":
+            _require(carry.get("x1_dependency_status") == "CODE_COMPLETE_ADMITTED"
+                     and any(r["record_status"] == "CODE_COMPLETE_ADMITTED_NO_EFFECT"
+                             and r["actor"].startswith("X1_")
+                             and r["terminal"] == carry.get("x1_terminal")
+                             and r["admission"] == carry.get("x1_admission")
+                             for r in projection["records"]),
+                     "active owner-proof carry needs the matching admitted X1 code record")
     coverage = doc.get("coverage")
     _require(isinstance(coverage, dict)
              and coverage.get("semantic_source_approval") == "NOT_GRANTED"
