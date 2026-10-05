@@ -40,6 +40,48 @@ architecture_dependency_integrity:
       - execution_surface_resolution_check
 
 
+  external_execution_preparation:
+
+    applies_to:
+      - integrations_with_external_runtime_dependencies
+      - host_specific_execution_surfaces
+
+    dependency_snapshot_check:
+      inspect_on_actual_target_host:
+        - selected_interpreter_and_environment
+        - installed_integration_extras_and_importable_runtime_dependencies
+        - required_api_or_program_access_and_login_state
+      evidence:
+        - one_cheap_real_check_for_each_applicable_external_edge
+
+    execution_surface_resolution_check:
+      inspect_on_actual_target_host:
+        - exact_local_files_and_configuration
+        - callable_provider_or_deployment_port
+        - receiving_process_or_endpoint
+        - start_and_restart_path
+      evidence:
+        - one_cheap_real_check_for_each_applicable_external_edge
+
+    edge_record:
+      required_fields:
+        - edge_and_target_host
+        - observed_evidence
+        - classification
+        - responsible_owner
+        - one_next_action
+      classification_values:
+        - CONFIRMED
+        - MACHINE_FIX
+        - CONCRETE_HUMAN_STEP
+        - UNKNOWN
+
+    scope_rule:
+      - offline_build_may_continue_when_an_external_execution_edge_is_unresolved
+      - unresolved_external_execution_edge_limits_only_its_affected_execution_claim
+      - no_new_research_gate_or_global_build_stop
+
+
   outcomes:
 
     CURRENT:

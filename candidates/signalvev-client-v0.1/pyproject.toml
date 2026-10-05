@@ -22,6 +22,8 @@ classifiers = [
 [project.optional-dependencies]
 # Needed only when nats.credentials_file is configured (nats-py signs the server nonce with nkeys).
 credentials = ["nkeys>=0.2.1"]
+# Runtime dependencies for the Google Drive owner resolver; ordinary NATS installs stay lean.
+drive = ["google-auth>=2,<3", "requests>=2.31,<3"]
 
 [project.scripts]
 signalvev-client = "signalvev_client.cli:main"
