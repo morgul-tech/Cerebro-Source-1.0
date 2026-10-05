@@ -7,11 +7,11 @@ local bytes, reuses BK04/BK05 as-is, and emits one non-authoritative receipt.
 It never wakes a model, grants authority, or performs a provider operation.
 
 Bundle fields: schema; task {actor_ref, generation_ref, carrier_ref, arc_ref,
-task_ref, original_path,
+task_ref, task_revision, original_path,
 original_sha256, source_head, effect_class, privacy_class, live_scope,
 authority_class, return_target, way_home, allowed_paths, required_invariants,
 stop_edges}; return {actor_ref, generation_ref, carrier_ref, arc_ref,
-task_ref, original_sha256,
+task_ref, task_revision, original_sha256,
 contract_kind}; optional bk04 {owner_facts_path, binding_path}; optional bk05
 {parent_manifest_path, verifier_path, verifier_delta_path, currentness_path,
 prior_record_path}. All paths refer to existing local files. Only
@@ -84,6 +84,7 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
     carrier = _text(task.get("carrier_ref"), "CARRIER")
     arc = _text(task.get("arc_ref"), "ARC")
     task_ref = _text(task.get("task_ref"), "TASK_REF")
+    task_revision = _text(task.get("task_revision"), "TASK_REVISION")
     original = _read(task.get("original_path"))
     if _sha(original) != task.get("original_sha256"):
         raise ValueError("ORIGINAL_HASH_MISMATCH")
@@ -120,6 +121,7 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
     elif (returned_actor != actor or returned.get("generation_ref") != generation or
             returned.get("carrier_ref") != carrier or returned_arc != arc or
             returned.get("task_ref") != task_ref or
+            returned.get("task_revision") != task_revision or
             returned.get("original_sha256") != _sha(original)):
         bk05_status = {"decision": "FULL_TASK_REQUIRED", "reasons": ["ACTOR_ARC_OR_ORIGINAL_CHANGED"]}
     elif isinstance(bundle.get("bk05"), dict):
@@ -128,8 +130,10 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
         if all(refs.get(name) for name in needed):
             core = _load_module("bk05_core", SOURCE_ROOT / "candidates/bk05-capsule-tool-v1/src/bk05_capsule/core.py")
             try:
+                manifest_raw = _read(refs["parent_manifest_path"])
+                manifest = json.loads(manifest_raw)
                 evaluation = core.evaluate(
-                    original, _read(refs["parent_manifest_path"]), _read(refs["verifier_path"]),
+                    original, manifest_raw, _read(refs["verifier_path"]),
                     _read(refs["verifier_delta_path"]), _read(refs["currentness_path"]),
                     prior=_read(refs["prior_record_path"]) if refs.get("prior_record_path") else None,
                 )
@@ -142,6 +146,7 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
                                    ("stop_edges", "stop_edges"))
                     same_scope = all(task.get(name) == capsule.get(name) for name in identity_fields)
                     same_scope = same_scope and task.get("source_head") == capsule.get("source_head")
+                    same_scope = same_scope and task.get("allowed_paths") == manifest.get("allowed_paths")
                     same_scope = same_scope and all(
                         task.get(task_name) == capsule.get(capsule_name)
                         for task_name, capsule_name in list_fields)
@@ -150,6 +155,7 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
                         and set(capsule["allowed_repair_paths"]).issubset(set(task["allowed_paths"]))
                     )
                     if (capsule["actor_ref"] == actor and capsule["parent"]["task_ref"] == task_ref
+                            and capsule["parent"]["revision"] == task_revision
                             and same_scope):
                         selection = "BK05_STRUCTURAL_CAPSULE_CANDIDATE"
                         payload = core.capsule_file_bytes(capsule)
@@ -162,7 +168,8 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
             bk05_status = {"decision": "FULL_TASK_REQUIRED", "reasons": ["BK05_INPUTS_INCOMPLETE"]}
 
     receipt = {
-        "schema": SCHEMA + "-receipt", "task_ref": task_ref, "actor_ref": actor,
+        "schema": SCHEMA + "-receipt", "task_ref": task_ref, "task_revision": task_revision,
+        "actor_ref": actor,
         "generation_ref": generation, "carrier_ref": carrier, "arc_ref": arc,
         "selection": selection, "selected_sha256": _sha(payload), "selected_bytes": len(payload),
         "original_sha256": _sha(original), "bk04": bk04_status, "bk05": bk05_status,

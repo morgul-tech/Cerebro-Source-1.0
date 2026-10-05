@@ -38,7 +38,8 @@ class NormalReturn(unittest.TestCase):
             "schema": adapter.SCHEMA,
             "task": {"actor_ref": "SYN-ACTOR-WRITER", "generation_ref": "SYN-GEN-1",
                      "carrier_ref": "SYN-CARRIER-1", "arc_ref": "SYN-ARC-1",
-                     "task_ref": "SYN-TASK-0001", "original_path": self.paths["parent.txt"],
+                     "task_ref": "SYN-TASK-0001", "task_revision": "rev-3",
+                     "original_path": self.paths["parent.txt"],
                      "original_sha256": hashlib.sha256(files["parent.txt"]).hexdigest(),
                      **{k: json.loads(files["parent_manifest.json"])[k] for k in
                         ("effect_class", "privacy_class", "live_scope", "authority_class",
@@ -46,7 +47,7 @@ class NormalReturn(unittest.TestCase):
                      "allowed_paths": json.loads(files["parent_manifest.json"])["allowed_paths"]},
             "return": {"actor_ref": "SYN-ACTOR-WRITER", "generation_ref": "SYN-GEN-1",
                        "carrier_ref": "SYN-CARRIER-1", "arc_ref": "SYN-ARC-1",
-                       "task_ref": "SYN-TASK-0001",
+                       "task_ref": "SYN-TASK-0001", "task_revision": "rev-3",
                        "original_sha256": hashlib.sha256(files["parent.txt"]).hexdigest()},
             "bk05": {"parent_manifest_path": self.paths["parent_manifest.json"],
                      "verifier_path": self.paths["verifier.txt"],
@@ -119,6 +120,16 @@ class NormalReturn(unittest.TestCase):
         finding, selected = adapter.evaluate(self.bundle)
         self.assertEqual(finding["selection"], "BK05_STRUCTURAL_CAPSULE_CANDIDATE")
         self.assertEqual(json.loads(selected)["allowed_repair_paths"], ["adapter.py"])
+
+    def test_changed_worklist_allowed_paths_or_revision_falls_back(self):
+        original = Path(self.paths["parent.txt"]).read_bytes()
+        self.bundle["task"]["allowed_paths"] = ["adapter.py"]
+        finding, selected = adapter.evaluate(self.bundle)
+        self.assertEqual((finding["selection"], selected), ("FULL_ORIGINAL_TASK", original))
+        self.bundle["task"]["allowed_paths"] = ["adapter.py", "test_adapter.py"]
+        self.bundle["return"]["task_revision"] = "rev-4"
+        finding, selected = adapter.evaluate(self.bundle)
+        self.assertEqual((finding["selection"], selected), ("FULL_ORIGINAL_TASK", original))
 
     def test_bk04_conflict_is_local_to_affected_arc(self):
         original = Path(self.paths["parent.txt"]).read_bytes()
