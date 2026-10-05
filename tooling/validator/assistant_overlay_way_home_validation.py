@@ -50,21 +50,41 @@ def continuity(head: str, method_fingerprint: str) -> dict[str, str | int | bool
     )
 
 
-def provider(current_head: str, *, changed_method: bool = False, ancestor: bool = True):
+def provider(
+    current_head: str,
+    *,
+    changed_method: bool = False,
+    ancestor: bool = True,
+    wrong_base: bool = False,
+    wrong_merge_base: bool = False,
+    malformed_compare: bool = False,
+    drift_current_head: bool = False,
+):
     raw_prefix = f"https://raw.githubusercontent.com/{REPOSITORY}/"
+    head_reads = 0
 
     def fetch(url: str) -> bytes:
+        nonlocal head_reads
         if url == HEAD_URL:
+            head_reads += 1
+            observed_head = (
+                "d" * 40
+                if drift_current_head and head_reads >= 4
+                else current_head
+            )
             return json.dumps({
-                "sha": current_head,
+                "sha": observed_head,
                 "commit": {"committer": {"date": "2026-09-30T00:00:00Z"}},
             }).encode()
         if url == f"{COMPARE_URL}/{HEAD}...{ADVANCED_HEAD}":
+            if malformed_compare:
+                return json.dumps([{"status": "ahead"}]).encode()
             return json.dumps({
                 "status": "ahead" if ancestor else "diverged",
-                "base_commit": {"sha": HEAD},
-                "merge_base_commit": {"sha": HEAD if ancestor else "0" * 40},
-                "head_commit": {"sha": ADVANCED_HEAD},
+                "base_commit": {"sha": "0" * 40 if wrong_base else HEAD},
+                "merge_base_commit": {
+                    "sha": "0" * 40 if wrong_merge_base or not ancestor else HEAD
+                },
             }).encode()
         if url.startswith(raw_prefix):
             revision, path = url[len(raw_prefix):].split("/", 1)
@@ -227,6 +247,30 @@ def main() -> int:
         lambda: verify_existing_birth_method_continuity(
             HEAD, birth_method["method_fingerprint"],
             fetch=provider(ADVANCED_HEAD, ancestor=False),
+        ), BootBirthSourceError,
+    )
+    checks["wrong-compare-base-denies"] = denied(
+        lambda: verify_existing_birth_method_continuity(
+            HEAD, birth_method["method_fingerprint"],
+            fetch=provider(ADVANCED_HEAD, wrong_base=True),
+        ), BootBirthSourceError,
+    )
+    checks["wrong-merge-base-denies"] = denied(
+        lambda: verify_existing_birth_method_continuity(
+            HEAD, birth_method["method_fingerprint"],
+            fetch=provider(ADVANCED_HEAD, wrong_merge_base=True),
+        ), BootBirthSourceError,
+    )
+    checks["malformed-compare-denies"] = denied(
+        lambda: verify_existing_birth_method_continuity(
+            HEAD, birth_method["method_fingerprint"],
+            fetch=provider(ADVANCED_HEAD, malformed_compare=True),
+        ), BootBirthSourceError,
+    )
+    checks["current-head-drift-denies"] = denied(
+        lambda: verify_existing_birth_method_continuity(
+            HEAD, birth_method["method_fingerprint"],
+            fetch=provider(ADVANCED_HEAD, drift_current_head=True),
         ), BootBirthSourceError,
     )
     checks["changed-method-denies"] = denied(

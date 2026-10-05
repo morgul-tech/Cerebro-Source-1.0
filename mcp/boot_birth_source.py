@@ -293,16 +293,18 @@ def verify_existing_birth_method_continuity(
             comparison = json.loads(fetch(f"{COMPARE_URL}/{birth_source_head}...{current_head}"))
         except Exception as exc:
             raise BootBirthSourceError("birth-main-ancestry-unavailable") from exc
+
+        if not isinstance(comparison, dict):
+            raise BootBirthSourceError("birth-not-ancestor-of-current-main")
+
         def compared_sha(field: str) -> str | None:
             value = comparison.get(field)
             return value.get("sha") if isinstance(value, dict) else None
 
         if (
-            not isinstance(comparison, dict)
-            or comparison.get("status") != "ahead"
+            comparison.get("status") != "ahead"
             or compared_sha("base_commit") != birth_source_head
             or compared_sha("merge_base_commit") != birth_source_head
-            or compared_sha("head_commit") != current_head
         ):
             raise BootBirthSourceError("birth-not-ancestor-of-current-main")
         birth_profile, birth_material, computed_birth_fingerprint = _method_contract_at_head(
