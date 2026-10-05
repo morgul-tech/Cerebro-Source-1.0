@@ -53,7 +53,6 @@ class FakeSessionAPI:
     """A local protocol double only; never evidence for authenticated provider behavior."""
 
     identity_value: ProviderSessionIdentity
-    pulse_event_id: str | None = "event:1"
     pointer_value: PointerRecord | None = None
     disposition_value: X9Disposition | None = None
 
@@ -63,10 +62,6 @@ class FakeSessionAPI:
     def identity(self):
         self.calls.append(("identity",))
         return self.identity_value
-
-    def current_pulse_event_id(self):
-        self.calls.append(("current_pulse_event_id",))
-        return self.pulse_event_id
 
     def append_pointer_once(self, event_id, content_sha256, record):
         self.calls.append(("append_pointer_once", event_id, content_sha256))
@@ -194,21 +189,31 @@ class X9SessionChannelPortTests(unittest.TestCase):
         self.assertEqual(port.append_disposition_once(disp), "NOT_SENT")
         self.assertFalse(any(c[0] == "append_disposition_once" for c in api.calls))
 
-    def test_missed_d0_uses_only_server_bound_pulse_event_and_never_consumes(self):
-        api = FakeSessionAPI(authorized_identity(), pulse_event_id=None)
+    def test_missed_d0_rereads_one_owner_tuple_without_consuming(self):
+        ptr = pointer()
+        api = FakeSessionAPI(authorized_identity())
         channel = X9SessionChannelPort(api=api, enabled=True)
         ingress = CaptureIngress()
-        self.assertEqual(consume_current_x9_pulse(ingress, channel, now=NOW), "CAPTURED")
-        self.assertEqual(ingress.calls, [(None, NOW, None)])
+        pm = FakePMOwnerRead(ptr)
+        result = consume_current_x9_pulse(ingress, channel, event_id=None, now=NOW,
+                                          pm_reader=pm,
+                                          recovery_scope=(ptr.claim_ref, ptr.packet_ref, ptr.queue_ref))
+        self.assertIsInstance(result, PMOwnerCut)
+        self.assertEqual(pm.calls, 1)
+        self.assertEqual(ingress.calls, [])
         self.assertFalse(any(call[0] == "append_disposition_once" for call in api.calls))
 
-    def test_pulse_event_id_is_read_from_session_not_caller_argument(self):
-        api = FakeSessionAPI(authorized_identity(), pulse_event_id="event:1")
+    def test_existing_inbox_event_id_selects_data_without_granting_custody(self):
+        api = FakeSessionAPI(authorized_identity())
         channel = X9SessionChannelPort(api=api, enabled=True)
         ingress = CaptureIngress()
-        consume_current_x9_pulse(ingress, channel, now=NOW, prior_material_sha256="c" * 64)
+        consume_current_x9_pulse(ingress, channel, event_id="event:1", now=NOW,
+                                 prior_material_sha256="c" * 64)
         self.assertEqual(ingress.calls, [("event:1", NOW, "c" * 64)])
-        self.assertEqual(api.calls, [("identity",), ("current_pulse_event_id",)])
+        api.identity_value = authorized_identity(session_ref="codex:local/old-session")
+        result = consume_current_x9_pulse(ingress, channel, event_id="event:1", now=NOW)
+        self.assertEqual(result.state, "REFINE_INGRESS_PORT_UNBOUND")
+        self.assertEqual(len(ingress.calls), 1)
 
     def test_duplicate_pulse_returns_exact_prior_disposition_without_reappend(self):
         ptr = pointer()
@@ -219,8 +224,8 @@ class X9SessionChannelPortTests(unittest.TestCase):
                                    producer_principal=PM, x9_principal=X9_PRINCIPAL,
                                    x9_session_ref=X9_SESSION_REF)
 
-        first = consume_current_x9_pulse(ingress, channel, now=NOW)
-        second = consume_current_x9_pulse(ingress, channel, now=NOW)
+        first = consume_current_x9_pulse(ingress, channel, event_id=ptr.event_id, now=NOW)
+        second = consume_current_x9_pulse(ingress, channel, event_id=ptr.event_id, now=NOW)
 
         self.assertEqual(first.state, "DISPOSITION_READBACK")
         self.assertEqual(second.state, "ALREADY_DISPOSED")

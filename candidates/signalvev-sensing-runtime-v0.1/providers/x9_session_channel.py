@@ -2,7 +2,10 @@
 
 This file defines the narrow host API the receiver still needs. It is not a
 Google Sheets client, credential store, pulse scheduler, or live binding. The
-current source checkout has no X9 session executor or pulse registration.
+existing X9 heartbeat selects a pointer from PROSJEKTMANN_CHANNEL. Its actual
+host is the Codex workspace C:/Users/morgu/Documents/Codex/2026-09-27/goo,
+with pulse C:/Users/morgu/.codex/automations/forskningshuset-r1-r2-videref-ring/
+automation.toml. This candidate does not mutate or register that live pulse.
 Production qualification requires the host to implement
 ``AuthenticatedX9SessionAPI`` with provider-authenticated identity, atomic
 append-once by event ID, and fresh readback (including provider revision).
@@ -23,12 +26,17 @@ from adapters.x9_channel_ingress import (
     HEX64,
     ID,
     MATERIAL,
+    HOLD,
+    REFINE,
+    PMOwnerCut,
+    PMOwnerReadPort,
     NO_DELTA,
     SCHEMA,
     STALE,
     ChannelIdentity,
     PointerRecord,
     Readback,
+    Result,
     X9Disposition,
 )
 
@@ -63,8 +71,6 @@ class AuthenticatedX9SessionAPI(Protocol):
     """
 
     def identity(self) -> ProviderSessionIdentity: ...
-
-    def current_pulse_event_id(self) -> str | None: ...
 
     def read_pointer_by_event_id(self, event_id: str) -> Readback | None: ...
 
@@ -107,17 +113,6 @@ class X9SessionChannelPort:
             read_allowed=current is not None and "pointer:read" in current.scopes
             and "disposition:read" in current.scopes,
         )
-
-    def current_pulse_event_id(self) -> str | None:
-        """Read the pulse's event binding from server custody, never its caller."""
-
-        if self._session() is None:
-            return None
-        try:
-            event_id = self._api.current_pulse_event_id()  # type: ignore[union-attr]
-        except Exception:  # noqa: BLE001
-            return None
-        return event_id if isinstance(event_id, str) and ID.fullmatch(event_id) else None
 
     def append_pointer_once(self, record: PointerRecord) -> str:
         """Refuse producer writes from X9's receiver-only session.
@@ -201,14 +196,37 @@ class X9PulseIngress(Protocol):
                 prior_material_sha256: str | None = None) -> object: ...
 
 
-def consume_current_x9_pulse(ingress: X9PulseIngress, channel: X9SessionChannelPort, *, now: datetime,
-                             prior_material_sha256: str | None = None) -> object:
-    """Minimal call target for an existing X9 pulse after host wiring is known.
+def consume_current_x9_pulse(ingress: X9PulseIngress, channel: X9SessionChannelPort, *,
+                             event_id: str | None, now: datetime,
+                             prior_material_sha256: str | None = None,
+                             pm_reader: PMOwnerReadPort | None = None,
+                             recovery_scope: tuple[str, str, str] | None = None) -> object:
+    """Call target for the existing pulse's durable inbox selection.
 
-    No event ID is accepted from the caller. Missed/invalid pulse evidence is
-    passed as ``None`` so the existing ingress returns its typed missed-D0
-    HOLD without channel disposition or semantic consumption.
+    event_id selects existing inbox data; it never supplies receiver custody.
+    The authenticated channel pins custody and the ingress verifies the exact
+    pointer. On missed D0, one known PM tuple may be freshly reread via the
+    existing owner port. The returned cut is recovery input for the ordinary
+    pulse, never a delivery/disposition/consume receipt.
     """
 
-    event_id = channel.current_pulse_event_id()
-    return ingress.consume(event_id, now=now, prior_material_sha256=prior_material_sha256)
+    if not channel.identity().authenticated:
+        return Result(REFINE, "AUTHENTICATED_X9_SESSION_PORT_MISSING", event_id)
+    if event_id is not None:
+        if not isinstance(event_id, str) or not ID.fullmatch(event_id):
+            return Result(HOLD, "INVALID_INBOX_EVENT_ID")
+        return ingress.consume(event_id, now=now, prior_material_sha256=prior_material_sha256)
+    if pm_reader is None or recovery_scope is None:
+        return ingress.consume(None, now=now, prior_material_sha256=prior_material_sha256)
+    if (not isinstance(recovery_scope, tuple) or len(recovery_scope) != 3
+            or any(not isinstance(ref, str) or not ID.fullmatch(ref) for ref in recovery_scope)):
+        return Result(HOLD, "INVALID_MISSED_D0_RECOVERY_SCOPE")
+    try:
+        cut = pm_reader.read_current(*recovery_scope)  # one bounded owner reread; no retry
+    except Exception:
+        return Result(HOLD, "MISSED_D0_PM_OWNER_REREAD_UNAVAILABLE")
+    if (not isinstance(cut, PMOwnerCut) or cut.authenticated is not True
+            or cut.committed_readback is not True
+            or (cut.claim_ref, cut.packet_ref, cut.queue_ref) != recovery_scope):
+        return Result(HOLD, "MISSED_D0_PM_OWNER_CUSTODY_UNPROVEN")
+    return cut
