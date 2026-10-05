@@ -6,10 +6,12 @@ semantic review, worklist writing and any later actor action. This adapter reads
 local bytes, reuses BK04/BK05 as-is, and emits one non-authoritative receipt.
 It never wakes a model, grants authority, or performs a provider operation.
 
-Bundle fields: schema; task {actor_ref, arc_ref, task_ref, original_path,
+Bundle fields: schema; task {actor_ref, generation_ref, carrier_ref, arc_ref,
+task_ref, original_path,
 original_sha256, source_head, effect_class, privacy_class, live_scope,
 authority_class, return_target, way_home, allowed_paths, required_invariants,
-stop_edges}; return {actor_ref, arc_ref, task_ref, original_sha256,
+stop_edges}; return {actor_ref, generation_ref, carrier_ref, arc_ref,
+task_ref, original_sha256,
 contract_kind}; optional bk04 {owner_facts_path, binding_path}; optional bk05
 {parent_manifest_path, verifier_path, verifier_delta_path, currentness_path,
 prior_record_path}. All paths refer to existing local files. Only
@@ -78,6 +80,8 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
     task = _object(bundle.get("task"), "TASK")
     returned = _object(bundle.get("return"), "RETURN")
     actor = _text(task.get("actor_ref"), "ACTOR")
+    generation = _text(task.get("generation_ref"), "GENERATION")
+    carrier = _text(task.get("carrier_ref"), "CARRIER")
     arc = _text(task.get("arc_ref"), "ARC")
     task_ref = _text(task.get("task_ref"), "TASK_REF")
     original = _read(task.get("original_path"))
@@ -113,7 +117,8 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
     returned_arc = returned.get("arc_ref")
     if bk04_status["state"] == "CONFLICT":
         bk05_status = {"decision": "FULL_TASK_REQUIRED", "reasons": ["BK04_CONFLICT_LOCAL_REVIEW"]}
-    elif (returned_actor != actor or returned_arc != arc or
+    elif (returned_actor != actor or returned.get("generation_ref") != generation or
+            returned.get("carrier_ref") != carrier or returned_arc != arc or
             returned.get("task_ref") != task_ref or
             returned.get("original_sha256") != _sha(original)):
         bk05_status = {"decision": "FULL_TASK_REQUIRED", "reasons": ["ACTOR_ARC_OR_ORIGINAL_CHANGED"]}
@@ -154,11 +159,14 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
             bk05_status = {"decision": "FULL_TASK_REQUIRED", "reasons": ["BK05_INPUTS_INCOMPLETE"]}
 
     receipt = {
-        "schema": SCHEMA + "-receipt", "task_ref": task_ref, "actor_ref": actor, "arc_ref": arc,
+        "schema": SCHEMA + "-receipt", "task_ref": task_ref, "actor_ref": actor,
+        "generation_ref": generation, "carrier_ref": carrier, "arc_ref": arc,
         "selection": selection, "selected_sha256": _sha(payload), "selected_bytes": len(payload),
         "original_sha256": _sha(original), "bk04": bk04_status, "bk05": bk05_status,
+        "return_target": task.get("return_target"), "way_home": task.get("way_home"),
         "authority": "NONE", "provider_currentness_proven": False,
         "semantic_review_proven": False, "work_consumed": False, "effect": "NONE_CLAIMED",
+        "task_eligibility_is_not_same_arc_proof": True,
         "model_wake_per_subcheck": False,
     }
     return receipt, payload

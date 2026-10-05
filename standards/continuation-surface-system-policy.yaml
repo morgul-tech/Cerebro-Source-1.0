@@ -132,7 +132,7 @@ continuation_surface_system_policy:
       irrelevant_return: SKIP
     bk05:
       source_function: candidates/bk05-capsule-tool-v1/src/bk05_capsule/core.py
-      compact_candidate_only_for: same_actor_same_arc_exact_original_valid_delta
+      compact_candidate_only_for: same_actor_generation_carrier_arc_exact_original_valid_delta
       otherwise: FULL_ORIGINAL_TASK
       invalid_or_stale: preserve_typed_reasons_and_require_current_owner_review
     output_authority: NONE

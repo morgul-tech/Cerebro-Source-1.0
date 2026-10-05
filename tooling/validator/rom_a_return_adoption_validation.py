@@ -36,14 +36,16 @@ class NormalReturn(unittest.TestCase):
             self.paths[name] = str(path)
         self.bundle = {
             "schema": adapter.SCHEMA,
-            "task": {"actor_ref": "SYN-ACTOR-WRITER", "arc_ref": "SYN-ARC-1",
+            "task": {"actor_ref": "SYN-ACTOR-WRITER", "generation_ref": "SYN-GEN-1",
+                     "carrier_ref": "SYN-CARRIER-1", "arc_ref": "SYN-ARC-1",
                      "task_ref": "SYN-TASK-0001", "original_path": self.paths["parent.txt"],
                      "original_sha256": hashlib.sha256(files["parent.txt"]).hexdigest(),
                      **{k: json.loads(files["parent_manifest.json"])[k] for k in
                         ("effect_class", "privacy_class", "live_scope", "authority_class",
                          "return_target", "way_home", "required_invariants", "stop_edges", "source_head")},
                      "allowed_paths": json.loads(files["parent_manifest.json"])["allowed_paths"]},
-            "return": {"actor_ref": "SYN-ACTOR-WRITER", "arc_ref": "SYN-ARC-1",
+            "return": {"actor_ref": "SYN-ACTOR-WRITER", "generation_ref": "SYN-GEN-1",
+                       "carrier_ref": "SYN-CARRIER-1", "arc_ref": "SYN-ARC-1",
                        "task_ref": "SYN-TASK-0001",
                        "original_sha256": hashlib.sha256(files["parent.txt"]).hexdigest()},
             "bk05": {"parent_manifest_path": self.paths["parent_manifest.json"],
@@ -58,6 +60,8 @@ class NormalReturn(unittest.TestCase):
         self.assertEqual(finding["bk05"]["decision"], "LOCAL_CAPSULE_CANDIDATE")
         self.assertEqual(json.loads(selected)["parent"]["task_ref"], "SYN-TASK-0001")
         self.assertEqual((finding["authority"], finding["effect"]), ("NONE", "NONE_CLAIMED"))
+        self.assertEqual((finding["generation_ref"], finding["carrier_ref"]),
+                         ("SYN-GEN-1", "SYN-CARRIER-1"))
 
     def test_changed_actor_and_stale_source_keep_exact_full_original(self):
         original = Path(self.paths["parent.txt"]).read_bytes()
@@ -97,6 +101,15 @@ class NormalReturn(unittest.TestCase):
         finding, selected = adapter.evaluate(self.bundle)
         self.assertEqual(finding["selection"], "FULL_ORIGINAL_TASK")
         self.assertEqual(selected, Path(self.paths["parent.txt"]).read_bytes())
+
+    def test_changed_generation_or_carrier_keeps_full_original(self):
+        original = Path(self.paths["parent.txt"]).read_bytes()
+        for field in ("generation_ref", "carrier_ref"):
+            saved = self.bundle["return"][field]
+            self.bundle["return"][field] = "SYN-OTHER"
+            finding, selected = adapter.evaluate(self.bundle)
+            self.assertEqual((finding["selection"], selected), ("FULL_ORIGINAL_TASK", original))
+            self.bundle["return"][field] = saved
 
     def test_bk04_conflict_is_local_to_affected_arc(self):
         original = Path(self.paths["parent.txt"]).read_bytes()
