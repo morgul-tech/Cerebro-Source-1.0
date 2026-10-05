@@ -753,7 +753,7 @@ class I_InternalIntegration(Base):
         self.assertEqual((b.ingress_count, b.sink.total_records, b.resolver.calls), (total, total, total))
         self.assertTrue(b.wait_for_ingress(total, timeout=0))
         self.assertFalse(b.wait_for_ingress(total + 1, timeout=0))
-        self.assertEqual(b.inbox.drain(), ["event:pending"])
+        self.assertEqual(b.inbox.snapshot(), ["event:pending"])
         self.assertEqual(b.status()["deposits"], total)
 
     def test_current_owner_active_hold_reaches_p22_disposition_policy(self):
@@ -777,6 +777,69 @@ class I_InternalIntegration(Base):
                     self.assertEqual(result.record.reason, "ACTIVE_HOLD_ACTION_OR_ESCALATION_DUE")
                 else:
                     self.assertEqual(result.disposition, x9.NO_DELTA)
+
+
+class J_PendingContinuity(Base):
+    """C1151 named transient/exception correction only, no live port proof."""
+
+    def test_pm_unavailable_then_restore_next_pulse_acks_once_without_replay(self):
+        w = self.world()
+        b = self.binding(w)
+        facts, sent = self.deliver(w, b)
+        w.pm.offline = True
+        first = b.pulse(human_conversation_active=False)
+        self.assertEqual((first.processed[0].state, first.pending, first.lost_owner_pulse_required),
+                         (x9.HOLD, 1, 0))
+        self.assertEqual(first.reason, "PULSE_PENDING_RECONCILIATION")
+        self.assertEqual(b.inbox.snapshot(), [sent.event_id])
+        self.assertEqual(w.store.disposition_appends, 0)
+        w.pm.offline = False
+        second = b.pulse(human_conversation_active=False)
+        self.assertEqual((second.processed[0].state, second.pending), ("DISPOSITION_READBACK", 0))
+        self.assertEqual(second.processed[0].event_id, facts["event_id"])
+        self.assertEqual((len(w.broker.published), w.store.pointer_appends, w.store.disposition_appends), (1, 1, 1))
+        self.assertEqual(b.pulse(human_conversation_active=False).processed, ())
+        self.assertEqual(w.store.disposition_appends, 1)
+
+    def test_consume_exception_preserves_current_and_unprocessed_tail(self):
+        from unittest.mock import patch
+        w = self.world()
+        b = self.binding(w)
+        _, first = self.deliver(w, b, receipt="pm-receipt:tail1", n=1)
+        _, second = self.deliver(w, b, receipt="pm-receipt:tail2", n=2)
+        with patch.object(b, "consume_one", side_effect=RuntimeError("injected-consume")) as consume:
+            with self.assertRaisesRegex(RuntimeError, "injected-consume"):
+                b.pulse(human_conversation_active=False)
+            consume.assert_called_once()
+        self.assertEqual(b.inbox.snapshot(), [first.event_id, second.event_id])
+        self.assertEqual((w.store.disposition_appends, b.inbox.lost_owner_pulse_required), (0, 0))
+        resumed = b.pulse(human_conversation_active=False)
+        self.assertEqual([r.event_id for r in resumed.processed], [first.event_id, second.event_id])
+        self.assertEqual([r.state for r in resumed.processed], ["DISPOSITION_READBACK"] * 2)
+        self.assertEqual((resumed.pending, w.store.disposition_appends, len(w.broker.published)), (0, 2, 2))
+
+    def test_ambiguous_disposition_stays_pending_until_exact_late_readback(self):
+        from unittest.mock import patch
+        w = self.world()
+        b = self.binding(w)
+        _, sent = self.deliver(w, b)
+        w.store.disposition_mode = "unknown_lost"
+        with patch.object(w.x9_channel, "append_disposition_once",
+                          wraps=w.x9_channel.append_disposition_once) as append:
+            first = b.pulse(human_conversation_active=False)
+            attempted = append.call_args.args[0]
+        self.assertEqual((first.processed[0].reason, first.pending),
+                         ("DISPOSITION_UNKNOWN_SEND_NO_REPLAY", 1))
+        w.store.disposition_mode = "ok"
+        second = b.pulse(human_conversation_active=False)
+        self.assertEqual((second.processed[0].reason, second.pending, w.store.disposition_appends),
+                         ("DISPOSITION_UNKNOWN_SEND_NO_REPLAY", 1, 1))
+        # The provider exposes a late exact receipt; this is a test observation,
+        # not a second client append or publication.
+        w.store.dispositions[sent.event_id] = (attempted, w.settings.x9_principal, "synthetic-channel:late1")
+        third = b.pulse(human_conversation_active=False)
+        self.assertEqual((third.processed[0].state, third.pending), ("ALREADY_DISPOSED", 0))
+        self.assertEqual((w.store.disposition_appends, len(w.broker.published)), (1, 1))
 
 
 if __name__ == "__main__":

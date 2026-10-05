@@ -404,10 +404,16 @@ class PulseInbox:
             self._q.append(event_id)
             return True
 
-    def drain(self) -> list[str]:
+    def snapshot(self) -> list[str]:
+        """One bounded pulse batch; obligations stay pending until acknowledged."""
         with self._lock:
-            items, self._q = list(self._q), collections.deque()
-            return items
+            return list(self._q)
+
+    def acknowledge(self, event_id: str) -> None:
+        """Used only after exact disposition readback, never on a transient HOLD."""
+        with self._lock:
+            if event_id in self._q:
+                self._q.remove(event_id)
 
     def __len__(self) -> int:
         with self._lock:
@@ -531,6 +537,7 @@ class PmX9Binding:
         self._results: collections.deque[Any] = collections.deque(maxlen=DIAGNOSTIC_RETENTION)
         self._ingress_count = 0
         self._results_cv = threading.Condition()
+        self._pulse_lock = threading.Lock()
 
     # -- clock
     def now(self) -> datetime:
@@ -629,8 +636,20 @@ class PmX9Binding:
             return PulseReport(True, "HUMAN_CONVERSATION_ACTIVE_DEFERRED", (), len(self.inbox),
                                self.inbox.lost_owner_pulse_required)
         prior = dict(prior_material_sha256 or {})
-        done = tuple(self.consume_one(eid, prior.get(eid), now) for eid in self.inbox.drain())
-        return PulseReport(False, "PULSE_PROCESSED", done, len(self.inbox), self.inbox.lost_owner_pulse_required)
+        with self._pulse_lock:
+            done = []
+            for eid in self.inbox.snapshot():
+                # Existing consume reconciles exact disposition readback before
+                # any append and refuses ambiguous-send replay. An exception
+                # leaves this event and the unprocessed tail in the same queue.
+                result = self.consume_one(eid, prior.get(eid), now)
+                done.append(result)
+                if (result.state in {"DISPOSITION_READBACK", "ALREADY_DISPOSED"}
+                        and result.event_id == eid and result.record is not None):
+                    self.inbox.acknowledge(eid)
+            pending = len(self.inbox)
+            return PulseReport(False, "PULSE_PENDING_RECONCILIATION" if pending else "PULSE_PROCESSED",
+                               tuple(done), pending, self.inbox.lost_owner_pulse_required)
 
     # -- lifecycle / status
     def status(self) -> dict[str, Any]:
