@@ -626,6 +626,12 @@ function Get-CacKnownDebtFindings {
         $classification=[string](Get-CacProperty $item 'classification' '')
         $rationale=[string](Get-CacProperty $item 'rationale' '')
 
+        foreach($field in @('owner','first_unproven_edge','way_home')){
+            if([string]::IsNullOrWhiteSpace([string](Get-CacProperty $item $field ''))){
+                $findings += New-CacFinding -Code ('ACTIVATION_DEBT_{0}_MISSING' -f $field.ToUpperInvariant()) -Scope 'ACTIVATION_DEBT' -Subject $id -Message ('Known activation debt requires {0}.' -f $field) -Blocking $true
+            }
+        }
+
         if([string]::IsNullOrWhiteSpace($rationale)){
             $findings += New-CacFinding -Code 'ACTIVATION_DEBT_RATIONALE_MISSING' -Scope 'ACTIVATION_DEBT' -Subject $id -Message 'Known activation debt requires rationale.' -Blocking $true
         }

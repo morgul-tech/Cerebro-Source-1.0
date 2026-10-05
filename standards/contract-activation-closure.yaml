@@ -88,6 +88,11 @@ contract_activation_closure:
     - SEMANTIC_REVIEW_REQUIRED
     debt_must_be_explicit: true
     debt_must_include_rationale_or_review_scope: true
+    known_activation_debt_requires:
+    - owner
+    - first_unproven_edge
+    - way_home
+    missing_address_field: BLOCK
     debt_is_green_operational_status: false
 
   binding_registry: tooling/validator/contract-activation-bindings.json
@@ -130,6 +135,7 @@ contract_activation_closure:
   - OPERATIONAL_IS_PROVEN_AT_CONTRACT_LEVEL_NOT_FILE_EXISTENCE_LEVEL
   - CANONICAL_CONFLICTS_ARE_EXPLICIT
   - KNOWN_ACTIVATION_DEBT_IS_VISIBLE_AND_NOT_FALSE_GREEN
+  - KNOWN_ACTIVATION_DEBT_HAS_OWNER_FIRST_UNPROVEN_EDGE_AND_WAY_HOME
   - STATIC_SOURCE_ACTIVATION_AND_RUNTIME_EXECUTION_EVIDENCE_REMAIN_SEPARATE
   - RUNTIME_EVIDENCE_BINDING_REQUIRES_INVOCATION_CONSUMPTION_AND_SOURCE_BOUND_PROOF
   - STALE_RUNTIME_EVIDENCE_NEVER_PROVES_OPERATIONAL

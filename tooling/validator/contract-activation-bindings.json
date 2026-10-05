@@ -1955,42 +1955,63 @@
       "id": "P17_PRINCIPAL_SUCCESSION_LIVE_PROVIDER_ACTIVATION",
       "classification": "PARTIALLY_OPERATIONAL",
       "blocking": false,
+      "owner": "PRINCIPAL_SUCCESSION",
+      "first_unproven_edge": "Live external permit provider is not bound to the normal Principal succession consumer.",
+      "way_home": "Bind the live permit provider, then run a bounded real RETIRE/READY succession with independent consumer and effect readback.",
       "rationale": "Content-blind permit qualification, constructor-bound Context reader verification, Principal RETIRE/READY governor gates and the local boot consumer are Source-implemented with deterministic canaries. Live external permit-provider binding and a bounded real Principal succession effect remain NOT_PROVEN pending postimplementation falsification."
     },
     {
       "id": "P16_OPERATIONAL_PULSE_LIVE_PROVIDER_ACTIVATION",
       "classification": "PARTIALLY_OPERATIONAL",
       "blocking": false,
+      "owner": "MCP_OPERATIONAL_PULSE",
+      "first_unproven_edge": "Normal consumer has no proven live external provider-tail binding.",
+      "way_home": "Bind and exercise the live provider tail through the normal pulse consumer; separately prove any provider-global or dormant-peer wake claim.",
       "rationale": "The constructor-bound PM/control plus ProtoBox tail consumer, exact watermark/currentness gates, role/objective debt filter, existing REFRESH_GOVERNING_REFS persistence path, readback surface and PRE_CLOSE terminal blocker pass local executable canaries. Live external provider-tail activation and provider-global or dormant-peer wake remain NOT_PROVEN."
     },
     {
       "id": "BLIND_CLAIM_OBSERVATION_CLOSURE_ADMISSIBILITY",
       "classification": "PARTIALLY_OPERATIONAL",
       "blocking": false,
+      "owner": "DECISION_ASSURANCE",
+      "first_unproven_edge": "A normal Decision Assurance consumer is not bound to a target-runtime observation-closure producer.",
+      "way_home": "Bind the observation-closure producer to the normal Decision Assurance path and verify admissibility and rejection through target-runtime consumer readback.",
       "rationale": "The Source policy, reused VERIFICATION_RESULT profile, deterministic assessor and fifteen negative/positive canaries are implemented. No normal Decision Assurance consumer or target-runtime observation-closure producer is activation-proven; static Source validation is not runtime enforcement."
     },
     {
       "id": "TOTAL_MCP_REVISION_REMOTE_STATE_SERVICE",
       "classification": "PARTIALLY_OPERATIONAL",
       "blocking": false,
+      "owner": "CONTROL_CONTEXT_STATE_SERVICE",
+      "first_unproven_edge": "The PostgreSQL adapter and migration path have no live database rehearsal with separate migration and runtime roles.",
+      "way_home": "Rehearse live PostgreSQL migration and runtime roles, then prove deployed OAuth/JWKS, official SDK transport and remote MCP availability with authenticated readback.",
       "rationale": "A checksum-locked production-directed PostgreSQL adapter, migrations, CAS/idempotency logic, commit ledgers and provider-neutral OAuth resource-server boundary now pass local contract tests. A live PostgreSQL rehearsal, deployment and identity providers, separate migration/runtime roles, official SDK transport binding, live OAuth/JWKS flow and remote MCP availability proof remain open; local contract tests cannot satisfy them."
     },
     {
       "id": "TOTAL_MCP_REVISION_HOST_CONSUMER_BINDING",
       "classification": "ACTIVATION_GAP",
       "blocking": false,
+      "owner": "CONTROL_CONTEXT_HOST",
+      "first_unproven_edge": "No deployed normal host consumes a State Service begin event.",
+      "way_home": "Bind the ordered host sequence in a deployed ChatGPT or local production host and capture begin-event, completion-consumption and final-handoff evidence.",
       "rationale": "A local normal-host harness now constructor-binds trusted persistence verification and runtime capability resolution, executes the ordered owner sequence and re-resolves after every commit. No deployed ChatGPT or local production host has yet produced normal begin-event, live completion-consumption and final-handoff evidence."
     },
     {
       "id": "TOTAL_MCP_REVISION_HNS_NORMAL_CONSUMER",
       "classification": "PARTIALLY_OPERATIONAL",
       "blocking": false,
+      "owner": "HUMAN_NAVIGATION_SURFACE_PRESENTATION",
+      "first_unproven_edge": "The normal Presentation handoff does not consume the validated HNS candidate.",
+      "way_home": "Wire validated HNS state and options into the normal Presentation handoff and capture runtime consumer and final-response readback.",
       "rationale": "HNS state and presentation candidates are deterministically validated, but the normal Presentation handoff path is not yet wired or runtime-evidenced."
     },
     {
       "id": "TOTAL_MCP_REVISION_OWNER_EFFECT_CONSUMERS",
       "classification": "PARTIALLY_OPERATIONAL",
       "blocking": false,
+      "owner": "PROJECT_QUALITY_CONVERGENCE_CONTEXT",
+      "first_unproven_edge": "Owner effect consumers have no live PostgreSQL commit and deployed normal-consumer readback.",
+      "way_home": "Complete R30-R34 against live PostgreSQL and capture each deployed Project, Quality, Convergence and Context consumer effect after commit-bound PASS verification.",
       "rationale": "Project, Quality, Convergence and Context now have local persistence adapters, commit-bound PASS promotion, trusted verification and an ordered local normal-host harness. R30-R34 remain open for live PostgreSQL and deployed normal-consumer evidence; scripted and local harness tests are not remote activation proof."
     }
   ],
