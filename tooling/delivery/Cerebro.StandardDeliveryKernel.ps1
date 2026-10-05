@@ -623,12 +623,321 @@ function Assert-NoUntrackedPythonBytecodeArtifacts {
     }
 }
 
+function Get-MaterialCommitmentEvidencePaths {
+    param(
+        [Parameter(Mandatory=$true)][string]$RetentionRoot,
+        [Parameter(Mandatory=$true)][string]$BoundAttemptId,
+        [Parameter(Mandatory=$true)][string]$Stage
+    )
+    if($BoundAttemptId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'){
+        throw 'MATERIAL_PREFLIGHT_ATTEMPT_ID_INVALID'
+    }
+    if(@('MATERIAL_EXECUTE','GOVERNING_PUBLISH') -notcontains $Stage){
+        throw ('MATERIAL_PREFLIGHT_STAGE_INVALID:{0}' -f $Stage)
+    }
+    $stageRoot=Join-Path (Join-Path $RetentionRoot $BoundAttemptId) $Stage
+    return [pscustomobject]@{
+        root=$stageRoot
+        request=(Join-Path $stageRoot 'request.json')
+        receipt=(Join-Path $stageRoot 'receipt.json')
+        consumption=(Join-Path $stageRoot 'consumption.json')
+    }
+}
+
+function Publish-MaterialCommitmentEvidence {
+    param(
+        [Parameter(Mandatory=$true)][string]$RetentionRoot,
+        [Parameter(Mandatory=$true)][string]$BoundAttemptId,
+        [Parameter(Mandatory=$true)][string]$PatchId,
+        [Parameter(Mandatory=$true)][string]$Stage,
+        [Parameter(Mandatory=$true)][string]$SourceIdentity,
+        [Parameter(Mandatory=$true)][string]$DecisionRef,
+        [Parameter(Mandatory=$true)][string]$BasisFingerprint,
+        [Parameter(Mandatory=$true)][string]$RequestPath,
+        [Parameter(Mandatory=$true)][string]$ReceiptPath,
+        [Parameter(Mandatory=$true)][string]$ConsumptionPath,
+        [Parameter(Mandatory=$true)][string]$LatestEvidencePath
+    )
+    $paths=Get-MaterialCommitmentEvidencePaths -RetentionRoot $RetentionRoot -BoundAttemptId $BoundAttemptId -Stage $Stage
+    foreach($source in @($RequestPath,$ReceiptPath,$ConsumptionPath)){
+        if(-not(Test-Path -LiteralPath $source -PathType Leaf)){
+            throw ('MATERIAL_PREFLIGHT_SOURCE_ARTIFACT_MISSING:{0}' -f $Stage)
+        }
+    }
+    foreach($target in @($paths.request,$paths.receipt,$paths.consumption)){
+        if(Test-Path -LiteralPath $target){
+            throw ('MATERIAL_PREFLIGHT_IMMUTABLE_EVIDENCE_ALREADY_EXISTS:{0}:{1}' -f $BoundAttemptId,$Stage)
+        }
+    }
+    [IO.Directory]::CreateDirectory([string]$paths.root)|Out-Null
+    [IO.File]::Copy($RequestPath,[string]$paths.request,$false)
+    [IO.File]::Copy($ReceiptPath,[string]$paths.receipt,$false)
+    [IO.File]::Copy($ConsumptionPath,[string]$paths.consumption,$false)
+    $artifacts=@(
+        [pscustomobject]@{kind='request';path=[string]$paths.request;sha256=(Get-Sha256 -LiteralPath ([string]$paths.request))},
+        [pscustomobject]@{kind='receipt';path=[string]$paths.receipt;sha256=(Get-Sha256 -LiteralPath ([string]$paths.receipt))},
+        [pscustomobject]@{kind='consumption';path=[string]$paths.consumption;sha256=(Get-Sha256 -LiteralPath ([string]$paths.consumption))}
+    )
+
+    $latestParent=Split-Path -Parent $LatestEvidencePath
+    if(-not[string]::IsNullOrWhiteSpace($latestParent)){[IO.Directory]::CreateDirectory($latestParent)|Out-Null}
+    $latestRequest=[IO.Path]::ChangeExtension($LatestEvidencePath,'.request.json')
+    $latestReceipt=[IO.Path]::ChangeExtension($LatestEvidencePath,'.receipt.json')
+    [IO.File]::Copy($RequestPath,$latestRequest,$true)
+    [IO.File]::Copy($ReceiptPath,$latestReceipt,$true)
+    [IO.File]::Copy($ConsumptionPath,$LatestEvidencePath,$true)
+
+    return [pscustomobject]@{
+        schema='cerebro-material-preflight-stage-evidence/v1'
+        state='PASS'
+        attempt_id=$BoundAttemptId
+        patch_id=$PatchId
+        stage=$Stage
+        source_identity=$SourceIdentity
+        decision_ref=$DecisionRef
+        receipt_id=$DecisionRef
+        basis_fingerprint=$BasisFingerprint
+        request_path=[string]$paths.request
+        receipt_path=[string]$paths.receipt
+        consumption_path=[string]$paths.consumption
+        artifacts=@($artifacts)
+        latest_audit_paths=[pscustomobject]@{
+            request=$latestRequest
+            receipt=$latestReceipt
+            consumption=$LatestEvidencePath
+        }
+    }
+}
+
+function Assert-MaterialCommitmentEvidenceBinding {
+    param(
+        [Parameter(Mandatory=$true)][object[]]$StageEvidence,
+        [Parameter(Mandatory=$true)][string]$RetentionRoot,
+        [Parameter(Mandatory=$true)][string]$BoundAttemptId,
+        [Parameter(Mandatory=$true)][string]$PatchId,
+        [Parameter(Mandatory=$true)][string]$SourceIdentity
+    )
+    $requiredStages=@('MATERIAL_EXECUTE','GOVERNING_PUBLISH')
+    if($StageEvidence.Count -ne $requiredStages.Count){throw 'MATERIAL_PREFLIGHT_STAGE_EVIDENCE_COUNT_INVALID'}
+    $normalized=@()
+    foreach($stage in $requiredStages){
+        $matches=@($StageEvidence|Where-Object{[string](Get-KernelOptionalProperty $_ 'stage' '') -eq $stage})
+        if($matches.Count -ne 1){throw ('MATERIAL_PREFLIGHT_STAGE_EVIDENCE_CARDINALITY_INVALID:{0}' -f $stage)}
+        $item=$matches[0]
+        if([string](Get-KernelOptionalProperty $item 'schema' '') -ne 'cerebro-material-preflight-stage-evidence/v1' -or
+           [string](Get-KernelOptionalProperty $item 'state' '') -ne 'PASS' -or
+           [string](Get-KernelOptionalProperty $item 'attempt_id' '') -ne $BoundAttemptId -or
+           [string](Get-KernelOptionalProperty $item 'patch_id' '') -ne $PatchId -or
+           [string](Get-KernelOptionalProperty $item 'source_identity' '') -ne $SourceIdentity){
+            throw ('MATERIAL_PREFLIGHT_STAGE_EVIDENCE_IDENTITY_INVALID:{0}' -f $stage)
+        }
+        $decision=[string](Get-KernelOptionalProperty $item 'decision_ref' '')
+        $basis=[string](Get-KernelOptionalProperty $item 'basis_fingerprint' '')
+        if([string]::IsNullOrWhiteSpace($decision) -or $basis -notmatch '^[0-9a-f]{64}$'){
+            throw ('MATERIAL_PREFLIGHT_STAGE_CONTROL_IDENTITY_INVALID:{0}' -f $stage)
+        }
+        $expected=Get-MaterialCommitmentEvidencePaths -RetentionRoot $RetentionRoot -BoundAttemptId $BoundAttemptId -Stage $stage
+        $artifactMap=@{}
+        foreach($artifact in @((Get-KernelOptionalProperty $item 'artifacts' @()))){
+            $kind=[string](Get-KernelOptionalProperty $artifact 'kind' '')
+            if(@('request','receipt','consumption') -notcontains $kind -or $artifactMap.ContainsKey($kind)){
+                throw ('MATERIAL_PREFLIGHT_ARTIFACT_SET_INVALID:{0}' -f $stage)
+            }
+            $artifactMap[$kind]=$artifact
+        }
+        if($artifactMap.Count -ne 3){throw ('MATERIAL_PREFLIGHT_ARTIFACT_SET_INCOMPLETE:{0}' -f $stage)}
+        foreach($kind in @('request','receipt','consumption')){
+            $artifact=$artifactMap[$kind]
+            $path=[string](Get-KernelOptionalProperty $artifact 'path' '')
+            $expectedPath=[string](Get-KernelOptionalProperty $expected $kind '')
+            if(-not[string]::Equals([IO.Path]::GetFullPath($path),[IO.Path]::GetFullPath($expectedPath),[StringComparison]::OrdinalIgnoreCase) -or
+               -not(Test-Path -LiteralPath $path -PathType Leaf) -or
+               [string](Get-KernelOptionalProperty $artifact 'sha256' '') -ne (Get-Sha256 -LiteralPath $path)){
+                throw ('MATERIAL_PREFLIGHT_ARTIFACT_BINDING_INVALID:{0}:{1}' -f $stage,$kind)
+            }
+        }
+        try{
+            $request=Get-Content -LiteralPath ([string]$artifactMap.request.path) -Raw|ConvertFrom-Json
+            $receipt=Get-Content -LiteralPath ([string]$artifactMap.receipt.path) -Raw|ConvertFrom-Json
+            $consumption=Get-Content -LiteralPath ([string]$artifactMap.consumption.path) -Raw|ConvertFrom-Json
+        }catch{throw ('MATERIAL_PREFLIGHT_ARTIFACT_JSON_INVALID:{0}' -f $stage)}
+        if([string](Get-KernelOptionalProperty $request 'attempt_id' '') -ne $BoundAttemptId -or
+           [string](Get-KernelOptionalProperty $request 'stage' '') -ne $stage -or
+           [string](Get-KernelOptionalProperty $request 'commitment_target' '') -ne $PatchId -or
+           [string](Get-KernelOptionalProperty $request 'authoritative_source_commit' '') -ne $SourceIdentity -or
+           [string](Get-KernelOptionalProperty $receipt 'result' '') -ne 'PASS' -or
+           [string](Get-KernelOptionalProperty $receipt 'stage' '') -ne $stage -or
+           [string](Get-KernelOptionalProperty $receipt 'commitment_target' '') -ne $PatchId -or
+           [string](Get-KernelOptionalProperty $receipt 'source_identity' '') -ne $SourceIdentity -or
+           [string](Get-KernelOptionalProperty $receipt 'control_decision_ref' '') -ne $decision -or
+           [string](Get-KernelOptionalProperty $receipt 'basis_fingerprint' '') -ne $basis -or
+           [string](Get-KernelOptionalProperty $consumption 'result' '') -ne 'PASS' -or
+           [string](Get-KernelOptionalProperty $consumption 'control_decision_ref' '') -ne $decision -or
+           [string](Get-KernelOptionalProperty $consumption 'current_basis_fingerprint' '') -ne $basis -or
+           [string](Get-KernelOptionalProperty $consumption 'receipt_basis_fingerprint' '') -ne $basis -or
+           -not[bool](Get-KernelOptionalProperty $consumption 'receipt_consumed' $false) -or
+           -not[bool](Get-KernelOptionalProperty $consumption 'freshness_verified' $false)){
+            throw ('MATERIAL_PREFLIGHT_ARTIFACT_CONTENT_INVALID:{0}' -f $stage)
+        }
+        $normalized += [pscustomobject]@{
+            stage=$stage
+            attempt_id=$BoundAttemptId
+            patch_id=$PatchId
+            source_identity=$SourceIdentity
+            decision_ref=$decision
+            basis_fingerprint=$basis
+            artifacts=@($artifactMap.request,$artifactMap.receipt,$artifactMap.consumption)
+        }
+    }
+    return [pscustomobject]@{
+        schema='cerebro-material-preflight-delivery-evidence/v1'
+        attempt_id=$BoundAttemptId
+        patch_id=$PatchId
+        source_identity=$SourceIdentity
+        stages=@($normalized)
+    }
+}
+
+function Invoke-MaterialCommitmentEvidenceRetentionSelfTest {
+    $fixtureRoot=Join-Path ([IO.Path]::GetTempPath()) ('cerebro-material-retention-'+[guid]::NewGuid().ToString('N'))
+    $retentionRoot=Join-Path $fixtureRoot 'attempts'
+    $latestRoot=Join-Path $fixtureRoot 'latest'
+    $patchId='PATCH-RETENTION-SELFTEST-001'
+    $sourceIdentity='c'*40
+    $writeFixture={
+        param([string]$Root,[string]$Attempt,[string]$Stage,[string]$Marker)
+        $sourceRoot=Join-Path $Root ('source-'+$Attempt+'-'+$Stage)
+        [IO.Directory]::CreateDirectory($sourceRoot)|Out-Null
+        $basis=if($Stage -eq 'MATERIAL_EXECUTE'){'a'*64}else{'b'*64}
+        $decision=if($Stage -eq 'MATERIAL_EXECUTE'){'MCPD-EXECUTE-'+$Marker}else{'MCPD-PUBLISH-'+$Marker}
+        $requestPath=Join-Path $sourceRoot 'request.json'
+        $receiptPath=Join-Path $sourceRoot 'receipt.json'
+        $consumptionPath=Join-Path $sourceRoot 'consumption.json'
+        $request=[ordered]@{
+            attempt_id=$Attempt;stage=$Stage;commitment_target=$patchId
+            authoritative_source_commit=$sourceIdentity;marker=$Marker
+        }
+        $receipt=[ordered]@{
+            schema='cerebro-material-commitment-preflight-receipt/v1';result='PASS'
+            stage=$Stage;commitment_target=$patchId;source_identity=$sourceIdentity
+            control_decision_ref=$decision;basis_fingerprint=$basis;marker=$Marker
+        }
+        $consumption=[ordered]@{
+            schema='cerebro-material-commitment-consumption/v1';result='PASS'
+            control_decision_ref=$decision;current_basis_fingerprint=$basis
+            receipt_basis_fingerprint=$basis;receipt_consumed=$true;freshness_verified=$true
+            marker=$Marker
+        }
+        [IO.File]::WriteAllText($requestPath,(($request|ConvertTo-Json -Depth 8)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($receiptPath,(($receipt|ConvertTo-Json -Depth 8)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($consumptionPath,(($consumption|ConvertTo-Json -Depth 8)+"`r`n"),[Text.UTF8Encoding]::new($false))
+        return [pscustomobject]@{
+            decision=$decision;basis=$basis;request=$requestPath;receipt=$receiptPath;consumption=$consumptionPath
+        }
+    }
+    $rejected={
+        param([scriptblock]$Call)
+        try{&$Call|Out-Null;return $false}catch{return $true}
+    }
+    try{
+        [IO.Directory]::CreateDirectory($latestRoot)|Out-Null
+        $attempts=@('ATTEMPT-RETENTION-A','ATTEMPT-RETENTION-B')
+        $evidenceByAttempt=@{}
+        foreach($attempt in $attempts){
+            $stageEvidence=@()
+            foreach($stage in @('MATERIAL_EXECUTE','GOVERNING_PUBLISH')){
+                $fixture=&$writeFixture $fixtureRoot $attempt $stage $attempt
+                $latestName=if($stage -eq 'MATERIAL_EXECUTE'){'execute.json'}else{'publish.json'}
+                $stageEvidence += Publish-MaterialCommitmentEvidence `
+                    -RetentionRoot $retentionRoot -BoundAttemptId $attempt -PatchId $patchId `
+                    -Stage $stage -SourceIdentity $sourceIdentity -DecisionRef $fixture.decision `
+                    -BasisFingerprint $fixture.basis -RequestPath $fixture.request `
+                    -ReceiptPath $fixture.receipt -ConsumptionPath $fixture.consumption `
+                    -LatestEvidencePath (Join-Path $latestRoot $latestName)
+            }
+            $evidenceByAttempt[$attempt]=@($stageEvidence)
+        }
+        $bindingA=Assert-MaterialCommitmentEvidenceBinding -StageEvidence $evidenceByAttempt[$attempts[0]] `
+            -RetentionRoot $retentionRoot -BoundAttemptId $attempts[0] -PatchId $patchId -SourceIdentity $sourceIdentity
+        $bindingB=Assert-MaterialCommitmentEvidenceBinding -StageEvidence $evidenceByAttempt[$attempts[1]] `
+            -RetentionRoot $retentionRoot -BoundAttemptId $attempts[1] -PatchId $patchId -SourceIdentity $sourceIdentity
+        if($bindingA.stages.Count -ne 2 -or $bindingB.stages.Count -ne 2){throw 'MATERIAL_RETENTION_SELFTEST_BINDING_COUNT_FAILED'}
+        foreach($stage in @('MATERIAL_EXECUTE','GOVERNING_PUBLISH')){
+            $a=@($bindingA.stages|Where-Object{$_.stage -eq $stage})[0]
+            $b=@($bindingB.stages|Where-Object{$_.stage -eq $stage})[0]
+            foreach($kind in @('request','receipt','consumption')){
+                $aArtifact=@($a.artifacts|Where-Object{$_.kind -eq $kind})[0]
+                $bArtifact=@($b.artifacts|Where-Object{$_.kind -eq $kind})[0]
+                if($aArtifact.path -eq $bArtifact.path -or $aArtifact.sha256 -eq $bArtifact.sha256 -or
+                   (Get-Sha256 -LiteralPath $aArtifact.path) -ne $aArtifact.sha256){
+                    throw ('MATERIAL_RETENTION_SELFTEST_ATTEMPT_ISOLATION_FAILED:{0}:{1}' -f $stage,$kind)
+                }
+            }
+            $bOriginal=@($evidenceByAttempt[$attempts[1]]|Where-Object{$_.stage -eq $stage})[0]
+            foreach($kind in @('request','receipt','consumption')){
+                $latestPath=[string](Get-KernelOptionalProperty $bOriginal.latest_audit_paths $kind '')
+                $bArtifact=@($b.artifacts|Where-Object{$_.kind -eq $kind})[0]
+                if(-not(Test-Path -LiteralPath $latestPath -PathType Leaf) -or
+                   (Get-Sha256 -LiteralPath $latestPath) -ne $bArtifact.sha256){
+                    throw ('MATERIAL_RETENTION_SELFTEST_LATEST_COMPATIBILITY_FAILED:{0}:{1}' -f $stage,$kind)
+                }
+            }
+        }
+
+        $duplicateFixture=&$writeFixture $fixtureRoot $attempts[0] 'MATERIAL_EXECUTE' 'DUPLICATE'
+        if(-not(&$rejected {
+            Publish-MaterialCommitmentEvidence -RetentionRoot $retentionRoot -BoundAttemptId $attempts[0] `
+                -PatchId $patchId -Stage 'MATERIAL_EXECUTE' -SourceIdentity $sourceIdentity `
+                -DecisionRef $duplicateFixture.decision -BasisFingerprint $duplicateFixture.basis `
+                -RequestPath $duplicateFixture.request -ReceiptPath $duplicateFixture.receipt `
+                -ConsumptionPath $duplicateFixture.consumption -LatestEvidencePath (Join-Path $latestRoot 'execute.json')
+        })){throw 'MATERIAL_RETENTION_SELFTEST_DUPLICATE_OVERWRITE_ACCEPTED'}
+
+        $wrongStage=($evidenceByAttempt[$attempts[0]]|ConvertTo-Json -Depth 32|ConvertFrom-Json)
+        $wrongStage[0].stage='GOVERNING_PUBLISH'
+        if(-not(&$rejected {Assert-MaterialCommitmentEvidenceBinding -StageEvidence @($wrongStage) -RetentionRoot $retentionRoot -BoundAttemptId $attempts[0] -PatchId $patchId -SourceIdentity $sourceIdentity})){
+            throw 'MATERIAL_RETENTION_SELFTEST_WRONG_STAGE_ACCEPTED'
+        }
+        if(-not(&$rejected {Assert-MaterialCommitmentEvidenceBinding -StageEvidence $evidenceByAttempt[$attempts[0]] -RetentionRoot $retentionRoot -BoundAttemptId 'ATTEMPT-RETENTION-WRONG' -PatchId $patchId -SourceIdentity $sourceIdentity})){
+            throw 'MATERIAL_RETENTION_SELFTEST_WRONG_RUN_ACCEPTED'
+        }
+        $wrongHash=($evidenceByAttempt[$attempts[0]]|ConvertTo-Json -Depth 32|ConvertFrom-Json)
+        $wrongHash[0].artifacts[0].sha256='0'*64
+        if(-not(&$rejected {Assert-MaterialCommitmentEvidenceBinding -StageEvidence @($wrongHash) -RetentionRoot $retentionRoot -BoundAttemptId $attempts[0] -PatchId $patchId -SourceIdentity $sourceIdentity})){
+            throw 'MATERIAL_RETENTION_SELFTEST_WRONG_HASH_ACCEPTED'
+        }
+        $failedStage=($evidenceByAttempt[$attempts[0]]|ConvertTo-Json -Depth 32|ConvertFrom-Json)
+        $failedStage[0].state='FAIL'
+        if(-not(&$rejected {Assert-MaterialCommitmentEvidenceBinding -StageEvidence @($failedStage) -RetentionRoot $retentionRoot -BoundAttemptId $attempts[0] -PatchId $patchId -SourceIdentity $sourceIdentity})){
+            throw 'MATERIAL_RETENTION_SELFTEST_FAILED_STAGE_ACCEPTED'
+        }
+        $missingAttempt='ATTEMPT-RETENTION-MISSING'
+        $missingEvidence=@()
+        foreach($stage in @('MATERIAL_EXECUTE','GOVERNING_PUBLISH')){
+            $fixture=&$writeFixture $fixtureRoot $missingAttempt $stage $missingAttempt
+            $missingEvidence += Publish-MaterialCommitmentEvidence -RetentionRoot $retentionRoot `
+                -BoundAttemptId $missingAttempt -PatchId $patchId -Stage $stage -SourceIdentity $sourceIdentity `
+                -DecisionRef $fixture.decision -BasisFingerprint $fixture.basis -RequestPath $fixture.request `
+                -ReceiptPath $fixture.receipt -ConsumptionPath $fixture.consumption `
+                -LatestEvidencePath (Join-Path $latestRoot ('missing-'+$stage+'.json'))
+        }
+        Remove-Item -LiteralPath ([string]$missingEvidence[0].consumption_path) -Force
+        if(-not(&$rejected {Assert-MaterialCommitmentEvidenceBinding -StageEvidence @($missingEvidence) -RetentionRoot $retentionRoot -BoundAttemptId $missingAttempt -PatchId $patchId -SourceIdentity $sourceIdentity})){
+            throw 'MATERIAL_RETENTION_SELFTEST_MISSING_ARTIFACT_ACCEPTED'
+        }
+    }
+    finally{
+        if(Test-Path -LiteralPath $fixtureRoot){Remove-Item -LiteralPath $fixtureRoot -Recurse -Force -ErrorAction SilentlyContinue}
+    }
+}
+
 function Invoke-MaterialCommitmentPreflightGate {
     param(
         $PatchManifest,
         [Parameter(Mandatory=$true)][string]$Stage,
         [Parameter(Mandatory=$true)][string]$SourceIdentity,
         [Parameter(Mandatory=$true)][string]$EvidencePath,
+        [string]$RetentionRoot='D:\Cerebro\Run\Evidence\DeliveryAttempts',
         [switch]$AllowBootstrapDefer
     )
 
@@ -653,6 +962,7 @@ function Invoke-MaterialCommitmentPreflightGate {
         [pscustomobject]@{name='stage';value=$Stage},
         [pscustomobject]@{name='material';value=$true},
         [pscustomobject]@{name='commitment_target';value=[string]$PatchManifest.patch_id},
+        [pscustomobject]@{name='attempt_id';value=$AttemptId},
         [pscustomobject]@{name='authoritative_source_commit';value=$SourceIdentity},
         [pscustomobject]@{name='current_decision_state';value=('SEALED_STANDARD_' + $Stage)}
     )){
@@ -664,8 +974,6 @@ function Invoke-MaterialCommitmentPreflightGate {
     $resolvePath=[IO.Path]::GetTempFileName()
     $receiptPath=[IO.Path]::GetTempFileName()
     $consumePath=[IO.Path]::GetTempFileName()
-    $requestEvidence=''
-    $receiptEvidence=''
     try {
         [IO.File]::WriteAllText($requestPath,(($request | ConvertTo-Json -Depth 32)+"`r`n"),[Text.UTF8Encoding]::new($false))
         $resolveArgs=@($python.PrefixArgs)+@($implementation,'resolve','--request',$requestPath,'--source-root',$WorkingSourcePath,'--output',$resolvePath)
@@ -691,23 +999,17 @@ function Invoke-MaterialCommitmentPreflightGate {
             $State.FailureFamily='MATERIAL_COMMITMENT_CONSUMPTION'
             throw ('MATERIAL_CONSUMPTION_BLOCKED:{0}' -f $Stage)
         }
-        if(-not[string]::IsNullOrWhiteSpace($EvidencePath)){
-            $parent=Split-Path -Parent $EvidencePath
-            if(-not[string]::IsNullOrWhiteSpace($parent)){[IO.Directory]::CreateDirectory($parent) | Out-Null}
-            $requestEvidence=[IO.Path]::ChangeExtension($EvidencePath,'.request.json')
-            $receiptEvidence=[IO.Path]::ChangeExtension($EvidencePath,'.receipt.json')
-            [IO.File]::Copy($requestPath,$requestEvidence,$true)
-            [IO.File]::Copy($receiptPath,$receiptEvidence,$true)
-            [IO.File]::Copy($consumePath,$EvidencePath,$true)
-        }
-        return [pscustomobject]@{
-            state='PASS'
-            stage=$Stage
-            receipt_id=[string]$resolved.receipt.control_decision_ref
-            basis_fingerprint=[string]$resolved.receipt.basis_fingerprint
-            request_path=$requestEvidence
-            receipt_path=$receiptEvidence
-            consumption_path=$EvidencePath
+        try{
+            return Publish-MaterialCommitmentEvidence `
+                -RetentionRoot $RetentionRoot -BoundAttemptId $AttemptId `
+                -PatchId ([string]$PatchManifest.patch_id) -Stage $Stage -SourceIdentity $SourceIdentity `
+                -DecisionRef ([string]$resolved.receipt.control_decision_ref) `
+                -BasisFingerprint ([string]$resolved.receipt.basis_fingerprint) `
+                -RequestPath $requestPath -ReceiptPath $receiptPath -ConsumptionPath $consumePath `
+                -LatestEvidencePath $EvidencePath
+        }catch{
+            $State.FailureFamily='MATERIAL_COMMITMENT_EVIDENCE_RETENTION'
+            throw
         }
     }
     finally {
@@ -1132,6 +1434,9 @@ function Invoke-SelfTest {
         }
     }
 
+    $State.ReachedStage = 'SELFTEST_MATERIAL_PREFLIGHT_EVIDENCE_RETENTION'
+    Invoke-MaterialCommitmentEvidenceRetentionSelfTest
+
     $State.ReachedStage = 'SELFTEST_PAYLOAD'
     $manifestObject = Read-Manifest
     Assert-PayloadIntegrity $manifestObject
@@ -1310,6 +1615,7 @@ function Invoke-SelfTest {
     Write-Host 'HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS=TRUE'
     Write-Host 'C02_P001_CANONICAL_FOUNDATION_SELFTEST_PASS=TRUE'
     Write-Host 'ASSURANCE_CONTINUITY_SELFTEST_PASS=TRUE'
+    Write-Host 'MATERIAL_PREFLIGHT_EVIDENCE_RETENTION_PASS=TRUE'
     Write-Host 'MCP_DELIVERY_PROFILE_ADAPTER_SELFTEST_PASS=TRUE'
     Write-Host 'SEALED_MCP_DELIVERY_CONTROL_BINDING_PASS=TRUE'
     Write-Host 'CHANGE_CAMPAIGN_CLOSEOUT_PASS=TRUE'
@@ -1647,6 +1953,10 @@ function Invoke-ImmuneMigrationRecoveryControl {
 function Invoke-Apply {
     $State.Manifest = Read-Manifest
     Assert-PayloadIntegrity $State.Manifest
+    if($AttemptId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$'){
+        $State.FailureFamily='MATERIAL_COMMITMENT_EVIDENCE_RETENTION'
+        throw 'MATERIAL_PREFLIGHT_ATTEMPT_ID_INVALID'
+    }
     if(-not[string]::IsNullOrWhiteSpace($TargetRuntimeValidationReceipt)){
         Assert-TargetRuntimeValidationReceipt -PatchManifest $State.Manifest -ReceiptPath $TargetRuntimeValidationReceipt
     }
@@ -2035,8 +2345,18 @@ function Invoke-Apply {
 
         $State.ReachedStage = 'MATERIAL_COMMITMENT_PREFLIGHT_PUBLISH'
         $publishEvidence=Join-Path 'D:\Cerebro\Run\Evidence\Audits' 'CEREBRO_STANDARD_MATERIAL_PREFLIGHT_CALL_PATH.json'
-        [void](Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'GOVERNING_PUBLISH' -SourceIdentity $localHead -EvidencePath $publishEvidence)
+        $materialPublishPreflight=Invoke-MaterialCommitmentPreflightGate -PatchManifest $State.Manifest -Stage 'GOVERNING_PUBLISH' -SourceIdentity $localHead -EvidencePath $publishEvidence
         Assert-NoUntrackedPythonBytecodeArtifacts -GitPath $gitPath -Stage 'GOVERNING_PUBLISH'
+        try{
+            $materialEvidence=Assert-MaterialCommitmentEvidenceBinding `
+                -StageEvidence @($materialExecutePreflight,$materialPublishPreflight) `
+                -RetentionRoot 'D:\Cerebro\Run\Evidence\DeliveryAttempts' `
+                -BoundAttemptId $AttemptId -PatchId ([string]$State.Manifest.patch_id) `
+                -SourceIdentity $localHead
+        }catch{
+            $State.FailureFamily='MATERIAL_COMMITMENT_EVIDENCE_RETENTION'
+            throw
+        }
         [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_PUBLICATION')
 
         Invoke-DeclaredActivationProbes -PatchManifest $State.Manifest
@@ -2092,6 +2412,16 @@ function Invoke-Apply {
         [void](Invoke-AssuranceContinuityGate -PatchManifest $State.Manifest -Stage 'BEFORE_COMPLETION_CLAIM' -Evidence $completionEvidence)
 
         $State.ReachedStage = 'RECEIPT'
+        try{
+            $materialEvidence=Assert-MaterialCommitmentEvidenceBinding `
+                -StageEvidence @($materialExecutePreflight,$materialPublishPreflight) `
+                -RetentionRoot 'D:\Cerebro\Run\Evidence\DeliveryAttempts' `
+                -BoundAttemptId $AttemptId -PatchId ([string]$State.Manifest.patch_id) `
+                -SourceIdentity $localHead
+        }catch{
+            $State.FailureFamily='MATERIAL_COMMITMENT_EVIDENCE_RETENTION'
+            throw
+        }
         $receiptRoot = 'D:\Cerebro\Run\receipts'
         [IO.Directory]::CreateDirectory($receiptRoot) | Out-Null
         $receiptPath = Join-Path -Path $receiptRoot -ChildPath ('CEREBRO_DELIVERY_KERNEL_' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.json')
@@ -2117,6 +2447,7 @@ function Invoke-Apply {
                 inventory_sha256=[string]$State.FullRecoverySnapshot.inventory_sha256
             }
             target_runtime_validation_receipt=$State.TargetRuntimeValidationReceipt
+            material_commitment_preflight_evidence=$materialEvidence
             operation_counts=[ordered]@{
                 create=@($State.Manifest.files | Where-Object {[string]$_.operation -eq 'create'}).Count
                 replace=@($State.Manifest.files | Where-Object {[string]$_.operation -eq 'replace'}).Count

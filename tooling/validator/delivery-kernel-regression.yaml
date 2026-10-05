@@ -15,6 +15,7 @@ delivery_kernel_regression_tool:
   - BASELINE_MANIFEST_PASS
   - CANDIDATE_SOURCE_COMPOSITION_PASS
   - HUMAN_CONTINUATION_SURFACE_SELFTEST_PASS
+  - MATERIAL_PREFLIGHT_EVIDENCE_RETENTION_PASS
   required_canaries:
   - declared-delete-requires-exact-baseline-git-blob
   - declared-delete-rejects-payload-fields
@@ -31,3 +32,8 @@ delivery_kernel_regression_tool:
   - changed-selftest-dependency-resolves-from-sealed-payload
   - deleted-selftest-dependency-is-absent-from-candidate-view
   - differential-payload-is-not-treated-as-a-complete-source-tree
+  - material-preflight-two-attempts-preserve-earlier-stage-bytes-and-attribution
+  - material-preflight-final-receipt-binds-attempt-stage-source-decision-basis-and-artifact-hashes
+  - material-preflight-wrong-stage-run-hash-or-missing-artifact-cannot-fabricate-pass
+  - material-preflight-failed-stage-cannot-become-delivery-success
+  - material-preflight-latest-audit-paths-remain-compatible-with-immutable-retention
