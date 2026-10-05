@@ -119,6 +119,27 @@ continuation_surface_system_policy:
     user-pulse-as-machine-loop-clock: PROHIBITED
     new-scheduler-queue-or-role: PROHIBITED
 
+  rom_a_normal_task_return_adoption:
+    applies_when: A1_CONSUMES_ACTOR_RETURN_AND_SELECTS_SAME_ARC_CONTINUATION_FROM_EXISTING_WORKLIST
+    deterministic_entrypoint: tooling/return-bridge/rom_a_return_adoption.py
+    invocation_owner: EXISTING_A1_NORMAL_RETURN_TURN
+    input: caller_supplied_exact_original_return_and_currentness_refs
+    receipt: cerebro-rom-a-return-adoption/v1-receipt
+    bk04:
+      eligible_only_with: hash_bound_owner_facts_and_typed_publication_binding
+      source_function: candidates/bk04-episode-verifier-v1/bk04_verify.py
+      unknown_effect: LOCAL_FINDING_NO_GLOBAL_STOP
+      irrelevant_return: SKIP
+    bk05:
+      source_function: candidates/bk05-capsule-tool-v1/src/bk05_capsule/core.py
+      compact_candidate_only_for: same_actor_generation_carrier_arc_exact_original_valid_delta
+      otherwise: FULL_ORIGINAL_TASK
+      invalid_or_stale: preserve_typed_reasons_and_require_current_owner_review
+    output_authority: NONE
+    provider_currentness_and_semantic_review: CALLER_RESPONSIBILITY_NOT_PROVEN_BY_ADAPTER
+    separate_model_wake_per_subcheck: PROHIBITED
+    global_native_delivery_or_pre_model_wake_binding: UNPROVEN
+
   local_execution_action_owner:
     schema: cerebro-action-owner-resolution/v1
     applies_when:
