@@ -39,12 +39,13 @@ PM_GUARDED_PUBLICATION_SCHEMA = "cerebro-pm-guarded-disposition-publication/v1"
 PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA = "cerebro-pm-guarded-disposition-publication-receipt/v1"
 PM_DISPOSITION_REQUEST_SCHEMA = "cerebro-pm-disposition-publication-request/v1"
 A7_FLOW_REDUCING_DISPOSITIONS = frozenset({
-    "HOLD", "WAIT", "BLOCK", "NOT_READY", "OMIT_BIND", "OMIT_SEND",
+    "HOLD", "WAIT", "UNBOUND", "BLOCK", "NOT_READY", "OMIT_BIND", "OMIT_SEND",
     "ADOPTION_DELAY", "OWNER_HUNT", "RESEARCH_DETOUR", "LOCAL_TO_GLOBAL_STOP",
 })
 A7_RELEVANT_CASE_REFS = frozenset({
     "A7-P22-PM-FLOW-STOP-008",
     "A7-P22-NATS-CLIENT-HOST-MISMATCH-009",
+    "A7-P22-PASSIVE-HOLD-NEGATIVE-010",
 })
 PM_FIXED_POINT_STOP_REASONS = (
     "QUIESCENT",
@@ -703,6 +704,44 @@ class BoundPmDispositionPublisher:
             )
             lane_refs.append(lane_ref)
 
+        active_hold = basis.get("active_hold")
+        hold_like = proposal["requested_disposition"] in {"HOLD", "WAIT", "UNBOUND", "OMIT_BIND"}
+        if hold_like and blocker.get("necessity") == "OBSERVED_REQUIRED":
+            _require(isinstance(active_hold, dict), "a7-active-hold-binding-required")
+            for field in (
+                "blocked_edge", "first_observed_at", "owner_ref",
+                "next_action", "next_check", "escalation_to",
+            ):
+                _require(
+                    self._ref(active_hold.get(field)),
+                    f"a7-active-hold-{field}-required",
+                )
+            _require(
+                active_hold["owner_ref"] == basis["owner_ref"],
+                "a7-active-hold-existing-mandate-owner-mismatch",
+            )
+            _require(
+                active_hold["escalation_to"] == "P22",
+                "a7-active-hold-escalation-must-be-P22",
+            )
+            _require(
+                type(active_hold.get("next_check_due")) is bool
+                and type(active_hold.get("orphaned")) is bool,
+                "a7-active-hold-due-or-orphan-flags-required",
+            )
+            previous_first = active_hold.get("previous_first_observed_at")
+            if previous_first is not None:
+                _require(
+                    previous_first == active_hold["first_observed_at"],
+                    "a7-active-hold-first-observed-at-must-survive-revision",
+                )
+            _require(
+                "A7-P22-PASSIVE-HOLD-NEGATIVE-010" in case_refs,
+                "a7-active-hold-entry010-basis-required",
+            )
+        elif active_hold is not None:
+            _require(isinstance(active_hold, dict), "a7-active-hold-object-required")
+
         safety = basis.get("safety")
         _require(
             isinstance(safety, dict)
@@ -732,6 +771,7 @@ class BoundPmDispositionPublisher:
         basis = self._read_basis(request)
         safety = basis["safety"]
         blocker = basis["blocker"]
+        active_hold = basis.get("active_hold")
         lane_refs = list(basis["parallel_lane_refs"])
         requested_scope = request["requested_scope_ref"]
         trusted_scope = basis["scope_ref"]
@@ -755,6 +795,17 @@ class BoundPmDispositionPublisher:
                 publication_scope = safety["scope_ref"]
                 reentry_required = True
                 safety_effect_may_precede_publication = True
+        elif (
+            isinstance(active_hold, dict)
+            and basis["basis_relation"] == "SAME_AS_LAST_PROVEN_WAY_HOME"
+            and (active_hold.get("next_check_due") is True or active_hold.get("orphaned") is True)
+        ):
+            decision = "ESCALATE_DUE_OR_ORPHAN_ACTIVE_HOLD"
+            publication_kind = "A7_HOLD_ACTION"
+            effective = "CONTINUE_REENTRY"
+            publication_scope = trusted_scope
+            reentry_required = True
+            safety_effect_may_precede_publication = False
         elif global_request:
             decision = "CORRECT_GLOBAL_STOP_PRESERVE_INDEPENDENT_LANES"
             publication_kind = "A7_CORRECTION"
@@ -812,6 +863,14 @@ class BoundPmDispositionPublisher:
             "last_way_home_revision": basis["last_proven_way_home"]["revision"],
             "blocker_necessity": blocker["necessity"],
             "blocker_ref": blocker.get("blocker_ref"),
+            "blocked_edge": active_hold.get("blocked_edge") if isinstance(active_hold, dict) else None,
+            "first_observed_at": active_hold.get("first_observed_at") if isinstance(active_hold, dict) else None,
+            "hold_owner_ref": active_hold.get("owner_ref") if isinstance(active_hold, dict) else None,
+            "hold_next_action": active_hold.get("next_action") if isinstance(active_hold, dict) else None,
+            "hold_next_check": active_hold.get("next_check") if isinstance(active_hold, dict) else None,
+            "hold_escalation_to": active_hold.get("escalation_to") if isinstance(active_hold, dict) else None,
+            "hold_next_check_due": active_hold.get("next_check_due") if isinstance(active_hold, dict) else False,
+            "hold_orphaned": active_hold.get("orphaned") if isinstance(active_hold, dict) else False,
             "smallest_reentry_owner_ref": basis["smallest_lawful_reentry"]["owner_ref"],
             "smallest_reentry_ref": basis["smallest_lawful_reentry"]["reentry_ref"],
             "preserve_lane_refs": lane_refs,

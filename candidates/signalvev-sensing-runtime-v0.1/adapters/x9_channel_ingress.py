@@ -137,6 +137,7 @@ class PMOwnerCut:
     committed_readback: bool
     authenticated: bool
     material_ready: bool
+    active_hold: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -179,6 +180,30 @@ class ChannelPort(Protocol):
 
 class PMOwnerReadPort(Protocol):
     def read_current(self, claim_ref: str, packet_ref: str, queue_ref: str) -> PMOwnerCut: ...
+
+
+def _active_hold_action_due(value: object, owner_ref: str) -> tuple[bool, bool]:
+    if value is None:
+        return False, True
+    if not isinstance(value, dict):
+        return False, False
+    required = {
+        "blocked_edge", "first_observed_at", "owner_ref", "next_action",
+        "next_check", "escalation_to", "next_check_due", "orphaned",
+    }
+    if not required.issubset(value):
+        return False, False
+    texts = ("blocked_edge", "first_observed_at", "owner_ref", "next_action", "next_check", "escalation_to")
+    if not all(isinstance(value.get(k), str) and bool(str(value[k]).strip()) for k in texts):
+        return False, False
+    if value["owner_ref"] != owner_ref or value["escalation_to"] != "P22":
+        return False, False
+    if type(value["next_check_due"]) is not bool or type(value["orphaned"]) is not bool:
+        return False, False
+    previous = value.get("previous_first_observed_at")
+    if previous is not None and previous != value["first_observed_at"]:
+        return False, False
+    return bool(value["next_check_due"] or value["orphaned"]), True
 
 
 class X9ChannelIngress:
@@ -335,11 +360,17 @@ class X9ChannelIngress:
         elif (cut.revision != pointer.revision or cut.packet_sha256 != pointer.packet_sha256
               or cut.source_cut != pointer.source_cut):
             return Result(COLLISION, "PM_SAME_REVISION_CONTENT_CONFLICT", event_id)
-        elif not cut.material_ready or (prior_material_sha256 is not None
-                                        and cut.material_sha256 == prior_material_sha256):
-            disposition, reason = NO_DELTA, "CURRENT_OWNER_HAS_NO_NEW_MATERIAL"
         else:
-            disposition, reason = MATERIAL, "NEW_CURRENT_PM_MATERIAL"
+            hold_due, hold_valid = _active_hold_action_due(cut.active_hold, cut.owner_ref)
+            if not hold_valid:
+                return Result(HOLD, "PM_ACTIVE_HOLD_BINDING_INVALID", event_id)
+            if hold_due:
+                disposition, reason = MATERIAL, "ACTIVE_HOLD_ACTION_OR_ESCALATION_DUE"
+            elif not cut.material_ready or (prior_material_sha256 is not None
+                                             and cut.material_sha256 == prior_material_sha256):
+                disposition, reason = NO_DELTA, "CURRENT_OWNER_HAS_NO_NEW_MATERIAL"
+            else:
+                disposition, reason = MATERIAL, "NEW_CURRENT_PM_MATERIAL"
         outcome = X9Disposition(DISPOSITION_SCHEMA, event_id, pointer.attempt_id, pointer.content_sha256,
                                 cut.revision, cut.material_sha256, disposition, reason)
         uncertain = self._uncertain_dispositions.get(event_id)

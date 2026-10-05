@@ -283,6 +283,27 @@ class X9ChannelIngressTests(unittest.TestCase):
         self.assertEqual(again.reason, "DISPOSITION_UNKNOWN_SEND_NO_REPLAY")
         self.assertEqual(self.channel.disposition_sends, 1)
 
+    def test_due_active_hold_routes_material_on_existing_pulse(self):
+        self.deposited()
+        active_hold = {
+            "blocked_edge": "EDGE-C1107-PUBLISH",
+            "first_observed_at": "2026-10-05T14:00:00Z",
+            "previous_first_observed_at": "2026-10-05T14:00:00Z",
+            "owner_ref": self.pm.state.owner_ref,
+            "next_action": "RETRY_EXISTING_OWNER_EDGE",
+            "next_check": "2026-10-05T14:10:00Z",
+            "escalation_to": "P22",
+            "next_check_due": True,
+            "orphaned": False,
+        }
+        self.pm.state = replace(self.pm.state, active_hold=active_hold)
+        result = self.bridge.consume(
+            self.ctx.event_id, now=NOW,
+            prior_material_sha256=self.pm.state.material_sha256,
+        )
+        self.assertEqual(result.disposition.disposition, x9.MATERIAL)
+        self.assertEqual(result.disposition.reason, "ACTIVE_HOLD_ACTION_OR_ESCALATION_DUE")
+
     def test_exhausted_pointer_requires_owner_pulse(self):
         self.deposited()
         late = datetime(2026, 10, 4, 23, 0, tzinfo=timezone.utc)

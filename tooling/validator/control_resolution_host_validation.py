@@ -218,6 +218,7 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
         acute: bool = False,
         owner_revision: int = 11,
         publication_revision: int = 40,
+        active_hold: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         blocker = {
             "necessity": necessity,
@@ -258,6 +259,14 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
                     "revoked": False,
                     "lesson_basis_ref": "A7-009-BASIS",
                 },
+                {
+                    "case_ref": "A7-P22-PASSIVE-HOLD-NEGATIVE-010",
+                    "revision": 10,
+                    "currentness": "CURRENT",
+                    "readback_verified": True,
+                    "revoked": False,
+                    "lesson_basis_ref": "A7-010-BASIS",
+                },
             ],
             "last_proven_way_home": {
                 "way_home_ref": "EDGE-P4-S0-S1-NSC-CEREBRO",
@@ -289,6 +298,7 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
                 "scope_ref": "C1107-SCOPE" if acute else None,
                 "readback_verified": acute,
             },
+            **({"active_hold": copy.deepcopy(active_hold)} if active_hold is not None else {}),
         }
 
     class BasisReader:
@@ -492,6 +502,64 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
             ).evaluate(bypass),
             "caller-prepublication-evidence-prohibited",
         ),
+    )
+
+    hold = {
+        "blocked_edge": "EDGE-C1107-PUBLISH",
+        "first_observed_at": "2026-10-05T14:00:00Z",
+        "previous_first_observed_at": "2026-10-05T14:00:00Z",
+        "owner_ref": "A7-OWNER",
+        "next_action": "RETRY_EXISTING_OWNER_EDGE",
+        "next_check": "2026-10-05T14:10:00Z",
+        "escalation_to": "P22",
+        "next_check_due": True,
+        "orphaned": False,
+    }
+    due = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([
+            basis(necessity="OBSERVED_REQUIRED", active_hold=hold),
+        ]),
+        enabled=True,
+    ).publish(proposal(requested="HOLD"))
+    check(
+        "P22-HOLD-01-due-same-basis-hold-cannot-repark",
+        due["result"] == "BLOCK_EXACT_PUBLISHER_PORT"
+        and due["decision_receipt"]["decision"] == "ESCALATE_DUE_OR_ORPHAN_ACTIVE_HOLD"
+        and due["decision_receipt"]["effective_disposition"] == "CONTINUE_REENTRY"
+        and due["decision_receipt"]["hold_escalation_to"] == "P22"
+        and due["decision_receipt"]["hold_next_action"] == "RETRY_EXISTING_OWNER_EDGE",
+    )
+
+    changed_age = copy.deepcopy(hold)
+    changed_age["previous_first_observed_at"] = "2026-10-05T14:00:00Z"
+    changed_age["first_observed_at"] = "2026-10-05T14:05:00Z"
+    check(
+        "P22-HOLD-02-first-observed-age-cannot-reset-on-revision",
+        rejects(
+            lambda: BoundPmDispositionPublisher(
+                basis_reader=BasisReader([
+                    basis(necessity="OBSERVED_REQUIRED", active_hold=changed_age)
+                ]),
+                enabled=True,
+            ).evaluate(proposal(requested="WAIT")),
+            "first-observed-at-must-survive-revision",
+        ),
+    )
+
+    safety_hold = copy.deepcopy(hold)
+    safety_hold["next_check_due"] = True
+    safety = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([
+            basis(necessity="OBSERVED_REQUIRED", acute=True, active_hold=safety_hold),
+        ]),
+        enabled=True,
+    ).publish(proposal(requested="HOLD"))
+    check(
+        "P22-HOLD-03-acute-scoped-safety-remains-local",
+        safety["decision_receipt"]["decision"] == "ALLOW_SCOPED_SAFETY_STOP"
+        and safety["decision_receipt"]["effective_disposition"] == "HOLD"
+        and safety["decision_receipt"]["preserve_lane_refs"]
+            == ["X3-C1111-SIGNALVEV", "X4-C1109-QG"],
     )
 
     bad_revision = Publisher(mode="BAD_REVISION")

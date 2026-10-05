@@ -45,6 +45,9 @@ project_manager_control_governor:
     - require-progress-observability-for-long-running-PM-work
     - reconcile-executor-terminal-execution-verification-and-admission-without-reopening-execution
     - require-self-next-owner-executable-PM-edge-same-cycle-progress-or-exact-external-blocker
+    - reuse-exact-qualified-evidence-at-finalization-without-broad-reanalysis
+    - reopen-only-named-or-identity-changed-evidence-delta
+    - bind-local-HOLD-to-existing-owner-next-action-next-check-and-P22-escalation
 
   non_responsibilities:
     - define-project-semantics
@@ -165,6 +168,43 @@ project_manager_control_governor:
     evidence_carrier_unavailable_effect: VERIFICATION_UNKNOWN_ROUTE_CAPABLE_CARRIER
     subject_failure_from_unavailable_carrier: PROHIBITED
     carrier_capability_is_system_truth: false
+
+  active_hold_action:
+    existing_homes:
+      - mcp/control_resolution_host.py#BoundPmDispositionPublisher
+      - candidates/signalvev-sensing-runtime-v0.1/adapters/x9_channel_ingress.py#X9ChannelIngress.consume
+    applies_to: [HOLD, WAIT, UNBOUND, OMIT_BIND]
+    required:
+      - blocked_edge
+      - first_observed_at
+      - existing_mandate_owner
+      - next_action
+      - next_check
+      - escalation_to_P22
+    same_blocker_revision_effect: PRESERVE_FIRST_OBSERVED_AT
+    due_or_orphan_same_basis_effect: ACTION_OR_ESCALATE_NOT_REPARK
+    acute_scoped_safety_stop_effect: LOCAL_HOLD_WITH_REENTRY
+    independent_lawful_fronts: PRESERVE
+    new_scheduler_or_gate_created: false
+
+  qualified_evidence_finalization:
+    existing_home: executor_terminal_reconciliation
+    approved_identity:
+      - artifact_ref
+      - artifact_sha256
+      - targetset_sha256
+      - currentness_ref
+    exact_same_identity_effect: REUSE_APPROVED_EVIDENCE
+    broad_reanalysis_on_same_identity: PROHIBITED
+    delta_open_triggers:
+      - NAMED_NEW_DEFECT
+      - ARTIFACT_CHANGED
+      - TARGETSET_CHANGED
+      - CURRENTNESS_CHANGED
+      - COUNTEREVIDENCE
+    unrelated_approved_evidence_preserved: true
+    executor_reopen_requires_verified_execution_defect: true
+    new_scheduler_or_gate_created: false
 
   self_next_owner_progress:
     applies_when: NEXT_OWNER_IS_SAME_PROJECT_MANAGER_AND_EDGE_INTERNALLY_EXECUTABLE
