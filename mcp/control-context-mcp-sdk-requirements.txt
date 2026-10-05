@@ -1,3 +1,4 @@
 # Validated remote transport and PostgreSQL runtime dependencies.
 mcp==2.0.0
 psycopg[binary]>=3.2,<4
+PyYAML>=6.0,<7
