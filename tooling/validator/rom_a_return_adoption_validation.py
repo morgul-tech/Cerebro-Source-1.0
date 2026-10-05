@@ -98,6 +98,38 @@ class NormalReturn(unittest.TestCase):
         self.assertEqual(finding["selection"], "FULL_ORIGINAL_TASK")
         self.assertEqual(selected, Path(self.paths["parent.txt"]).read_bytes())
 
+    def test_bk04_conflict_is_local_to_affected_arc(self):
+        original = Path(self.paths["parent.txt"]).read_bytes()
+        saved = adapter._load_module
+
+        class ConflictVerifier:
+            class InputError(Exception):
+                pass
+
+            @staticmethod
+            def load_consumer_input(raw, binding):
+                return {}, "digest"
+
+            @staticmethod
+            def classify_document(parsed, digest):
+                return {"overall_status": "CONFLICT", "authority": "NONE"}
+
+        try:
+            adapter._load_module = lambda name, path: ConflictVerifier
+            facts = self.root / "facts.json"
+            binding = self.root / "binding.json"
+            facts.write_text("{}", encoding="utf-8")
+            binding.write_text("{}", encoding="utf-8")
+            self.bundle["bk04"] = {"owner_facts_path": str(facts), "binding_path": str(binding)}
+            self.bundle["return"]["contract_kind"] = "BK04_OWNER_FACTS"
+            finding, selected = adapter.evaluate(self.bundle)
+        finally:
+            adapter._load_module = saved
+        self.assertEqual(finding["selection"], "FULL_ORIGINAL_TASK")
+        self.assertEqual(selected, original)
+        self.assertFalse(finding["bk04"]["blocks_other_work"])
+        self.assertIn("BK04_CONFLICT_LOCAL_REVIEW", finding["bk05"]["reasons"])
+
 
 if __name__ == "__main__":
     unittest.main()

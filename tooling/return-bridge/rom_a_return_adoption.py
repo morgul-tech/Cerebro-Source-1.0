@@ -5,6 +5,17 @@ The caller supplies a current normal-task bundle and owns provider currentness,
 semantic review, worklist writing and any later actor action. This adapter reads
 local bytes, reuses BK04/BK05 as-is, and emits one non-authoritative receipt.
 It never wakes a model, grants authority, or performs a provider operation.
+
+Bundle fields: schema; task {actor_ref, arc_ref, task_ref, original_path,
+original_sha256, source_head, effect_class, privacy_class, live_scope,
+authority_class, return_target, way_home, allowed_paths, required_invariants,
+stop_edges}; return {actor_ref, arc_ref, task_ref, original_sha256,
+contract_kind}; optional bk04 {owner_facts_path, binding_path}; optional bk05
+{parent_manifest_path, verifier_path, verifier_delta_path, currentness_path,
+prior_record_path}. All paths refer to existing local files. Only
+contract_kind=BK04_OWNER_FACTS makes BK04 relevant. Example invocation:
+python -B tooling/return-bridge/rom_a_return_adoption.py --bundle BUNDLE.json
+    --out-dir NEW_OUTPUT_DIRECTORY
 """
 
 from __future__ import annotations
@@ -100,7 +111,9 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
     payload = original
     returned_actor = returned.get("actor_ref")
     returned_arc = returned.get("arc_ref")
-    if (returned_actor != actor or returned_arc != arc or
+    if bk04_status["state"] == "CONFLICT":
+        bk05_status = {"decision": "FULL_TASK_REQUIRED", "reasons": ["BK04_CONFLICT_LOCAL_REVIEW"]}
+    elif (returned_actor != actor or returned_arc != arc or
             returned.get("task_ref") != task_ref or
             returned.get("original_sha256") != _sha(original)):
         bk05_status = {"decision": "FULL_TASK_REQUIRED", "reasons": ["ACTOR_ARC_OR_ORIGINAL_CHANGED"]}
