@@ -1,0 +1,50 @@
+context_source_package:
+  schema: cerebro-context-source-package/v1
+  package_profile: READ_BOOT_GENERATION_STATE_V1
+  authority: NONE
+  source_of_truth: CEREBRO_SOURCE_EXACT_REVISION
+  entrypoints:
+    - mcp/control_context_tools.py
+    - mcp/control_context_remote_service.py
+    - mcp/control_context_mcp_sdk.py
+  explicit_files:
+    - mcp/control-context-mcp-sdk-requirements.txt
+  required_tool:
+    name: read_boot_generation_state
+    required_scope: project_state:read
+    exact_arguments:
+      - generation_ref
+    state_mutation: false
+    repository_mutation: false
+    role_grant: false
+    claim_grant: false
+  dependency_policy:
+    resolve_local_python_imports_recursively: true
+    allowed_source_roots:
+      - mcp
+      - tooling
+      - engines
+    preserve_repository_relative_paths: true
+    require_source_blob_sha256: true
+    forbid_unresolved_local_import: true
+  provider_adapter_boundary:
+    allowed:
+      - injected_state_port
+      - verified_bearer_token_verifier
+      - readiness_probe
+      - process_and_network_configuration
+    prohibited_core_semantics:
+      - role_grant_redefinition
+      - standing_grant_redefinition
+      - birth_source_rewrite
+      - audience_policy_redefinition
+      - hidden_scope_expansion
+  forbidden_package_paths:
+    - mcp/worker_attach_grant.py
+    - deployment/app.py
+  later_family:
+    source_continuity_method: verify_existing_birth_method_continuity
+    applies_to:
+      - resume_ready_unbound_assistant_overlay
+      - resume_ready_unbound_worker_overlay
+    first_read_requires_continuity_check: false
