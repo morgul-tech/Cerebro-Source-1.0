@@ -138,14 +138,17 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
                     capsule = evaluation.capsule
                     identity_fields = ("effect_class", "privacy_class", "live_scope", "authority_class",
                                        "return_target", "way_home")
-                    list_fields = (("allowed_paths", "allowed_repair_paths"),
-                                   ("required_invariants", "required_invariants"),
+                    list_fields = (("required_invariants", "required_invariants"),
                                    ("stop_edges", "stop_edges"))
                     same_scope = all(task.get(name) == capsule.get(name) for name in identity_fields)
                     same_scope = same_scope and task.get("source_head") == capsule.get("source_head")
                     same_scope = same_scope and all(
                         task.get(task_name) == capsule.get(capsule_name)
                         for task_name, capsule_name in list_fields)
+                    same_scope = same_scope and (
+                        isinstance(task.get("allowed_paths"), list)
+                        and set(capsule["allowed_repair_paths"]).issubset(set(task["allowed_paths"]))
+                    )
                     if (capsule["actor_ref"] == actor and capsule["parent"]["task_ref"] == task_ref
                             and same_scope):
                         selection = "BK05_STRUCTURAL_CAPSULE_CANDIDATE"

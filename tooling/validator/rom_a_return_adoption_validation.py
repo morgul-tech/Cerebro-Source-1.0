@@ -111,6 +111,15 @@ class NormalReturn(unittest.TestCase):
             self.assertEqual((finding["selection"], selected), ("FULL_ORIGINAL_TASK", original))
             self.bundle["return"][field] = saved
 
+    def test_valid_proper_subset_of_allowed_repair_paths_selects_capsule(self):
+        delta = Path(self.paths["verifier_delta.json"])
+        value = json.loads(delta.read_bytes())
+        value["repair_paths"] = ["adapter.py"]
+        delta.write_text(json.dumps(value), encoding="utf-8")
+        finding, selected = adapter.evaluate(self.bundle)
+        self.assertEqual(finding["selection"], "BK05_STRUCTURAL_CAPSULE_CANDIDATE")
+        self.assertEqual(json.loads(selected)["allowed_repair_paths"], ["adapter.py"])
+
     def test_bk04_conflict_is_local_to_affected_arc(self):
         original = Path(self.paths["parent.txt"]).read_bytes()
         saved = adapter._load_module
