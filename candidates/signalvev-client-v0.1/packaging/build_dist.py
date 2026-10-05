@@ -49,17 +49,37 @@ def git(*args: str) -> str | None:
         return None
 
 
+def committed_bytes(src: Path) -> bytes:
+    """Read a tracked input from HEAD, rejecting any staged or working-tree edit.
+
+    Git's blob is the canonical byte source. This avoids checkout EOL conversion
+    changing wheel contents while keeping real source drift fail-closed.
+    """
+    rel = src.relative_to(REPO).as_posix()
+    check = subprocess.run(["git", "-C", str(REPO), "diff", "--quiet", "HEAD", "--", rel],
+                           capture_output=True)
+    if check.returncode != 0:
+        raise RuntimeError(f"SOURCE_HEAD_MISMATCH: {rel}")
+    try:
+        return subprocess.run(["git", "-C", str(REPO), "show", f"HEAD:{rel}"],
+                              check=True, capture_output=True).stdout
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(f"SOURCE_NOT_IN_HEAD: {rel}") from exc
+
+
 def stage(dest: Path) -> dict:
     files: dict[str, str] = {}
     sources: dict[str, str] = {}
 
-    def put(src: Path, rel: str) -> None:
+    def put(src: Path, rel: str, *, pin: bool = True) -> None:
         target = dest / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(src, target)
-        assert sha256(src) == sha256(target), rel               # byte-identical, or the build stops
-        files[rel] = sha256(target)
-        sources[rel] = src.relative_to(REPO).as_posix()
+        content = committed_bytes(src)
+        target.write_bytes(content)
+        assert target.read_bytes() == content, rel
+        if pin:
+            files[rel] = hashlib.sha256(content).hexdigest()
+            sources[rel] = src.relative_to(REPO).as_posix()
 
     for f in sorted(CORE_SRC.glob("*.py")):
         put(f, f"signalvev_sensing/{f.name}")
@@ -74,8 +94,8 @@ def stage(dest: Path) -> dict:
                 "files": dict(sorted(files.items())), "sources": dict(sorted(sources.items()))}
     (dest / RES).mkdir(parents=True, exist_ok=True)
     (dest / RES / "RESOURCE_MANIFEST.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n", encoding="utf-8")
-    shutil.copyfile(CANDIDATE / "pyproject.toml", dest / "pyproject.toml")
-    shutil.copyfile(CANDIDATE / "README.md", dest / "README.md")
+    put(CANDIDATE / "pyproject.toml", "pyproject.toml", pin=False)
+    put(CANDIDATE / "README.md", "README.md", pin=False)
     return manifest
 
 
