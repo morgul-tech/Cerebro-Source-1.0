@@ -1,0 +1,18 @@
+# BK07 PM-to-X9 binding -- PRODUCTION shape. EXAMPLE ONLY: every value below is a placeholder to be supplied by
+# CURRENT_PM + the PM provider/credential custodian (PM coordinates, principals) and Runtime/Infra (ports_factory).
+# No secret belongs here: ports carry their own runtime authentication. Until a host module exists,
+# `signalvev-pm-x9 diagnose` reports PM_X9_PORTS_FACTORY_FAILED / MISSING and nothing is contacted.
+[pm_x9]
+mode = "PRODUCTION"
+owner_ref = "CURRENT_PM"
+claim_ref = "WORK_CLAIMS:<claim>"
+packet_ref = "WORK_PACKETS:<packet>"
+queue_ref = "READY_QUEUE:<queue>"
+packet_sha256 = "<64 lowercase hex of the exact packet>"
+producer_principal = "<scoped producer principal>"
+x9_principal = "<scoped X9 principal>"
+x9_session_ref = "<X9 receiver session ref>"
+attempt_ref = "<attempt ref>"
+pointer_ttl_seconds = 900
+max_pending_ingress = 64
+ports_factory = "<host_module>:<make_ports>"   # returns signalvev_client.pm_x9.PmX9HostPorts

@@ -66,6 +66,11 @@ class PointerContext:
     expires_at: str
     way_home: tuple[str, ...]
     subject: str = SUBJECT
+    # BK07 compatibility extension. A PM ready hint's referent (type PM_READY_HINT, id pm-ready:...)
+    # is NOT the claim coordinate. When referent_id is set, the closure must name exactly that
+    # referent; claim_ref stays the separate PM coordinate. None keeps the legacy claim-referent check.
+    referent_id: str | None = None
+    owner_seq: int | None = None
 
     def valid(self) -> bool:
         identifiers = (self.event_id, self.attempt_id, self.owner_ref, self.referent_type,
@@ -74,6 +79,10 @@ class PointerContext:
         try:
             _utc(self.expires_at)
         except (TypeError, ValueError):
+            return False
+        if not (self.referent_id is None or _id(self.referent_id)):
+            return False
+        if not (self.owner_seq is None or (type(self.owner_seq) is int and self.owner_seq >= 1)):
             return False
         return (self.subject == SUBJECT and all(_id(v) for v in identifiers)
                 and bool(HEX64.fullmatch(self.expected_sha256))
@@ -100,6 +109,8 @@ class PointerRecord:
     source_cut: str
     expires_at: str
     way_home: tuple[str, ...]
+    referent_id: str | None = None     # BK07: PM referent kept separate from claim_ref
+    owner_seq: int | None = None       # BK07: owner sequence carried from the validated D0
 
     @property
     def content_sha256(self) -> str:
@@ -206,13 +217,22 @@ def _active_hold_action_due(value: object, owner_ref: str) -> tuple[bool, bool]:
     return bool(value["next_check_due"] or value["orphaned"]), True
 
 
+class PMHintReadPort(Protocol):
+    """BK07: hint-bound fresh owner read. The PM owner judges the relation of its current cut to
+    the pointer's opaque revision for the pointer's own referent; nothing here orders revisions."""
+
+    def read_current_for_pointer(self, pointer: PointerRecord) -> PMOwnerCut: ...
+
+
 class X9ChannelIngress:
     """Explicit calls only. There is no subscription, scheduler, model or live host binding."""
 
     def __init__(self, *, enabled: bool = False, channel: ChannelPort | None = None,
                  pm_reader: PMOwnerReadPort | None = None, producer_principal: str = "",
-                 x9_principal: str = "", x9_session_ref: str = "") -> None:
+                 x9_principal: str = "", x9_session_ref: str = "",
+                 pm_hint_reader: PMHintReadPort | None = None) -> None:
         self.enabled, self.channel, self.pm_reader = enabled, channel, pm_reader
+        self.pm_hint_reader = pm_hint_reader
         self.producer_principal, self.x9_principal = producer_principal, x9_principal
         self.x9_session_ref = x9_session_ref
         # Same-process guard only. Cross-process uniqueness belongs to the
@@ -255,7 +275,8 @@ class X9ChannelIngress:
                 or closure.receipt_stage != "READ" or closure.work_consumed or closure.effect != "NONE_CLAIMED"
                 or closure.authority != "NONE" or closure.is_truth_store or closure.activation.wake_bound
                 or closure.event_id != context.event_id or closure.owner_ref != context.owner_ref
-                or closure.referent_type != context.referent_type or closure.referent_id != context.claim_ref
+                or closure.referent_type != context.referent_type
+                or closure.referent_id != (context.referent_id if context.referent_id is not None else context.claim_ref)
                 or closure.revision_after != context.revision or closure.way_home != context.way_home
                 or closure.observed_sha256 != context.expected_sha256):
             return Result(HOLD, "CLOSURE_D0_BINDING_UNPROVEN", context.event_id)
@@ -265,7 +286,7 @@ class X9ChannelIngress:
             context.revision, context.expected_sha256, context.claim_ref, context.packet_ref,
             context.packet_sha256, context.queue_ref, context.producer_id, context.receiver_ref,
             context.source_cut,
-            context.expires_at, context.way_home)
+            context.expires_at, context.way_home, context.referent_id, context.owner_seq)
         if context.producer_id != self.producer_principal or context.receiver_ref != self.x9_session_ref:
             return Result(HOLD, "PRODUCER_OR_RECEIVER_BINDING_MISMATCH", context.event_id)
         try:
@@ -305,7 +326,7 @@ class X9ChannelIngress:
             return Result(HOLD, "MISSED_D0_OWNER_PULSE_REQUIRED")
         if not self._identity(producer=False):
             return Result(REFINE, "AUTHENTICATED_X9_CHANNEL_READ_DISPOSITION_PORT_MISSING", event_id)
-        if self.pm_reader is None:
+        if self.pm_reader is None and self.pm_hint_reader is None:
             return Result(REFINE, "AUTHENTICATED_PM_OWNER_REREAD_PORT_MISSING", event_id)
         try:
             readback = self.channel.read_pointer_by_event_id(event_id)
@@ -343,7 +364,10 @@ class X9ChannelIngress:
                               disposition)
             return Result(COLLISION, "DISPOSITION_EVENT_ID_CONFLICT", event_id)
         try:
-            cut = self.pm_reader.read_current(pointer.claim_ref, pointer.packet_ref, pointer.queue_ref)
+            if self.pm_hint_reader is not None:
+                cut = self.pm_hint_reader.read_current_for_pointer(pointer)
+            else:
+                cut = self.pm_reader.read_current(pointer.claim_ref, pointer.packet_ref, pointer.queue_ref)
         except Exception:
             return Result(HOLD, "PM_OWNER_REREAD_UNAVAILABLE", event_id)
         if not isinstance(cut, PMOwnerCut) or not cut.authenticated or not cut.committed_readback:

@@ -311,6 +311,41 @@ class X9ChannelIngressTests(unittest.TestCase):
         self.assertEqual(result.reason, "EXPIRED_POINTER_OWNER_PULSE_REQUIRED")
         self.assertEqual(self.pm.calls, 0)
 
+    # ---- BK07 compatibility extension: PM referent kept separate from claim_ref
+    def test_bk07_pm_referent_must_match_and_is_not_relabelled(self):
+        ctx = replace(self.ctx, referent_type="PM_READY_HINT", referent_id="pm-ready:claim-1", owner_seq=7)
+
+        def pm_closure(rid):
+            return make_closure(event_id=ctx.event_id, owner_ref=ctx.owner_ref, referent_type=ctx.referent_type,
+                                referent_id=rid, revision_after=ctx.revision, disposition="ACK_READ",
+                                reason="OWNER_READ_MATCHES_EVENT", observed_sha256=ctx.expected_sha256,
+                                activation=decide_activation("ACK_READ", "SEMANTIC"), way_home=ctx.way_home)
+        for wrong in (ctx.claim_ref, "pm-ready:other"):
+            with self.subTest(wrong=wrong):
+                self.assertEqual(self.bridge.deposit(pm_closure(wrong), ctx, now=NOW).reason,
+                                 "CLOSURE_D0_BINDING_UNPROVEN")
+        self.assertEqual(self.channel.pointer_sends, 0)
+        self.assertEqual(self.bridge.deposit(pm_closure("pm-ready:claim-1"), ctx, now=NOW).state, "DEPOSITED_READBACK")
+        self.assertEqual((self.channel.pointer.referent_id, self.channel.pointer.claim_ref, self.channel.pointer.owner_seq),
+                         ("pm-ready:claim-1", "claim:test1", 7))
+        for bad in ({"owner_seq": 0}, {"owner_seq": "7"}, {"referent_id": "bad id"}):
+            with self.subTest(bad=bad):
+                self.assertFalse(replace(ctx, **bad).valid())
+
+    def test_bk07_hint_reader_is_used_when_bound(self):
+        self.deposited()
+        seen = []
+
+        class HintReader:
+            def read_current_for_pointer(self, pointer):
+                seen.append(pointer)
+                return cut()
+        bridge = x9.X9ChannelIngress(enabled=True, channel=self.channel, pm_hint_reader=HintReader(),
+                                     producer_principal=PM, x9_principal=X9, x9_session_ref=SESSION)
+        self.assertEqual(bridge.consume(self.ctx.event_id, now=NOW).disposition.disposition, x9.MATERIAL)
+        self.assertEqual([p.event_id for p in seen], [self.ctx.event_id])
+        self.assertEqual(self.pm.calls, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
