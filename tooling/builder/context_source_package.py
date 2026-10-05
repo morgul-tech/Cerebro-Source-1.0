@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, ast, hashlib, json, shutil, subprocess
+import argparse, ast, hashlib, importlib.util, json, shutil, subprocess, sys
 from pathlib import Path
 from typing import Iterable
 import yaml
@@ -17,17 +17,23 @@ def _sha(path: Path)->str:
 def _git_head(root: Path)->str:
     return subprocess.check_output(["git","-C",str(root),"rev-parse","HEAD"],text=True).strip()
 
-def _index(root: Path, allowed_roots: Iterable[str])->dict[str,Path]:
-    found={}
-    dup=set()
+def _index(
+    root: Path, allowed_roots: Iterable[str]
+)->tuple[dict[str,Path],dict[str,list[Path]]]:
+    candidates:dict[str,list[Path]]={}
     for relroot in allowed_roots:
         base=root/relroot
         for p in base.rglob("*.py"):
-            name=p.stem
-            if name in found and found[name]!=p: dup.add(name)
-            else: found[name]=p
-    for name in dup: found.pop(name,None)
-    return found
+            candidates.setdefault(p.stem,[]).append(p)
+    found={}
+    ambiguous={}
+    for name,paths in candidates.items():
+        unique=sorted({p.resolve() for p in paths},key=lambda x:x.as_posix())
+        if len(unique)==1:
+            found[name]=unique[0]
+        elif len(unique)>1:
+            ambiguous[name]=unique
+    return found,ambiguous
 
 def _imports(path: Path)->set[str]:
     tree=ast.parse(path.read_text(encoding="utf-8"),filename=str(path))
@@ -39,8 +45,23 @@ def _imports(path: Path)->set[str]:
             names.add(node.module.split(".",1)[0])
     return names
 
-def resolve_closure(root: Path, entrypoints:list[str], allowed_roots:list[str])->list[str]:
-    index=_index(root,allowed_roots)
+def _external_import_allowed(module: str, governed_external_imports:set[str])->bool:
+    return (
+        module=="__future__"
+        or module in sys.stdlib_module_names
+        or module in governed_external_imports
+    )
+
+def resolve_closure(
+    root: Path,
+    entrypoints:list[str],
+    allowed_roots:list[str],
+    *,
+    forbid_unresolved_local_import:bool=False,
+    governed_external_imports:set[str]|None=None,
+)->list[str]:
+    index,ambiguous=_index(root,allowed_roots)
+    governed_external_imports=set(governed_external_imports or ())
     queue=[root/p for p in entrypoints]
     closure=set()
     while queue:
@@ -52,10 +73,18 @@ def resolve_closure(root: Path, entrypoints:list[str], allowed_roots:list[str])-
         closure.add(rel)
         if path.suffix!=".py": continue
         for mod in sorted(_imports(path)):
+            if mod in ambiguous:
+                refs=",".join(p.relative_to(root).as_posix() for p in ambiguous[mod])
+                raise PackageError("ambiguous-local-import:"+rel+":"+mod+":"+refs)
             dep=index.get(mod)
             if dep is not None:
                 dep_rel=dep.relative_to(root).as_posix()
                 if dep_rel not in closure: queue.append(dep)
+                continue
+            if forbid_unresolved_local_import and not _external_import_allowed(
+                mod, governed_external_imports
+            ):
+                raise PackageError("unresolved-local-import:"+rel+":"+mod)
     return sorted(closure)
 
 def load_contract(root:Path=ROOT)->dict:
@@ -68,7 +97,17 @@ def build(output:Path, *, root:Path=ROOT, expected_source_revision:str|None=None
     c=load_contract(root)
     head=_git_head(root)
     if expected_source_revision and head!=expected_source_revision: raise PackageError("source-revision-mismatch")
-    closure=resolve_closure(root,list(c["entrypoints"]),list(c["dependency_policy"]["allowed_source_roots"]))
+    closure=resolve_closure(
+        root,
+        list(c["entrypoints"]),
+        list(c["dependency_policy"]["allowed_source_roots"]),
+        forbid_unresolved_local_import=bool(
+            c["dependency_policy"].get("forbid_unresolved_local_import",False)
+        ),
+        governed_external_imports=set(
+            c["dependency_policy"].get("governed_external_imports") or ()
+        ),
+    )
     files=sorted(set(closure+list(c["explicit_files"])))
     forbidden=set(c.get("forbidden_package_paths") or [])
     hit=sorted(forbidden.intersection(files))

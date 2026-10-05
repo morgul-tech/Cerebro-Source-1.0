@@ -27,6 +27,10 @@ context_source_package:
     preserve_repository_relative_paths: true
     require_source_blob_sha256: true
     forbid_unresolved_local_import: true
+    governed_external_imports:
+      - mcp
+      - starlette
+      - yaml
   provider_adapter_boundary:
     allowed:
       - injected_state_port

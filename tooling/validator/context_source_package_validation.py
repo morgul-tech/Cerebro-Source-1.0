@@ -5,7 +5,7 @@ import yaml
 
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"tooling"/"builder"))
-from context_source_package import build, load_contract, verify
+from context_source_package import PackageError, build, load_contract, verify
 
 def check(name, cond, rows):
     rows.append({"name":name,"result":"PASS" if cond else "FAIL"})
@@ -75,6 +75,37 @@ print(json.dumps(result))
     if cp.returncode: raise RuntimeError("installed-read-failed:"+cp.stderr[-1000:])
     return json.loads(cp.stdout)
 
+def build_blocks_mutant(mutator)->str:
+    target=ROOT/"mcp/control_context_mcp_sdk.py"
+    original=target.read_bytes()
+    created=[]
+    try:
+        mutator(target,created)
+        with tempfile.TemporaryDirectory() as td:
+            try:
+                build(pathlib.Path(td)/"pkg",root=ROOT)
+            except PackageError as exc:
+                return str(exc)
+            raise AssertionError("mutant-build-unexpected-pass")
+    finally:
+        target.write_bytes(original)
+        for path in created:
+            if path.exists():
+                path.unlink()
+
+def unresolved_mutant(target,created):
+    with target.open("a",encoding="utf-8",newline="\n") as f:
+        f.write("\nimport definitely_missing_local_module\n")
+
+def ambiguous_mutant(target,created):
+    left=ROOT/"mcp/localdup.py"
+    right=ROOT/"tooling/localdup.py"
+    left.write_text("VALUE='mcp'\n",encoding="utf-8",newline="\n")
+    right.write_text("VALUE='tooling'\n",encoding="utf-8",newline="\n")
+    created.extend([left,right])
+    with target.open("a",encoding="utf-8",newline="\n") as f:
+        f.write("\nimport localdup\n")
+
 def selftest()->dict:
     rows=[]
     contract=load_contract(ROOT)
@@ -85,6 +116,20 @@ def selftest()->dict:
           and contract["required_tool"]["state_mutation"] is False,rows)
     check("PR7-authority-not-in-reader-profile",
           "mcp/worker_attach_grant.py" in contract["forbidden_package_paths"],rows)
+    check("contract-enables-unresolved-local-import-fail-closed",
+          contract["dependency_policy"].get("forbid_unresolved_local_import") is True,rows)
+    check("contract-governs-external-reader-imports",
+          set(contract["dependency_policy"].get("governed_external_imports") or ())
+          == {"mcp","starlette","yaml"},rows)
+    unresolved=build_blocks_mutant(unresolved_mutant)
+    check("unresolved-local-import-mutant-blocks-build",
+          unresolved.startswith("unresolved-local-import:")
+          and "definitely_missing_local_module" in unresolved,rows)
+    ambiguous=build_blocks_mutant(ambiguous_mutant)
+    check("ambiguous-local-import-mutant-blocks-build",
+          ambiguous.startswith("ambiguous-local-import:")
+          and "mcp/localdup.py" in ambiguous
+          and "tooling/localdup.py" in ambiguous,rows)
     with tempfile.TemporaryDirectory() as td:
         pkg=pathlib.Path(td)/"pkg"
         manifest=build(pkg,root=ROOT,expected_source_revision=head)
