@@ -33,6 +33,8 @@ PROTECTED_RESOURCE_PATH = "/.well-known/oauth-protected-resource"
 MCP_PATH = "/mcp"
 HEALTH_PATH = "/healthz"
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
+PACKAGE_BUILD_SCOPE = "package_build:verify"
+SUPPORTED_SCOPES = STATE_SCOPES | {PACKAGE_BUILD_SCOPE}
 TOOL_REQUIRED_SCOPES = {
     "create_ready_unbound_boot_generation": "project_state:transition",
     "create_pre_role_generation": "project_state:transition",
@@ -357,7 +359,7 @@ class OAuthBearerAuthenticator:
             tenant_ref=_claim_text(claims, self._config.tenant_claim, required_scope=required_scope),
             workspace_ref=_claim_text(claims, self._config.workspace_claim, required_scope=required_scope),
             principal_ref=_claim_text(claims, self._config.principal_claim, required_scope=required_scope),
-            scopes=frozenset(scopes.intersection(STATE_SCOPES)),
+            scopes=frozenset(scopes.intersection(SUPPORTED_SCOPES)),
             token_verified=True,
             consumer_ref="CHATGPT_REMOTE_MCP",
         )
@@ -401,11 +403,16 @@ class ControlContextRemoteMcpService:
     def config(self) -> RemoteMcpServiceConfig:
         return self._config
 
+    @property
+    def supported_scopes(self) -> frozenset[str]:
+        # Discovery is capability exposure, not token issuance or grant authority.
+        return (SUPPORTED_SCOPES if self._package_build_verifier is not None else STATE_SCOPES)
+
     def protected_resource_metadata(self) -> dict[str, Any]:
         return {
             "resource": self._config.resource,
             "authorization_servers": list(self._config.authorization_servers),
-            "scopes_supported": sorted(STATE_SCOPES),
+            "scopes_supported": sorted(self.supported_scopes),
             "resource_documentation": self._config.resource_documentation,
         }
 
@@ -442,7 +449,7 @@ class ControlContextRemoteMcpService:
         error: str,
         description: str,
     ) -> str:
-        if required_scope not in STATE_SCOPES:
+        if required_scope not in self.supported_scopes:
             raise RemoteMcpConfigurationError("challenge-scope-invalid")
         if not _AUTH_ERROR.fullmatch(error):
             raise RemoteMcpConfigurationError("challenge-error-invalid")

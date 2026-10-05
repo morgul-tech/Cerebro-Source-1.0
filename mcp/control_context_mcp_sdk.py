@@ -26,6 +26,7 @@ from control_context_remote_service import (
     MCP_PATH,
     PROTECTED_RESOURCE_PATH,
     ControlContextRemoteMcpService,
+    RemoteMcpAuthenticationError,
 )
 from control_context_tools import ControlContextToolError
 
@@ -470,6 +471,12 @@ def create_streamable_http_app(
                     return JSONResponse({"result": "HOLD", "reason": "request-too-large"}, status_code=413)
             value = service.verify_run_only_package_build(args=json.loads(raw), headers=request.headers)
             return JSONResponse(value, headers={"Cache-Control": "no-store"})
+        except RemoteMcpAuthenticationError as exc:
+            challenge = service.authentication_challenge(required_scope=exc.required_scope,
+                error=exc.error, description=exc.description)
+            return JSONResponse({"result": "HOLD", "reason": "package-build-authentication-required"},
+                status_code=403 if exc.error == "insufficient_scope" else 401,
+                headers={"Cache-Control": "no-store", "WWW-Authenticate": challenge})
         except Exception:
             return JSONResponse({"result": "HOLD", "reason": "package-build-verification-refused"},
                                 status_code=403, headers={"Cache-Control": "no-store"})
