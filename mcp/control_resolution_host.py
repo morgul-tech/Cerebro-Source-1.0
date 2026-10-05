@@ -9,6 +9,8 @@ neither provide these dependencies nor self-assert executability or durability.
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -31,6 +33,19 @@ PM_COMMAND_CHAIN_SCHEMA = "cerebro-pm-command-fixed-point/v1"
 OPERATIONAL_PULSE_SCHEMA = "cerebro-operational-pulse-consumption/v1"
 OPERATIONAL_PULSE_STAGES = ("FRESH_WORLD", "CURRENT_CONTACT", "PRE_CLOSE")
 OPERATIONAL_DEBT_KINDS = ("CORRECTION", "REPORT")
+A7_PREPUBLICATION_BASIS_SCHEMA = "cerebro-a7-pm-prepublication-basis/v1"
+A7_PREPUBLICATION_DECISION_SCHEMA = "cerebro-a7-pm-prepublication-decision/v1"
+PM_GUARDED_PUBLICATION_SCHEMA = "cerebro-pm-guarded-disposition-publication/v1"
+PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA = "cerebro-pm-guarded-disposition-publication-receipt/v1"
+PM_DISPOSITION_REQUEST_SCHEMA = "cerebro-pm-disposition-publication-request/v1"
+A7_FLOW_REDUCING_DISPOSITIONS = frozenset({
+    "HOLD", "WAIT", "BLOCK", "NOT_READY", "OMIT_BIND", "OMIT_SEND",
+    "ADOPTION_DELAY", "OWNER_HUNT", "RESEARCH_DETOUR", "LOCAL_TO_GLOBAL_STOP",
+})
+A7_RELEVANT_CASE_REFS = frozenset({
+    "A7-P22-PM-FLOW-STOP-008",
+    "A7-P22-NATS-CLIENT-HOST-MISMATCH-009",
+})
 PM_FIXED_POINT_STOP_REASONS = (
     "QUIESCENT",
     "OTHER_OWNER_WAIT",
@@ -58,6 +73,11 @@ PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "human_t3_effect_capability",
     "effect_capability",
     "current_reader",
+    "a7_predecision_basis_reader",
+    "prepublication_basis_reader",
+    "pm_disposition_publisher",
+    "publisher_port",
+    "prepublication_guard",
 }
 
 
@@ -427,6 +447,485 @@ class BoundControlResolutionHost:
             completions.append(copy.deepcopy(completion))
             executed.add(owner)
         raise ControlResolutionHostError("owner-sequence-did-not-converge")
+
+
+
+def _canonical_sha256(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+
+
+class BoundPmDispositionPublisher:
+    """Default-off A7 guard around one authoritative PM disposition publisher.
+
+    The caller supplies only the requested disposition identity and expected
+    referent revision.  All A7/currentness/Way Home/blocker/safety/parallel-lane
+    evidence comes from a constructor-bound owner reader.  This adapter grants
+    no PM Sheet or provider authority by itself.  A missing publisher port is a
+    typed live cut, not a local-code failure.
+    """
+
+    _REQUEST_KEYS = frozenset({
+        "schema",
+        "disposition_ref",
+        "requested_disposition",
+        "expected_referent_ref",
+        "expected_referent_revision",
+        "requested_scope_ref",
+    })
+    _BASIS_RELATIONS = frozenset({"SAME_AS_LAST_PROVEN_WAY_HOME", "CHANGED"})
+    _BLOCKER_NECESSITY = frozenset({"OBSERVED_REQUIRED", "ASSUMED", "UNKNOWN"})
+
+    def __init__(
+        self,
+        *,
+        basis_reader: Any,
+        publisher_port: Any | None = None,
+        enabled: bool = False,
+    ):
+        _require(
+            callable(getattr(basis_reader, "read_prepublication_basis", None)),
+            "a7-prepublication-basis-reader-required",
+        )
+        if publisher_port is not None:
+            _require(
+                callable(getattr(publisher_port, "publish_and_readback", None)),
+                "pm-guarded-publisher-port-invalid",
+            )
+        self._basis_reader = basis_reader
+        self._publisher_port = publisher_port
+        self._enabled = enabled
+
+    @staticmethod
+    def _ref(value: Any) -> bool:
+        return isinstance(value, str) and bool(value.strip())
+
+    @staticmethod
+    def _hex64(value: Any) -> bool:
+        return (
+            isinstance(value, str)
+            and len(value) == 64
+            and all(ch in "0123456789abcdef" for ch in value)
+        )
+
+    def _proposal(self, proposal: Any) -> dict[str, Any]:
+        _require(self._enabled, "a7-prepublication-guard-default-off")
+        _require(isinstance(proposal, dict), "pm-disposition-request-object-required")
+        extra = sorted(set(proposal) - self._REQUEST_KEYS)
+        _require(
+            not extra,
+            "caller-prepublication-evidence-prohibited:" + ",".join(extra),
+        )
+        _require(
+            proposal.get("schema") == PM_DISPOSITION_REQUEST_SCHEMA,
+            "pm-disposition-request-schema-mismatch",
+        )
+        disposition_ref = str(proposal.get("disposition_ref") or "").strip()
+        requested = str(proposal.get("requested_disposition") or "").strip().upper()
+        referent_ref = str(proposal.get("expected_referent_ref") or "").strip()
+        referent_revision = proposal.get("expected_referent_revision")
+        scope_ref = str(proposal.get("requested_scope_ref") or "").strip()
+        _require(disposition_ref, "pm-disposition-ref-required")
+        _require(
+            requested in A7_FLOW_REDUCING_DISPOSITIONS,
+            "pm-flow-reducing-disposition-required",
+        )
+        _require(referent_ref, "pm-disposition-referent-ref-required")
+        _require(
+            type(referent_revision) is int and referent_revision >= 0,
+            "pm-disposition-referent-revision-invalid",
+        )
+        _require(scope_ref, "pm-disposition-scope-ref-required")
+        return {
+            "schema": PM_DISPOSITION_REQUEST_SCHEMA,
+            "disposition_ref": disposition_ref,
+            "requested_disposition": requested,
+            "expected_referent_ref": referent_ref,
+            "expected_referent_revision": referent_revision,
+            "requested_scope_ref": scope_ref,
+        }
+
+    def _read_basis(self, proposal: dict[str, Any]) -> dict[str, Any]:
+        try:
+            basis = self._basis_reader.read_prepublication_basis(
+                disposition_ref=proposal["disposition_ref"],
+                expected_referent_ref=proposal["expected_referent_ref"],
+                expected_referent_revision=proposal["expected_referent_revision"],
+            )
+        except Exception as exc:
+            raise ControlResolutionHostError(
+                f"a7-prepublication-basis-read-failed:{exc}"
+            ) from exc
+        return self._validate_basis(proposal, basis)
+
+    def _validate_basis(self, proposal: dict[str, Any], basis: Any) -> dict[str, Any]:
+        _require(isinstance(basis, dict), "a7-prepublication-basis-object-required")
+        _require(
+            basis.get("schema") == A7_PREPUBLICATION_BASIS_SCHEMA,
+            "a7-prepublication-basis-schema-mismatch",
+        )
+        _require(
+            basis.get("disposition_ref") == proposal["disposition_ref"],
+            "a7-prepublication-disposition-ref-mismatch",
+        )
+        _require(
+            basis.get("referent_ref") == proposal["expected_referent_ref"]
+            and basis.get("referent_revision") == proposal["expected_referent_revision"],
+            "a7-prepublication-referent-currentness-mismatch",
+        )
+        _require(
+            self._ref(basis.get("referent_status")),
+            "a7-prepublication-referent-status-required",
+        )
+        _require(
+            basis.get("currentness") == "CURRENT"
+            and basis.get("readback_verified") is True
+            and basis.get("revoked") is False,
+            "a7-prepublication-owner-basis-not-current",
+        )
+        _require(
+            self._ref(basis.get("owner_ref"))
+            and type(basis.get("owner_revision")) is int
+            and basis["owner_revision"] >= 0
+            and self._ref(basis.get("basis_ref"))
+            and self._hex64(basis.get("basis_fingerprint"))
+            and self._ref(basis.get("readback_ref")),
+            "a7-prepublication-owner-basis-identity-invalid",
+        )
+        _require(
+            type(basis.get("publication_revision")) is int
+            and basis["publication_revision"] >= 0,
+            "a7-prepublication-publication-revision-invalid",
+        )
+        _require(
+            self._ref(basis.get("scope_ref")),
+            "a7-prepublication-scope-ref-required",
+        )
+        relation = basis.get("basis_relation")
+        _require(
+            relation in self._BASIS_RELATIONS,
+            "a7-prepublication-basis-relation-invalid",
+        )
+
+        cases = basis.get("relevant_a7_cases")
+        _require(
+            isinstance(cases, list) and bool(cases),
+            "a7-prepublication-relevant-case-required",
+        )
+        case_refs: list[str] = []
+        for index, item in enumerate(cases):
+            _require(
+                isinstance(item, dict),
+                f"a7-prepublication-case-object-required:{index}",
+            )
+            case_ref = str(item.get("case_ref") or "").strip()
+            _require(
+                case_ref in A7_RELEVANT_CASE_REFS and case_ref not in case_refs,
+                f"a7-prepublication-case-ref-invalid:{index}",
+            )
+            _require(
+                item.get("currentness") == "CURRENT"
+                and item.get("readback_verified") is True
+                and item.get("revoked") is False
+                and type(item.get("revision")) is int
+                and item["revision"] >= 0
+                and self._ref(item.get("lesson_basis_ref")),
+                f"a7-prepublication-case-currentness-invalid:{case_ref}",
+            )
+            case_refs.append(case_ref)
+
+        way_home = basis.get("last_proven_way_home")
+        _require(
+            isinstance(way_home, dict)
+            and self._ref(way_home.get("way_home_ref"))
+            and type(way_home.get("revision")) is int
+            and way_home["revision"] >= 0
+            and way_home.get("readback_verified") is True,
+            "a7-prepublication-way-home-readback-required",
+        )
+        blocker = basis.get("blocker")
+        _require(
+            isinstance(blocker, dict)
+            and blocker.get("necessity") in self._BLOCKER_NECESSITY,
+            "a7-prepublication-blocker-necessity-invalid",
+        )
+        if blocker.get("necessity") == "OBSERVED_REQUIRED":
+            _require(
+                self._ref(blocker.get("blocker_ref"))
+                and blocker.get("readback_verified") is True,
+                "a7-prepublication-observed-blocker-readback-required",
+            )
+
+        reentry = basis.get("smallest_lawful_reentry")
+        _require(
+            isinstance(reentry, dict)
+            and self._ref(reentry.get("owner_ref"))
+            and self._ref(reentry.get("reentry_ref")),
+            "a7-prepublication-reentry-required",
+        )
+
+        lanes = basis.get("parallel_lanes")
+        _require(isinstance(lanes, list), "a7-prepublication-parallel-lanes-array-required")
+        lane_refs: list[str] = []
+        for index, lane in enumerate(lanes):
+            _require(
+                isinstance(lane, dict)
+                and self._ref(lane.get("lane_ref"))
+                and lane.get("currentness") == "CURRENT"
+                and lane.get("readback_verified") is True
+                and lane.get("independent") is True,
+                f"a7-prepublication-parallel-lane-invalid:{index}",
+            )
+            lane_ref = lane["lane_ref"].strip()
+            _require(
+                lane_ref not in lane_refs,
+                f"a7-prepublication-parallel-lane-duplicate:{lane_ref}",
+            )
+            lane_refs.append(lane_ref)
+
+        safety = basis.get("safety")
+        _require(
+            isinstance(safety, dict)
+            and type(safety.get("acute")) is bool,
+            "a7-prepublication-safety-object-required",
+        )
+        if safety["acute"]:
+            _require(
+                self._ref(safety.get("evidence_ref"))
+                and self._ref(safety.get("scope_ref"))
+                and safety.get("readback_verified") is True,
+                "a7-prepublication-acute-safety-readback-required",
+            )
+
+        value = copy.deepcopy(basis)
+        value["relevant_case_refs"] = case_refs
+        value["parallel_lane_refs"] = lane_refs
+        return value
+
+    @staticmethod
+    def _decision_ref(subject: dict[str, Any]) -> tuple[str, str]:
+        fingerprint = _canonical_sha256(subject)
+        return "A7PRE-" + fingerprint[:20].upper(), fingerprint
+
+    def evaluate(self, proposal: dict[str, Any]) -> dict[str, Any]:
+        request = self._proposal(proposal)
+        basis = self._read_basis(request)
+        safety = basis["safety"]
+        blocker = basis["blocker"]
+        lane_refs = list(basis["parallel_lane_refs"])
+        requested_scope = request["requested_scope_ref"]
+        trusted_scope = basis["scope_ref"]
+        global_request = (
+            request["requested_disposition"] == "LOCAL_TO_GLOBAL_STOP"
+            or requested_scope.upper() == "GLOBAL"
+        )
+
+        if safety["acute"]:
+            if requested_scope != safety["scope_ref"]:
+                decision = "REJECT_UNSCOPED_SAFETY_STOP"
+                publication_kind = "A7_CORRECTION"
+                effective = "CONTINUE_REENTRY"
+                publication_scope = trusted_scope
+                reentry_required = True
+                safety_effect_may_precede_publication = False
+            else:
+                decision = "ALLOW_SCOPED_SAFETY_STOP"
+                publication_kind = "SCOPED_SAFETY_STOP"
+                effective = request["requested_disposition"]
+                publication_scope = safety["scope_ref"]
+                reentry_required = True
+                safety_effect_may_precede_publication = True
+        elif global_request:
+            decision = "CORRECT_GLOBAL_STOP_PRESERVE_INDEPENDENT_LANES"
+            publication_kind = "A7_CORRECTION"
+            effective = "CONTINUE_REENTRY"
+            publication_scope = trusted_scope
+            reentry_required = True
+            safety_effect_may_precede_publication = False
+        elif (
+            basis["basis_relation"] == "SAME_AS_LAST_PROVEN_WAY_HOME"
+            and blocker["necessity"] != "OBSERVED_REQUIRED"
+        ):
+            decision = "CORRECT_FALSE_SAME_BASIS_STOP"
+            publication_kind = "A7_CORRECTION"
+            effective = "CONTINUE_REENTRY"
+            publication_scope = trusted_scope
+            reentry_required = True
+            safety_effect_may_precede_publication = False
+        elif blocker["necessity"] == "OBSERVED_REQUIRED":
+            _require(
+                requested_scope == trusted_scope,
+                "a7-prepublication-flow-reduction-scope-mismatch",
+            )
+            decision = "ALLOW_SCOPED_FLOW_REDUCTION"
+            publication_kind = "FLOW_REDUCTION"
+            effective = request["requested_disposition"]
+            publication_scope = trusted_scope
+            reentry_required = True
+            safety_effect_may_precede_publication = False
+        else:
+            decision = "REJECT_UNPROVEN_FLOW_REDUCTION"
+            publication_kind = "A7_CORRECTION"
+            effective = "CONTINUE_REENTRY"
+            publication_scope = trusted_scope
+            reentry_required = True
+            safety_effect_may_precede_publication = False
+
+        subject = {
+            "schema": A7_PREPUBLICATION_DECISION_SCHEMA,
+            "decision": decision,
+            "requested_disposition": request["requested_disposition"],
+            "effective_disposition": effective,
+            "publication_kind": publication_kind,
+            "disposition_ref": request["disposition_ref"],
+            "referent_ref": basis["referent_ref"],
+            "referent_revision": basis["referent_revision"],
+            "referent_status": basis["referent_status"],
+            "publication_scope_ref": publication_scope,
+            "basis_ref": basis["basis_ref"],
+            "basis_owner_ref": basis["owner_ref"],
+            "basis_owner_revision": basis["owner_revision"],
+            "basis_fingerprint": basis["basis_fingerprint"],
+            "basis_relation": basis["basis_relation"],
+            "a7_case_refs": list(basis["relevant_case_refs"]),
+            "last_way_home_ref": basis["last_proven_way_home"]["way_home_ref"],
+            "last_way_home_revision": basis["last_proven_way_home"]["revision"],
+            "blocker_necessity": blocker["necessity"],
+            "blocker_ref": blocker.get("blocker_ref"),
+            "smallest_reentry_owner_ref": basis["smallest_lawful_reentry"]["owner_ref"],
+            "smallest_reentry_ref": basis["smallest_lawful_reentry"]["reentry_ref"],
+            "preserve_lane_refs": lane_refs,
+            "acute_safety": safety["acute"],
+            "safety_evidence_ref": safety.get("evidence_ref"),
+            "reentry_required": reentry_required,
+            "safety_effect_may_precede_publication": safety_effect_may_precede_publication,
+            "publication_previous_revision": basis["publication_revision"],
+            "authority": "NONE",
+            "publisher_required": True,
+        }
+        decision_ref, fingerprint = self._decision_ref(subject)
+        subject["decision_ref"] = decision_ref
+        subject["decision_fingerprint"] = fingerprint
+        subject["_basis_snapshot_fingerprint"] = _canonical_sha256(basis)
+        return subject
+
+    def publish(self, proposal: dict[str, Any]) -> dict[str, Any]:
+        decision = self.evaluate(proposal)
+        if self._publisher_port is None:
+            public_decision = {
+                key: copy.deepcopy(value)
+                for key, value in decision.items()
+                if not key.startswith("_")
+            }
+            return {
+                "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                "result": "BLOCK_EXACT_PUBLISHER_PORT",
+                "published": False,
+                "live_effect": False,
+                "retry_allowed": False,
+                "first_unproven_live_edge": (
+                    "PM_PRINCIPAL_CHANNEL_GUARDED_PUBLISH_AND_READBACK_PORT_UNBOUND"
+                ),
+                "decision_receipt": public_decision,
+            }
+
+        request = self._proposal(proposal)
+        fresh_basis = self._read_basis(request)
+        if _canonical_sha256(fresh_basis) != decision["_basis_snapshot_fingerprint"]:
+            return {
+                "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                "result": "HOLD_STALE_PREPUBLICATION_BASIS",
+                "published": False,
+                "live_effect": False,
+                "retry_allowed": False,
+                "decision_ref": decision["decision_ref"],
+            }
+
+        publication = {
+            "schema": PM_GUARDED_PUBLICATION_SCHEMA,
+            "decision_ref": decision["decision_ref"],
+            "decision_fingerprint": decision["decision_fingerprint"],
+            "publication_kind": decision["publication_kind"],
+            "effective_disposition": decision["effective_disposition"],
+            "requested_disposition": decision["requested_disposition"],
+            "referent_ref": decision["referent_ref"],
+            "referent_revision": decision["referent_revision"],
+            "scope_ref": decision["publication_scope_ref"],
+            "previous_revision": decision["publication_previous_revision"],
+            "a7_case_refs": list(decision["a7_case_refs"]),
+            "preserve_lane_refs": list(decision["preserve_lane_refs"]),
+            "reentry_owner_ref": decision["smallest_reentry_owner_ref"],
+            "reentry_ref": decision["smallest_reentry_ref"],
+            "reentry_required": decision["reentry_required"],
+            "acute_safety": decision["acute_safety"],
+            "safety_evidence_ref": decision["safety_evidence_ref"],
+        }
+        publication["publication_fingerprint"] = _canonical_sha256(publication)
+
+        try:
+            receipt = self._publisher_port.publish_and_readback(
+                publication=copy.deepcopy(publication)
+            )
+        except Exception:
+            return {
+                "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                "result": "PUBLICATION_OUTCOME_UNKNOWN",
+                "published": "UNKNOWN",
+                "live_effect": "UNKNOWN",
+                "retry_allowed": False,
+                "decision_ref": decision["decision_ref"],
+                "publication_fingerprint": publication["publication_fingerprint"],
+            }
+
+        _require(
+            isinstance(receipt, dict),
+            "pm-guarded-publication-receipt-object-required",
+        )
+        _require(
+            receipt.get("schema") == PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA
+            and receipt.get("result") == "COMMITTED"
+            and receipt.get("decision_ref") == decision["decision_ref"]
+            and receipt.get("decision_fingerprint") == decision["decision_fingerprint"]
+            and receipt.get("publication_fingerprint")
+                == publication["publication_fingerprint"]
+            and receipt.get("referent_ref") == decision["referent_ref"]
+            and receipt.get("referent_revision") == decision["referent_revision"]
+            and receipt.get("scope_ref") == decision["publication_scope_ref"]
+            and receipt.get("effective_disposition") == decision["effective_disposition"],
+            "pm-guarded-publication-receipt-binding-mismatch",
+        )
+        _require(
+            receipt.get("previous_revision") == decision["publication_previous_revision"]
+            and receipt.get("published_revision")
+                == decision["publication_previous_revision"] + 1,
+            "pm-guarded-publication-revision-mismatch",
+        )
+        _require(
+            receipt.get("preserve_lane_refs") == decision["preserve_lane_refs"],
+            "pm-guarded-publication-parallel-lane-readback-mismatch",
+        )
+        _require(
+            receipt.get("readback_verified") is True
+            and type(receipt.get("provider_revision")) is int
+            and receipt["provider_revision"] >= 0
+            and self._ref(receipt.get("receipt_ref")),
+            "pm-guarded-publication-readback-unverified",
+        )
+        return {
+            "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+            "result": "PASS_GUARDED_PUBLICATION_READBACK",
+            "published": True,
+            "live_effect": True,
+            "retry_allowed": False,
+            "decision_receipt": {
+                key: copy.deepcopy(value)
+                for key, value in decision.items()
+                if not key.startswith("_")
+            },
+            "publication": publication,
+            "publisher_receipt": copy.deepcopy(receipt),
+        }
 
 
 def _pm_command_hmi(next_machine_action: str, next_owner: str) -> dict[str, str]:

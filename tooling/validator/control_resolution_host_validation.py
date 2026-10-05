@@ -20,10 +20,14 @@ import adaptive_control_resolver  # noqa: E402
 from control_owner_effect_receipt import build_owner_effect_receipt  # noqa: E402
 from control_owner_routing import _consolidation_fixture  # noqa: E402
 from control_resolution_host import (  # noqa: E402
+    A7_PREPUBLICATION_BASIS_SCHEMA,
     BoundControlResolutionHost,
+    BoundPmDispositionPublisher,
     BoundRuntimeCapabilityResolver,
     CompositeOwnerPersistenceVerifier,
     ControlResolutionHostError,
+    PM_DISPOSITION_REQUEST_SCHEMA,
+    PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
     PM_AUTHORIZED_COMMAND_STATE_SCHEMA,
     PM_FIXED_POINT_STOP_REASONS,
     consume_pm_authorized_command,
@@ -189,6 +193,345 @@ def _runtime(enabled: set[str] | None = None) -> tuple[
     )
     composite = CompositeOwnerPersistenceVerifier(verifiers=verifiers)
     return capability, composite, executors, order
+
+
+
+def pm_prepublication_regressions() -> list[dict[str, str]]:
+    """Issue #41 local fixtures; no PM Sheet/provider effect."""
+
+    tests: list[dict[str, str]] = []
+
+    def check(name: str, condition: bool) -> None:
+        tests.append({"name": "A7-ISSUE41-" + name, "result": "PASS" if condition else "FAIL"})
+
+    def rejects(fn, token: str) -> bool:
+        try:
+            fn()
+        except ControlResolutionHostError as exc:
+            return token in str(exc)
+        return False
+
+    def basis(
+        *,
+        relation: str = "SAME_AS_LAST_PROVEN_WAY_HOME",
+        necessity: str = "ASSUMED",
+        acute: bool = False,
+        owner_revision: int = 11,
+        publication_revision: int = 40,
+    ) -> dict[str, Any]:
+        blocker = {
+            "necessity": necessity,
+            "blocker_ref": "BLOCKER-OBSERVED-1" if necessity == "OBSERVED_REQUIRED" else None,
+            "readback_verified": necessity == "OBSERVED_REQUIRED",
+        }
+        return {
+            "schema": A7_PREPUBLICATION_BASIS_SCHEMA,
+            "disposition_ref": "PM-DISPOSITION-41",
+            "referent_ref": "C1107",
+            "referent_revision": 9,
+            "referent_status": "ACTIVE",
+            "currentness": "CURRENT",
+            "readback_verified": True,
+            "revoked": False,
+            "owner_ref": "A7-OWNER",
+            "owner_revision": owner_revision,
+            "basis_ref": "A7-BASIS-41",
+            "basis_fingerprint": "a" * 64,
+            "readback_ref": "A7-BASIS-RB-41",
+            "publication_revision": publication_revision,
+            "scope_ref": "C1107-SCOPE",
+            "basis_relation": relation,
+            "relevant_a7_cases": [
+                {
+                    "case_ref": "A7-P22-PM-FLOW-STOP-008",
+                    "revision": 8,
+                    "currentness": "CURRENT",
+                    "readback_verified": True,
+                    "revoked": False,
+                    "lesson_basis_ref": "A7-008-BASIS",
+                },
+                {
+                    "case_ref": "A7-P22-NATS-CLIENT-HOST-MISMATCH-009",
+                    "revision": 9,
+                    "currentness": "CURRENT",
+                    "readback_verified": True,
+                    "revoked": False,
+                    "lesson_basis_ref": "A7-009-BASIS",
+                },
+            ],
+            "last_proven_way_home": {
+                "way_home_ref": "EDGE-P4-S0-S1-NSC-CEREBRO",
+                "revision": 4,
+                "readback_verified": True,
+            },
+            "blocker": blocker,
+            "smallest_lawful_reentry": {
+                "owner_ref": "X3_SIGNALVEV",
+                "reentry_ref": "CHECK_CURRENT_ACL_SUBSCRIBERS_CREDS",
+            },
+            "parallel_lanes": [
+                {
+                    "lane_ref": "X3-C1111-SIGNALVEV",
+                    "currentness": "CURRENT",
+                    "readback_verified": True,
+                    "independent": True,
+                },
+                {
+                    "lane_ref": "X4-C1109-QG",
+                    "currentness": "CURRENT",
+                    "readback_verified": True,
+                    "independent": True,
+                },
+            ],
+            "safety": {
+                "acute": acute,
+                "evidence_ref": "SAFETY-EVIDENCE-1" if acute else None,
+                "scope_ref": "C1107-SCOPE" if acute else None,
+                "readback_verified": acute,
+            },
+        }
+
+    class BasisReader:
+        def __init__(self, rows: list[dict[str, Any]]):
+            self.rows = [copy.deepcopy(row) for row in rows]
+            self.calls = 0
+
+        def read_prepublication_basis(
+            self,
+            *,
+            disposition_ref: str,
+            expected_referent_ref: str,
+            expected_referent_revision: int,
+        ) -> dict[str, Any]:
+            index = min(self.calls, len(self.rows) - 1)
+            row = copy.deepcopy(self.rows[index])
+            self.calls += 1
+            return row
+
+    class Publisher:
+        def __init__(self, *, mode: str = "PASS"):
+            self.mode = mode
+            self.calls: list[dict[str, Any]] = []
+
+        def publish_and_readback(self, *, publication: dict[str, Any]) -> dict[str, Any]:
+            self.calls.append(copy.deepcopy(publication))
+            if self.mode == "RAISE":
+                raise RuntimeError("fixture-publisher-outcome-unknown")
+            published_revision = publication["previous_revision"] + 1
+            if self.mode == "BAD_REVISION":
+                published_revision += 1
+            return {
+                "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                "result": "COMMITTED",
+                "decision_ref": publication["decision_ref"],
+                "decision_fingerprint": publication["decision_fingerprint"],
+                "publication_fingerprint": publication["publication_fingerprint"],
+                "referent_ref": publication["referent_ref"],
+                "referent_revision": publication["referent_revision"],
+                "scope_ref": publication["scope_ref"],
+                "effective_disposition": publication["effective_disposition"],
+                "previous_revision": publication["previous_revision"],
+                "published_revision": published_revision,
+                "preserve_lane_refs": copy.deepcopy(publication["preserve_lane_refs"]),
+                "readback_verified": True,
+                "provider_revision": 501,
+                "receipt_ref": "FIXTURE-PM-PUBLICATION-RB-501",
+            }
+
+    def proposal(
+        *,
+        requested: str = "HOLD",
+        scope: str = "C1107-SCOPE",
+    ) -> dict[str, Any]:
+        return {
+            "schema": PM_DISPOSITION_REQUEST_SCHEMA,
+            "disposition_ref": "PM-DISPOSITION-41",
+            "requested_disposition": requested,
+            "expected_referent_ref": "C1107",
+            "expected_referent_revision": 9,
+            "requested_scope_ref": scope,
+        }
+
+    missing = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([basis()]),
+        publisher_port=None,
+        enabled=True,
+    ).publish(proposal())
+    check(
+        "missing-live-publisher-is-exact-typed-cut",
+        missing["result"] == "BLOCK_EXACT_PUBLISHER_PORT"
+        and missing["published"] is False
+        and missing["live_effect"] is False
+        and missing["first_unproven_live_edge"]
+            == "PM_PRINCIPAL_CHANNEL_GUARDED_PUBLISH_AND_READBACK_PORT_UNBOUND",
+    )
+    check(
+        "same-basis-false-stop-corrected-before-publication",
+        missing["decision_receipt"]["decision"] == "CORRECT_FALSE_SAME_BASIS_STOP"
+        and missing["decision_receipt"]["effective_disposition"] == "CONTINUE_REENTRY",
+    )
+
+    false_publisher = Publisher()
+    false_result = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([basis(), basis()]),
+        publisher_port=false_publisher,
+        enabled=True,
+    ).publish(proposal())
+    check(
+        "fixture-publication-cannot-persist-false-hold",
+        false_result["result"] == "PASS_GUARDED_PUBLICATION_READBACK"
+        and false_result["publisher_receipt"]["effective_disposition"] == "CONTINUE_REENTRY"
+        and false_publisher.calls[0]["publication_kind"] == "A7_CORRECTION",
+    )
+    check(
+        "independent-lanes-preserved-on-correction",
+        false_result["publisher_receipt"]["preserve_lane_refs"]
+        == ["X3-C1111-SIGNALVEV", "X4-C1109-QG"],
+    )
+
+    safety_pub = Publisher()
+    safety_result = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([basis(acute=True), basis(acute=True)]),
+        publisher_port=safety_pub,
+        enabled=True,
+    ).publish(proposal())
+    check(
+        "acute-scoped-safety-stop-remains-available-with-reentry",
+        safety_result["result"] == "PASS_GUARDED_PUBLICATION_READBACK"
+        and safety_result["decision_receipt"]["decision"] == "ALLOW_SCOPED_SAFETY_STOP"
+        and safety_result["decision_receipt"]["safety_effect_may_precede_publication"] is True
+        and safety_result["decision_receipt"]["reentry_required"] is True
+        and safety_result["publisher_receipt"]["effective_disposition"] == "HOLD",
+    )
+    check(
+        "safety-stop-preserves-independent-lanes",
+        safety_result["publisher_receipt"]["preserve_lane_refs"]
+        == ["X3-C1111-SIGNALVEV", "X4-C1109-QG"],
+    )
+
+    observed_pub = Publisher()
+    observed_result = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([
+            basis(relation="CHANGED", necessity="OBSERVED_REQUIRED"),
+            basis(relation="CHANGED", necessity="OBSERVED_REQUIRED"),
+        ]),
+        publisher_port=observed_pub,
+        enabled=True,
+    ).publish(proposal(requested="BLOCK"))
+    check(
+        "observed-required-scoped-flow-reduction-can-publish",
+        observed_result["result"] == "PASS_GUARDED_PUBLICATION_READBACK"
+        and observed_result["decision_receipt"]["decision"] == "ALLOW_SCOPED_FLOW_REDUCTION"
+        and observed_result["publisher_receipt"]["effective_disposition"] == "BLOCK",
+    )
+
+    global_pub = Publisher()
+    global_result = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([basis(), basis()]),
+        publisher_port=global_pub,
+        enabled=True,
+    ).publish(proposal(requested="LOCAL_TO_GLOBAL_STOP", scope="GLOBAL"))
+    check(
+        "local-to-global-stop-corrected-and-independent-fronts-continue",
+        global_result["decision_receipt"]["decision"]
+            == "CORRECT_GLOBAL_STOP_PRESERVE_INDEPENDENT_LANES"
+        and global_result["publisher_receipt"]["effective_disposition"] == "CONTINUE_REENTRY"
+        and global_result["publisher_receipt"]["preserve_lane_refs"]
+            == ["X3-C1111-SIGNALVEV", "X4-C1109-QG"],
+    )
+
+    changed = basis()
+    changed["owner_revision"] = 12
+    changed["basis_fingerprint"] = "b" * 64
+    stale_pub = Publisher()
+    stale = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([basis(), changed]),
+        publisher_port=stale_pub,
+        enabled=True,
+    ).publish(proposal())
+    check(
+        "basis-change-between-decision-and-publication-holds-zero-publish",
+        stale["result"] == "HOLD_STALE_PREPUBLICATION_BASIS"
+        and stale_pub.calls == [],
+    )
+
+    forged_owner = basis()
+    forged_owner["readback_verified"] = False
+    check(
+        "forged-or-unverified-owner-basis-rejected",
+        rejects(
+            lambda: BoundPmDispositionPublisher(
+                basis_reader=BasisReader([forged_owner]),
+                enabled=True,
+            ).evaluate(proposal()),
+            "owner-basis-not-current",
+        ),
+    )
+
+    stale_lesson = basis()
+    stale_lesson["relevant_a7_cases"][0]["currentness"] = "STALE"
+    check(
+        "stale-A7-lesson-rejected",
+        rejects(
+            lambda: BoundPmDispositionPublisher(
+                basis_reader=BasisReader([stale_lesson]),
+                enabled=True,
+            ).evaluate(proposal()),
+            "case-currentness-invalid",
+        ),
+    )
+
+    bypass = proposal()
+    bypass["prepublication_basis"] = basis()
+    check(
+        "caller-prose-or-self-supplied-proof-cannot-bypass-guard",
+        rejects(
+            lambda: BoundPmDispositionPublisher(
+                basis_reader=BasisReader([basis()]),
+                enabled=True,
+            ).evaluate(bypass),
+            "caller-prepublication-evidence-prohibited",
+        ),
+    )
+
+    bad_revision = Publisher(mode="BAD_REVISION")
+    check(
+        "publisher-receipt-must-bind-next-publication-revision",
+        rejects(
+            lambda: BoundPmDispositionPublisher(
+                basis_reader=BasisReader([basis(), basis()]),
+                publisher_port=bad_revision,
+                enabled=True,
+            ).publish(proposal()),
+            "publication-revision-mismatch",
+        ),
+    )
+
+    unknown_pub = Publisher(mode="RAISE")
+    unknown = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([basis(), basis()]),
+        publisher_port=unknown_pub,
+        enabled=True,
+    ).publish(proposal())
+    check(
+        "publisher-outcome-unknown-is-no-blind-retry",
+        unknown["result"] == "PUBLICATION_OUTCOME_UNKNOWN"
+        and unknown["published"] == "UNKNOWN"
+        and unknown["retry_allowed"] is False,
+    )
+
+    check(
+        "default-off-guard-cannot-run",
+        rejects(
+            lambda: BoundPmDispositionPublisher(
+                basis_reader=BasisReader([basis()]),
+                enabled=False,
+            ).evaluate(proposal()),
+            "default-off",
+        ),
+    )
+
+    return tests
 
 
 def selftest() -> dict[str, Any]:
@@ -911,6 +1254,7 @@ def selftest() -> dict[str, Any]:
         persisted_pulse_readback(),
     )
 
+    tests.extend(pm_prepublication_regressions())
     tests.extend(human_t3_regressions())
     result = "PASS" if all(item["result"] == "PASS" for item in tests) else "FAIL"
     return {
