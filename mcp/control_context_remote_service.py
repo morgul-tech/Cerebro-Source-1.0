@@ -382,6 +382,7 @@ class ControlContextRemoteMcpService:
         readiness_probe: Callable[[], bool],
         clock: Callable[[], float] = time.time,
         project_commissioning_bridge: Any | None = None,
+        package_build_verifier: Any | None = None,
     ) -> None:
         _require(callable(getattr(tools, "dispatch", None)), "control-context-tools-required")
         _require(callable(readiness_probe), "readiness-probe-required")
@@ -389,6 +390,7 @@ class ControlContextRemoteMcpService:
         self._tools = tools
         self._readiness_probe = readiness_probe
         self._project_commissioning_bridge = project_commissioning_bridge
+        self._package_build_verifier = package_build_verifier
         self._authenticator = OAuthBearerAuthenticator(
             config=config,
             token_verifier=token_verifier,
@@ -512,6 +514,13 @@ class ControlContextRemoteMcpService:
         if isinstance(args, dict) and "session_handle" in args:
             return bridge.resume(identity=identity, args=args)
         return bridge.start(identity=identity, args=args)
+
+    def verify_run_only_package_build(self, *, args: dict[str, Any], headers: Mapping[str, Any]) -> dict[str, Any]:
+        """Read-only server-owned route; absent owner reader means disabled."""
+        if self._package_build_verifier is None:
+            raise ControlContextToolError("package-build-owner-grant-reader-unbound")
+        identity = self._authenticator.authenticate(headers, required_scope="package_build:verify")
+        return self._package_build_verifier.verify(identity, args)
 
     def readiness(self) -> dict[str, Any]:
         ready = False

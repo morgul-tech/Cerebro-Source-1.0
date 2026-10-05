@@ -461,6 +461,19 @@ def create_streamable_http_app(
             headers={"Cache-Control": "no-store"},
         )
 
+    async def package_build_verify(request: Any) -> Any:
+        try:
+            raw = bytearray()
+            async for chunk in request.stream():
+                raw.extend(chunk)
+                if len(raw) > 65536:
+                    return JSONResponse({"result": "HOLD", "reason": "request-too-large"}, status_code=413)
+            value = service.verify_run_only_package_build(args=json.loads(raw), headers=request.headers)
+            return JSONResponse(value, headers={"Cache-Control": "no-store"})
+        except Exception:
+            return JSONResponse({"result": "HOLD", "reason": "package-build-verification-refused"},
+                                status_code=403, headers={"Cache-Control": "no-store"})
+
     app = server.streamable_http_app(
         streamable_http_path=MCP_PATH,
         json_response=True,
@@ -474,6 +487,7 @@ def create_streamable_http_app(
         custom_starlette_routes=[
             Route(PROTECTED_RESOURCE_PATH, protected_resource_metadata, methods=["GET"]),
             Route(HEALTH_PATH, health, methods=["GET"]),
+            Route("/control/package-build/verify", package_build_verify, methods=["POST"]),
         ],
         debug=debug,
     )
