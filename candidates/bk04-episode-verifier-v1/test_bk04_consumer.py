@@ -2,6 +2,10 @@
 import hashlib
 import json
 import unittest
+import copy
+import io
+import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import bk04_verify as v
@@ -81,6 +85,124 @@ class ConsumerDelta(unittest.TestCase):
             gate.assert_called_once_with(raw)
         with self.assertRaises(v.InputError):
             v.load_consumer_input(b"{}")
+
+
+def owner_fixture(revision="1.0", row=100):
+    def ref(n):
+        return {"sheet": "PM_PRINCIPAL_CHANNEL", "row": n,
+                "message_id": "SYNTHETIC-%s" % n, "record_sha256": "%064x" % n}
+    cut = ref(row)
+    records = []
+    for i, active in enumerate((True, False)):
+        records.append({"task_id": "P%d" % (10+i), "claim_id": "C%d" % (20+i),
+            "actor": "SYNTHETIC-X%d" % i, "original_sha256": "%064x" % (30+i), "original_bytes": 10,
+            "original_source": ref(row-10), "actor_start": ref(row-9+i),
+            "terminal": None if active else ref(row-5), "admission": None if active else ref(row-4),
+            "owner_corroboration": cut,
+            "record_status": "ACTIVE_SAME_CLAIM_SAME_ORIGINAL" if active else "READ_COMPLETE_ADMITTED_NO_EFFECT",
+            "typed_carry": {"kind": "CONTINUE_SAME_TASK_PENDING_OAUTH_AND_X1_TERMINAL" if active else "SEPARATE_PROVIDER_ACTION_PENDING",
+                "causal_equality": "SAME_CLAIM_TASK_AND_ORIGINAL_HASH_CORROBORATED_BY_OWNER" if active else "READ_RECEIPT_IS_NOT_PROVIDER_EXECUTION",
+                "provider_effect": "UNKNOWN", "publication_status": "NOT_EXECUTED_AT_OWNER_CUT",
+                "global_publication_completeness": "UNKNOWN",
+                "provider_action_source": ref(row-3) if active else {"sheet": "PM_PRINCIPAL_CHANNEL",
+                    "message_id": "SYNTHETIC-ACTION", "corroborated_at": cut}}})
+    return {"schema": "x2-owner-carry-basis-v1", "artifact_id": "SYNTHETIC-"+revision,
+            "revision": revision, "owner_source_cut": cut, "integration_source": ref(row+1),
+            "closed_prior_basis": {"immutable_sha256": "f"*64}, "records": records,
+            "coverage": {"semantic_source_approval": "NOT_GRANTED", "complete_for_global_publication_scope": "UNKNOWN"}}
+
+
+def owner_binding(doc):
+    raw = json.dumps(doc).encode()
+    return raw, {"schema": "bk04-owner-input-binding-v1",
+        "publication_ref": {**doc["integration_source"], "row": doc["integration_source"]["row"]+1},
+        "source": {"file_id": "SYNTHETIC", "provider_revision": "SYNTHETIC-"+doc["revision"]},
+        "expected": {"schema": doc["schema"], "artifact_id": doc["artifact_id"], "revision": doc["revision"],
+                     "raw_sha256": hashlib.sha256(raw).hexdigest(), "raw_bytes": len(raw)},
+        "currentness": {k: doc[k] for k in ("owner_source_cut", "integration_source")},
+        "provenance": v.owner_projection(doc)}
+
+
+class NormalOwnerContract(unittest.TestCase):
+    def test_two_successive_snapshots_same_contract_no_digest_code_change(self):
+        digests = []
+        for doc in (owner_fixture(), owner_fixture("2.0", 200)):
+            raw, binding = owner_binding(doc)
+            parsed, digest = v.load_consumer_input(raw, binding)
+            result = v.classify_document(parsed, digest)
+            digests.append(digest)
+            self.assertEqual(result["input_acceptance"], "HASH_BOUND_OWNER_FACTS")
+            self.assertEqual(result["structural_overall_status"], "PASS")
+            self.assertEqual(result["overall_status"], "UNKNOWN")
+            self.assertEqual(result["authority"], "NONE")
+            self.assertTrue(all(r["provider_action_status"] == "OPEN" for r in result["records"]))
+            self.assertIsNone(result["records"][0]["terminal"])
+            self.assertNotIn("episodes", result)
+        self.assertNotEqual(*digests)
+
+    def test_wrong_bytes_rejected_before_parse(self):
+        raw, binding = owner_binding(owner_fixture())
+        with patch.object(v.json, "loads", side_effect=AssertionError("must not parse")):
+            with self.assertRaises(v.InputError) as caught:
+                v.load_consumer_input(raw+b" ", binding)
+        self.assertEqual(caught.exception.code, "DIGEST_MISMATCH")
+
+    def test_wrong_revision_original_or_provenance_rejected(self):
+        raw, binding = owner_binding(owner_fixture())
+        for key in ("revision", "original", "carry", "cut"):
+            b = copy.deepcopy(binding)
+            if key == "revision": b["expected"]["revision"] = "STALE"
+            elif key == "original": b["provenance"]["records"][0]["original_sha256"] = "a"*64
+            elif key == "carry": b["provenance"]["records"][0]["typed_carry"]["kind"] = "CLOSED"
+            else: b["currentness"]["owner_source_cut"]["row"] += 1
+            with self.subTest(key=key), self.assertRaises(v.InputError):
+                v.load_consumer_input(raw, b)
+
+    def test_invalid_facts_even_matching_hash_cannot_close_pending(self):
+        for change in ("terminal", "order", "action", "effect", "original", "duplicate", "approval"):
+            doc = owner_fixture()
+            if change == "terminal": doc["records"][0]["terminal"] = doc["owner_source_cut"]
+            elif change == "order": doc["records"][1]["admission"] = doc["records"][1]["actor_start"]
+            elif change == "action": doc["records"][0]["typed_carry"]["provider_action_source"]["row"] = 999
+            elif change == "effect": doc["records"][0]["typed_carry"]["provider_effect"] = "PASS"
+            elif change == "original": doc["records"][0]["original_bytes"] = True
+            elif change == "duplicate": doc["records"][1]["claim_id"] = doc["records"][0]["claim_id"]
+            else: doc["coverage"]["semantic_source_approval"] = "APPROVED"
+            raw, binding = owner_binding(doc)
+            with self.subTest(change=change), self.assertRaises(v.InputError):
+                v.load_consumer_input(raw, binding)
+
+    def test_parsed_or_binding_mutation_loses_acceptance(self):
+        for target in ("document", "binding"):
+            raw, binding = owner_binding(owner_fixture())
+            doc, digest = v.load_consumer_input(raw, binding)
+            if target == "document": doc["owner_approved"] = True
+            else: doc.binding["source"]["provider_revision"] = "FAKE"
+            result = v.classify_document(doc, digest)
+            self.assertEqual(result["input_acceptance"], "UNQUALIFIED_INPUT")
+            self.assertEqual(result["overall_status"], "UNKNOWN")
+
+    def test_plain_document_hash_and_approval_flags_do_not_bind(self):
+        doc = owner_fixture(); doc.update(owner_approved=True, authority="PM")
+        raw, binding = owner_binding(doc)
+        self.assertEqual(v.classify_document(doc, binding["expected"]["raw_sha256"])["input_acceptance"], "UNQUALIFIED_INPUT")
+        parsed, sha = v.load_consumer_input(raw, {**binding, "owner_approved": True})
+        result = v.classify_document(parsed, sha)
+        self.assertEqual(result["authority"], "NONE")
+        self.assertEqual(result["overall_status"], "UNKNOWN")
+        with self.assertRaises(v.InputError): v.load_consumer_input(b"{}", binding)
+
+    def test_generic_cli_binding_and_duplicate_keys(self):
+        raw, binding = owner_binding(owner_fixture())
+        with tempfile.TemporaryDirectory() as folder:
+            p = Path(folder); (p/"input.json").write_bytes(raw)
+            (p/"binding.json").write_text(json.dumps(binding), encoding="utf-8")
+            out, err = io.BytesIO(), io.BytesIO()
+            self.assertEqual(v.main(["--binding", str(p/"binding.json"), str(p/"input.json")], out, err), 0)
+            self.assertEqual(json.loads(out.getvalue())["overall_status"], "UNKNOWN")
+        bad = raw[:-1]+b',"revision":"duplicate"}'
+        binding["expected"].update(raw_sha256=hashlib.sha256(bad).hexdigest(), raw_bytes=len(bad))
+        with self.assertRaises(v.InputError): v.load_consumer_input(bad, binding)
 
 
 if __name__ == "__main__":

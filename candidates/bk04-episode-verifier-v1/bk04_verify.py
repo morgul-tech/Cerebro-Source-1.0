@@ -2,8 +2,9 @@
 """BK04-CLAUDE-V1 -- offline, read-only classifier for bounded historical PM episode evidence.
 
 Usage:  python3 bk04_verify.py PATH_TO_PINNED_SNAPSHOT.json
+        python3 bk04_verify.py --binding OWNER_PUBLICATION_BINDING.json OWNER_FACTS.json
 
-Reads exactly one local file (raw bytes), verifies its SHA-256 BEFORE parsing (fail closed), and writes one
+Reads local input (and optional explicit publication binding), verifies input SHA-256 BEFORE parsing, and writes one
 UTF-8 JSON object ``bk04-result-v1`` to stdout.  Standard library only.  No network, no filesystem write
 (only stdout/stderr), no process spawning, no ambient process state.
 
@@ -11,7 +12,8 @@ Exit codes: 0 valid classification (PASS/CONFLICT/UNKNOWN alike) | 2 malformed i
 usage error (machine-readable JSON on stderr) | 3 unexpected tool failure (machine-readable JSON on stderr).
 
 This is a diagnostic prototype.  It decides no PM authority, changes no Cerebro state and claims no production
-readiness.  ``case_id`` is a label and never a branch key; the snapshot's review-oracle prose (expected outcomes,
+readiness. Normal fact inputs retain pending actions and UNKNOWN qualification; bindings prove integrity only.
+``case_id`` is a label and never a branch key; the snapshot's review-oracle prose (expected outcomes,
 the common negative-case text), the referent text and other descriptive prose are never read as input.
 """
 import hashlib
@@ -102,12 +104,14 @@ class _HashBoundDocument(dict):
         self.parsed_bytes = json.dumps(doc, sort_keys=True, ensure_ascii=False)
 
 
-def load_consumer_input(raw):
+def load_consumer_input(raw, binding=None):
     """CLI pins: historical rev2 or PM-designated current rev3. No caller digest flag.
 
     Acceptance proves byte identity only. The X2 rev3 draft is not owner-approved;
     typed structural consistency and qualified usability are separate below.
     """
+    if binding is not None:
+        return load_owner_input(raw, binding)
     digest = hashlib.sha256(raw).hexdigest()
     if digest == REV3_INPUT_SHA256:
         doc, digest = load_verified(raw, REV3_INPUT_SHA256, len(raw))
@@ -115,6 +119,170 @@ def load_consumer_input(raw):
             raise InputError("REVISION_MISMATCH", "designated rev3 input must declare revision 3.0")
         return _HashBoundDocument(doc, digest), digest
     return load_verified(raw)
+
+
+# Normal owner input: the separately supplied publication binding is an integrity
+# expectation, never an authentication, approval or live currentness oracle.
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_OWNER_SCHEMA = "x2-owner-carry-basis-v1"
+_RECORD_KEYS = ("task_id", "claim_id", "actor", "original_sha256", "original_bytes",
+                "original_source", "actor_start", "terminal", "admission",
+                "owner_corroboration", "record_status", "typed_carry")
+
+
+def _require(condition, message):
+    if not condition:
+        raise InputError("OWNER_BINDING_MISMATCH", message)
+
+
+def _sha(value):
+    return isinstance(value, str) and _HEX64.fullmatch(value) is not None
+
+
+def _positive(value):
+    return type(value) is int and value > 0
+
+
+def _source_ref(ref):
+    _require(isinstance(ref, dict) and ref.get("sheet") == "PM_PRINCIPAL_CHANNEL"
+             and _positive(ref.get("row")) and _text(ref.get("message_id"))
+             and _sha(ref.get("record_sha256")), "invalid typed source reference")
+    return ref["row"]
+
+
+def owner_projection(doc):
+    """Only actual typed facts are adapted; descriptive prose never grants proof."""
+    _require(isinstance(doc, dict), "owner input must be an object")
+    records = doc.get("records")
+    _require(isinstance(records, list) and bool(records), "nonempty records required")
+    _require(all(isinstance(r, dict) and all(k in r for k in _RECORD_KEYS)
+                 for r in records), "incomplete typed record")
+    prior = doc.get("closed_prior_basis")
+    _require(isinstance(prior, dict) and _sha(prior.get("immutable_sha256")),
+             "immutable prior basis required")
+    return {"owner_source_cut": doc.get("owner_source_cut"),
+            "integration_source": doc.get("integration_source"),
+            "prior_basis_sha256": prior["immutable_sha256"],
+            "records": [{k: r[k] for k in _RECORD_KEYS} for r in records]}
+
+
+def _validate_owner_facts(doc):
+    projection = owner_projection(doc)
+    cut = _source_ref(projection["owner_source_cut"])
+    _require(_source_ref(projection["integration_source"]) >= cut,
+             "integration reference precedes owner cut")
+    seen_tasks, seen_claims = set(), set()
+    for record in projection["records"]:
+        task, claim = record["task_id"], record["claim_id"]
+        _require(_task(task) and isinstance(claim, str) and re.fullmatch(r"C[0-9]+", claim)
+                 and _text(record["actor"]) and _sha(record["original_sha256"])
+                 and _positive(record["original_bytes"]), "invalid original identity")
+        _require(task not in seen_tasks and claim not in seen_claims, "duplicate task or claim")
+        seen_tasks.add(task); seen_claims.add(claim)
+        original = _source_ref(record["original_source"])
+        start = _source_ref(record["actor_start"])
+        _require(original < start <= cut and record["owner_corroboration"] == projection["owner_source_cut"],
+                 "original/start/corroboration inconsistent with owner cut")
+        carry = record["typed_carry"]
+        _require(isinstance(carry, dict) and carry.get("provider_effect") == UNKNOWN
+                 and carry.get("publication_status") == "NOT_EXECUTED_AT_OWNER_CUT"
+                 and carry.get("global_publication_completeness") == UNKNOWN,
+                 "unsupported provider effect/publication assertion")
+        if record["record_status"] == "ACTIVE_SAME_CLAIM_SAME_ORIGINAL":
+            _require(record["terminal"] is None and record["admission"] is None
+                     and carry.get("kind") == "CONTINUE_SAME_TASK_PENDING_OAUTH_AND_X1_TERMINAL"
+                     and carry.get("causal_equality") == "SAME_CLAIM_TASK_AND_ORIGINAL_HASH_CORROBORATED_BY_OWNER",
+                     "active carry cannot close or change original claim")
+        elif record["record_status"] == "READ_COMPLETE_ADMITTED_NO_EFFECT":
+            terminal, admission = _source_ref(record["terminal"]), _source_ref(record["admission"])
+            _require(start < terminal < admission <= cut
+                     and carry.get("kind") == "SEPARATE_PROVIDER_ACTION_PENDING"
+                     and carry.get("causal_equality") == "READ_RECEIPT_IS_NOT_PROVIDER_EXECUTION",
+                     "read receipt order/carry inconsistent")
+        else:
+            raise InputError("OWNER_BINDING_MISMATCH", "unsupported record status")
+        action = carry.get("provider_action_source")
+        _require(isinstance(action, dict), "provider action reference required")
+        if "corroborated_at" in action:
+            _require(action.get("sheet") == "PM_PRINCIPAL_CHANNEL"
+                     and _text(action.get("message_id"))
+                     and action["corroborated_at"] == projection["owner_source_cut"]
+                     and "row" not in action and "record_sha256" not in action,
+                     "corroborated action must retain its unresolved exact row/hash")
+        else:
+            _require(_source_ref(action) <= cut, "provider action after owner cut")
+    coverage = doc.get("coverage")
+    _require(isinstance(coverage, dict)
+             and coverage.get("semantic_source_approval") == "NOT_GRANTED"
+             and coverage.get("complete_for_global_publication_scope") == UNKNOWN,
+             "coverage cannot promote semantic approval or global completeness")
+    return projection
+
+
+class _OwnerBoundDocument(_HashBoundDocument):
+    def __init__(self, doc, digest, binding):
+        super().__init__(doc, digest)
+        # Detach from caller mutation. No capability/authority is derived here.
+        self.binding = json.loads(json.dumps(binding))
+        self.binding_bytes = json.dumps(self.binding, sort_keys=True, ensure_ascii=False)
+
+
+def load_owner_input(raw, binding):
+    """Verify external expectations before parsing input; qualify nothing.
+
+    Binding schema bk04-owner-input-binding-v1: publication_ref (typed PM ref),
+    source {file_id, provider_revision}, expected {schema, artifact_id, revision,
+    raw_sha256, raw_bytes}, currentness {owner_source_cut, integration_source},
+    provenance (owner_projection). The designated publication supplies these
+    expectations. Matching them does not authenticate that publication or prove
+    the provider revision remains latest; the owner must fresh-read it externally.
+    """
+    _require(isinstance(binding, dict) and binding.get("schema") == "bk04-owner-input-binding-v1",
+             "explicit typed owner publication binding required")
+    _source_ref(binding.get("publication_ref"))
+    source, expected = binding.get("source"), binding.get("expected")
+    _require(isinstance(source, dict) and _text(source.get("file_id"))
+             and _text(source.get("provider_revision")), "provider file/revision identity required")
+    _require(isinstance(expected, dict) and expected.get("schema") == _OWNER_SCHEMA
+             and _text(expected.get("artifact_id")) and _text(expected.get("revision"))
+             and _sha(expected.get("raw_sha256")) and _positive(expected.get("raw_bytes")),
+             "typed raw identity expectation required")
+    current, provenance = binding.get("currentness"), binding.get("provenance")
+    _require(isinstance(current, dict) and isinstance(provenance, dict)
+             and current.get("owner_source_cut") == provenance.get("owner_source_cut")
+             and current.get("integration_source") == provenance.get("integration_source"),
+             "binding currentness/provenance correlation required")
+    _require(_source_ref(current.get("owner_source_cut")) <= _source_ref(current.get("integration_source"))
+             <= _source_ref(binding["publication_ref"]), "binding publication/cut order invalid")
+    doc, digest = load_verified(raw, expected["raw_sha256"], expected["raw_bytes"])
+    _require(isinstance(doc, dict) and all(doc.get(k) == expected[k]
+             for k in ("schema", "artifact_id", "revision")), "input revision/artifact/schema mismatch")
+    _require(_validate_owner_facts(doc) == provenance, "immutable original/carry/provenance mismatch")
+    return _OwnerBoundDocument(doc, digest, binding), digest
+
+
+def _classify_owner_document(doc, digest):
+    _require(_text(doc.get("artifact_id")) and _text(doc.get("revision")), "owner artifact/revision required")
+    projection = _validate_owner_facts(doc)
+    bound = (type(doc) is _OwnerBoundDocument and doc.digest == digest
+             and doc.parsed_bytes == json.dumps(doc, sort_keys=True, ensure_ascii=False)
+             and doc.binding_bytes == json.dumps(doc.binding, sort_keys=True, ensure_ascii=False)
+             and projection == doc.binding["provenance"])
+    # No episode is synthesized from a fact projection; an admitted read is not
+    # the completion of its separately pending provider action.
+    return {"schema_version": SCHEMA_VERSION, "work_order_id": WORK_ORDER_ID,
+            "input_snapshot_id": doc["artifact_id"], "input_revision": doc["revision"],
+            "input_sha256": digest, "input_acceptance": "HASH_BOUND_OWNER_FACTS" if bound else "UNQUALIFIED_INPUT",
+            "structural_overall_status": PASS if bound else UNKNOWN,
+            "overall_status": UNKNOWN, "qualification": "OWNER_BASIS_NOT_QUALIFIED", "authority": "NONE",
+            "binding_trust": "INTEGRITY_ONLY_NOT_AUTHENTICATED",
+            "currentness": "BOUND_SOURCE_CUT_ONLY_PROVIDER_LATEST_NOT_VERIFIED",
+            "source_binding": doc.binding["source"] if bound else None,
+            "publication_ref": doc.binding["publication_ref"] if bound else None,
+            "records": [{**record, "structural_status": PASS if bound else UNKNOWN,
+                         "status": UNKNOWN, "provider_action_status": "OPEN",
+                         "publication_completeness": UNKNOWN}
+                        for record in projection["records"]]}
 
 
 def _rev3_completeness(case, result):
@@ -608,6 +776,8 @@ def classify_document(doc, input_sha256):
     """Classify an already digest-verified (or test-supplied) document.  Pure function; raises InputError."""
     if not isinstance(doc, dict):
         raise InputError("MALFORMED_INPUT", "top-level JSON value is not an object")
+    if doc.get("schema") == _OWNER_SCHEMA:
+        return _classify_owner_document(doc, input_sha256)
     meta = {}
     for key in ("snapshot_id", "revision", "source_cut"):
         if _text(doc.get(key)) is None:
@@ -676,14 +846,24 @@ def main(argv=None, stdout=None, stderr=None):
     out = stdout if stdout is not None else sys.stdout.buffer
     err = stderr if stderr is not None else sys.stderr.buffer
     try:
+        binding = None
+        if len(argv) == 3 and argv[0] == "--binding":
+            try:
+                with open(argv[1], "rb") as fh:
+                    binding_raw = fh.read()
+            except OSError as exc:
+                raise InputError("INPUT_UNREADABLE", "cannot read binding: %s" % exc)
+            # Parsing an external expectation does not authenticate it.
+            binding, _ = load_verified(binding_raw, hashlib.sha256(binding_raw).hexdigest(), len(binding_raw))
+            argv = [argv[2]]
         if len(argv) != 1:
-            raise InputError("USAGE", "expected exactly one positional argument: pinned rev2 or current rev3 snapshot JSON")
+            raise InputError("USAGE", "expected snapshot.json or --binding owner-binding.json owner-facts.json")
         try:
             with open(argv[0], "rb") as fh:
                 raw = fh.read()
         except OSError as exc:
             raise InputError("INPUT_UNREADABLE", "cannot read %r: %s" % (argv[0], exc.strerror or exc))
-        doc, digest = load_consumer_input(raw)
+        doc, digest = load_consumer_input(raw, binding) if binding is not None else load_consumer_input(raw)
         result = classify_document(doc, digest)
         payload = (json.dumps(result, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     except InputError as exc:
