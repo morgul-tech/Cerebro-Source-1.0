@@ -1,0 +1,31 @@
+{
+  "event_id": "example-evt-0001",
+  "owner_ref": "owner:example-synthetic",
+  "source_ref": "src:example-doc",
+  "referent": {
+    "type": "doc",
+    "id": "example-doc"
+  },
+  "owner_seq": 5,
+  "revision_basis": {
+    "before": "rev-4",
+    "after": "rev-5"
+  },
+  "change_class": "MECHANICAL",
+  "delta": {
+    "kind": "INLINE",
+    "expected_sha256": "bb1bb77934a4249dedda4b0895a8596f29a4390b9f6cf88000b93b38df337e0a",
+    "fields": {
+      "status": "READY",
+      "n": 3
+    }
+  },
+  "commit": {
+    "state": "COMMITTED_READBACK",
+    "readback_ref": "rb:example-doc:rev-5",
+    "observed_at": "2026-10-03T12:00:00Z"
+  },
+  "way_home": [
+    "owner:example-doc#section-1"
+  ]
+}

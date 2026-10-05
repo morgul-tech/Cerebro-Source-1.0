@@ -1,0 +1,14 @@
+# SIGNALVEV CLIENT v0.1 -- sending node. NON-SECRET example.
+[node]
+id = "node-b"
+
+[nats]
+server = "nats://127.0.0.1:4222"
+connect_timeout_seconds = 5
+flush_timeout_seconds = 2
+
+[evidence]
+dir = "state-b"                     # holds sender.jsonl: the durable send ledger that forbids replay after UNKNOWN_SEND
+
+[send]
+ttl_seconds = 30

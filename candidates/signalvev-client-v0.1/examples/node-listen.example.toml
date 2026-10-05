@@ -1,0 +1,29 @@
+# SIGNALVEV CLIENT v0.1 -- listening node. NON-SECRET example: no credentials, loopback server.
+# Real credentials/TLS are referenced by FILE PATH only (never inline). Relative paths resolve against this file.
+[node]
+id = "node-a"                       # this node's identity (Signalvev id grammar)
+
+[nats]
+server = "nats://127.0.0.1:4222"    # private Core NATS. Non-loopback needs tls:// (or tls_* files) or allow_plaintext = true
+connect_timeout_seconds = 5
+flush_timeout_seconds = 2
+max_reconnect_attempts = 30         # listen only: re-subscribes after an outage; the send path never reconnects/buffers
+reconnect_wait_seconds = 2
+# credentials_file = "/etc/signalvev/node-a.creds"     # Linux  (needs: pip install "signalvev-client[credentials]")
+# credentials_file = 'C:\ProgramData\Signalvev\node-a.creds'   # Windows (TOML literal string: single quotes)
+# tls_ca_file = "/etc/signalvev/ca.pem"
+
+[evidence]
+dir = "state-a"                     # local EVIDENCE only: cursor.jsonl, recorder.jsonl, closures.jsonl (not owner truth)
+
+[[listen.interest]]                 # what this node cares about (anything else is NOT_APPLICABLE, free)
+owner_ref = "owner:example-synthetic"
+referent_type = "doc"
+
+[listen]
+max_queue = 256
+
+[resolver]                          # DEVELOPMENT ONLY: labelled synthetic fixture, not owner truth
+kind = "synthetic_fixture"
+fixture_file = "owner.synthetic.json"
+# kind = "factory"                  # production adapter port: factory = "package.module:callable" returning an OwnerResolver

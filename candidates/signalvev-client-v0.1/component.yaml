@@ -1,0 +1,50 @@
+schema: cerebro-component/v1
+component:
+  id: signalvev-client-v0.1
+  name: Signalvev Client Candidate v0.1 (installable private Core NATS send/listen over the existing D0 implementation)
+  type: candidate
+  version: 0.1.0
+  status: isolated-implementation-candidate
+  authority: NONE
+responsibility:
+  primary: >
+    Make the existing Signalvev D0 sensing runtime installable as one Windows/Linux Python distribution with a real
+    private Core NATS binding (nats-py), a bounded TOML configuration, and a minimal foreground CLI
+    (check-config, health, send, listen). Send goes through the existing SensingSender + durable SendLedger; listen routes
+    received frames into the existing SensingReceiver + DedupeCursor + FlightRecorder + OwnerResolver port. The client
+    adds only the installation/transport seam; it re-implements no sender, receiver, envelope, cursor or owner-truth logic.
+  explicitly_not:
+    - Ikke en ny protokoll, envelope, subject eller receipt-vokabular; alt importeres uendret fra signalvev-sensing-runtime-v0.1 og referanse v0.1/v0.9/v0.15/v0.16.
+    - Ikke JetStream, ingen generell durabel inbox, ingen request/reply, ingen SFTP/bulk, ingen HA/cluster.
+    - Ikke daemon, tjenestebehandler eller scheduler; kun forgrunnskjoring (Ctrl+C / --duration / --max-frames).
+    - Ikke PM/bind/start/admission/autowake, ingen produksjons-eieradapter, ingen eier-sannhetslager; lokal evidens er ikke kanonisk.
+    - Ikke ChatGPT-worker-wake eller levering til en worker-baerer; en CLI-prosess kan ikke det.
+    - Ikke hemmelighetsplattform: transportlegitimasjon refereres kun som filsti og gir ingen eier- eller PM-myndighet.
+    - Ikke live EDGE-01, ingen produksjonsdeploy, ingen Source-migrering, ingen produksjonsklarhetspaastand.
+dependencies:
+  build: []
+  runtime:
+    - nats-py>=2.16.0,<3   # real Core NATS client binding (asyncio), isolated to one file
+  optional:
+    - nkeys>=0.2.1         # only when nats.credentials_file is configured (extra: signalvev-client[credentials])
+  candidate:
+    - signalvev-sensing-runtime-v0.1   # bundled UNCHANGED (byte-identical, hash-pinned): sender, receiver, d0, cursor, evidence, transport seam
+    - signalvev-reference-v0.1         # envelope, subject registry (bundled resources, unchanged)
+    - signalvev-reference-v0.9         # FirstBrokenEdgeRecorder (bundled, unchanged)
+    - signalvev-reference-v0.15        # schema compatibility gate (bundled, unchanged)
+    - signalvev-reference-v0.16        # EVENT is not STATE_TRUTH guard (bundled, unchanged)
+interfaces:
+  input:
+  - >-
+    TOML configuration (node id, private server URL, timeouts, credential/TLS FILE PATHS, evidence dir, send TTL,
+    listen interests, resolver), a committed owner event JSON (send), frames from the two registered literal subjects (listen)
+  output:
+  - >-
+    SendOutcome (ACCEPTED | NOT_SENT | UNKNOWN_SEND, replay_refused) as JSON + exit code; INGRESS lines (typed disposition)
+    and local evidence-only JSONL (cursor, flight recorder, closures, send ledger); honest status/health that is transport
+    evidence only
+relationship_to_prior_evidence:
+  note: >
+    S0/S1/R10C remain the only behaviour-real transport evidence and are not touched. This candidate adds a real-client
+    binding and packaging; its tests prove adapter mapping, routing, lifecycle and installation. A disposable-broker
+    roundtrip and any live-node proof are separate, separately reported claims.
