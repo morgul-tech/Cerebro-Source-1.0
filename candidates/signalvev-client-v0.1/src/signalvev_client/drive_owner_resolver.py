@@ -280,7 +280,7 @@ def create_resolver(cfg) -> DriveOwnerResolver:
           and any((i.owner_ref, i.referent_type, i.referent_id)
                   == (binding.scope.owner_ref, binding.scope.referent_type, binding.scope.referent_id)
                   for i in cfg.interests), "HOST_CONFIG_SCOPE_MISMATCH")
-        _need(binding.owner_confirmation is not None
+    _need(binding.owner_confirmation is not None
           and callable(getattr(binding.owner_confirmation, "confirm_current", None))
           and getattr(binding.owner_confirmation, "SYNTHETIC_TEST_ONLY", False) is not True,
           "OWNER_CONFIRMATION_PORT_UNBOUND")
