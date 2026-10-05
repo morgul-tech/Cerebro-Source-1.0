@@ -67,6 +67,25 @@ def committed_bytes(src: Path) -> bytes:
         raise RuntimeError(f"SOURCE_NOT_IN_HEAD: {rel}") from exc
 
 
+def committed_python_sources(root: Path) -> list[Path]:
+    """Enumerate the top-level packaged Python files at HEAD and reject tree drift."""
+    rel_root = root.relative_to(REPO).as_posix()
+    try:
+        listed = subprocess.run(["git", "-C", str(REPO), "ls-tree", "-r", "--name-only",
+                                 "HEAD", "--", rel_root], check=True, capture_output=True,
+                                text=True).stdout.splitlines()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(f"SOURCE_HEAD_MISMATCH: cannot enumerate {rel_root}") from exc
+    tracked = {Path(name).name for name in listed
+               if Path(name).parent.as_posix() == rel_root and name.endswith(".py")}
+    present = {path.name for path in root.glob("*.py") if path.is_file()}
+    if tracked != present:
+        missing, extra = sorted(tracked - present), sorted(present - tracked)
+        detail = f"missing={missing}; untracked={extra}"
+        raise RuntimeError(f"SOURCE_HEAD_MISMATCH: {rel_root}: {detail}")
+    return [root / name for name in sorted(tracked)]
+
+
 def stage(dest: Path) -> dict:
     files: dict[str, str] = {}
     sources: dict[str, str] = {}
@@ -81,13 +100,13 @@ def stage(dest: Path) -> dict:
             files[rel] = hashlib.sha256(content).hexdigest()
             sources[rel] = src.relative_to(REPO).as_posix()
 
-    for f in sorted(CORE_SRC.glob("*.py")):
+    for f in committed_python_sources(CORE_SRC):
         put(f, f"signalvev_sensing/{f.name}")
     for f in sorted(REFERENCE_PY):
         put(REPO / "tooling" / "validator" / f, f"{RES}/tooling/validator/{f}")
     for f in sorted(REFERENCE_DATA):
         put(REPO / "candidates" / "signalvev-reference-v0.1" / f, f"{RES}/candidates/signalvev-reference-v0.1/{f}")
-    for f in sorted(CLIENT_SRC.glob("*.py")):                    # the client package itself is also pinned (tamper evidence)
+    for f in committed_python_sources(CLIENT_SRC):                # the client package itself is also pinned (tamper evidence)
         put(f, f"signalvev_client/{f.name}")
     manifest = {"schema": "signalvev-client-resource-manifest/v0.1", "authority": "NONE",
                 "source_repository": "morgul-tech/Cerebro-Source-1.0", "source_commit": git("rev-parse", "HEAD") or "NOT_AVAILABLE",
