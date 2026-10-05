@@ -18,7 +18,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from typing import Any
+from typing import Any, Callable
+from package_build_verifier import PackageBuildVerifier, VerifierError
 
 
 INPUT_SCHEMA = "cerebro-standard-delivery-package-input/v1"
@@ -29,6 +30,12 @@ IDENTITY_CAPSULE_SCHEMA = "cerebro-exact15-candidate-capsule/v1"
 REPOSITORY = "morgul-tech/Cerebro-Source-1.0"
 BRANCH = "main"
 FILE_COUNT = 15
+EXACT35_PROFILE = "EXACT35_COMMIT_1886"
+EXACT35_BASE = "7321e4592eac0940a8b075c1932765a9c4d046d8"
+EXACT35_CANDIDATE = "1886c0c1aa58e5734fc4149a11781cf0f0588375"
+EXACT35_TREE = "9493601ab89c4025a5e794cb21cf9b31d862ad74"
+EXACT35_AUDIT_SHA256 = "359b11809a5e7a138e6e6b6ac4989185ee3c962c7f8acd9c7a5a195061e8f308"
+EXACT35_REPLACE = "tooling/validator/test_component_inventory.py"
 BUILDER_EXTENSION_PATHS = (
     "tooling/builder/component.yaml", "tooling/builder/standard_delivery_package.py")
 P813_COMPONENT_SHA256 = "b6c5a24883ae14690d4d074cda99b4545a3bb39ad6b689bddc765e45fa6e8ff6"
@@ -101,6 +108,114 @@ def command(cwd: Path, *args: str) -> str:
     completed = subprocess.run(args, cwd=cwd, text=True, capture_output=True, check=False)
     require(completed.returncode == 0, f"command failed: {args[0]} {args[1:]}: {completed.stderr.strip()}")
     return completed.stdout.strip()
+
+
+def git_bytes(cwd: Path, revision: str, path: str) -> bytes:
+    completed = subprocess.run(["git", "show", f"{revision}:{path}"], cwd=cwd,
+                               capture_output=True, check=False)
+    require(completed.returncode == 0, f"Git object unreadable: {revision}:{path}")
+    return completed.stdout
+
+
+def exact35_candidate(declared: dict[str, Any]) -> tuple[Path, list[dict[str, Any]], str]:
+    """Pin current main separately from the historical exact35 artifact parent."""
+    source, identity = declared["source"], declared["identity"]
+    require(identity.get("profile") == EXACT35_PROFILE, "exact35 profile required")
+    root = Path(nonempty(source.get("root"), "source.root")).resolve()
+    require(root.is_dir() and source.get("repository") == REPOSITORY and source.get("branch") == BRANCH,
+            "exact35 Source binding mismatch")
+    require(Path(command(root, "git", "rev-parse", "--show-toplevel")).resolve() == root,
+            "exact35 Source root is not Git top level")
+    origin_url = command(root, "git", "remote", "get-url", "origin").lower().replace("\\", "/").rstrip("/")
+    require(origin_url.removesuffix(".git").endswith("morgul-tech/cerebro-source-1.0"),
+            "exact35 origin repository mismatch")
+    require(source.get("base_commit") == EXACT35_BASE and source.get("candidate_commit") == EXACT35_CANDIDATE
+            and source.get("candidate_tree") == EXACT35_TREE, "exact35 pinned identity mismatch")
+    require(command(root, "git", "symbolic-ref", "--short", "HEAD") == BRANCH,
+            "exact35 requires current main checkout")
+    remote = command(root, "git", "ls-remote", "origin", "refs/heads/main").split()
+    current_main = str(source.get("current_main_commit", "")).lower()
+    require(bool(HEX40.fullmatch(current_main)), "exact35 current main commit required")
+    require(bool(remote) and command(root, "git", "rev-parse", "HEAD").lower()
+            == command(root, "git", "rev-parse", "origin/main").lower()
+            == remote[0].lower() == current_main, "exact35 main currentness mismatch")
+    require(not command(root, "git", "status", "--porcelain=v1", "--untracked-files=all"),
+            "exact35 Source checkout must be clean")
+    parents = command(root, "git", "rev-list", "--parents", "-n", "1", EXACT35_CANDIDATE).split()
+    require(parents == [EXACT35_CANDIDATE, EXACT35_BASE], "exact35 candidate parent mismatch")
+    require(command(root, "git", "rev-parse", f"{EXACT35_CANDIDATE}^{{tree}}").lower() == EXACT35_TREE,
+            "exact35 candidate tree mismatch")
+    audit_arg = Path(nonempty(identity.get("audit_path"), "identity.audit_path"))
+    require(not audit_arg.is_symlink(), "exact35 audit symlink unsafe")
+    audit_path = audit_arg.resolve()
+    require(audit_path.is_file() and not audit_path.is_relative_to(root), "exact35 audit missing/unsafe")
+    require(identity.get("audit_sha256") == EXACT35_AUDIT_SHA256
+            and digest(audit_path.read_bytes()) == EXACT35_AUDIT_SHA256, "exact35 audit hash mismatch")
+    audit = read_json(audit_path)
+    require(audit.get("schema") == "c1043-p1651-exact-35-path-manifest/v1"
+            and audit.get("base_head") == EXACT35_BASE
+            and audit.get("candidate_head") == EXACT35_CANDIDATE
+            and audit.get("candidate_tree") == EXACT35_TREE
+            and audit.get("sole_parent") == EXACT35_BASE
+            and audit.get("changed_paths") == 35, "exact35 audit identity mismatch")
+    audit_rows = audit.get("rows")
+    require(isinstance(audit_rows, list) and len(audit_rows) == 35, "exact35 audit rows required")
+    audit_by_path: dict[str, dict[str, Any]] = {}
+    for row in audit_rows:
+        require(isinstance(row, dict), "exact35 audit row malformed")
+        path = relative(row.get("path"), "audit.path")
+        require(path not in audit_by_path, f"duplicate exact35 audit path: {path}")
+        audit_by_path[path] = row
+    raw_diff = subprocess.run(["git", "diff-tree", "--no-commit-id", "--name-status", "--no-renames",
+                               "-r", "-z", EXACT35_BASE, EXACT35_CANDIDATE], cwd=root,
+                              capture_output=True, check=False)
+    require(raw_diff.returncode == 0 and raw_diff.stdout.endswith(b"\0"), "exact35 Git diff unavailable")
+    tokens = raw_diff.stdout[:-1].split(b"\0")
+    require(len(tokens) == 70, "exact35 Git diff count mismatch")
+    files: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index in range(0, len(tokens), 2):
+        try:
+            status, raw_path = tokens[index].decode("ascii"), tokens[index + 1].decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise BuilderError("exact35 Git diff encoding invalid") from exc
+        path = relative(raw_path, "diff.path")
+        require(path not in seen, f"duplicate exact35 Git path: {path}")
+        seen.add(path)
+        operation = "replace" if path == EXACT35_REPLACE else "create"
+        require(status == ("M" if operation == "replace" else "A"), f"exact35 operation mismatch: {path}")
+        entry = command(root, "git", "ls-tree", EXACT35_CANDIDATE, "--", path).split()
+        require(len(entry) >= 3 and entry[0] in {"100644", "100755"} and entry[1] == "blob",
+                f"exact35 nonregular Git object: {path}")
+        blob = entry[2].lower()
+        data = git_bytes(root, EXACT35_CANDIDATE, path)
+        require(git_blob(data) == blob, f"exact35 candidate blob mismatch: {path}")
+        row = audit_by_path.get(path)
+        require(row is not None and str(row.get("git_blob", "")).lower() == blob
+                and str(row.get("physical_sha256", "")).lower() == digest(data),
+                f"exact35 audit differs from Git: {path}")
+        record = {"path": path, "operation": operation, "sha256": digest(data),
+                  "final_git_blob_sha": blob}
+        baseline = command(root, "git", "ls-tree", EXACT35_BASE, "--", path).split()
+        if operation == "create":
+            require(not baseline, f"exact35 create baseline exists: {path}")
+        else:
+            require(len(baseline) >= 3 and baseline[0] in {"100644", "100755"}
+                    and baseline[1] == "blob", "exact35 replacement baseline invalid")
+            record["expected_git_blob_sha"] = baseline[2].lower()
+        files.append(record)
+    files.sort(key=lambda item: item["path"])
+    require(set(audit_by_path) == seen and len(files) == 35
+            and sum(item["operation"] == "create" for item in files) == 34
+            and sum(item["operation"] == "replace" for item in files) == 1,
+            "exact35 pathset/operation count mismatch")
+    declared_files = identity.get("files")
+    if declared_files is not None:
+        require(declared_files == files, "exact35 declarative files differ from Git")
+    rendered = "\n".join(f'{item["path"]}|{item["operation"]}|{item["sha256"]}' for item in files)
+    target_digest = digest(rendered.encode("utf-8"))
+    require(identity.get("target_bytes_sha256") == target_digest, "exact35 target digest mismatch")
+    return root, files, target_digest
 
 
 def source_currentness(source: dict[str, Any], files: list[dict[str, Any]]) -> Path:
@@ -203,7 +318,64 @@ def load_declared_input(path: Path) -> dict[str, Any]:
     nonempty(auth.get("claim"), "authorization.claim")
     require(declared["output"].get("authority") == "NON_AUTHORITATIVE_GENERATED_EVIDENCE",
             "output must remain non-authoritative")
+    if declared["identity"].get("profile") == EXACT35_PROFILE:
+        exact35_evidence(declared)
     return declared
+
+
+def exact35_evidence(declared: dict[str, Any]) -> None:
+    """Check candidate-bound evidence consistency; hashes alone confer no PM authority."""
+    auth = declared["authorization"]
+    require(auth.get("source_base") == EXACT35_BASE
+            and auth.get("candidate_commit") == EXACT35_CANDIDATE
+            and auth.get("candidate_tree") == EXACT35_TREE,
+            "exact35 authorization identity missing/mismatched")
+    root = Path(nonempty(declared["source"].get("root"), "source.root")).resolve()
+    proof_arg = Path(nonempty(auth.get("qualification_report_path"),
+                              "authorization.qualification_report_path"))
+    require(not proof_arg.is_symlink(), "exact35 qualification report symlink unsafe")
+    proof_path = proof_arg.resolve()
+    proof_sha = str(auth.get("qualification_report_sha256", "")).lower()
+    require(bool(HEX64.fullmatch(proof_sha)) and proof_path.is_file()
+            and not proof_path.is_relative_to(root)
+            and digest(proof_path.read_bytes()) == proof_sha,
+            "exact35 qualification report missing/hash mismatch")
+    proof = read_json(proof_path)
+    require(proof.get("result") == "PASS"
+            and proof.get("source_base") == EXACT35_BASE
+            and proof.get("candidate_commit") == EXACT35_CANDIDATE
+            and proof.get("candidate_tree") == EXACT35_TREE,
+            "exact35 qualification report not candidate-bound PASS")
+    basis = declared["standard_manifest"].get("qualification_basis", {})
+    require(isinstance(basis, dict) and basis.get("result") == "PASS"
+            and basis.get("report_sha256") == proof_sha,
+            "exact35 manifest qualification basis not bound to report")
+    control = declared["standard_manifest"].get("delivery_control_binding", {})
+    require(isinstance(control, dict) and control.get("source_commit") == EXACT35_BASE
+            and control.get("candidate_commit") == EXACT35_CANDIDATE
+            and control.get("candidate_tree") == EXACT35_TREE,
+            "exact35 control binding not candidate-bound")
+
+
+def exact35_authority(declared: dict[str, Any],
+                      trusted_check: Callable[[dict[str, Any]], dict[str, Any]] | None) -> None:
+    """A JSON field or caller-supplied hash cannot authenticate a PM decision.
+
+    The CLI binds an owner-configured authenticated HTTPS verifier. Process
+    configuration is outside declarative input; absent configuration holds.
+    """
+    require(trusted_check is not None, "EXACT35_AUTHORITY_VERIFIER_UNBOUND")
+    receipt = trusted_check(declared)
+    auth = declared["authorization"]
+    require(isinstance(receipt, dict) and receipt.get("result") == "PASS"
+            and receipt.get("effect") == "RUN_ONLY_PACKAGE_BUILD"
+            and receipt.get("packet") == auth["packet"]
+            and receipt.get("claim") == auth["claim"]
+            and receipt.get("source_base") == EXACT35_BASE
+            and receipt.get("candidate_commit") == EXACT35_CANDIDATE
+            and receipt.get("candidate_tree") == EXACT35_TREE
+            and receipt.get("qualification_report_sha256") == auth["qualification_report_sha256"],
+            "EXACT35_AUTHORITY_VERIFIER_REJECTED")
 
 
 def verify_source_and_p801_lock(declared: dict[str, Any]) -> tuple[Path, list[dict[str, Any]], str]:
@@ -266,6 +438,9 @@ def verify_source_and_p801_lock(declared: dict[str, Any]) -> tuple[Path, list[di
 
 
 def build_standard_manifest(declared: dict[str, Any], files: list[dict[str, Any]]) -> dict[str, Any]:
+    exact35 = declared["identity"].get("profile") == EXACT35_PROFILE
+    if exact35:
+        exact35_evidence(declared)
     envelope = declared["standard_manifest"]
     for field in MANIFEST_REQUIRED:
         require(field in envelope and envelope[field] not in (None, "", [], {}), f"manifest {field} required")
@@ -282,9 +457,15 @@ def build_standard_manifest(declared: dict[str, Any], files: list[dict[str, Any]
             envelope.get("delivery_execution_contract") == "CEREBRO-STANDARD-DELIVERY-KERNEL-001",
             "standard delivery contract mismatch")
     require(bool(HEX64.fullmatch(str(envelope["kernel_sha256"]))), "kernel_sha256 invalid")
-    kernel = next((item for item in files if item["path"] == "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1"), None)
-    require(kernel is not None and envelope["kernel_sha256"].lower() == kernel["sha256"],
-            "kernel binding differs from dirty15 candidate")
+    if exact35:
+        root = Path(declared["source"]["root"]).resolve()
+        kernel_bytes = git_bytes(root, EXACT35_BASE, "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1")
+        require(envelope["kernel_sha256"].lower() == digest(kernel_bytes),
+                "kernel binding differs from exact35 base")
+    else:
+        kernel = next((item for item in files if item["path"] == "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1"), None)
+        require(kernel is not None and envelope["kernel_sha256"].lower() == kernel["sha256"],
+                "kernel binding differs from dirty15 candidate")
     require(envelope.get("assurance_kernel", {}).get("campaign_id") == envelope["campaign_id"],
             "assurance campaign mismatch")
     require(envelope.get("assurance_kernel", {}).get("package_class") == envelope["package_class"],
@@ -304,10 +485,11 @@ def build_standard_manifest(declared: dict[str, Any], files: list[dict[str, Any]
             "manifest derived fields must not be caller supplied")
     manifest = {"schema": MANIFEST_SCHEMA, "branch": BRANCH,
                 "expected_base_commit": declared["source"]["base_commit"].lower(), **envelope}
-    manifest["files"] = [{"path": item["path"], "operation": "replace",
+    manifest["files"] = [{"path": item["path"], "operation": item["operation"],
                           "payload_path": f'payload/{item["path"]}', "sha256": item["sha256"],
                           "final_git_blob_sha": item["final_git_blob_sha"],
-                          "expected_git_blob_sha": item["expected_git_blob_sha"]} for item in files]
+                          **({"expected_git_blob_sha": item["expected_git_blob_sha"]}
+                             if item["operation"] == "replace" else {})} for item in files]
     return manifest
 
 
@@ -320,10 +502,11 @@ def build_change_capsule(declared: dict[str, Any], files: list[dict[str, Any]]) 
             "authority": {"repository": REPOSITORY, "branch": BRANCH,
                           "base_commit": declared["source"]["base_commit"].lower()},
             "assurance": {"profile": "DEEP"},
-            "files": [{"path": item["path"], "operation": "replace",
+            "files": [{"path": item["path"], "operation": item["operation"],
                        "payload": f'payload/{item["path"]}', "sha256": item["sha256"],
-                       "baseline": {"state": "present",
-                                    "git_blob_sha": item["expected_git_blob_sha"]}} for item in files]}
+                       "baseline": ({"state": "present", "git_blob_sha": item["expected_git_blob_sha"]}
+                                    if item["operation"] == "replace" else {"state": "absent"})}
+                      for item in files]}
 
 
 def output_path(declared: dict[str, Any], source_root: Path, disposable: bool = False) -> Path:
@@ -339,6 +522,7 @@ def output_path(declared: dict[str, Any], source_root: Path, disposable: bool = 
 
 def verify_bundle_cross_binding(bundle: Path, declared: dict[str, Any], files: list[dict[str, Any]],
                                 target_digest: str) -> dict[str, Any]:
+    exact35 = declared["identity"].get("profile") == EXACT35_PROFILE
     manifest_path = bundle / "manifest.json"
     capsule_path = bundle / "capsule" / "capsule.json"
     manifest_bytes = manifest_path.read_bytes()
@@ -351,16 +535,21 @@ def verify_bundle_cross_binding(bundle: Path, declared: dict[str, Any], files: l
             "generated schema mismatch")
     mf = manifest["files"]
     cf = capsule["files"]
-    require(len(mf) == len(cf) == FILE_COUNT, "generated file-count mismatch")
+    require(len(mf) == len(cf) == (35 if exact35 else FILE_COUNT), "generated file-count mismatch")
     for source_item, standard_item, change_item in zip(files, mf, cf, strict=True):
         path = source_item["path"]
         require(standard_item["path"] == change_item["path"] == path and
-                standard_item["operation"] == change_item["operation"] == "replace" and
+                standard_item["operation"] == change_item["operation"] == source_item["operation"] and
                 standard_item["sha256"] == change_item["sha256"] == source_item["sha256"],
                 f"cross-binding mismatch: {path}")
-        require(standard_item["expected_git_blob_sha"] ==
-                change_item["baseline"]["git_blob_sha"] == source_item["expected_git_blob_sha"],
-                f"baseline mismatch: {path}")
+        if source_item["operation"] == "replace":
+            require(standard_item["expected_git_blob_sha"] ==
+                    change_item["baseline"]["git_blob_sha"] == source_item["expected_git_blob_sha"],
+                    f"baseline mismatch: {path}")
+        else:
+            require("expected_git_blob_sha" not in standard_item
+                    and change_item["baseline"] == {"state": "absent"},
+                    f"create baseline mismatch: {path}")
         first = beneath(bundle, standard_item["payload_path"])
         second = beneath(bundle / "capsule", change_item["payload"])
         require(first.is_file() and second.is_file() and not first.is_symlink() and not second.is_symlink(),
@@ -371,29 +560,38 @@ def verify_bundle_cross_binding(bundle: Path, declared: dict[str, Any], files: l
     rendered = "\n".join(f'{item["path"]}|{item["operation"]}|{item["sha256"]}' for item in mf)
     require(digest(rendered.encode("utf-8")) == target_digest, "emitted target digest mismatch")
     change_sha = digest(capsule_bytes)
-    identity_sha = str(declared["identity"]["candidate_capsule_sha256"]).lower()
-    require(change_sha != identity_sha, "P801 identity capsule cannot substitute for change capsule")
+    identity_sha = str(declared["identity"].get("candidate_capsule_sha256", "")).lower()
+    if not exact35:
+        require(change_sha != identity_sha, "P801 identity capsule cannot substitute for change capsule")
     engine = Path(__file__).resolve().parents[1] / "change" / "change_engine.py"
     verified = subprocess.run([sys.executable, str(engine), "verify-capsule", "--capsule-root",
                                str(bundle / "capsule")], text=True, capture_output=True, check=False)
     require(verified.returncode == 0, f"existing change validator rejected capsule: {verified.stdout} {verified.stderr}")
     return {"result": "PASS_NON_AUTHORITATIVE_BYTES_ONLY", "standard_manifest_sha256": digest(manifest_bytes),
             "change_capsule_sha256": change_sha,
-            "p801_identity_capsule_sha256": identity_sha,
-            "target_bytes_sha256": target_digest, "file_count": FILE_COUNT,
+            **({"p801_identity_capsule_sha256": identity_sha} if not exact35 else
+               {"exact35_audit_sha256": EXACT35_AUDIT_SHA256, "candidate_commit": EXACT35_CANDIDATE}),
+            "target_bytes_sha256": target_digest, "file_count": len(files),
             "publication": "NONE", "s1a": "NONE"}
 
 
 def write_bundle_atomically_outside_source(declared: dict[str, Any], source_root: Path,
                                            files: list[dict[str, Any]], target_digest: str,
-                                           disposable: bool = False) -> dict[str, Any]:
+                                           disposable: bool = False,
+                                           trusted_authority_check: Callable[[dict[str, Any]], dict[str, Any]] | None = None
+                                           ) -> dict[str, Any]:
+    if declared["identity"].get("profile") == EXACT35_PROFILE:
+        exact35_evidence(declared)
+        exact35_authority(declared, trusted_authority_check)
     root = output_path(declared, source_root, disposable)
     temporary = Path(tempfile.mkdtemp(prefix=".standard-delivery-builder-", dir=root.parent))
     try:
         bundle = temporary / "bundle"
         (bundle / "capsule").mkdir(parents=True)
         for item in files:
-            source_bytes = beneath(source_root, item["path"]).read_bytes()
+            source_bytes = (git_bytes(source_root, EXACT35_CANDIDATE, item["path"])
+                            if declared["identity"].get("profile") == EXACT35_PROFILE
+                            else beneath(source_root, item["path"]).read_bytes())
             for payload_root in (bundle / "payload", bundle / "capsule" / "payload"):
                 destination = beneath(payload_root, item["path"])
                 destination.parent.mkdir(parents=True, exist_ok=True)
@@ -401,6 +599,8 @@ def write_bundle_atomically_outside_source(declared: dict[str, Any], source_root
         (bundle / "manifest.json").write_bytes(json_bytes(build_standard_manifest(declared, files)))
         (bundle / "capsule" / "capsule.json").write_bytes(json_bytes(build_change_capsule(declared, files)))
         result = verify_bundle_cross_binding(bundle, declared, files, target_digest)
+        if declared["identity"].get("profile") == EXACT35_PROFILE:
+            exact35_authority(declared, trusted_authority_check)
         require(not root.exists(), "output raced with another writer")
         os.replace(temporary, root)
         temporary = root
@@ -413,7 +613,9 @@ def write_bundle_atomically_outside_source(declared: dict[str, Any], source_root
 
 
 def verify(declared: dict[str, Any]) -> dict[str, Any]:
-    source_root, files, target_digest = verify_source_and_p801_lock(declared)
+    source_root, files, target_digest = (exact35_candidate(declared)
+                                         if declared["identity"].get("profile") == EXACT35_PROFILE
+                                         else verify_source_and_p801_lock(declared))
     root = Path(nonempty(declared["output"].get("root"), "output.root")).resolve()
     require(not root.is_relative_to(source_root) and root.is_dir(), "bundle root missing/unsafe")
     return verify_bundle_cross_binding(root / "bundle", declared, files, target_digest)
@@ -648,11 +850,17 @@ def main() -> int:
             if args.mode == "verify":
                 result = verify(declared)
             else:
-                source_root, files, target_digest = verify_source_and_p801_lock(declared)
-                result = write_bundle_atomically_outside_source(declared, source_root, files, target_digest)
+                verifier = PackageBuildVerifier.from_environment()
+                source_root, files, target_digest = (exact35_candidate(declared)
+                                                     if declared["identity"].get("profile") == EXACT35_PROFILE
+                                                     else verify_source_and_p801_lock(declared))
+                if declared["identity"].get("profile") != EXACT35_PROFILE:
+                    verifier(declared)
+                result = write_bundle_atomically_outside_source(
+                    declared, source_root, files, target_digest, trusted_authority_check=verifier)
         print(json.dumps(result, sort_keys=True, indent=2))
         return 0
-    except (BuilderError, OSError, subprocess.SubprocessError) as exc:
+    except (BuilderError, VerifierError, OSError, subprocess.SubprocessError) as exc:
         print(json.dumps({"result": "HOLD_NO_OUTPUT_NO_EFFECT", "detail": str(exc)}, sort_keys=True), file=sys.stderr)
         return 1
 
