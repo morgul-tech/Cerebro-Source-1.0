@@ -1,0 +1,31 @@
+{
+  "files": {
+    "__init__.py": "f419a2ebed9e0692b7b52a899fab2b20d092ac5a789014206042a5d27bde0805",
+    "canonical.py": "cebe1349557b8f677e78e7472c7e36955aad0e58e9c75e0e743933199980f49a",
+    "errors.py": "71ca5cd15bb86451d5f76661b48456155bd92fa3d2cf53203196f6c249508b91",
+    "executor.py": "ee57aed337b2e2682d39718da6c0c8e14ef83b9c7f605c87c86834e5203ab11d",
+    "grant.py": "5bd0aba4696271778499fa96c6cb9fb25b4a91a2bc3a9f483777283698bdc6f5",
+    "ports.py": "845eb576de1bba666c2b0be758ab930415704ef42ea76c952babd0677d21bf45",
+    "receipts.py": "e962f62375075c2caf45016c08f5f23877f913c43eafc5c65ba773b127bb0a6e",
+    "spec.py": "9f5fc89e98ba0d7ed8ce27f61f4680af98b7688ea3530abdb740b638a7fd21a1",
+    "states.py": "3684a3fc61bba2e00fcb4871bd7664b9232eee48de3d896a9dc7ea1d6a3d22b5",
+    "store.py": "1ef9790558fb924384d48d6cd666ae5a1a98b9a96f838f9a170a57ce42ee9940",
+    "synthetic/__init__.py": "7016443f8b530bbc514134591a89be74efd1abf1577aae590d4ddc6d4157821f",
+    "synthetic/clock.py": "e515534cb3a6b28a4f571d9c84806885986f9c3202ae6ff3f14bd97a29ef3c30",
+    "synthetic/owner.py": "ac8fe47f01ebb8177ce27a050f01a2c1b228ae1e463b80eb2a7559207330ae9c",
+    "synthetic/provider.py": "1e1ab79f61862e236c4e936e0f13c9c636eaf08d02c313b688d6742ecb0c1c32",
+    "views.py": "9d837f50efd6d84d90dc5b7e164509ee6d006252ae5faec5308bc84d283587de"
+  },
+  "package": "controlled_effect_executor",
+  "regression_originals": {
+    "ARCHITECTURE.md": "01c71bdeb5eeee49f9ca68e06e58058c7277cf033999d8c92e452fc2fd30e34f",
+    "README.md": "aeb6124f782c00de77f1824de3dc6cfc48fdd828654420c892b7e61329cf27c5",
+    "controlled_effect_executor_v01_validation.py": "f9eb6f390f27c3d8cf8447256d11c939a04db69fde0ef860eb887fa16ae56c64",
+    "tests/_world.py": "1ce33c187e8b5e319a6c9cd0d10a2b4fdefd793ea616d3f45680cebcc0f01df0",
+    "tests/test_admission.py": "a59ecae57a10f9ccef78fb1f7e4046871fd463119472a5bca2235ff3d767e037",
+    "tests/test_boundary.py": "d1a005e919e42685d68b2bd56300fec888428275616f7bfc13a6a1888be127f3",
+    "tests/test_execution.py": "1e49c27baea7080e14406339a5791b3b1ef13234e78c8ece83fccf7acfa65e77",
+    "tests/test_spec.py": "329105ecd9129047a1f1e0645e3b3d6d00af19860f8f51c273a595a437464769"
+  },
+  "source": "INPUT_V01_RETURN.zip sha256 f8ff8d16d4521a818e4e8fcec223df4fd8fea97e67f1236f9f02a75219478094"
+}
