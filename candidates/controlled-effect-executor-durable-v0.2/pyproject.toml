@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cerebro-controlled-effect-executor-durable"
+version = "0.2.0"
+description = "Isolated candidate (authority NONE): PostgreSQL-backed, restart-recoverable controlled effect executor; includes the unchanged V0.1 package."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "LicenseRef-Cerebro-Internal-Candidate" }
+dependencies = []
+
+[project.optional-dependencies]
+# The tested driver is the stdlib-ctypes libpq shim (needs the system libpq5). The psycopg path is UNRUN here.
+postgres = ["psycopg[binary]>=3.2,<4"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["controlled_effect_executor*", "controlled_effect_executor_durable*"]
