@@ -84,6 +84,16 @@ def _config_mapping() -> dict[str, Any]:
     }
 
 
+class RuntimePmPrepublicationBasisReader:
+    def read_prepublication_basis(self, **_: Any) -> dict[str, Any]:
+        return {}
+
+
+class RuntimePmDispositionPublisherPort:
+    def publish_and_readback(self, **_: Any) -> dict[str, Any]:
+        return {}
+
+
 class StaticTokenVerifier:
     def verify(self, token: str) -> VerifiedBearerToken:
         claims = {
@@ -461,12 +471,16 @@ def selftest() -> dict[str, Any]:
           _expect_error(lambda:assemble_postgres_control_context_remote_runtime_from_connection_factory(
               **{**custody_args,"principal_succession_reader":succession_provider}),ControlContextRemoteRuntimeError))
     lifecycle_runtime_factory = ProbeFactory()
+    runtime_pm_basis_reader = RuntimePmPrepublicationBasisReader()
+    runtime_pm_publisher_port = RuntimePmDispositionPublisherPort()
     lifecycle_runtime = assemble_postgres_control_context_remote_runtime_from_connection_factory(
         config=config,
         connection_factory=lifecycle_runtime_factory,
         token_verifier=StaticTokenVerifier(),
         resolution_attestation_verifier=attestor,
         pm_profile_verifier=RuntimePmProfileVerifier(),
+        pm_prepublication_basis_reader=runtime_pm_basis_reader,
+        pm_disposition_publisher_port=runtime_pm_publisher_port,
         principal_succession_reader=succession_provider,
         machine_diary_effect_verifier=succession_provider,
         clock=lambda: NOW,
@@ -493,6 +507,30 @@ def selftest() -> dict[str, Any]:
         "P554-runtime-binds-same-verifier-into-normal-host",
         getattr(bound_host, "_pm_profile_verifier", None)
         is lifecycle_runtime.pm_lifecycle_verifier,
+    )
+    check(
+        "ROMA-I41-runtime-composes-trusted-A7-basis-and-publisher-into-normal-host",
+        lifecycle_runtime.descriptor()["pm_durable_disposition_guard_bound"] is True
+        and getattr(bound_host, "_pm_disposition_publisher", None) is not None
+        and getattr(bound_host._pm_disposition_publisher, "_basis_reader", None)
+            is runtime_pm_basis_reader
+        and getattr(bound_host._pm_disposition_publisher, "_publisher_port", None)
+            is runtime_pm_publisher_port,
+    )
+    check(
+        "ROMA-I41-runtime-rejects-one-sided-durable-disposition-port-binding",
+        _expect_error(
+            lambda: assemble_postgres_control_context_remote_runtime_from_connection_factory(
+                config=config,
+                connection_factory=ProbeFactory(),
+                token_verifier=StaticTokenVerifier(),
+                resolution_attestation_verifier=attestor,
+                pm_profile_verifier=RuntimePmProfileVerifier(),
+                pm_prepublication_basis_reader=RuntimePmPrepublicationBasisReader(),
+                clock=lambda: NOW,
+            ),
+            ControlContextRemoteRuntimeError,
+        ),
     )
     check(
         "P554-readiness-requires-existing-actor-shadow-relations",

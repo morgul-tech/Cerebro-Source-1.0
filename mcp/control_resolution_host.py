@@ -329,6 +329,7 @@ class BoundControlResolutionHost:
         capability_resolver: BoundRuntimeCapabilityResolver,
         canonical_resolver: Callable[..., dict[str, Any]] = control_resolution.resolve,
         pm_profile_verifier: Any | None = None,
+        pm_disposition_publisher: Any | None = None,
     ):
         _require(callable(getattr(persistence_verifier, "verify", None)), "host-persistence-verifier-required")
         _require(callable(getattr(capability_resolver, "is_available", None)), "host-capability-resolver-required")
@@ -337,10 +338,28 @@ class BoundControlResolutionHost:
         if pm_profile_verifier is not None:
             _require(callable(getattr(pm_profile_verifier, "verify", None)), "host-pm-profile-verifier-invalid")
             _require(callable(getattr(pm_profile_verifier, "verify_lifecycle_effect", None)), "host-lifecycle-effect-verifier-invalid")
+        if pm_disposition_publisher is not None:
+            _require(
+                callable(getattr(pm_disposition_publisher, "publish", None)),
+                "host-pm-disposition-publisher-invalid",
+            )
         self._persistence_verifier = persistence_verifier
         self._capability_resolver = capability_resolver
         self._canonical_resolver = canonical_resolver
         self._pm_profile_verifier = pm_profile_verifier
+        self._pm_disposition_publisher = pm_disposition_publisher
+
+    def publish_pm_durable_disposition(self, proposal: dict[str, Any]) -> dict[str, Any]:
+        _require(
+            self._pm_disposition_publisher is not None,
+            "normal-pm-durable-disposition-publisher-unbound",
+        )
+        result = self._pm_disposition_publisher.publish(copy.deepcopy(proposal))
+        _require(
+            isinstance(result, dict),
+            "normal-pm-durable-disposition-publication-result-required",
+        )
+        return result
 
     def resolve(
         self,
@@ -1207,6 +1226,7 @@ def consume_pm_authorized_command_chain(
     command_executor: Any | None,
     current_state_reader: Any,
     max_steps: int = 8,
+    durable_disposition_request: dict[str, Any] | None = None,
     root: Path = control_resolution.SOURCE_ROOT,
     require_git_ancestry: bool = True,
 ) -> dict[str, Any]:
@@ -1218,6 +1238,11 @@ def consume_pm_authorized_command_chain(
     """
 
     _require(isinstance(max_steps, int) and 1 <= max_steps <= 32, "pm-command-chain-bound-invalid")
+    if durable_disposition_request is not None:
+        _require(
+            isinstance(durable_disposition_request, dict),
+            "pm-command-chain-durable-disposition-request-object-required",
+        )
     read_current = getattr(current_state_reader, "read_current", None)
     _require(callable(read_current), "pm-command-chain-current-state-reader-required")
     current_governance = copy.deepcopy(governance)
@@ -1236,9 +1261,25 @@ def consume_pm_authorized_command_chain(
             "steps": copy.deepcopy(steps),
             "step_count": len(steps),
             "human_action": "REQUIRED" if reason == "REAL_HUMAN_GATE" else "NONE",
+            "durable_disposition_consumer_exercised": durable_disposition_request is not None,
         }
         if blocker:
             value["exact_blocker"] = blocker
+        if durable_disposition_request is not None:
+            if host._pm_disposition_publisher is None:
+                value["durable_disposition_publication"] = {
+                    "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                    "result": "BLOCK_EXACT_PUBLISHER_PORT",
+                    "published": False,
+                    "live_effect": False,
+                    "retry_allowed": False,
+                    "first_unproven_live_edge":
+                        "NORMAL_PM_DURABLE_DISPOSITION_GUARDED_PUBLISHER_UNBOUND",
+                }
+            else:
+                value["durable_disposition_publication"] = (
+                    host.publish_pm_durable_disposition(durable_disposition_request)
+                )
         return value
 
     for _ in range(max_steps):
