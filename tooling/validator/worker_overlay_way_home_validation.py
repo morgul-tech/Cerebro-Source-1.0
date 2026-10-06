@@ -38,6 +38,7 @@ class Owners:
         self.method = method
         self.intent = "BOOT_WORKER"
         self.intent_current = True
+        self.intent_revision = 5
         self.intent_generation = GENERATION
         self.intent_session = context().session_ref()
         self.grantor = "HUMAN"
@@ -68,6 +69,7 @@ class Owners:
                 "principal_ref": kwargs["principal_ref"], "session_ref": self.intent_session,
                 "generation_ref": self.intent_generation, "source_revision": HEAD,
                 "method_fingerprint": self.method, "intent_ref": "HUMAN-BOOT-WORKER-001",
+                "owner_revision": self.intent_revision,
                 "readback_ref": "HUMAN-READBACK-001", "actor_ref": ACTOR,
                 "actor_generation_ref": ACTOR_GENERATION, "overlay_ref": "WORKER-OVERLAY-001"}
 
@@ -80,6 +82,26 @@ class Owners:
                 "allowed_task_scopes": self.allowed_task_scopes,
                 "mandate_ref": "HUMAN-PM-MANDATE-001",
                 "owner_revision": self.mandate_revision, "readback_ref": "MANDATE-READBACK-001"}
+
+    def hold_human(self, *, generation_ref, principal_ref, session_ref,
+                   intent_ref, expected_revision):
+        owner = self
+        return OwnerFence(owner, "worker-human-intent-fence-stale", lambda: (
+            generation_ref == owner.intent_generation and
+            principal_ref == context().identity.principal_ref and
+            session_ref == owner.intent_session and
+            intent_ref == "HUMAN-BOOT-WORKER-001" and
+            expected_revision == owner.intent_revision and owner.intent_current
+        ))
+
+    def hold_mandate(self, *, generation_ref, actor_ref, mandate_ref,
+                     expected_revision):
+        owner = self
+        return OwnerFence(owner, "worker-parent-mandate-fence-stale", lambda: (
+            generation_ref == owner.mandate_generation and actor_ref == ACTOR and
+            mandate_ref == "HUMAN-PM-MANDATE-001" and
+            expected_revision == owner.mandate_revision and owner.mandate_current
+        ))
 
     def zero(self, **kwargs):
         with self.lock:
@@ -134,8 +156,27 @@ class Owners:
 
 
 class Reader:
-    def __init__(self, call):
+    def __init__(self, call, hold=None):
         self.read_current = call
+        if hold is not None:
+            self.hold_current = hold
+
+
+class OwnerFence:
+    def __init__(self, owner, error, current):
+        self.owner, self.error, self.current = owner, error, current
+
+    def __enter__(self):
+        self.owner.lock.acquire()
+        return self
+
+    def __exit__(self, *_):
+        self.owner.lock.release()
+        return False
+
+    def assert_current(self):
+        if not self.current():
+            raise WorkerContextAuthError(self.error)
 
 
 class ClaimReader:
@@ -236,6 +277,12 @@ class WorkerOverlayProof(unittest.TestCase):
         return (tools or self.tools).dispatch(TOOL, self.args if args is None else args,
                                               context())["structuredContent"]
 
+    def fenced_owner_readers(self):
+        return (
+            Reader(self.owners.human, self.owners.hold_human),
+            Reader(self.owners.mandate, self.owners.hold_mandate),
+        )
+
     def test_g0_g2_exact_attach_readback_and_zero_claim(self):
         self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
         self.assertIsNone(self.birth["authority_envelope"]["role"])
@@ -280,8 +327,9 @@ class WorkerOverlayProof(unittest.TestCase):
                              identity=context().identity, session_ref=context().session_ref())
         self.assertEqual((grant_reader.reads, self.owners.human_reads), (0, 0))
 
+        intent_reader, mandate_reader = self.fenced_owner_readers()
         enabled = SourceStandingGrantWorkerPolicyResolver(
-            grant_reader, Reader(self.owners.human), Reader(self.owners.mandate),
+            grant_reader, intent_reader, mandate_reader,
             ClaimReader(self.owners), enabled=True,
         )
         decision = enabled.resolve(
@@ -312,6 +360,48 @@ class WorkerOverlayProof(unittest.TestCase):
                                     "worker-standing-grant-fence-stale"):
             with enabled.hold_zero_claim(decision):
                 self.fail("revoked grant crossed the pre-attach fence")
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_revoked_intent_after_allow_fails_held_attach_fence(self):
+        intent_reader, mandate_reader = self.fenced_owner_readers()
+        policy = SourceStandingGrantWorkerPolicyResolver(
+            StandingGrantReader(self.owners, self.owners.method), intent_reader,
+            mandate_reader, ClaimReader(self.owners), enabled=True,
+        )
+        decision = policy.resolve(
+            pre_role_generation=self.birth,
+            verified_source={"source_revision": HEAD,
+                             "method_fingerprint": self.owners.method,
+                             "method_unchanged": True, "ancestry_verified": True},
+            identity=context().identity, session_ref=context().session_ref(),
+        )
+        self.owners.intent_current = False
+        self.owners.intent_revision += 1
+        with self.assertRaisesRegex(WorkerContextAuthError,
+                                    "worker-human-intent-fence-stale"):
+            with policy.hold_zero_claim(decision):
+                self.fail("revoked Human intent crossed the pre-attach fence")
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_revoked_mandate_after_allow_fails_held_attach_fence(self):
+        intent_reader, mandate_reader = self.fenced_owner_readers()
+        policy = SourceStandingGrantWorkerPolicyResolver(
+            StandingGrantReader(self.owners, self.owners.method), intent_reader,
+            mandate_reader, ClaimReader(self.owners), enabled=True,
+        )
+        decision = policy.resolve(
+            pre_role_generation=self.birth,
+            verified_source={"source_revision": HEAD,
+                             "method_fingerprint": self.owners.method,
+                             "method_unchanged": True, "ancestry_verified": True},
+            identity=context().identity, session_ref=context().session_ref(),
+        )
+        self.owners.mandate_current = False
+        self.owners.mandate_revision += 1
+        with self.assertRaisesRegex(WorkerContextAuthError,
+                                    "worker-parent-mandate-fence-stale"):
+            with policy.hold_zero_claim(decision):
+                self.fail("revoked PM mandate crossed the pre-attach fence")
         self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
 
     def test_standing_grant_rejections_happen_before_intent_or_claim_reads(self):

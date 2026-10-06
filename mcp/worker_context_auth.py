@@ -116,6 +116,7 @@ class BoundWorkerPolicyResolver:
                  intent.get("source_revision") == source and
                  intent.get("method_fingerprint") == verified_source["method_fingerprint"] and
                  _ref(intent.get("intent_ref")) and _ref(intent.get("readback_ref")) and
+                 type(intent.get("owner_revision")) is int and intent["owner_revision"] > 0 and
                  _ref(intent.get("actor_ref")) and _ref(intent.get("actor_generation_ref")) and
                  _ref(intent.get("overlay_ref")), "trusted-human-worker-intent-required")
         actor_ref = intent["actor_ref"]
@@ -187,13 +188,11 @@ class BoundWorkerPolicyResolver:
 class SourceStandingGrantWorkerPolicyResolver:
     """Compose a verified standing Human grant with current worker owner readers.
 
-    The standing-grant reader is a trusted provider port, not a JSON value or
-    environment variable. Its ``read_current`` result follows the strict
-    ``cerebro.worker-standing-grant-readback/v1`` contract below, and its
-    ``hold_current`` method fences revocation while a role-attach decision is
-    consumed. This class authenticates neither that reader nor the other owner
-    ports; host composition must bind state-backed/provider-verified ports.
-    It remains disabled unless explicitly enabled.
+    The standing-grant, Human-intent and parent-mandate readers are trusted
+    owner ports, not JSON values or environment variables. Their current
+    readbacks are fenced by revision while an attach decision is consumed.
+    This class authenticates none of those readers; host composition must bind
+    state-backed/provider-verified ports. It remains disabled unless enabled.
     """
 
     GRANT_SCHEMA = "cerebro.worker-standing-grant-readback/v1"
@@ -204,10 +203,12 @@ class SourceStandingGrantWorkerPolicyResolver:
         _require(type(enabled) is bool, "worker-policy-enabled-flag-invalid")
         self.standing_grant_reader = standing_grant_reader
         self.enabled = enabled
+        self._intent_capture = _OwnerReadbackCapture(human_intent_reader)
+        self._mandate_capture = _OwnerReadbackCapture(mandate_reader)
         self.policy = BoundWorkerPolicyResolver(
-            human_intent_reader, mandate_reader, claim_reader, enabled=enabled,
+            self._intent_capture, self._mandate_capture, claim_reader, enabled=enabled,
         )
-        self._pending_grants: dict[str, tuple[str, str, str, str, int]] = {}
+        self._pending_grants: dict[int, dict[str, Any]] = {}
         self._pending_lock = threading.RLock()
 
     def _grant(self, *, generation_ref: str, source_revision: str,
@@ -259,39 +260,81 @@ class SourceStandingGrantWorkerPolicyResolver:
         method = verified_source.get("method_fingerprint")
         grant = self._grant(generation_ref=generation, source_revision=source,
                             method_fingerprint=method)
+        self._intent_capture.clear()
+        self._mandate_capture.clear()
         decision = self.policy.resolve(
             pre_role_generation=pre_role_generation, verified_source=verified_source,
             identity=identity, session_ref=session_ref,
         )
         decision_ref = decision.get("decision_ref")
         _require(_ref(decision_ref), "worker-standing-grant-decision-ref-required")
+        intent = self._intent_capture.take()
+        mandate = self._mandate_capture.take()
+        _require(isinstance(intent, dict) and isinstance(mandate, dict) and
+                 intent.get("intent_ref") == decision_ref and
+                 mandate.get("mandate_ref") == decision.get("mandate_ref") and
+                 type(intent.get("owner_revision")) is int and intent["owner_revision"] > 0 and
+                 type(mandate.get("owner_revision")) is int and mandate["owner_revision"] > 0,
+                 "worker-current-owner-readbacks-not-bound-to-decision")
+        binding = {
+            "generation_ref": generation,
+            "source_revision": source,
+            "method_fingerprint": method,
+            "grant_ref": grant["grant_ref"],
+            "grant_revision": grant["owner_revision"],
+            "principal_ref": identity.principal_ref,
+            "session_ref": session_ref,
+            "intent_ref": intent["intent_ref"],
+            "intent_revision": intent["owner_revision"],
+            "actor_ref": intent["actor_ref"],
+            "mandate_ref": mandate["mandate_ref"],
+            "mandate_revision": mandate["owner_revision"],
+        }
         with self._pending_lock:
-            self._pending_grants[decision_ref] = (
-                generation, source, method, grant["grant_ref"], grant["owner_revision"],
-            )
+            self._pending_grants[id(decision)] = binding
         return decision
 
     def hold_zero_claim(self, decision: dict):
         _require(self.enabled, "worker-policy-default-off")
         decision_ref = decision.get("decision_ref") if isinstance(decision, dict) else None
         with self._pending_lock:
-            binding = self._pending_grants.pop(decision_ref, None)
-        _require(binding is not None, "worker-standing-grant-decision-not-bound")
-        generation, source, method, grant_ref, grant_revision = binding
-        hold_grant = getattr(self.standing_grant_reader, "hold_current", None)
-        _require(callable(hold_grant), "trusted-worker-standing-grant-fence-unbound")
+            binding = self._pending_grants.pop(id(decision), None)
+        _require(binding is not None and binding.get("intent_ref") == decision_ref and
+                 binding.get("mandate_ref") == decision.get("mandate_ref"),
+                 "worker-standing-grant-decision-not-bound")
+        grant_fence = self._fence(
+            self.standing_grant_reader, "standing-grant",
+            generation_ref=binding["generation_ref"],
+            source_revision=binding["source_revision"],
+            method_fingerprint=binding["method_fingerprint"],
+            grant_ref=binding["grant_ref"], expected_revision=binding["grant_revision"],
+        )
+        intent_fence = self._fence(
+            self._intent_capture, "human-intent",
+            generation_ref=binding["generation_ref"],
+            principal_ref=binding["principal_ref"], session_ref=binding["session_ref"],
+            intent_ref=binding["intent_ref"], expected_revision=binding["intent_revision"],
+        )
+        mandate_fence = self._fence(
+            self._mandate_capture, "parent-mandate",
+            generation_ref=binding["generation_ref"], actor_ref=binding["actor_ref"],
+            mandate_ref=binding["mandate_ref"], expected_revision=binding["mandate_revision"],
+        )
+        claim_fence = self.policy.hold_zero_claim(decision)
+        return _WorkerStandingGrantAndClaimFence(
+            grant_fence, intent_fence, mandate_fence, claim_fence,
+        )
+
+    @staticmethod
+    def _fence(reader: Any, label: str, **kwargs: Any) -> Any:
+        call = getattr(reader, "hold_current", None)
+        _require(callable(call), "trusted-worker-" + label + "-fence-unbound")
         try:
-            grant_fence = hold_grant(
-                generation_ref=generation, source_revision=source,
-                method_fingerprint=method, grant_ref=grant_ref,
-                expected_revision=grant_revision,
-            )
+            return call(**kwargs)
         except WorkerContextAuthError:
             raise
         except Exception as exc:
-            raise WorkerContextAuthError("worker-standing-grant-fence-unavailable") from exc
-        claim_fence = self.policy.hold_zero_claim(decision)
-        return _WorkerStandingGrantAndClaimFence(grant_fence, claim_fence)
+            raise WorkerContextAuthError("worker-" + label + "-fence-unavailable") from exc
 
     def read_current_task(self, *, generation_ref: str, actor_ref: str,
                           source_revision: str, method_fingerprint: str,
@@ -305,11 +348,42 @@ class SourceStandingGrantWorkerPolicyResolver:
         )
 
 
-class _WorkerStandingGrantAndClaimFence:
-    """Hold grant revocation and zero-claim owner fences across attach/readback."""
+class _OwnerReadbackCapture:
+    """Capture the exact current receipt used by the resolver in this thread."""
 
-    def __init__(self, grant_fence: Any, claim_fence: Any):
+    def __init__(self, reader: Any):
+        self.reader = reader
+        self._local = threading.local()
+
+    def clear(self) -> None:
+        self._local.value = None
+
+    def read_current(self, **kwargs: Any) -> Any:
+        call = getattr(self.reader, "read_current", None)
+        _require(callable(call), "trusted-worker-owner-port-unbound:read_current")
+        value = call(**kwargs)
+        self._local.value = copy.deepcopy(value) if isinstance(value, dict) else None
+        return value
+
+    def take(self) -> Any:
+        value = getattr(self._local, "value", None)
+        self._local.value = None
+        return value
+
+    def hold_current(self, **kwargs: Any) -> Any:
+        call = getattr(self.reader, "hold_current", None)
+        _require(callable(call), "trusted-worker-owner-fence-unbound")
+        return call(**kwargs)
+
+
+class _WorkerStandingGrantAndClaimFence:
+    """Hold all current authority and zero-claim fences across attach/readback."""
+
+    def __init__(self, grant_fence: Any, intent_fence: Any,
+                 mandate_fence: Any, claim_fence: Any):
         self.grant_fence = grant_fence
+        self.intent_fence = intent_fence
+        self.mandate_fence = mandate_fence
         self.claim_fence = claim_fence
         self._entered: list[Any] = []
 
@@ -323,6 +397,8 @@ class _WorkerStandingGrantAndClaimFence:
     def __enter__(self):
         try:
             for fence, label in ((self.grant_fence, "standing-grant"),
+                                 (self.intent_fence, "human-intent"),
+                                 (self.mandate_fence, "parent-mandate"),
                                  (self.claim_fence, "zero-claim")):
                 self._validate(fence, label)
                 fence.__enter__()
