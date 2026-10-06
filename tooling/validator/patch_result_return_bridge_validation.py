@@ -296,6 +296,30 @@ def validate(root: Path) -> dict[str, Any]:
             and pointer_path.read_bytes() != pointer_bytes,
         )
         stable_pointer = pointer_path.read_bytes()
+        replay_outbox = work / "other-outbox"
+        replay_pending = replay_outbox / "Pending" / provider.name
+        shutil.copytree(provider, replay_pending)
+        old_replay = invoke_pump(pump, "Drain", outbox=replay_outbox, drive=drive)
+        record(
+            "old-provider-duplicate-cannot-rewind-newer-current-without-local-sent",
+            parse_fields(old_replay.stdout).get("RETURN_BRIDGE_STATE") == "DUPLICATE_NO_EFFECT"
+            and pointer_path.read_bytes() == stable_pointer,
+        )
+        pointer_path.write_bytes(stable_pointer)
+        pointer_path.unlink()
+        missing_outbox = work / "missing-pointer-replay-outbox"
+        shutil.copytree(provider, missing_outbox / "Pending" / provider.name)
+        invoke_pump(pump, "Drain", outbox=missing_outbox, drive=drive)
+        missing_current = json.loads(
+            invoke_pump(pump, "VerifyCurrent", drive=drive, expected=(1,)).stdout
+        )
+        record(
+            "duplicate-with-missing-pointer-remains-typed-unknown",
+            not pointer_path.exists()
+            and missing_current.get("Result") == "UNKNOWN"
+            and missing_current.get("Reason") == "POINTER_MISSING",
+        )
+        pointer_path.write_bytes(stable_pointer)
         invalid_pending = outbox / "Pending" / ("RB-" + "f" * 24)
         invalid_pending.mkdir(parents=True)
         write_json(invalid_pending / "READY.json", {"schema": "invalid"})

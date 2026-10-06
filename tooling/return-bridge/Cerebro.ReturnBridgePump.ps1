@@ -414,9 +414,6 @@ function Invoke-ReturnBridgeDrain {
             $existing=Test-ReturnBridgePackage $destination
             if($existing.Result -eq 'PASS' -and $existing.EnvelopeSha256 -eq $validation.EnvelopeSha256){
                 $sentPath=Join-Path $sent $package.Name
-                if(-not(Test-Path -LiteralPath $sentPath)){
-                    Set-ReturnBridgeCurrent -ProviderRoot $driveRoot -RelativePath $package.Name|Out-Null
-                }
                 if(Test-Path -LiteralPath $sentPath){Remove-Item -LiteralPath $package.FullName -Recurse -Force}
                 else{[IO.Directory]::Move($package.FullName,$sentPath)}
                 $duplicates++

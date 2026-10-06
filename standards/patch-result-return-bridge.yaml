@@ -78,6 +78,7 @@ patch_result_return_bridge:
       - supersedes_ref
       - updated_at
     exact_duplicate: POINTER_BYTES_UNCHANGED
+    existing_provider_duplicate_even_without_local_Sent: NEVER_ADVANCES_POINTER
     canonical_evidence: IMMUTABLE_HISTORICAL_PACKAGES
     consumer_lookup: POINTER_THEN_ONE_NAMED_PACKAGE_WITH_FULL_HASH_VERIFICATION
     consumer_command: VerifyCurrent
