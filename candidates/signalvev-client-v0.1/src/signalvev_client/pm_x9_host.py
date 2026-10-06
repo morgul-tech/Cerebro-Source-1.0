@@ -9,7 +9,7 @@ import time
 from dataclasses import dataclass, replace
 from typing import Any
 
-from .pm_x9 import (MODE_OFF, ConsumeResult, DepositRecord, HintSendResult,
+from .pm_x9 import (MODE_OFF, MODE_PRODUCTION, ConsumeResult, DepositRecord, HintSendResult,
                     PmX9Settings, PmX9Unbound, build_binding, load_ports)
 
 
@@ -29,6 +29,10 @@ def compose(settings: PmX9Settings, bindings: Any, *, host_authorized: bool = Fa
         raise PmX9Unbound("PM_X9_HOST_CHOICE_REQUIRED")
     if not isinstance(settings, PmX9Settings) or settings.mode == MODE_OFF:
         raise PmX9Unbound("PM_X9_DEFAULT_OFF")
+    if settings.mode != MODE_PRODUCTION:
+        raise PmX9Unbound("PM_X9_PRODUCTION_MODE_REQUIRED")
+    if settings.ports_factory != "providers.pm_x9_live_host:make_ports":
+        raise PmX9Unbound("PM_X9_TRUSTED_HOST_FACTORY_REQUIRED")
     from providers.pm_x9_live_host import LiveRuntimeBindings
     if type(bindings) is not LiveRuntimeBindings or bindings.enabled is not True:
         raise PmX9Unbound("EXPLICIT_CURRENT_HOST_RUNTIME_REQUIRED")
@@ -75,13 +79,18 @@ def run_one_existing_ready_receipt(
                     break
             if deposit is None:
                 result = HostRunResult("INGRESS_UNCONFIRMED", send=sent)
-            elif deposit.state != "DEPOSITED_READBACK" or deposit.queued_for_pulse is not True:
+            elif (deposit.state != "DEPOSITED_READBACK" or deposit.queued_for_pulse is not True
+                  or not isinstance(deposit.pointer_sha256, str)
+                  or len(deposit.pointer_sha256) != 64):
                 result = HostRunResult("DEPOSIT_UNCONFIRMED", send=sent, deposit=deposit)
             else:
                 consumed = binding.consume_one(sent.event_id)
                 proven = (consumed.event_id == sent.event_id
                           and consumed.state in {"DISPOSITION_READBACK", "ALREADY_DISPOSED"}
-                          and consumed.record is not None)
+                          and consumed.record is not None
+                          and getattr(consumed.record, "event_id", None) == sent.event_id
+                          and getattr(consumed.record, "disposition", None) == consumed.disposition
+                          and consumed.pointer_sha256 == deposit.pointer_sha256)
                 result = HostRunResult("DISPOSITION_READBACK" if proven else "CONSUME_UNCONFIRMED",
                                        send=sent, deposit=deposit, consume=consumed)
     except Exception as exc:
