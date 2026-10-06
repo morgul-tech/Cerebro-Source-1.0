@@ -1202,17 +1202,20 @@ def selftest() -> dict[str, Any]:
             "carrier": copy.deepcopy(carrier),
         }])
 
-    def run_fresh_prestop(host: BoundControlResolutionHost, next_governance: dict[str, Any], event_ref: str):
+    def run_prestop_with_reader(host: BoundControlResolutionHost, reader: PMCurrentStateReaderFixture):
         return consume_pm_authorized_command_chain(
             host,
             governance=governance,
             command_state=command,
             carrier=carrier,
             command_executor=PMCommandExecutorFixture(),
-            current_state_reader=fresh_prestop_reader(next_governance, event_ref),
+            current_state_reader=reader,
             root=SOURCE_ROOT,
             require_git_ancestry=False,
         )
+
+    def run_fresh_prestop(host: BoundControlResolutionHost, next_governance: dict[str, Any], event_ref: str):
+        return run_prestop_with_reader(host, fresh_prestop_reader(next_governance, event_ref))
 
     durable_fixed = consume_pm_authorized_command_chain(
         durable_host,
@@ -1250,6 +1253,57 @@ def selftest() -> dict[str, Any]:
         duplicate_event_fixed["stop_reason"] == "OTHER_OWNER_WAIT"
         and duplicate_event_fixed["durable_disposition_consumer_exercised"] is True
         and durable_fixture.calls[0]["disposition_ref"] == durable_fixture.calls[1]["disposition_ref"],
+    )
+    missing_scope_governance = {
+        "event_ref": "EVENT-PRESTOP-MISSING-SCOPE",
+        "referent_ref": "REFERENT-PRESTOP-MISSING-SCOPE",
+        "referent_revision": 5,
+        "scope_ref": "STALE-GOVERNANCE-SCOPE",
+        "next_action": {},
+    }
+    missing_scope_reader = fresh_prestop_reader(
+        missing_scope_governance,
+        "EVENT-PRESTOP-MISSING-SCOPE",
+    )
+    missing_scope_reader.states[0]["referent_ref"] = "REFERENT-PRESTOP-MISSING-SCOPE"
+    missing_scope_reader.states[0]["referent_revision"] = 5
+    del missing_scope_reader.states[0]["scope_ref"]
+    calls_before_missing_scope = len(durable_fixture.calls)
+    missing_scope_fixed = run_prestop_with_reader(durable_host, missing_scope_reader)
+    check(
+        "A7-fresh-missing-scope-never-falls-back-to-governance-scope",
+        missing_scope_fixed["stop_reason"] == "QUIESCENT"
+        and missing_scope_fixed["durable_disposition_publication"]["result"]
+            == "HOLD_LOCAL_PRESTOP_BASIS_UNBOUND"
+        and missing_scope_fixed["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "A7_PRESTOP_CANONICAL_SCOPE_REF_UNBOUND"
+        and len(durable_fixture.calls) == calls_before_missing_scope,
+    )
+    divergent_governance = {
+        "event_ref": "EVENT-PRESTOP-GOV-DIVERGES",
+        "referent_ref": "REFERENT-PRESTOP-GOV-DIVERGES",
+        "referent_revision": 6,
+        "scope_ref": "SCOPE-PRESTOP-GOV-DIVERGES",
+        "next_action": {},
+    }
+    divergent_reader = fresh_prestop_reader(
+        divergent_governance,
+        "EVENT-PRESTOP-DIVERGENCE",
+    )
+    divergent_reader.states[0]["event_ref"] = "EVENT-PRESTOP-DIVERGENCE"
+    divergent_reader.states[0]["referent_ref"] = "REFERENT-PRESTOP-DIVERGENCE"
+    divergent_reader.states[0]["referent_revision"] = 5
+    divergent_reader.states[0]["scope_ref"] = "SCOPE-PRESTOP-DIVERGENCE"
+    calls_before_divergence = len(durable_fixture.calls)
+    divergent_fixed = run_prestop_with_reader(durable_host, divergent_reader)
+    check(
+        "A7-complete-divergent-governance-tuple-holds-before-publisher",
+        divergent_fixed["stop_reason"] == "QUIESCENT"
+        and divergent_fixed["durable_disposition_publication"]["result"]
+            == "HOLD_LOCAL_PRESTOP_CANONICAL_CONFLICT"
+        and divergent_fixed["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE:governance"
+        and len(durable_fixture.calls) == calls_before_divergence,
     )
     unbound_fixed = run_fresh_prestop(
         chain_host,

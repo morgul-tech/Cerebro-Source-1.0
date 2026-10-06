@@ -1310,7 +1310,7 @@ def consume_pm_authorized_command_chain(
     observed_frontiers: set[tuple[Any, ...]] = set()
 
     def default_disposition_request() -> tuple[dict[str, Any] | None, str | None]:
-        """Build the A7 proposal only from canonical chain/readback state."""
+        """Build a proposal from one complete fresh tuple; never mix fields."""
         if not isinstance(last_fresh_state, dict):
             return None, "A7_PRESTOP_CURRENT_STATE_READER_NOT_EXERCISED"
         if (
@@ -1318,43 +1318,89 @@ def consume_pm_authorized_command_chain(
             or last_fresh_state.get("provider_readback_verified") is not True
         ):
             return None, "A7_PRESTOP_CURRENT_STATE_READBACK_NOT_CURRENT"
-        sources = [
-            last_fresh_state,
-            current_governance if isinstance(current_governance, dict) else {},
-            current_command if isinstance(current_command, dict) else {},
-            current_carrier if isinstance(current_carrier, dict) else {},
-        ]
 
-        def first_text(*keys: str) -> str | None:
-            for source in sources:
-                for key in keys:
-                    value = source.get(key)
-                    if isinstance(value, str) and value.strip():
-                        return value.strip()
-            return None
+        def complete_tuple(
+            source: dict[str, Any],
+            *,
+            identity_key: str | None = None,
+        ) -> tuple[tuple[str, str, int, str] | None, str | None, str | None]:
+            selected_identity_key = identity_key or (
+                "event_ref" if source.get("event_ref") is not None else "command_id"
+            )
+            identity = source.get(selected_identity_key)
+            if not isinstance(identity, str) or not identity.strip():
+                return None, None, None
 
-        def first_revision(*keys: str) -> int | None:
-            for source in sources:
-                for key in keys:
-                    value = source.get(key)
-                    if type(value) is int and value >= 0:
-                        return value
-            return None
+            def one_text(keys: tuple[str, ...], edge: str) -> tuple[str | None, str | None]:
+                present = [source[key] for key in keys if key in source and source[key] is not None]
+                if any(not isinstance(value, str) or not value.strip() for value in present):
+                    return None, edge
+                normalized = {value.strip() for value in present}
+                if len(normalized) > 1:
+                    return None, edge
+                return (next(iter(normalized)) if normalized else None), None
 
-        referent_ref = first_text("prepublication_referent_ref", "referent_ref", "canonical_state_ref")
-        referent_revision = first_revision(
-            "prepublication_referent_revision", "referent_revision", "canonical_state_revision",
-        )
-        scope_ref = first_text("prepublication_scope_ref", "scope_ref")
-        event_or_command_ref = first_text("event_ref", "command_id")
-        if not event_or_command_ref:
+            def one_revision(keys: tuple[str, ...], edge: str) -> tuple[int | None, str | None]:
+                present = [source[key] for key in keys if key in source and source[key] is not None]
+                if any(type(value) is not int or value < 0 for value in present):
+                    return None, edge
+                normalized = set(present)
+                if len(normalized) > 1:
+                    return None, edge
+                return (next(iter(normalized)) if normalized else None), None
+
+            referent_ref, edge = one_text(
+                ("prepublication_referent_ref", "referent_ref", "canonical_state_ref"),
+                "A7_PRESTOP_CANONICAL_REFERENT_REF_DIVERGENCE",
+            )
+            if edge:
+                return None, selected_identity_key, edge
+            referent_revision, edge = one_revision(
+                ("prepublication_referent_revision", "referent_revision", "canonical_state_revision"),
+                "A7_PRESTOP_CANONICAL_REFERENT_REVISION_DIVERGENCE",
+            )
+            if edge:
+                return None, selected_identity_key, edge
+            scope_ref, edge = one_text(
+                ("prepublication_scope_ref", "scope_ref"),
+                "A7_PRESTOP_CANONICAL_SCOPE_REF_DIVERGENCE",
+            )
+            if edge:
+                return None, selected_identity_key, edge
+            if not referent_ref:
+                return None, selected_identity_key, "A7_PRESTOP_CANONICAL_REFERENT_REF_UNBOUND"
+            if referent_revision is None:
+                return None, selected_identity_key, "A7_PRESTOP_CANONICAL_REFERENT_REVISION_UNBOUND"
+            if not scope_ref:
+                return None, selected_identity_key, "A7_PRESTOP_CANONICAL_SCOPE_REF_UNBOUND"
+            return (
+                (identity.strip(), referent_ref, referent_revision, scope_ref),
+                selected_identity_key,
+                None,
+            )
+
+        fresh_tuple, identity_key, tuple_gap = complete_tuple(last_fresh_state)
+        if tuple_gap:
+            return None, tuple_gap
+        if fresh_tuple is None or identity_key is None:
             return None, "A7_PRESTOP_CANONICAL_EVENT_IDENTITY_UNBOUND"
-        if not referent_ref:
-            return None, "A7_PRESTOP_CANONICAL_REFERENT_REF_UNBOUND"
-        if referent_revision is None:
-            return None, "A7_PRESTOP_CANONICAL_REFERENT_REVISION_UNBOUND"
-        if not scope_ref:
-            return None, "A7_PRESTOP_CANONICAL_SCOPE_REF_UNBOUND"
+
+        for source_name, source in (
+            ("governance", current_governance),
+            ("command_state", current_command),
+            ("carrier", current_carrier),
+        ):
+            if not isinstance(source, dict) or source.get(identity_key) is None:
+                continue
+            candidate_tuple, _, candidate_gap = complete_tuple(source, identity_key=identity_key)
+            if candidate_gap:
+                if candidate_gap.endswith("_UNBOUND"):
+                    continue
+                return None, f"A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE:{source_name}:{candidate_gap}"
+            if candidate_tuple is not None and candidate_tuple != fresh_tuple:
+                return None, f"A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE:{source_name}"
+
+        event_or_command_ref, referent_ref, referent_revision, scope_ref = fresh_tuple
 
         identity = {
             "event_or_command_ref": event_or_command_ref,
@@ -1391,7 +1437,11 @@ def consume_pm_authorized_command_chain(
             if proposal_gap:
                 value["durable_disposition_publication"] = {
                     "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
-                    "result": "HOLD_LOCAL_PRESTOP_BASIS_UNBOUND",
+                    "result": (
+                        "HOLD_LOCAL_PRESTOP_CANONICAL_CONFLICT"
+                        if proposal_gap.startswith("A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE")
+                        else "HOLD_LOCAL_PRESTOP_BASIS_UNBOUND"
+                    ),
                     "published": False,
                     "live_effect": False,
                     "retry_allowed": False,
