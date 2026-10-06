@@ -1,7 +1,7 @@
 # BK07 PM-to-X9 binding -- PRODUCTION shape. EXAMPLE ONLY: every value below is a placeholder to be supplied by
-# CURRENT_PM + the PM provider/credential custodian (PM coordinates, principals) and Runtime/Infra (ports_factory).
-# No secret belongs here: ports carry their own runtime authentication. Until a host module exists,
-# `signalvev-pm-x9 diagnose` reports PM_X9_PORTS_FACTORY_FAILED / MISSING and nothing is contacted.
+# CURRENT_PM + the PM provider/credential custodian (PM coordinates, principals) and Runtime/Infra.
+# No secret belongs here. Runtime injects provider/credential objects and fresh control-session readbacks
+# in-process; OAuth and openai/session transport metadata alone never establish a role or persisted session.
 [pm_x9]
 mode = "PRODUCTION"
 owner_ref = "CURRENT_PM"
@@ -15,4 +15,11 @@ x9_session_ref = "<X9 receiver session ref>"
 attempt_ref = "<attempt ref>"
 pointer_ttl_seconds = 900
 max_pending_ingress = 64
-ports_factory = "<host_module>:<make_ports>"   # returns signalvev_client.pm_x9.PmX9HostPorts
+ports_factory = "providers.pm_x9_live_host:make_ports" # requires explicit enabled LiveRuntimeBindings
+
+# Host-only runtime inputs are intentionally NOT serialized in this file:
+# - current PM + X9 results from read_project_control_state (v2 caller and CURRENT_PERSISTED_SESSION)
+# - provider-owned PmProjectionBinding and trusted X9 role configuration
+# - existing OAuth authenticator, secret/header getter, PostgreSQL connection factory, NATS ClientConfig/connect_fn
+# The PM and X9 persisted sessions must be distinct and current on the same project revision.
+# A missing/stale/mismatched tuple fails closed before any event send, listener, DB call, or NATS connection.
