@@ -1,0 +1,22 @@
+# EXAMPLE ONLY - not installed by this scaffold (no service install from Claude). Debian private staging.
+[Unit]
+Description=CerebroBase room scaffold (PRIVATE STAGING, synthetic identities)
+After=network.target
+
+[Service]
+Type=simple
+User=cerebrobase-staging
+Group=cerebrobase-staging
+WorkingDirectory=/srv/cerebrobase-staging/releases/current
+ExecStartPre=/usr/bin/python3 -m cerebrobase preflight --config /etc/cerebrobase-staging/config.json --phase pre-start
+ExecStart=/usr/bin/python3 -m cerebrobase serve --config /etc/cerebrobase-staging/config.json
+ExecStop=/usr/bin/python3 -m cerebrobase stop --config /etc/cerebrobase-staging/config.json
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/srv/cerebrobase-staging/data /srv/cerebrobase-staging/run
+
+[Install]
+WantedBy=multi-user.target

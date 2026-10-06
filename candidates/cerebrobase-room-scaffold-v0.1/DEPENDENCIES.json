@@ -1,0 +1,28 @@
+{
+ "schema": "cerebrobase.dependencies/v1",
+ "candidate": "cerebrobase-room-scaffold-v0.1",
+ "assignment_id": "EXT-CLAUDE-CEREBROBASE-CB-P01-V01",
+ "status_vocabulary": ["INSTALLED_TESTED", "REQUIRED_NOT_QUALIFIED", "NOT_REQUIRED", "UNQUALIFIED"],
+ "runtime_check": "python -m cerebrobase preflight --config <cfg> [--phase pre-migrate|pre-start]  (validates the real config; writes nothing but creates missing private/runtime dirs and a removed probe file)",
+ "third_party_requirements": [],
+ "lock": "No third-party packages. Lock = exact CPython minor (3.12 or 3.13) + SQLite >= 3.35 checked at preflight.",
+ "dependencies": [
+  {"name": "python", "required": true, "requirement": "CPython 3.12 or 3.13", "check": "sys.version_info", "blocking_code": "PYTHON_UNSUPPORTED"},
+  {"name": "sqlite", "required": true, "requirement": "SQLite >= 3.35, transactional DDL, foreign keys, upsert", "check": "in-memory feature probe", "blocking_code": "SQLITE_UNQUALIFIED"},
+  {"name": "root:private_data_root", "required": true, "requirement": "writable, outside public_assets_root, outside PROD roots when STAGING", "blocking_code": "ROOT_NOT_WRITABLE"},
+  {"name": "root:runtime_root", "required": true, "requirement": "writable (pidfile, STOP file, logs)", "blocking_code": "ROOT_NOT_WRITABLE"},
+  {"name": "root:db_path", "required": true, "requirement": "parent writable; DB outside public root; never the Postkasse DB", "blocking_code": "ROOT_NOT_WRITABLE"},
+  {"name": "disk", "required": true, "requirement": "free bytes >= min_free_bytes", "blocking_code": "DISK_SPACE_LOW"},
+  {"name": "db", "required": true, "requirement": "schema_version == 2 (exact); migrate first", "blocking_code": "DB_MISSING|SCHEMA_MIGRATION_REQUIRED|SCHEMA_NEWER_THAN_APP|DB_UNREADABLE"},
+  {"name": "listener", "required": true, "requirement": "numeric loopback bind free (no wildcard; synthetic auth loopback only)", "blocking_code": "PORT_IN_USE_OR_FORBIDDEN"},
+  {"name": "build", "required": true, "requirement": "installed files hash to BUILD_INFO build_id == config build_id", "blocking_code": "BUILD_ID_MISMATCH|BUILD_INTEGRITY_MISMATCH"},
+  {"name": "auth_adapter", "required": true, "requirement": "SYNTHETIC in DEV/STAGING (test identities only); a qualified EXTERNAL AuthProvider before any real user / PROD", "blocking_code": "AUTH_ADAPTER_NOT_QUALIFIED"},
+  {"name": "deployment_qualification", "required": "PROD only", "requirement": "PM effect approval + A1 EDGE/Caddy readback", "blocking_code": "PROD_DEPLOYMENT_NOT_QUALIFIED"},
+  {"name": "tool:fixture.echo", "required": false, "requirement": "LOCAL_SYNTHETIC_ONLY, DEV/STAGING, enabled in config"},
+  {"name": "tool:postkasse.lese", "required": false, "status": "UNQUALIFIED", "requirement": "owner-supplied attested port + dependencies + allowed operation + custody readback"},
+  {"name": "tool:signalvev.status", "required": false, "status": "UNQUALIFIED", "requirement": "same"},
+  {"name": "tool:drive.navigasjon", "required": false, "status": "UNQUALIFIED", "requirement": "same"},
+  {"name": "secret_refs", "required": "only for enabled integrations", "requirement": "env:NAME or file:/abs owner-controlled file; never inline/repo/Drive/logs", "blocking_code": "SECRET_REF_UNRESOLVED"}
+ ],
+ "not_used": ["Node build", "external CDN/fonts", "ORM", "broker/NATS", "per-room process/user/DB", "Postkasse DB", "network calls"]
+}

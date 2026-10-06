@@ -1,0 +1,17 @@
+# EXAMPLE ONLY - not installed by this scaffold. Private staging behind the EXISTING EDGE Caddy.
+# Public Main (/srv/cerebro/www, cerebrobase.net/.no) stays untouched; this adds NO public vhost.
+# Option A (recommended first step): no Caddy route at all - operators reach the loopback app via an SSH/WireGuard
+# tunnel to 127.0.0.1:8472.
+# Option B (after A1/PM approval): a private WireGuard-only listener proxying to the loopback app:
+#
+# http://10.77.0.1:8480 {
+#     bind 10.77.0.1                      # private wg0 address only, never 0.0.0.0
+#     @blocked path /data/* /run/* /*.sqlite3 /*.json
+#     respond @blocked 404
+#     reverse_proxy 127.0.0.1:8472 {
+#         header_up -X-Account-Id         # identity is never taken from headers
+#         header_up -X-Role
+#     }
+# }
+#
+# The app serves only its in-memory /static/app.css; private data and the DB live outside every Caddy root.

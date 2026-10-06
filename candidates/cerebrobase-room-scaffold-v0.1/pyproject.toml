@@ -1,0 +1,13 @@
+[project]
+name = "cerebrobase-room-scaffold"
+version = "0.1.0"
+description = "CerebroBase CB-P01 local/private-staging room scaffold (synthetic identities only; not production)"
+requires-python = ">=3.12,<3.14"
+dependencies = []
+classifiers = ["Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Private :: Do Not Upload"]
+
+[tool.cerebrobase]
+supported_interpreters = ["CPython 3.12", "CPython 3.13"]
+third_party_requirements = []
+build_command = "python -m cerebrobase build --out dist"
+note = "Not installed with pip: the deterministic artifact is a source ZIP run with `python -m cerebrobase` from the release directory."
