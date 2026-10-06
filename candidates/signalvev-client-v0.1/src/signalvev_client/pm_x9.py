@@ -554,7 +554,14 @@ class PmX9Binding:
     def open_sender(self) -> None:
         if self._sender is None:
             client = SendClient(self.ports.client_config, connect_fn=self.ports.connect_fn, clock=self._epoch)
-            client.connect()
+            try:
+                client.connect()
+            except Exception:
+                try:
+                    client.close()
+                except Exception:
+                    pass
+                raise
             self._sender = client
 
     def send_hint(self, receipt_ref: str) -> HintSendResult:
@@ -593,7 +600,14 @@ class PmX9Binding:
         if self._listener is None:
             client = ListenClient(self.ports.client_config, resolver=self.resolver, sink=self.sink,
                                   connect_fn=self.ports.connect_fn, clock=self._epoch, on_result=self._on_result)
-            client.start()
+            try:
+                client.start()
+            except Exception:
+                try:
+                    client.stop()
+                except Exception:
+                    pass
+                raise
             self._listener = client
 
     @property
