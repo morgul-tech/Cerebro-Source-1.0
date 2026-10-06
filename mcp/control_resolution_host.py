@@ -1297,18 +1297,80 @@ def consume_pm_authorized_command_chain(
     """
 
     _require(isinstance(max_steps, int) and 1 <= max_steps <= 32, "pm-command-chain-bound-invalid")
-    if durable_disposition_request is not None:
-        _require(
-            isinstance(durable_disposition_request, dict),
-            "pm-command-chain-durable-disposition-request-object-required",
-        )
+    # Retained as a source-compatible argument only. Caller-authored proposals
+    # are never trusted; the pre-stop proposal is derived below from canonical
+    # governance, command/carrier, and current-state readback fields.
     read_current = getattr(current_state_reader, "read_current", None)
     _require(callable(read_current), "pm-command-chain-current-state-reader-required")
     current_governance = copy.deepcopy(governance)
     current_command = copy.deepcopy(command_state)
     current_carrier = copy.deepcopy(carrier)
+    last_fresh_state: dict[str, Any] | None = None
     steps: list[dict[str, Any]] = []
     observed_frontiers: set[tuple[Any, ...]] = set()
+
+    def default_disposition_request() -> tuple[dict[str, Any] | None, str | None]:
+        """Build the A7 proposal only from canonical chain/readback state."""
+        if not isinstance(last_fresh_state, dict):
+            return None, "A7_PRESTOP_CURRENT_STATE_READER_NOT_EXERCISED"
+        if (
+            str(last_fresh_state.get("currentness") or "UNKNOWN").upper() != "CURRENT"
+            or last_fresh_state.get("provider_readback_verified") is not True
+        ):
+            return None, "A7_PRESTOP_CURRENT_STATE_READBACK_NOT_CURRENT"
+        sources = [
+            last_fresh_state,
+            current_governance if isinstance(current_governance, dict) else {},
+            current_command if isinstance(current_command, dict) else {},
+            current_carrier if isinstance(current_carrier, dict) else {},
+        ]
+
+        def first_text(*keys: str) -> str | None:
+            for source in sources:
+                for key in keys:
+                    value = source.get(key)
+                    if isinstance(value, str) and value.strip():
+                        return value.strip()
+            return None
+
+        def first_revision(*keys: str) -> int | None:
+            for source in sources:
+                for key in keys:
+                    value = source.get(key)
+                    if type(value) is int and value >= 0:
+                        return value
+            return None
+
+        referent_ref = first_text("prepublication_referent_ref", "referent_ref", "canonical_state_ref")
+        referent_revision = first_revision(
+            "prepublication_referent_revision", "referent_revision", "canonical_state_revision",
+        )
+        scope_ref = first_text("prepublication_scope_ref", "scope_ref")
+        event_or_command_ref = first_text("event_ref", "command_id")
+        if not event_or_command_ref:
+            return None, "A7_PRESTOP_CANONICAL_EVENT_IDENTITY_UNBOUND"
+        if not referent_ref:
+            return None, "A7_PRESTOP_CANONICAL_REFERENT_REF_UNBOUND"
+        if referent_revision is None:
+            return None, "A7_PRESTOP_CANONICAL_REFERENT_REVISION_UNBOUND"
+        if not scope_ref:
+            return None, "A7_PRESTOP_CANONICAL_SCOPE_REF_UNBOUND"
+
+        identity = {
+            "event_or_command_ref": event_or_command_ref,
+            "referent_ref": referent_ref,
+            "referent_revision": referent_revision,
+            "scope_ref": scope_ref,
+        }
+        proposal_ref = "PM-PRESTOP-" + _canonical_sha256(identity)[:24].upper()
+        return ({
+            "schema": PM_DISPOSITION_REQUEST_SCHEMA,
+            "disposition_ref": proposal_ref,
+            "requested_disposition": "HOLD",
+            "expected_referent_ref": referent_ref,
+            "expected_referent_revision": referent_revision,
+            "requested_scope_ref": scope_ref,
+        }, None)
 
     def stop(reason: str, *, currentness: str = "CURRENT", blocker: str | None = None) -> dict[str, Any]:
         _require(reason in PM_FIXED_POINT_STOP_REASONS, "pm-command-chain-stop-reason-invalid")
@@ -1320,12 +1382,22 @@ def consume_pm_authorized_command_chain(
             "steps": copy.deepcopy(steps),
             "step_count": len(steps),
             "human_action": "REQUIRED" if reason == "REAL_HUMAN_GATE" else "NONE",
-            "durable_disposition_consumer_exercised": durable_disposition_request is not None,
+            "durable_disposition_consumer_exercised": reason != "REAL_HUMAN_GATE",
         }
         if blocker:
             value["exact_blocker"] = blocker
-        if durable_disposition_request is not None:
-            if host._pm_disposition_publisher is None:
+        if reason != "REAL_HUMAN_GATE":
+            proposal, proposal_gap = default_disposition_request()
+            if proposal_gap:
+                value["durable_disposition_publication"] = {
+                    "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                    "result": "HOLD_LOCAL_PRESTOP_BASIS_UNBOUND",
+                    "published": False,
+                    "live_effect": False,
+                    "retry_allowed": False,
+                    "first_unproven_live_edge": proposal_gap,
+                }
+            elif host._pm_disposition_publisher is None:
                 value["durable_disposition_publication"] = {
                     "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
                     "result": "BLOCK_EXACT_PUBLISHER_PORT",
@@ -1336,9 +1408,17 @@ def consume_pm_authorized_command_chain(
                         "NORMAL_PM_DURABLE_DISPOSITION_GUARDED_PUBLISHER_UNBOUND",
                 }
             else:
-                value["durable_disposition_publication"] = (
-                    host.publish_pm_durable_disposition(durable_disposition_request)
-                )
+                try:
+                    value["durable_disposition_publication"] = host.publish_pm_durable_disposition(proposal)
+                except Exception as exc:
+                    value["durable_disposition_publication"] = {
+                        "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                        "result": "HOLD_LOCAL_PRESTOP_A7_BASIS",
+                        "published": "UNKNOWN",
+                        "live_effect": "UNKNOWN",
+                        "retry_allowed": False,
+                        "first_unproven_live_edge": str(exc),
+                    }
         return value
 
     for _ in range(max_steps):
@@ -1390,6 +1470,7 @@ def consume_pm_authorized_command_chain(
         fresh = read_current(previous=copy.deepcopy(consumed))
         _require(isinstance(fresh, dict), "pm-command-chain-fresh-state-object-required")
         _reject_runtime_authority_injection(fresh, "pm_command_chain_fresh_state")
+        last_fresh_state = copy.deepcopy(fresh)
         currentness = str(fresh.get("currentness") or "UNKNOWN").upper()
         _require(currentness in {"CURRENT", "STALE", "UNKNOWN"}, "pm-command-chain-currentness-invalid")
         if currentness != "CURRENT":
