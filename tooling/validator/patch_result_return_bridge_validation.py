@@ -259,6 +259,81 @@ def validate(root: Path) -> dict[str, Any]:
             drain_fields.get("RETURN_BRIDGE_STATE") == "DELIVERED"
             and verified.get("Result") == "PASS",
         )
+        pointer_path = drive / "CURRENT.json"
+        initial_pointer = json.loads(pointer_path.read_text(encoding="utf-8-sig"))
+        current = json.loads(invoke_pump(pump, "VerifyCurrent", drive=drive).stdout)
+        record(
+            "current-pointer-provider-verified-nonauthoritative",
+            current.get("Result") == "PASS"
+            and current.get("Authority") == "NONE"
+            and initial_pointer.get("provider_relative_path") == provider.name
+            and initial_pointer.get("envelope_sha256") == sha256(provider / "envelope.json")
+            and initial_pointer.get("manifest_sha256") == sha256(provider / "manifest.json")
+            and initial_pointer.get("transport_authority") == "NONE",
+        )
+        pointer_bytes = pointer_path.read_bytes()
+        duplicate_pending = outbox / "Pending" / provider.name
+        shutil.copytree(provider, duplicate_pending)
+        duplicate_drain = invoke_pump(pump, "Drain", outbox=outbox, drive=drive)
+        record(
+            "duplicate-drain-zero-pointer-churn",
+            parse_fields(duplicate_drain.stdout).get("RETURN_BRIDGE_STATE") == "DUPLICATE_NO_EFFECT"
+            and pointer_path.read_bytes() == pointer_bytes,
+        )
+
+        next_enqueue = invoke_pump(
+            pump, "Enqueue", outbox=outbox, artifact=pass_artifact, attempt="ATTEMPT-NEXT"
+        )
+        next_name = parse_fields(next_enqueue.stdout)["RETURN_BRIDGE_ENVELOPE"]
+        invoke_pump(pump, "Drain", outbox=outbox, drive=drive)
+        next_pointer = json.loads(pointer_path.read_text(encoding="utf-8-sig"))
+        next_provider = drive / next_name
+        record(
+            "new-delivery-advances-once-preserves-prior-address",
+            next_pointer.get("provider_relative_path") == next_name
+            and next_pointer.get("supersedes_ref") == provider.name
+            and next_pointer.get("envelope_sha256") == sha256(next_provider / "envelope.json")
+            and pointer_path.read_bytes() != pointer_bytes,
+        )
+        stable_pointer = pointer_path.read_bytes()
+        invalid_pending = outbox / "Pending" / ("RB-" + "f" * 24)
+        invalid_pending.mkdir(parents=True)
+        write_json(invalid_pending / "READY.json", {"schema": "invalid"})
+        invoke_pump(pump, "Drain", outbox=outbox, drive=drive)
+        record("malformed-unrelated-cannot-advance-pointer", pointer_path.read_bytes() == stable_pointer)
+
+        parked_target = work / "parked-current-target"
+        shutil.move(next_provider, parked_target)
+        stale = json.loads(
+            invoke_pump(pump, "VerifyCurrent", drive=drive, package=provider, expected=(1,)).stdout
+        )
+        record(
+            "missing-target-stale-bounded-fallback",
+            stale.get("Result") == "STALE"
+            and stale.get("Reason") == "TARGET_MISSING"
+            and stale.get("FallbackPackageResult") == "PASS"
+            and stale.get("FallbackScope") == "ONE_EXPLICIT_PACKAGE",
+        )
+        shutil.move(parked_target, next_provider)
+        next_artifact = next(next_provider.glob("01-*"))
+        original_artifact = next_artifact.read_bytes()
+        next_artifact.write_bytes(original_artifact + b"tamper")
+        hash_stale = json.loads(invoke_pump(pump, "VerifyCurrent", drive=drive, expected=(1,)).stdout)
+        record(
+            "hash-mismatch-target-stale",
+            hash_stale.get("Result") == "STALE" and hash_stale.get("Reason") == "TARGET_INVALID",
+        )
+        next_artifact.write_bytes(original_artifact)
+        pointer_path.write_text("{invalid", encoding="utf-8")
+        unknown = json.loads(
+            invoke_pump(pump, "VerifyCurrent", drive=drive, package=provider, expected=(1,)).stdout
+        )
+        record(
+            "corrupt-pointer-unknown-bounded-fallback",
+            unknown.get("Result") == "UNKNOWN"
+            and unknown.get("FallbackPackageResult") == "PASS",
+        )
+        pointer_path.write_bytes(stable_pointer)
 
         multi = run(
             [

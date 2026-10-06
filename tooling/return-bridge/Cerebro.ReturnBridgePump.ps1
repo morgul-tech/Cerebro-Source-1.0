@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('Enqueue','Drain','Verify','SelfTest')]
+    [ValidateSet('Enqueue','Drain','Verify','VerifyCurrent','SelfTest')]
     [string]$Mode,
     [ValidateSet('PASS','FAIL')]
     [string]$Result='PASS',
@@ -164,6 +164,114 @@ function Test-ReturnBridgePackage {
     }
 }
 
+function Test-ReturnBridgeCurrent {
+    param([Parameter(Mandatory=$true)][string]$ProviderRoot,[string]$FallbackPackagePath='')
+    $pointerPath=Join-Path $ProviderRoot 'CURRENT.json'
+    $result='UNKNOWN'
+    $reason='POINTER_MISSING'
+    $relative=''
+    if(Test-Path -LiteralPath $pointerPath -PathType Leaf){
+        try {
+            $pointer=Read-ReturnBridgeJson $pointerPath
+            $relative=[string]$pointer.provider_relative_path
+            $valid=(
+                [string]$pointer.schema -eq 'cerebro-patch-result-return-current/v1' -and
+                $relative -match '^RB-[0-9a-f]{24}$' -and
+                [string]$pointer.envelope_id -eq $relative -and
+                [string]$pointer.envelope_sha256 -match '^[0-9a-f]{64}$' -and
+                [string]$pointer.manifest_sha256 -match '^[0-9a-f]{64}$' -and
+                [string]$pointer.product_sha256 -match '^[0-9a-f]{64}$' -and
+                [string]$pointer.source_after -ne '' -and
+                [string]$pointer.updated_at -ne '' -and
+                ([string]$pointer.supersedes_ref -eq '' -or [string]$pointer.supersedes_ref -match '^RB-[0-9a-f]{24}$') -and
+                [string]$pointer.transport_authority -eq 'NONE'
+            )
+            if(-not $valid){$reason='POINTER_INVALID'}
+            else {
+                $target=Join-Path $ProviderRoot $relative
+                if(-not(Test-Path -LiteralPath $target -PathType Container)){
+                    $result='STALE';$reason='TARGET_MISSING'
+                }
+                else {
+                    $verified=Test-ReturnBridgePackage $target
+                    if($verified.Result -ne 'PASS'){$result='STALE';$reason='TARGET_INVALID'}
+                    elseif(
+                        $verified.EnvelopeId -ne [string]$pointer.envelope_id -or
+                        $verified.EnvelopeSha256 -ne [string]$pointer.envelope_sha256 -or
+                        [string]$verified.Envelope.manifest_sha256 -ne [string]$pointer.manifest_sha256 -or
+                        [string]$verified.Envelope.source_after -ne [string]$pointer.source_after -or
+                        [string]$verified.Envelope.product_sha256 -ne [string]$pointer.product_sha256
+                    ){$result='STALE';$reason='TARGET_POINTER_MISMATCH'}
+                    else {$result='PASS';$reason='CURRENT_VERIFIED'}
+                }
+            }
+        }
+        catch {$result='UNKNOWN';$reason='POINTER_OR_TARGET_UNREADABLE'}
+    }
+    $fallback='NOT_REQUESTED'
+    if($result -ne 'PASS' -and -not[string]::IsNullOrWhiteSpace($FallbackPackagePath)){
+        try {
+            $fallbackCheck=Test-ReturnBridgePackage $FallbackPackagePath
+            $fallback=if($fallbackCheck.Result -eq 'PASS'){'PASS'}else{$fallbackCheck.Result}
+        }
+        catch {$fallback='UNKNOWN'}
+    }
+    return [pscustomobject]@{
+        Result=$result;Reason=$reason;ProviderRelativePath=$relative
+        FallbackPackageResult=$fallback;FallbackPackagePath=$FallbackPackagePath
+        FallbackScope='ONE_EXPLICIT_PACKAGE';Authority='NONE'
+    }
+}
+
+function Set-ReturnBridgeCurrent {
+    param([Parameter(Mandatory=$true)][string]$ProviderRoot,[Parameter(Mandatory=$true)][string]$RelativePath)
+    if($RelativePath -notmatch '^RB-[0-9a-f]{24}$'){throw 'CURRENT_TARGET_NAME_INVALID'}
+    $target=Join-Path $ProviderRoot $RelativePath
+    $verified=Test-ReturnBridgePackage $target
+    if($verified.Result -ne 'PASS' -or $verified.EnvelopeId -ne $RelativePath){throw 'CURRENT_TARGET_NOT_VERIFIED'}
+    $pointerPath=Join-Path $ProviderRoot 'CURRENT.json'
+    $supersedes=''
+    if(Test-Path -LiteralPath $pointerPath -PathType Leaf){
+        try {
+            $old=Read-ReturnBridgeJson $pointerPath
+            $oldRelative=[string]$old.provider_relative_path
+            if($oldRelative -match '^RB-[0-9a-f]{24}$' -and [string]$old.envelope_id -eq $oldRelative){
+                if($oldRelative -eq $RelativePath){
+                    $current=Test-ReturnBridgeCurrent -ProviderRoot $ProviderRoot
+                    if($current.Result -eq 'PASS'){return 'UNCHANGED'}
+                    if([string]$old.supersedes_ref -match '^RB-[0-9a-f]{24}$'){$supersedes=[string]$old.supersedes_ref}
+                }
+                else{$supersedes=$oldRelative}
+            }
+        }
+        catch {$supersedes=''}
+    }
+    $pointer=[ordered]@{
+        schema='cerebro-patch-result-return-current/v1'
+        envelope_id=$RelativePath
+        envelope_sha256=$verified.EnvelopeSha256
+        manifest_sha256=[string]$verified.Envelope.manifest_sha256
+        source_after=[string]$verified.Envelope.source_after
+        product_sha256=[string]$verified.Envelope.product_sha256
+        provider_relative_path=$RelativePath
+        supersedes_ref=$supersedes
+        updated_at=[string]$verified.Envelope.created_at_utc
+        transport_authority='NONE'
+    }
+    $temporary=$pointerPath+'.tmp-'+[guid]::NewGuid().ToString('N')
+    $backup=$pointerPath+'.bak-'+[guid]::NewGuid().ToString('N')
+    try {
+        [IO.File]::WriteAllText($temporary,(($pointer|ConvertTo-Json -Depth 8)+[Environment]::NewLine),[Text.UTF8Encoding]::new($false))
+        if(Test-Path -LiteralPath $pointerPath -PathType Leaf){[IO.File]::Replace($temporary,$pointerPath,$backup)}
+        else{[IO.File]::Move($temporary,$pointerPath)}
+    }
+    finally {
+        if(Test-Path -LiteralPath $temporary){Remove-Item -LiteralPath $temporary -Force}
+        if(Test-Path -LiteralPath $backup){Remove-Item -LiteralPath $backup -Force}
+    }
+    return 'ADVANCED'
+}
+
 function Invoke-ReturnBridgeEnqueue {
     if([string]::IsNullOrWhiteSpace($AttemptId)){throw 'ATTEMPT_ID_REQUIRED'}
     if([string]::IsNullOrWhiteSpace($PatchId)){throw 'PATCH_ID_REQUIRED'}
@@ -306,6 +414,9 @@ function Invoke-ReturnBridgeDrain {
             $existing=Test-ReturnBridgePackage $destination
             if($existing.Result -eq 'PASS' -and $existing.EnvelopeSha256 -eq $validation.EnvelopeSha256){
                 $sentPath=Join-Path $sent $package.Name
+                if(-not(Test-Path -LiteralPath $sentPath)){
+                    Set-ReturnBridgeCurrent -ProviderRoot $driveRoot -RelativePath $package.Name|Out-Null
+                }
                 if(Test-Path -LiteralPath $sentPath){Remove-Item -LiteralPath $package.FullName -Recurse -Force}
                 else{[IO.Directory]::Move($package.FullName,$sentPath)}
                 $duplicates++
@@ -325,6 +436,7 @@ function Invoke-ReturnBridgeDrain {
                 throw ('PROVIDER_READBACK_FAILED:{0}' -f ($providerValidation.Errors -join ','))
             }
             [IO.Directory]::Move($partial,$destination)
+            Set-ReturnBridgeCurrent -ProviderRoot $driveRoot -RelativePath $package.Name|Out-Null
             $sentPath=Join-Path $sent $package.Name
             if(Test-Path -LiteralPath $sentPath){throw ('SENT_ID_COLLISION:{0}' -f $package.Name)}
             [IO.Directory]::Move($package.FullName,$sentPath)
@@ -413,6 +525,16 @@ if($Mode -eq 'Verify'){
     if([string]::IsNullOrWhiteSpace($PackagePath)){throw 'PACKAGE_PATH_REQUIRED'}
     $resultValue=Test-ReturnBridgePackage $PackagePath
     $resultValue|ConvertTo-Json -Depth 12
+    if($resultValue.Result -eq 'PASS'){exit 0}
+    exit 1
+}
+if($Mode -eq 'VerifyCurrent'){
+    $driveRoot=Resolve-ReturnBridgeDriveRoot -ExplicitRoot $DriveReturnRoot
+    if([string]::IsNullOrWhiteSpace($driveRoot)){
+        $resultValue=[pscustomobject]@{Result='UNKNOWN';Reason='PROVIDER_ROOT_UNAVAILABLE';FallbackScope='ONE_EXPLICIT_PACKAGE';Authority='NONE'}
+    }
+    else{$resultValue=Test-ReturnBridgeCurrent -ProviderRoot $driveRoot -FallbackPackagePath $PackagePath}
+    $resultValue|ConvertTo-Json -Depth 8
     if($resultValue.Result -eq 'PASS'){exit 0}
     exit 1
 }

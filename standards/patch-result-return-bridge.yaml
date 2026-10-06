@@ -61,6 +61,33 @@ patch_result_return_bridge:
       provider_READY_copied_last: true
       READY_alone_is_authority: false
 
+  current_pointer:
+    schema: cerebro-patch-result-return-current/v1
+    path: CEREBRO_EVIDENCE/PATCH_RESULT_RETURN/CURRENT.json
+    status: REBUILDABLE_NONAUTHORITATIVE_LOOKUP_HINT
+    writer: tooling/return-bridge/Cerebro.ReturnBridgePump.ps1
+    write_gate: PROVIDER_PACKAGE_FULL_HASH_READBACK_PASS
+    atomic_replace: true
+    required_fields:
+      - envelope_id
+      - envelope_sha256
+      - manifest_sha256
+      - source_after
+      - product_sha256
+      - provider_relative_path
+      - supersedes_ref
+      - updated_at
+    exact_duplicate: POINTER_BYTES_UNCHANGED
+    canonical_evidence: IMMUTABLE_HISTORICAL_PACKAGES
+    consumer_lookup: POINTER_THEN_ONE_NAMED_PACKAGE_WITH_FULL_HASH_VERIFICATION
+    consumer_command: VerifyCurrent
+    missing_or_corrupt_pointer: UNKNOWN_WITH_OPTIONAL_ONE_EXPLICIT_PACKAGE_FALLBACK
+    missing_or_mismatched_target: STALE_WITH_OPTIONAL_ONE_EXPLICIT_PACKAGE_FALLBACK
+    fallback_history_scan: PROHIBITED
+    pointer_grants_work_authority: false
+    pointer_suppresses_materially_different_return: false
+    wake_suppression: FUTURE_WORK_NOT_THIS_CONTRACT
+
   result_fields:
     required:
       - envelope_id
@@ -123,7 +150,9 @@ patch_result_return_bridge:
       - PROCESS_POOL
     order:
       - isolate current control context
-      - scan fixed provider folder
+      - read fixed provider CURRENT.json as nonauthoritative bounded lookup hint
+      - verify exact named package and pointer identity/hashes before treating it as current
+      - on UNKNOWN or STALE, verify at most one explicitly addressed package if supplied
       - ignore packages without READY
       - verify envelope and manifest schemas
       - verify manifest cardinality
@@ -139,6 +168,7 @@ patch_result_return_bridge:
     invalid_unrelated_package_blocks_unrelated_currentness: false
     provider_visible_equals_consumed: false
     ingress_equals_project_effect: false
+    pointer_equals_ingress_or_work_authority: false
 
   prohibited:
     - new command or scheduler
@@ -182,4 +212,3 @@ patch_result_return_bridge:
     - INVALID_UNRELATED_PACKAGE_DOES_NOT_BLOCK_CURRENTNESS
     - NETWORK_FAILURE_NE_PATCH_FAILURE
     - ONE_DELIVERY_FAMILY_WRITER
-
