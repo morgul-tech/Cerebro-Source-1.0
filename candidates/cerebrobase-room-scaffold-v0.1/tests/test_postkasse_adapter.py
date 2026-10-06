@@ -23,7 +23,7 @@ class Fixture(ThreadingHTTPServer):
 
     def __init__(self):
         self.messages, self.posts, self.dedupe = {}, [], {}
-        self.next_post_500, self.bad_contact = False, False
+        self.next_post_500, self.bad_contact, self.bad_scope = False, False, False
         super().__init__(("127.0.0.1", 0), FixtureHandler)
 
 
@@ -58,13 +58,13 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if room is None:
             return self._send(403, {"code": "AUTH_REJECTED"})
         if self.path == "/v1/me":
-            return self._send(200, {"room_id": room, "scopes": SCOPES})
+            scopes = SCOPES[:-1] if self.server.bad_scope else SCOPES
+            return self._send(200, {"room_id": room, "scope_set": ",".join(scopes)})
         if self.path == "/v1/contacts":
-            peer = S_ADMIN if room == S_PILOT else S_PILOT
             alias = "andreas_admin" if room == S_PILOT else "pilot"
             if self.server.bad_contact:
-                peer = "unpaired-server-room"
-            return self._send(200, {"contacts": [{"alias": alias, "room_id": peer, "state": "ALLOWED"}]})
+                alias = "unpaired_alias"
+            return self._send(200, {"contacts": [{"local_alias": alias, "state": "ALLOWED"}]})
         if self.path.startswith("/v1/postkassa?limit="):
             return self._send(200, {"messages": [m for m in self.server.messages.values()
                                                 if room in (m["sender_room_id"], m["recipient_room_id"])]})
@@ -258,6 +258,11 @@ class PostkasseAdapterTest(ServerCase):
         item = next(x for x in result["items"] if x["name"] == "integration:postkasse")
         self.assertEqual(item["code"], "POSTKASSE_CONTACT_MISMATCH")
         self.fixture.bad_contact = False
+        self.fixture.bad_scope = True
+        result = preflight(self.cfg, check_listener=False)
+        item = next(x for x in result["items"] if x["name"] == "integration:postkasse")
+        self.assertEqual(item["code"], "POSTKASSE_ROOM_MISMATCH")
+        self.fixture.bad_scope = False
         self.app.postkasse.spec = {**self.spec, "endpoint": "http://100.77.125.87:18788"}
         self.assertEqual(self.app.postkasse._address(), ("http", "100.77.125.87", 18788))
         self.app.postkasse.spec = {**self.spec, "endpoint": "http://100.77.125.88:18788"}

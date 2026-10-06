@@ -165,8 +165,10 @@ class Postkasse:
 
     def _me(self, b: Binding) -> None:
         _, me = self._request(b, "GET", "/v1/me")
-        if me.get("room_id") != b.room_id or not isinstance(me.get("scopes"), list) or not _SCOPES.issubset(
-                set(x for x in me["scopes"] if isinstance(x, str))):
+        scope_set = me.get("scope_set")
+        scopes = [part.strip() for part in scope_set.split(",")] if isinstance(scope_set, str) else []
+        if (me.get("room_id") != b.room_id or len(scopes) != len(_SCOPES) or
+                set(scopes) != _SCOPES):
             raise PostkasseError("POSTKASSE_ROOM_MISMATCH")
 
     def _contacts(self, b: Binding) -> dict[str, str]:
@@ -174,16 +176,16 @@ class Postkasse:
         rows = obj.get("contacts")
         if not isinstance(rows, list):
             raise PostkasseError("POSTKASSE_RESPONSE_INVALID")
-        allowed = {}
+        allowed = set()
         for row in rows:
             if not isinstance(row, dict):
                 raise PostkasseError("POSTKASSE_RESPONSE_INVALID")
-            if (row.get("state") or row.get("status")) == "ALLOWED":
-                rid, alias = row.get("room_id"), row.get("alias")
-                if not isinstance(rid, str) or not isinstance(alias, str) or alias in allowed:
+            if row.get("state") == "ALLOWED":
+                alias = row.get("local_alias")
+                if not isinstance(alias, str) or alias in allowed:
                     raise PostkasseError("POSTKASSE_RESPONSE_INVALID")
-                allowed[alias] = rid
-        if allowed != b.contacts:
+                allowed.add(alias)
+        if allowed != set(b.contacts):
             raise PostkasseError("POSTKASSE_CONTACT_MISMATCH")
         return b.contacts
 
