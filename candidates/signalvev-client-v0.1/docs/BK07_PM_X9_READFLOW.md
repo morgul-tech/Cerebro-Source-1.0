@@ -21,7 +21,7 @@ PM receipt ─PmOwnerCommitReader.read_verified (authenticated, committed, read-
 | `PmX9HostPorts(pm_port, producer_channel, x9_channel, clock, client_config, connect_fn=None, pm_reread_port=None)` | what the host binds |
 | `diagnose(settings, ports) -> [{port,status,detail}]` | per-port `BOUND / MISSING / INVALID / SYNTHETIC_IN_PRODUCTION / NOT_SYNTHETIC_IN_TEST_MODE / DEFAULT_OFF`, no I/O |
 | `build_binding(settings, ports) -> PmX9Binding` | **the one factory entry point**; raises `PmX9Unbound(code, diagnostics)` before any I/O |
-| `load_ports(settings)` | resolves `ports_factory = "module:callable"` |
+| `load_ports(settings, *, host_runtime=None)` | resolves `ports_factory = "module:callable"`; passes an explicit runtime only when supplied |
 | `binding.open_sender()` / `binding.send_hint(receipt_ref) -> HintSendResult` | operation 1 |
 | `binding.start_listener()` | operation 2: `ListenClient(resolver=PmRereadResolver, sink=X9DepositSink)` |
 | `binding.consume_one(event_id, prior_material_sha256=None, now=None) -> ConsumeResult` | operation 3 (the X9 pulse calls it) |
@@ -103,6 +103,51 @@ The original external ZIP/wheel and X2's completed source77/installed49/pins42 e
 immutable. Internal code changes need distinct review; the old wheel is not evidence of the new
 integrated bytes. Only targeted reconciliation/retention tests are new here. The separate X2
 Windows verifier correction preserves `SystemRoot` in its subprocess environment.
+
+## BK07 X6 current-session host composition
+
+`providers.pm_x9_live_host:make_ports` composes the existing PM projection, Postgres producer/X9
+custody, X9 receiver channel, and existing NATS `ClientConfig`. The client loader passes
+`host_runtime` only when the live host explicitly supplies it. The runtime object is created by the
+host in memory; provider readbacks, credentials, headers, and connection factories are not written
+to the TOML file. `enabled=True` is an explicit host setting and is not a role grant or session bind.
+
+Before returning ports, the factory requires fresh `read_project_control_state` v2 readbacks for PM
+and X9, provider-bound caller identity, a current persisted session for each caller, matching
+transport/persisted session refs, matching project revisions, distinct sessions, and exact agreement
+with the provider-owned PM projection and trusted X9 producer/receiver tuples. Shared OAuth principal
+metadata is permitted, but never substitutes for these bindings. No identity probe, role bind, NATS
+connect, database operation, install, event send, or listener start occurs during this check. Missing
+data returns `PM_X9_CURRENT_HOST_COMPOSITION_UNAVAILABLE` with exact missing fields; other exceptions
+are reduced to a safe type-only code.
+
+The fresh RYG396 PM10880 and X9 PM10867 reads for this task report
+`NO_CURRENT_PERSISTED_SESSION` and `persisted_session=null`. Their transport refs cannot establish
+roles. The expected safe result is therefore a fail-closed composition diagnostic naming the missing
+persisted session tuple fields. No first PM event is authorized until the existing PM and X9 providers
+return actual current persisted bindings; do not create or bind one to clear this preflight.
+
+### A1 install and first-run handoff
+
+1. Install the reviewed Source package from the draft PR commit and use this example TOML as the
+   non-secret configuration template. Keep existing NATS, OAuth, header/secret, Postgres, PM-owner,
+   and X9 role providers in their current host; inject them through `LiveRuntimeBindings`.
+2. Before enabling any operation, take fresh PM/X9 control-state readbacks and invoke
+   `load_ports(settings, host_runtime=bindings)`, then `build_binding(settings, ports)`. If the current
+   persisted PM/X9 session tuples are absent, stale, duplicate, or mismatched, stop on the returned
+   diagnostic. Do not call `open_sender`, `start_listener`, `send_hint`, or `pulse`.
+3. Rollback: restore the prior package version and its prior TOML/config selection; keep the new
+   runtime composition disabled. No schema installation or credential migration is part of this
+   change.
+4. The first eligible live edge, after A1 independently verifies both real persisted bindings and
+   the existing provider readiness, is one existing genuine PM-ready event through the current
+   owner receipt path, preserving its event identity. Continue D0 → X9 deposit/ordinary consume →
+   fresh PM reread → typed disposition/readback, then stop and record that single result. Never
+   synthesize, replay, duplicate, or restart an event for this qualification.
+
+A1 retains install ownership and X6 retains the operative PM→X9 chain. This PR supplies the selected
+non-secret config template, runner factory, schema reuse reference (`providers/x9-role-binding-config.schema.json`),
+rollback recipe, and exact first edge. It does not authorize deployment or a live event by itself.
 
 Room C rev2 (C2 → C3 → C4) remains the current operational case. This PM/X9 composition does
 not authorize a first PM/X9 live trial, install, NATS connection, deployment or actor work.

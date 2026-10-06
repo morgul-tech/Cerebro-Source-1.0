@@ -250,15 +250,16 @@ def build_binding(settings: PmX9Settings, ports: PmX9HostPorts | None) -> "PmX9B
     return PmX9Binding(settings, ports)
 
 
-def load_ports(settings: PmX9Settings) -> PmX9HostPorts:
-    """Resolve ``ports_factory = 'module:callable'`` (called with the settings). Only for a non-OFF mode."""
+def load_ports(settings: PmX9Settings, *, host_runtime: Any = None) -> PmX9HostPorts:
+    """Resolve ``ports_factory = 'module:callable'``. Host runtime is explicit and never ambient."""
     if settings.mode == MODE_OFF:
         raise PmX9Unbound("PM_X9_DEFAULT_OFF", diagnose(settings, None))
     if not settings.ports_factory:
         raise PmX9Unbound("PM_X9_PORTS_FACTORY_MISSING", diagnose(settings, None))
     module_name, _, attr = settings.ports_factory.partition(":")
     try:
-        ports = getattr(importlib.import_module(module_name), attr)(settings)
+        factory = getattr(importlib.import_module(module_name), attr)
+        ports = factory(settings, host_runtime=host_runtime) if host_runtime is not None else factory(settings)
     except PmX9Unbound:
         raise
     except Exception as exc:  # noqa: BLE001 - the host factory's failure is reported, never papered over
