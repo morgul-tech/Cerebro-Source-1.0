@@ -1297,18 +1297,126 @@ def consume_pm_authorized_command_chain(
     """
 
     _require(isinstance(max_steps, int) and 1 <= max_steps <= 32, "pm-command-chain-bound-invalid")
-    if durable_disposition_request is not None:
-        _require(
-            isinstance(durable_disposition_request, dict),
-            "pm-command-chain-durable-disposition-request-object-required",
-        )
+    # Retained as a source-compatible argument only. Caller-authored proposals
+    # are never trusted; the pre-stop proposal is derived below from canonical
+    # governance, command/carrier, and current-state readback fields.
     read_current = getattr(current_state_reader, "read_current", None)
     _require(callable(read_current), "pm-command-chain-current-state-reader-required")
     current_governance = copy.deepcopy(governance)
     current_command = copy.deepcopy(command_state)
     current_carrier = copy.deepcopy(carrier)
+    last_fresh_state: dict[str, Any] | None = None
     steps: list[dict[str, Any]] = []
     observed_frontiers: set[tuple[Any, ...]] = set()
+
+    def default_disposition_request() -> tuple[dict[str, Any] | None, str | None]:
+        """Build a proposal from one complete fresh tuple; never mix fields."""
+        if not isinstance(last_fresh_state, dict):
+            return None, "A7_PRESTOP_CURRENT_STATE_READER_NOT_EXERCISED"
+        if (
+            str(last_fresh_state.get("currentness") or "UNKNOWN").upper() != "CURRENT"
+            or last_fresh_state.get("provider_readback_verified") is not True
+        ):
+            return None, "A7_PRESTOP_CURRENT_STATE_READBACK_NOT_CURRENT"
+
+        def complete_tuple(
+            source: dict[str, Any],
+            *,
+            identity_key: str | None = None,
+        ) -> tuple[tuple[str, str, int, str] | None, str | None, str | None]:
+            selected_identity_key = identity_key or (
+                "event_ref" if source.get("event_ref") is not None else "command_id"
+            )
+            identity = source.get(selected_identity_key)
+            if not isinstance(identity, str) or not identity.strip():
+                return None, None, None
+
+            def one_text(keys: tuple[str, ...], edge: str) -> tuple[str | None, str | None]:
+                present = [source[key] for key in keys if key in source and source[key] is not None]
+                if any(not isinstance(value, str) or not value.strip() for value in present):
+                    return None, edge
+                normalized = {value.strip() for value in present}
+                if len(normalized) > 1:
+                    return None, edge
+                return (next(iter(normalized)) if normalized else None), None
+
+            def one_revision(keys: tuple[str, ...], edge: str) -> tuple[int | None, str | None]:
+                present = [source[key] for key in keys if key in source and source[key] is not None]
+                if any(type(value) is not int or value < 0 for value in present):
+                    return None, edge
+                normalized = set(present)
+                if len(normalized) > 1:
+                    return None, edge
+                return (next(iter(normalized)) if normalized else None), None
+
+            referent_ref, edge = one_text(
+                ("prepublication_referent_ref", "referent_ref", "canonical_state_ref"),
+                "A7_PRESTOP_CANONICAL_REFERENT_REF_DIVERGENCE",
+            )
+            if edge:
+                return None, selected_identity_key, edge
+            referent_revision, edge = one_revision(
+                ("prepublication_referent_revision", "referent_revision", "canonical_state_revision"),
+                "A7_PRESTOP_CANONICAL_REFERENT_REVISION_DIVERGENCE",
+            )
+            if edge:
+                return None, selected_identity_key, edge
+            scope_ref, edge = one_text(
+                ("prepublication_scope_ref", "scope_ref"),
+                "A7_PRESTOP_CANONICAL_SCOPE_REF_DIVERGENCE",
+            )
+            if edge:
+                return None, selected_identity_key, edge
+            if not referent_ref:
+                return None, selected_identity_key, "A7_PRESTOP_CANONICAL_REFERENT_REF_UNBOUND"
+            if referent_revision is None:
+                return None, selected_identity_key, "A7_PRESTOP_CANONICAL_REFERENT_REVISION_UNBOUND"
+            if not scope_ref:
+                return None, selected_identity_key, "A7_PRESTOP_CANONICAL_SCOPE_REF_UNBOUND"
+            return (
+                (identity.strip(), referent_ref, referent_revision, scope_ref),
+                selected_identity_key,
+                None,
+            )
+
+        fresh_tuple, identity_key, tuple_gap = complete_tuple(last_fresh_state)
+        if tuple_gap:
+            return None, tuple_gap
+        if fresh_tuple is None or identity_key is None:
+            return None, "A7_PRESTOP_CANONICAL_EVENT_IDENTITY_UNBOUND"
+
+        for source_name, source in (
+            ("governance", current_governance),
+            ("command_state", current_command),
+            ("carrier", current_carrier),
+        ):
+            if not isinstance(source, dict) or source.get(identity_key) is None:
+                continue
+            candidate_tuple, _, candidate_gap = complete_tuple(source, identity_key=identity_key)
+            if candidate_gap:
+                if candidate_gap.endswith("_UNBOUND"):
+                    continue
+                return None, f"A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE:{source_name}:{candidate_gap}"
+            if candidate_tuple is not None and candidate_tuple != fresh_tuple:
+                return None, f"A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE:{source_name}"
+
+        event_or_command_ref, referent_ref, referent_revision, scope_ref = fresh_tuple
+
+        identity = {
+            "event_or_command_ref": event_or_command_ref,
+            "referent_ref": referent_ref,
+            "referent_revision": referent_revision,
+            "scope_ref": scope_ref,
+        }
+        proposal_ref = "PM-PRESTOP-" + _canonical_sha256(identity)[:24].upper()
+        return ({
+            "schema": PM_DISPOSITION_REQUEST_SCHEMA,
+            "disposition_ref": proposal_ref,
+            "requested_disposition": "HOLD",
+            "expected_referent_ref": referent_ref,
+            "expected_referent_revision": referent_revision,
+            "requested_scope_ref": scope_ref,
+        }, None)
 
     def stop(reason: str, *, currentness: str = "CURRENT", blocker: str | None = None) -> dict[str, Any]:
         _require(reason in PM_FIXED_POINT_STOP_REASONS, "pm-command-chain-stop-reason-invalid")
@@ -1320,12 +1428,26 @@ def consume_pm_authorized_command_chain(
             "steps": copy.deepcopy(steps),
             "step_count": len(steps),
             "human_action": "REQUIRED" if reason == "REAL_HUMAN_GATE" else "NONE",
-            "durable_disposition_consumer_exercised": durable_disposition_request is not None,
+            "durable_disposition_consumer_exercised": reason != "REAL_HUMAN_GATE",
         }
         if blocker:
             value["exact_blocker"] = blocker
-        if durable_disposition_request is not None:
-            if host._pm_disposition_publisher is None:
+        if reason != "REAL_HUMAN_GATE":
+            proposal, proposal_gap = default_disposition_request()
+            if proposal_gap:
+                value["durable_disposition_publication"] = {
+                    "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                    "result": (
+                        "HOLD_LOCAL_PRESTOP_CANONICAL_CONFLICT"
+                        if proposal_gap.startswith("A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE")
+                        else "HOLD_LOCAL_PRESTOP_BASIS_UNBOUND"
+                    ),
+                    "published": False,
+                    "live_effect": False,
+                    "retry_allowed": False,
+                    "first_unproven_live_edge": proposal_gap,
+                }
+            elif host._pm_disposition_publisher is None:
                 value["durable_disposition_publication"] = {
                     "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
                     "result": "BLOCK_EXACT_PUBLISHER_PORT",
@@ -1336,9 +1458,17 @@ def consume_pm_authorized_command_chain(
                         "NORMAL_PM_DURABLE_DISPOSITION_GUARDED_PUBLISHER_UNBOUND",
                 }
             else:
-                value["durable_disposition_publication"] = (
-                    host.publish_pm_durable_disposition(durable_disposition_request)
-                )
+                try:
+                    value["durable_disposition_publication"] = host.publish_pm_durable_disposition(proposal)
+                except Exception as exc:
+                    value["durable_disposition_publication"] = {
+                        "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
+                        "result": "HOLD_LOCAL_PRESTOP_A7_BASIS",
+                        "published": "UNKNOWN",
+                        "live_effect": "UNKNOWN",
+                        "retry_allowed": False,
+                        "first_unproven_live_edge": str(exc),
+                    }
         return value
 
     for _ in range(max_steps):
@@ -1390,6 +1520,7 @@ def consume_pm_authorized_command_chain(
         fresh = read_current(previous=copy.deepcopy(consumed))
         _require(isinstance(fresh, dict), "pm-command-chain-fresh-state-object-required")
         _reject_runtime_authority_injection(fresh, "pm_command_chain_fresh_state")
+        last_fresh_state = copy.deepcopy(fresh)
         currentness = str(fresh.get("currentness") or "UNKNOWN").upper()
         _require(currentness in {"CURRENT", "STALE", "UNKNOWN"}, "pm-command-chain-currentness-invalid")
         if currentness != "CURRENT":

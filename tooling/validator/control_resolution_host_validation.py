@@ -1090,6 +1090,8 @@ def selftest() -> dict[str, Any]:
         human_fixed["stop_reason"] == "REAL_HUMAN_GATE"
         and human_fixed["step_count"] == 1
         and human_fixed["human_action"] == "REQUIRED"
+        and human_fixed["durable_disposition_consumer_exercised"] is False
+        and "durable_disposition_publication" not in human_fixed
         and human_reader.calls == 1,
     )
 
@@ -1183,38 +1185,133 @@ def selftest() -> dict[str, Any]:
         canonical_resolver=chain_resolver,
         pm_disposition_publisher=durable_fixture,
     )
+    def fresh_prestop_reader(next_governance: dict[str, Any], event_ref: str) -> PMCurrentStateReaderFixture:
+        return PMCurrentStateReaderFixture([{
+            "currentness": "CURRENT",
+            "provider_readback_verified": True,
+            "event_ref": event_ref,
+            "referent_ref": event_ref,
+            "referent_revision": 4,
+            "scope_ref": f"{event_ref}-SCOPE",
+            "control_request": {
+                "canonical_resolution": {
+                    "project_manager_control_governance": copy.deepcopy(next_governance),
+                },
+            },
+            "command_state": None,
+            "carrier": copy.deepcopy(carrier),
+        }])
+
+    def run_prestop_with_reader(host: BoundControlResolutionHost, reader: PMCurrentStateReaderFixture):
+        return consume_pm_authorized_command_chain(
+            host,
+            governance=governance,
+            command_state=command,
+            carrier=carrier,
+            command_executor=PMCommandExecutorFixture(),
+            current_state_reader=reader,
+            root=SOURCE_ROOT,
+            require_git_ancestry=False,
+        )
+
+    def run_fresh_prestop(host: BoundControlResolutionHost, next_governance: dict[str, Any], event_ref: str):
+        return run_prestop_with_reader(host, fresh_prestop_reader(next_governance, event_ref))
+
     durable_fixed = consume_pm_authorized_command_chain(
         durable_host,
-        governance={"next_action": {}},
-        command_state=None,
+        governance=governance,
+        command_state=command,
         carrier=carrier,
-        command_executor=None,
-        current_state_reader=PMCurrentStateReaderFixture([]),
+        command_executor=PMCommandExecutorFixture(),
+        current_state_reader=fresh_prestop_reader(
+            {"event_ref": "EVENT-PRESTOP-1", "next_action": {}}, "EVENT-PRESTOP-1",
+        ),
         durable_disposition_request=durable_request,
         root=SOURCE_ROOT,
         require_git_ancestry=False,
     )
     check(
-        "ROMA-I41-normal-fixed-point-consumer-invokes-bound-guarded-publisher",
+        "A7-default-prestop-consumer-invokes-derived-guarded-proposal",
         durable_fixed["stop_reason"] == "QUIESCENT"
         and durable_fixed["durable_disposition_consumer_exercised"] is True
         and durable_fixed["durable_disposition_publication"]["result"]
             == "PASS_GUARDED_PUBLICATION_READBACK"
-        and durable_fixture.calls == [durable_request],
+        and len(durable_fixture.calls) == 1
+        and durable_fixture.calls[0]["disposition_ref"].startswith("PM-PRESTOP-")
+        and durable_fixture.calls[0]["expected_referent_ref"] == "EVENT-PRESTOP-1"
+        and durable_fixture.calls[0]["expected_referent_revision"] == 4
+        and durable_fixture.calls[0]["requested_scope_ref"] == "EVENT-PRESTOP-1-SCOPE"
+        and durable_fixture.calls[0]["disposition_ref"] != durable_request["disposition_ref"],
     )
-    unbound_fixed = consume_pm_authorized_command_chain(
-        chain_host,
-        governance={"next_action": {}},
-        command_state=None,
-        carrier=carrier,
-        command_executor=None,
-        current_state_reader=PMCurrentStateReaderFixture([]),
-        durable_disposition_request=durable_request,
-        root=SOURCE_ROOT,
-        require_git_ancestry=False,
+    duplicate_event_fixed = run_fresh_prestop(
+        durable_host,
+        {"event_ref": "EVENT-PRESTOP-1", "next_action": {"action_ref": "OTHER-OWNER", "owner": "MACHINE", "pm_actor": "QUALITY"}},
+        "EVENT-PRESTOP-1",
     )
     check(
-        "ROMA-I41-normal-fixed-point-consumer-fails-closed-without-publisher-binding",
+        "A7-same-event-reuses-deterministic-disposition-reference",
+        duplicate_event_fixed["stop_reason"] == "OTHER_OWNER_WAIT"
+        and duplicate_event_fixed["durable_disposition_consumer_exercised"] is True
+        and durable_fixture.calls[0]["disposition_ref"] == durable_fixture.calls[1]["disposition_ref"],
+    )
+    missing_scope_governance = {
+        "event_ref": "EVENT-PRESTOP-MISSING-SCOPE",
+        "referent_ref": "REFERENT-PRESTOP-MISSING-SCOPE",
+        "referent_revision": 5,
+        "scope_ref": "STALE-GOVERNANCE-SCOPE",
+        "next_action": {},
+    }
+    missing_scope_reader = fresh_prestop_reader(
+        missing_scope_governance,
+        "EVENT-PRESTOP-MISSING-SCOPE",
+    )
+    missing_scope_reader.states[0]["referent_ref"] = "REFERENT-PRESTOP-MISSING-SCOPE"
+    missing_scope_reader.states[0]["referent_revision"] = 5
+    del missing_scope_reader.states[0]["scope_ref"]
+    calls_before_missing_scope = len(durable_fixture.calls)
+    missing_scope_fixed = run_prestop_with_reader(durable_host, missing_scope_reader)
+    check(
+        "A7-fresh-missing-scope-never-falls-back-to-governance-scope",
+        missing_scope_fixed["stop_reason"] == "QUIESCENT"
+        and missing_scope_fixed["durable_disposition_publication"]["result"]
+            == "HOLD_LOCAL_PRESTOP_BASIS_UNBOUND"
+        and missing_scope_fixed["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "A7_PRESTOP_CANONICAL_SCOPE_REF_UNBOUND"
+        and len(durable_fixture.calls) == calls_before_missing_scope,
+    )
+    divergent_governance = {
+        "event_ref": "EVENT-PRESTOP-GOV-DIVERGES",
+        "referent_ref": "REFERENT-PRESTOP-GOV-DIVERGES",
+        "referent_revision": 6,
+        "scope_ref": "SCOPE-PRESTOP-GOV-DIVERGES",
+        "next_action": {},
+    }
+    divergent_reader = fresh_prestop_reader(
+        divergent_governance,
+        "EVENT-PRESTOP-DIVERGENCE",
+    )
+    divergent_reader.states[0]["event_ref"] = "EVENT-PRESTOP-DIVERGENCE"
+    divergent_reader.states[0]["referent_ref"] = "REFERENT-PRESTOP-DIVERGENCE"
+    divergent_reader.states[0]["referent_revision"] = 5
+    divergent_reader.states[0]["scope_ref"] = "SCOPE-PRESTOP-DIVERGENCE"
+    calls_before_divergence = len(durable_fixture.calls)
+    divergent_fixed = run_prestop_with_reader(durable_host, divergent_reader)
+    check(
+        "A7-complete-divergent-governance-tuple-holds-before-publisher",
+        divergent_fixed["stop_reason"] == "QUIESCENT"
+        and divergent_fixed["durable_disposition_publication"]["result"]
+            == "HOLD_LOCAL_PRESTOP_CANONICAL_CONFLICT"
+        and divergent_fixed["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "A7_PRESTOP_CANONICAL_TUPLE_DIVERGENCE:governance"
+        and len(durable_fixture.calls) == calls_before_divergence,
+    )
+    unbound_fixed = run_fresh_prestop(
+        chain_host,
+        {"event_ref": "EVENT-PRESTOP-1", "next_action": {}},
+        "EVENT-PRESTOP-1",
+    )
+    check(
+        "A7-normal-fixed-point-consumer-fails-closed-without-publisher-binding",
         unbound_fixed["stop_reason"] == "QUIESCENT"
         and unbound_fixed["durable_disposition_consumer_exercised"] is True
         and unbound_fixed["durable_disposition_publication"]["result"]
@@ -1232,10 +1329,50 @@ def selftest() -> dict[str, Any]:
         require_git_ancestry=False,
     )
     check(
-        "ROMA-I41-normal-consumer-without-durable-request-preserves-old-fixed-point",
+        "A7-default-prestop-consumer-blocks-locally-when-canonical-basis-identity-is-missing",
         legacy_fixed["stop_reason"] == "QUIESCENT"
-        and legacy_fixed["durable_disposition_consumer_exercised"] is False
-        and "durable_disposition_publication" not in legacy_fixed,
+        and legacy_fixed["durable_disposition_consumer_exercised"] is True
+        and legacy_fixed["durable_disposition_publication"]["result"]
+            == "HOLD_LOCAL_PRESTOP_BASIS_UNBOUND"
+        and legacy_fixed["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "A7_PRESTOP_CURRENT_STATE_READER_NOT_EXERCISED",
+    )
+    exact_publisher_gap = run_fresh_prestop(
+        chain_host,
+        {"event_ref": "EVENT-PRESTOP-2", "next_action": {}},
+        "EVENT-PRESTOP-2",
+    )
+    check(
+        "A7-default-prestop-reports-exact-unbound-publisher-edge",
+        exact_publisher_gap["durable_disposition_consumer_exercised"] is True
+        and exact_publisher_gap["durable_disposition_publication"]["result"]
+            == "BLOCK_EXACT_PUBLISHER_PORT"
+        and exact_publisher_gap["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "NORMAL_PM_DURABLE_DISPOSITION_GUARDED_PUBLISHER_UNBOUND"
+        and exact_publisher_gap["durable_disposition_publication"]["published"] is False,
+    )
+    class ExplodingDurableDispositionPublisherFixture:
+        def publish(self, proposal: dict[str, Any]) -> dict[str, Any]:
+            raise RuntimeError("PRESTOP_PUBLICATION_READBACK_UNCERTAIN")
+
+    uncertain_host = BoundControlResolutionHost(
+        persistence_verifier=composite,
+        capability_resolver=capability,
+        canonical_resolver=chain_resolver,
+        pm_disposition_publisher=ExplodingDurableDispositionPublisherFixture(),
+    )
+    uncertain_publication = run_fresh_prestop(
+        uncertain_host,
+        {"event_ref": "EVENT-PRESTOP-3", "next_action": {}},
+        "EVENT-PRESTOP-3",
+    )
+    check(
+        "A7-prestop-uncertain-publication-is-local-and-never-blind-retried",
+        uncertain_publication["durable_disposition_publication"]["result"]
+            == "HOLD_LOCAL_PRESTOP_A7_BASIS"
+        and uncertain_publication["durable_disposition_publication"]["published"] == "UNKNOWN"
+        and uncertain_publication["durable_disposition_publication"]["live_effect"] == "UNKNOWN"
+        and uncertain_publication["durable_disposition_publication"]["retry_allowed"] is False,
     )
 
     # P659 Wave2: executable ADMINPULSE/debt consumer with exact provider watermarks.
