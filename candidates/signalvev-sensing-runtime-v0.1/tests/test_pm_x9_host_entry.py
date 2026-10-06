@@ -178,6 +178,22 @@ class HostEntryTests(unittest.TestCase):
         self.assertTrue(listener.stopped)
         self.assertIsNone(fake._listener)
 
+    def test_close_attempts_sender_even_when_listener_stop_fails(self):
+        calls = []
+        class Listener:
+            def stop(self):
+                calls.append("stop")
+                raise RuntimeError("listener failed")
+        class Sender:
+            def close(self):
+                calls.append("close")
+        fake = SimpleNamespace(_listener=Listener(), _sender=Sender())
+        with self.assertRaises(RuntimeError):
+            PmX9Binding.close(fake)
+        self.assertEqual(calls, ["stop", "close"])
+        self.assertIsNone(fake._listener)
+        self.assertIsNone(fake._sender)
+
 
 if __name__ == "__main__":
     unittest.main()

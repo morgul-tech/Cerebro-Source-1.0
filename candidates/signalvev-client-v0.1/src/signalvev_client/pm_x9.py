@@ -677,9 +677,21 @@ class PmX9Binding:
                 "claims": dict(CLAIMS)}
 
     def close(self) -> None:
+        failure = None
         if self._listener is not None:
-            self._listener.stop()
-            self._listener = None
+            try:
+                self._listener.stop()
+            except Exception as exc:
+                failure = exc
+            finally:
+                self._listener = None
         if self._sender is not None:
-            self._sender.close()
-            self._sender = None
+            try:
+                self._sender.close()
+            except Exception as exc:
+                if failure is None:
+                    failure = exc
+            finally:
+                self._sender = None
+        if failure is not None:
+            raise failure
