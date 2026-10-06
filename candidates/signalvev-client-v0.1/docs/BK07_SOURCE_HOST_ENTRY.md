@@ -19,10 +19,12 @@ The call is `run_one_existing_ready_receipt(settings, bindings, receipt_ref,
 host_authorized=True, receiver_consume_authorized=True)`. It starts the listener
 and sender, sends that one existing owner receipt, waits at most 30 seconds for
 the same event's deposit, and calls `consume_one` only after exact deposited
-readback. That consume performs a fresh hint-bound PM reread through the
-existing binding. The returned `HostRunResult` retains typed send, deposit and
+readback. A new disposition decision performs a fresh hint-bound PM reread
+through the existing binding. The returned `HostRunResult` retains typed send, deposit and
 consume results. `DISPOSITION_READBACK` requires the same event ID and an
-actual disposition record. `UNKNOWN_SEND`, replay refusal, missing ingress or
+actual fresh disposition record. `ALREADY_DISPOSED` keeps its separate top-level
+state: it confirms a prior durable disposition without claiming a new PM reread.
+`UNKNOWN_SEND`, replay refusal, missing ingress or
 deposit, and exceptions are returned without an automatic retry. Opened
 resources are closed on every path. An uncertain result requires owner-led
 reconciliation of the original event identity, never a new event or blind

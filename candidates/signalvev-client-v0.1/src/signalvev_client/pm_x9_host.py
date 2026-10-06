@@ -91,7 +91,7 @@ def run_one_existing_ready_receipt(
                           and getattr(consumed.record, "event_id", None) == sent.event_id
                           and getattr(consumed.record, "disposition", None) == consumed.disposition
                           and consumed.pointer_sha256 == deposit.pointer_sha256)
-                result = HostRunResult("DISPOSITION_READBACK" if proven else "CONSUME_UNCONFIRMED",
+                result = HostRunResult(consumed.state if proven else "CONSUME_UNCONFIRMED",
                                        send=sent, deposit=deposit, consume=consumed)
     except Exception as exc:
         result = HostRunResult("OPERATION_UNCONFIRMED", send=sent,

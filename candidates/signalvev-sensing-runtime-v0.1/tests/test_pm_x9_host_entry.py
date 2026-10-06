@@ -18,7 +18,7 @@ sys.path[:0] = [str(REPO / "candidates" / "signalvev-client-v0.1" / "src"),
 from providers.pm_x9_live_host import LiveRuntimeBindings  # noqa: E402
 from signalvev_client.pm_x9 import (ConsumeResult, DepositRecord, HintSendResult,
                                      PmX9Binding, PmX9Settings, PmX9Unbound)  # noqa: E402
-from signalvev_client import pm_x9, pm_x9_host  # noqa: E402
+from signalvev_client import pm_x9, pm_x9_host, pm_x9_synthetic  # noqa: E402
 
 
 def settings(mode="PRODUCTION"):
@@ -59,7 +59,7 @@ class FakeBinding:
 
     def consume_one(self, event_id):
         self.calls.append(("consume", event_id))
-        return self.consume
+        return self.consume(event_id) if callable(self.consume) else self.consume
 
     def close(self):
         self.calls.append("close")
@@ -138,6 +138,35 @@ class HostEntryTests(unittest.TestCase):
         self.assertEqual((result.state, result.error_type), ("OPERATION_UNCONFIRMED", "RuntimeError"))
         self.assertNotIn("credential value", repr(result))
         self.assertEqual(b.calls, ["listen", "close"])
+
+    def test_existing_durable_disposition_retains_already_disposed_without_pm_reread(self):
+        world = pm_x9_synthetic.SyntheticWorld()
+        self.addCleanup(world.close)
+        receipt = "pm-receipt:already-disposed-host-boundary"
+        world.pm.seed_hint(receipt)
+        first = pm_x9.build_binding(world.settings, world.ports())
+        self.addCleanup(first.close)
+        first.start_listener()
+        first.open_sender()
+        sent = first.send_hint(receipt)
+        self.assertEqual(sent.state, "TRANSPORT_ACCEPTED")
+        self.assertTrue(first.wait_for_ingress(1, 5.0))
+        [deposit] = first.sink.records
+        self.assertEqual(first.consume_one(sent.event_id).state, "DISPOSITION_READBACK")
+
+        restarted = world.fork()
+        second = pm_x9.build_binding(restarted.settings, restarted.ports())
+        self.addCleanup(second.close)
+        reads_before = world.pm.reread_calls
+        host_binding = FakeBinding(sent, deposit, second.consume_one)
+        with patch.object(pm_x9_host, "compose", return_value=host_binding):
+            result = pm_x9_host.run_one_existing_ready_receipt(
+                settings(), runtime(), receipt, host_authorized=True,
+                receiver_consume_authorized=True)
+        self.assertEqual((result.state, result.consume.state), ("ALREADY_DISPOSED", "ALREADY_DISPOSED"))
+        self.assertEqual(result.consume.event_id, sent.event_id)
+        self.assertEqual(world.pm.reread_calls, reads_before)
+        self.assertEqual(host_binding.calls[-1], "close")
 
     def test_partial_client_startup_releases_its_own_resource(self):
         class Sender:
