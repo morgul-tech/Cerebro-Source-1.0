@@ -6,6 +6,7 @@ import re
 import unittest
 
 from support import ServerCase, jbody
+from cerebrobase import ui
 
 FORBIDDEN_CLAIMS = ("Lås opp med din nøkkel", "Ingen andre har tilgang", "heller ikke Cerebrobase", "kryptert",
                     "gjenopprettet", "Filen er lagret", "nye meldinger", "Operativ")
@@ -38,7 +39,10 @@ class F_Labels(ServerCase):
         _, _, login = anon.get("/logg-inn")
         t = login.decode()
         self.assertIn("ikke ekte innlogging", t)
-        self.assertIn("Testidentitet: Andreas (ADMIN)", t)
+        self.assertIn("Velkommen inn.", t)
+        self.assertIn('name="identity" value="fixture-andreas-admin"', t)
+        self.assertIn('name="identity" value="fixture-marianne-pilot"', t)
+        self.assertNotIn("Andreas (ADMIN)", t)
         a = self.logged_in("fixture-andreas-admin")
         m = self.logged_in("fixture-marianne-pilot")
         pages = [t, a.get("/rom/room-fixture-andreas-admin")[2].decode(), a.get("/admin")[2].decode(),
@@ -48,11 +52,42 @@ class F_Labels(ServerCase):
                 self.assertNotIn(claim, p)
             self.assertIn('lang="nb"', p)
         self.assertIn("Ikke tilgjengelig ennå", pages[1])
-        self.assertIn("Ingen filer er lagret", pages[3])
+        self.assertIn("Filer", pages[3])
+        self.assertIn("Kandidat 0.1-alpha.1", pages[3])
         for p in pages:                                            # every form control is labelled/named
             for inp in re.findall(r"<input [^>]*type=\"text\"[^>]*>", p):
                 ident = re.search(r'id="([^"]+)"', inp).group(1)
                 self.assertIn(f'for="{ident}"', p)
+
+    def test_mailbox_human_labels_preserve_wire_and_truth(self):
+        messages = [
+            {"message_id": "incoming-1", "sender_room_id": "known-andreas", "role": "incoming",
+             "delivery_state": "SENT"},
+            {"message_id": "sent-1", "sender_room_id": "our-room", "role": "sent",
+             "delivery_state": "ACKED_BY_RECIPIENT_PROTO"},
+        ]
+        body = ui.postkasse_body("our-room", messages, {"andreas_admin": "known-andreas"}, "csrf-token")
+        self.assertIn("Melding fra Andreas", body)
+        self.assertIn("Din melding", body)
+        self.assertIn("Lest", body)
+        self.assertNotIn("Svar mottatt", body)  # mailbox summaries have no reply_to proof
+        self.assertNotIn("ACKED_BY_RECIPIENT_PROTO", body)
+        self.assertIn('href="/rom/our-room/postkasse/incoming-1"', body)
+        self.assertIn('name="csrf" value="csrf-token"', body)
+        self.assertIn('name="dedupe_key"', body)
+        self.assertIn('name="recipient"', body)
+        self.assertIn('name="tekst"', body)
+        self.assertIn('<summary>Tekniske detaljer</summary>', body)
+
+    def test_message_detail_escapes_content_and_keeps_actions(self):
+        message = {"message_id": "msg-1", "sender_room_id": "peer", "recipient_room_id": "our-room",
+                   "role": "incoming", "delivery_state": "SENT", "payload": "<private>"}
+        body = ui.postkasse_message_body("our-room", message, "csrf-token")
+        self.assertIn("&lt;private&gt;", body)
+        self.assertNotIn("<private>", body)
+        self.assertIn('action="/rom/our-room/postkasse/msg-1/ack"', body)
+        self.assertIn('action="/rom/our-room/postkasse/msg-1/reply"', body)
+        self.assertIn('name="csrf" value="csrf-token"', body)
 
 
 if __name__ == "__main__":
