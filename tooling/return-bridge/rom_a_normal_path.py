@@ -1,0 +1,286 @@
+#!/usr/bin/env python3
+"""Run BK04/BK05 selection from an existing PR73 capture during a normal A1 return.
+
+This is a local, non-authoritative preparation step. The caller supplies an
+observed return and any actual verifier/currentness files; the tool never
+invents review, authenticates a provider, sends work, or claims recipient use.
+
+Example:
+  python -B tooling/return-bridge/rom_a_normal_path.py \
+    --capture-record ABS/capture.json --return-input ABS/return.json \
+    --verifier ABS/verifier.txt --verifier-delta ABS/verifier_delta.json \
+    --currentness ABS/currentness.json --out-dir ABS/new-result
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+from typing import Any
+
+
+SOURCE_ROOT = Path(__file__).resolve().parents[2]
+SCHEMA = "cerebro-rom-a-normal-path/v1"
+RETURN_SCHEMA = "cerebro-rom-a-return-observation/v1"
+MAX_INPUT_BYTES = 2_000_000
+RETURN_FIELDS = frozenset({
+    "actor_ref", "generation_ref", "carrier_ref", "arc_ref", "task_ref",
+    "task_revision", "original_sha256", "contract_kind",
+})
+REPAIR_KINDS = frozenset({"REPAIR", "REFINE"})
+PARENT_FIELDS = (
+    "actor_ref", "effect_class", "privacy_class", "live_scope", "authority_class",
+    "allowed_paths", "required_invariants", "stop_edges", "return_target",
+    "way_home", "source_head",
+)
+
+
+def _module(name: str, path: Path) -> Any:
+    sys.path.insert(0, str(path.parent))
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ValueError("MODULE_UNAVAILABLE")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _sha(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _pairs(items: list[tuple[str, Any]]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for key, value in items:
+        if key in out:
+            raise ValueError("DUPLICATE_JSON_KEY")
+        out[key] = value
+    return out
+
+
+def _json(raw: bytes) -> dict[str, Any]:
+    try:
+        obj = json.loads(raw.decode("utf-8"), object_pairs_hook=_pairs,
+                         parse_constant=lambda _: (_ for _ in ()).throw(ValueError("NONFINITE_JSON")))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("JSON_INVALID") from exc
+    if not isinstance(obj, dict):
+        raise ValueError("JSON_OBJECT_REQUIRED")
+    return obj
+
+
+def _read(path_text: str | None) -> tuple[Path, bytes]:
+    if not isinstance(path_text, str) or not path_text:
+        raise ValueError("INPUT_PATH_MISSING")
+    path = Path(path_text)
+    if not path.is_absolute() or path.is_symlink() or not path.is_file():
+        raise ValueError("INPUT_PATH_UNAVAILABLE")
+    if path.stat().st_size > MAX_INPUT_BYTES:
+        raise ValueError("INPUT_TOO_LARGE")
+    return path, path.read_bytes()
+
+
+def _text(value: Any, name: str) -> str:
+    if not isinstance(value, str) or not value.strip() or value != value.strip():
+        raise ValueError(name + "_INVALID")
+    return value
+
+
+def _capture(record_path_text: str) -> tuple[dict[str, Any], Path, bytes, dict[str, Any]]:
+    record_path, record_raw = _read(record_path_text)
+    if record_path.name != "capture.json" or record_path.parent.is_symlink():
+        raise ValueError("CAPTURE_PATH_INVALID")
+    record = _json(record_raw)
+    capture = _module("rom_a_dispatch_capture_normal", SOURCE_ROOT /
+                      "tooling/return-bridge/rom_a_dispatch_capture.py")
+    if record_raw != capture._canonical(record) + b"\n":
+        raise ValueError("CAPTURE_RECORD_NOT_CANONICAL")
+    task = record.get("task")
+    provenance = record.get("provenance")
+    review = record.get("semantic_review")
+    if not isinstance(task, dict) or not isinstance(provenance, dict) or not isinstance(review, dict):
+        raise ValueError("CAPTURE_RECORD_INVALID")
+    if set(provenance) != {"status", "original_dispatch_ref", "assertion"} or \
+            set(review) != {"status", "receipt_ref", "assertion"} or \
+            provenance["assertion"] != "CALLER_SUPPLIED_NOT_VERIFIED" or \
+            review["assertion"] != "CALLER_SUPPLIED_NOT_VERIFIED":
+        raise ValueError("CAPTURE_ASSERTION_INVALID")
+    request = {"schema": capture.SCHEMA, "task": task,
+               "provenance": {k: provenance[k] for k in ("status", "original_dispatch_ref")},
+               "semantic_review": {k: review[k] for k in ("status", "receipt_ref")}}
+    capture._validate_request(request)
+    original_path, original = _read(str(record_path.parent / "original_task.txt"))
+    key = _sha(capture._canonical([task["task_ref"], task["task_revision"]]))
+    expected = {
+        "schema": capture.SCHEMA + "-receipt", "capture_key": key, "task": task,
+        "original_sha256": _sha(original), "original_bytes": len(original),
+        "provenance": provenance, "semantic_review": review,
+        "identity_currentness": "CALLER_SUPPLIED_NOT_PROVIDER_VERIFIED",
+        "capture_stage": "LOCAL_CAPTURE_TIMING_NOT_PROVIDER_VERIFIED",
+        "publish_durability": capture.PUBLISH_DURABILITY,
+        "authority": "NONE", "effect": "NONE_CLAIMED", "work_consumed": False,
+        "recipient_read_or_use_proven": False,
+    }
+    if record != expected or record_path.parent.name != "capture-" + key:
+        raise ValueError("CAPTURE_READBACK_MISMATCH")
+    original.decode("utf-8", errors="strict")
+    return task, original_path, original, {
+        "record_path": str(record_path), "record_sha256": _sha(record_raw),
+        "original_path": str(original_path), "original_sha256": _sha(original),
+        "original_bytes": len(original), "publish_durability": record["publish_durability"],
+        "provenance": provenance, "semantic_review": review,
+    }
+
+
+def _return_input(path_text: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    path, raw = _read(path_text)
+    obj = _json(raw)
+    if set(obj) != {"schema", "observation_ref", "return"} or obj["schema"] != RETURN_SCHEMA:
+        raise ValueError("RETURN_SCHEMA_INVALID")
+    _text(obj["observation_ref"], "RETURN_OBSERVATION_REF")
+    returned = obj["return"]
+    if not isinstance(returned, dict) or set(returned) != RETURN_FIELDS:
+        raise ValueError("RETURN_FIELDS_INVALID")
+    for field in RETURN_FIELDS:
+        _text(returned[field], "RETURN_" + field.upper())
+    return returned, {"path": str(path), "sha256": _sha(raw),
+                      "bytes": len(raw), "observation_ref": obj["observation_ref"],
+                      "authority": "CALLER_SUPPLIED_NOT_PROVIDER_VERIFIED"}
+
+
+def _parent_manifest(task: dict[str, Any], original_sha256: str,
+                     supplied_path: str | None) -> tuple[bytes, str]:
+    derived = {"task_ref": task["task_ref"], "parent_revision": task["task_revision"],
+               "parent_sha256": original_sha256,
+               **{name: task[name] for name in PARENT_FIELDS}}
+    if supplied_path is None:
+        manifest = {**derived, "semantic_review": {"status": "UNREVIEWED", "receipt_ref": ""}}
+        return (json.dumps(manifest, sort_keys=True, ensure_ascii=False,
+                           separators=(",", ":")) + "\n").encode("utf-8"), "DERIVED_UNREVIEWED"
+    _, raw = _read(supplied_path)
+    manifest = _json(raw)
+    if set(manifest) != set(derived) | {"semantic_review"} or \
+            any(manifest.get(key) != value for key, value in derived.items()):
+        raise ValueError("PARENT_MANIFEST_CAPTURE_MISMATCH")
+    review = manifest["semantic_review"]
+    if not isinstance(review, dict) or set(review) != {"status", "receipt_ref"}:
+        raise ValueError("PARENT_REVIEW_FIELDS_INVALID")
+    return raw, "SUPPLIED_REVIEW_NOT_AUTHENTICATED_HERE"
+
+
+def _input_ref(path_text: str | None) -> dict[str, Any] | None:
+    if path_text is None:
+        return None
+    path, raw = _read(path_text)
+    return {"path": str(path), "sha256": _sha(raw), "bytes": len(raw)}
+
+
+def prepare(*, capture_record: str, return_input: str, out_dir: str,
+            owner_facts: str | None = None, owner_binding: str | None = None,
+            parent_manifest: str | None = None, verifier: str | None = None,
+            verifier_delta: str | None = None, currentness: str | None = None,
+            prior_record: str | None = None) -> dict[str, Any]:
+    """Prepare one selection and receipt; never send it or assert recipient use."""
+    task, original_path, original, capture_ref = _capture(capture_record)
+    returned, return_ref = _return_input(return_input)
+    refs = {name: _input_ref(path) for name, path in (
+        ("owner_facts", owner_facts), ("owner_binding", owner_binding),
+        ("parent_manifest", parent_manifest), ("verifier", verifier),
+        ("verifier_delta", verifier_delta), ("currentness", currentness),
+        ("prior_record", prior_record))}
+    fact_return = returned["contract_kind"] in {"BK04_OWNER_FACTS", "FACT_RETURN"}
+    if not fact_return and (owner_facts is not None or owner_binding is not None):
+        raise ValueError("OWNER_FACTS_KIND_MISMATCH")
+    manifest_raw, manifest_basis = _parent_manifest(task, capture_ref["original_sha256"], parent_manifest)
+    missing = []
+    if fact_return:
+        missing.extend(name for name, value in (("owner_facts", owner_facts),
+                                                 ("owner_binding", owner_binding)) if value is None)
+    repair_return = returned["contract_kind"] in REPAIR_KINDS
+    if repair_return:
+        missing.extend(name for name, value in (("verifier", verifier),
+                                                 ("verifier_delta", verifier_delta),
+                                                 ("currentness", currentness)) if value is None)
+        if parent_manifest is None:
+            missing.append("qualified_parent_review_manifest")
+    out = Path(out_dir)
+    if not out.is_absolute() or out.exists() or out.is_symlink() or not out.parent.is_dir():
+        raise ValueError("OUTPUT_TARGET_INVALID")
+    adapter = _module("rom_a_return_adoption_normal", SOURCE_ROOT /
+                      "tooling/return-bridge/rom_a_return_adoption.py")
+    pending = Path(tempfile.mkdtemp(prefix=".rom-a-normal-pending-", dir=out.parent))
+    try:
+        manifest_path = pending / "parent_manifest.json"
+        manifest_path.write_bytes(manifest_raw)
+        bundle: dict[str, Any] = {"schema": adapter.SCHEMA,
+            "task": {**task, "original_path": str(original_path),
+                     "original_sha256": capture_ref["original_sha256"]},
+            "return": returned}
+        if fact_return:
+            bundle["bk04"] = {"owner_facts_path": owner_facts,
+                              "binding_path": owner_binding}
+        if repair_return and all(value is not None for value in
+                                 (verifier, verifier_delta, currentness)):
+            bundle["bk05"] = {"parent_manifest_path": str(manifest_path),
+                              "verifier_path": verifier, "verifier_delta_path": verifier_delta,
+                              "currentness_path": currentness}
+            if prior_record is not None:
+                bundle["bk05"]["prior_record_path"] = prior_record
+        adoption, payload = adapter.evaluate(bundle)
+        name = "capsule.json" if adoption["selection"].startswith("BK05_") else "original_task.txt"
+        selected_path = pending / name
+        selected_path.write_bytes(payload)
+        receipt = {"schema": SCHEMA + "-receipt", "capture": capture_ref,
+                   "return_input": return_ref, "input_refs": refs,
+                   "parent_manifest": {"basis": manifest_basis, "sha256": _sha(manifest_raw),
+                                       "bytes": len(manifest_raw)},
+                   "missing_inputs": missing, "adoption": adoption,
+                   "selected": {"file": name, "sha256": _sha(payload), "bytes": len(payload),
+                                "selection": adoption["selection"],
+                                "recipient_delivery_qualified": False},
+                   "recipient_use": {"state": "NOT_OBSERVED", "readback_ref": None,
+                                     "selected_sha256": _sha(payload)},
+                   "authority": "NONE", "provider_currentness_proven": False,
+                   "semantic_review_proven": False, "effect": "NONE_CLAIMED"}
+        (pending / "receipt.json").write_text(
+            json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+        os.rename(pending, out)
+        return {"receipt": str(out / "receipt.json"), "selected": str(out / name),
+                "selection": adoption["selection"], "selected_sha256": _sha(payload),
+                "missing_inputs": missing, "recipient_use": "NOT_OBSERVED", "authority": "NONE"}
+    finally:
+        if pending.exists():
+            shutil.rmtree(pending)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--capture-record", required=True)
+    parser.add_argument("--return-input", required=True)
+    parser.add_argument("--out-dir", required=True)
+    for name in ("owner-facts", "owner-binding", "parent-manifest", "verifier",
+                 "verifier-delta", "currentness", "prior-record"):
+        parser.add_argument("--" + name)
+    args = parser.parse_args()
+    try:
+        result = prepare(capture_record=args.capture_record, return_input=args.return_input,
+                         out_dir=args.out_dir, owner_facts=args.owner_facts,
+                         owner_binding=args.owner_binding, parent_manifest=args.parent_manifest,
+                         verifier=args.verifier, verifier_delta=args.verifier_delta,
+                         currentness=args.currentness, prior_record=args.prior_record)
+        print(json.dumps(result, sort_keys=True))
+        return 0
+    except (OSError, ValueError, TypeError, UnicodeError) as exc:
+        print(json.dumps({"result": "REFUSED", "reason": str(exc).split(":", 1)[0]}))
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

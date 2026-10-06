@@ -6,6 +6,10 @@ semantic review, worklist writing and any later actor action. This adapter reads
 local bytes, reuses BK04/BK05 as-is, and emits one non-authoritative receipt.
 It never wakes a model, grants authority, or performs a provider operation.
 
+The normal return invocation takes an existing PR73 capture and a typed return
+observation through --capture-record/--return-input. --bundle remains the
+legacy local test/diagnostic form and does not establish recipient use.
+
 Bundle fields: schema; task {actor_ref, generation_ref, carrier_ref, arc_ref,
 task_ref, task_revision, original_path,
 original_sha256, source_head, effect_class, privacy_class, live_scope,
@@ -15,7 +19,7 @@ task_ref, task_revision, original_sha256,
 contract_kind}; optional bk04 {owner_facts_path, binding_path}; optional bk05
 {parent_manifest_path, verifier_path, verifier_delta_path, currentness_path,
 prior_record_path}. All paths refer to existing local files. Only
-contract_kind=BK04_OWNER_FACTS makes BK04 relevant. Example invocation:
+contract_kind=BK04_OWNER_FACTS or FACT_RETURN makes BK04 relevant. Example invocation:
 python -B tooling/return-bridge/rom_a_return_adoption.py --bundle BUNDLE.json
     --out-dir NEW_OUTPUT_DIRECTORY
 """
@@ -34,6 +38,7 @@ from typing import Any
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = "cerebro-rom-a-return-adoption/v1"
 MAX_INPUT_BYTES = 2_000_000
+FACT_RETURN_KINDS = frozenset({"BK04_OWNER_FACTS", "FACT_RETURN"})
 
 
 def _load_module(name: str, path: Path) -> Any:
@@ -91,7 +96,7 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
 
     bk04_status: dict[str, Any] = {"state": "SKIPPED_NOT_ELIGIBLE", "blocks_other_work": False}
     bk04_input = bundle.get("bk04")
-    if returned.get("contract_kind") == "BK04_OWNER_FACTS" and bk04_input is not None:
+    if returned.get("contract_kind") in FACT_RETURN_KINDS and bk04_input is not None:
         bk04_input = _object(bk04_input, "BK04")
         if bk04_input.get("owner_facts_path") and bk04_input.get("binding_path"):
             bk04 = _load_module("bk04_verify", SOURCE_ROOT / "candidates/bk04-episode-verifier-v1/bk04_verify.py")
@@ -107,7 +112,7 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
         else:
             bk04_status = {"state": "UNKNOWN", "reason": "OWNER_FACTS_OR_BINDING_MISSING",
                            "blocks_other_work": False}
-    elif returned.get("contract_kind") == "BK04_OWNER_FACTS":
+    elif returned.get("contract_kind") in FACT_RETURN_KINDS:
         bk04_status = {"state": "UNKNOWN", "reason": "OWNER_FACTS_OR_BINDING_MISSING",
                        "blocks_other_work": False}
 
@@ -184,10 +189,33 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bundle", required=True, help="local normal task/return reference bundle JSON")
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--bundle", help="legacy local task/return reference bundle JSON")
+    source.add_argument("--capture-record", help="PR73 capture.json for normal return")
+    parser.add_argument("--return-input", help="typed normal return observation JSON")
     parser.add_argument("--out-dir", required=True, help="new directory for one receipt and selected bytes")
+    for name in ("owner-facts", "owner-binding", "parent-manifest", "verifier",
+                 "verifier-delta", "currentness", "prior-record"):
+        parser.add_argument("--" + name)
     args = parser.parse_args()
     try:
+        if args.capture_record:
+            if not args.return_input:
+                raise ValueError("RETURN_INPUT_REQUIRED")
+            normal = _load_module("rom_a_normal_path", SOURCE_ROOT /
+                                  "tooling/return-bridge/rom_a_normal_path.py")
+            result = normal.prepare(
+                capture_record=args.capture_record, return_input=args.return_input,
+                out_dir=args.out_dir, owner_facts=args.owner_facts,
+                owner_binding=args.owner_binding, parent_manifest=args.parent_manifest,
+                verifier=args.verifier, verifier_delta=args.verifier_delta,
+                currentness=args.currentness, prior_record=args.prior_record)
+            print(json.dumps(result, sort_keys=True))
+            return 0
+        if args.return_input or any(getattr(args, name) is not None for name in (
+                "owner_facts", "owner_binding", "parent_manifest", "verifier",
+                "verifier_delta", "currentness", "prior_record")):
+            raise ValueError("NORMAL_INPUTS_REQUIRE_CAPTURE_RECORD")
         bundle = json.loads(_read(args.bundle))
         receipt, payload = evaluate(_object(bundle, "BUNDLE"))
         out = Path(args.out_dir)
