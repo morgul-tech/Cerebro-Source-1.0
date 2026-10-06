@@ -3,6 +3,7 @@ recovery, saved files or operative unqualified tools."""
 from __future__ import annotations
 
 from html import escape
+import secrets
 
 ENV_LABEL = {"DEV": "Utvikling (lokal)", "STAGING": "Staging (privat)", "PROD": "Produksjon"}
 
@@ -54,7 +55,7 @@ def _unavailable(title: str, text: str) -> str:
             f'<p><span class="status off">Ikke tilgjengelig ennå</span></p><p class="note">{_e(text)}</p></section>')
 
 
-def room_body(room, principal, *, is_admin_room: bool) -> str:
+def room_body(room, principal, *, is_admin_room: bool, postkasse_enabled: bool = False) -> str:
     kind = "Adminrom" if is_admin_room else "Pilotrom"
     files = _unavailable("Private filer", "Filområdet kommer med CB-P02. Ingen filer er lagret, og ingenting kan "
                                           "lastes opp eller gjenopprettes her ennå.")
@@ -67,11 +68,50 @@ def room_body(room, principal, *, is_admin_room: bool) -> str:
         extra = ""
         books = _unavailable("Stambok og dagbok", "Speil av Stambok/dagbok kommer med CB-P03 når en lovlig kilde "
                                                   "er avklart. Ingen innhold vises her ennå.")
-    post = _unavailable("Postkasse", "Postkasse er en egen tjeneste og er ikke koblet til dette rommet ennå.")
+    post = (f'<section class="card"><h2>Postkasse</h2><p class="note">Meldinger mellom godkjente kontakter.'
+            f' Ingen fil-, app- eller minnetilgang følger av en melding.</p><p><a class="button" '
+            f'href="/rom/{_e(room["id"])}/postkasse">Åpne Postkasse</a></p></section>' if postkasse_enabled else
+            _unavailable("Postkasse", "Postkasse er en egen tjeneste og er ikke koblet til dette rommet ennå."))
     return f"""<h1>{_e(principal.display_name)} · {kind}</h1>
 <p class="lead">Ditt private rom <span class="receipt">{_e(room["id"])}</span>. Bare medlemmer av rommet har tilgang;
 navigasjonen gir ingen rettigheter i seg selv.</p>
 <div class="grid">{files}{books}{post}{extra}</div>"""
+
+
+def postkasse_body(room_id: str, messages: list[dict], contacts: dict[str, str], csrf: str) -> str:
+    base = f"/rom/{_e(room_id)}/postkasse"
+    options = "".join(f'<option value="{_e(alias)}">{_e(alias)}</option>' for alias in sorted(contacts))
+    rows = "".join(f'<li><a href="{base}/{_e(m["message_id"])}">{_e(m["message_id"])}'
+                   f'</a> · {_e("Mottatt" if m["role"] == "incoming" else "Sendt")} · '
+                   f'{_e(m["delivery_state"])}</li>' for m in messages)
+    form = (f'<form method="post" action="{base}"><input type="hidden" name="csrf" value="{_e(csrf)}">'
+            f'<input type="hidden" name="dedupe_key" value="{secrets.token_urlsafe(24)}">'
+            f'<label for="recipient">Kontakt</label><select id="recipient" name="recipient">{options}</select>'
+            f'<label for="tekst">Kort melding</label><textarea id="tekst" name="tekst" maxlength="4096" '
+            f'required></textarea><button type="submit">Send</button></form>' if options else
+            '<p class="note">Ingen tillatte kontakter er paret for dette rommet.</p>')
+    return (f'<p><a href="/rom/{_e(room_id)}">Til rommet</a></p><h1>Postkasse</h1>'
+            f'<p class="lead">Tjenesten er kilden til meldingsstatus. Kvitteringer gir ingen handlingsfullmakt.</p>'
+            f'<div class="grid"><section class="card"><h2>Innboks</h2><ul>{rows}</ul></section>'
+            f'<section class="card"><h2>Ny melding</h2>{form}</section></div>')
+
+
+def postkasse_message_body(room_id: str, message: dict, csrf: str) -> str:
+    base = f'/rom/{_e(room_id)}/postkasse'
+    mid = _e(message["message_id"])
+    key = secrets.token_urlsafe(24)
+    actions = (f'<form method="post" action="{base}/{mid}/ack">'
+               f'<input type="hidden" name="csrf" value="{_e(csrf)}">'
+               f'<button type="submit">Bekreft mottatt</button></form>'
+               f'<form method="post" action="{base}/{mid}/reply">'
+               f'<input type="hidden" name="csrf" value="{_e(csrf)}">'
+               f'<input type="hidden" name="dedupe_key" value="{key}">'
+               f'<label for="tekst">Svar</label><textarea id="tekst" name="tekst" maxlength="4096" required>'
+               f'</textarea><button type="submit">Svar</button></form>' if message["role"] == "incoming" else "")
+    return (f'<p><a href="{base}">Til innboks</a></p><h1>Melding {mid}</h1>'
+            f'<section class="card"><p>{_e("Mottatt fra" if message["role"] == "incoming" else "Sendt til")} '
+            f'{_e(message["sender_room_id"] if message["role"] == "incoming" else message["recipient_room_id"])}'
+            f' · {_e(message["delivery_state"])}</p><p>{_e(message["payload"])}</p></section>{actions}')
 
 
 def admin_body(tools: list[dict], ops: dict, csrf: str, result: str | None = None) -> str:

@@ -30,6 +30,7 @@ from .config import Config
 from .db import connect
 from .interfaces import P02_FILES, P03_MIRRORS, UNAVAILABLE
 from .preflight import readiness
+from .postkasse import Postkasse, PostkasseError
 from .tools import invoke as invoke_tool
 from .tools import tool_view
 
@@ -37,6 +38,7 @@ STATIC = {"/static/app.css": (Path(__file__).resolve().parent / "static" / "app.
 _ROOM = re.compile(r"^/rom/([A-Za-z0-9_-]{1,80})$")
 _API = re.compile(r"^/api/rom/([A-Za-z0-9_-]{1,80})/(filer|speil)$")
 _TOOL = re.compile(r"^/admin/verktoy/([a-z0-9_.-]{1,64})$")
+_POSTKASSE = re.compile(r"^/rom/([A-Za-z0-9_-]{1,80})/postkasse(?:/([A-Za-z0-9_-]{1,128})(?:/(ack|reply))?)?$")
 SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'none'; style-src 'self'; img-src 'self'; form-action 'self'; "
                                "frame-ancestors 'none'; base-uri 'none'",
@@ -90,6 +92,7 @@ class App:
         self.limiter = RateLimiter(cfg.limits["rate_per_minute"], time.monotonic)
         self.log = JsonLog(cfg.runtime_root / "logs" / "app.jsonl")
         self.build = runtime_build()
+        self.postkasse = Postkasse(cfg)
         self.slots = threading.BoundedSemaphore(MAX_CONCURRENCY)
 
     def db(self) -> sqlite3.Connection:
@@ -212,6 +215,8 @@ def make_handler(app: App):
                     return
                 try:
                     getattr(self, f"_{method}")(path)
+                except PostkasseError as exc:
+                    self.json(exc.status, {"error": exc.code})
                 except sqlite3.Error:
                     self._route = self._route or "?"
                     self.json(503, {"error": "DB_UNAVAILABLE"})
@@ -298,8 +303,24 @@ def make_handler(app: App):
                                                                            "Rommet finnes ikke for deg."),
                                          principal=p, csrf=csrf, admin_link=is_admin)
                     return self.html(200, "Mitt rom", ui.room_body(room, p, is_admin_room=room["kind"] ==
-                                                                   "ADMIN_PRIVATE"), principal=p, csrf=csrf,
+                                                                   "ADMIN_PRIVATE", postkasse_enabled=
+                                                                   app.postkasse.configured(room["id"])), principal=p, csrf=csrf,
                                      admin_link=is_admin)
+                m = _POSTKASSE.match(path)
+                if m:
+                    self._route = "/rom/{id}/postkasse" + ("/{message}" if m.group(2) else "")
+                    room = room_for(con, p, m.group(1))
+                    if room is None:
+                        return self.json(404, {"error": "NOT_FOUND"})
+                    if m.group(3):
+                        return self.json(404, {"error": "NOT_FOUND"})
+                    if m.group(2):
+                        message = app.postkasse.message(room["id"], m.group(2))
+                        body = ui.postkasse_message_body(room["id"], message, csrf or "")
+                    else:
+                        messages, contacts = app.postkasse.mailbox(room["id"])
+                        body = ui.postkasse_body(room["id"], messages, contacts, csrf or "")
+                    return self.html(200, "Postkasse", body, principal=p, csrf=csrf, admin_link=is_admin)
                 m = _API.match(path)
                 if m:
                     self._route = "/api/rom/{id}/" + m.group(2)
@@ -381,6 +402,30 @@ def make_handler(app: App):
                 app.auth.revoke(self.cookie("cb_session"))
                 return self.redirect("/logg-inn", cookies=[self.set_cookie("cb_session", "", 0),
                                                            self.set_cookie("cb_csrf", "", 0)])
+            m = _POSTKASSE.match(path)
+            if m:
+                self._route = "/rom/{id}/postkasse/" + (m.group(3) or "send")
+                con = app.db()
+                try:
+                    room = room_for(con, p, m.group(1))
+                    if room is None:
+                        return self.json(404, {"error": "NOT_FOUND"})
+                    # A client-supplied sender/room selector is never an authority input.
+                    if any(k in f for k in ("room_id", "sender_room_id", "recipient_room_id")):
+                        return self.json(400, {"error": "POSTKASSE_SEND_REJECTED"})
+                    if m.group(3) == "ack":
+                        app.postkasse.ack(room["id"], m.group(2))
+                        return self.redirect(f"/rom/{room['id']}/postkasse/{m.group(2)}")
+                    if m.group(3) == "reply":
+                        app.postkasse.reply(room["id"], m.group(2), f.get("tekst", ""), f.get("dedupe_key", ""))
+                        return self.redirect(f"/rom/{room['id']}/postkasse")
+                    if m.group(2):
+                        return self.json(404, {"error": "NOT_FOUND"})
+                    app.postkasse.send(room["id"], f.get("recipient", ""), f.get("tekst", ""),
+                                       f.get("dedupe_key", ""))
+                    return self.redirect(f"/rom/{room['id']}/postkasse")
+                finally:
+                    con.close()
             m = _TOOL.match(path)
             if m:
                 self._route = "/admin/verktoy/{id}"

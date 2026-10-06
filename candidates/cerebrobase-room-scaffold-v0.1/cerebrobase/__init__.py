@@ -1,6 +1,7 @@
 """CerebroBase CB-P01 local/private-staging room scaffold. AUTHORITY NONE; synthetic identities only.
 
-Not a production identity system, not public Main, not Postkasse. See README.md and CONTRACTS.md.
+Not a production identity system or public Main. The optional Postkasse adapter is disabled pending private
+qualification; this package is not the Postkassa service or its message store. See README.md and CONTRACTS.md.
 """
 PACKAGE = "cerebrobase-room-scaffold"
 VERSION = "0.1.0"

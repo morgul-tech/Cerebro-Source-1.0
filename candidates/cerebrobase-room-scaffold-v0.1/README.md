@@ -33,7 +33,7 @@ Tests:
 
 ```
 cd tests && python3 -B -m unittest -v test_a_build_health test_b_migrations test_c_auth_rooms \
-    test_d_config_static test_e_tools_audit test_f_limits_ui test_g_rehearsal
+    test_d_config_static test_e_tools_audit test_f_limits_ui test_g_rehearsal test_postkasse_adapter
 python3 -B tests/visual_check.py --out NEW_DIR        # 320px/desktop screenshots + overflow; needs python playwright
 ```
 
@@ -64,6 +64,15 @@ Exit codes:
 | `POST /admin/verktoy/{tool_id}` | ADMIN + membership + scoped capability + CSRF | tool registry; unqualified tools rejected |
 | `GET /api/rom/{room_id}/filer`, `GET /api/rom/{room_id}/speil` | member | 503 `CAPABILITY_UNAVAILABLE` (P02/P03 not integrated); non-members get 404 |
 | `GET /static/app.css` | public | the only static file (in-memory allowlist) |
+| `GET /rom/{room_id}/postkasse` | member + paired private credential | service-backed own inbox and explicit contacts only |
+| `GET /rom/{room_id}/postkasse/{message_id}` | member + service-confirmed sender or recipient | exact allowed-contact message; foreign/missing both 404 |
+| `POST /rom/{room_id}/postkasse` | member + CSRF | short message to an explicitly allowed contact; service derives sender |
+| `POST /rom/{room_id}/postkasse/{message_id}/ack` | member + CSRF + recipient | ACK only, no action authority |
+| `POST /rom/{room_id}/postkasse/{message_id}/reply` | member + CSRF + recipient | reply through the service's reply endpoint |
+
+The Postkasse adapter is disabled by default. It has only been exercised against a synthetic local fixture; no live
+service, historic port or pilot room is inferred. Its private configuration and activation gates are in
+`CONTRACTS.md`. The service DB is authoritative; CerebroBase adds no mailbox tables or message store.
 
 See `CONTRACTS.md` for the interfaces, config, schema, tool and auth contracts. See `DEPLOY.md` for the
 staging install, upgrade and rollback recipe and the Caddy/systemd examples. See `LIMITATIONS.md` for what is not
