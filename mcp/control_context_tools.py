@@ -2057,19 +2057,23 @@ class ControlContextMcpTools:
                     raise
             else:
                 if (session["tenant_ref"], session["workspace_ref"], session["principal_ref"],
-                    session["consumer_ref"], session["session_ref"], session["project_ref"],
-                    session["project_revision"]) != (
+                    session["consumer_ref"], session["session_ref"]) != (
                     identity.tenant_ref, identity.workspace_ref, identity.principal_ref,
-                    identity.consumer_ref, session_ref, project["project_ref"], project["revision"]):
-                    raise ControlContextToolAuthorizationError("persisted-session-project-or-identity-mismatch")
-                caller["session_status"] = "CURRENT_PERSISTED_SESSION"
-                caller["persisted_session"] = {
-                    "session_ref": session_ref,
-                    "session_binding_id": session["session_binding_id"],
-                    "session_revision": session["session_revision"],
-                    "session_fingerprint": session["fingerprint"],
-                    "project_revision": session["project_revision"],
-                }
+                    identity.consumer_ref, session_ref):
+                    raise ControlContextToolAuthorizationError("persisted-session-identity-mismatch")
+                if session["project_ref"] != project["project_ref"]:
+                    caller["session_status"] = "PERSISTED_SESSION_BOUND_TO_OTHER_PROJECT"
+                else:
+                    if session["project_revision"] != project["revision"]:
+                        raise ControlContextToolAuthorizationError("persisted-session-project-revision-mismatch")
+                    caller["session_status"] = "CURRENT_PERSISTED_SESSION"
+                    caller["persisted_session"] = {
+                        "session_ref": session_ref,
+                        "session_binding_id": session["session_binding_id"],
+                        "session_revision": session["session_revision"],
+                        "session_fingerprint": session["fingerprint"],
+                        "project_revision": session["project_revision"],
+                    }
         return self._result({"project": project, "authenticated_caller": caller,
                              "repository_permission_required": False}, context)
 

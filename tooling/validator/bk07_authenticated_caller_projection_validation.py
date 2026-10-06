@@ -74,6 +74,16 @@ class AuthenticatedCallerProjection(unittest.TestCase):
         with self.assertRaises(ControlContextToolAuthorizationError):
             read(StatePort(session=session), context())
 
+    def test_other_project_session_preserves_authorized_project_read(self):
+        session = {"tenant_ref": "T", "workspace_ref": "W", "principal_ref": "VERIFIED-PRINCIPAL",
+                   "consumer_ref": "CHATGPT_REMOTE_MCP", "session_ref": "chatgpt:S",
+                   "project_ref": "P1", "project_revision": 1}
+        result = read(StatePort(session=session), context())
+        self.assertEqual(result["project"]["project_ref"], "P")
+        self.assertEqual(result["authenticated_caller"]["session_status"],
+                         "PERSISTED_SESSION_BOUND_TO_OTHER_PROJECT")
+        self.assertIsNone(result["authenticated_caller"]["persisted_session"])
+
     def test_mismatched_project_revision_fails_closed(self):
         session = {"tenant_ref": "T", "workspace_ref": "W", "principal_ref": "VERIFIED-PRINCIPAL",
                    "consumer_ref": "CHATGPT_REMOTE_MCP", "session_ref": "chatgpt:S",
