@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,6 +54,20 @@ class DispatchCapture(unittest.TestCase):
         self.assertEqual(result["receipt"]["semantic_review"]["status"], "UNREVIEWED")
         self.assertEqual(result["receipt"]["provenance"]["status"], "UNVERIFIED")
         self.assertFalse(result["receipt"]["recipient_read_or_use_proven"])
+
+    def test_publish_receipt_does_not_claim_crash_durability_and_fsync_failure_refuses(self):
+        with mock.patch.object(capture_module.os, "fsync", side_effect=OSError("sync failed")):
+            with self.assertRaisesRegex(OSError, "sync failed"):
+                capture_module.capture(self.root, self.request, self.raw)
+        self.assertFalse(list(self.root.glob("capture-*")))
+        result = capture_module.capture(self.root, self.request, self.raw)
+        self.assertEqual(result["state"], "CAPTURED_READBACK")
+        self.assertEqual(result["publish_durability"],
+                         "LOCAL_READBACK_ONLY_CRASH_DURABILITY_UNPROVEN")
+        self.assertEqual(result["receipt"]["publish_durability"], result["publish_durability"])
+        reused = capture_module.capture(self.root, self.request, self.raw)
+        self.assertEqual(reused["state"], "EXACT_REUSE")
+        self.assertEqual(reused["publish_durability"], result["publish_durability"])
 
     def test_exact_same_record_reuses_and_same_key_divergence_collides(self):
         first = capture_module.capture(self.root, self.request, self.raw)

@@ -4,6 +4,7 @@
 This is local evidence, not a sender, identity oracle, review service, or BK05
 decision. The caller must pass the original UTF-8 prompt bytes, never a parsed
 chat turn or reconstructed start post. A later recipient-use receipt is separate.
+File fsync and local rename/readback do not attest crash-durable parent metadata.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from typing import Any
 
 
 SCHEMA = "cerebro-rom-a-dispatch-capture/v1"
+PUBLISH_DURABILITY = "LOCAL_READBACK_ONLY_CRASH_DURABILITY_UNPROVEN"
 MAX_PROMPT_BYTES = 2_000_000
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 TASK_FIELDS = frozenset({
@@ -119,7 +121,8 @@ def _readback(directory: Path, expected: dict[str, Any]) -> dict[str, Any]:
             or _sha(raw) != expected["original_sha256"]):
         raise ValueError("COLLISION")
     return {"state": "EXACT_REUSE", "capture_path": str(record_path),
-            "original_path": str(original_path), "receipt": observed}
+            "original_path": str(original_path), "receipt": observed,
+            "publish_durability": PUBLISH_DURABILITY}
 
 
 def capture(root: Path, request: object, original: bytes) -> dict[str, Any]:
@@ -140,6 +143,7 @@ def capture(root: Path, request: object, original: bytes) -> dict[str, Any]:
         "semantic_review": {**validated["semantic_review"], "assertion": "CALLER_SUPPLIED_NOT_VERIFIED"},
         "identity_currentness": "CALLER_SUPPLIED_NOT_PROVIDER_VERIFIED",
         "capture_stage": "LOCAL_CAPTURE_TIMING_NOT_PROVIDER_VERIFIED",
+        "publish_durability": PUBLISH_DURABILITY,
         "authority": "NONE", "effect": "NONE_CLAIMED", "work_consumed": False,
         "recipient_read_or_use_proven": False,
     }
@@ -194,6 +198,7 @@ def main() -> int:
                           "original_path": result["original_path"],
                           "original_sha256": result["receipt"]["original_sha256"],
                           "original_bytes": result["receipt"]["original_bytes"],
+                          "publish_durability": result["publish_durability"],
                           "authority": "NONE"}, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, UnicodeError, json.JSONDecodeError) as exc:
