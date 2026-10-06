@@ -76,6 +76,10 @@ class PmContextCustody:
     principal_ref: str
     consumer_ref: str
     session_ref: str
+    project_revision: int
+    session_binding_id: str
+    session_revision: int
+    session_fingerprint: str
     allowed_actions: frozenset[str]
 
 
@@ -89,7 +93,14 @@ class ContextPmCredentialPort:
     def __init__(self, *, custody: PmContextCustody, authenticator, state_port,
                  credential_reader):
         _need(type(custody) is PmContextCustody
-              and all(_text(v) for k, v in asdict(custody).items() if k != "allowed_actions")
+              and all(_text(getattr(custody, k)) for k in (
+                  "owner_ref", "audience", "tenant_ref", "workspace_ref", "project_ref",
+                  "principal_ref", "consumer_ref", "session_ref", "session_binding_id"))
+              and type(custody.project_revision) is int and custody.project_revision >= 1
+              and type(custody.session_revision) is int and custody.session_revision >= 1
+              and isinstance(custody.session_fingerprint, str)
+              and len(custody.session_fingerprint) == 64
+              and all(c in "0123456789abcdef" for c in custody.session_fingerprint)
               and type(custody.allowed_actions) is frozenset
               and bool(custody.allowed_actions)
               and custody.allowed_actions <= {"read_receipt", "read_current", "initialize", "commit_ready"},
@@ -119,7 +130,8 @@ class ContextPmCredentialPort:
                 consumer_ref=c.consumer_ref, session_ref=c.session_ref,
                 scopes=set(identity.scopes))
             if any(session.get(k) != getattr(c, k) for k in
-                   ("tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref")):
+                   ("tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref",
+                    "project_revision", "session_binding_id", "session_revision", "session_fingerprint")):
                 return None
         except Exception:
             raise PmProviderError("PM_CONTEXT_AUTH_OR_SESSION_UNAVAILABLE") from None

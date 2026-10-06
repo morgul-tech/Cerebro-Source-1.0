@@ -6,7 +6,7 @@ control-session readbacks and existing provider/credential objects on each invoc
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Callable, Mapping
 
 from signalvev_client.config import ClientConfig
@@ -163,6 +163,34 @@ def _require_distinct_current_sessions(pm: CurrentControlSession, x9: CurrentCon
         raise LiveHostError("PM_X9_CURRENT_PROJECT_REVISION_MISMATCH", mismatched_fields=mismatches)
 
 
+def _bind_pm_current_tuple(binding: PmProjectionBinding,
+                           current: CurrentControlSession) -> PmProjectionBinding:
+    """Pin PM's existing per-operation credential port to the freshly read exact session tuple."""
+    from .pm_owner_sqlite import ContextPmCredentialPort
+
+    credential_port = binding.credentials
+    if type(credential_port) is not ContextPmCredentialPort:
+        raise LiveHostError("PM_CONTEXT_CURRENTNESS_PORT_REQUIRED", ("pm_projection_binding.credentials",))
+    custody = credential_port.custody
+    stable_fields = ("tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref")
+    mismatches = tuple("pm_context_custody." + name for name in stable_fields
+                       if getattr(custody, name) != getattr(current, name))
+    if mismatches:
+        raise LiveHostError("PM_CONTEXT_CUSTODY_IDENTITY_MISMATCH", mismatched_fields=mismatches)
+    exact_custody = replace(
+        custody,
+        project_revision=current.project_revision,
+        session_binding_id=current.session_binding_id,
+        session_revision=current.session_revision,
+        session_fingerprint=current.session_fingerprint,
+    )
+    exact_port = ContextPmCredentialPort(
+        custody=exact_custody, authenticator=credential_port.authenticator,
+        state_port=credential_port.state_port, credential_reader=credential_port.credential_reader,
+    )
+    return replace(binding, credentials=exact_port)
+
+
 def make_ports(settings: PmX9Settings, *, host_runtime: LiveRuntimeBindings | None = None) -> PmX9HostPorts:
     """Build the existing production ports; caller remains responsible for explicit operation start."""
     try:
@@ -207,6 +235,8 @@ def make_ports(settings: PmX9Settings, *, host_runtime: LiveRuntimeBindings | No
                 or runtime.x9_authenticator is None):
             raise LiveHostError("EXISTING_X9_AUTH_AND_POSTGRES_PORTS_REQUIRED", (
                 "x9_authenticator", "x9_header_provider", "x9_connection_factory"))
+
+        pm_binding = _bind_pm_current_tuple(pm_binding, pm_current)
 
         # Keep the readback/preflight path importable without initializing the host's live
         # Postgres/OAuth service modules. Those providers are needed only after preflight passes.

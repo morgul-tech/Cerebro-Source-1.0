@@ -20,6 +20,12 @@ from adapters.pm_owner_commit import ReadyHintExpectation, PmOwnerCommitReader
 OWNER, AUD, PRINCIPAL = "test:pm-owner", "test:audience", "test:producer"
 
 
+def context_custody(actions):
+    return PmContextCustody(OWNER, AUD, "t", "w", "p", PRINCIPAL,
+        "CHATGPT_REMOTE_MCP", "test:session", 7, "test:binding", 3, "a" * 64,
+        frozenset(actions))
+
+
 class Auth:
     SYNTHETIC_TEST_ONLY = True
     def __init__(self):
@@ -193,14 +199,14 @@ class SqliteTests(unittest.TestCase):
             self.db.commit_ready(transition())
 
     def test_context_auth_requires_exact_owner_identity_session_and_project(self):
-        custody = PmContextCustody(OWNER, AUD, "t", "w", "p", PRINCIPAL,
-            "CHATGPT_REMOTE_MCP", "test:session", frozenset({"read_current", "commit_ready"}))
+        custody = context_custody({"read_current", "commit_ready"})
         calls = []
         identity = SimpleNamespace(tenant_ref="t", workspace_ref="w", principal_ref=PRINCIPAL,
             consumer_ref="CHATGPT_REMOTE_MCP", token_verified=True,
             scopes=frozenset({"project_state:read", "project_state:transition"}))
         session = {k: getattr(custody, k) for k in ("tenant_ref", "workspace_ref", "project_ref",
-            "principal_ref", "consumer_ref", "session_ref")}
+            "principal_ref", "consumer_ref", "session_ref", "project_revision", "session_binding_id",
+            "session_revision", "session_fingerprint")}
         class Authenticator:
             SYNTHETIC_TEST_ONLY = True
             def authenticate(self, headers, *, required_scope):
@@ -225,9 +231,56 @@ class SqliteTests(unittest.TestCase):
         self.assertIsNone(port.authenticate_and_authorize("offline-only", owner_ref=OWNER,
             audience=AUD, action="initialize"))
 
+    def test_context_same_principal_session_rejects_stale_project_or_session_revision(self):
+        custody = context_custody({"read_current"})
+        identity = SimpleNamespace(tenant_ref="t", workspace_ref="w", principal_ref=PRINCIPAL,
+            consumer_ref="CHATGPT_REMOTE_MCP", token_verified=True,
+            scopes=frozenset({"project_state:read"}))
+        session = {k: getattr(custody, k) for k in (
+            "tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref",
+            "project_revision", "session_binding_id", "session_revision", "session_fingerprint")}
+        class Authenticator:
+            SYNTHETIC_TEST_ONLY = True
+            def authenticate(self, headers, *, required_scope):
+                return identity
+        class State:
+            SYNTHETIC_TEST_ONLY = True
+            def read_session(self, **kwargs):
+                return session
+        port = ContextPmCredentialPort(custody=custody, authenticator=Authenticator(),
+            state_port=State(), credential_reader=lambda: "offline-only")
+        for name, stale in (("project_revision", 8), ("session_revision", 4)):
+            with self.subTest(field=name):
+                session[name] = stale
+                self.assertFalse(port.session_check(PRINCIPAL, "test:session", "read_current"))
+                session[name] = getattr(custody, name)
+
+    def test_context_same_principal_session_rejects_stale_binding_or_fingerprint(self):
+        custody = context_custody({"read_current"})
+        identity = SimpleNamespace(tenant_ref="t", workspace_ref="w", principal_ref=PRINCIPAL,
+            consumer_ref="CHATGPT_REMOTE_MCP", token_verified=True,
+            scopes=frozenset({"project_state:read"}))
+        session = {k: getattr(custody, k) for k in (
+            "tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref",
+            "project_revision", "session_binding_id", "session_revision", "session_fingerprint")}
+        class Authenticator:
+            SYNTHETIC_TEST_ONLY = True
+            def authenticate(self, headers, *, required_scope):
+                return identity
+        class State:
+            SYNTHETIC_TEST_ONLY = True
+            def read_session(self, **kwargs):
+                return session
+        port = ContextPmCredentialPort(custody=custody, authenticator=Authenticator(),
+            state_port=State(), credential_reader=lambda: "offline-only")
+        for name, stale in (("session_binding_id", "test:other-binding"), ("session_fingerprint", "b" * 64)):
+            with self.subTest(field=name):
+                session[name] = stale
+                self.assertFalse(port.session_check(PRINCIPAL, "test:session", "read_current"))
+                session[name] = getattr(custody, name)
+
     def test_context_stale_session_and_scope_errors_never_grant_access(self):
-        custody = PmContextCustody(OWNER, AUD, "t", "w", "p", PRINCIPAL,
-            "CHATGPT_REMOTE_MCP", "test:session", frozenset({"read_current"}))
+        custody = context_custody({"read_current"})
         class Authenticator:
             SYNTHETIC_TEST_ONLY = True
             def authenticate(self, headers, *, required_scope):

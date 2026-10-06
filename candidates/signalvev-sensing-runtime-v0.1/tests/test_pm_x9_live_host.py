@@ -4,6 +4,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO / "candidates" / "signalvev-client-v0.1" / "src"))
@@ -18,10 +19,13 @@ from providers.pm_x9_live_host import (  # noqa: E402
     LiveRuntimeBindings,
     LiveHostError,
     _require_distinct_current_sessions,
+    _bind_pm_current_tuple,
     make_ports,
     read_current_control_session,
 )
 from signalvev_client.pm_x9 import PmX9Settings, PmX9Unbound  # noqa: E402
+from providers.pm_owner_projection import PmProjectionBinding  # noqa: E402
+from providers.pm_owner_sqlite import ContextPmCredentialPort, PmContextCustody  # noqa: E402
 
 
 def _readback(role: str, session: str, *, project_revision: int = 7,
@@ -84,6 +88,38 @@ class CurrentSessionReadbackTests(unittest.TestCase):
         pm = read_current_control_session(_readback("pm", "chatgpt:PM"), role="pm")
         x9 = read_current_control_session(_readback("x9", "chatgpt:X9"), role="x9")
         _require_distinct_current_sessions(pm, x9)
+
+    def test_host_binds_pm_provider_to_exact_fresh_current_tuple(self):
+        current = read_current_control_session(_readback("pm", "chatgpt:PM"), role="pm")
+        custody = PmContextCustody(
+            "owner:pm", "audience:pm", current.tenant_ref, current.workspace_ref,
+            current.project_ref, current.principal_ref, current.consumer_ref, current.session_ref,
+            6, "OLD_BINDING", 2, "b" * 64, frozenset({"read_current"}))
+        class Authenticator:
+            def authenticate(self, headers, *, required_scope):
+                raise AssertionError("helper must not authenticate")
+        class State:
+            def read_session(self, **kwargs):
+                raise AssertionError("helper must not read provider state")
+        credential_port = ContextPmCredentialPort(custody=custody, authenticator=Authenticator(),
+            state_port=State(), credential_reader=lambda: "not-read")
+        binding = PmProjectionBinding(
+            expectation=SimpleNamespace(owner_ref="owner:pm", claim_ref="claim:pm", packet_ref="packet:pm",
+                                        queue_ref="queue:pm", packet_sha256="a" * 64),
+            receipt_ref="receipt:pm", audience="audience:pm", provider_ref="provider:pm",
+            principal_ref=current.principal_ref, session_ref=current.session_ref,
+            credentials=credential_port, projections=object(), credential_reader=lambda: "not-read", enabled=True)
+        updated = _bind_pm_current_tuple(binding, current)
+        self.assertIsNot(updated, binding)
+        self.assertIsNot(updated.credentials, credential_port)
+        self.assertEqual((updated.credentials.custody.project_revision,
+                          updated.credentials.custody.session_binding_id,
+                          updated.credentials.custody.session_revision,
+                          updated.credentials.custody.session_fingerprint),
+                         (current.project_revision, current.session_binding_id,
+                          current.session_revision, current.session_fingerprint))
+        self.assertIs(updated.credentials.authenticator, credential_port.authenticator)
+        self.assertIs(updated.credentials.state_port, credential_port.state_port)
 
     def test_composition_returns_exact_missing_session_fields_before_other_ports(self):
         runtime = LiveRuntimeBindings(
