@@ -52,6 +52,28 @@ Validation (each failure is `{code, field, next}`):
 
 Examples: `deploy/config/{dev,staging,prod}.example.json`.
 
+## CB16 Postkasse adapter candidate (disabled until private X6 readback)
+
+`integrations.postkasse` is absent/disabled by default. A private config may supply `enabled: true`, a numeric-IP
+`endpoint` (`http://127.0.0.1:PORT` or private-IP HTTPS), and `rooms` keyed by CerebroBase room ID. Every room binding
+must have `server_room_id`, `credential_ref` (a name in top-level `secret_refs`) and `contacts` (explicit display alias
+to server room ID). Credentials are resolved server-side per room; the browser never receives credentials or the
+endpoint. Hostnames, public IPs, redirects, embedded URL credentials, HTTP to non-loopback and missing bindings are
+rejected. Enabled integrations still block general preflight pending X6 attestation; do not activate this candidate
+merely by placing a plausible endpoint/secret in config.
+
+The candidate v0.1 wire parser expects `GET /v1/me` -> `room_id`, `GET /v1/contacts` -> `contacts[]` with `room_id`,
+`GET /v1/postkassa?limit=50` -> `messages[]`, and message/receipt objects with `message_id`, `sender_room_id`,
+`recipient_room_id`, `payload` and `delivery_state` where applicable. It sends a per-room `Authorization: Bearer`
+credential and uses POST `/v1/postkassa`, `/{message_id}/ack`, `/{message_id}/reply`. X6 must verify the actual
+credential scheme, field names, reply/ACK shapes, list cursor and sender-proof semantics before activation; an
+unknown shape fails closed. The config never accepts a client-selected sender room or arbitrary request path.
+
+The UI receipt is only a transport result. It grants no file, app, memory, tool or identity authority. The service
+DB is the only message state; the adapter makes no mailbox table, broker, scheduler or local retry queue. A timeout
+after a POST is `POSTKASSE_OUTCOME_UNKNOWN` and is not retried automatically. Generic HTTP logs contain only method,
+route template, status, request ID and account ID, never bodies, credentials or message IDs.
+
 ## Schema (SQLite, `schema_meta.schema_version`, head = 2)
 
 | Version | Tables |

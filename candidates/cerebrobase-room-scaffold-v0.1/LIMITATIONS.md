@@ -8,7 +8,9 @@
 * No private file storage, upload, download, quota enforcement, encryption, admin-unreadability or recovery. These are
   CB-P02; only reserved tables and interfaces exist.
 * No Stambok/Dagbok mirror. That is CB-P03; only reserved tables and interfaces exist.
-* No Postkasse integration: no Postkasse mutation and no use of its DB.
+* The CB16 Postkasse adapter is a disabled candidate, tested only against a local synthetic fixture. It does not use
+  the service DB directly. Private endpoint, per-room credential, contacts and exact v0.1 wire readback remain X6
+  gates before activation. No real message or live POST was sent.
 * No external tool is operative. `postkasse.lese`, `signalvev.status` and `drive.navigasjon` are UNQUALIFIED until
   the owner supplies an attested port.
 * No live host mutation, SSH, DNS, ACL, Caddy or service install. EDGE install is UNRUN.
