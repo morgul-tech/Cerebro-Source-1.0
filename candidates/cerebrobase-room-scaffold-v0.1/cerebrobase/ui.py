@@ -5,11 +5,20 @@ from __future__ import annotations
 from html import escape
 import secrets
 
-ENV_LABEL = {"DEV": "Utvikling (lokal)", "STAGING": "Staging (privat)", "PROD": "Produksjon"}
+ENV_LABEL = {"DEV": "Lokal test", "STAGING": "Privat staging", "PROD": "Produksjon"}
+STUDIO_CANDIDATE = "0.1-alpha.1"
+STUDIO_PREPARED = "6. oktober 2026"
+CONTACT_NAMES = {"andreas_admin": "Andreas", "pilot": "Marianne"}
+HUMAN_NAMES = {"Andreas (testidentitet)": "Andreas", "Marianne (testidentitet)": "Marianne"}
+HUMAN_PAGE_TITLES = {"Testinngang": "Velkommen inn", "Mitt rom": "Ditt rom"}
 
 
 def _e(v) -> str:
     return escape(str(v), quote=True)
+
+
+def _human_name(display_name: str) -> str:
+    return HUMAN_NAMES.get(display_name, display_name)
 
 
 def page(title: str, body: str, *, env: str, build_id: str, principal=None, csrf: str | None = None,
@@ -18,82 +27,93 @@ def page(title: str, body: str, *, env: str, build_id: str, principal=None, csrf
     if principal is not None:
         logout = (f'<form class="inline" method="post" action="/logg-ut"><input type="hidden" name="csrf" '
                   f'value="{_e(csrf or "")}"><button class="quiet" type="submit">Logg ut</button></form>')
-        admin = '<a href="/admin">Admininngang</a>' if admin_link else ""
-        who = (f'<nav class="top-nav" aria-label="Konto"><span class="who">{_e(principal.display_name)}</span>'
-               f'<a href="/rom">Mitt rom</a>{admin}{logout}</nav>')
+        admin = '<a class="admin-link" href="/admin">Admininngang</a>' if admin_link else ""
+        who = (f'<nav class="top-nav" aria-label="Konto"><span class="who">{_e(_human_name(principal.display_name))}</span>'
+               f'<a href="/rom">Ditt rom</a>{admin}{logout}</nav>')
     return f"""<!doctype html>
 <html lang="nb">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{_e(title)} · Cerebrobase</title><link rel="stylesheet" href="/static/app.css"></head>
+<title>{_e(HUMAN_PAGE_TITLES.get(title, title))} · CerebroBase</title><link rel="stylesheet" href="/static/app.css"></head>
 <body><a class="skip" href="#main">Hopp til innhold</a>
 <div class="wrap">
-<header class="top"><a class="brand" href="/">Cerebrobase</a>{who}</header>
+<header class="top"><a class="brand" href="/">CerebroBase</a>{who}</header>
 <main id="main">
 {body}
 </main>
-<footer class="foot">{_e(ENV_LABEL.get(env, env))} · bygg <span class="receipt">{_e(build_id)}</span> ·
-testoppsett med syntetiske identiteter, ikke ekte innlogging.</footer>
+<footer class="foot"><span>CerebroBase alpha · Kandidat {_e(STUDIO_CANDIDATE)} · Forberedt {_e(STUDIO_PREPARED)}</span>
+<details class="changelog"><summary>Endringslogg</summary><p><strong>{_e(STUDIO_PREPARED)} · Kandidat {_e(STUDIO_CANDIDATE)}</strong></p>
+<ul><li>Språket er ryddet og gjort mer menneskelig.</li><li>Innlogging og rommet er ført mot en roligere retning.</li>
+<li>Postkasse er beholdt som fungerende romfunksjon.</li><li>Kandidatversjonen er synlig.</li></ul></details>
+<details class="technical"><summary>Om denne testen</summary><p>{_e(ENV_LABEL.get(env, env))} ·
+syntetiske identiteter, ikke ekte innlogging · bygg <span class="receipt">{_e(build_id)}</span></p></details></footer>
 </div></body></html>"""
 
 
 def login_body(prelogin: str, error: str | None = None) -> str:
     err = f'<p class="banner" role="alert">{_e(error)}</p>' if error else ""
-    return f"""<h1>Lokal testinngang</h1>
-<p class="lead">Velg en testidentitet for å åpne et rom i dette lokale/staging-oppsettet.</p>
-<p class="banner"><strong>Kun utvikling og staging.</strong> Dette er ikke ekte innlogging. Ingen ekte kontoer,
-passord, nøkler eller private data finnes her.</p>
+    return f"""<section class="login-scene"><p class="eyebrow">Privat alpha</p><h1>Velkommen inn.</h1>
+<p class="lead">Velg testrom</p>
 {err}
-<form method="post" action="/logg-inn" class="identities" aria-label="Velg testidentitet">
+<form method="post" action="/logg-inn" class="identities" aria-label="Velg testrom">
 <input type="hidden" name="prelogin" value="{_e(prelogin)}">
-<button type="submit" name="identity" value="fixture-andreas-admin">Testidentitet: Andreas (ADMIN)</button>
-<button type="submit" name="identity" value="fixture-marianne-pilot">Testidentitet: Marianne (PILOT)</button>
-</form>"""
+<button type="submit" name="identity" value="fixture-andreas-admin"><span>Andreas</span><span aria-hidden="true">→</span></button>
+<button type="submit" name="identity" value="fixture-marianne-pilot"><span>Marianne</span><span aria-hidden="true">→</span></button>
+</form><p class="staging-note">Dette er et testoppsett med syntetiske identiteter, ikke ekte innlogging.</p></section>"""
 
 
-def _unavailable(title: str, text: str) -> str:
-    return (f'<section class="card" aria-labelledby="h-{_e(title)}"><h2 id="h-{_e(title)}">{_e(title)}</h2>'
-            f'<p><span class="status off">Ikke tilgjengelig ennå</span></p><p class="note">{_e(text)}</p></section>')
+def _unavailable(title: str) -> str:
+    return (f'<li class="quiet-place"><span>{_e(title)}</span>'
+            '<span class="availability">Ikke tilgjengelig ennå</span></li>')
 
 
 def room_body(room, principal, *, is_admin_room: bool, postkasse_enabled: bool = False) -> str:
-    kind = "Adminrom" if is_admin_room else "Pilotrom"
-    files = _unavailable("Private filer", "Filområdet kommer med CB-P02. Ingen filer er lagret, og ingenting kan "
-                                          "lastes opp eller gjenopprettes her ennå.")
-    if is_admin_room:
-        extra = ('<section class="card" aria-labelledby="h-adm"><h2 id="h-adm">Verktøy og drift</h2>'
-                 '<p class="note">Verktøypanel og driftsoverblikk ligger bak den separate admininngangen.</p>'
-                 '<p><a class="button" href="/admin">Åpne admininngang</a></p></section>')
-        books = ""
-    else:
-        extra = ""
-        books = _unavailable("Stambok og dagbok", "Speil av Stambok/dagbok kommer med CB-P03 når en lovlig kilde "
-                                                  "er avklart. Ingen innhold vises her ennå.")
-    post = (f'<section class="card"><h2>Postkasse</h2><p class="note">Meldinger mellom godkjente kontakter.'
-            f' Ingen fil-, app- eller minnetilgang følger av en melding.</p><p><a class="button" '
-            f'href="/rom/{_e(room["id"])}/postkasse">Åpne Postkasse</a></p></section>' if postkasse_enabled else
-            _unavailable("Postkasse", "Postkasse er en egen tjeneste og er ikke koblet til dette rommet ennå."))
-    return f"""<h1>{_e(principal.display_name)} · {kind}</h1>
-<p class="lead">Ditt private rom <span class="receipt">{_e(room["id"])}</span>. Bare medlemmer av rommet har tilgang;
-navigasjonen gir ingen rettigheter i seg selv.</p>
-<div class="grid">{files}{books}{post}{extra}</div>"""
+    post = (f'<a class="postkasse-entry" href="/rom/{_e(room["id"])}/postkasse"><span>Postkasse</span>'
+            '<span aria-hidden="true">↗</span></a>' if postkasse_enabled else
+            '<div class="postkasse-entry unavailable"><span>Postkasse</span><small>Ikke tilgjengelig ennå</small></div>')
+    places = "".join(_unavailable(name) for name in ("Bokhylla", "Dagbok", "Filer", "Notater", "Bilder"))
+    extra = ('<p class="admin-entry">Verktøy og drift: <a href="/admin">Admininngang</a></p>'
+             if is_admin_room else "")
+    return f"""<section class="room-scene"><p class="eyebrow">Ditt rom</p>
+<h1>{_e(_human_name(principal.display_name))}</h1><p class="lead">Et rolig sted for det som hører til her.</p>
+<nav aria-label="Romfunksjoner">{post}<ul class="places">{places}</ul></nav>
+{extra}<details class="technical"><summary>Om rommet</summary><p>Rom-ID: <span class="receipt">{_e(room["id"])}</span></p>
+<p>Filer og andre uferdige funksjoner lagrer ikke innhold her ennå.</p></details></section>"""
+
+
+def _contact_name(alias: str) -> str:
+    return CONTACT_NAMES.get(alias, "Kontakt")
+
+
+def _message_status(role: str, state: str) -> str:
+    if state == "ACKED_BY_RECIPIENT_PROTO":
+        return "Lest"
+    if role == "sent":
+        return "Sendt"
+    return "Mottatt"
 
 
 def postkasse_body(room_id: str, messages: list[dict], contacts: dict[str, str], csrf: str) -> str:
     base = f"/rom/{_e(room_id)}/postkasse"
-    options = "".join(f'<option value="{_e(alias)}">{_e(alias)}</option>' for alias in sorted(contacts))
-    rows = "".join(f'<li><a href="{base}/{_e(m["message_id"])}">{_e(m["message_id"])}'
-                   f'</a> · {_e("Mottatt" if m["role"] == "incoming" else "Sendt")} · '
-                   f'{_e(m["delivery_state"])}</li>' for m in messages)
+    names_by_room = {server_id: _contact_name(alias) for alias, server_id in contacts.items()}
+    options = "".join(f'<option value="{_e(alias)}">{_e(_contact_name(alias))}</option>'
+                      for alias in sorted(contacts))
+    rows = "".join(
+        f'<li class="message-row"><a href="{base}/{_e(m["message_id"])}">'
+        f'{_e("Melding fra " + names_by_room.get(m["sender_room_id"], "en kontakt") if m["role"] == "incoming" else "Din melding")}'
+        f'</a><span class="message-state">{_e(_message_status(m["role"], m["delivery_state"]))}</span>'
+        f'<details class="technical"><summary>Tekniske detaljer</summary><span class="receipt">'
+        f'{_e(m["message_id"])}</span></details></li>' for m in messages)
     form = (f'<form method="post" action="{base}"><input type="hidden" name="csrf" value="{_e(csrf)}">'
             f'<input type="hidden" name="dedupe_key" value="{secrets.token_urlsafe(24)}">'
             f'<label for="recipient">Kontakt</label><select id="recipient" name="recipient">{options}</select>'
             f'<label for="tekst">Kort melding</label><textarea id="tekst" name="tekst" maxlength="4096" '
             f'required></textarea><button type="submit">Send</button></form>' if options else
-            '<p class="note">Ingen tillatte kontakter er paret for dette rommet.</p>')
+            '<p class="note">Du kan ikke sende meldinger her ennå.</p>')
+    inbox = '<ul>' + rows + '</ul>' if rows else '<p class="empty">Ingen meldinger ennå.</p>'
     return (f'<p><a href="/rom/{_e(room_id)}">Til rommet</a></p><h1>Postkasse</h1>'
-            f'<p class="lead">Tjenesten er kilden til meldingsstatus. Kvitteringer gir ingen handlingsfullmakt.</p>'
-            f'<div class="grid"><section class="card"><h2>Innboks</h2><ul>{rows}</ul></section>'
-            f'<section class="card"><h2>Ny melding</h2>{form}</section></div>')
+            f'<div class="mail-layout"><section class="mail-list"><h2>Meldinger</h2>'
+            f'{inbox}</section>'
+            f'<section class="compose"><h2>Ny melding</h2>{form}</section></div>')
 
 
 def postkasse_message_body(room_id: str, message: dict, csrf: str) -> str:
@@ -108,10 +128,12 @@ def postkasse_message_body(room_id: str, message: dict, csrf: str) -> str:
                f'<input type="hidden" name="dedupe_key" value="{key}">'
                f'<label for="tekst">Svar</label><textarea id="tekst" name="tekst" maxlength="4096" required>'
                f'</textarea><button type="submit">Svar</button></form>' if message["role"] == "incoming" else "")
-    return (f'<p><a href="{base}">Til innboks</a></p><h1>Melding {mid}</h1>'
-            f'<section class="card"><p>{_e("Mottatt fra" if message["role"] == "incoming" else "Sendt til")} '
-            f'{_e(message["sender_room_id"] if message["role"] == "incoming" else message["recipient_room_id"])}'
-            f' · {_e(message["delivery_state"])}</p><p>{_e(message["payload"])}</p></section>{actions}')
+    return (f'<p><a href="{base}">Til Postkasse</a></p><section class="message-detail">'
+            f'<p class="eyebrow">{_e("Mottatt melding" if message["role"] == "incoming" else "Sendt melding")}</p>'
+            f'<h1>Melding</h1><p class="message-state">{_e(_message_status(message["role"], message["delivery_state"]))}</p>'
+            f'<div class="message-text">{_e(message["payload"])}</div>'
+            f'<details class="technical"><summary>Tekniske detaljer</summary><p>Meldings-ID: '
+            f'<span class="receipt">{mid}</span></p></details></section>{actions}')
 
 
 def admin_body(tools: list[dict], ops: dict, csrf: str, result: str | None = None) -> str:
