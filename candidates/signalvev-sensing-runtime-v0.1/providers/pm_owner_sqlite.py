@@ -129,9 +129,14 @@ class ContextPmCredentialPort:
                 workspace_ref=c.workspace_ref, principal_ref=c.principal_ref,
                 consumer_ref=c.consumer_ref, session_ref=c.session_ref,
                 scopes=set(identity.scopes))
+            fingerprint = session.get("fingerprint")
+            if (not isinstance(fingerprint, str)
+                    or ("session_fingerprint" in session
+                        and session["session_fingerprint"] != fingerprint)):
+                return None
             if any(session.get(k) != getattr(c, k) for k in
-                   ("tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref",
-                    "project_revision", "session_binding_id", "session_revision", "session_fingerprint")):
+                    ("tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref",
+                     "project_revision", "session_binding_id", "session_revision")) or fingerprint != c.session_fingerprint:
                 return None
         except Exception:
             raise PmProviderError("PM_CONTEXT_AUTH_OR_SESSION_UNAVAILABLE") from None

@@ -206,7 +206,8 @@ class SqliteTests(unittest.TestCase):
             scopes=frozenset({"project_state:read", "project_state:transition"}))
         session = {k: getattr(custody, k) for k in ("tenant_ref", "workspace_ref", "project_ref",
             "principal_ref", "consumer_ref", "session_ref", "project_revision", "session_binding_id",
-            "session_revision", "session_fingerprint")}
+            "session_revision")}
+        session["fingerprint"] = custody.session_fingerprint
         class Authenticator:
             SYNTHETIC_TEST_ONLY = True
             def authenticate(self, headers, *, required_scope):
@@ -238,7 +239,8 @@ class SqliteTests(unittest.TestCase):
             scopes=frozenset({"project_state:read"}))
         session = {k: getattr(custody, k) for k in (
             "tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref",
-            "project_revision", "session_binding_id", "session_revision", "session_fingerprint")}
+            "project_revision", "session_binding_id", "session_revision")}
+        session["fingerprint"] = custody.session_fingerprint
         class Authenticator:
             SYNTHETIC_TEST_ONLY = True
             def authenticate(self, headers, *, required_scope):
@@ -262,7 +264,8 @@ class SqliteTests(unittest.TestCase):
             scopes=frozenset({"project_state:read"}))
         session = {k: getattr(custody, k) for k in (
             "tenant_ref", "workspace_ref", "project_ref", "principal_ref", "consumer_ref", "session_ref",
-            "project_revision", "session_binding_id", "session_revision", "session_fingerprint")}
+            "project_revision", "session_binding_id", "session_revision")}
+        session["fingerprint"] = custody.session_fingerprint
         class Authenticator:
             SYNTHETIC_TEST_ONLY = True
             def authenticate(self, headers, *, required_scope):
@@ -273,11 +276,17 @@ class SqliteTests(unittest.TestCase):
                 return session
         port = ContextPmCredentialPort(custody=custody, authenticator=Authenticator(),
             state_port=State(), credential_reader=lambda: "offline-only")
-        for name, stale in (("session_binding_id", "test:other-binding"), ("session_fingerprint", "b" * 64)):
+        for name, stale in (("session_binding_id", "test:other-binding"), ("fingerprint", "b" * 64)):
             with self.subTest(field=name):
                 session[name] = stale
                 self.assertFalse(port.session_check(PRINCIPAL, "test:session", "read_current"))
-                session[name] = getattr(custody, name)
+                session[name] = (custody.session_fingerprint if name == "fingerprint"
+                    else getattr(custody, name))
+        del session["fingerprint"]
+        self.assertFalse(port.session_check(PRINCIPAL, "test:session", "read_current"))
+        session["fingerprint"] = custody.session_fingerprint
+        session["session_fingerprint"] = "b" * 64
+        self.assertFalse(port.session_check(PRINCIPAL, "test:session", "read_current"))
 
     def test_context_stale_session_and_scope_errors_never_grant_access(self):
         custody = context_custody({"read_current"})
