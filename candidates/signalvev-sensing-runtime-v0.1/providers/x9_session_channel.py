@@ -10,8 +10,9 @@ Production qualification requires the host to implement
 ``AuthenticatedX9SessionAPI`` with provider-authenticated identity, atomic
 append-once by event ID, and fresh readback (including provider revision).
 
-The one supported receiver is pinned here. A caller cannot supply a different
-principal or session. ``enabled`` is false by default. A test double can check
+The receiver identity comes from an explicit host-owned role assignment and a
+fresh authenticated current-session read; this adapter contains no principal
+or session aliases. ``enabled`` is false by default. A test double can check
 the interface contract, but cannot establish provider custody or live effect.
 """
 from __future__ import annotations
@@ -40,8 +41,6 @@ from adapters.x9_channel_ingress import (
     X9Disposition,
 )
 
-X9_PRINCIPAL = "X9_PROSJEKTMANN_8F7290F3"
-X9_SESSION_REF = "codex:local01a0e1b4-eb38-7e80-83cb-fff0f30a253e"
 NOT_SENT = "NOT_SENT"
 UNKNOWN_SEND = "UNKNOWN_SEND"
 ACCEPTED = "ACCEPTED"
@@ -63,6 +62,10 @@ class ProviderSessionIdentity:
 
 class AuthenticatedX9SessionAPI(Protocol):
     """Missing host-owned execution port required for production qualification.
+
+    ``identity`` must be selected through the trusted receiver role assignment
+    and report the actual authenticated current session. Principal names,
+    consumer labels, request fields, and transport sessions alone cannot assign role.
 
     Append methods must enforce event-ID uniqueness atomically across processes.
     Read methods must perform a fresh authenticated provider read and return
@@ -95,8 +98,10 @@ class X9SessionChannelPort:
             return None
         if not isinstance(identity, ProviderSessionIdentity):
             return None
-        if (identity.channel != CHANNEL or identity.principal != X9_PRINCIPAL
-                or identity.session_ref != X9_SESSION_REF or identity.authenticated is not True
+        if (identity.channel != CHANNEL
+                or not isinstance(identity.principal, str) or not identity.principal.strip()
+                or not isinstance(identity.session_ref, str) or not identity.session_ref.strip()
+                or identity.authenticated is not True
                 or identity.current is not True or not isinstance(identity.scopes, frozenset)
                 or any(not isinstance(scope, str) for scope in identity.scopes)
                 or not REQUIRED_SCOPES.issubset(identity.scopes)):
@@ -107,7 +112,7 @@ class X9SessionChannelPort:
         current = self._session()
         return ChannelIdentity(
             CHANNEL,
-            X9_PRINCIPAL,
+            current.principal if current is not None else "",
             authenticated=current is not None,
             append_allowed=current is not None and "disposition:append" in current.scopes,
             read_allowed=current is not None and "pointer:read" in current.scopes
@@ -125,7 +130,8 @@ class X9SessionChannelPort:
         return NOT_SENT
 
     def read_pointer_by_event_id(self, event_id: str) -> Readback | None:
-        if self._session() is None or not isinstance(event_id, str) or not ID.fullmatch(event_id):
+        identity = self._session()
+        if identity is None or not isinstance(event_id, str) or not ID.fullmatch(event_id):
             return None
         try:
             readback = self._api.read_pointer_by_event_id(event_id)  # type: ignore[union-attr]
@@ -135,7 +141,7 @@ class X9SessionChannelPort:
             return None
         if (not isinstance(readback, Readback) or not isinstance(readback.record, PointerRecord)
                 or readback.record.schema != SCHEMA or readback.record.event_id != event_id
-                or readback.record.receiver_ref != X9_SESSION_REF
+                or readback.record.receiver_ref != identity.session_ref
                 or readback.producer_principal != readback.record.producer_id
                 or readback.content_sha256 != readback.record.content_sha256
                 or not isinstance(readback.revision_token, str) or not ID.fullmatch(readback.revision_token)):
@@ -156,7 +162,7 @@ class X9SessionChannelPort:
         if (pointer is None or not isinstance(pointer.record, PointerRecord)
                 or pointer.record.attempt_id != record.attempt_id
                 or pointer.record.content_sha256 != record.pointer_sha256
-                or pointer.record.receiver_ref != X9_SESSION_REF):
+                or pointer.record.receiver_ref != identity.session_ref):
             return NOT_SENT
         try:
             result = self._api.append_disposition_once(  # type: ignore[union-attr]
@@ -167,7 +173,8 @@ class X9SessionChannelPort:
         return result if result in {ACCEPTED, NOT_SENT, UNKNOWN_SEND} else UNKNOWN_SEND
 
     def read_disposition_by_event_id(self, event_id: str) -> Readback | None:
-        if self._session() is None or not isinstance(event_id, str) or not ID.fullmatch(event_id):
+        identity = self._session()
+        if identity is None or not isinstance(event_id, str) or not ID.fullmatch(event_id):
             return None
         try:
             readback = self._api.read_disposition_by_event_id(event_id)  # type: ignore[union-attr]
@@ -184,7 +191,7 @@ class X9SessionChannelPort:
                 or not HEX64.fullmatch(readback.record.owner_material_sha256)
                 or not ID.fullmatch(readback.record.owner_revision)
                 or not ID.fullmatch(readback.record.reason)
-                or readback.producer_principal != X9_PRINCIPAL
+                or readback.producer_principal != identity.principal
                 or readback.content_sha256 != readback.record.content_sha256
                 or not isinstance(readback.revision_token, str) or not ID.fullmatch(readback.revision_token)):
             return None

@@ -24,14 +24,14 @@ from adapters.x9_channel_ingress import (  # noqa: E402
 )
 from providers.x9_session_channel import (  # noqa: E402
     REQUIRED_SCOPES,
-    X9_PRINCIPAL,
-    X9_SESSION_REF,
     ProviderSessionIdentity,
     X9SessionChannelPort,
     consume_current_x9_pulse,
 )
 
 PM = "CURRENT_PM_PROJECT_MANAGER_C1A05B39"
+X9_PRINCIPAL = "test:receiver-principal"
+X9_SESSION_REF = "test:receiver-session"
 NOW = datetime(2026, 10, 5, 14, 0, tzinfo=timezone.utc)
 
 
@@ -138,8 +138,8 @@ class X9SessionChannelPortTests(unittest.TestCase):
         self.assertFalse(disabled.identity().authenticated)
         self.assertEqual(api.calls, [])
 
-        for bad in (authorized_identity(principal="X9_OTHER"),
-                    authorized_identity(session_ref="codex:local/old-session"),
+        for bad in (authorized_identity(principal=""),
+                    authorized_identity(session_ref=""),
                     authorized_identity(current=False),
                     authorized_identity(authenticated=False),
                     authorized_identity(scopes=frozenset({"pointer:read"}))):
@@ -210,7 +210,7 @@ class X9SessionChannelPortTests(unittest.TestCase):
         consume_current_x9_pulse(ingress, channel, event_id="event:1", now=NOW,
                                  prior_material_sha256="c" * 64)
         self.assertEqual(ingress.calls, [("event:1", NOW, "c" * 64)])
-        api.identity_value = authorized_identity(session_ref="codex:local/old-session")
+        api.identity_value = authorized_identity(current=False)
         result = consume_current_x9_pulse(ingress, channel, event_id="event:1", now=NOW)
         self.assertEqual(result.state, "REFINE_INGRESS_PORT_UNBOUND")
         self.assertEqual(len(ingress.calls), 1)
