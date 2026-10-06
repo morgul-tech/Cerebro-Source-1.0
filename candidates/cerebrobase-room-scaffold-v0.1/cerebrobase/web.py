@@ -262,7 +262,12 @@ def make_handler(app: App):
                 if cfg.auth_mode != "SYNTHETIC" or cfg.environment == "PROD":
                     return self.html(503, "Innlogging", ui.message_body(
                         "Innlogging er ikke klar", "Ingen kvalifisert innloggingsleverandør er satt opp."))
-                pre = secrets.token_urlsafe(24)
+                # Keep the browser's pending double-submit token stable across
+                # parallel login pages/prefetch redirects. A second GET must not
+                # invalidate a form already displayed in the same cookie jar.
+                pre = self.cookie("cb_prelogin")
+                if not pre or not re.fullmatch(r"[A-Za-z0-9_-]{32}", pre):
+                    pre = secrets.token_urlsafe(24)
                 return self.html(200, "Testinngang", ui.login_body(pre),
                                  cookies=[self.set_cookie("cb_prelogin", pre, 600)])
             p = self.principal()
