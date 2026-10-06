@@ -46,32 +46,44 @@ Validation (each failure is `{code, field, next}`):
   * `SYNTHETIC` is refused;
   * preflight is never ready (it reports `AUTH_ADAPTER_NOT_QUALIFIED` and `PROD_DEPLOYMENT_NOT_QUALIFIED`);
   * `seed` is refused.
-* **Secrets:** values are never inline. An enabled integration with an unresolved ref blocks with
-  `SECRET_REF_UNRESOLVED` (field `secret_refs.<name>`). A present secret still needs a qualified port
-  (`INTEGRATION_PORT_NOT_QUALIFIED`). A disabled integration is `NOT_REQUIRED` and does not block the scaffold.
+* **Secrets:** values are never inline. A generic enabled integration with an unresolved ref blocks with
+  `SECRET_REF_UNRESOLVED` (field `secret_refs.<name>`); a present generic secret still needs a qualified port
+  (`INTEGRATION_PORT_NOT_QUALIFIED`). CB16 Postkasse has its own fresh read-only qualification port below. A disabled
+  integration is `NOT_REQUIRED` and does not block the scaffold.
 
 Examples: `deploy/config/{dev,staging,prod}.example.json`.
 
-## CB16 Postkasse adapter candidate (disabled until private X6 readback)
+## CB16 Postkasse adapter (default off; private STAGING synthetic scope)
 
-`integrations.postkasse` is absent/disabled by default. A private config may supply `enabled: true`, a numeric-IP
-`endpoint` (`http://127.0.0.1:PORT` or private-IP HTTPS), and `rooms` keyed by CerebroBase room ID. Every room binding
-must have `server_room_id`, `credential_ref` (a name in top-level `secret_refs`) and `contacts` (explicit display alias
-to server room ID). Credentials are resolved server-side per room; the browser never receives credentials or the
-endpoint. Hostnames, public IPs, redirects, embedded URL credentials, HTTP to non-loopback and missing bindings are
-rejected. Enabled integrations still block general preflight pending X6 attestation; do not activate this candidate
-merely by placing a plausible endpoint/secret in config.
+`integrations.postkasse` is absent/disabled by default. Its non-secret configuration has `enabled`, numeric-IP
+`endpoint`, `credential_reader_ref`, and `rooms` keyed by CerebroBase room ID. Each room has `server_room_id` and
+`contacts` (local alias -> service room ID). The protected reader reference points to one local JSON object
+`{server_room_id: bearer_token}`; it may be a name in `secret_refs` resolving to `file:/absolute/path`, or a direct
+`file:/absolute/path` reference. Tokens are selected by the bound server room ID, never by browser input. Duplicate
+service room IDs or token values across distinct CB rooms, missing credentials, and non-reciprocal mappings block.
+No credential value or endpoint is returned to the browser. A selected `http://100.77.125.87:18788` carrier is
+allowed only in STAGING with SYNTHETIC auth; other non-loopback HTTP, hostnames, public IPs, redirects and embedded
+URL credentials are refused. This does not install/qualify a persistent carrier or expose a public route.
 
-The candidate v0.1 wire parser expects `GET /v1/me` -> `room_id`, `GET /v1/contacts` -> `contacts[]` with `room_id`,
-`GET /v1/postkassa?limit=50` -> `messages[]`, and message/receipt objects with `message_id`, `sender_room_id`,
-`recipient_room_id`, `payload` and `delivery_state` where applicable. It sends a per-room `Authorization: Bearer`
-credential and uses POST `/v1/postkassa`, `/{message_id}/ack`, `/{message_id}/reply`. X6 must verify the actual
-credential scheme, field names, reply/ACK shapes, list cursor and sender-proof semantics before activation; an
-unknown shape fails closed. The config never accepts a client-selected sender room or arbitrary request path.
+Preflight for an enabled adapter is a fresh read-only port: verify active local synthetic room membership, then for
+each bound room authenticate `GET /v1/me` (exact room + `postkassa:read`, `postkassa:send`, `contacts:read` scopes),
+`GET /v1/contacts` (exact configured ALLOWED correspondents), and `GET /v1/postkassa?limit=1`. A config flag cannot
+claim qualification. Failed readback blocks start. A1 still owns private config fit, versioned install/rollback and
+actual readback; this source-only candidate does not claim the CYBORG sidecar was read on this host.
+
+The matched v0.1 wire uses `Authorization: Bearer` per mailbox. Send is `POST /v1/postkassa` with local `recipient`
+alias, `type: TEXT`, JSON `payload: {text: ...}`, and nonempty `dedupe_key`; the service derives sender. A new send
+returns `201 {deduped:false,message}`, exact retry `200 {deduped:true,message}`, and a changed dedupe body returns
+`409 DEDUPE_CONFLICT`. Detail is `GET /v1/postkassa/{id} -> {message}`; reply uses `POST /{id}/reply` with
+`type: REPLY`, JSON payload and dedupe key, preserving `reply_to`; ACK returns
+`{state:ACKED_BY_RECIPIENT_PROTO,deduped,guards}`. Message identity/state are the wire receipt; there is no exposed
+`receipt_id`. Guard fields are checked as response shape, never converted into app authority. Only explicit allowed
+inbound contacts and own sent messages to those contacts are displayed; only inbound recipient messages can ACK or
+reply. The adapter reads a sent detail back before treating its receipt as confirmed. An unknown shape fails closed.
 
 The UI receipt is only a transport result. It grants no file, app, memory, tool or identity authority. The service
 DB is the only message state; the adapter makes no mailbox table, broker, scheduler or local retry queue. A timeout
-after a POST is `POSTKASSE_OUTCOME_UNKNOWN` and is not retried automatically. Generic HTTP logs contain only method,
+or unexpected 5xx after a POST is `POSTKASSE_OUTCOME_UNKNOWN` and is not retried automatically. Generic HTTP logs contain only method,
 route template, status, request ID and account ID, never bodies, credentials or message IDs.
 
 ## Schema (SQLite, `schema_meta.schema_version`, head = 2)

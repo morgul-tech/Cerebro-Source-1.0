@@ -19,6 +19,7 @@ from .buildinfo import runtime_build
 from .config import Config, resolve_secret
 from .db import SchemaError, connect, require_compatible
 from .tools import REGISTRY, UNQUALIFIED
+from .postkasse import Postkasse, PostkasseError
 
 INSTALLED_TESTED, REQUIRED_NOT_QUALIFIED, NOT_REQUIRED = "INSTALLED_TESTED", "REQUIRED_NOT_QUALIFIED", "NOT_REQUIRED"
 
@@ -157,6 +158,16 @@ def preflight(cfg: Config, *, phase: str = "pre-start", check_listener: bool = T
         ref_name = spec.get("secret_ref")
         if not spec["enabled"]:
             items.append(_item(f"integration:{name}", NOT_REQUIRED, reason="DISABLED"))
+            continue
+        if name == "postkasse" and "credential_reader_ref" in spec:
+            try:
+                Postkasse(cfg).qualify()  # read-only current /me, /contacts, inbox + CB membership
+            except PostkasseError as exc:
+                items.append(_item(f"integration:{name}", REQUIRED_NOT_QUALIFIED, blocking=True,
+                                   code=exc.code, field="integrations.postkasse",
+                                   nxt="verify the current private reader, room mapping, membership and service readback"))
+            else:
+                items.append(_item(f"integration:{name}", INSTALLED_TESTED, mode="PRIVATE_READ_ONLY_QUALIFIED"))
             continue
         if ref_name is None:
             items.append(_item(f"integration:{name}", REQUIRED_NOT_QUALIFIED, blocking=True,

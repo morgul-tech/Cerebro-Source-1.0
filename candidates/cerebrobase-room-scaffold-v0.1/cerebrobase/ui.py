@@ -82,7 +82,8 @@ def postkasse_body(room_id: str, messages: list[dict], contacts: dict[str, str],
     base = f"/rom/{_e(room_id)}/postkasse"
     options = "".join(f'<option value="{_e(alias)}">{_e(alias)}</option>' for alias in sorted(contacts))
     rows = "".join(f'<li><a href="{base}/{_e(m["message_id"])}">{_e(m["message_id"])}'
-                   f'</a> · fra {_e(m["sender_room_id"])} · {_e(m["delivery_state"])}</li>' for m in messages)
+                   f'</a> · {_e("Mottatt" if m["role"] == "incoming" else "Sendt")} · '
+                   f'{_e(m["delivery_state"])}</li>' for m in messages)
     form = (f'<form method="post" action="{base}"><input type="hidden" name="csrf" value="{_e(csrf)}">'
             f'<input type="hidden" name="dedupe_key" value="{secrets.token_urlsafe(24)}">'
             f'<label for="recipient">Kontakt</label><select id="recipient" name="recipient">{options}</select>'
@@ -99,16 +100,18 @@ def postkasse_message_body(room_id: str, message: dict, csrf: str) -> str:
     base = f'/rom/{_e(room_id)}/postkasse'
     mid = _e(message["message_id"])
     key = secrets.token_urlsafe(24)
+    actions = (f'<form method="post" action="{base}/{mid}/ack">'
+               f'<input type="hidden" name="csrf" value="{_e(csrf)}">'
+               f'<button type="submit">Bekreft mottatt</button></form>'
+               f'<form method="post" action="{base}/{mid}/reply">'
+               f'<input type="hidden" name="csrf" value="{_e(csrf)}">'
+               f'<input type="hidden" name="dedupe_key" value="{key}">'
+               f'<label for="tekst">Svar</label><textarea id="tekst" name="tekst" maxlength="4096" required>'
+               f'</textarea><button type="submit">Svar</button></form>' if message["role"] == "incoming" else "")
     return (f'<p><a href="{base}">Til innboks</a></p><h1>Melding {mid}</h1>'
-            f'<section class="card"><p>Fra {_e(message["sender_room_id"])} · '
-            f'{_e(message["delivery_state"])}</p><p>{_e(message["payload"])}</p></section>'
-            f'<form method="post" action="{base}/{mid}/ack">'
-            f'<input type="hidden" name="csrf" value="{_e(csrf)}"><button type="submit">Bekreft mottatt</button></form>'
-            f'<form method="post" action="{base}/{mid}/reply">'
-            f'<input type="hidden" name="csrf" value="{_e(csrf)}">'
-            f'<input type="hidden" name="dedupe_key" value="{key}">'
-            f'<label for="tekst">Svar</label><textarea id="tekst" name="tekst" maxlength="4096" required></textarea>'
-            f'<button type="submit">Svar</button></form>')
+            f'<section class="card"><p>{_e("Mottatt fra" if message["role"] == "incoming" else "Sendt til")} '
+            f'{_e(message["sender_room_id"] if message["role"] == "incoming" else message["recipient_room_id"])}'
+            f' · {_e(message["delivery_state"])}</p><p>{_e(message["payload"])}</p></section>{actions}')
 
 
 def admin_body(tools: list[dict], ops: dict, csrf: str, result: str | None = None) -> str:

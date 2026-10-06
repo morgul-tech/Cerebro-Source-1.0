@@ -65,7 +65,7 @@ Exit codes:
 | `GET /api/rom/{room_id}/filer`, `GET /api/rom/{room_id}/speil` | member | 503 `CAPABILITY_UNAVAILABLE` (P02/P03 not integrated); non-members get 404 |
 | `GET /static/app.css` | public | the only static file (in-memory allowlist) |
 | `GET /rom/{room_id}/postkasse` | member + paired private credential | service-backed own inbox and explicit contacts only |
-| `GET /rom/{room_id}/postkasse/{message_id}` | member + service-confirmed recipient | exact message; foreign/missing both 404 |
+| `GET /rom/{room_id}/postkasse/{message_id}` | member + service-confirmed sender or recipient | exact allowed-contact message; foreign/missing both 404 |
 | `POST /rom/{room_id}/postkasse` | member + CSRF | short message to an explicitly allowed contact; service derives sender |
 | `POST /rom/{room_id}/postkasse/{message_id}/ack` | member + CSRF + recipient | ACK only, no action authority |
 | `POST /rom/{room_id}/postkasse/{message_id}/reply` | member + CSRF + recipient | reply through the service's reply endpoint |
