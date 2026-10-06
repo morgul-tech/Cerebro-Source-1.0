@@ -1434,6 +1434,7 @@ class PostgresControlContextStatePort:
             tenant_ref=tenant_ref,
             workspace_ref=workspace_ref,
             principal_ref=principal_ref,
+            read_only=True,
         ) as cursor:
             session = self._load_session(
                 cursor,

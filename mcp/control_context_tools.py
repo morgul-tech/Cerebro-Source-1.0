@@ -101,15 +101,30 @@ class McpToolCallContext:
     identity: VerifiedMcpIdentity
     request_meta: Mapping[str, Any]
 
-    def session_ref(self) -> str:
+    def transport_session(self) -> dict[str, str] | None:
+        """Return the host-delivered session reference without implying a persisted binding."""
         self.identity.validate()
-        raw = self.request_meta.get("openai/session")
-        if not isinstance(raw, str) or not raw.strip():
-            raw = self.request_meta.get("cerebro/session")
-        if not isinstance(raw, str) or not raw.strip():
+        present = [
+            (key, self.request_meta.get(key))
+            for key in ("openai/session", "cerebro/session")
+            if key in self.request_meta
+        ]
+        if len(present) > 1:
+            raise ControlContextToolAuthorizationError("ambiguous-control-session-metadata")
+        if not present:
+            return None
+        source, raw = present[0]
+        if (not isinstance(raw, str) or not raw.strip()
+                or len(raw.strip().encode("utf-8")) > 512):
+            raise ControlContextToolAuthorizationError("invalid-control-session-metadata")
+        namespace = "chatgpt" if source == "openai/session" else "local"
+        return {"source": source, "session_ref": f"{namespace}:{raw.strip()}"}
+
+    def session_ref(self) -> str:
+        metadata = self.transport_session()
+        if metadata is None:
             raise ControlContextToolAuthorizationError("stable-control-session-metadata-required")
-        namespace = "chatgpt" if "openai/session" in self.request_meta else "local"
-        return f"{namespace}:{raw.strip()}"
+        return metadata["session_ref"]
 
     @property
     def subject_correlation(self) -> str | None:
@@ -1201,9 +1216,10 @@ def tool_definitions() -> list[dict[str, Any]]:
                 "properties": {"project_ref": {"type": "string", "minLength": 1}},
             },
             "outputSchema": _object_output_schema(
-                required=("project", "repository_permission_required"),
+                required=("project", "authenticated_caller", "repository_permission_required"),
                 properties={
                     "project": {"type": "object"},
+                    "authenticated_caller": {"type": "object"},
                     "repository_permission_required": {"const": False},
                 },
             ),
@@ -2024,7 +2040,63 @@ class ControlContextMcpTools:
             project_ref=_require_text(args, "project_ref"),
             scopes=identity.state_scopes,
         )
-        return self._result({"project": project, "repository_permission_required": False}, context)
+        transport_session = context.transport_session()
+        caller = {
+            "schema": "cerebro-authenticated-project-read-caller/v2",
+            "tenant_ref": identity.tenant_ref,
+            "workspace_ref": identity.workspace_ref,
+            "principal_ref": identity.principal_ref,
+            "consumer_ref": identity.consumer_ref,
+            "consumer_source": "SERVICE_BOUND",
+            "project_ref": project["project_ref"],
+            "oauth_verified": True,
+            "session_status": "NO_CURRENT_PERSISTED_SESSION",
+            "persisted_session": None,
+            "transport_session": {
+                "status": "AVAILABLE" if transport_session is not None else "ABSENT",
+                "source": transport_session["source"] if transport_session is not None else None,
+                "session_ref": transport_session["session_ref"] if transport_session is not None else None,
+                "authority": "TRANSPORT_METADATA_ONLY" if transport_session is not None else "NONE",
+            },
+        }
+        if transport_session is None:
+            caller["session_status"] = "NO_HOST_SESSION_METADATA"
+        else:
+            session_ref = transport_session["session_ref"]
+            try:
+                session = self._state_port.read_session(
+                    tenant_ref=identity.tenant_ref,
+                    workspace_ref=identity.workspace_ref,
+                    principal_ref=identity.principal_ref,
+                    consumer_ref=identity.consumer_ref,
+                    session_ref=session_ref,
+                    scopes=identity.state_scopes,
+                )
+            except StateBindingError as exc:
+                if str(exc) not in ("control-session-not-bound", "session-read-result-missing",
+                                    "control-session-stale-requires-begin-event-rehydrate"):
+                    raise
+            else:
+                if (session["tenant_ref"], session["workspace_ref"], session["principal_ref"],
+                    session["consumer_ref"], session["session_ref"]) != (
+                    identity.tenant_ref, identity.workspace_ref, identity.principal_ref,
+                    identity.consumer_ref, session_ref):
+                    raise ControlContextToolAuthorizationError("persisted-session-identity-mismatch")
+                if session["project_ref"] != project["project_ref"]:
+                    caller["session_status"] = "PERSISTED_SESSION_BOUND_TO_OTHER_PROJECT"
+                else:
+                    if session["project_revision"] != project["revision"]:
+                        raise ControlContextToolAuthorizationError("persisted-session-project-revision-mismatch")
+                    caller["session_status"] = "CURRENT_PERSISTED_SESSION"
+                    caller["persisted_session"] = {
+                        "session_ref": session_ref,
+                        "session_binding_id": session["session_binding_id"],
+                        "session_revision": session["session_revision"],
+                        "session_fingerprint": session["fingerprint"],
+                        "project_revision": session["project_revision"],
+                    }
+        return self._result({"project": project, "authenticated_caller": caller,
+                             "repository_permission_required": False}, context)
 
     def begin_project_control_event(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         identity = self._identity(context)

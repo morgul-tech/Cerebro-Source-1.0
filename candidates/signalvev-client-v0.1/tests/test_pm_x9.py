@@ -696,8 +696,8 @@ class I_InternalIntegration(Base):
         provider = self.provider_module("x9_session_channel")
         self.assertIs(provider.PointerRecord, x9.PointerRecord)
         self.assertIs(provider.Readback, x9.Readback)
-        w = self.world(settings=replace(syn.synthetic_settings(), x9_principal=provider.X9_PRINCIPAL,
-                                       x9_session_ref=provider.X9_SESSION_REF))
+        settings = syn.synthetic_settings()
+        w = self.world(settings=settings)
         b = self.binding(w)
         _, sent = self.deliver(w, b)
         readback = w.x9_channel.read_pointer_by_event_id(sent.event_id)
@@ -706,8 +706,8 @@ class I_InternalIntegration(Base):
             current = True
 
             def identity(self):
-                return provider.ProviderSessionIdentity(x9.CHANNEL, provider.X9_PRINCIPAL,
-                    provider.X9_SESSION_REF, True, self.current, provider.REQUIRED_SCOPES)
+                return provider.ProviderSessionIdentity(x9.CHANNEL, settings.x9_principal,
+                    settings.x9_session_ref, True, self.current, provider.REQUIRED_SCOPES)
 
             def read_pointer_by_event_id(self, event_id):
                 return readback

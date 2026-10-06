@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cerebro.invalid/schemas/x9-role-binding-config-v1.json",
+  "title": "Trusted X9 channel role-binding configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["config_ref", "channel", "receiver", "producer"],
+  "properties": {
+    "config_ref": {"$ref": "#/$defs/ref"},
+    "channel": {"const": "PROSJEKTMANN_CHANNEL"},
+    "receiver": {"$ref": "#/$defs/receiver_assignment"},
+    "producer": {"$ref": "#/$defs/producer_assignment"}
+  },
+  "$defs": {
+    "ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@/#=-]{0,159}$"},
+    "tuple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref",
+                    "project_ref", "project_revision", "session_binding_id", "session_revision", "session_fingerprint"],
+      "properties": {
+        "tenant_ref": {"type": "string", "minLength": 1, "maxLength": 512},
+        "workspace_ref": {"type": "string", "minLength": 1, "maxLength": 512},
+        "principal_ref": {"type": "string", "minLength": 1, "maxLength": 512},
+        "consumer_ref": {"type": "string", "minLength": 1, "maxLength": 512},
+        "session_ref": {"type": "string", "minLength": 1, "maxLength": 512},
+        "project_ref": {"type": "string", "minLength": 1, "maxLength": 512},
+        "project_revision": {"type": "integer", "minimum": 1},
+        "session_binding_id": {"$ref": "#/$defs/ref"},
+        "session_revision": {"type": "integer", "minimum": 1},
+        "session_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "assignment_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "assignment_ref", "source_ref", "identity"],
+      "properties": {
+        "role": {"enum": ["receiver", "producer"]},
+        "assignment_ref": {"$ref": "#/$defs/ref"},
+        "source_ref": {"type": "string", "minLength": 1, "maxLength": 512},
+        "identity": {"$ref": "#/$defs/tuple"}
+      }
+    },
+    "receiver_assignment": {
+      "allOf": [
+        {"$ref": "#/$defs/assignment_base"},
+        {"type": "object", "required": ["role"], "properties": {"role": {"const": "receiver"}}}
+      ]
+    },
+    "producer_assignment": {
+      "allOf": [
+        {"$ref": "#/$defs/assignment_base"},
+        {"type": "object", "required": ["role"], "properties": {"role": {"const": "producer"}}}
+      ]
+    }
+  }
+}
