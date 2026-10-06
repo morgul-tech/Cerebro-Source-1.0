@@ -447,6 +447,41 @@ class ControlContextRemoteRuntime:
         )
 
 
+def _compose_worker_overlay_resolver(
+    *,
+    worker_overlay_control_resolver: Any | None,
+    worker_standing_grant_reader: Any | None,
+    worker_human_intent_reader: Any | None,
+    worker_parent_mandate_reader: Any | None,
+    worker_claim_reader: Any | None,
+    enable_standing_worker_policy: bool,
+) -> Any | None:
+    _require(type(enable_standing_worker_policy) is bool,
+             "runtime-standing-worker-policy-enable-flag-invalid")
+    owner_ports = (
+        worker_standing_grant_reader,
+        worker_human_intent_reader,
+        worker_parent_mandate_reader,
+        worker_claim_reader,
+    )
+    if not any(port is not None for port in owner_ports):
+        _require(not enable_standing_worker_policy,
+                 "runtime-standing-worker-policy-owner-ports-required")
+        return worker_overlay_control_resolver
+    _require(worker_overlay_control_resolver is None,
+             "runtime-ambiguous-worker-policy-composition-prohibited")
+    _require(all(port is not None for port in owner_ports),
+             "runtime-standing-worker-policy-owner-ports-must-bind-together")
+    from worker_context_auth import SourceStandingGrantWorkerPolicyResolver
+    return SourceStandingGrantWorkerPolicyResolver(
+        worker_standing_grant_reader,
+        worker_human_intent_reader,
+        worker_parent_mandate_reader,
+        worker_claim_reader,
+        enabled=enable_standing_worker_policy,
+    )
+
+
 def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     *,
     config: ControlContextRemoteRuntimeConfig,
@@ -463,6 +498,11 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     worker_overlay_control_resolver: Any | None = None,
     worker_overlay_attestation_issuer: Any | None = None,
     worker_overlay_source_continuity_verifier: Any | None = None,
+    worker_standing_grant_reader: Any | None = None,
+    worker_human_intent_reader: Any | None = None,
+    worker_parent_mandate_reader: Any | None = None,
+    worker_claim_reader: Any | None = None,
+    enable_standing_worker_policy: bool = False,
     pm_profile_verifier: Any | None = None,
     pm_prepublication_basis_reader: Any | None = None,
     pm_disposition_publisher_port: Any | None = None,
@@ -486,6 +526,14 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         "runtime-resolution-attestation-verifier-required",
     )
     _require(callable(clock), "runtime-clock-required")
+    worker_overlay_control_resolver = _compose_worker_overlay_resolver(
+        worker_overlay_control_resolver=worker_overlay_control_resolver,
+        worker_standing_grant_reader=worker_standing_grant_reader,
+        worker_human_intent_reader=worker_human_intent_reader,
+        worker_parent_mandate_reader=worker_parent_mandate_reader,
+        worker_claim_reader=worker_claim_reader,
+        enable_standing_worker_policy=enable_standing_worker_policy,
+    )
     state_port = PostgresControlContextStatePort(connection_factory)
     if principal_succession_inputs_reader is not None or principal_succession_mcp_authorizer is not None:
         _require(principal_succession_reader is None, "runtime-ambiguous-succession-reader-prohibited")
@@ -587,6 +635,11 @@ def assemble_postgres_control_context_remote_runtime(
     worker_overlay_control_resolver: Any | None = None,
     worker_overlay_attestation_issuer: Any | None = None,
     worker_overlay_source_continuity_verifier: Any | None = None,
+    worker_standing_grant_reader: Any | None = None,
+    worker_human_intent_reader: Any | None = None,
+    worker_parent_mandate_reader: Any | None = None,
+    worker_claim_reader: Any | None = None,
+    enable_standing_worker_policy: bool = False,
     pm_profile_verifier: Any | None = None,
     pm_prepublication_basis_reader: Any | None = None,
     pm_disposition_publisher_port: Any | None = None,
@@ -622,6 +675,11 @@ def assemble_postgres_control_context_remote_runtime(
         worker_overlay_control_resolver=worker_overlay_control_resolver,
         worker_overlay_attestation_issuer=worker_overlay_attestation_issuer,
         worker_overlay_source_continuity_verifier=worker_overlay_source_continuity_verifier,
+        worker_standing_grant_reader=worker_standing_grant_reader,
+        worker_human_intent_reader=worker_human_intent_reader,
+        worker_parent_mandate_reader=worker_parent_mandate_reader,
+        worker_claim_reader=worker_claim_reader,
+        enable_standing_worker_policy=enable_standing_worker_policy,
         pm_profile_verifier=pm_profile_verifier,
         pm_prepublication_basis_reader=pm_prepublication_basis_reader,
         pm_disposition_publisher_port=pm_disposition_publisher_port,

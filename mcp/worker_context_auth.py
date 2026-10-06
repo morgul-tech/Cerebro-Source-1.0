@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import threading
 from typing import Any
 
 
@@ -181,6 +182,179 @@ class BoundWorkerPolicyResolver:
                  task.get("readback_verified") is True,
                  "operative-pm-task-not-current-or-outside-parent-mandate")
         return copy.deepcopy(task)
+
+
+class SourceStandingGrantWorkerPolicyResolver:
+    """Compose a verified standing Human grant with current worker owner readers.
+
+    The standing-grant reader is a trusted provider port, not a JSON value or
+    environment variable. Its ``read_current`` result follows the strict
+    ``cerebro.worker-standing-grant-readback/v1`` contract below, and its
+    ``hold_current`` method fences revocation while a role-attach decision is
+    consumed. This class authenticates neither that reader nor the other owner
+    ports; host composition must bind state-backed/provider-verified ports.
+    It remains disabled unless explicitly enabled.
+    """
+
+    GRANT_SCHEMA = "cerebro.worker-standing-grant-readback/v1"
+    GRANT_SCOPES = {"WORKER_ROLE_ATTACH", "WORKER_TASK_ISSUE"}
+
+    def __init__(self, standing_grant_reader: Any, human_intent_reader: Any,
+                 mandate_reader: Any, claim_reader: Any, *, enabled: bool = False):
+        _require(type(enabled) is bool, "worker-policy-enabled-flag-invalid")
+        self.standing_grant_reader = standing_grant_reader
+        self.enabled = enabled
+        self.policy = BoundWorkerPolicyResolver(
+            human_intent_reader, mandate_reader, claim_reader, enabled=enabled,
+        )
+        self._pending_grants: dict[str, tuple[str, str, str, str, int]] = {}
+        self._pending_lock = threading.RLock()
+
+    def _grant(self, *, generation_ref: str, source_revision: str,
+               method_fingerprint: str) -> dict:
+        _require(self.enabled, "worker-policy-default-off")
+        _require(_ref(generation_ref) and _ref(source_revision) and
+                 _ref(method_fingerprint),
+                 "worker-standing-grant-scope-input-required")
+        reader = self.standing_grant_reader
+        call = getattr(reader, "read_current", None)
+        _require(callable(call), "trusted-worker-standing-grant-reader-unbound")
+        try:
+            value = call(generation_ref=generation_ref, source_revision=source_revision,
+                         method_fingerprint=method_fingerprint)
+        except WorkerContextAuthError:
+            raise
+        except Exception as exc:
+            raise WorkerContextAuthError("worker-standing-grant-read-unavailable") from exc
+        _require(isinstance(value, dict), "worker-standing-grant-readback-required")
+        value = copy.deepcopy(value)
+        _require(set(value) == {
+            "schema", "current", "revoked", "readback_verified", "generation_ref",
+            "source_revision", "method_fingerprint", "grantor_role", "grantee_role",
+            "scopes", "grant_ref", "owner_revision", "readback_ref",
+        }, "worker-standing-grant-readback-fields-invalid")
+        _require(value.get("schema") == self.GRANT_SCHEMA and
+                 value.get("current") is True and value.get("revoked") is False and
+                 value.get("readback_verified") is True,
+                 "worker-standing-grant-not-current-or-verified")
+        _require(value.get("generation_ref") == generation_ref and
+                 value.get("source_revision") == source_revision and
+                 value.get("method_fingerprint") == method_fingerprint,
+                 "worker-standing-grant-generation-source-method-mismatch")
+        _require(value.get("grantor_role") == "HUMAN" and
+                 value.get("grantee_role") == "PROJECT_MANAGER" and
+                 isinstance(value.get("scopes"), list) and
+                 len(value["scopes"]) == len(self.GRANT_SCOPES) and
+                 set(value["scopes"]) == self.GRANT_SCOPES,
+                 "worker-standing-grant-human-pm-scope-required")
+        _require(_ref(value.get("grant_ref")) and _ref(value.get("readback_ref")) and
+                 type(value.get("owner_revision")) is int and value["owner_revision"] > 0,
+                 "worker-standing-grant-owner-readback-required")
+        return value
+
+    def resolve(self, *, pre_role_generation: dict, verified_source: dict,
+                identity: Any, session_ref: str) -> dict:
+        generation = pre_role_generation.get("generation_ref")
+        source = pre_role_generation.get("source_revision")
+        method = verified_source.get("method_fingerprint")
+        grant = self._grant(generation_ref=generation, source_revision=source,
+                            method_fingerprint=method)
+        decision = self.policy.resolve(
+            pre_role_generation=pre_role_generation, verified_source=verified_source,
+            identity=identity, session_ref=session_ref,
+        )
+        decision_ref = decision.get("decision_ref")
+        _require(_ref(decision_ref), "worker-standing-grant-decision-ref-required")
+        with self._pending_lock:
+            self._pending_grants[decision_ref] = (
+                generation, source, method, grant["grant_ref"], grant["owner_revision"],
+            )
+        return decision
+
+    def hold_zero_claim(self, decision: dict):
+        _require(self.enabled, "worker-policy-default-off")
+        decision_ref = decision.get("decision_ref") if isinstance(decision, dict) else None
+        with self._pending_lock:
+            binding = self._pending_grants.pop(decision_ref, None)
+        _require(binding is not None, "worker-standing-grant-decision-not-bound")
+        generation, source, method, grant_ref, grant_revision = binding
+        hold_grant = getattr(self.standing_grant_reader, "hold_current", None)
+        _require(callable(hold_grant), "trusted-worker-standing-grant-fence-unbound")
+        try:
+            grant_fence = hold_grant(
+                generation_ref=generation, source_revision=source,
+                method_fingerprint=method, grant_ref=grant_ref,
+                expected_revision=grant_revision,
+            )
+        except WorkerContextAuthError:
+            raise
+        except Exception as exc:
+            raise WorkerContextAuthError("worker-standing-grant-fence-unavailable") from exc
+        claim_fence = self.policy.hold_zero_claim(decision)
+        return _WorkerStandingGrantAndClaimFence(grant_fence, claim_fence)
+
+    def read_current_task(self, *, generation_ref: str, actor_ref: str,
+                          source_revision: str, method_fingerprint: str,
+                          task_ref: str) -> dict:
+        self._grant(generation_ref=generation_ref, source_revision=source_revision,
+                    method_fingerprint=method_fingerprint)
+        return self.policy.read_current_task(
+            generation_ref=generation_ref, actor_ref=actor_ref,
+            source_revision=source_revision, method_fingerprint=method_fingerprint,
+            task_ref=task_ref,
+        )
+
+
+class _WorkerStandingGrantAndClaimFence:
+    """Hold grant revocation and zero-claim owner fences across attach/readback."""
+
+    def __init__(self, grant_fence: Any, claim_fence: Any):
+        self.grant_fence = grant_fence
+        self.claim_fence = claim_fence
+        self._entered: list[Any] = []
+
+    @staticmethod
+    def _validate(fence: Any, label: str) -> None:
+        _require(callable(getattr(fence, "__enter__", None)) and
+                 callable(getattr(fence, "__exit__", None)) and
+                 callable(getattr(fence, "assert_current", None)),
+                 "trusted-worker-" + label + "-fence-invalid")
+
+    def __enter__(self):
+        try:
+            for fence, label in ((self.grant_fence, "standing-grant"),
+                                 (self.claim_fence, "zero-claim")):
+                self._validate(fence, label)
+                fence.__enter__()
+                self._entered.append(fence)
+                fence.assert_current()
+        except Exception as exc:
+            for fence in reversed(self._entered):
+                try:
+                    fence.__exit__(type(exc), exc, exc.__traceback__)
+                except Exception:
+                    pass
+            self._entered.clear()
+            raise
+        return self
+
+    def assert_current(self) -> None:
+        for fence in self._entered:
+            fence.assert_current()
+
+    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> bool:
+        suppress = False
+        exit_error = None
+        for fence in reversed(self._entered):
+            try:
+                suppress = bool(fence.__exit__(exc_type, exc, traceback)) or suppress
+            except Exception as error:
+                if exit_error is None:
+                    exit_error = error
+        self._entered.clear()
+        if exit_error is not None:
+            raise exit_error
+        return suppress
 
 PM_RIGHTS_SCHEMA = "cerebro.pm-human-rights/v2"
 PM_DELEGATION_SCHEMA = "cerebro.pm-generation-delegation/v2"
