@@ -231,15 +231,27 @@ def _parent_review_gap(parent_raw: bytes, capture: dict[str, Any], manifest: dic
     return None
 
 
-def _repair_same_actor(delta: dict[str, Any], parent_actor: str) -> tuple[dict[str, Any], list[dict[str, str]]]:
-    repaired = dict(delta)
+def _bind_missing_producer_fields(delta: dict[str, Any], parent_actor: str,
+                                  verifier_sha256: str) -> tuple[dict[str, Any], list[dict[str, str]],
+                                                               list[dict[str, str]]]:
+    """Fill only absent producer bindings; preserve and reject reviewer conflicts."""
+    bound = dict(delta)
     repairs: list[dict[str, str]] = []
-    if repaired.get("requested_actor_ref") != parent_actor:
-        repairs.append({"field": "requested_actor_ref", "source": "parent_manifest.actor_ref",
-                        "before": str(repaired.get("requested_actor_ref")), "after": parent_actor,
-                        "reason": "BK05_REQUESTED_ACTOR_MUST_EQUAL_THE_REVIEWED_PARENT_ACTOR"})
-        repaired["requested_actor_ref"] = parent_actor
-    return repaired, repairs
+    conflicts: list[dict[str, str]] = []
+    expected = {"requested_actor_ref": parent_actor, "verifier_sha256": verifier_sha256}
+    sources = {"requested_actor_ref": "parent_manifest.actor_ref",
+               "verifier_sha256": "exact_verifier.txt_bytes"}
+    reasons = {"requested_actor_ref": "BK05_REQUESTED_ACTOR_MUST_EQUAL_THE_REVIEWED_PARENT_ACTOR",
+               "verifier_sha256": "BK05_VERIFIER_HASH_MUST_BIND_EXACT_VERIFIER_BYTES"}
+    for field, value in expected.items():
+        if field not in bound:
+            bound[field] = value
+            repairs.append({"field": field, "source": sources[field], "before": "ABSENT",
+                            "after": value, "reason": reasons[field]})
+        elif bound[field] != value:
+            conflicts.append({"field": field, "expected": value, "observed": str(bound[field]),
+                              "source": sources[field], "reason": reasons[field]})
+    return bound, repairs, conflicts
 
 
 def prepare(evidence_root: Path, source_root: Path) -> dict[str, Any]:
@@ -364,7 +376,7 @@ def prepare(evidence_root: Path, source_root: Path) -> dict[str, Any]:
                 "A4 verifier.txt bytes that review this producer's exact immutable head and finding",
                 "A4 verifier_delta.json with exact reviewer return ref, current reviewed head, and typed test delta",
             ],
-            "producer_field_repair": "requested_actor_ref is copied from the reviewed parent actor when a real A4 delta arrives; source delta bytes are retained unchanged and the correction is hash-bound",
+            "producer_field_repair": "only absent requested_actor_ref or verifier_sha256 producer fields may be bound from their named source; any supplied disagreement returns an exact gap and source delta bytes are preserved",
             "limits": ["NO_CAPSULE_UNTIL_CURRENT_A4_REVIEW", "NO_HOST_BINDING", "NO_RECIPIENT_USE_CLAIM",
                        "NO_REVIEW_PROMOTION_FROM_CAPTURE_METADATA"],
             "authority": "NONE",
@@ -376,8 +388,15 @@ def prepare(evidence_root: Path, source_root: Path) -> dict[str, Any]:
     if delta_error or delta_source is None:
         return _gap(source_root, bindings, missing, "A4_VERIFIER_DELTA_INVALID",
                     currentness_raw=current_raw, detail=delta_error)
-    delta, repairs = _repair_same_actor(delta_source, manifest["actor_ref"])
-    delta["verifier_sha256"] = _sha(verifier_raw)
+    delta, repairs, conflicts = _bind_missing_producer_fields(
+        delta_source, manifest["actor_ref"], _sha(verifier_raw)
+    )
+    if conflicts:
+        return _gap(source_root, bindings, missing, "VERIFIER_DELTA_CONFLICTS_WITH_PARENT_OR_VERIFIER_BYTES",
+                    currentness_raw=current_raw,
+                    detail={"conflicts": conflicts, "source_delta_sha256": _sha(delta_raw or b""),
+                            "source_delta_bytes": len(delta_raw or b""),
+                            "source_delta_preserved": True})
 
     core = _load_core(source_root)
     evaluated = core.evaluate(

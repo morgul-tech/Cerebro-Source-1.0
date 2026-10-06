@@ -40,16 +40,32 @@ def _empty_evidence_gap(producer: Any, source_root: Path) -> None:
     _assert(not result.get("capsule"), "empty evidence must not contain capsule")
 
 
-def _same_actor_repair(producer: Any) -> None:
-    source_delta = {"requested_actor_ref": "stale-actor", "review_ref": "A4-REAL-RETURN",
-                    "typed_test_delta": {"added": ["current-head"]}}
-    before = json.dumps(source_delta, sort_keys=True)
-    repaired, repairs = producer._repair_same_actor(source_delta, "1BDEA0B3")
-    _assert(json.dumps(source_delta, sort_keys=True) == before, "source delta must remain unchanged")
-    _assert(repaired["requested_actor_ref"] == "1BDEA0B3", "actor must come from parent")
-    _assert(repaired["review_ref"] == source_delta["review_ref"], "review ref must be retained")
-    _assert(repaired["typed_test_delta"] == source_delta["typed_test_delta"], "typed delta must be retained")
-    _assert(len(repairs) == 1 and repairs[0]["field"] == "requested_actor_ref", "repair must be recorded")
+def _field_binding_preserves_conflicts(producer: Any) -> None:
+    verifier_hash = "a" * 64
+    missing = {"review_ref": "A4-RETURN-REF", "required_test_delta": ["focused-check"]}
+    before = json.dumps(missing, sort_keys=True)
+    bound, repairs, conflicts = producer._bind_missing_producer_fields(
+        missing, "1BDEA0B3", verifier_hash
+    )
+    _assert(json.dumps(missing, sort_keys=True) == before, "source delta bytes/object must remain unchanged")
+    _assert(bound["requested_actor_ref"] == "1BDEA0B3" and bound["verifier_sha256"] == verifier_hash,
+            "only absent producer bindings may be derived")
+    _assert({item["field"] for item in repairs} == {"requested_actor_ref", "verifier_sha256"},
+            "each absent binding must have explicit provenance")
+    _assert(not conflicts, "absent fields do not create conflicts")
+
+    conflicting = {"requested_actor_ref": "reviewer-supplied-other-actor",
+                   "verifier_sha256": "b" * 64,
+                   "review_ref": "A4-RETURN-REF", "required_test_delta": ["focused-check"]}
+    conflict_before = json.dumps(conflicting, sort_keys=True)
+    preserved, repairs, conflicts = producer._bind_missing_producer_fields(
+        conflicting, "1BDEA0B3", verifier_hash
+    )
+    _assert(json.dumps(conflicting, sort_keys=True) == conflict_before, "conflicting source delta must stay unchanged")
+    _assert(preserved == conflicting, "reviewer-supplied conflicting fields must not be overwritten")
+    _assert(not repairs, "conflicting fields must not be classified as producer repairs")
+    _assert({item["field"] for item in conflicts} == {"requested_actor_ref", "verifier_sha256"},
+            "actor and verifier hash disagreements must both fail closed")
 
 
 def _real_gap_without_a4(producer: Any, evidence_root: Path, source_root: Path) -> None:
@@ -74,9 +90,10 @@ def _real_gap_without_a4(producer: Any, evidence_root: Path, source_root: Path) 
 def validate(evidence_root: Path, source_root: Path) -> dict[str, Any]:
     producer = _load_producer()
     _empty_evidence_gap(producer, source_root)
-    _same_actor_repair(producer)
+    _field_binding_preserves_conflicts(producer)
     _real_gap_without_a4(producer, evidence_root, source_root)
-    return {"state": "PASS", "checks": ["empty_evidence_exact_gap", "same_actor_repair_preserves_source_delta",
+    return {"state": "PASS", "checks": ["empty_evidence_exact_gap", "missing_bindings_only_are_derived",
+                                          "supplied_actor_and_verifier_hash_conflicts_preserved_and_rejected",
                                           "current_a4_bytes_required", "no_capsule_or_host_binding"],
             "evidence_dir": str(evidence_root), "authority": "NONE", "host_binding": "NONE"}
 
