@@ -157,11 +157,25 @@
         "SOURCE:9d7c042589217eea5fc5efc9ac2fd316de680dd4"
       ],
       "maturity": "LOCKED",
-      "readiness": "READY_AFTER_TRANSPORT_ACTIVATION_VALIDATION",
+      "readiness": "READY_AFTER_TRANSPORT_AND_TRUSTED_HOST_RECIPIENT_PROJECTION",
+      "recipient_binding_contract": {
+        "required_fields": [
+          "actor_ref",
+          "generation_ref",
+          "thread_ref",
+          "carrier_ref",
+          "continuation_ref"
+        ],
+        "intended_source": "HASH_BOUND_ENVELOPE_NOT_IDENTITY_AUTHORITY",
+        "actual_source": "TRUSTED_HOST_PROJECTION_AT_CONSUME",
+        "missing_actual_effect": "BLOCK_BEFORE_LAUNCH",
+        "caller_alias_authority": false
+      },
       "source_revision": "9d7c042589217eea5fc5efc9ac2fd316de680dd4+RUNTIME2-HCS8-EXACT8",
       "required_next_behavior": [
         "VERIFY_RUNTIME2_CONTEXT_BINDING",
         "VERIFY_RUNTIME2_TRANSPORT_ACTIVATION",
+        "VERIFY_TRUSTED_HOST_RECIPIENT_BINDING",
         "RESOLVE_EXACTLY_ONE_CMD_BY_SHA256",
         "REHASH_IMMEDIATELY_BEFORE_EXECUTION",
         "EXECUTE_WITH_NONSYNCING_RUNTIME2_CONSUMER"
@@ -170,11 +184,12 @@
         "LOAD_RUNTIME2_ACTIVE_BINDING",
         "LOAD_CURRENT_BASIS",
         "VERIFY_TRANSPORT_ACTIVATION",
+        "VERIFY_TRUSTED_HOST_RECIPIENT_BINDING",
         "RESOLVE_AND_REHASH_CMD",
         "EXECUTE_BOUND_RUNTIME2_HANDOFF"
       ],
       "alternative_paths": [],
-      "binding_fingerprint": "84b504cc558531817b95ae4a5cdd3fe405cf213851f71b65406d407f430413cf"
+      "binding_fingerprint": "6a32ea28e8d1a2d174cfd091aacb4f60e2a032c3b203352867e1f2466fbed0e9"
     }
   ]
 }
