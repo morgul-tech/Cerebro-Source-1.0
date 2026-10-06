@@ -54,6 +54,10 @@ class AuthenticatedCallerProjection(unittest.TestCase):
                          ("VERIFIED-PRINCIPAL", "CHATGPT_REMOTE_MCP"))
         self.assertEqual(caller["session_status"], "NO_CURRENT_PERSISTED_SESSION")
         self.assertIsNone(caller["persisted_session"])
+        self.assertEqual(caller["transport_session"], {
+            "status": "AVAILABLE", "source": "openai/session", "session_ref": "chatgpt:S",
+            "authority": "TRANSPORT_METADATA_ONLY",
+        })
         self.assertEqual([name for name, _ in port.calls], ["read_project", "read_session"])
         self.assertEqual(port.calls[1][1]["session_ref"], "chatgpt:S")
 
@@ -95,7 +99,23 @@ class AuthenticatedCallerProjection(unittest.TestCase):
         port = StatePort()
         caller = read(port, context(meta={}))["authenticated_caller"]
         self.assertEqual(caller["session_status"], "NO_HOST_SESSION_METADATA")
+        self.assertEqual(caller["transport_session"], {
+            "status": "ABSENT", "source": None, "session_ref": None, "authority": "NONE",
+        })
         self.assertEqual([name for name, _ in port.calls], ["read_project"])
+
+    def test_local_transport_metadata_is_reported_without_creating_a_binding(self):
+        port = StatePort(error=StateBindingError("control-session-not-bound"))
+        caller = read(port, context(meta={"cerebro/session": "local-session"}))["authenticated_caller"]
+        self.assertEqual(caller["session_status"], "NO_CURRENT_PERSISTED_SESSION")
+        self.assertEqual(caller["transport_session"], {
+            "status": "AVAILABLE", "source": "cerebro/session", "session_ref": "local:local-session",
+            "authority": "TRANSPORT_METADATA_ONLY",
+        })
+
+    def test_ambiguous_transport_metadata_fails_closed(self):
+        with self.assertRaises(ControlContextToolAuthorizationError):
+            read(StatePort(), context(meta={"openai/session": "remote", "cerebro/session": "local"}))
 
     def test_unverified_context_cannot_project_any_identity(self):
         port = StatePort()
