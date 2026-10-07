@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import replace
+import importlib
 import json
 from pathlib import Path
 import sys
@@ -20,6 +21,7 @@ from .pm_x9_cli import _load_settings
 PROFILE_SCHEMA = "cerebro-bk07-normal-use-profile/v1"
 SUBJECT = "cerebro.v1.artifact.pointer"
 MAX_PROFILE_BYTES = 16 * 1024
+QUALIFIED_FACTORY = "providers.pm_x9_live_host:make_ports"
 
 
 class HostRefused(ValueError):
@@ -52,13 +54,22 @@ def _same_path(actual: Path | None, expected: str | None) -> bool:
 
 
 def compose(profile_path: Path, binding_path: Path, sender_path: Path, receiver_path: Path,
-            *, require_enabled: bool = True) -> pm_x9.PmX9Binding:
+            *, require_enabled: bool = True, host_runtime: object = None) -> pm_x9.PmX9Binding:
     profile = _profile(profile_path)
     if require_enabled and profile.get("enabled") is not True:
         raise HostRefused("PROFILE_DISABLED")
     settings = _load_settings(binding_path)
     if settings.mode != pm_x9.MODE_PRODUCTION:
         raise HostRefused("BINDING_NOT_PRODUCTION")
+    if settings.ports_factory != QUALIFIED_FACTORY:
+        raise HostRefused("QUALIFIED_HOST_FACTORY_REQUIRED")
+    try:
+        provider = importlib.import_module("providers.pm_x9_live_host")
+    except (ImportError, AttributeError) as exc:
+        raise HostRefused("CURRENT_HOST_BACKING_UNAVAILABLE") from exc
+    if (type(host_runtime) is not getattr(provider, "LiveRuntimeBindings", None)
+            or host_runtime.enabled is not True):
+        raise HostRefused("CURRENT_HOST_RUNTIME_REQUIRED")
     sender = load_config(sender_path)
     receiver = load_config(receiver_path)
     if (sender.server != profile["broker"] or receiver.server != profile["broker"] or
@@ -72,7 +83,9 @@ def compose(profile_path: Path, binding_path: Path, sender_path: Path, receiver_
             receiver.interests[0].referent_type != pm_x9.PM_READY_HINT or
             receiver.interests[0].referent_id is not None):
         raise HostRefused("CLIENT_PROFILE_MISMATCH")
-    ports = pm_x9.load_ports(settings)
+    ports = provider.make_ports(settings, host_runtime=host_runtime)
+    if not isinstance(ports, pm_x9.PmX9HostPorts):
+        raise HostRefused("QUALIFIED_HOST_PORTS_INVALID")
     # The factory owns authenticated PM and separately scoped channel ports;
     # transport paths are always taken from the reviewed host configuration.
     ports = replace(ports, client_config=sender, receiver_client_config=receiver)

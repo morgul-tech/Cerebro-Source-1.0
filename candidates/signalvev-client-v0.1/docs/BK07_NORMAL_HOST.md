@@ -16,10 +16,16 @@ client configs. The sender has no listen interest; the receiver has exactly
 one `PM_READY_HINT` interest for the bound owner. Production rejects shared
 credentials and shared evidence state. The host never reads credential bytes.
 
-`ports_factory` must return current authenticated PM owner read/reread and
-separately scoped producer/X9 channel ports. A NATS credential alone does not
-provide those ports or prove PM `MATERIAL_READY`. If the factory or current
-provider backing is absent, binding refuses before a send/listen operation.
+The binding TOML must name exactly `providers.pm_x9_live_host:make_ports`.
+The Source host must call `compose(..., host_runtime=...)` with an exact
+`LiveRuntimeBindings` instance from that reviewed provider module. A TOML
+factory string or a structurally similar object does not confer this
+capability. The command-line entry remains UNBOUND without a host-supplied
+runtime; it cannot grant itself one from a file. The provider must supply
+current authenticated PM owner read/reread and separately scoped producer/X9
+channel ports. A NATS credential alone does not prove PM `MATERIAL_READY`.
+If the concrete provider backing is absent, every operation refuses before
+any NATS send or listener start.
 Only a genuine owner-produced `receipt_ref` is accepted by `send`; no event ID
 or revision is supplied by the caller. The factory must preserve the current
 provider's authentication, atomic snapshot and owner-sequence checks.

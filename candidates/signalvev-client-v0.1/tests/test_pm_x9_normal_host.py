@@ -1,5 +1,7 @@
 """Changed seam: scoped normal sender/listener composition without X9 auto-consume."""
 import json
+import sys
+import types
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -42,21 +44,44 @@ class NormalHostTests(unittest.TestCase):
     def test_composition_uses_distinct_scoped_configs(self):
         world = SyntheticWorld()
         self.addCleanup(world.close)
-        settings = replace(world.settings, mode=pm_x9.MODE_PRODUCTION)
+        settings = replace(world.settings, mode=pm_x9.MODE_PRODUCTION,
+                           ports_factory=host.QUALIFIED_FACTORY)
         sender = replace(world.ports().client_config, server=self.doc["broker"],
                          credentials_file=self.sender_cred, evidence_dir=self.sender_state,
                          interests=())
         receiver = replace(sender, credentials_file=self.receiver_cred, evidence_dir=self.receiver_state,
                            interests=world.ports().client_config.interests, resolver_kind="factory")
         marker = object()
+        provider = types.ModuleType("providers.pm_x9_live_host")
+        class LiveRuntimeBindings:
+            enabled = True
+        provider.LiveRuntimeBindings = LiveRuntimeBindings
+        provider.make_ports = Mock(return_value=world.ports())
+        runtime = LiveRuntimeBindings()
         with (patch.object(host, "_load_settings", return_value=settings),
               patch.object(host, "load_config", side_effect=[sender, receiver]),
-              patch.object(pm_x9, "load_ports", return_value=world.ports()),
+              patch.dict(sys.modules, {"providers.pm_x9_live_host": provider}),
               patch.object(pm_x9, "build_binding", return_value=marker) as build):
-            got = host.compose(self.profile, Path("binding"), Path("sender"), Path("receiver"))
+            got = host.compose(self.profile, Path("binding"), Path("sender"), Path("receiver"),
+                               host_runtime=runtime)
         self.assertIs(got, marker)
+        provider.make_ports.assert_called_once_with(settings, host_runtime=runtime)
         self.assertEqual(build.call_args.args[1].client_config, sender)
         self.assertEqual(build.call_args.args[1].receiver_client_config, receiver)
+
+    def test_alternate_factory_and_missing_current_host_refused(self):
+        world = SyntheticWorld()
+        self.addCleanup(world.close)
+        alternate = replace(world.settings, mode=pm_x9.MODE_PRODUCTION,
+                            ports_factory="some.other:make_ports")
+        with patch.object(host, "_load_settings", return_value=alternate):
+            with self.assertRaisesRegex(host.HostRefused, "QUALIFIED_HOST_FACTORY_REQUIRED"):
+                host.compose(self.profile, Path("binding"), Path("sender"), Path("receiver"))
+        pinned = replace(alternate, ports_factory=host.QUALIFIED_FACTORY)
+        with patch.object(host, "_load_settings", return_value=pinned), \
+             patch.object(host.importlib, "import_module", side_effect=ImportError("missing")):
+            with self.assertRaisesRegex(host.HostRefused, "CURRENT_HOST_BACKING_UNAVAILABLE"):
+                host.compose(self.profile, Path("binding"), Path("sender"), Path("receiver"))
 
     def test_profile_disabled_and_wildcard_refused_before_binding(self):
         self.doc["enabled"] = False
