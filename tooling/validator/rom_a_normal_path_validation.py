@@ -138,6 +138,49 @@ class NormalPath(unittest.TestCase):
         self.assertIn("owner_facts", result["missing_inputs"])
         self.assertEqual(result["selection"], "FULL_ORIGINAL_TASK")
 
+    def test_structured_fact_return_invokes_local_bk04_without_minting_authority(self):
+        self.returned["contract_kind"] = "FACT_RETURN"
+        facts = {"result_source_ref": "observed-result:SYN-FACT-2",
+                 "completed_work": [{"ref": "seam:one", "summary": "One local seam completed"}],
+                 "local_remainder": [{"ref": "seam:two", "summary": "One local seam remains"}],
+                 "responsibility": {"actor_ref": "next-owner", "next_action": "Finish seam two"}}
+        self.return_file = self.write_json("return.json", {
+            "schema": normal.RETURN_SCHEMA, "observation_ref": "SYN-FACT-2",
+            "return": self.returned, "facts": facts})
+        result = normal.prepare(**self.kwargs())
+        receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
+        finding = receipt["adoption"]["bk04"]["finding"]
+        self.assertEqual(finding["structural_overall_status"], "PASS")
+        self.assertEqual((finding["overall_status"], finding["authority"]), ("UNKNOWN", "NONE"))
+        self.assertEqual(finding["local_next"], "PRESERVE_COMPLETED_AND_ROUTE_LOCAL_REMAINDER")
+        self.assertEqual(finding["recipient_use"], "NOT_OBSERVED")
+        self.assertNotIn("owner_facts", result["missing_inputs"])
+        self.assertEqual(result["selection"], "FULL_ORIGINAL_TASK")
+
+    def test_structured_fact_return_overlap_is_local_conflict(self):
+        self.returned["contract_kind"] = "FACT_RETURN"
+        facts = {"result_source_ref": "observed-result:SYN-FACT-3",
+                 "completed_work": [{"ref": "seam:same", "summary": "Claimed complete"}],
+                 "local_remainder": [{"ref": "seam:same", "summary": "Also remains"}],
+                 "responsibility": {"actor_ref": "next-owner", "next_action": "Inspect contradiction"}}
+        self.return_file = self.write_json("return.json", {
+            "schema": normal.RETURN_SCHEMA, "observation_ref": "SYN-FACT-3",
+            "return": self.returned, "facts": facts})
+        result = normal.prepare(**self.kwargs())
+        receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
+        finding = receipt["adoption"]["bk04"]["finding"]
+        self.assertEqual(finding["overall_status"], "CONFLICT")
+        self.assertEqual(finding["local_next"], "REPAIR_EXACT_LOCAL_CONTRADICTION")
+        self.assertFalse(receipt["adoption"]["bk04"]["blocks_other_work"])
+
+    def test_unrelated_return_cannot_smuggle_bk04_facts(self):
+        self.return_file = self.write_json("return.json", {
+            "schema": normal.RETURN_SCHEMA, "observation_ref": "SYN-OTHER",
+            "return": self.returned, "facts": {"completed_work": []}})
+        with self.assertRaisesRegex(ValueError, "BK04_FACTS_KIND_MISMATCH"):
+            normal.prepare(**self.kwargs())
+        self.assertFalse((self.root / "result").exists())
+
     def test_tampered_capture_and_duplicate_return_refused_without_output(self):
         original = Path(self.captured["original_path"])
         original.write_bytes(b"tampered")

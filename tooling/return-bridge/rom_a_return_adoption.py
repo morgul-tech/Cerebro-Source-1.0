@@ -113,8 +113,19 @@ def evaluate(bundle: dict[str, Any]) -> tuple[dict[str, Any], bytes]:
             bk04_status = {"state": "UNKNOWN", "reason": "OWNER_FACTS_OR_BINDING_MISSING",
                            "blocks_other_work": False}
     elif returned.get("contract_kind") in FACT_RETURN_KINDS:
-        bk04_status = {"state": "UNKNOWN", "reason": "OWNER_FACTS_OR_BINDING_MISSING",
-                       "blocks_other_work": False}
+        normal_facts = bundle.get("bk04_normal_facts")
+        if isinstance(normal_facts, dict):
+            bk04 = _load_module("bk04_verify_normal_return", SOURCE_ROOT / "candidates/bk04-episode-verifier-v1/bk04_verify.py")
+            try:
+                finding = bk04.classify_normal_return_facts(normal_facts)
+                bk04_status = {"state": finding["overall_status"], "finding": finding,
+                               "blocks_other_work": False}
+            except bk04.InputError as exc:
+                bk04_status = {"state": "UNKNOWN", "reason": exc.code,
+                               "blocks_other_work": False}
+        else:
+            bk04_status = {"state": "UNKNOWN", "reason": "OWNER_FACTS_OR_BINDING_MISSING",
+                           "blocks_other_work": False}
 
     selection = "FULL_ORIGINAL_TASK"
     bk05_status: dict[str, Any] = {"decision": "NOT_ELIGIBLE", "reasons": ["VALID_DELTA_NOT_SUPPLIED"]}

@@ -128,6 +128,63 @@ _OWNER_SCHEMA = "x2-owner-carry-basis-v1"
 _RECORD_KEYS = ("task_id", "claim_id", "actor", "original_sha256", "original_bytes",
                 "original_source", "actor_start", "terminal", "admission",
                 "owner_corroboration", "record_status", "typed_carry")
+NORMAL_RETURN_FACTS_SCHEMA = "bk04-normal-return-facts/v1"
+
+
+def classify_normal_return_facts(facts):
+    """Diagnose a normal return's typed local carry without minting owner proof.
+
+    The normal host supplies exact captured-task identity and caller-observed
+    return facts. A structural PASS remains UNKNOWN for authenticated use.
+    """
+    if not isinstance(facts, dict) or facts.get("schema") != NORMAL_RETURN_FACTS_SCHEMA:
+        raise InputError("MALFORMED_INPUT", "normal return facts schema required")
+    task, returned = facts.get("task"), facts.get("return")
+    missing, conflicts = [], []
+    if not isinstance(task, dict) or not isinstance(returned, dict):
+        missing.append("task-or-return")
+        task, returned = task if isinstance(task, dict) else {}, returned if isinstance(returned, dict) else {}
+    for field in ("task_ref", "task_revision", "actor_ref", "original_sha256"):
+        if not isinstance(task.get(field), str) or not task[field].strip():
+            missing.append("task." + field)
+        if not isinstance(returned.get(field), str) or not returned[field].strip():
+            missing.append("return." + field)
+        if task.get(field) and returned.get(field) and task[field] != returned[field]:
+            conflicts.append(field + "-mismatch")
+    if not _sha(task.get("original_sha256")) or not _positive(task.get("original_bytes")):
+        missing.append("task.original-byte-identity")
+    for field in ("original_source_ref",):
+        if not _text(task.get(field)):
+            missing.append("task." + field)
+    if not _text(returned.get("result_source_ref")):
+        missing.append("return.result_source_ref")
+    refs = []
+    for field in ("completed_work", "local_remainder"):
+        items = returned.get(field)
+        if not isinstance(items, list):
+            missing.append("return." + field)
+            continue
+        for index, item in enumerate(items):
+            if not isinstance(item, dict) or not _text(item.get("ref")) or not _text(item.get("summary")):
+                missing.append("return.%s[%d]" % (field, index))
+            else:
+                refs.append((field, item["ref"]))
+    if len({ref for _, ref in refs}) != len(refs):
+        conflicts.append("completed-and-remainder-ref-overlap")
+    responsibility = returned.get("responsibility")
+    if not isinstance(responsibility, dict) or not _text(responsibility.get("actor_ref")) or not _text(responsibility.get("next_action")):
+        missing.append("return.responsibility")
+    structural = CONFLICT if conflicts else UNKNOWN if missing else PASS
+    return {"schema_version": SCHEMA_VERSION, "work_order_id": WORK_ORDER_ID,
+            "input_revision": "NORMAL_RETURN_FACTS_V1", "structural_overall_status": structural,
+            "overall_status": CONFLICT if conflicts else UNKNOWN, "authority": "NONE",
+            "qualification": "CALLER_FACTS_NOT_PROVIDER_OR_OWNER_AUTHENTICATED",
+            "completed_work_verified": False, "recipient_use": "NOT_OBSERVED",
+            "missing_fields": missing, "conflicts": conflicts,
+            "local_next": ("REPAIR_EXACT_LOCAL_CONTRADICTION" if conflicts else
+                           "READ_NECESSARY_ORIGINAL_OR_MISSING_FACTS" if missing else
+                           "PRESERVE_COMPLETED_AND_ROUTE_LOCAL_REMAINDER"),
+            "blocks_other_work": False}
 
 
 def _require(condition, message):

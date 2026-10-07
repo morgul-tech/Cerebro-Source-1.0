@@ -139,10 +139,11 @@ def _capture(record_path_text: str) -> tuple[dict[str, Any], Path, bytes, dict[s
     }
 
 
-def _return_input(path_text: str) -> tuple[dict[str, Any], dict[str, Any]]:
+def _return_input(path_text: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any] | None]:
     path, raw = _read(path_text)
     obj = _json(raw)
-    if set(obj) != {"schema", "observation_ref", "return"} or obj["schema"] != RETURN_SCHEMA:
+    if set(obj) not in ({"schema", "observation_ref", "return"},
+                        {"schema", "observation_ref", "return", "facts"}) or obj["schema"] != RETURN_SCHEMA:
         raise ValueError("RETURN_SCHEMA_INVALID")
     _text(obj["observation_ref"], "RETURN_OBSERVATION_REF")
     returned = obj["return"]
@@ -150,9 +151,12 @@ def _return_input(path_text: str) -> tuple[dict[str, Any], dict[str, Any]]:
         raise ValueError("RETURN_FIELDS_INVALID")
     for field in RETURN_FIELDS:
         _text(returned[field], "RETURN_" + field.upper())
+    facts = obj.get("facts")
+    if facts is not None and not isinstance(facts, dict):
+        raise ValueError("RETURN_FACTS_OBJECT_REQUIRED")
     return returned, {"path": str(path), "sha256": _sha(raw),
                       "bytes": len(raw), "observation_ref": obj["observation_ref"],
-                      "authority": "CALLER_SUPPLIED_NOT_PROVIDER_VERIFIED"}
+                      "authority": "CALLER_SUPPLIED_NOT_PROVIDER_VERIFIED"}, facts
 
 
 def _parent_manifest(task: dict[str, Any], original_sha256: str,
@@ -197,7 +201,7 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
             bounded_context: str | None = None, _host_selection: dict[str, Any] | None = None) -> dict[str, Any]:
     """Prepare one selection and receipt; never send it or assert recipient use."""
     task, original_path, original, capture_ref = _capture(capture_record)
-    returned, return_ref = _return_input(return_input)
+    returned, return_ref, return_facts = _return_input(return_input)
     selection = None
     if bounded_context is not None:
         _, context_raw = _read(bounded_context)
@@ -214,11 +218,13 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
         ("verifier_delta", verifier_delta), ("currentness", currentness),
         ("prior_record", prior_record))}
     fact_return = returned["contract_kind"] in {"BK04_OWNER_FACTS", "FACT_RETURN"}
+    if return_facts is not None and not fact_return:
+        raise ValueError("BK04_FACTS_KIND_MISMATCH")
     if not fact_return and (owner_facts is not None or owner_binding is not None):
         raise ValueError("OWNER_FACTS_KIND_MISMATCH")
     manifest_raw, manifest_basis = _parent_manifest(task, capture_ref["original_sha256"], parent_manifest)
     missing = []
-    if fact_return:
+    if fact_return and return_facts is None:
         missing.extend(name for name, value in (("owner_facts", owner_facts),
                                                  ("owner_binding", owner_binding)) if value is None)
     repair_return = returned["contract_kind"] in REPAIR_KINDS
@@ -242,8 +248,29 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
                      "original_sha256": capture_ref["original_sha256"]},
             "return": returned}
         if fact_return:
-            bundle["bk04"] = {"owner_facts_path": owner_facts,
-                              "binding_path": owner_binding}
+            if return_facts is not None and (owner_facts is not None or owner_binding is not None):
+                raise ValueError("BK04_FACT_SOURCE_AMBIGUOUS")
+            if return_facts is not None:
+                bundle["bk04_normal_facts"] = {
+                    "schema": "bk04-normal-return-facts/v1",
+                    "task": {"task_ref": task["task_ref"], "task_revision": task["task_revision"],
+                             "actor_ref": task["actor_ref"],
+                             "original_sha256": capture_ref["original_sha256"],
+                             "original_bytes": capture_ref["original_bytes"],
+                             "original_source_ref": (capture_ref["provenance"]["original_dispatch_ref"]
+                                                     or capture_ref["original_path"])},
+                    "return": {"task_ref": returned["task_ref"],
+                               "task_revision": returned["task_revision"],
+                               "actor_ref": returned["actor_ref"],
+                               "original_sha256": returned["original_sha256"],
+                               "result_source_ref": return_facts.get("result_source_ref"),
+                               "completed_work": return_facts.get("completed_work"),
+                               "local_remainder": return_facts.get("local_remainder"),
+                               "responsibility": return_facts.get("responsibility")},
+                }
+            if owner_facts is not None or owner_binding is not None:
+                bundle["bk04"] = {"owner_facts_path": owner_facts,
+                                  "binding_path": owner_binding}
         if repair_return and all(value is not None for value in
                                  (verifier, verifier_delta, currentness)):
             bundle["bk05"] = {"parent_manifest_path": str(manifest_path),
