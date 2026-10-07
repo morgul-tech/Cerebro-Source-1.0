@@ -17,9 +17,9 @@ from .pm_x9 import MODE_PRODUCTION, PM_READY_HINT, PmX9Settings
 from .session import SendClient
 
 PREPARE = "prepare_signalvev_notice_v1"
-OBSERVE = "observe_signalvev_notice_v1"
+OBSERVE = "transport_resolve_signalvev_notice_v1"
 PREPARE_SCHEMA = "cerebro-signalvev-notice-preparation/v1"
-OBSERVE_SCHEMA = "cerebro-signalvev-notice-observation/v1"
+OBSERVE_SCHEMA = "cerebro-signalvev-transport-resolution/v1"
 
 
 class ContextNoticeError(ValueError):
@@ -57,14 +57,15 @@ def parse_preparation(result: Any, *, receipt_ref: str, settings: PmX9Settings) 
     value = _content(result)
     _need(value.get("schema") == PREPARE_SCHEMA and value.get("state") == "DEPOSITED_READBACK",
           "CONTEXT_PREPARATION_NOT_DEPOSITED")
+    _need(value.get("subject") == "cerebro.v1.artifact.pointer", "CONTEXT_SUBJECT_MISMATCH")
     record, projection = value.get("record"), value.get("projection")
     _need(isinstance(record, Mapping) and isinstance(projection, Mapping),
           "CONTEXT_OWNER_RECORD_REQUIRED")
-    identity = (record.get("owner_ref"), record.get("claim_ref"), record.get("packet_ref"),
-                record.get("queue_ref"), record.get("packet_sha256"), record.get("commit_ref"))
-    _need(identity == (settings.owner_ref, settings.claim_ref, settings.packet_ref,
-                       settings.queue_ref, settings.packet_sha256, settings.attempt_ref),
-          "CONTEXT_RECEIPT_SETTINGS_MISMATCH")
+    _need(record.get("owner_ref") == settings.owner_ref,
+          "CONTEXT_RECEIPT_OWNER_MISMATCH")
+    _need(all(isinstance(record.get(key), str) and record[key] for key in
+              ("claim_ref", "packet_ref", "queue_ref", "packet_sha256", "commit_ref")),
+          "CONTEXT_RECEIPT_COORDINATES_REQUIRED")
     _need(record.get("receipt_ref") == receipt_ref and record.get("ready_state") == "MATERIAL_READY"
           and value.get("event_id") == record.get("event_id"), "CONTEXT_RECEIPT_EVENT_MISMATCH")
     snapshot_sha = record.get("snapshot_sha256")
@@ -118,32 +119,34 @@ class PMNoticePublisher:
             self.sender.close()
 
 
-class X9ContextResolver:
-    """D0 resolver over one fresh X9-scoped service observation per NATS frame."""
+class RuntimeContextResolver:
+    """D0 resolver over one fresh, separately scoped local-runtime service read."""
 
-    description = "X9_CONTEXT_NOTICE_RESOLVER_V1"
+    description = "RUNTIME_CONTEXT_NOTICE_RESOLVER_V1"
 
-    def __init__(self, *, owner_ref: str, packet_sha256: str,
-                 call_x9: Callable[[str, dict[str, str]], Any]):
-        _need(isinstance(owner_ref, str) and owner_ref and callable(call_x9), "HOST_X9_PORT_REQUIRED")
-        self.owner_ref, self.packet_sha256, self.call_x9 = owner_ref, packet_sha256, call_x9
+    def __init__(self, *, owner_ref: str,
+                 call_runtime: Callable[[str, dict[str, str]], Any]):
+        _need(isinstance(owner_ref, str) and owner_ref and callable(call_runtime), "HOST_RUNTIME_PORT_REQUIRED")
+        self.owner_ref, self.call_runtime = owner_ref, call_runtime
 
     def resolve(self, req: ResolveRequest) -> ResolverResult:
         if req.owner_ref != self.owner_ref or req.referent_type != PM_READY_HINT or not req.pointer_ref:
             raise ResolverUnavailable("SIGNALVEV_HINT_BINDING_MISMATCH")
         try:
-            value = _content(self.call_x9(OBSERVE, {"event_id": req.event_id}))
-            _need(value.get("schema") == OBSERVE_SCHEMA and value.get("state") == "CURRENT_READBACK"
+            value = _content(self.call_runtime(OBSERVE, {"event_id": req.event_id}))
+            _need(value.get("schema") == OBSERVE_SCHEMA and value.get("state") == "SAME"
                   and value.get("event_id") == req.event_id, "X9_OBSERVATION_UNAVAILABLE")
             pointer, cut = value.get("pointer"), value.get("pm_current_cut")
             _need(isinstance(pointer, Mapping) and isinstance(cut, Mapping), "X9_OBSERVATION_INVALID")
+            _need(value.get("pointer_sha256") == sha256_hex(canonical(pointer)),
+                  "RUNTIME_POINTER_HASH_MISMATCH")
             _need((pointer.get("event_id"), pointer.get("owner_ref"), pointer.get("referent_id"),
                    pointer.get("revision"), pointer.get("expected_sha256"), pointer.get("owner_seq")) ==
                   (req.event_id, req.owner_ref, req.referent_id, req.expected_revision,
                    req.expected_sha256, req.owner_seq), "X9_POINTER_EVENT_MISMATCH")
             _need(cut.get("owner_ref") == req.owner_ref and cut.get("revision") == req.expected_revision
                   and cut.get("relation_to_hint") == "SAME"
-                  and cut.get("packet_sha256") == self.packet_sha256
+                  and isinstance(cut.get("packet_sha256"), str)
                   and cut.get("authenticated") is True and cut.get("committed_readback") is True
                   and cut.get("material_ready") is True, "X9_CURRENT_PM_MISMATCH")
             return ResolverResult(

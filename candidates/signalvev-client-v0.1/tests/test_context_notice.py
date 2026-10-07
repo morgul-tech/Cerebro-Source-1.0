@@ -30,6 +30,7 @@ class NoticeTests(unittest.TestCase):
         }
         self.record["snapshot_sha256"] = sha256_hex(canonical(self.record))
         self.prepared = {"schema": notice.PREPARE_SCHEMA, "state": "DEPOSITED_READBACK",
+                         "subject": "cerebro.v1.artifact.pointer",
                          "event_id": self.record["event_id"], "record": self.record,
                          "projection": {"material_sha256": "a" * 64, "source_cut": "pm-cut:new1"},
                          "pointer_sha256": "b" * 64}
@@ -49,7 +50,7 @@ class NoticeTests(unittest.TestCase):
             with self.assertRaises(notice.ContextNoticeError):
                 host.send_receipt(self.receipt_ref)
             sender.return_value.connect.assert_not_called()
-        changed = {**self.prepared, "record": {**self.record, "packet_sha256": "0" * 64}}
+        changed = {**self.prepared, "record": {**self.record, "owner_ref": "other:owner"}}
         with self.assertRaises(notice.ContextNoticeError):
             notice.parse_preparation(changed, receipt_ref=self.receipt_ref, settings=self.settings)
 
@@ -69,7 +70,7 @@ class NoticeTests(unittest.TestCase):
                              depth="POINTER_GROUND", pointer_ref=self.record["snapshot_ref"],
                              expected_revision=self.record["revision_after"],
                              expected_sha256=self.record["snapshot_sha256"], owner_seq=1)
-        observed = {"schema": notice.OBSERVE_SCHEMA, "state": "CURRENT_READBACK",
+        observed = {"schema": notice.OBSERVE_SCHEMA, "state": "SAME",
                     "event_id": req.event_id,
                     "pointer": {"event_id": req.event_id, "owner_ref": req.owner_ref,
                                 "referent_id": req.referent_id, "revision": req.expected_revision,
@@ -78,9 +79,9 @@ class NoticeTests(unittest.TestCase):
                                        "relation_to_hint": "SAME", "packet_sha256": self.settings.packet_sha256,
                                        "authenticated": True, "committed_readback": True,
                                        "material_ready": True, "source_cut": "pm-cut:new1"}}
+        observed["pointer_sha256"] = sha256_hex(canonical(observed["pointer"]))
         call = Mock(return_value={"structuredContent": observed})
-        resolver = notice.X9ContextResolver(owner_ref=self.settings.owner_ref,
-                                            packet_sha256=self.settings.packet_sha256, call_x9=call)
+        resolver = notice.RuntimeContextResolver(owner_ref=self.settings.owner_ref, call_runtime=call)
         result = resolver.resolve(req)
         self.assertEqual(result.revision_relation, "SAME")
         call.assert_called_once_with(notice.OBSERVE, {"event_id": req.event_id})
@@ -101,16 +102,16 @@ class NoticeTests(unittest.TestCase):
                    "receiver_credential_ref": str(receiver.credentials_file),
                    "receiver_state_dir": str(receiver.evidence_dir)}
         settings = replace(self.settings, ports_factory=host.REMOTE_FACTORY)
-        pm_call, x9_call = Mock(), Mock()
+        pm_call, runtime_call = Mock(), Mock()
         with (patch.object(host, "_profile", return_value=profile),
               patch.object(host, "_load_settings", return_value=settings),
               patch.object(host, "load_config", side_effect=[sender, receiver])):
             publisher = host.compose_pm(None, None, None, call_pm=pm_call)
-            listener = host.compose_x9(None, None, None, call_x9=x9_call)
+            listener = host.compose_runtime(None, None, None, call_runtime=runtime_call)
         self.assertIsInstance(publisher, notice.PMNoticePublisher)
-        self.assertIsInstance(listener._resolver, notice.X9ContextResolver)
+        self.assertIsInstance(listener._resolver, notice.RuntimeContextResolver)
         pm_call.assert_not_called()
-        x9_call.assert_not_called()
+        runtime_call.assert_not_called()
         self.assertIsNone(listener.receiver)
 
     def test_disabled_profile_and_old_factory_fail_before_calls(self):
@@ -120,7 +121,7 @@ class NoticeTests(unittest.TestCase):
         with (patch.object(host, "_profile", return_value={"enabled": True}),
               patch.object(host, "_load_settings", return_value=self.settings)):
             with self.assertRaisesRegex(host.HostRefused, "REMOTE_CONTEXT_FACTORY_REQUIRED"):
-                host.compose_x9(None, None, None, call_x9=Mock())
+                host.compose_runtime(None, None, None, call_runtime=Mock())
         with self.assertRaisesRegex(host.HostRefused, "REMOTE_CONTEXT_NOTICE_ROUTE_ONLY"):
             host.make_ports()
 
