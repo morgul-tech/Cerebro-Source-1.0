@@ -28,6 +28,7 @@ drive = ["google-auth>=2,<3", "requests>=2.31,<3"]
 [project.scripts]
 signalvev-client = "signalvev_client.cli:main"
 signalvev-pm-x9 = "signalvev_client.pm_x9_cli:main"
+signalvev-pm-x9-normal = "signalvev_client.pm_x9_normal_host:main"
 
 [tool.setuptools]
 packages = ["signalvev_client", "signalvev_sensing", "signalvev_adapters"]

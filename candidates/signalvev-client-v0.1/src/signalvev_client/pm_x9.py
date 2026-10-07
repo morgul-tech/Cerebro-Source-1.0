@@ -149,6 +149,7 @@ class PmX9HostPorts:
     client_config: ClientConfig                    # existing client transport config (paths only, no secrets)
     connect_fn: Callable[..., Any] | None = None   # None => the installed real nats-py binding
     pm_reread_port: Any = None                     # optional separately scoped receiver/X9 PM port (default pm_port)
+    receiver_client_config: ClientConfig | None = None  # distinct subscribe-only credentials and receiver ledger
 
 
 _PORT_METHODS = {
@@ -170,7 +171,7 @@ def diagnose(settings: PmX9Settings, ports: PmX9HostPorts | None) -> list[dict[s
     NOT_SYNTHETIC_IN_TEST_MODE | DEFAULT_OFF. Honest about what is absent; never fills a gap."""
     if settings.mode == MODE_OFF:
         return [{"port": "*", "status": "DEFAULT_OFF", "detail": "mode = OFF; nothing is bound or contacted"}]
-    names = ("pm_port", "pm_reread_port", "producer_channel", "x9_channel", "clock", "client_config", "transport")
+    names = ("pm_port", "pm_reread_port", "producer_channel", "x9_channel", "clock", "client_config", "receiver_client_config", "transport")
     if ports is None:
         return [{"port": n, "status": "MISSING", "detail": "no host ports supplied"} for n in names]
     out: list[dict[str, str]] = []
@@ -220,11 +221,22 @@ def diagnose(settings: PmX9Settings, ports: PmX9HostPorts | None) -> list[dict[s
     if not isinstance(ports.client_config, ClientConfig):
         out.append({"port": "client_config", "status": "MISSING", "detail": "existing ClientConfig required"})
     else:
+        out.append({"port": "client_config", "status": "BOUND", "detail": "sender config"})
+    receiver_cfg = ports.receiver_client_config or ports.client_config
+    if not isinstance(receiver_cfg, ClientConfig):
+        out.append({"port": "receiver_client_config", "status": "MISSING", "detail": "receiver config required"})
+    else:
         interest = any(i.owner_ref == settings.owner_ref and i.referent_type == PM_READY_HINT
-                       for i in ports.client_config.interests)
-        out.append({"port": "client_config", "status": "BOUND" if interest else "INVALID",
-                    "detail": "listen interest present" if interest
-                    else f"needs [[listen.interest]] owner_ref={settings.owner_ref} referent_type={PM_READY_HINT}"})
+                       for i in receiver_cfg.interests)
+        separate = (settings.mode != MODE_PRODUCTION or
+                    (ports.receiver_client_config is not None and ports.client_config is not None and
+                     receiver_cfg.credentials_file is not None and ports.client_config.credentials_file is not None and
+                     receiver_cfg.credentials_file != ports.client_config.credentials_file and
+                     receiver_cfg.evidence_dir != ports.client_config.evidence_dir))
+        ok = interest and separate
+        out.append({"port": "receiver_client_config", "status": "BOUND" if ok else "INVALID",
+                    "detail": "separate receiver credentials, state and interest" if ok else
+                    "production needs separate receiver credentials/state and PM_READY_HINT interest"})
     if ports.connect_fn is None:
         if settings.mode == MODE_SYNTHETIC:
             out.append({"port": "transport", "status": "NOT_SYNTHETIC_IN_TEST_MODE", "detail": "real nats-py in test mode"})
@@ -590,7 +602,8 @@ class PmX9Binding:
 
     def start_listener(self) -> None:
         if self._listener is None:
-            client = ListenClient(self.ports.client_config, resolver=self.resolver, sink=self.sink,
+            client = ListenClient(self.ports.receiver_client_config or self.ports.client_config,
+                                  resolver=self.resolver, sink=self.sink,
                                   connect_fn=self.ports.connect_fn, clock=self._epoch, on_result=self._on_result)
             client.start()
             self._listener = client
