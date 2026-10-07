@@ -151,6 +151,61 @@ def source_fingerprints(root: Path) -> dict[str, str]:
     return {name: sha256_file(path) for name, path in paths.items()}
 
 
+def select_bounded_content(read: dict[str, Any]) -> dict[str, Any]:
+    """Project one current provider selection; never return unselected source parts.
+
+    The caller owns provider authentication and may pass a prior selected view for
+    same-revision reuse. This function creates no cache, authority, or truth store.
+    """
+    if not isinstance(read, dict):
+        raise ValueError("bounded-read-object-required")
+    required = ("content_ref", "revision", "authority_ref", "selector")
+    if any(not isinstance(read.get(key), str) or not read[key].strip() for key in required):
+        raise ValueError("bounded-read-identity-or-selector-missing")
+    if read.get("currentness") != "CURRENT" or read.get("provider_readback_verified") is not True:
+        raise ValueError("bounded-read-current-provider-readback-required")
+    selector_kind = read.get("selector_kind")
+    if selector_kind not in {"TAB", "SECTION", "RANGE"}:
+        raise ValueError("bounded-read-selector-kind-invalid")
+    if read.get("depth") == "DEEPER_READ" and not read.get("task_need_ref"):
+        raise ValueError("bounded-read-deeper-task-need-required")
+    provenance = read.get("provenance_refs")
+    if not isinstance(provenance, list) or not provenance or any(
+        not isinstance(ref, str) or not ref.strip() for ref in provenance
+    ):
+        raise ValueError("bounded-read-provenance-required")
+    key = read["selector"]
+    prior = read.get("prior_selection")
+    same_prior = isinstance(prior, dict) and all(prior.get(field) == read.get(field)
+        for field in ("content_ref", "revision", "selector", "selector_kind", "authority_ref", "provenance_refs"))
+    parts = read.get("parts")
+    if parts is None:
+        if not same_prior or not isinstance(prior.get("selected_text"), str):
+            raise ValueError("bounded-read-selected-content-or-exact-cache-required")
+        selected = prior["selected_text"]
+        mode = "SAME_REVISION_REUSE"
+    else:
+        if not isinstance(parts, dict) or key not in parts or not isinstance(parts[key], str):
+            raise ValueError("bounded-read-selected-part-missing")
+        selected = parts[key]
+        mode = "SELECTED_PROVIDER_PART"
+    if not selected.strip() or len(selected.encode("utf-8")) > 16_384:
+        raise ValueError("bounded-read-selection-empty-or-too-large")
+    digest = hashlib.sha256(selected.encode("utf-8")).hexdigest()
+    if same_prior and prior.get("selected_sha256") != digest:
+        raise ValueError("bounded-read-same-revision-content-conflict")
+    delta = "NO_PRIOR_SELECTION"
+    if isinstance(prior, dict) and prior.get("content_ref") == read["content_ref"]:
+        delta = "UNCHANGED" if prior.get("selected_sha256") == digest else "MATERIAL_DELTA"
+    return {"schema": "cerebro-bounded-content-selection/v1", "content_ref": read["content_ref"],
+            "revision": read["revision"], "selector_kind": selector_kind, "selector": key,
+            "selected_text": selected, "selected_sha256": digest, "selection_mode": mode,
+            "delta": delta, "authority_ref": read["authority_ref"],
+            "provenance_refs": list(provenance), "provider_readback_verified": True,
+            "backend_part_count": len(parts) if isinstance(parts, dict) else 0,
+            "model_part_count": 1}
+
+
 def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]:
     if not request.get("current_objective") or not request.get("current_scope"):
         raise ValueError("current_objective-and-current_scope-required")
@@ -359,6 +414,38 @@ def selftest() -> dict[str, Any]:
         check("material-insight-reresolves", retrieve(req2, root)["next_control_event"] == "RE_RESOLVE_CONTROL")
         result = feedback({"objective_ref": "O", "action_ref": "A", "result": "PASS", "verification_state": "VERIFIED", "evidence_refs": ["E"]})
         check("feedback-remains-evidence-only", result["authority"] == "EVIDENCE_ONLY" and not result["source_mutation"])
+    bounded = {"content_ref": "doc:1", "revision": "r1", "authority_ref": "source:1",
+               "selector_kind": "TAB", "selector": "current", "currentness": "CURRENT",
+               "provider_readback_verified": True, "provenance_refs": ["provider:1"],
+               "parts": {"current": "Relevant current fact", "history": "Unselected private history"}}
+    selected = select_bounded_content(bounded)
+    check("ordinary-read-projects-only-selected-part",
+          selected["selected_text"] == "Relevant current fact" and
+          "Unselected private history" not in str(selected) and selected["model_part_count"] == 1)
+    reused = select_bounded_content({**bounded, "parts": None, "prior_selection": selected})
+    check("same-revision-exact-selection-reused", reused["selection_mode"] == "SAME_REVISION_REUSE")
+    changed = select_bounded_content({**bounded, "revision": "r2", "parts": {"current": "Changed fact"},
+                                      "prior_selection": selected})
+    check("changed-revision-relevant-delta", changed["delta"] == "MATERIAL_DELTA")
+    for name, bad in (
+        ("stale-provider-readback-refused", {**bounded, "currentness": "STALE"}),
+        ("missing-selector-refused", {**bounded, "selector": "missing"}),
+        ("unjustified-deeper-read-refused", {**bounded, "depth": "DEEPER_READ"}),
+        ("changed-authority-cache-refused", {**bounded, "parts": None,
+                                             "authority_ref": "source:other", "prior_selection": selected}),
+        ("same-revision-content-conflict-refused", {**bounded,
+                                                     "parts": {"current": "Changed fact"},
+                                                     "prior_selection": selected}),
+    ):
+        try:
+            select_bounded_content(bad)
+            check(name, False)
+        except ValueError:
+            check(name, True)
+    deeper = select_bounded_content({**bounded, "selector_kind": "SECTION", "selector": "history",
+                                     "depth": "DEEPER_READ", "task_need_ref": "task:verified-gap"})
+    check("task-justified-deeper-read-targets-one-section",
+          deeper["selected_text"] == "Unselected private history" and deeper["model_part_count"] == 1)
     return {"schema": "cerebro-relevance-selftest/v0.3", "result": "PASS" if all(x["result"] == "PASS" for x in tests) else "FAIL", "tests": tests}
 
 

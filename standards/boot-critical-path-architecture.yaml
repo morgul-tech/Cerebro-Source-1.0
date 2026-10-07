@@ -37,8 +37,8 @@ boot_critical_path:
     - emit-human-boot-completion-surface
 
   # JSON flow mapping is also YAML: one Source-owned profile, no provider rule store.
-  current_civilization_method_profile: {"id":"CURRENT_CIVILIZATION_METHOD_PROFILE","version":"1.0","authority":"NONE","durable_method":["CURRENTNESS_FIRST","METHOD_NE_AUTHORITY","NO_LIVE_STATE_INHERITANCE","VERIFY_LOAD_CONSUME_READBACK","TASK_SEMANTICS_ON_DEMAND"],"contract_refs":["mcp/constitution.yaml","mcp/boot-architecture-control.yaml","engines/presentation/component.yaml","engines/presentation/rules.yaml"]}
-  role_method_contract_profile: {"version":"1.0","authority":"NONE","roles":{"PRINCIPAL":["standards/principalstambok.yaml"],"ASSISTANT":[],"PROJECT_MANAGER":[],"IMPLEMENTER":[],"WORKER":[],"RESEARCHER":[]}}
+  current_civilization_method_profile: {"id":"CURRENT_CIVILIZATION_METHOD_PROFILE","version":"1.0","authority":"NONE","durable_method":["CURRENTNESS_FIRST","METHOD_NE_AUTHORITY","NO_LIVE_STATE_INHERITANCE","VERIFY_LOAD_CONSUME_READBACK","TASK_SEMANTICS_ON_DEMAND"],"contract_refs":["mcp/constitution.yaml","mcp/boot-architecture-control.yaml","engines/presentation/component.yaml","engines/presentation/rules.yaml","standards/development/implementation-learning-loop.yaml"]}
+  role_method_contract_profile: {"version":"1.0","authority":"NONE","roles":{"PRINCIPAL":["standards/principalstambok.yaml","standards/development/implementation-learning-loop.yaml"],"ASSISTANT":[],"PROJECT_MANAGER":[],"IMPLEMENTER":[],"WORKER":[],"RESEARCHER":[]}}
   civilization_method:
     owner: boot_critical_path.current_civilization_method_profile
     resolver: tooling/runtime-host/cerebro_boot.ps1#Resolve-CerebroCivilizationMethod

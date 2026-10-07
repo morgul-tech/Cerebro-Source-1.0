@@ -586,7 +586,8 @@ function Resolve-CerebroCivilizationMethod {
     $methods = @('CURRENTNESS_FIRST','METHOD_NE_AUTHORITY','NO_LIVE_STATE_INHERITANCE',
         'VERIFY_LOAD_CONSUME_READBACK','TASK_SEMANTICS_ON_DEMAND')
     $refs = @('mcp/constitution.yaml','mcp/boot-architecture-control.yaml',
-        'engines/presentation/component.yaml','engines/presentation/rules.yaml')
+        'engines/presentation/component.yaml','engines/presentation/rules.yaml',
+        'standards/development/implementation-learning-loop.yaml')
     $roleContractOwners = [regex]::Matches($text, '(?m)^  role_method_contract_profile:\s*([^\r\n]+)\r?$')
     if ($roleContractOwners.Count -ne 1) { throw 'CIVILIZATION_ROLE_CONTRACT_SINGLE_OWNER_REQUIRED' }
     $roleContractProfile = $roleContractOwners[0].Groups[1].Value | ConvertFrom-Json

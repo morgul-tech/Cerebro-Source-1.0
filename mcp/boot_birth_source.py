@@ -26,6 +26,7 @@ METHODS = (
 REFS = (
     "mcp/constitution.yaml", "mcp/boot-architecture-control.yaml",
     "engines/presentation/component.yaml", "engines/presentation/rules.yaml",
+    "standards/development/implementation-learning-loop.yaml",
 )
 ROLE_NAMES = ("PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER")
 ROLE_PROJECTION_SCHEMA = "cerebro-role-method-projection/v1"

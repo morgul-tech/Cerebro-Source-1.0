@@ -298,6 +298,7 @@ $paths=@('cerebro.yaml','mcp/activation.yaml','mcp/constitution.yaml',
 'tooling/validator/checks.yaml','standards/human-continuation-surface.yaml',
 'standards/continuation-surface-system-policy.yaml','engines/presentation/human-admin-projection.schema.json',
 'engines/context/control-context-state.schema.json','standards/principalstambok.yaml',
+'standards/development/implementation-learning-loop.yaml',
 'engines/presentation/component.yaml','engines/presentation/rules.yaml')
 foreach($p in $paths){
     $dest=Join-Path $fixture $p
@@ -420,8 +421,9 @@ Check 'K157-cross-role-profile-shared-projection-distinct' {
 Check 'K157-principal-role-contract-ref-projected' {
     $principal=Binding 'PRINCIPAL'
     $principalRefs=@($principal.role_method_projection.role_contract_refs)
-    if ($principalRefs.Count -ne 1 -or
+    if ($principalRefs.Count -ne 2 -or
         $principalRefs[0] -cne 'standards/principalstambok.yaml' -or
+        $principalRefs[1] -cne 'standards/development/implementation-learning-loop.yaml' -or
         $principal.role_method_projection.authority -cne 'NONE' -or
         $principal.role_method_projection.role_contract_fingerprint -notmatch '^[0-9a-f]{64}$') {
         throw 'PRINCIPAL_ROLE_CONTRACT_PROJECTION_MISMATCH'

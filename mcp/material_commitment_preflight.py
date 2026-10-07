@@ -33,6 +33,7 @@ SOLUTION_ESCALATION_OUTCOMES = {
 }
 ACTIVATION_BASIS_FILES = [
     "standards/development/material-commitment-preflight.yaml",
+    "standards/development/implementation-learning-loop.yaml",
     "standards/development/relevance-retrieval.yaml",
     "standards/development/wisdom-control-binding.yaml",
     "standards/control-architecture.yaml",
@@ -464,6 +465,10 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]
     source_identity = authoritative_source_identity(root, request)
     current_context_identity = context_identity(root)
     engine = load_relevance_engine(root)
+    if request.get("requires_bounded_context") is True and not isinstance(request.get("bounded_context"), dict):
+        raise ValueError("bounded-context-selector-required")
+    bounded_context = (engine.select_bounded_content(request["bounded_context"])
+                       if isinstance(request.get("bounded_context"), dict) else None)
     retrieval_request = {
         "current_objective": semantics["objective"] or request.get("current_objective"),
         "current_scope": semantics["scope"] or request.get("current_scope"),
@@ -507,6 +512,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]
         "control_state_ref": control_state["control_state_id"],
         "control_decision_ref": decision["control_decision_id"],
         "solution_escalation_assessment": solution_escalation,
+        "bounded_context": bounded_context,
         "issued_at": utc_now(),
         "authority": "DERIVED_CONTROL_EVIDENCE",
     }
@@ -519,6 +525,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]
         "control_state": control_state,
         "mcp_control_decision": decision,
         "solution_escalation_assessment": solution_escalation,
+        "bounded_context": bounded_context,
         "receipt": receipt,
     }
 
@@ -554,6 +561,7 @@ def consume(request: dict[str, Any], receipt: dict[str, Any], root: Path = SOURC
         "applicable_history_refs",
         "relevance_source_fingerprints",
         "solution_escalation_assessment",
+        "bounded_context",
     )
     for field in freshness_fields:
         if not _freshness_equal(receipt.get(field), current["receipt"].get(field)):
@@ -630,6 +638,23 @@ def selftest(root: Path = SOURCE_ROOT) -> dict[str, Any]:
         }
         first = resolve(request, fixture)
         check("material-preflight-pass", first["result"] == "PASS")
+        bounded = {"content_ref": "doc:1", "revision": "r1", "authority_ref": "source:1",
+                   "selector_kind": "TAB", "selector": "current", "currentness": "CURRENT",
+                   "provider_readback_verified": True, "provenance_refs": ["provider:1"],
+                   "parts": {"current": "Relevant fact", "other": "Unselected history"}}
+        bounded_request = {**request, "requires_bounded_context": True, "bounded_context": bounded}
+        bounded_result = resolve(bounded_request, fixture)
+        check("material-preflight-bounded-current-selection",
+              bounded_result["receipt"]["bounded_context"]["selected_text"] == "Relevant fact"
+              and "Unselected history" not in str(bounded_result["receipt"]["bounded_context"]))
+        for name, bad in (("missing-bounded-context-refused", {**request, "requires_bounded_context": True}),
+                          ("stale-bounded-context-refused", {**bounded_request,
+                           "bounded_context": {**bounded, "currentness": "STALE"}})):
+            try:
+                resolve(bad, fixture)
+                check(name, False)
+            except ValueError:
+                check(name, True)
         check("context-invoked", first.get("context_invoked") is True)
         check("mcp-consumed-retrieval", first.get("mcp_consumed") is True and first["mcp_control_decision"]["basis_fingerprint"] == first["control_state"]["basis_fingerprint"])
         check("current-wisdom-only", first["retrieval"]["applicable_wisdom_refs"] == ["W1"])

@@ -102,12 +102,12 @@ def main() -> int:
         return (ROOT / url[len(prefix):]).read_bytes().replace(bytes([13, 10]), bytes([10]))
     verified = verify_current_method(HEAD, fetch=pinned_fetch)
     checks["pinned-method-fingerprint-matches-source-contract"] = (
-        verified["method_fingerprint"] == "a3b606f741356be75c2b00ab9ffc67b3a2298acd3156cd9e2a6d86332f88e64d"
+        verified["method_fingerprint"] == "06a66382b50cf6c8af0bf06e5b59ed5bfbdc37523e79c74617d080eb1e9c45f5"
     )
     principal_projection = verify_role_method_projection(HEAD, "PRINCIPAL", fetch=pinned_fetch)
     checks["principal-role-projection-binds-stambok-source-ref"] = (
         principal_projection["method_profile_fingerprint"] == verified["method_fingerprint"]
-        and principal_projection["contract_refs"] == ["standards/principalstambok.yaml"]
+        and principal_projection["contract_refs"] == ["standards/principalstambok.yaml", "standards/development/implementation-learning-loop.yaml"]
         and principal_projection["authority"] == "NONE"
     )
     worker_fetches: list[str] = []

@@ -1318,6 +1318,15 @@ def consume_pm_authorized_command_chain(
             or last_fresh_state.get("provider_readback_verified") is not True
         ):
             return None, "A7_PRESTOP_CURRENT_STATE_READBACK_NOT_CURRENT"
+        if last_fresh_state.get("bounded_context_required") is True:
+            selected = last_fresh_state.get("bounded_context")
+            if not isinstance(selected, dict) or any(
+                not selected.get(key) for key in (
+                    "content_ref", "revision", "selector_kind", "selector",
+                    "selected_sha256", "authority_ref", "provenance_refs",
+                )
+            ) or selected.get("provider_readback_verified") is not True:
+                return None, "A7_PRESTOP_BOUNDED_CONTEXT_UNVERIFIED"
 
         def complete_tuple(
             source: dict[str, Any],

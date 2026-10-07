@@ -186,10 +186,18 @@ def prepare(*, capture_record: str, return_input: str, out_dir: str,
             owner_facts: str | None = None, owner_binding: str | None = None,
             parent_manifest: str | None = None, verifier: str | None = None,
             verifier_delta: str | None = None, currentness: str | None = None,
-            prior_record: str | None = None) -> dict[str, Any]:
+            prior_record: str | None = None,
+            bounded_context: str | None = None) -> dict[str, Any]:
     """Prepare one selection and receipt; never send it or assert recipient use."""
     task, original_path, original, capture_ref = _capture(capture_record)
     returned, return_ref = _return_input(return_input)
+    selection = None
+    if bounded_context is not None:
+        _, context_raw = _read(bounded_context)
+        context_read = _json(context_raw)
+        engine = _module("rom_a_bounded_context_normal", SOURCE_ROOT /
+                         "tooling/context/relevance_engine.py")
+        selection = engine.select_bounded_content(context_read)
     refs = {name: _input_ref(path) for name, path in (
         ("owner_facts", owner_facts), ("owner_binding", owner_binding),
         ("parent_manifest", parent_manifest), ("verifier", verifier),
@@ -237,6 +245,12 @@ def prepare(*, capture_record: str, return_input: str, out_dir: str,
         name = "capsule.json" if adoption["selection"].startswith("BK05_") else "original_task.txt"
         selected_path = pending / name
         selected_path.write_bytes(payload)
+        context_ref = None
+        if selection is not None:
+            context_path = pending / "context_selected.txt"
+            context_path.write_text(selection["selected_text"], encoding="utf-8")
+            context_ref = {key: value for key, value in selection.items() if key != "selected_text"}
+            context_ref["file"] = context_path.name
         receipt = {"schema": SCHEMA + "-receipt", "capture": capture_ref,
                    "return_input": return_ref, "input_refs": refs,
                    "parent_manifest": {"basis": manifest_basis, "sha256": _sha(manifest_raw),
@@ -249,6 +263,8 @@ def prepare(*, capture_record: str, return_input: str, out_dir: str,
                                      "selected_sha256": _sha(payload)},
                    "authority": "NONE", "provider_currentness_proven": False,
                    "semantic_review_proven": False, "effect": "NONE_CLAIMED"}
+        if context_ref is not None:
+            receipt["bounded_context"] = context_ref
         (pending / "receipt.json").write_text(
             json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
         os.rename(pending, out)
@@ -266,7 +282,7 @@ def main() -> int:
     parser.add_argument("--return-input", required=True)
     parser.add_argument("--out-dir", required=True)
     for name in ("owner-facts", "owner-binding", "parent-manifest", "verifier",
-                 "verifier-delta", "currentness", "prior-record"):
+                 "verifier-delta", "currentness", "prior-record", "bounded-context"):
         parser.add_argument("--" + name)
     args = parser.parse_args()
     try:
@@ -274,7 +290,8 @@ def main() -> int:
                          out_dir=args.out_dir, owner_facts=args.owner_facts,
                          owner_binding=args.owner_binding, parent_manifest=args.parent_manifest,
                          verifier=args.verifier, verifier_delta=args.verifier_delta,
-                         currentness=args.currentness, prior_record=args.prior_record)
+                         currentness=args.currentness, prior_record=args.prior_record,
+                         bounded_context=args.bounded_context)
         print(json.dumps(result, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, UnicodeError) as exc:

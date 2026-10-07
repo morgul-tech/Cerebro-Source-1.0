@@ -51,6 +51,8 @@ architecture_dependency_integrity:
         - selected_interpreter_and_environment
         - installed_integration_extras_and_importable_runtime_dependencies
         - required_api_or_program_access_and_login_state
+        - necessary_sender_identity_and_callable_visibility_for_message_routes
+        - necessary_receiver_identity_and_access_for_message_routes
       evidence:
         - one_cheap_real_check_for_each_applicable_external_edge
 
@@ -60,8 +62,15 @@ architecture_dependency_integrity:
         - callable_provider_or_deployment_port
         - receiving_process_or_endpoint
         - start_and_restart_path
+        - actual_delivery_and_receiver_use_when_message_route_is_required
+        - required_reply_only_when_the_task_contract_requires_a_reply
       evidence:
         - one_cheap_real_check_for_each_applicable_external_edge
+
+    message_route_scope:
+      sender_callable_delivery_receiver_use: REQUIRED_WHEN_APPLICABLE
+      reply_service: REQUIRED_ONLY_FOR_REPLY_REQUIRED_CONTRACT
+      one_way_tasks_do_not_gain_reply_dependency: true
 
     edge_record:
       required_fields:

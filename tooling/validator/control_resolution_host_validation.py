@@ -1217,6 +1217,16 @@ def selftest() -> dict[str, Any]:
     def run_fresh_prestop(host: BoundControlResolutionHost, next_governance: dict[str, Any], event_ref: str):
         return run_prestop_with_reader(host, fresh_prestop_reader(next_governance, event_ref))
 
+    bounded_missing_reader = fresh_prestop_reader(
+        {"event_ref": "EVENT-BOUNDED-MISSING", "next_action": {}}, "EVENT-BOUNDED-MISSING")
+    bounded_missing_reader.states[0]["bounded_context_required"] = True
+    bounded_missing = run_prestop_with_reader(chain_host, bounded_missing_reader)
+    check(
+        "A7-prestop-required-bounded-context-fails-closed",
+        bounded_missing["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "A7_PRESTOP_BOUNDED_CONTEXT_UNVERIFIED",
+    )
+
     durable_fixed = consume_pm_authorized_command_chain(
         durable_host,
         governance=governance,
