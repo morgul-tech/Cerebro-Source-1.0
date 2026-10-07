@@ -8,6 +8,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $taskName = 'Cerebro-BK07-LocalSessionHost'
 $source = (Resolve-Path -LiteralPath $ReviewedSourceScript).Path
+$expectedHash = '44515BD8C69A733EAF906C006ED536B0C2BDE155F95896ECEA13AF9326254F34'
+if ((Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ne $expectedHash) {
+    throw 'SOURCE_SCRIPT_NOT_REVIEWED_SHA256'
+}
 $python = (Resolve-Path -LiteralPath $PythonExe).Path
 $rootPath = [IO.Path]::GetFullPath($Root)
 $profile = Join-Path $rootPath 'profile.json'
@@ -28,7 +32,6 @@ if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
 }
 
 New-Item -ItemType Directory -Path $installedDir,$stateDir -Force | Out-Null
-$expectedHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash
 if (Test-Path -LiteralPath $installed -PathType Leaf) {
     if ((Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash -ne $expectedHash) {
         throw 'INSTALLED_SCRIPT_DIFFERS_REVIEW_BEFORE_REPLACE'
