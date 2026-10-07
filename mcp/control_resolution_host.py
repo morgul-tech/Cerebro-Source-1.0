@@ -333,6 +333,7 @@ class BoundControlResolutionHost:
         pm_profile_verifier: Any | None = None,
         pm_disposition_publisher: Any | None = None,
         bounded_content_provider: Any | None = None,
+        rom_a_selected_dispatcher: Any | None = None,
     ):
         _require(callable(getattr(persistence_verifier, "verify", None)), "host-persistence-verifier-required")
         _require(callable(getattr(capability_resolver, "is_available", None)), "host-capability-resolver-required")
@@ -349,12 +350,16 @@ class BoundControlResolutionHost:
         if bounded_content_provider is not None:
             _require(callable(getattr(bounded_content_provider, "read_current", None)),
                      "host-bounded-content-provider-invalid")
+        if rom_a_selected_dispatcher is not None:
+            _require(callable(getattr(rom_a_selected_dispatcher, "send_selected", None)),
+                     "host-rom-a-selected-dispatcher-invalid")
         self._persistence_verifier = persistence_verifier
         self._capability_resolver = capability_resolver
         self._canonical_resolver = canonical_resolver
         self._pm_profile_verifier = pm_profile_verifier
         self._pm_disposition_publisher = pm_disposition_publisher
         self._bounded_content_provider = bounded_content_provider
+        self._rom_a_selected_dispatcher = rom_a_selected_dispatcher
 
     def select_bounded_content(self, target: dict[str, Any], *, root: Path = control_resolution.SOURCE_ROOT) -> dict[str, Any]:
         """Normal-host operation: a caller names a target, never a provider reader."""
@@ -409,7 +414,10 @@ class BoundControlResolutionHost:
         _, raw = module._read(context_path)
         target = module._json(raw)
         selected = self.select_bounded_content(target)
-        return module._prepare(**kwargs, _host_selection=selected)
+        result = module._prepare(**kwargs, _host_selection=selected)
+        if self._rom_a_selected_dispatcher is not None:
+            return module._dispatch_selected(result, self._rom_a_selected_dispatcher)
+        return result
 
     def publish_pm_durable_disposition(self, proposal: dict[str, Any]) -> dict[str, Any]:
         _require(

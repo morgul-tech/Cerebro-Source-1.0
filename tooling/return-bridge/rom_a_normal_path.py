@@ -2,8 +2,10 @@
 """Run BK04/BK05 selection from an existing PR73 capture during a normal A1 return.
 
 This is a local, non-authoritative preparation step. The caller supplies an
-observed return and any actual verifier/currentness files; the tool never
-invents review, authenticates a provider, sends work, or claims recipient use.
+observed return; actual review/currentness files beside that return are bound
+to the captured episode when present. The CLI never invents review,
+authenticates a provider, sends work, or claims recipient use. Only the
+existing normal host may dispatch selected bytes through its bound sender.
 
 Example:
   python -B tooling/return-bridge/rom_a_normal_path.py \
@@ -186,6 +188,55 @@ def _input_ref(path_text: str | None) -> dict[str, Any] | None:
     return {"path": str(path), "sha256": _sha(raw), "bytes": len(raw)}
 
 
+def _episode_inputs(task: dict[str, Any], original_sha256: str,
+                    returned: dict[str, Any],
+                    return_ref: dict[str, Any], supplied: dict[str, str | None]
+                    ) -> tuple[dict[str, str | None], list[str]]:
+    """Use only named files beside the same-episode return, never a broad search."""
+    paths = dict(supplied)
+    if returned["contract_kind"] not in REPAIR_KINDS or any(
+        returned[name] != task[name] for name in
+        ("actor_ref", "generation_ref", "carrier_ref", "arc_ref", "task_ref", "task_revision")
+    ) or returned["original_sha256"] != original_sha256:
+        return paths, []
+    episode = Path(return_ref["path"]).parent
+    discovered = []
+    names = {"parent_manifest": "parent_manifest.json", "verifier": "verifier.txt",
+             "verifier_delta": "verifier_delta.json", "currentness": "currentness.json"}
+    for key, name in names.items():
+        candidate = episode / name
+        if paths[key] is None and candidate.is_file() and not candidate.is_symlink():
+            paths[key] = str(candidate)
+            discovered.append(key)
+    return paths, discovered
+
+
+def _bind_delta(raw: bytes, actor: str, verifier_raw: bytes
+                ) -> tuple[bytes, list[dict[str, str]], list[str]]:
+    """Complete two mechanical bindings only; never alter a reviewer-supplied value."""
+    try:
+        delta = _json(raw)
+    except ValueError:
+        return raw, [], []  # The BK05 evaluator reports the malformed input.
+    expected = {"requested_actor_ref": actor, "verifier_sha256": _sha(verifier_raw)}
+    sources = {"requested_actor_ref": "captured_task.actor_ref",
+               "verifier_sha256": "exact_verifier_bytes"}
+    repairs = []
+    conflicts = []
+    for field, value in expected.items():
+        if field not in delta:
+            delta[field] = value
+            repairs.append({"field": field, "source": sources[field], "value": value})
+        elif delta[field] != value:
+            conflicts.append(field)
+    if conflicts:
+        return raw, [], conflicts
+    if not repairs:
+        return raw, [], []
+    return (json.dumps(delta, sort_keys=True, ensure_ascii=False,
+                       separators=(",", ":")) + "\n").encode("utf-8"), repairs, []
+
+
 def prepare(**kwargs: Any) -> dict[str, Any]:
     """Public file/CLI path cannot transport a reader or self-issued selection."""
     if any(key in kwargs for key in ("bounded_provider_reader", "provider_reader", "_host_selection")):
@@ -202,6 +253,16 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
     """Prepare one selection and receipt; never send it or assert recipient use."""
     task, original_path, original, capture_ref = _capture(capture_record)
     returned, return_ref, return_facts = _return_input(return_input)
+    supplied = {"owner_facts": owner_facts, "owner_binding": owner_binding,
+                "parent_manifest": parent_manifest, "verifier": verifier,
+                "verifier_delta": verifier_delta, "currentness": currentness,
+                "prior_record": prior_record}
+    inputs, discovered = _episode_inputs(
+        task, capture_ref["original_sha256"], returned, return_ref, supplied)
+    owner_facts, owner_binding = inputs["owner_facts"], inputs["owner_binding"]
+    parent_manifest, verifier = inputs["parent_manifest"], inputs["verifier"]
+    verifier_delta, currentness = inputs["verifier_delta"], inputs["currentness"]
+    prior_record = inputs["prior_record"]
     selection = None
     if bounded_context is not None:
         _, context_raw = _read(bounded_context)
@@ -222,7 +283,17 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
         raise ValueError("BK04_FACTS_KIND_MISMATCH")
     if not fact_return and (owner_facts is not None or owner_binding is not None):
         raise ValueError("OWNER_FACTS_KIND_MISMATCH")
-    manifest_raw, manifest_basis = _parent_manifest(task, capture_ref["original_sha256"], parent_manifest)
+    try:
+        manifest_raw, manifest_basis = _parent_manifest(
+            task, capture_ref["original_sha256"], parent_manifest)
+    except ValueError:
+        if "parent_manifest" not in discovered:
+            raise
+        parent_manifest = None
+        inputs["parent_manifest"] = None
+        discovered.remove("parent_manifest")
+        manifest_raw, manifest_basis = _parent_manifest(
+            task, capture_ref["original_sha256"], None)
     missing = []
     if fact_return and return_facts is None:
         missing.extend(name for name, value in (("owner_facts", owner_facts),
@@ -243,6 +314,20 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
     try:
         manifest_path = pending / "parent_manifest.json"
         manifest_path.write_bytes(manifest_raw)
+        repairs: list[dict[str, str]] = []
+        delta_conflicts: list[str] = []
+        delta_for_core = verifier_delta
+        if repair_return and verifier is not None and verifier_delta is not None:
+            _, verifier_raw = _read(verifier)
+            _, delta_raw = _read(verifier_delta)
+            bound_raw, repairs, delta_conflicts = _bind_delta(
+                delta_raw, task["actor_ref"], verifier_raw)
+            if repairs:
+                bound_path = pending / "verifier_delta_bound.json"
+                bound_path.write_bytes(bound_raw)
+                delta_for_core = str(bound_path)
+        if delta_conflicts:
+            missing.append("verifier_delta_conflict")
         bundle: dict[str, Any] = {"schema": adapter.SCHEMA,
             "task": {**task, "original_path": str(original_path),
                      "original_sha256": capture_ref["original_sha256"]},
@@ -271,10 +356,10 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
             if owner_facts is not None or owner_binding is not None:
                 bundle["bk04"] = {"owner_facts_path": owner_facts,
                                   "binding_path": owner_binding}
-        if repair_return and all(value is not None for value in
-                                 (verifier, verifier_delta, currentness)):
+        if repair_return and not delta_conflicts and all(value is not None for value in
+                                 (verifier, delta_for_core, currentness)):
             bundle["bk05"] = {"parent_manifest_path": str(manifest_path),
-                              "verifier_path": verifier, "verifier_delta_path": verifier_delta,
+                              "verifier_path": verifier, "verifier_delta_path": delta_for_core,
                               "currentness_path": currentness}
             if prior_record is not None:
                 bundle["bk05"]["prior_record_path"] = prior_record
@@ -292,12 +377,16 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
                    "return_input": return_ref, "input_refs": refs,
                    "parent_manifest": {"basis": manifest_basis, "sha256": _sha(manifest_raw),
                                        "bytes": len(manifest_raw)},
-                   "missing_inputs": missing, "adoption": adoption,
+                   "missing_inputs": missing, "episode_inputs_discovered": discovered,
+                   "delta_field_repairs": repairs, "delta_field_conflicts": delta_conflicts,
+                   "adoption": adoption,
                    "selected": {"file": name, "sha256": _sha(payload), "bytes": len(payload),
                                 "selection": adoption["selection"],
                                 "recipient_delivery_qualified": False},
                    "recipient_use": {"state": "NOT_OBSERVED", "readback_ref": None,
                                      "selected_sha256": _sha(payload)},
+                   "dispatch": {"state": "NOT_SENT", "delivery_ref": None,
+                                "recipient_ref": task["actor_ref"]},
                    "authority": "NONE", "provider_currentness_proven": False,
                    "semantic_review_proven": False, "effect": "NONE_CLAIMED"}
         if context_ref is not None:
@@ -311,6 +400,47 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
     finally:
         if pending.exists():
             shutil.rmtree(pending)
+
+
+def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
+    """Host-owned send of exactly the selected file; acceptance is not recipient use."""
+    if not callable(getattr(sender, "send_selected", None)):
+        raise ValueError("SELECTED_DISPATCHER_UNBOUND")
+    receipt_path, receipt_raw = _read(result["receipt"])
+    receipt = _json(receipt_raw)
+    selected_path, payload = _read(result["selected"])
+    selected = receipt.get("selected")
+    adoption = receipt.get("adoption")
+    if (not isinstance(selected, dict) or not isinstance(adoption, dict)
+            or selected_path.parent != receipt_path.parent
+            or selected_path.name != selected.get("file")
+            or _sha(payload) != selected.get("sha256")
+            or receipt.get("dispatch", {}).get("state") != "NOT_SENT"):
+        raise ValueError("SELECTED_DISPATCH_READBACK_MISMATCH")
+    recipient = adoption["actor_ref"]
+    response = sender.send_selected(
+        recipient_ref=recipient, selected_bytes=payload,
+        selected_sha256=selected["sha256"], selection=selected["selection"],
+        task_ref=adoption["task_ref"], task_revision=adoption["task_revision"])
+    if (not isinstance(response, dict) or response.get("state") != "ACCEPTED"
+            or response.get("recipient_ref") != recipient
+            or response.get("selected_sha256") != selected["sha256"]
+            or not isinstance(response.get("delivery_ref"), str)
+            or not response["delivery_ref"].strip()):
+        raise ValueError("SELECTED_DISPATCH_NOT_ACCEPTED")
+    receipt["dispatch"] = {"state": "SENT_ACCEPTED", "delivery_ref": response["delivery_ref"],
+                           "recipient_ref": recipient,
+                           "selected_sha256": selected["sha256"],
+                           "assertion": "HOST_SENDER_RETURN_NOT_RECIPIENT_USE"}
+    updated = (json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+    temporary = receipt_path.with_name(".receipt-dispatch-pending.json")
+    with temporary.open("xb") as stream:
+        stream.write(updated)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, receipt_path)
+    return {**result, "dispatch": "SENT_ACCEPTED", "delivery_ref": response["delivery_ref"],
+            "recipient_use": "NOT_OBSERVED"}
 
 
 def main() -> int:

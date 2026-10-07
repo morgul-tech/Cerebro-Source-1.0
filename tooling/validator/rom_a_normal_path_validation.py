@@ -77,6 +77,88 @@ class NormalPath(unittest.TestCase):
             "currentness": self.write("currentness.json", self.fixture["currentness.json"]),
         }
 
+    def episode_files(self, *, missing_bindings: bool = False) -> None:
+        self.write("parent_manifest.json", self.fixture["parent_manifest.json"])
+        self.write("verifier.txt", self.fixture["verifier.txt"])
+        delta = json.loads(self.fixture["verifier_delta.json"])
+        if missing_bindings:
+            delta.pop("requested_actor_ref")
+            delta.pop("verifier_sha256")
+        self.write_json("verifier_delta.json", delta)
+        self.write("currentness.json", self.fixture["currentness.json"])
+
+    def test_same_episode_discovers_actual_files_and_repairs_only_missing_bindings(self):
+        self.episode_files(missing_bindings=True)
+        result = normal.prepare(**self.kwargs())
+        receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
+        self.assertEqual(result["selection"], "BK05_STRUCTURAL_CAPSULE_CANDIDATE")
+        self.assertEqual(set(receipt["episode_inputs_discovered"]),
+                         {"parent_manifest", "verifier", "verifier_delta", "currentness"})
+        self.assertEqual({item["field"] for item in receipt["delta_field_repairs"]},
+                         {"requested_actor_ref", "verifier_sha256"})
+        self.assertFalse(receipt["semantic_review_proven"])
+        self.assertFalse(receipt["provider_currentness_proven"])
+        self.assertEqual(receipt["recipient_use"]["state"], "NOT_OBSERVED")
+
+    def test_same_episode_conflicting_delta_preserves_full_original(self):
+        self.episode_files()
+        delta = json.loads(Path(self.root / "verifier_delta.json").read_text())
+        delta["requested_actor_ref"] = "OTHER-ACTOR"
+        self.write_json("verifier_delta.json", delta)
+        result = normal.prepare(**self.kwargs())
+        receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
+        self.assertEqual(result["selection"], "FULL_ORIGINAL_TASK")
+        self.assertEqual(Path(result["selected"]).read_bytes(), self.fixture["parent.txt"])
+        self.assertEqual(receipt["delta_field_conflicts"], ["requested_actor_ref"])
+
+    def test_same_episode_mismatched_review_manifest_preserves_full_original(self):
+        self.episode_files()
+        manifest = json.loads(Path(self.root / "parent_manifest.json").read_text())
+        manifest["way_home"] = "foreign route"
+        self.write_json("parent_manifest.json", manifest)
+        result = normal.prepare(**self.kwargs())
+        self.assertEqual(result["selection"], "FULL_ORIGINAL_TASK")
+        self.assertEqual(Path(result["selected"]).read_bytes(), self.fixture["parent.txt"])
+
+    def test_host_dispatches_exact_selected_bytes_without_claiming_use(self):
+        self.episode_files(missing_bindings=True)
+        sent = []
+        class Sender:
+            def send_selected(self, **kwargs):
+                sent.append(kwargs)
+                return {"state": "ACCEPTED", "recipient_ref": kwargs["recipient_ref"],
+                        "selected_sha256": kwargs["selected_sha256"],
+                        "delivery_ref": "SYN-DELIVERY-1"}
+        class Reader:
+            def read_current(self, content_ref, kind, selector):
+                return {"content_ref": content_ref, "selector_kind": kind,
+                        "selector": selector, "revision": "r1", "authority_ref": "source:1",
+                        "currentness": "CURRENT", "provider_readback_verified": True,
+                        "access_verified": True, "access_scope_ref": "actor:1:doc:1",
+                        "provenance_refs": ["provider:1"], "parts": {"current": "Relevant text"}}
+        class Persistence:
+            def verify(self, **kwargs):
+                return {}
+        class Capability:
+            def is_available(self, **kwargs):
+                return False
+            def executor(self, **kwargs):
+                raise AssertionError("not-used")
+        host = BoundControlResolutionHost(persistence_verifier=Persistence(),
+            capability_resolver=Capability(), bounded_content_provider=Reader(),
+            rom_a_selected_dispatcher=Sender())
+        context = self.write_json("context.json", {
+            "content_ref": "doc:1", "selector_kind": "TAB", "selector": "current"})
+        result = host.prepare_rom_a_return(**self.kwargs(), bounded_context=context)
+        receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
+        self.assertEqual(result["dispatch"], "SENT_ACCEPTED")
+        self.assertEqual(sent[0]["selected_bytes"], Path(result["selected"]).read_bytes())
+        self.assertEqual(sent[0]["recipient_ref"], self.task["actor_ref"])
+        self.assertEqual(receipt["dispatch"]["state"], "SENT_ACCEPTED")
+        self.assertFalse(receipt["selected"]["recipient_delivery_qualified"])
+        self.assertEqual(receipt["recipient_use"]["state"], "NOT_OBSERVED")
+        self.assertFalse(receipt["adoption"]["work_consumed"])
+
     def test_missing_producer_inputs_keeps_exact_full_original_and_marks_gap(self):
         result = normal.prepare(**self.kwargs())
         receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
