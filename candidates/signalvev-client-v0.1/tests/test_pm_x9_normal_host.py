@@ -52,7 +52,7 @@ class NormalHostTests(unittest.TestCase):
         receiver = replace(sender, credentials_file=self.receiver_cred, evidence_dir=self.receiver_state,
                            interests=world.ports().client_config.interests, resolver_kind="factory")
         marker = object()
-        provider = types.ModuleType("providers.pm_x9_live_host")
+        provider = types.ModuleType("signalvev_client.pm_x9_live_host")
         class LiveRuntimeBindings:
             enabled = True
         provider.LiveRuntimeBindings = LiveRuntimeBindings
@@ -60,7 +60,7 @@ class NormalHostTests(unittest.TestCase):
         runtime = LiveRuntimeBindings()
         with (patch.object(host, "_load_settings", return_value=settings),
               patch.object(host, "load_config", side_effect=[sender, receiver]),
-              patch.dict(sys.modules, {"providers.pm_x9_live_host": provider}),
+              patch.dict(sys.modules, {"signalvev_client.pm_x9_live_host": provider}),
               patch.object(pm_x9, "build_binding", return_value=marker) as build):
             got = host.compose(self.profile, Path("binding"), Path("sender"), Path("receiver"),
                                host_runtime=runtime)

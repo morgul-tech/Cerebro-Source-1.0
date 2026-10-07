@@ -16,7 +16,7 @@ client configs. The sender has no listen interest; the receiver has exactly
 one `PM_READY_HINT` interest for the bound owner. Production rejects shared
 credentials and shared evidence state. The host never reads credential bytes.
 
-The binding TOML must name exactly `providers.pm_x9_live_host:make_ports`.
+The binding TOML must name exactly `signalvev_client.pm_x9_live_host:make_ports`.
 The Source host must call `compose(..., host_runtime=...)` with an exact
 `LiveRuntimeBindings` instance from that reviewed provider module. A TOML
 factory string or a structurally similar object does not confer this
@@ -30,8 +30,19 @@ Only a genuine owner-produced `receipt_ref` is accepted by `send`; no event ID
 or revision is supplied by the caller. The factory must preserve the current
 provider's authentication, atomic snapshot and owner-sequence checks.
 
-The PR85 host-entry and its live provider stack are still outside published
-Source `main` at this change's base. This entry does not import candidate
-provider code, reuse an old BK07 receipt, enable the local profile, or claim
-a running normal listener. Those require a separately qualified current host
-binding and a new eligible PM owner receipt.
+The Context adapter is packaged with the client. It accepts only the exact
+`PostgresPmOwner`, `X9ProducerHost`, `X9ReceiverHost` and two distinct
+`McpToolCallContext` instances supplied in-process by a privileged host.
+It uses Context's existing producer receipt verifier, current PM owner read,
+PostgreSQL custody channels, and X9-scoped read transaction. Each composition
+requires a new current `MATERIAL_READY` receipt whose owner, claim, packet,
+queue, hash and commit reference match the host binding. Context rechecks
+persisted role sessions and scopes. Caller JSON cannot provide a role, token,
+provider result, or project readback as authority.
+
+This adapter does not install a privileged host registration or durable
+PM/X9 service sessions. A retained listener needs the host to maintain
+valid receiver authentication throughout its lifetime; expired credentials
+fail closed at the Context API. The local profile remains OFF until those
+capabilities, separate NATS rights, and one genuine new receipt are reviewed
+and tested. No old BK07 receipt is eligible for replay.
