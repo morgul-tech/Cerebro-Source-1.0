@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -331,6 +332,7 @@ class BoundControlResolutionHost:
         canonical_resolver: Callable[..., dict[str, Any]] = control_resolution.resolve,
         pm_profile_verifier: Any | None = None,
         pm_disposition_publisher: Any | None = None,
+        bounded_content_provider: Any | None = None,
     ):
         _require(callable(getattr(persistence_verifier, "verify", None)), "host-persistence-verifier-required")
         _require(callable(getattr(capability_resolver, "is_available", None)), "host-capability-resolver-required")
@@ -344,11 +346,70 @@ class BoundControlResolutionHost:
                 callable(getattr(pm_disposition_publisher, "publish", None)),
                 "host-pm-disposition-publisher-invalid",
             )
+        if bounded_content_provider is not None:
+            _require(callable(getattr(bounded_content_provider, "read_current", None)),
+                     "host-bounded-content-provider-invalid")
         self._persistence_verifier = persistence_verifier
         self._capability_resolver = capability_resolver
         self._canonical_resolver = canonical_resolver
         self._pm_profile_verifier = pm_profile_verifier
         self._pm_disposition_publisher = pm_disposition_publisher
+        self._bounded_content_provider = bounded_content_provider
+
+    def select_bounded_content(self, target: dict[str, Any], *, root: Path = control_resolution.SOURCE_ROOT) -> dict[str, Any]:
+        """Normal-host operation: a caller names a target, never a provider reader."""
+        _require(type(self) is BoundControlResolutionHost, "host-bounded-content-origin-invalid")
+        _require(self._bounded_content_provider is not None, "host-bounded-content-provider-unbound")
+        _require(isinstance(target, dict), "host-bounded-content-target-required")
+        _require(not any(key in target for key in (
+            "provider_reader", "bounded_provider_reader", "currentness",
+            "provider_readback_verified", "authority_ref", "provenance_refs", "parts", "revision",
+            "prior_selection",
+        )), "host-bounded-content-caller-provider-injection")
+        source = Path(__file__).resolve().parents[1] / "tooling/context/relevance_engine.py"
+        spec = importlib.util.spec_from_file_location("host_bounded_relevance_engine", source)
+        _require(spec is not None and spec.loader is not None, "host-bounded-content-engine-unavailable")
+        engine = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(engine)
+        current = self._bounded_content_provider.read_current(
+            target.get("content_ref"), target.get("selector_kind"), target.get("selector"))
+        return engine._select_bounded_content_from_host_readback(target, current)
+
+    def resolve_material_commitment(self, request: dict[str, Any], *, root: Path = control_resolution.SOURCE_ROOT) -> dict[str, Any]:
+        """Host-owned bounded preflight; the public resolver has no reader parameter."""
+        selected = self.select_bounded_content(request["bounded_context"], root=root)
+        source = Path(__file__).with_name("material_commitment_preflight.py")
+        spec = importlib.util.spec_from_file_location("host_material_preflight", source)
+        _require(spec is not None and spec.loader is not None, "host-material-preflight-unavailable")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module._resolve_host_bound(request, root, selected)
+
+    def consume_material_commitment(self, request: dict[str, Any], receipt: dict[str, Any],
+                                    *, root: Path = control_resolution.SOURCE_ROOT) -> dict[str, Any]:
+        selected = self.select_bounded_content(request["bounded_context"], root=root)
+        source = Path(__file__).with_name("material_commitment_preflight.py")
+        spec = importlib.util.spec_from_file_location("host_material_preflight_consume", source)
+        _require(spec is not None and spec.loader is not None, "host-material-preflight-unavailable")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module._consume_host_bound(request, receipt, root, selected)
+
+    def prepare_rom_a_return(self, **kwargs: Any) -> dict[str, Any]:
+        """Existing normal host owns the bounded reader before return preparation."""
+        source = control_resolution.SOURCE_ROOT / "tooling/return-bridge/rom_a_normal_path.py"
+        spec = importlib.util.spec_from_file_location("host_rom_a_normal_return", source)
+        _require(spec is not None and spec.loader is not None, "host-rom-a-normal-return-unavailable")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        context_path = kwargs.get("bounded_context")
+        _require(isinstance(context_path, str) and bool(context_path), "host-bounded-return-context-required")
+        _require(not any(key in kwargs for key in ("provider_reader", "bounded_provider_reader", "_host_selection")),
+                 "host-bounded-return-caller-provider-injection")
+        _, raw = module._read(context_path)
+        target = module._json(raw)
+        selected = self.select_bounded_content(target)
+        return module._prepare(**kwargs, _host_selection=selected)
 
     def publish_pm_durable_disposition(self, proposal: dict[str, Any]) -> dict[str, Any]:
         _require(

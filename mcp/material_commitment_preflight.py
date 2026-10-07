@@ -455,7 +455,15 @@ def mcp_decide(request: dict[str, Any], control_state: dict[str, Any], retrieval
     }
 
 
-def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, *, bounded_provider_reader: Any = None) -> dict[str, Any]:
+def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]:
+    return _resolve(request, root, None)
+
+
+def _resolve_host_bound(request: dict[str, Any], root: Path, selected: dict[str, Any]) -> dict[str, Any]:
+    return _resolve(request, root, selected)
+
+
+def _resolve(request: dict[str, Any], root: Path, selected: dict[str, Any] | None) -> dict[str, Any]:
     stage = str(request.get("stage") or "UNDERSTAND_FRAME").upper()
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
     if stage not in MATERIAL_STAGES | EXPLORATORY_STAGES:
@@ -467,8 +475,9 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, *, bounded_provid
     engine = load_relevance_engine(root)
     if request.get("requires_bounded_context") is True and not isinstance(request.get("bounded_context"), dict):
         raise ValueError("bounded-context-selector-required")
-    bounded_context = (engine.select_bounded_content(request["bounded_context"], bounded_provider_reader)
-                       if isinstance(request.get("bounded_context"), dict) else None)
+    if isinstance(request.get("bounded_context"), dict) and not isinstance(selected, dict):
+        raise ValueError("bounded-context-normal-host-binding-required")
+    bounded_context = selected
     retrieval_request = {
         "current_objective": semantics["objective"] or request.get("current_objective"),
         "current_scope": semantics["scope"] or request.get("current_scope"),
@@ -534,9 +543,18 @@ def _freshness_equal(left: Any, right: Any) -> bool:
     return json.dumps(left, sort_keys=True, separators=(",", ":"), ensure_ascii=False) == json.dumps(right, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
-def consume(request: dict[str, Any], receipt: dict[str, Any], root: Path = SOURCE_ROOT,
-            *, bounded_provider_reader: Any = None) -> dict[str, Any]:
-    current = resolve(request, root, bounded_provider_reader=bounded_provider_reader)
+def consume(request: dict[str, Any], receipt: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]:
+    return _consume(request, receipt, root, None)
+
+
+def _consume_host_bound(request: dict[str, Any], receipt: dict[str, Any], root: Path,
+                        selected: dict[str, Any]) -> dict[str, Any]:
+    return _consume(request, receipt, root, selected)
+
+
+def _consume(request: dict[str, Any], receipt: dict[str, Any], root: Path,
+             selected: dict[str, Any] | None) -> dict[str, Any]:
+    current = _resolve(request, root, selected)
     reasons: list[str] = []
     if receipt.get("schema") != "cerebro-material-commitment-preflight-receipt/v1":
         reasons.append("RECEIPT_SCHEMA_INVALID")
@@ -644,14 +662,62 @@ def selftest(root: Path = SOURCE_ROOT) -> dict[str, Any]:
             def read_current(self, content_ref: str, kind: str, selector: str) -> dict[str, Any]:
                 return {"content_ref": content_ref, "selector_kind": kind, "selector": selector,
                         "revision": "r1", "authority_ref": "source:1", "currentness": "CURRENT",
-                        "provider_readback_verified": True, "provenance_refs": ["provider:1"],
+                        "provider_readback_verified": True, "access_verified": True,
+                        "access_scope_ref": "actor:1:doc:1", "provenance_refs": ["provider:1"],
                         "parts": {"current": "Relevant fact", "other": "Unselected history"}}
         bounded_reader = BoundedReader()
+        from control_resolution_host import BoundControlResolutionHost
+        class Persistence:
+            def verify(self, **kwargs: Any) -> dict[str, Any]:
+                return {}
+        class Capability:
+            def is_available(self, **kwargs: Any) -> bool:
+                return False
+            def executor(self, **kwargs: Any) -> Any:
+                raise AssertionError("not-used")
+        bounded_host = BoundControlResolutionHost(
+            persistence_verifier=Persistence(), capability_resolver=Capability(),
+            bounded_content_provider=bounded_reader)
         bounded_request = {**request, "requires_bounded_context": True, "bounded_context": bounded}
-        bounded_result = resolve(bounded_request, fixture, bounded_provider_reader=bounded_reader)
+        bounded_result = bounded_host.resolve_material_commitment(bounded_request, root=fixture)
         check("material-preflight-bounded-current-selection",
               bounded_result["receipt"]["bounded_context"]["selected_text"] == "Relevant fact"
               and "Unselected history" not in str(bounded_result["receipt"]["bounded_context"]))
+        check("material-preflight-host-bound-consume",
+              bounded_host.consume_material_commitment(bounded_request, bounded_result["receipt"], root=fixture)["result"] == "PASS")
+        unbound_host = BoundControlResolutionHost(
+            persistence_verifier=Persistence(), capability_resolver=Capability())
+        try:
+            unbound_host.select_bounded_content(bounded)
+            check("missing-normal-host-provider-refused", False)
+        except Exception:
+            check("missing-normal-host-provider-refused", True)
+        try:
+            bounded_host.select_bounded_content({**bounded, "provider_reader": bounded_reader})
+            check("caller-duck-wrapper-in-target-refused", False)
+        except Exception:
+            check("caller-duck-wrapper-in-target-refused", True)
+        class ForgedHost(BoundControlResolutionHost):
+            pass
+        forged_host = ForgedHost(persistence_verifier=Persistence(),
+                                 capability_resolver=Capability(),
+                                 bounded_content_provider=bounded_reader)
+        try:
+            forged_host.select_bounded_content(bounded, root=fixture)
+            check("caller-subclass-host-origin-refused", False)
+        except Exception:
+            check("caller-subclass-host-origin-refused", True)
+        class NoAccessReader(BoundedReader):
+            def read_current(self, content_ref: str, kind: str, selector: str) -> dict[str, Any]:
+                return {**super().read_current(content_ref, kind, selector), "access_verified": False}
+        no_access_host = BoundControlResolutionHost(
+            persistence_verifier=Persistence(), capability_resolver=Capability(),
+            bounded_content_provider=NoAccessReader())
+        try:
+            no_access_host.select_bounded_content(bounded, root=fixture)
+            check("host-readback-without-access-refused", False)
+        except ValueError:
+            check("host-readback-without-access-refused", True)
         for name, bad in (("missing-bounded-context-refused", {**request, "requires_bounded_context": True}),
                           ("caller-asserted-provider-refused", {**bounded_request,
                            "bounded_context": {**bounded, "provider_readback_verified": True,
@@ -661,6 +727,11 @@ def selftest(root: Path = SOURCE_ROOT) -> dict[str, Any]:
                 check(name, False)
             except ValueError:
                 check(name, True)
+        try:
+            resolve(bounded_request, fixture, bounded_provider_reader=bounded_reader)
+            check("caller-duck-reader-parameter-refused", False)
+        except TypeError:
+            check("caller-duck-reader-parameter-refused", True)
         check("context-invoked", first.get("context_invoked") is True)
         check("mcp-consumed-retrieval", first.get("mcp_consumed") is True and first["mcp_control_decision"]["basis_fingerprint"] == first["control_state"]["basis_fingerprint"])
         check("current-wisdom-only", first["retrieval"]["applicable_wisdom_refs"] == ["W1"])

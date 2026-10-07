@@ -182,12 +182,19 @@ def _input_ref(path_text: str | None) -> dict[str, Any] | None:
     return {"path": str(path), "sha256": _sha(raw), "bytes": len(raw)}
 
 
-def prepare(*, capture_record: str, return_input: str, out_dir: str,
+def prepare(**kwargs: Any) -> dict[str, Any]:
+    """Public file/CLI path cannot transport a reader or self-issued selection."""
+    if any(key in kwargs for key in ("bounded_provider_reader", "provider_reader", "_host_selection")):
+        raise ValueError("bounded-context-normal-host-binding-required")
+    return _prepare(**kwargs)
+
+
+def _prepare(*, capture_record: str, return_input: str, out_dir: str,
             owner_facts: str | None = None, owner_binding: str | None = None,
             parent_manifest: str | None = None, verifier: str | None = None,
             verifier_delta: str | None = None, currentness: str | None = None,
             prior_record: str | None = None,
-            bounded_context: str | None = None, bounded_provider_reader: Any = None) -> dict[str, Any]:
+            bounded_context: str | None = None, _host_selection: dict[str, Any] | None = None) -> dict[str, Any]:
     """Prepare one selection and receipt; never send it or assert recipient use."""
     task, original_path, original, capture_ref = _capture(capture_record)
     returned, return_ref = _return_input(return_input)
@@ -195,9 +202,12 @@ def prepare(*, capture_record: str, return_input: str, out_dir: str,
     if bounded_context is not None:
         _, context_raw = _read(bounded_context)
         context_read = _json(context_raw)
-        engine = _module("rom_a_bounded_context_normal", SOURCE_ROOT /
-                         "tooling/context/relevance_engine.py")
-        selection = engine.select_bounded_content(context_read, bounded_provider_reader)
+        if not isinstance(_host_selection, dict) or any(
+            context_read.get(key) != _host_selection.get(key)
+            for key in ("content_ref", "selector_kind", "selector")
+        ):
+            raise ValueError("bounded-context-normal-host-binding-required")
+        selection = _host_selection
     refs = {name: _input_ref(path) for name, path in (
         ("owner_facts", owner_facts), ("owner_binding", owner_binding),
         ("parent_manifest", parent_manifest), ("verifier", verifier),

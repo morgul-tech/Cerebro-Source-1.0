@@ -151,27 +151,31 @@ def source_fingerprints(root: Path) -> dict[str, str]:
     return {name: sha256_file(path) for name, path in paths.items()}
 
 
-def select_bounded_content(read: dict[str, Any], provider_reader: Any = None) -> dict[str, Any]:
+def select_bounded_content(read: dict[str, Any]) -> dict[str, Any]:
+    """Public direct selection has no provider origin and therefore fails closed."""
+    raise ValueError("bounded-read-normal-host-binding-required")
+
+
+def _select_bounded_content_from_host_readback(read: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
     """Project one current provider selection; never return unselected source parts.
 
-    The provider reader is a host-bound dependency, never supplied inside read.
-    Caller assertions cannot establish currentness, authority, or provenance.
+    Only the existing normal host calls this after its bound reader has read the provider.
+    Public callers cannot supply a reader or turn their payload into host readback.
     """
     if not isinstance(read, dict):
         raise ValueError("bounded-read-object-required")
     required = ("content_ref", "selector")
     if any(not isinstance(read.get(key), str) or not read[key].strip() for key in required):
         raise ValueError("bounded-read-identity-or-selector-missing")
-    if provider_reader is None or not callable(getattr(provider_reader, "read_current", None)):
-        raise ValueError("bounded-read-trusted-provider-reader-required")
     selector_kind = read.get("selector_kind")
     if selector_kind not in {"TAB", "SECTION", "RANGE"}:
         raise ValueError("bounded-read-selector-kind-invalid")
     if read.get("depth") == "DEEPER_READ" and not read.get("task_need_ref"):
         raise ValueError("bounded-read-deeper-task-need-required")
-    current = provider_reader.read_current(read["content_ref"], selector_kind, read["selector"])
     if not isinstance(current, dict) or current.get("currentness") != "CURRENT" or current.get("provider_readback_verified") is not True:
         raise ValueError("bounded-read-current-provider-readback-required")
+    if current.get("access_verified") is not True or not isinstance(current.get("access_scope_ref"), str) or not current["access_scope_ref"].strip():
+        raise ValueError("bounded-read-current-access-verification-required")
     if current.get("content_ref") != read["content_ref"] or current.get("selector_kind") != selector_kind or current.get("selector") != read["selector"]:
         raise ValueError("bounded-read-provider-identity-mismatch")
     if not isinstance(current.get("revision"), str) or not current["revision"].strip() or not isinstance(current.get("authority_ref"), str) or not current["authority_ref"].strip():
@@ -189,7 +193,7 @@ def select_bounded_content(read: dict[str, Any], provider_reader: Any = None) ->
     ):
         raise ValueError("bounded-read-prior-selection-hash-invalid")
     same_prior = isinstance(prior, dict) and all(prior.get(field) == current.get(field)
-        for field in ("content_ref", "revision", "selector", "selector_kind", "authority_ref", "provenance_refs"))
+        for field in ("content_ref", "revision", "selector", "selector_kind", "authority_ref", "provenance_refs", "access_scope_ref"))
     parts = current.get("parts")
     if parts is None:
         if not same_prior or not isinstance(prior.get("selected_text"), str):
@@ -214,6 +218,7 @@ def select_bounded_content(read: dict[str, Any], provider_reader: Any = None) ->
             "selected_text": selected, "selected_sha256": digest, "selection_mode": mode,
             "delta": delta, "authority_ref": current["authority_ref"],
             "provenance_refs": list(provenance), "provider_readback_verified": True,
+            "access_verified": True, "access_scope_ref": current["access_scope_ref"],
             "backend_part_count": len(parts) if isinstance(parts, dict) else 0,
             "model_part_count": 1}
 
@@ -430,6 +435,7 @@ def selftest() -> dict[str, Any]:
     class Reader:
         state = {**bounded, "revision": "r1", "authority_ref": "source:1",
                  "currentness": "CURRENT", "provider_readback_verified": True,
+                 "access_verified": True, "access_scope_ref": "actor:1:doc:1",
                  "provenance_refs": ["provider:1"],
                  "parts": {"current": "Relevant current fact", "history": "Unselected private history"}}
         def read_current(self, content_ref: str, kind: str, selector: str) -> dict[str, Any]:
@@ -441,23 +447,26 @@ def selftest() -> dict[str, Any]:
         check("caller-only-provider-assertion-refused", False)
     except ValueError:
         check("caller-only-provider-assertion-refused", True)
-    selected = select_bounded_content(bounded, reader)
+    def host_project(target: dict[str, Any]) -> dict[str, Any]:
+        return _select_bounded_content_from_host_readback(
+            target, reader.read_current(target["content_ref"], target["selector_kind"], target["selector"]))
+    selected = host_project(bounded)
     check("ordinary-read-projects-only-selected-part",
           selected["selected_text"] == "Relevant current fact" and
           "Unselected private history" not in str(selected) and selected["model_part_count"] == 1)
     reader.state = {**reader.state, "parts": None, "prior_selection": selected}
-    reused = select_bounded_content(bounded, reader)
+    reused = host_project(bounded)
     check("same-revision-exact-selection-reused", reused["selection_mode"] == "SAME_REVISION_REUSE")
     trusted_prior = reader.state["prior_selection"]
     reader.state = {**reader.state, "prior_selection": None}
     try:
-        select_bounded_content({**bounded, "prior_selection": trusted_prior}, reader)
+        host_project({**bounded, "prior_selection": trusted_prior})
         check("caller-supplied-prior-cache-refused", False)
     except ValueError:
         check("caller-supplied-prior-cache-refused", True)
     reader.state = {**reader.state, "prior_selection": trusted_prior}
     reader.state = {**reader.state, "revision": "r2", "parts": {"current": "Changed fact"}}
-    changed = select_bounded_content(bounded, reader)
+    changed = host_project(bounded)
     check("changed-revision-relevant-delta", changed["delta"] == "MATERIAL_DELTA")
     for name, bad, state in (
         ("stale-provider-readback-refused", bounded, {**reader.state, "currentness": "STALE"}),
@@ -470,14 +479,14 @@ def selftest() -> dict[str, Any]:
     ):
         reader.state = state
         try:
-            select_bounded_content(bad, reader)
+            host_project(bad)
             check(name, False)
         except ValueError:
             check(name, True)
     reader.state = {**reader.state, "revision": "r1", "authority_ref": "source:1",
                     "parts": {"history": "Unselected private history"}}
-    deeper = select_bounded_content({**bounded, "selector_kind": "SECTION", "selector": "history",
-                                     "depth": "DEEPER_READ", "task_need_ref": "task:verified-gap"}, reader)
+    deeper = host_project({**bounded, "selector_kind": "SECTION", "selector": "history",
+                           "depth": "DEEPER_READ", "task_need_ref": "task:verified-gap"})
     check("task-justified-deeper-read-targets-one-section",
           deeper["selected_text"] == "Unselected private history" and deeper["model_part_count"] == 1)
     return {"schema": "cerebro-relevance-selftest/v0.3", "result": "PASS" if all(x["result"] == "PASS" for x in tests) else "FAIL", "tests": tests}

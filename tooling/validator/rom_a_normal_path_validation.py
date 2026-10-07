@@ -27,7 +27,9 @@ def module(name: str, relative: str):
 capture = module("capture_normal_test", "tooling/return-bridge/rom_a_dispatch_capture.py")
 normal = module("normal_test", "tooling/return-bridge/rom_a_normal_path.py")
 sys.path.insert(0, str(ROOT / "candidates/bk05-capsule-tool-v1/src"))
+sys.path.insert(0, str(ROOT / "mcp"))
 from bk05_capsule.synthetic import positive_fixture  # noqa: E402
+from control_resolution_host import BoundControlResolutionHost  # noqa: E402
 
 
 class NormalPath(unittest.TestCase):
@@ -182,10 +184,22 @@ class NormalPath(unittest.TestCase):
             def read_current(self, content_ref, kind, selector):
                 return {"content_ref": content_ref, "selector_kind": kind, "selector": selector,
                         "revision": "r1", "authority_ref": "source:1", "currentness": "CURRENT",
-                        "provider_readback_verified": True, "provenance_refs": ["provider:1"],
+                        "provider_readback_verified": True, "access_verified": True,
+                        "access_scope_ref": "actor:1:doc:1", "provenance_refs": ["provider:1"],
                         "parts": {"current": "Current answer", "history": "Unselected history"}}
+        class Persistence:
+            def verify(self, **kwargs):
+                return {}
+        class Capability:
+            def is_available(self, **kwargs):
+                return False
+            def executor(self, **kwargs):
+                raise AssertionError("not-used")
+        host = BoundControlResolutionHost(persistence_verifier=Persistence(),
+                                          capability_resolver=Capability(),
+                                          bounded_content_provider=Reader())
         path = self.write_json("context.json", context)
-        result = normal.prepare(**self.kwargs(), bounded_context=path, bounded_provider_reader=Reader())
+        result = host.prepare_rom_a_return(**self.kwargs(), bounded_context=path)
         receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
         selected = Path(result["receipt"]).parent / receipt["bounded_context"]["file"]
         self.assertEqual(selected.read_text(encoding="utf-8"), "Current answer")
@@ -197,7 +211,7 @@ class NormalPath(unittest.TestCase):
                    "selector_kind": "TAB", "selector": "current", "currentness": "STALE",
                    "provider_readback_verified": True, "provenance_refs": ["provider:1"],
                    "parts": {"current": "Stale answer"}}
-        with self.assertRaisesRegex(ValueError, "trusted-provider-reader-required"):
+        with self.assertRaisesRegex(ValueError, "normal-host-binding-required"):
             normal.prepare(**self.kwargs(), bounded_context=self.write_json("context.json", context))
         self.assertFalse((self.root / "result").exists())
 

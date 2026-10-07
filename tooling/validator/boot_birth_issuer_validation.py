@@ -102,7 +102,7 @@ def main() -> int:
         return (ROOT / url[len(prefix):]).read_bytes().replace(bytes([13, 10]), bytes([10]))
     verified = verify_current_method(HEAD, fetch=pinned_fetch)
     checks["pinned-method-fingerprint-matches-source-contract"] = (
-        verified["method_fingerprint"] == "ceb55184be3e8a9b147b9fe8e0b0a31e95a0e06bb50d25d4c3ae421cb29af35f"
+        verified["method_fingerprint"] == "f00aab16dc748d9f9b75d94525596807e20150123348a091f03e554947c99d96"
     )
     principal_projection = verify_role_method_projection(HEAD, "PRINCIPAL", fetch=pinned_fetch)
     checks["principal-role-projection-binds-stambok-source-ref"] = (
