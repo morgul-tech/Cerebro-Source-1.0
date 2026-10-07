@@ -177,24 +177,27 @@ class NormalPath(unittest.TestCase):
         self.assertEqual(Path(emitted["selected"]).read_bytes(), self.fixture["parent.txt"])
 
     def test_bounded_context_normal_return_exposes_only_selected_tab(self):
-        context = {"content_ref": "doc:1", "revision": "r1", "authority_ref": "source:1",
-                   "selector_kind": "TAB", "selector": "current", "currentness": "CURRENT",
-                   "provider_readback_verified": True, "provenance_refs": ["provider:1"],
-                   "parts": {"current": "Current answer", "history": "Unselected history"}}
+        context = {"content_ref": "doc:1", "selector_kind": "TAB", "selector": "current"}
+        class Reader:
+            def read_current(self, content_ref, kind, selector):
+                return {"content_ref": content_ref, "selector_kind": kind, "selector": selector,
+                        "revision": "r1", "authority_ref": "source:1", "currentness": "CURRENT",
+                        "provider_readback_verified": True, "provenance_refs": ["provider:1"],
+                        "parts": {"current": "Current answer", "history": "Unselected history"}}
         path = self.write_json("context.json", context)
-        result = normal.prepare(**self.kwargs(), bounded_context=path)
+        result = normal.prepare(**self.kwargs(), bounded_context=path, bounded_provider_reader=Reader())
         receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
         selected = Path(result["receipt"]).parent / receipt["bounded_context"]["file"]
         self.assertEqual(selected.read_text(encoding="utf-8"), "Current answer")
         self.assertNotIn("Unselected history", receipt["bounded_context"].__str__())
         self.assertEqual(receipt["recipient_use"]["state"], "NOT_OBSERVED")
 
-    def test_stale_bounded_context_cannot_create_return(self):
+    def test_caller_claimed_bounded_context_cannot_create_return(self):
         context = {"content_ref": "doc:1", "revision": "r1", "authority_ref": "source:1",
                    "selector_kind": "TAB", "selector": "current", "currentness": "STALE",
                    "provider_readback_verified": True, "provenance_refs": ["provider:1"],
                    "parts": {"current": "Stale answer"}}
-        with self.assertRaisesRegex(ValueError, "current-provider-readback-required"):
+        with self.assertRaisesRegex(ValueError, "trusted-provider-reader-required"):
             normal.prepare(**self.kwargs(), bounded_context=self.write_json("context.json", context))
         self.assertFalse((self.root / "result").exists())
 

@@ -187,7 +187,7 @@ def prepare(*, capture_record: str, return_input: str, out_dir: str,
             parent_manifest: str | None = None, verifier: str | None = None,
             verifier_delta: str | None = None, currentness: str | None = None,
             prior_record: str | None = None,
-            bounded_context: str | None = None) -> dict[str, Any]:
+            bounded_context: str | None = None, bounded_provider_reader: Any = None) -> dict[str, Any]:
     """Prepare one selection and receipt; never send it or assert recipient use."""
     task, original_path, original, capture_ref = _capture(capture_record)
     returned, return_ref = _return_input(return_input)
@@ -197,7 +197,7 @@ def prepare(*, capture_record: str, return_input: str, out_dir: str,
         context_read = _json(context_raw)
         engine = _module("rom_a_bounded_context_normal", SOURCE_ROOT /
                          "tooling/context/relevance_engine.py")
-        selection = engine.select_bounded_content(context_read)
+        selection = engine.select_bounded_content(context_read, bounded_provider_reader)
     refs = {name: _input_ref(path) for name, path in (
         ("owner_facts", owner_facts), ("owner_binding", owner_binding),
         ("parent_manifest", parent_manifest), ("verifier", verifier),

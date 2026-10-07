@@ -47,10 +47,12 @@ implementation_learning_loop:
     applies_at: [NORMAL_PREFLIGHT, PM_PRE_STOP, NORMAL_RETURN, ROLE_METHOD_PROJECTION]
     existing_selection_implementation: tooling/context/relevance_engine.py#select_bounded_content
     normal_preflight_consumer: mcp/material_commitment_preflight.py#resolve
+    provider_trust_boundary: HOST_BOUND_READER_PORT_NOT_CALLER_READ_PAYLOAD
+    missing_host_reader_effect: FAIL_CLOSED
     selection_rule: CURRENT_SELECTOR_AND_LEAST_SUFFICIENT_CONTENT
     selected_read_fields: [content_ref, revision, selector_kind, selector, selected_sha256, authority_ref, provenance_refs]
     backend_fetch_may_be_broad_but_model_projection_is_selected_only: true
-    same_revision_reuse_requires: [current_provider_readback, same_content_ref, same_revision, same_selector, same_selected_sha256]
+    same_revision_reuse_requires: [current_provider_readback, reader_owned_prior_selection, same_content_ref, same_revision, same_selector, same_selected_sha256]
     material_delta: COMPARE_SELECTED_CONTENT_SHA_WITH_PRIOR_SELECTION
     deeper_read_requires: [task_need_ref, targeted_selector, necessary_original_authority_and_provenance]
     missing_or_stale_selector_effect: FAIL_CLOSED_NO_FULL_HISTORY_FALLBACK

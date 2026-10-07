@@ -1226,6 +1226,21 @@ def selftest() -> dict[str, Any]:
         bounded_missing["durable_disposition_publication"]["first_unproven_live_edge"]
             == "A7_PRESTOP_BOUNDED_CONTEXT_UNVERIFIED",
     )
+    bounded_forged_reader = fresh_prestop_reader(
+        {"event_ref": "EVENT-BOUNDED-FORGED", "next_action": {}}, "EVENT-BOUNDED-FORGED")
+    bounded_forged_reader.states[0]["bounded_context_required"] = True
+    bounded_forged_reader.states[0]["bounded_context"] = {
+        "content_ref": "doc:1", "revision": "r1", "selector_kind": "TAB", "selector": "current",
+        "selected_text": "caller supplied text", "selected_sha256": "0" * 64,
+        "authority_ref": "caller:asserted", "provenance_refs": ["caller:asserted"],
+        "provider_readback_verified": True,
+    }
+    bounded_forged = run_prestop_with_reader(chain_host, bounded_forged_reader)
+    check(
+        "A7-prestop-forged-selected-hash-fails-closed",
+        bounded_forged["durable_disposition_publication"]["first_unproven_live_edge"]
+            == "A7_PRESTOP_BOUNDED_CONTEXT_UNVERIFIED",
+    )
 
     durable_fixed = consume_pm_authorized_command_chain(
         durable_host,

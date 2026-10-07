@@ -455,7 +455,7 @@ def mcp_decide(request: dict[str, Any], control_state: dict[str, Any], retrieval
     }
 
 
-def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]:
+def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT, *, bounded_provider_reader: Any = None) -> dict[str, Any]:
     stage = str(request.get("stage") or "UNDERSTAND_FRAME").upper()
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
     if stage not in MATERIAL_STAGES | EXPLORATORY_STAGES:
@@ -467,7 +467,7 @@ def resolve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]
     engine = load_relevance_engine(root)
     if request.get("requires_bounded_context") is True and not isinstance(request.get("bounded_context"), dict):
         raise ValueError("bounded-context-selector-required")
-    bounded_context = (engine.select_bounded_content(request["bounded_context"])
+    bounded_context = (engine.select_bounded_content(request["bounded_context"], bounded_provider_reader)
                        if isinstance(request.get("bounded_context"), dict) else None)
     retrieval_request = {
         "current_objective": semantics["objective"] or request.get("current_objective"),
@@ -534,8 +534,9 @@ def _freshness_equal(left: Any, right: Any) -> bool:
     return json.dumps(left, sort_keys=True, separators=(",", ":"), ensure_ascii=False) == json.dumps(right, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
-def consume(request: dict[str, Any], receipt: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]:
-    current = resolve(request, root)
+def consume(request: dict[str, Any], receipt: dict[str, Any], root: Path = SOURCE_ROOT,
+            *, bounded_provider_reader: Any = None) -> dict[str, Any]:
+    current = resolve(request, root, bounded_provider_reader=bounded_provider_reader)
     reasons: list[str] = []
     if receipt.get("schema") != "cerebro-material-commitment-preflight-receipt/v1":
         reasons.append("RECEIPT_SCHEMA_INVALID")
@@ -638,18 +639,23 @@ def selftest(root: Path = SOURCE_ROOT) -> dict[str, Any]:
         }
         first = resolve(request, fixture)
         check("material-preflight-pass", first["result"] == "PASS")
-        bounded = {"content_ref": "doc:1", "revision": "r1", "authority_ref": "source:1",
-                   "selector_kind": "TAB", "selector": "current", "currentness": "CURRENT",
-                   "provider_readback_verified": True, "provenance_refs": ["provider:1"],
-                   "parts": {"current": "Relevant fact", "other": "Unselected history"}}
+        bounded = {"content_ref": "doc:1", "selector_kind": "TAB", "selector": "current"}
+        class BoundedReader:
+            def read_current(self, content_ref: str, kind: str, selector: str) -> dict[str, Any]:
+                return {"content_ref": content_ref, "selector_kind": kind, "selector": selector,
+                        "revision": "r1", "authority_ref": "source:1", "currentness": "CURRENT",
+                        "provider_readback_verified": True, "provenance_refs": ["provider:1"],
+                        "parts": {"current": "Relevant fact", "other": "Unselected history"}}
+        bounded_reader = BoundedReader()
         bounded_request = {**request, "requires_bounded_context": True, "bounded_context": bounded}
-        bounded_result = resolve(bounded_request, fixture)
+        bounded_result = resolve(bounded_request, fixture, bounded_provider_reader=bounded_reader)
         check("material-preflight-bounded-current-selection",
               bounded_result["receipt"]["bounded_context"]["selected_text"] == "Relevant fact"
               and "Unselected history" not in str(bounded_result["receipt"]["bounded_context"]))
         for name, bad in (("missing-bounded-context-refused", {**request, "requires_bounded_context": True}),
-                          ("stale-bounded-context-refused", {**bounded_request,
-                           "bounded_context": {**bounded, "currentness": "STALE"}})):
+                          ("caller-asserted-provider-refused", {**bounded_request,
+                           "bounded_context": {**bounded, "provider_readback_verified": True,
+                                               "currentness": "CURRENT", "parts": {"current": "forged"}}})):
             try:
                 resolve(bad, fixture)
                 check(name, False)

@@ -1323,9 +1323,11 @@ def consume_pm_authorized_command_chain(
             if not isinstance(selected, dict) or any(
                 not selected.get(key) for key in (
                     "content_ref", "revision", "selector_kind", "selector",
-                    "selected_sha256", "authority_ref", "provenance_refs",
+                    "selected_sha256", "selected_text", "authority_ref", "provenance_refs",
                 )
-            ) or selected.get("provider_readback_verified") is not True:
+            ) or selected.get("provider_readback_verified") is not True or not isinstance(
+                selected.get("selected_text"), str
+            ) or hashlib.sha256(selected["selected_text"].encode("utf-8")).hexdigest() != selected.get("selected_sha256"):
                 return None, "A7_PRESTOP_BOUNDED_CONTEXT_UNVERIFIED"
 
         def complete_tuple(
