@@ -340,6 +340,53 @@ class NormalPath(unittest.TestCase):
             normal.prepare(**self.kwargs(), bounded_context=self.write_json("context.json", context))
         self.assertFalse((self.root / "result").exists())
 
+    def test_human_action_first_normal_return_cases(self):
+        base = {"result": "Den isolerte testen er bestått.", "missing": None,
+                "next_action": "Tilbakekall testbrukerne", "next_room": "X6",
+                "next_window": "ROOM_X62", "human_wake_required": True,
+                "already_active": False, "no_action": False}
+        wake = normal._human_return(base)
+        self.assertEqual(wake["lines"][0], base["result"])
+        self.assertEqual(wake["lines"][-1], "Andreas: BUE X6.")
+        self.assertIn("ROOM_X62", wake["lines"][1])
+        self.assertEqual(wake["authority"], "NONE")
+
+        active = normal._human_return({**base, "human_wake_required": False,
+                                       "already_active": True})
+        self.assertEqual(active["lines"][-1], "Ingen handling fra deg nå.")
+        self.assertFalse(any("BUE" in line for line in active["lines"]))
+
+        no_action = normal._human_return({**base, "next_action": None, "next_room": None,
+                                          "next_window": None, "human_wake_required": False,
+                                          "no_action": True})
+        self.assertEqual(no_action["lines"], [base["result"], "Ingen handling fra deg nå."])
+
+        transfer = normal._human_return({**base, "result": "CLI er installert.",
+                                         "next_action": "Kopier CLI til P55 og kontroller versjon",
+                                         "human_wake_required": False})
+        self.assertIn("Kopier CLI", transfer["lines"][1])
+        self.assertNotIn("BUE", " ".join(transfer["lines"]))
+
+        blocker = normal._human_return({**base, "result": "Testen kan ikke starte.",
+                                        "missing": "nats.exe på P55"})
+        self.assertEqual(blocker["lines"][0], "Mangler: nats.exe på P55")
+        with self.assertRaisesRegex(ValueError, "ACTIVE_WAKE_CONFLICT"):
+            normal._human_return({**base, "already_active": True})
+        with self.assertRaisesRegex(ValueError, "EXACT_NEXT_REQUIRED"):
+            normal._human_return({**base, "next_room": None})
+
+        # A normal caller gets the same bounded projection in its receipt,
+        # but that local receipt cannot assert recipient use or provider truth.
+        self.return_file = self.write_json("human-return.json", {
+            "schema": normal.RETURN_SCHEMA, "observation_ref": "SYN-OBS-HUMAN",
+            "return": self.returned, "human_return": {**base,
+                "result": "Testen kan ikke starte.", "missing": "nats.exe på P55"},
+        })
+        result = normal.prepare(**self.kwargs("human-result"))
+        receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
+        self.assertEqual(receipt["human_return"]["lines"][-1], "Andreas: BUE X6.")
+        self.assertEqual(receipt["recipient_use"]["state"], "NOT_OBSERVED")
+
 
 if __name__ == "__main__":
     unittest.main()

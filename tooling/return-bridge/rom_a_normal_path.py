@@ -36,6 +36,10 @@ RETURN_FIELDS = frozenset({
     "actor_ref", "generation_ref", "carrier_ref", "arc_ref", "task_ref",
     "task_revision", "original_sha256", "contract_kind",
 })
+HUMAN_RETURN_FIELDS = frozenset({
+    "result", "missing", "next_action", "next_room", "next_window",
+    "human_wake_required", "already_active", "no_action",
+})
 REPAIR_KINDS = frozenset({"REPAIR", "REFINE"})
 PARENT_FIELDS = (
     "actor_ref", "effect_class", "privacy_class", "live_scope", "authority_class",
@@ -141,11 +145,45 @@ def _capture(record_path_text: str) -> tuple[dict[str, Any], Path, bytes, dict[s
     }
 
 
-def _return_input(path_text: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any] | None]:
+def _human_return(value: Any) -> dict[str, Any]:
+    """Render caller-observed facts; never infer authority or a Human gate from prose."""
+    if not isinstance(value, dict) or set(value) != HUMAN_RETURN_FIELDS:
+        raise ValueError("HUMAN_RETURN_FIELDS_INVALID")
+    result = _text(value["result"], "HUMAN_RETURN_RESULT")
+    missing = value["missing"]
+    if missing is not None:
+        missing = _text(missing, "HUMAN_RETURN_MISSING")
+    action, room, window = (value[name] for name in ("next_action", "next_room", "next_window"))
+    if any(item is not None and (not isinstance(item, str) or not item.strip() or item != item.strip())
+           for item in (action, room, window)):
+        raise ValueError("HUMAN_RETURN_NEXT_INVALID")
+    wake, active, no_action = (value[name] for name in
+                               ("human_wake_required", "already_active", "no_action"))
+    if any(type(item) is not bool for item in (wake, active, no_action)):
+        raise ValueError("HUMAN_RETURN_STATE_INVALID")
+    if no_action:
+        if any(item is not None for item in (missing, action, room, window)) or wake or active:
+            raise ValueError("HUMAN_RETURN_NO_ACTION_CONFLICT")
+        lines = [result, "Ingen handling fra deg nå."]
+    else:
+        if not action or not room or not window:
+            raise ValueError("HUMAN_RETURN_EXACT_NEXT_REQUIRED")
+        if wake and active:
+            raise ValueError("HUMAN_RETURN_ACTIVE_WAKE_CONFLICT")
+        lines = ["Mangler: " + missing, result] if missing else [result]
+        lines.append("Neste: " + action + " · Ansvar: " + room + " / " + window)
+        lines.append("Andreas: BUE " + room + "." if wake else "Ingen handling fra deg nå.")
+    return {"schema": "cerebro-human-action-first-return/v1", "lines": lines,
+            "human_wake_required": wake, "next_room": room,
+            "source": "CALLER_OBSERVED_NOT_PROVIDER_VERIFIED", "authority": "NONE"}
+
+
+def _return_input(path_text: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any] | None, dict[str, Any] | None]:
     path, raw = _read(path_text)
     obj = _json(raw)
-    if set(obj) not in ({"schema", "observation_ref", "return"},
-                        {"schema", "observation_ref", "return", "facts"}) or obj["schema"] != RETURN_SCHEMA:
+    if not {"schema", "observation_ref", "return"}.issubset(obj) or \
+            set(obj) - {"schema", "observation_ref", "return", "facts", "human_return"} or \
+            obj["schema"] != RETURN_SCHEMA:
         raise ValueError("RETURN_SCHEMA_INVALID")
     _text(obj["observation_ref"], "RETURN_OBSERVATION_REF")
     returned = obj["return"]
@@ -156,9 +194,10 @@ def _return_input(path_text: str) -> tuple[dict[str, Any], dict[str, Any], dict[
     facts = obj.get("facts")
     if facts is not None and not isinstance(facts, dict):
         raise ValueError("RETURN_FACTS_OBJECT_REQUIRED")
+    human_return = _human_return(obj["human_return"]) if "human_return" in obj else None
     return returned, {"path": str(path), "sha256": _sha(raw),
                       "bytes": len(raw), "observation_ref": obj["observation_ref"],
-                      "authority": "CALLER_SUPPLIED_NOT_PROVIDER_VERIFIED"}, facts
+                      "authority": "CALLER_SUPPLIED_NOT_PROVIDER_VERIFIED"}, facts, human_return
 
 
 def _parent_manifest(task: dict[str, Any], original_sha256: str,
@@ -252,7 +291,7 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
             bounded_context: str | None = None, _host_selection: dict[str, Any] | None = None) -> dict[str, Any]:
     """Prepare one selection and receipt; never send it or assert recipient use."""
     task, original_path, original, capture_ref = _capture(capture_record)
-    returned, return_ref, return_facts = _return_input(return_input)
+    returned, return_ref, return_facts, human_return = _return_input(return_input)
     supplied = {"owner_facts": owner_facts, "owner_binding": owner_binding,
                 "parent_manifest": parent_manifest, "verifier": verifier,
                 "verifier_delta": verifier_delta, "currentness": currentness,
@@ -391,12 +430,15 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
                    "semantic_review_proven": False, "effect": "NONE_CLAIMED"}
         if context_ref is not None:
             receipt["bounded_context"] = context_ref
+        if human_return is not None:
+            receipt["human_return"] = human_return
         (pending / "receipt.json").write_text(
             json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
         os.rename(pending, out)
         return {"receipt": str(out / "receipt.json"), "selected": str(out / name),
                 "selection": adoption["selection"], "selected_sha256": _sha(payload),
-                "missing_inputs": missing, "recipient_use": "NOT_OBSERVED", "authority": "NONE"}
+                "missing_inputs": missing, "recipient_use": "NOT_OBSERVED", "authority": "NONE",
+                "human_return": human_return}
     finally:
         if pending.exists():
             shutil.rmtree(pending)

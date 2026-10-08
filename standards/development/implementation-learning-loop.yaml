@@ -62,6 +62,22 @@ implementation_learning_loop:
     no_new_registry_or_truth_store: true
     no_role_or_work_authority_from_method: true
 
+  human_action_first_normal_return:
+    id: P22-T7-HUMAN-COMMUNICATION-ACTION-FIRST-20261008-001
+    authority: NONE
+    applies_at: [NORMAL_PREFLIGHT, PM_PRE_STOP, NORMAL_RETURN, ROLE_METHOD_PROJECTION]
+    existing_normal_return_consumer: tooling/return-bridge/rom_a_normal_path.py#_human_return
+    typed_inputs: [result, missing, next_action, next_room, next_window, human_wake_required, already_active, no_action]
+    order: [concrete_result_or_missing, exact_next_action_and_room_window, human_action_only_when_needed]
+    real_human_wake_only: "Andreas: BUE <room>"
+    already_active_or_machine_continues: "Ingen handling fra deg nå."
+    no_action: "Ingen handling fra deg nå."
+    simple_install_or_transfer_requires_new_owner_gate: false
+    return_receipt_retains_full_facts_and_way_home: true
+    caller_observation_ne_provider_or_recipient_proof: true
+    no_model_review_per_return: true
+    no_new_service_or_authority: true
+
   same_patch_feedback:
     generalizable_learning_discovered_during_patch: MUST_BE_INCORPORATED_BEFORE_CLOSURE
     chat_memory_only_persistence: PROHIBITED
