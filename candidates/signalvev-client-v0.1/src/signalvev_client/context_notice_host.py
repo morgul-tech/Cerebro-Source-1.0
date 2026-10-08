@@ -24,6 +24,7 @@ from .pm_x9_normal_host import HostRefused, _profile, _same_path
 from .session import ListenClient
 
 REMOTE_FACTORY = "signalvev_client.context_notice_host:make_ports"
+CURRENT_PM_OWNER_REF = "CURRENT_PM_PROJECT_MANAGER_C1A05B39"
 
 
 def make_ports(*_args: Any, **_kwargs: Any) -> None:
@@ -31,10 +32,9 @@ def make_ports(*_args: Any, **_kwargs: Any) -> None:
     raise HostRefused("REMOTE_CONTEXT_NOTICE_ROUTE_ONLY")
 
 
-def _binding(profile_path: Path, binding_path: Path, *, require_enabled: bool = True
-             ) -> tuple[dict, pm_x9.PmX9Settings]:
+def _binding(profile_path: Path, binding_path: Path) -> tuple[dict, pm_x9.PmX9Settings]:
     profile = _profile(profile_path)
-    if require_enabled and profile.get("enabled") is not True:
+    if profile.get("enabled") is not True:
         raise HostRefused("PROFILE_DISABLED")
     settings = _load_settings(binding_path)
     if settings.mode != pm_x9.MODE_PRODUCTION or settings.ports_factory != REMOTE_FACTORY:
@@ -75,8 +75,7 @@ def compose_runtime(profile_path: Path, binding_path: Path, receiver_path: Path,
     return ListenClient(receiver, resolver=resolver)
 
 
-def compose_admitted_runtime(profile_path: Path, binding_path: Path,
-                             receiver_path: Path) -> ListenClient:
+def compose_admitted_runtime(profile_path: Path, receiver_path: Path) -> ListenClient:
     """Build an inert receiver from the current provider admission and OFF lease.
 
     The protected resolver port is fixed to this Liv host and rechecks admission
@@ -85,7 +84,7 @@ def compose_admitted_runtime(profile_path: Path, binding_path: Path,
     if (not isinstance(profile_path, Path) or profile_path.is_symlink()
             or profile_path.resolve() != PROFILE_PATH):
         raise HostRefused("LOCAL_SESSION_PROFILE_PATH_MISMATCH")
-    profile, settings = _binding(profile_path, binding_path, require_enabled=False)
+    profile = _profile(profile_path)
     if profile.get("enabled") is not False:
         raise HostRefused("LOCAL_SESSION_PROFILE_MUST_REMAIN_OFF")
     receiver = load_config(receiver_path)
@@ -93,7 +92,7 @@ def compose_admitted_runtime(profile_path: Path, binding_path: Path,
             not _same_path(receiver.credentials_file, profile.get("receiver_credential_ref")) or
             not _same_path(receiver.evidence_dir, profile.get("receiver_state_dir")) or
             len(receiver.interests) != 1 or
-            receiver.interests[0].owner_ref != settings.owner_ref or
+            receiver.interests[0].owner_ref != CURRENT_PM_OWNER_REF or
             receiver.interests[0].referent_type != pm_x9.PM_READY_HINT or
             receiver.interests[0].referent_id is not None):
         raise HostRefused("RECEIVER_PROFILE_MISMATCH")
@@ -107,5 +106,5 @@ def compose_admitted_runtime(profile_path: Path, binding_path: Path,
         except (LocalRuntimeSessionError, PortUnavailable) as exc:
             raise ResolverUnavailable("BK07_ADMISSION_NOT_CURRENT") from exc
 
-    resolver = RuntimeContextResolver(owner_ref=settings.owner_ref, call_runtime=current_call)
+    resolver = RuntimeContextResolver(owner_ref=CURRENT_PM_OWNER_REF, call_runtime=current_call)
     return ListenClient(receiver, resolver=resolver)

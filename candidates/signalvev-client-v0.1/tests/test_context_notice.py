@@ -133,14 +133,13 @@ class NoticeTests(unittest.TestCase):
         profile = {"enabled": False, "broker": cfg.server,
                    "receiver_credential_ref": str(receiver.credentials_file),
                    "receiver_state_dir": str(receiver.evidence_dir)}
-        settings = replace(self.settings, ports_factory=host.REMOTE_FACTORY)
-        with (patch.object(host, "_profile", return_value=profile),
-              patch.object(host, "_load_settings", return_value=settings),
+        with (patch.object(host, "CURRENT_PM_OWNER_REF", self.settings.owner_ref),
+              patch.object(host, "_profile", return_value=profile),
               patch.object(host, "load_config", return_value=receiver),
               patch.object(host, "read_admitted_local_session", return_value={}) as admitted,
               patch.object(host, "resolve_current_notice",
                            return_value={"structuredContent": {"state": "HOLD"}}) as resolved):
-            listener = host.compose_admitted_runtime(host.PROFILE_PATH, None, None)
+            listener = host.compose_admitted_runtime(host.PROFILE_PATH, None)
             self.assertIsNone(listener.receiver)
             admitted.assert_called_once_with(profile_path=host.PROFILE_PATH, state_dir=host.STATE_DIR)
             listener._resolver.call_runtime(notice.OBSERVE, {"event_id": "pm-event:new1"})
@@ -154,13 +153,18 @@ class NoticeTests(unittest.TestCase):
             self.assertEqual(resolved.call_count, 2)
 
         with (patch.object(host, "_profile", return_value={**profile, "enabled": True}),
-              patch.object(host, "_load_settings", return_value=settings),
               patch.object(host, "read_admitted_local_session") as admitted):
             with self.assertRaisesRegex(host.HostRefused, "PROFILE_MUST_REMAIN_OFF"):
-                host.compose_admitted_runtime(host.PROFILE_PATH, None, None)
+                host.compose_admitted_runtime(host.PROFILE_PATH, None)
             admitted.assert_not_called()
         with self.assertRaisesRegex(host.HostRefused, "PROFILE_PATH_MISMATCH"):
-            host.compose_admitted_runtime(base / "foreign-profile.json", None, None)
+            host.compose_admitted_runtime(base / "foreign-profile.json", None)
+        with (patch.object(host, "_profile", return_value=profile),
+              patch.object(host, "load_config", return_value=receiver),
+              patch.object(host, "read_admitted_local_session") as admitted):
+            with self.assertRaisesRegex(host.HostRefused, "RECEIVER_PROFILE_MISMATCH"):
+                host.compose_admitted_runtime(host.PROFILE_PATH, None)
+            admitted.assert_not_called()
 
 
 if __name__ == "__main__":
