@@ -12,6 +12,7 @@ from signalvev_client.local_runtime_admission import (
 from signalvev_client.local_runtime_session_host import (
     LocalRuntimeSessionError, LocalRuntimeSessionHost,
 )
+from signalvev_client import local_runtime_provider_port as provider_port
 
 
 class LocalRuntimeAdmissionTests(unittest.TestCase):
@@ -36,6 +37,13 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
             "tenant": "tenant", "workspace": "workspace", "project": "project",
             "principal": "principal", "enabled": True,
         }
+        policy = {key: self.binding[key] for key in (
+            "binding_id", "session_ref", "issuer", "client_id", "audience", "tenant",
+            "workspace", "project", "principal")}
+        policy_patch = patch.dict("signalvev_client.local_runtime_admission._EXACT_IDENTITY",
+                                  policy, clear=True)
+        policy_patch.start()
+        self.addCleanup(policy_patch.stop)
 
     def admit(self, provider=None):
         with patch("signalvev_client.local_runtime_admission._read_provider_binding",
@@ -78,15 +86,24 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
                 with self.assertRaises(LocalRuntimeSessionError):
                     self.read(provider=lambda: dict(self.binding, **changed))
 
+    def test_host_pins_exact_provider_identity(self):
+        for changed in ({"binding_id": "CSB-forged"}, {"tenant": "OTHER"},
+                        {"client_id": "OTHER"}, {"audience": "OTHER"}):
+            with self.subTest(changed=changed):
+                with self.assertRaisesRegex(LocalRuntimeSessionError, "IDENTITY_MISMATCH"):
+                    self.admit(provider=lambda: dict(self.binding, **changed))
+
     def test_caller_cannot_supply_authority_or_forge_readback(self):
         with self.assertRaises(TypeError):
             admit_local_runtime_session(profile_path=self.profile, state_dir=self.state,
                                         expected_binding=self.binding,
                                         read_provider_binding=lambda: self.binding,
                                         clock=lambda: self.now)
-        with self.assertRaisesRegex(LocalRuntimeSessionError, "TRUSTED_PROVIDER_UNBOUND"):
-            admit_local_runtime_session(profile_path=self.profile, state_dir=self.state,
-                                        clock=lambda: self.now)
+        with patch.object(provider_port, "read_current_binding",
+                          side_effect=provider_port.PortUnavailable("synthetic unavailable")):
+            with self.assertRaisesRegex(LocalRuntimeSessionError, "PROVIDER_READ_FAILED"):
+                admit_local_runtime_session(profile_path=self.profile, state_dir=self.state,
+                                            clock=lambda: self.now)
         self.assertFalse((self.state / "admission.json").exists())
         forged = {"schema": ADMISSION_SCHEMA, "binding": dict(self.binding, binding_id="FORGED"),
                   "session_ref": self.lease["session_ref"], "pid": self.lease["pid"],
@@ -94,17 +111,21 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
                   "started_at_epoch": self.lease["started_at_epoch"],
                   "admitted_at_epoch": self.now}
         (self.state / "admission.json").write_text(json.dumps(forged), encoding="utf-8")
-        with self.assertRaisesRegex(LocalRuntimeSessionError, "TRUSTED_PROVIDER_UNBOUND"):
-            read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
-                                        clock=lambda: self.now)
+        with patch.object(provider_port, "read_current_binding",
+                          side_effect=provider_port.PortUnavailable("synthetic unavailable")):
+            with self.assertRaisesRegex(LocalRuntimeSessionError, "PROVIDER_READ_FAILED"):
+                read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
+                                            clock=lambda: self.now)
         self.admit()  # internal test seam only; not a public authority argument
         with self.assertRaises(TypeError):
             read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
                                         read_provider_binding=lambda: self.binding,
                                         clock=lambda: self.now)
-        with self.assertRaisesRegex(LocalRuntimeSessionError, "TRUSTED_PROVIDER_UNBOUND"):
-            read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
-                                        clock=lambda: self.now)
+        with patch.object(provider_port, "read_current_binding",
+                          side_effect=provider_port.PortUnavailable("synthetic unavailable")):
+            with self.assertRaisesRegex(LocalRuntimeSessionError, "PROVIDER_READ_FAILED"):
+                read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
+                                            clock=lambda: self.now)
 
     def test_currentness_rechecked_after_admission(self):
         self.admit()
@@ -119,6 +140,22 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(LocalRuntimeSessionError, "PROVIDER_READ_FAILED"):
             self.admit(provider=lambda: (_ for _ in ()).throw(OSError("provider unavailable")))
         self.assertFalse((self.state / "admission.json").exists())
+
+    def test_fixed_protected_port_has_no_caller_selector(self):
+        calls = []
+
+        async def bound_call():
+            calls.append(provider_port.READ_TOOL)
+            return {"structuredContent": {
+                "schema": "cerebro-local-runtime-binding-read/v1",
+                "binding": dict(self.binding), "currentness": "CURRENT",
+                "repository_permission_required": False}}
+
+        with patch.object(provider_port, "_call", side_effect=bound_call):
+            self.assertEqual(provider_port.read_current_binding(), self.binding)
+        self.assertEqual(calls, [provider_port.READ_TOOL])
+        with self.assertRaises(TypeError):
+            provider_port.read_current_binding("local:forged")
         self.now = 100.0
         self.host.stop()
         with self.assertRaisesRegex(LocalRuntimeSessionError, "NOT_CURRENT"):

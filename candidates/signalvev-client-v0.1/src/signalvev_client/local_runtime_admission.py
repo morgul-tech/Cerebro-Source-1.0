@@ -22,6 +22,17 @@ _BINDING_FIELDS = (
     "session_ref", "issuer", "client_id", "audience", "tenant", "workspace",
     "project", "principal", "enabled",
 )
+_EXACT_IDENTITY = {
+    "binding_id": "CSB-1DE1D89140DF68AC917715EC",
+    "session_ref": "local:c549c9ba53c741d39558150beab3d2b6",
+    "issuer": "https://dev-lmzknalapbdhfdua.us.auth0.com",
+    "client_id": "s6Lu5katfEwbnFEoRyxq7RFvx1fG5i1v",
+    "audience": "https://cerebro-context-deploy-production.up.railway.app/bk07-runtime",
+    "tenant": "CEREBRO-TENANT-1",
+    "workspace": "BOOT-FULL-IMPLEMENTER-20260902T033946Z-GENERIC-7BAC373D",
+    "project": "TOTAL_MCP_REVISION",
+    "principal": "s6Lu5katfEwbnFEoRyxq7RFvx1fG5i1v@clients",
+}
 
 
 def _binding(value: Mapping) -> dict:
@@ -40,13 +51,17 @@ def _binding(value: Mapping) -> dict:
 
 
 def _read_provider_binding() -> Mapping:
-    """Host-owned provider port. Deliberately unbound in this Source candidate."""
-    raise LocalRuntimeSessionError("BK07_TRUSTED_PROVIDER_UNBOUND")
+    """Fixed protected transport; no caller callback or authority argument."""
+    from .local_runtime_provider_port import read_current_binding
+    return read_current_binding()
 
 
 def _provider_binding() -> dict:
     try:
-        return _binding(_read_provider_binding())
+        binding = _binding(_read_provider_binding())
+        if any(binding[key] != expected for key, expected in _EXACT_IDENTITY.items()):
+            raise LocalRuntimeSessionError("BK07_BINDING_IDENTITY_MISMATCH")
+        return binding
     except LocalRuntimeSessionError:
         raise
     except Exception as exc:
