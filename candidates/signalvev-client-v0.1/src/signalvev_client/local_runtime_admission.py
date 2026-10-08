@@ -8,6 +8,7 @@ caller-supplied evidence and the local admission file are never authority.
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 from typing import Callable, Mapping
@@ -44,6 +45,7 @@ def _binding(value: Mapping) -> dict:
     if (binding["enabled"] is not True
             or any(not isinstance(binding[key], str) or not binding[key] for key in strings)
             or not binding["session_ref"].startswith("local:")
+            or re.fullmatch(r"[0-9a-f]{64}", binding["binding_fingerprint"]) is None
             or any(type(binding[key]) is not int or binding[key] < 1
                    for key in ("project_revision", "session_revision"))):
         raise LocalRuntimeSessionError("BK07_BINDING_INVALID")
