@@ -9,7 +9,9 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -158,6 +160,131 @@ class NormalPath(unittest.TestCase):
         self.assertFalse(receipt["selected"]["recipient_delivery_qualified"])
         self.assertEqual(receipt["recipient_use"]["state"], "NOT_OBSERVED")
         self.assertFalse(receipt["adoption"]["work_consumed"])
+        with self.assertRaisesRegex(ValueError, "READBACK_MISMATCH"):
+            normal._dispatch_selected(result, Sender())
+        self.assertEqual(len(sent), 1)
+
+    def test_accepted_then_receipt_write_failure_never_resends(self):
+        result = normal.prepare(**self.kwargs())
+        calls = []
+        class Sender:
+            def send_selected(self, **kwargs):
+                calls.append(kwargs)
+                return {"state": "ACCEPTED", "recipient_ref": kwargs["recipient_ref"],
+                        "selected_sha256": kwargs["selected_sha256"],
+                        "delivery_ref": "SYN-ACCEPTED-1"}
+        original_replace = normal.os.replace
+        replaces = []
+        def fail_after_accept(source, target):
+            replaces.append((source, target))
+            if len(replaces) == 2:
+                raise OSError("post-accept persistence failed")
+            return original_replace(source, target)
+        with mock.patch.object(normal.os, "replace", side_effect=fail_after_accept):
+            with self.assertRaisesRegex(OSError, "post-accept"):
+                normal._dispatch_selected(result, Sender())
+        receipt = json.loads(Path(result["receipt"]).read_text(encoding="utf-8"))
+        self.assertEqual(receipt["dispatch"]["state"], "UNKNOWN_NO_RETRY")
+        self.assertTrue((Path(result["receipt"]).parent / ".receipt-dispatch-intent.json").is_file())
+        with self.assertRaisesRegex(ValueError, "READBACK_MISMATCH"):
+            normal._dispatch_selected(result, Sender())
+        self.assertEqual(len(calls), 1)
+
+    def test_pre_send_persistence_failure_never_calls_sender_or_retries(self):
+        result = normal.prepare(**self.kwargs())
+        sender = mock.Mock()
+        with mock.patch.object(normal.os, "replace", side_effect=OSError("before-send failed")):
+            with self.assertRaisesRegex(OSError, "before-send"):
+                normal._dispatch_selected(result, sender)
+        sender.send_selected.assert_not_called()
+        self.assertEqual(json.loads(Path(result["receipt"]).read_text())["dispatch"]["state"],
+                         "NOT_SENT")
+        with self.assertRaisesRegex(ValueError, "UNKNOWN_NO_RETRY"):
+            normal._dispatch_selected(result, sender)
+        sender.send_selected.assert_not_called()
+
+    def test_ambiguous_sender_outcome_holds_after_restart(self):
+        result = normal.prepare(**self.kwargs())
+        sender = mock.Mock()
+        sender.send_selected.side_effect = RuntimeError("ambiguous external outcome")
+        with self.assertRaisesRegex(RuntimeError, "ambiguous"):
+            normal._dispatch_selected(result, sender)
+        self.assertEqual(json.loads(Path(result["receipt"]).read_text())["dispatch"]["state"],
+                         "UNKNOWN_NO_RETRY")
+        with self.assertRaisesRegex(ValueError, "READBACK_MISMATCH"):
+            normal._dispatch_selected(dict(result), sender)
+        sender.send_selected.assert_called_once()
+
+    def test_concurrent_dispatch_claim_allows_only_one_send(self):
+        result = normal.prepare(**self.kwargs())
+        entered, release = threading.Event(), threading.Event()
+        calls, errors = [], []
+        class Sender:
+            def send_selected(self, **kwargs):
+                calls.append(kwargs)
+                entered.set()
+                if not release.wait(5):
+                    raise RuntimeError("test sender timeout")
+                return {"state": "ACCEPTED", "recipient_ref": kwargs["recipient_ref"],
+                        "selected_sha256": kwargs["selected_sha256"],
+                        "delivery_ref": "SYN-ACCEPTED-1"}
+        sender = Sender()
+        def first():
+            try:
+                normal._dispatch_selected(result, sender)
+            except Exception as exc:
+                errors.append(exc)
+        thread = threading.Thread(target=first)
+        thread.start()
+        self.assertTrue(entered.wait(5))
+        try:
+            with self.assertRaisesRegex(ValueError, "READBACK_MISMATCH"):
+                normal._dispatch_selected(result, sender)
+        finally:
+            release.set()
+            thread.join(5)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(len(calls), 1)
+
+    def test_competing_caller_cannot_send_while_intent_precedes_receipt(self):
+        result = normal.prepare(**self.kwargs())
+        entered, release = threading.Event(), threading.Event()
+        calls, errors = [], []
+        original_replace = normal.os.replace
+        def pause_first_replace(source, target):
+            entered.set()
+            if not release.wait(5):
+                raise RuntimeError("test replace timeout")
+            return original_replace(source, target)
+        class Sender:
+            def send_selected(self, **kwargs):
+                calls.append(kwargs)
+                return {"state": "ACCEPTED", "recipient_ref": kwargs["recipient_ref"],
+                        "selected_sha256": kwargs["selected_sha256"],
+                        "delivery_ref": "SYN-ACCEPTED-1"}
+        sender = Sender()
+        def first():
+            try:
+                normal._dispatch_selected(result, sender)
+            except Exception as exc:
+                errors.append(exc)
+        with mock.patch.object(normal.os, "replace", side_effect=pause_first_replace):
+            thread = threading.Thread(target=first)
+            thread.start()
+            self.assertTrue(entered.wait(5))
+            try:
+                self.assertEqual(json.loads(Path(result["receipt"]).read_text())["dispatch"]["state"],
+                                 "NOT_SENT")
+                with self.assertRaisesRegex(ValueError, "UNKNOWN_NO_RETRY"):
+                    normal._dispatch_selected(result, sender)
+                self.assertEqual(calls, [])
+            finally:
+                release.set()
+                thread.join(5)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(len(calls), 1)
 
     def test_missing_producer_inputs_keeps_exact_full_original_and_marks_gap(self):
         result = normal.prepare(**self.kwargs())
