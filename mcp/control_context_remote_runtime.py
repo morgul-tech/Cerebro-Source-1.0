@@ -386,6 +386,8 @@ class ControlContextRemoteRuntime:
     principal_succession_reader: Any | None = field(default=None, repr=False)
     machine_diary_effect_verifier: Any | None = field(default=None, repr=False)
     human_t3_host: HumanT3BreakGlassHost | None = field(default=None, repr=False)
+    rom_a_bounded_content_provider: Any | None = field(default=None, repr=False)
+    rom_a_selected_dispatcher: Any | None = field(default=None, repr=False)
 
     def descriptor(self) -> dict[str, Any]:
         sdk = official_mcp_sdk_runtime()
@@ -416,6 +418,11 @@ class ControlContextRemoteRuntime:
             "machine_diary_effect_verifier_bound": self.machine_diary_effect_verifier is not None,
             "human_t3_host_bound": self.human_t3_host is not None,
             "human_t3_remote_activation": "NOT_PROVEN",
+            "rom_a_normal_return_ports_bound": (
+                self.rom_a_bounded_content_provider is not None
+                and self.rom_a_selected_dispatcher is not None
+            ),
+            "rom_a_recipient_use_proven": False,
             "deployed": False,
         }
 
@@ -444,6 +451,8 @@ class ControlContextRemoteRuntime:
             capability_resolver=capability_resolver,
             pm_profile_verifier=self.pm_lifecycle_verifier,
             pm_disposition_publisher=guarded_publisher,
+            bounded_content_provider=self.rom_a_bounded_content_provider,
+            rom_a_selected_dispatcher=self.rom_a_selected_dispatcher,
         )
 
 
@@ -473,6 +482,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     principal_succession_mcp_authorizer: Any | None = None,
     human_t3_current_reader: Any | None = None,
     human_t3_effect_capability: Any | None = None,
+    rom_a_bounded_content_provider: Any | None = None,
+    rom_a_selected_dispatcher: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -501,6 +512,15 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         == (pm_disposition_publisher_port is None),
         "runtime-pm-durable-disposition-ports-must-bind-together",
     )
+    _require(
+        (rom_a_bounded_content_provider is None) == (rom_a_selected_dispatcher is None),
+        "runtime-rom-a-normal-return-ports-must-bind-together",
+    )
+    if rom_a_bounded_content_provider is not None:
+        _require(callable(getattr(rom_a_bounded_content_provider, "read_current", None)),
+                 "runtime-rom-a-bounded-content-provider-invalid")
+        _require(callable(getattr(rom_a_selected_dispatcher, "send_selected", None)),
+                 "runtime-rom-a-selected-dispatcher-invalid")
     human_t3_host = (HumanT3BreakGlassHost(state_port=state_port, current_reader=human_t3_current_reader,
                                         effect_capability=human_t3_effect_capability)
                      if human_t3_current_reader is not None else None)
@@ -568,6 +588,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         provider_tail_reader=provider_tail_reader,
         principal_succession_reader=principal_succession_reader,
         machine_diary_effect_verifier=machine_diary_effect_verifier,
+        rom_a_bounded_content_provider=rom_a_bounded_content_provider,
+        rom_a_selected_dispatcher=rom_a_selected_dispatcher,
     )
 
 
@@ -597,6 +619,8 @@ def assemble_postgres_control_context_remote_runtime(
     principal_succession_mcp_authorizer: Any | None = None,
     human_t3_current_reader: Any | None = None,
     human_t3_effect_capability: Any | None = None,
+    rom_a_bounded_content_provider: Any | None = None,
+    rom_a_selected_dispatcher: Any | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -632,6 +656,8 @@ def assemble_postgres_control_context_remote_runtime(
         principal_succession_mcp_authorizer=principal_succession_mcp_authorizer,
         human_t3_current_reader=human_t3_current_reader,
         human_t3_effect_capability=human_t3_effect_capability,
+        rom_a_bounded_content_provider=rom_a_bounded_content_provider,
+        rom_a_selected_dispatcher=rom_a_selected_dispatcher,
         clock=clock,
         manifest_path=manifest_path,
     )
