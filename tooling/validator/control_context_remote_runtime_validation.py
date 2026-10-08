@@ -517,6 +517,46 @@ def selftest() -> dict[str, Any]:
         and getattr(bound_host._pm_disposition_publisher, "_publisher_port", None)
             is runtime_pm_publisher_port,
     )
+    class RomAReader:
+        def __init__(self):
+            self.calls = []
+        def read_current(self, content_ref, kind, selector):
+            self.calls.append((content_ref, kind, selector))
+            raise AssertionError("no-provider-read-during-construction")
+    class RomASender:
+        def __init__(self):
+            self.calls = []
+        def send_selected(self, **kwargs):
+            self.calls.append(kwargs)
+            raise AssertionError("no-send-during-construction")
+    rom_reader, rom_sender = RomAReader(), RomASender()
+    rom_runtime = assemble_postgres_control_context_remote_runtime_from_connection_factory(
+        config=config, connection_factory=ProbeFactory(),
+        token_verifier=StaticTokenVerifier(), resolution_attestation_verifier=attestor,
+        pm_profile_verifier=RuntimePmProfileVerifier(),
+        rom_a_bounded_content_provider=rom_reader,
+        rom_a_selected_dispatcher=rom_sender, clock=lambda: NOW,
+    )
+    rom_host = rom_runtime.bind_control_resolution_host(
+        persistence_verifier=RuntimePersistenceVerifier(),
+        capability_resolver=RuntimeCapabilityResolver(),
+    )
+    check("ROMA-normal-runtime-binds-server-owned-paired-ports-with-no-effect",
+          rom_runtime.descriptor()["rom_a_normal_return_ports_bound"] is True
+          and rom_runtime.descriptor()["rom_a_recipient_use_proven"] is False
+          and rom_host._bounded_content_provider is rom_reader
+          and rom_host._rom_a_selected_dispatcher is rom_sender
+          and rom_reader.calls == [] and rom_sender.calls == [])
+    check("ROMA-normal-runtime-refuses-one-sided-or-invalid-ports",
+          _expect_error(lambda: assemble_postgres_control_context_remote_runtime_from_connection_factory(
+              config=config, connection_factory=ProbeFactory(), token_verifier=StaticTokenVerifier(),
+              resolution_attestation_verifier=attestor,
+              rom_a_bounded_content_provider=rom_reader, clock=lambda: NOW), ControlContextRemoteRuntimeError)
+          and _expect_error(lambda: assemble_postgres_control_context_remote_runtime_from_connection_factory(
+              config=config, connection_factory=ProbeFactory(), token_verifier=StaticTokenVerifier(),
+              resolution_attestation_verifier=attestor,
+              rom_a_bounded_content_provider=object(), rom_a_selected_dispatcher=rom_sender,
+              clock=lambda: NOW), ControlContextRemoteRuntimeError))
     check(
         "ROMA-I41-runtime-rejects-one-sided-durable-disposition-port-binding",
         _expect_error(
