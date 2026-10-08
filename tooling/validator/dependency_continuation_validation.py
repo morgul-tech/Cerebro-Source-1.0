@@ -155,6 +155,19 @@ class DependencyContinuationTests(unittest.TestCase):
             self.run_once()
         self.assertEqual(self.sender.sent, [])
 
+    def test_preflight_or_reservation_refusal_never_dispatches(self):
+        with patch("control_resolution_host.material_commitment_preflight.consume",
+                   return_value={"result": "BLOCK"}):
+            self.assertEqual(self.run_once()["reason"], "MATERIAL_PREFLIGHT_NOT_CURRENT")
+        self.assertEqual(self.sender.sent, [])
+        self.assertEqual(self.reader.reservations, [])
+        with patch.object(self.reader, "reserve_reconsideration",
+                          return_value={"state": "ALREADY_RESERVED"}):
+            self.assertEqual(self.run_once()["reason"],
+                             "RECONSIDERATION_NOT_EXCLUSIVELY_RESERVED")
+        self.assertEqual(self.sender.sent, [])
+        self.assertEqual(self.reader.reservations, [])
+
     def test_uncertain_prior_and_missing_consumer_fail_closed(self):
         first = self.run_once()
         self.assertEqual(first["action"], "CONTINUATION_SENT")
