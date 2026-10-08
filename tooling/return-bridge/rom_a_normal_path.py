@@ -452,7 +452,12 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
 
 
 def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
-    """Host-owned send of exactly the selected file; acceptance is not recipient use."""
+    """Host-owned one-attempt send; uncertain outcomes never authorize a retry.
+
+    The intent and receipt have local fsync/readback only. A hard crash cannot
+    prove external delivery or directory-entry durability; recovery must hold
+    for sender reconciliation, never infer NOT_SENT from an uncertain outcome.
+    """
     if not callable(getattr(sender, "send_selected", None)):
         raise ValueError("SELECTED_DISPATCHER_UNBOUND")
     receipt_path, receipt_raw = _read(result["receipt"])
@@ -467,6 +472,33 @@ def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
             or receipt.get("dispatch", {}).get("state") != "NOT_SENT"):
         raise ValueError("SELECTED_DISPATCH_READBACK_MISMATCH")
     recipient = adoption["actor_ref"]
+    intent_path = receipt_path.with_name(".receipt-dispatch-intent.json")
+    intent = {"state": "UNKNOWN_NO_RETRY", "recipient_ref": recipient,
+              "task_ref": adoption["task_ref"], "task_revision": adoption["task_revision"],
+              "selected_sha256": selected["sha256"], "selection": selected["selection"],
+              "assertion": "LOCAL_ATTEMPT_INTENT_NOT_DELIVERY_OR_RECIPIENT_USE",
+              "way_home": "RECONCILE_EXACT_SENDER_OUTCOME_BEFORE_ANY_NEW_DISPATCH"}
+    try:
+        with intent_path.open("xb") as stream:
+            stream.write((json.dumps(intent, sort_keys=True) + "\n").encode("utf-8"))
+            stream.flush()
+            os.fsync(stream.fileno())
+    except FileExistsError as exc:
+        raise ValueError("SELECTED_DISPATCH_OUTCOME_UNKNOWN_NO_RETRY") from exc
+    # The exclusive intent is retained across failure and restart. A second
+    # caller that read NOT_SENT before this claim must still not reach send.
+    if receipt_path.read_bytes() != receipt_raw:
+        raise ValueError("SELECTED_DISPATCH_RECEIPT_CHANGED_NO_RETRY")
+    receipt["dispatch"] = intent
+    unknown = (json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+    before_send = receipt_path.with_name(".receipt-dispatch-before-send.json")
+    with before_send.open("xb") as stream:
+        stream.write(unknown)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(before_send, receipt_path)
+    if receipt_path.read_bytes() != unknown:
+        raise ValueError("SELECTED_DISPATCH_INTENT_READBACK_FAILED")
     response = sender.send_selected(
         recipient_ref=recipient, selected_bytes=payload,
         selected_sha256=selected["sha256"], selection=selected["selection"],
@@ -482,7 +514,7 @@ def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
                            "selected_sha256": selected["sha256"],
                            "assertion": "HOST_SENDER_RETURN_NOT_RECIPIENT_USE"}
     updated = (json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
-    temporary = receipt_path.with_name(".receipt-dispatch-pending.json")
+    temporary = receipt_path.with_name(".receipt-dispatch-accepted.json")
     with temporary.open("xb") as stream:
         stream.write(updated)
         stream.flush()
