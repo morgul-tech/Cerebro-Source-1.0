@@ -160,6 +160,16 @@ implementation_learning_loop:
     dispositions: [SOURCE_REQUIRED_NOW, SOURCE_AFTER_DEPENDENCY, RUNTIME_ONLY, SHARED_ONLY_JUSTIFIED, DEFER, SUPERSEDE, RETIRE]
     source_required_now_may_stop_at_provider_or_chat_memory: false
     source_after_dependency_must_remain_visible_until_resolved: true
+    source_after_dependency_reconsideration:
+      normal_host: mcp/control_resolution_host.py#BoundControlResolutionHost.reconsider_authorized_task_dependency
+      producer: host-bound-current-task-and-dependency-owner-readback
+      consumer: existing-rom-a-selected-dispatcher-after-atomic-owner-basis-reservation
+      exact_basis: [task_ref, task_revision, authority_ref, dependency_ref, dependency_revision, dependency_source_ref, selected_sha256]
+      same_basis: QUIET_REUSE
+      changed_basis: REVALIDATE_EXISTING_AUTHORITY_AND_REMAINING_GATES
+      new_authority_or_project_start: PROHIBITED
+      recipient_use_from-send-acceptance: NOT_PROVEN
+      unresolved_or_stale_or_paused_or_revoked: NO_DISPATCH
     shared_only_justified_requires: [owner, rationale]
     source_canonical_does_not_imply: [RUNTIME_ENFORCED, EFFECT_PROVEN]
     closure_requires: terminal-layer-disposition-and-readback

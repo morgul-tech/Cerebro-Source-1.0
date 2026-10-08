@@ -17,6 +17,7 @@ from typing import Any, Callable, Mapping
 
 import control_owner_routing
 import control_resolution
+import material_commitment_preflight
 from human_t3_break_glass import HumanT3BreakGlassHost
 
 
@@ -81,6 +82,65 @@ PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "publisher_port",
     "prepublication_guard",
 }
+
+
+def _authorized_dependency_basis(
+    readback: Any, task_ref: str, dependency_ref: str
+) -> tuple[dict[str, Any], dict[str, Any], str]:
+    """Validate one owner readback, never a caller-authored task/dependency claim."""
+    _require(isinstance(readback, dict) and readback.get("provider_readback_verified") is True
+             and readback.get("currentness") == "CURRENT",
+             "authorized-task-dependency-current-readback-required")
+    task, dependency = readback.get("task"), readback.get("dependency")
+    _require(isinstance(task, dict) and isinstance(dependency, dict),
+             "authorized-task-dependency-records-required")
+    _require(task.get("task_ref") == task_ref and dependency.get("dependency_ref") == dependency_ref,
+             "authorized-task-dependency-exact-target-mismatch")
+    for owner, names in ((task, ("task_revision", "actor_ref", "authority_ref", "scope_ref")),
+                         (dependency, ("dependency_revision", "source_ref"))):
+        _require(all(isinstance(owner.get(name), str) and bool(owner[name].strip())
+                     and owner[name] == owner[name].strip() for name in names),
+                 "authorized-task-dependency-revision-or-source-missing")
+    _require(task.get("authority_state") in {"AUTHORIZED", "REVOKED", "UNKNOWN"}
+             and task.get("progress_state") in {"WAITING_DEPENDENCY", "STARTED", "DONE", "UNKNOWN"}
+             and type(task.get("paused")) is bool and type(task.get("revoked")) is bool
+             and type(task.get("all_dependencies_resolved")) is bool,
+             "authorized-task-state-invalid")
+    refs = task.get("dependency_refs")
+    _require(isinstance(refs, list) and dependency_ref in refs and len(refs) == len(set(refs))
+             and all(isinstance(ref, str) and bool(ref) for ref in refs),
+             "authorized-task-dependency-not-owned-by-task")
+    gates = task.get("other_unresolved_gates")
+    _require(isinstance(gates, list) and len(gates) == len(set(gates))
+             and all(isinstance(gate, str) and bool(gate) for gate in gates),
+             "authorized-task-other-gates-invalid")
+    _require(dependency.get("disposition") == "SOURCE_AFTER_DEPENDENCY"
+             and type(dependency.get("applicable")) is bool
+             and dependency.get("state") in {"RESOLVED", "UNRESOLVED", "REOPENED", "UNKNOWN"},
+             "authorized-task-dependency-disposition-invalid")
+    payload = task.get("selected_bytes")
+    _require(type(payload) is bytes and 0 < len(payload) <= 2_000_000,
+             "authorized-task-selected-bytes-invalid")
+    selected_sha256 = hashlib.sha256(payload).hexdigest()
+    _require(task.get("selected_sha256") == selected_sha256,
+             "authorized-task-selected-bytes-readback-mismatch")
+    material = {
+        "task_ref": task_ref, "task_revision": task["task_revision"],
+        "authority_ref": task["authority_ref"], "actor_ref": task["actor_ref"],
+        "scope_ref": task["scope_ref"], "dependency_refs": sorted(refs),
+        "authority_state": task["authority_state"], "progress_state": task["progress_state"],
+        "paused": task["paused"], "revoked": task["revoked"],
+        "all_dependencies_resolved": task["all_dependencies_resolved"],
+        "other_unresolved_gates": gates,
+        "dependency_ref": dependency_ref,
+        "dependency_revision": dependency["dependency_revision"],
+        "dependency_source_ref": dependency["source_ref"],
+        "dependency_state": dependency["state"], "dependency_applicable": dependency["applicable"],
+        "selected_sha256": selected_sha256,
+    }
+    basis = hashlib.sha256(json.dumps(material, sort_keys=True, separators=(",", ":"))
+                           .encode("utf-8")).hexdigest()
+    return task, dependency, basis
 
 
 class ControlResolutionHostError(ValueError):
@@ -334,6 +394,7 @@ class BoundControlResolutionHost:
         pm_disposition_publisher: Any | None = None,
         bounded_content_provider: Any | None = None,
         rom_a_selected_dispatcher: Any | None = None,
+        authorized_task_dependency_reader: Any | None = None,
     ):
         _require(callable(getattr(persistence_verifier, "verify", None)), "host-persistence-verifier-required")
         _require(callable(getattr(capability_resolver, "is_available", None)), "host-capability-resolver-required")
@@ -353,6 +414,10 @@ class BoundControlResolutionHost:
         if rom_a_selected_dispatcher is not None:
             _require(callable(getattr(rom_a_selected_dispatcher, "send_selected", None)),
                      "host-rom-a-selected-dispatcher-invalid")
+        if authorized_task_dependency_reader is not None:
+            for operation in ("read_current", "reserve_reconsideration", "record_reconsideration_result"):
+                _require(callable(getattr(authorized_task_dependency_reader, operation, None)),
+                         "host-authorized-task-dependency-reader-invalid:" + operation)
         self._persistence_verifier = persistence_verifier
         self._capability_resolver = capability_resolver
         self._canonical_resolver = canonical_resolver
@@ -360,6 +425,7 @@ class BoundControlResolutionHost:
         self._pm_disposition_publisher = pm_disposition_publisher
         self._bounded_content_provider = bounded_content_provider
         self._rom_a_selected_dispatcher = rom_a_selected_dispatcher
+        self._authorized_task_dependency_reader = authorized_task_dependency_reader
 
     def select_bounded_content(self, target: dict[str, Any], *, root: Path = control_resolution.SOURCE_ROOT) -> dict[str, Any]:
         """Normal-host operation: a caller names a target, never a provider reader."""
@@ -418,6 +484,120 @@ class BoundControlResolutionHost:
         if self._rom_a_selected_dispatcher is not None:
             return module._dispatch_selected(result, self._rom_a_selected_dispatcher)
         return result
+
+    def reconsider_authorized_task_dependency(
+        self, task_ref: str, dependency_ref: str, *, root: Path = control_resolution.SOURCE_ROOT
+    ) -> dict[str, Any]:
+        """Normal host path from a current dependency readback to its existing task consumer.
+
+        The reader is host-bound and owns the task/dependency revision fence and
+        durable same-basis reservation in the existing owner front. A caller can
+        name only the already-authorized task and one dependency, not supply
+        authority, a provider readback, preflight evidence, or selected bytes.
+        """
+        _require(type(self) is BoundControlResolutionHost, "dependency-host-origin-invalid")
+        _require(isinstance(task_ref, str) and bool(task_ref.strip()) and task_ref == task_ref.strip(),
+                 "dependency-task-ref-required")
+        _require(isinstance(dependency_ref, str) and bool(dependency_ref.strip())
+                 and dependency_ref == dependency_ref.strip(), "dependency-ref-required")
+        reader = self._authorized_task_dependency_reader
+        _require(reader is not None, "authorized-task-dependency-reader-unbound")
+        current = reader.read_current(task_ref=task_ref, dependency_ref=dependency_ref)
+        task, dependency, basis = _authorized_dependency_basis(current, task_ref, dependency_ref)
+        receipt = {
+            "schema": "cerebro-authorized-task-dependency-continuation/v1",
+            "task_ref": task_ref, "task_revision": task["task_revision"],
+            "dependency_ref": dependency_ref,
+            "dependency_revision": dependency["dependency_revision"],
+            "dependency_source_ref": dependency["source_ref"],
+            "basis_fingerprint": basis, "consumer_ref": task["actor_ref"],
+            "authority_added": "NONE", "recipient_use": "NOT_PROVEN",
+        }
+
+        def finish(action: str, reason: str, **extra: Any) -> dict[str, Any]:
+            return {**receipt, "action": action, "reason": reason, **extra}
+
+        if task["revoked"] is True or task["authority_state"] != "AUTHORIZED":
+            return finish("HOLD", "TASK_AUTHORITY_REVOKED_OR_UNVERIFIED")
+        if task["paused"] is True:
+            return finish("HOLD", "TASK_PAUSED")
+        if task["progress_state"] in {"STARTED", "DONE"}:
+            return finish("QUIET_REUSE", "TASK_ALREADY_" + task["progress_state"])
+        if task["progress_state"] != "WAITING_DEPENDENCY":
+            return finish("PRECISE_REPAIR", "TASK_PROGRESS_STATE_UNRECOGNIZED")
+        if dependency["state"] != "RESOLVED" or dependency["applicable"] is not True:
+            return finish("HOLD", "DEPENDENCY_NOT_CURRENTLY_RESOLVED")
+        if task["other_unresolved_gates"] or task["all_dependencies_resolved"] is not True:
+            return finish("PRECISE_REPAIR", "OTHER_UNRESOLVED_GATE",
+                          next_repair=(task["other_unresolved_gates"][0]
+                                       if task["other_unresolved_gates"] else "DEPENDENCY_SET_RECHECK"))
+        prior = current.get("prior_reconsideration")
+        if isinstance(prior, dict) and prior.get("basis_fingerprint") == basis:
+            if prior.get("result") == "SENT_ACCEPTED":
+                return finish("QUIET_REUSE", "SAME_BASIS_ALREADY_CONSUMED")
+            return finish("PRECISE_REPAIR", "SAME_BASIS_UNCERTAIN_OR_UNRESOLVED")
+        if self._rom_a_selected_dispatcher is None:
+            return finish("PRECISE_REPAIR", "NORMAL_CONSUMER_UNBOUND")
+
+        request = task["preflight_request"]
+        if (not isinstance(request, dict)
+                or request.get("commitment_target") != task_ref
+                or request.get("stage") != "MATERIAL_AUTHORIZE"
+                or request.get("material") is not True
+                or request.get("resolved_scope") != task["scope_ref"]):
+            return finish("PRECISE_REPAIR", "TASK_PREFLIGHT_BASIS_MISMATCH")
+        try:
+            resolved = material_commitment_preflight.resolve(request, root)
+            consumed = material_commitment_preflight.consume(request, resolved["receipt"], root)
+        except (OSError, ValueError, TypeError, KeyError):
+            return finish("PRECISE_REPAIR", "MATERIAL_PREFLIGHT_UNAVAILABLE")
+        if resolved.get("result") != "PASS" or consumed.get("result") != "PASS":
+            return finish("PRECISE_REPAIR", "MATERIAL_PREFLIGHT_NOT_CURRENT")
+
+        reread = reader.read_current(task_ref=task_ref, dependency_ref=dependency_ref)
+        _, _, current_basis = _authorized_dependency_basis(reread, task_ref, dependency_ref)
+        if current_basis != basis or reread != current:
+            return finish("HOLD", "TASK_OR_DEPENDENCY_CHANGED_DURING_PREFLIGHT")
+        reservation = reader.reserve_reconsideration(
+            task_ref=task_ref, task_revision=task["task_revision"],
+            dependency_ref=dependency_ref, dependency_revision=dependency["dependency_revision"],
+            basis_fingerprint=basis)
+        if (not isinstance(reservation, dict) or reservation.get("state") != "RESERVED"
+                or reservation.get("basis_fingerprint") != basis
+                or reservation.get("task_revision") != task["task_revision"]
+                or reservation.get("dependency_revision") != dependency["dependency_revision"]):
+            return finish("HOLD", "RECONSIDERATION_NOT_EXCLUSIVELY_RESERVED")
+        payload = task["selected_bytes"]
+        selected_sha256 = hashlib.sha256(payload).hexdigest()
+        try:
+            sent = self._rom_a_selected_dispatcher.send_selected(
+                recipient_ref=task["actor_ref"], selected_bytes=payload,
+                selected_sha256=selected_sha256, selection="DEPENDENCY_CONTINUATION",
+                task_ref=task_ref, task_revision=task["task_revision"])
+        except Exception:
+            sent = None
+        accepted = (isinstance(sent, dict) and sent.get("state") == "ACCEPTED"
+                    and sent.get("recipient_ref") == task["actor_ref"]
+                    and sent.get("selected_sha256") == selected_sha256
+                    and isinstance(sent.get("delivery_ref"), str) and bool(sent["delivery_ref"].strip()))
+        result = "SENT_ACCEPTED" if accepted else "SEND_UNCERTAIN"
+        try:
+            recorded = reader.record_reconsideration_result(
+                task_ref=task_ref, dependency_ref=dependency_ref,
+                basis_fingerprint=basis, result=result,
+                delivery_ref=sent["delivery_ref"] if accepted else None)
+        except Exception:
+            recorded = None
+        if (not isinstance(recorded, dict) or recorded.get("state") != "RECORDED"
+                or recorded.get("basis_fingerprint") != basis):
+            return finish("PRECISE_REPAIR", "RECONSIDERATION_RESULT_RECORD_UNCERTAIN",
+                          dispatch_state=result)
+        if not accepted:
+            return finish("PRECISE_REPAIR", "SELECTED_DISPATCH_UNCERTAIN",
+                          dispatch_state=result)
+        return finish("CONTINUATION_SENT", "EXISTING_AUTHORIZED_TASK_SELECTED",
+                      dispatch_state=result, delivery_ref=sent["delivery_ref"],
+                      selected_sha256=selected_sha256)
 
     def publish_pm_durable_disposition(self, proposal: dict[str, Any]) -> dict[str, Any]:
         _require(
