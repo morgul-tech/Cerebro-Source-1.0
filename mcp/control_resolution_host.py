@@ -81,6 +81,10 @@ PROHIBITED_RUNTIME_INJECTION_KEYS = {
     "pm_disposition_publisher",
     "publisher_port",
     "prepublication_guard",
+    "authorized_task_dependency_reader",
+    "dependency_reader",
+    "reserve_reconsideration",
+    "record_reconsideration_result",
 }
 
 
