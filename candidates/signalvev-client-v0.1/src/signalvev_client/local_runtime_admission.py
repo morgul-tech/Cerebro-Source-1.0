@@ -1,8 +1,8 @@
 """Explicit, read-only admission of an existing Liv session to a Context binding.
 
 This module never starts a host, enables a profile, emits an event, or sends to
-NATS. Its caller must supply an authenticated, fresh provider readback for each
-operation; the local admission file is only a pinned receipt, not authority.
+NATS. The provider reader must be bound by a reviewed host implementation;
+caller-supplied evidence and the local admission file are never authority.
 """
 
 from __future__ import annotations
@@ -39,11 +39,14 @@ def _binding(value: Mapping) -> dict:
     return binding
 
 
-def _provider_binding(read_provider_binding: Callable[[], Mapping]) -> dict:
-    if not callable(read_provider_binding):
-        raise LocalRuntimeSessionError("BK07_PROVIDER_READ_REQUIRED")
+def _read_provider_binding() -> Mapping:
+    """Host-owned provider port. Deliberately unbound in this Source candidate."""
+    raise LocalRuntimeSessionError("BK07_TRUSTED_PROVIDER_UNBOUND")
+
+
+def _provider_binding() -> dict:
     try:
-        return _binding(read_provider_binding())
+        return _binding(_read_provider_binding())
     except LocalRuntimeSessionError:
         raise
     except Exception as exc:
@@ -56,14 +59,12 @@ def _same_lease(first: Mapping, second: Mapping) -> bool:
 
 
 def admit_local_runtime_session(*, profile_path: Path, state_dir: Path,
-                                expected_binding: Mapping,
-                                read_provider_binding: Callable[[], Mapping],
                                 clock: Callable[[], float] = time.time) -> dict:
-    """Pin one reviewed, enabled provider binding to the already running lease."""
-    expected = _binding(expected_binding)
+    """Pin a host-read enabled provider binding to the already running lease."""
+    expected = _provider_binding()
     first = read_current_local_session(profile_path=profile_path, state_dir=state_dir,
                                        expected_session_ref=expected["session_ref"], clock=clock)
-    if _provider_binding(read_provider_binding) != expected:
+    if _provider_binding() != expected:
         raise LocalRuntimeSessionError("BK07_BINDING_MISMATCH")
     second = read_current_local_session(profile_path=profile_path, state_dir=state_dir,
                                         expected_session_ref=expected["session_ref"], clock=clock)
@@ -79,7 +80,6 @@ def admit_local_runtime_session(*, profile_path: Path, state_dir: Path,
 
 
 def read_admitted_local_session(*, profile_path: Path, state_dir: Path,
-                                read_provider_binding: Callable[[], Mapping],
                                 clock: Callable[[], float] = time.time) -> dict:
     """Recheck the lock, heartbeat, process identity, and provider on every read."""
     try:
@@ -92,7 +92,7 @@ def read_admitted_local_session(*, profile_path: Path, state_dir: Path,
         if (binding["session_ref"] != receipt["session_ref"]
                 or not _same_lease(receipt, session)):
             raise ValueError("lease")
-        if _provider_binding(read_provider_binding) != binding:
+        if _provider_binding() != binding:
             raise LocalRuntimeSessionError("BK07_BINDING_MISMATCH")
         current = read_current_local_session(profile_path=profile_path, state_dir=state_dir,
                                              expected_session_ref=receipt["session_ref"], clock=clock)

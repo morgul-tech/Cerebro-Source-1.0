@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from signalvev_client.local_runtime_admission import (
-    admit_local_runtime_session, read_admitted_local_session,
+    ADMISSION_SCHEMA, admit_local_runtime_session, read_admitted_local_session,
 )
 from signalvev_client.local_runtime_session_host import (
     LocalRuntimeSessionError, LocalRuntimeSessionHost,
@@ -37,18 +37,17 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
             "principal": "principal", "enabled": True,
         }
 
-    def admit(self, provider=None, expected=None):
-        return admit_local_runtime_session(
-            profile_path=self.profile, state_dir=self.state,
-            expected_binding=expected or self.binding,
-            read_provider_binding=provider or (lambda: self.binding),
-            clock=lambda: self.now)
+    def admit(self, provider=None):
+        with patch("signalvev_client.local_runtime_admission._read_provider_binding",
+                   side_effect=provider or (lambda: self.binding)):
+            return admit_local_runtime_session(
+                profile_path=self.profile, state_dir=self.state, clock=lambda: self.now)
 
     def read(self, provider=None):
-        return read_admitted_local_session(
-            profile_path=self.profile, state_dir=self.state,
-            read_provider_binding=provider or (lambda: self.binding),
-            clock=lambda: self.now)
+        with patch("signalvev_client.local_runtime_admission._read_provider_binding",
+                   side_effect=provider or (lambda: self.binding)):
+            return read_admitted_local_session(
+                profile_path=self.profile, state_dir=self.state, clock=lambda: self.now)
 
     def test_only_explicit_exact_transition_admits_without_restarting_or_sending(self):
         with self.assertRaisesRegex(LocalRuntimeSessionError, "ADMISSION_NOT_CURRENT"):
@@ -66,7 +65,8 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
                         {"project_revision": 2}, {"session_revision": 2},
                         {"binding_id": "CSB-other"}, {"binding_fingerprint": "0" * 64}):
             with self.subTest(changed=changed):
-                provider = lambda: dict(self.binding, **changed)
+                calls = iter((self.binding, dict(self.binding, **changed)))
+                provider = lambda: next(calls)
                 with self.assertRaises(LocalRuntimeSessionError):
                     self.admit(provider=provider)
         self.assertFalse((self.state / "admission.json").exists())
@@ -78,11 +78,33 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
                 with self.assertRaises(LocalRuntimeSessionError):
                     self.read(provider=lambda: dict(self.binding, **changed))
 
-    def test_wrong_expected_ref_or_revision_does_not_admit(self):
-        for changed in ({"session_ref": "local:wrong"}, {"project_revision": 2}):
-            with self.assertRaises(LocalRuntimeSessionError):
-                self.admit(expected=dict(self.binding, **changed))
+    def test_caller_cannot_supply_authority_or_forge_readback(self):
+        with self.assertRaises(TypeError):
+            admit_local_runtime_session(profile_path=self.profile, state_dir=self.state,
+                                        expected_binding=self.binding,
+                                        read_provider_binding=lambda: self.binding,
+                                        clock=lambda: self.now)
+        with self.assertRaisesRegex(LocalRuntimeSessionError, "TRUSTED_PROVIDER_UNBOUND"):
+            admit_local_runtime_session(profile_path=self.profile, state_dir=self.state,
+                                        clock=lambda: self.now)
         self.assertFalse((self.state / "admission.json").exists())
+        forged = {"schema": ADMISSION_SCHEMA, "binding": dict(self.binding, binding_id="FORGED"),
+                  "session_ref": self.lease["session_ref"], "pid": self.lease["pid"],
+                  "process_start_epoch": self.lease["process_start_epoch"],
+                  "started_at_epoch": self.lease["started_at_epoch"],
+                  "admitted_at_epoch": self.now}
+        (self.state / "admission.json").write_text(json.dumps(forged), encoding="utf-8")
+        with self.assertRaisesRegex(LocalRuntimeSessionError, "TRUSTED_PROVIDER_UNBOUND"):
+            read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
+                                        clock=lambda: self.now)
+        self.admit()  # internal test seam only; not a public authority argument
+        with self.assertRaises(TypeError):
+            read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
+                                        read_provider_binding=lambda: self.binding,
+                                        clock=lambda: self.now)
+        with self.assertRaisesRegex(LocalRuntimeSessionError, "TRUSTED_PROVIDER_UNBOUND"):
+            read_admitted_local_session(profile_path=self.profile, state_dir=self.state,
+                                        clock=lambda: self.now)
 
     def test_currentness_rechecked_after_admission(self):
         self.admit()
@@ -94,10 +116,6 @@ class LocalRuntimeAdmissionTests(unittest.TestCase):
             self.read()
 
     def test_provider_read_is_mandatory_and_failure_is_closed(self):
-        with self.assertRaisesRegex(LocalRuntimeSessionError, "PROVIDER_READ_REQUIRED"):
-            admit_local_runtime_session(profile_path=self.profile, state_dir=self.state,
-                                        expected_binding=self.binding, read_provider_binding=None,
-                                        clock=lambda: self.now)
         with self.assertRaisesRegex(LocalRuntimeSessionError, "PROVIDER_READ_FAILED"):
             self.admit(provider=lambda: (_ for _ in ()).throw(OSError("provider unavailable")))
         self.assertFalse((self.state / "admission.json").exists())
