@@ -33,7 +33,7 @@ class Reader:
     def __init__(self):
         payload = b"existing authorized task bytes\n"
         self.current = {
-            "provider_readback_verified": True, "currentness": "CURRENT",
+            "owner_readback_verified": True, "currentness": "CURRENT",
             "task": {
                 "task_ref": "TASK-1", "task_revision": "TREV-1", "actor_ref": "ACTOR-1",
                 "authority_ref": "AUTH-1", "authority_state": "AUTHORIZED",

@@ -162,6 +162,11 @@ implementation_learning_loop:
     source_after_dependency_must_remain_visible_until_resolved: true
     source_after_dependency_reconsideration:
       normal_host: mcp/control_resolution_host.py#BoundControlResolutionHost.reconsider_authorized_task_dependency
+      owner_episode_adapter: tooling/return-bridge/rom_a_dispatch_capture.py#BoundRomAOwnerEpisodePort
+      owner_home: exact-existing-capture-episode-only
+      owner_ingress_requires: [authenticated-A1-identity-readback, current-Human-mandate-revision-and-provenance, current-dependency-revision-and-source-readback]
+      legacy_capture_alone_is_authority: false
+      local_file_fsync_rename_proves_remote_or_crash_durability: false
       producer: host-bound-current-task-and-dependency-owner-readback
       consumer: existing-rom-a-selected-dispatcher-after-atomic-owner-basis-reservation
       exact_basis: [task_ref, task_revision, authority_ref, dependency_ref, dependency_revision, dependency_source_ref, selected_sha256]

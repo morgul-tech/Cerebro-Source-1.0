@@ -92,7 +92,7 @@ def _authorized_dependency_basis(
     readback: Any, task_ref: str, dependency_ref: str
 ) -> tuple[dict[str, Any], dict[str, Any], str]:
     """Validate one owner readback, never a caller-authored task/dependency claim."""
-    _require(isinstance(readback, dict) and readback.get("provider_readback_verified") is True
+    _require(isinstance(readback, dict) and readback.get("owner_readback_verified") is True
              and readback.get("currentness") == "CURRENT",
              "authorized-task-dependency-current-readback-required")
     task, dependency = readback.get("task"), readback.get("dependency")
@@ -387,6 +387,27 @@ class CompositeOwnerPersistenceVerifier:
 
 class BoundControlResolutionHost:
     """Canonical resolver wrapper and ordered normal owner-effect consumer."""
+
+    @classmethod
+    def for_rom_a_owner_episode(
+        cls, *, capture_record: Path, owner_identity_reader: Any,
+        human_mandate_reader: Any, dependency_reader: Any, selected_sender: Any,
+        persistence_verifier: Any, capability_resolver: Any,
+    ) -> "BoundControlResolutionHost":
+        """Bind one exact A1 episode and existing selected sender at host construction."""
+        _require(cls is BoundControlResolutionHost, "rom-a-owner-host-origin-invalid")
+        source = control_resolution.SOURCE_ROOT / "tooling/return-bridge/rom_a_dispatch_capture.py"
+        spec = importlib.util.spec_from_file_location("host_rom_a_owner_episode", source)
+        _require(spec is not None and spec.loader is not None, "rom-a-owner-episode-module-unavailable")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        owner_port = module.BoundRomAOwnerEpisodePort(
+            capture_record=Path(capture_record), owner_identity_reader=owner_identity_reader,
+            mandate_reader=human_mandate_reader, dependency_reader=dependency_reader)
+        return cls(persistence_verifier=persistence_verifier,
+                   capability_resolver=capability_resolver,
+                   rom_a_selected_dispatcher=selected_sender,
+                   authorized_task_dependency_reader=owner_port)
 
     def __init__(
         self,
