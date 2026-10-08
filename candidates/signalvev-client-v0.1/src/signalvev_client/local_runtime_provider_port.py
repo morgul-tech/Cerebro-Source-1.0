@@ -18,6 +18,9 @@ SCOPE = "project_state:read"
 SECRET_PATH = Path(r"D:\Cerebro\Run\Signalvev\BK07\normal-use\runtime-custody\auth0-client.dpapi")
 ENTROPY = b"CEREBRO_BK07_RUNTIME_M2M_V1"
 READ_TOOL = "read_local_runtime_binding_v1"
+RESOLVE_TOOL = "transport_resolve_signalvev_notice_v1"
+PROFILE_PATH = Path(r"D:\Cerebro\Run\Signalvev\BK07\normal-use\profile.json")
+STATE_DIR = Path(r"D:\Cerebro\Run\Signalvev\BK07\normal-use\session-host-state")
 
 
 class PortUnavailable(RuntimeError):
@@ -143,3 +146,36 @@ def read_current_binding() -> dict[str, Any]:
         raise
     except Exception:
         raise PortUnavailable("BK07_CONTEXT_UNAVAILABLE") from None
+
+
+async def _resolve_call(event_id: str) -> dict[str, Any]:
+    import httpx2
+    from mcp import ClientSession
+    from mcp.client.streamable_http import streamable_http_client
+
+    token = _token()
+    async with httpx2.AsyncClient(headers={"Authorization": "Bearer " + token}, timeout=15) as http:
+        async with streamable_http_client(MCP_URL, http_client=http) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.call_tool(RESOLVE_TOOL, {"event_id": event_id})
+                if result.is_error:
+                    raise PortUnavailable("BK07_CONTEXT_TOOL_REFUSED")
+                if not isinstance(result.structured_content, dict):
+                    raise PortUnavailable("BK07_CONTEXT_RESULT_UNSTRUCTURED")
+                return {"structuredContent": result.structured_content}
+
+
+def resolve_current_notice(event_id: str) -> dict[str, Any]:
+    """Resolve only a PM event while the exact installed admission is current."""
+    if (not isinstance(event_id, str) or not event_id.startswith("pm-event:")
+            or len(event_id) > 200 or any(ch.isspace() for ch in event_id)):
+        raise PortUnavailable("BK07_EVENT_ID_INVALID")
+    from .local_runtime_admission import read_admitted_local_session
+    try:
+        read_admitted_local_session(profile_path=PROFILE_PATH, state_dir=STATE_DIR)
+        return asyncio.run(_resolve_call(event_id))
+    except PortUnavailable:
+        raise
+    except Exception:
+        raise PortUnavailable("BK07_ADMITTED_RESOLVE_UNAVAILABLE") from None
