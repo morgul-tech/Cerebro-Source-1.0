@@ -24,6 +24,9 @@ classifiers = [
 credentials = ["nkeys>=0.2.1"]
 # Runtime dependencies for the Google Drive owner resolver; ordinary NATS installs stay lean.
 drive = ["google-auth>=2,<3", "requests>=2.31,<3"]
+# The BK07 protected Context transport uses the official MCP 2.0 HTTP client.
+# The exact Windows/Python 3.12 wheel hashes live in requirements-bk07-runtime-win312.lock.
+runtime_context = ["mcp==2.0.0", "httpx2==2.13.1"]
 
 [project.scripts]
 signalvev-client = "signalvev_client.cli:main"
