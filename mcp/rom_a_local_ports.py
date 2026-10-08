@@ -10,6 +10,8 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 from dataclasses import dataclass
+import base64
+import binascii
 import hashlib
 import importlib.util
 import json
@@ -101,10 +103,13 @@ class FixedLocalEpisodeReader:
         _require(binding.selector_kind == "SECTION" and binding.selector == "selected",
                  "ROMA_FIXED_SELECTOR_REQUIRED")
         _require(bool(_SHA.fullmatch(binding.sha256)), "ROMA_CONTENT_HASH_REQUIRED")
-        relative = Path(binding.relative_path)
-        _require(not relative.is_absolute() and relative.parts and
-                 all(part not in (".", "..") for part in relative.parts) and
-                 ":" not in binding.relative_path, "ROMA_RELATIVE_PATH_INVALID")
+        raw = binding.relative_path
+        parts = re.split(r"[\\/]", raw)
+        _require(bool(raw) and not ntpath.isabs(raw) and
+                 not ntpath.splitdrive(raw)[0] and
+                 all(part not in ("", ".", "..") for part in parts) and
+                 ":" not in raw and "\\\\" not in raw and
+                 not raw.startswith(("\\", "/")), "ROMA_RELATIVE_PATH_INVALID")
         self._root = root
         self._binding = binding
         self._sid = expected_process_sid
@@ -154,53 +159,37 @@ class QueueBinding:
 
 
 class FixedCodexQueueSender:
-    def __init__(self, *, codex_exe: Path, executable_root: Path,
-                 expected_exe_sha256: str, registry_path: Path,
+    def __init__(self, *, registry_path: Path,
                  registry_root: Path, expected_custody_owner_sid: str,
-                 expected_process_sid: str,
-                 binding: QueueBinding, sid_reader=_token_sid,
+                 expected_process_sid: str, episode_ref: str,
+                 sid_reader=_token_sid,
                  runner=subprocess.run):
         _require(sid_reader() == expected_process_sid, "ROMA_WRONG_PRINCIPAL")
-        _require(codex_exe.is_absolute() and codex_exe.is_file(), "ROMA_CODEX_EXE_REQUIRED")
-        _require(bool(_SHA.fullmatch(expected_exe_sha256)), "ROMA_CODEX_HASH_REQUIRED")
         _require(expected_custody_owner_sid in {"S-1-5-18", "S-1-5-32-544"},
                  "ROMA_PROTECTED_CUSTODY_OWNER_REQUIRED")
-        _require(bool(_REF.fullmatch(binding.recipient_ref)) and
-                 bool(_REF.fullmatch(binding.task_ref)) and
-                 bool(_REF.fullmatch(binding.task_revision)), "ROMA_QUEUE_BINDING_INVALID")
-        uuid.UUID(binding.recipient_thread_id)
-        _require(binding.selection in {"FULL_ORIGINAL_TASK", "BK05_STRUCTURAL_CAPSULE_CANDIDATE"},
-                 "ROMA_SELECTION_NOT_ALLOWED")
-        _require(bool(_SHA.fullmatch(binding.selected_sha256)) and
-                 hashlib.sha256(binding.selected_bytes).hexdigest() == binding.selected_sha256 and
-                 0 < len(binding.selected_bytes) <= MAX_BYTES, "ROMA_SELECTED_HASH_INVALID")
-        binding.selected_bytes.decode("utf-8", errors="strict")
-        self._exe = codex_exe
-        self._exe_root = executable_root
-        self._exe_sha256 = expected_exe_sha256
+        _require(bool(_REF.fullmatch(episode_ref)), "ROMA_EPISODE_REF_INVALID")
         self._registry = registry_path
         self._registry_root = registry_root
+        self._episode_ref = episode_ref
         self._owner_sid = expected_custody_owner_sid
         self._sid = expected_process_sid
         self._sid_reader = sid_reader
-        self._binding = binding
         self._runner = runner
         self._attempted = False
+        self._registry_sha256, self._binding, self._exe, self._exe_root, self._exe_sha256 = self._check_registry()
         with open_protected(self._exe, root=self._exe_root,
                             owner_sid=self._owner_sid) as (stream, final):
             _require(final == ntpath.normcase(ntpath.normpath(str(self._exe))),
                      "ROMA_CODEX_FINAL_PATH_MISMATCH")
             _require(sha256_stream(stream) == self._exe_sha256,
                      "ROMA_CODEX_EXE_HASH_MISMATCH")
-        self._registry_sha256 = self._check_registry()
-
-    def _check_registry(self) -> str:
+    def _check_registry(self) -> tuple[str, QueueBinding, Path, Path, str]:
         with open_protected(self._registry, root=self._registry_root,
                             owner_sid=self._owner_sid) as (stream, final):
             _require(final == ntpath.normcase(ntpath.normpath(str(self._registry))),
                      "ROMA_REGISTRY_FINAL_PATH_MISMATCH")
-            raw = stream.read(4097)
-        _require(len(raw) <= 4096, "ROMA_REGISTRY_TOO_LARGE")
+            raw = stream.read(32769)
+        _require(len(raw) <= 32768, "ROMA_REGISTRY_TOO_LARGE")
         try:
             def unique(items):
                 keys = [key for key, _ in items]
@@ -209,17 +198,62 @@ class FixedCodexQueueSender:
             record = json.loads(raw.decode("utf-8"), object_pairs_hook=unique)
         except (UnicodeError, json.JSONDecodeError) as exc:
             raise ValueError("ROMA_REGISTRY_INVALID") from exc
-        bound = self._binding
-        exact = {"schema": "cerebro-rom-a-selected-queue-registry/v1",
-                 "recipient_ref": bound.recipient_ref,
-                 "recipient_thread_id": bound.recipient_thread_id,
-                 "task_ref": bound.task_ref, "task_revision": bound.task_revision,
-                 "selection": bound.selection,
-                 "selected_sha256": bound.selected_sha256,
-                 "selected_bytes": len(bound.selected_bytes),
-                 "codex_exe_sha256": self._exe_sha256}
-        _require(record == exact, "ROMA_PROTECTED_REGISTRY_BINDING_MISMATCH")
-        return hashlib.sha256(raw).hexdigest()
+        fields = {"schema", "episode_ref", "recipient_ref", "recipient_thread_id",
+                  "task_ref", "task_revision", "selection", "selected_sha256",
+                  "selected_bytes_b64", "codex_exe", "executable_root",
+                  "codex_exe_sha256", "association_receipt", "association_sha256"}
+        _require(isinstance(record, dict) and set(record) == fields and
+                 record["schema"] == "cerebro-rom-a-selected-queue-registry/v2" and
+                 record["episode_ref"] == self._episode_ref,
+                 "ROMA_PROTECTED_REGISTRY_BINDING_MISMATCH")
+        try:
+            selected = base64.b64decode(record["selected_bytes_b64"], validate=True)
+            binding = QueueBinding(record["recipient_ref"], record["recipient_thread_id"],
+                                   record["task_ref"], record["task_revision"],
+                                   record["selection"], record["selected_sha256"], selected)
+            uuid.UUID(binding.recipient_thread_id)
+            selected.decode("utf-8", errors="strict")
+        except (TypeError, ValueError, UnicodeError, binascii.Error) as exc:
+            raise ValueError("ROMA_PROTECTED_REGISTRY_BINDING_MISMATCH") from exc
+        _require(all(bool(_REF.fullmatch(value)) for value in
+                     (binding.recipient_ref, binding.task_ref, binding.task_revision)) and
+                 binding.selection in {"FULL_ORIGINAL_TASK", "BK05_STRUCTURAL_CAPSULE_CANDIDATE"} and
+                 bool(_SHA.fullmatch(binding.selected_sha256)) and
+                 0 < len(selected) <= MAX_BYTES and
+                 hashlib.sha256(selected).hexdigest() == binding.selected_sha256,
+                 "ROMA_PROTECTED_REGISTRY_BINDING_MISMATCH")
+        exe = Path(record["codex_exe"])
+        exe_root = Path(record["executable_root"])
+        exe_sha = record["codex_exe_sha256"]
+        _require(exe.is_absolute() and exe.is_file() and exe_root.is_absolute() and
+                 bool(_SHA.fullmatch(exe_sha)), "ROMA_CODEX_EXE_REQUIRED")
+        association_path = self._registry_root / record["association_receipt"]
+        _require(isinstance(record["association_receipt"], str) and
+                 bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json",
+                                   record["association_receipt"])) and
+                 bool(_SHA.fullmatch(record["association_sha256"])),
+                 "ROMA_ASSOCIATION_RECEIPT_REQUIRED")
+        with open_protected(association_path, root=self._registry_root,
+                            owner_sid=self._owner_sid) as (stream, final):
+            _require(final == ntpath.normcase(ntpath.normpath(str(association_path))),
+                     "ROMA_ASSOCIATION_FINAL_PATH_MISMATCH")
+            association_raw = stream.read(4097)
+        _require(len(association_raw) <= 4096 and
+                 hashlib.sha256(association_raw).hexdigest() == record["association_sha256"],
+                 "ROMA_ASSOCIATION_RECEIPT_DRIFT")
+        try:
+            association = json.loads(association_raw.decode("utf-8"), object_pairs_hook=unique)
+        except (UnicodeError, json.JSONDecodeError) as exc:
+            raise ValueError("ROMA_ASSOCIATION_RECEIPT_INVALID") from exc
+        _require(isinstance(association, dict) and set(association) ==
+                 {"schema", "episode_ref", "recipient_ref", "recipient_thread_id", "evidence_ref"} and
+                 association["schema"] == "cerebro-rom-a-existing-thread-association/v1" and
+                 association["episode_ref"] == self._episode_ref and
+                 association["recipient_ref"] == binding.recipient_ref and
+                 association["recipient_thread_id"] == binding.recipient_thread_id and
+                 bool(_REF.fullmatch(association["evidence_ref"])),
+                 "ROMA_ASSOCIATION_RECEIPT_MISMATCH")
+        return hashlib.sha256(raw).hexdigest(), binding, exe, exe_root, exe_sha
 
     def send_selected(self, *, recipient_ref: str, selected_bytes: bytes,
                       selected_sha256: str, selection: str, task_ref: str,
@@ -231,7 +265,7 @@ class FixedCodexQueueSender:
                   bound.task_ref, bound.task_revision), "ROMA_QUEUE_BINDING_MISMATCH")
         _require(selection == bound.selection, "ROMA_SELECTION_BINDING_MISMATCH")
         _require(not self._attempted, "ROMA_QUEUE_OUTCOME_UNKNOWN_NO_RETRY")
-        _require(self._check_registry() == self._registry_sha256,
+        _require(self._check_registry()[0] == self._registry_sha256,
                  "ROMA_REGISTRY_CHANGED_NO_SEND")
         message = ("ROM_A_NORMAL_RETURN\n"
                    f"TASK={task_ref}\nREVISION={task_revision}\n"
@@ -270,10 +304,7 @@ def assemble_fixed_local_episode_ports(*, operator_root: Path,
                                        expected_process_sid: str,
                                        expected_custody_owner_sid: str,
                                        content: LocalContentBinding,
-                                       delivery: QueueBinding,
-                                       codex_exe: Path,
-                                       executable_root: Path,
-                                       expected_exe_sha256: str,
+                                       episode_ref: str,
                                        registry_path: Path,
                                        registry_root: Path) -> tuple[FixedLocalEpisodeReader,
                                                                  FixedCodexQueueSender]:
@@ -287,12 +318,9 @@ def assemble_fixed_local_episode_ports(*, operator_root: Path,
                                      expected_process_sid=expected_process_sid,
                                      expected_custody_owner_sid=expected_custody_owner_sid,
                                      bindings=(content,))
-    sender = FixedCodexQueueSender(codex_exe=codex_exe,
-                                   executable_root=executable_root,
-                                   expected_exe_sha256=expected_exe_sha256,
-                                   registry_path=registry_path,
+    sender = FixedCodexQueueSender(registry_path=registry_path,
                                    registry_root=registry_root,
                                    expected_custody_owner_sid=expected_custody_owner_sid,
                                    expected_process_sid=expected_process_sid,
-                                   binding=delivery)
+                                   episode_ref=episode_ref)
     return reader, sender

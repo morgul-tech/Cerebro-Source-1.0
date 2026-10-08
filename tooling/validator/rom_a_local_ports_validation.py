@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import base64
 import hashlib
 import importlib.util
 import json
@@ -13,6 +14,7 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
+from unittest.mock import Mock
 
 
 SOURCE = Path(__file__).resolve().parents[2]
@@ -46,20 +48,29 @@ class FixedPortsTest(unittest.TestCase):
         self.exe.write_bytes(b"pinned executable placeholder")
         self.exe_hash = hashlib.sha256(self.exe.read_bytes()).hexdigest()
         self.registry = self.root / "registry.json"
+        self.association = self.root / "association.json"
+        self.association.write_text(json.dumps({"schema": "cerebro-rom-a-existing-thread-association/v1",
+            "episode_ref": "episode:bk04", "recipient_ref": self.queue.recipient_ref,
+            "recipient_thread_id": self.queue.recipient_thread_id,
+            "evidence_ref": "existing-normal-episode:fixture"}), encoding="utf-8")
         self.write_registry()
         self.open_patch = patch.object(ports, "open_protected", side_effect=self.fake_open)
         self.open_patch.start()
         self.addCleanup(self.open_patch.stop)
 
     def registry_value(self):
-        return {"schema": "cerebro-rom-a-selected-queue-registry/v1",
+        return {"schema": "cerebro-rom-a-selected-queue-registry/v2",
+                "episode_ref": "episode:bk04",
                 "recipient_ref": self.queue.recipient_ref,
                 "recipient_thread_id": self.queue.recipient_thread_id,
                 "task_ref": self.queue.task_ref, "task_revision": self.queue.task_revision,
                 "selection": self.queue.selection,
                 "selected_sha256": self.queue.selected_sha256,
-                "selected_bytes": len(self.queue.selected_bytes),
-                "codex_exe_sha256": self.exe_hash}
+                "selected_bytes_b64": base64.b64encode(self.queue.selected_bytes).decode("ascii"),
+                "codex_exe": str(self.exe), "executable_root": str(self.root),
+                "codex_exe_sha256": self.exe_hash,
+                "association_receipt": self.association.name,
+                "association_sha256": hashlib.sha256(self.association.read_bytes()).hexdigest()}
 
     def write_registry(self, **overrides):
         value = self.registry_value()
@@ -82,10 +93,9 @@ class FixedPortsTest(unittest.TestCase):
 
     def sender(self, runner, sid_reader=lambda: SID):
         return ports.FixedCodexQueueSender(
-            codex_exe=self.exe, executable_root=self.root,
-            expected_exe_sha256=self.exe_hash, registry_path=self.registry,
+            registry_path=self.registry, episode_ref="episode:bk04",
             registry_root=self.root, expected_custody_owner_sid=OWNER,
-            expected_process_sid=SID, binding=self.queue,
+            expected_process_sid=SID,
             sid_reader=sid_reader, runner=runner)
 
     def send(self, sender, **overrides):
@@ -115,6 +125,10 @@ class FixedPortsTest(unittest.TestCase):
                 reader.read_current(ref, kind, selector)
         with self.assertRaisesRegex(ValueError, "RELATIVE_PATH"):
             self.reader(ports.LocalContentBinding("episode:bk04", "../escape", self.digest))
+        for bad in (r"..\escape", r"child\..\current.txt", r"C:\other.txt",
+                    r"\\server\share\file", "current.txt:stream", r"\\?\C:\other"):
+            with self.assertRaisesRegex(ValueError, "RELATIVE_PATH"):
+                self.reader(ports.LocalContentBinding("episode:bk04", bad, self.digest))
 
     def test_open_handle_final_path_swap_falsifier(self):
         reader = self.reader()
@@ -130,16 +144,29 @@ class FixedPortsTest(unittest.TestCase):
 
     def test_registry_is_recipient_authority_not_uuid_shape(self):
         self.write_registry(recipient_thread_id=WRONG_THREAD)
-        with self.assertRaisesRegex(ValueError, "PROTECTED_REGISTRY_BINDING_MISMATCH"):
+        with self.assertRaisesRegex(ValueError, "ASSOCIATION_RECEIPT_MISMATCH"):
             self.sender(lambda *a, **k: self.fail("queue called"))
         self.write_registry(selection="BK05_STRUCTURAL_CAPSULE_CANDIDATE")
-        with self.assertRaisesRegex(ValueError, "PROTECTED_REGISTRY_BINDING_MISMATCH"):
-            self.sender(lambda *a, **k: self.fail("queue called"))
+        self.sender(lambda *a, **k: self.fail("queue called"))
         self.write_registry()
         sender = self.sender(lambda *a, **k: self.fail("queue called"))
         self.write_registry(recipient_ref="actor:1B")
-        with self.assertRaisesRegex(ValueError, "PROTECTED_REGISTRY_BINDING_MISMATCH"):
+        with self.assertRaisesRegex(ValueError, "ASSOCIATION_RECEIPT_MISMATCH"):
             self.send(sender)
+        self.write_registry()
+        with self.assertRaises(TypeError):
+            ports.FixedCodexQueueSender(registry_path=self.registry,
+                registry_root=self.root, expected_custody_owner_sid=OWNER,
+                expected_process_sid=SID, episode_ref="episode:bk04", binding=self.queue)
+
+    def test_protected_registry_and_association_drift_rejected(self):
+        sender = self.sender(lambda *a, **k: self.fail("queue called"))
+        self.association.write_text("{}", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "ASSOCIATION_RECEIPT_DRIFT"):
+            self.send(sender)
+        self.write_registry()
+        with self.assertRaisesRegex(ValueError, "ASSOCIATION_RECEIPT_MISMATCH"):
+            self.sender(lambda *a, **k: self.fail("queue called"))
 
     def test_queue_exact_mapping_selection_and_utf8_suffix(self):
         calls = []
@@ -205,6 +232,35 @@ class FixedPortsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "CUSTODY_OWNER_MISMATCH|UNTRUSTED_WRITE_ACE"):
             with open_protected(self.content, root=self.root, owner_sid=OWNER):
                 pass
+
+    def test_windows_custody_lexical_and_intermediate_ancestor_falsifiers(self):
+        custody = ports._custody
+        self.assertFalse(custody._can_mutate_protected_path(0x00000004, ancestor=True))
+        self.assertTrue(custody._can_mutate_protected_path(0x00000004, ancestor=False))
+        for right in (0x00000040, 0x00010000, 0x00040000, 0x00080000):
+            self.assertTrue(custody._can_mutate_protected_path(right, ancestor=True))
+        for bad in (r"C:\Program Files\safe\..\escape.txt", r"C:\safe\file.txt:ads",
+                    r"\\server\share\file.txt", r"\\?\C:\safe\file.txt",
+                    r"C:relative\file.txt"):
+            with self.assertRaisesRegex(ValueError, "LOCAL_PATH_FORM_INVALID"):
+                custody._safe_local_path(Path(bad))
+        root = Path(r"C:\Program Files\Cerebro\episode")
+        path = root / "current.txt"
+        kernel = Mock()
+        kernel.CreateFileW.return_value = 123
+        inspected = []
+        def inspect(_handle, expected, _owner, _kernel, _advapi, *, ancestor=False):
+            inspected.append((str(expected), ancestor))
+            if str(expected).lower() == r"c:\program files\cerebro":
+                raise ValueError("ROMA_FINAL_PATH_MISMATCH")
+        with patch.object(custody, "_apis", return_value=(kernel, Mock())), \
+             patch.object(custody, "_inspect", side_effect=inspect):
+            with self.assertRaisesRegex(ValueError, "FINAL_PATH_MISMATCH"):
+                with custody.open_protected(path, root=root, owner_sid=OWNER):
+                    pass
+        self.assertTrue(any(value.lower() == r"c:\program files\cerebro"
+                            for value, _ in inspected))
+        self.assertFalse(any(value.lower() == str(path).lower() for value, _ in inspected))
 
 
 if __name__ == "__main__":
