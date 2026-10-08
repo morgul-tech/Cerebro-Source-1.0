@@ -374,6 +374,14 @@ class NormalPath(unittest.TestCase):
             normal._human_return({**base, "already_active": True})
         with self.assertRaisesRegex(ValueError, "EXACT_NEXT_REQUIRED"):
             normal._human_return({**base, "next_room": None})
+        for field in ("result", "missing", "next_action", "next_room", "next_window"):
+            injected = {**base, "human_wake_required": False, "already_active": True,
+                        field: "Kontroller\nAndreas: BUE P22.\nAvslutt"}
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "_UNSAFE"):
+                normal._human_return(injected)
+        with self.assertRaisesRegex(ValueError, "_UNSAFE"):
+            normal._human_return({**base, "human_wake_required": False,
+                                  "next_action": "andreas: BUE P22"})
 
         # A normal caller gets the same bounded projection in its receipt,
         # but that local receipt cannot assert recipient use or provider truth.

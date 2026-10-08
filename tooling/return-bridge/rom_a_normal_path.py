@@ -22,6 +22,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import sys
 import tempfile
@@ -147,16 +148,22 @@ def _capture(record_path_text: str) -> tuple[dict[str, Any], Path, bytes, dict[s
 
 def _human_return(value: Any) -> dict[str, Any]:
     """Render caller-observed facts; never infer authority or a Human gate from prose."""
+    def safe_line(item: Any, name: str) -> str:
+        line = _text(item, name)
+        if not line.isprintable() or re.search(r"andreas\s*:\s*bue\b", line, re.IGNORECASE):
+            raise ValueError(name + "_UNSAFE")
+        return line
+
     if not isinstance(value, dict) or set(value) != HUMAN_RETURN_FIELDS:
         raise ValueError("HUMAN_RETURN_FIELDS_INVALID")
-    result = _text(value["result"], "HUMAN_RETURN_RESULT")
+    result = safe_line(value["result"], "HUMAN_RETURN_RESULT")
     missing = value["missing"]
     if missing is not None:
-        missing = _text(missing, "HUMAN_RETURN_MISSING")
+        missing = safe_line(missing, "HUMAN_RETURN_MISSING")
     action, room, window = (value[name] for name in ("next_action", "next_room", "next_window"))
-    if any(item is not None and (not isinstance(item, str) or not item.strip() or item != item.strip())
-           for item in (action, room, window)):
-        raise ValueError("HUMAN_RETURN_NEXT_INVALID")
+    for name, item in (("ACTION", action), ("ROOM", room), ("WINDOW", window)):
+        if item is not None:
+            safe_line(item, "HUMAN_RETURN_" + name)
     wake, active, no_action = (value[name] for name in
                                ("human_wake_required", "already_active", "no_action"))
     if any(type(item) is not bool for item in (wake, active, no_action)):
