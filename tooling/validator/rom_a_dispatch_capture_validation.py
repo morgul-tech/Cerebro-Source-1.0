@@ -9,9 +9,11 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest import mock
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "mcp"))
 MODULE = ROOT / "tooling/return-bridge/rom_a_dispatch_capture.py"
 spec = importlib.util.spec_from_file_location("rom_a_dispatch_capture", MODULE)
 assert spec is not None and spec.loader is not None
@@ -144,6 +146,229 @@ class DispatchCapture(unittest.TestCase):
         Path(result["original_path"]).unlink()
         with self.assertRaisesRegex(ValueError, "CAPTURE_READBACK_UNAVAILABLE"):
             capture_module.capture(self.root, self.request, self.raw)
+
+
+class OwnerEpisodeAdapter(unittest.TestCase):
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        root = Path(temp.name) / "capture"
+        request = {"schema": capture_module.SCHEMA, "task": {
+            "task_ref": "TASK-1", "task_revision": "TREV-1", "actor_ref": "ACTOR-1",
+            "generation_ref": "GEN-1", "carrier_ref": "CARRIER-1", "arc_ref": "ARC-1",
+            "source_head": "a" * 40, "effect_class": "NONE", "privacy_class": "SYNTHETIC",
+            "live_scope": "SCOPE-1", "authority_class": "NONE", "return_target": "A1",
+            "way_home": "A1-RETURN", "allowed_paths": ["one.py"],
+            "required_invariants": ["one task"], "stop_edges": ["authority change"],
+        }}
+        self.raw = b"original task bytes\n"
+        self.capture = capture_module.capture(root, request, self.raw)
+        self.identity = {"owner_ref": "A1", "authenticated": True, "currentness": "CURRENT"}
+        self.mandate = {
+            "owner_ref": "A1", "mandate_ref": "HUMAN-MANDATE-1", "revision": "MREV-1",
+            "currentness": "CURRENT", "authenticated_readback": True,
+            "human_authorized": True,
+            "human_provenance_ref": "HUMAN-DECISION-1", "task_ref": "TASK-1",
+            "task_revision": "TREV-1", "actor_ref": "ACTOR-1", "scope_ref": "SCOPE-1",
+            "progress_state": "WAITING_DEPENDENCY", "paused": False, "revoked": False,
+            "dependency_refs": ["DEP-1"], "all_dependencies_resolved": True,
+            "other_unresolved_gates": [],
+            "preflight_request": {"stage": "MATERIAL_AUTHORIZE", "material": True,
+                                  "commitment_target": "TASK-1", "resolved_scope": "SCOPE-1"},
+        }
+        self.dependency = {"dependency_ref": "DEP-1", "revision": "DREV-1",
+                           "source_ref": "SOURCE-1", "currentness": "CURRENT",
+                           "readback_verified": True,
+                           "disposition": "SOURCE_AFTER_DEPENDENCY",
+                           "state": "RESOLVED", "applicable": True}
+
+        class Reader:
+            def __init__(self, value):
+                self.value = value
+
+            def read_current(self, **_kwargs):
+                return dict(self.value)
+
+        self.port = capture_module.BoundRomAOwnerEpisodePort(
+            capture_record=Path(self.capture["capture_path"]),
+            owner_identity_reader=Reader(self.identity),
+            mandate_reader=Reader(self.mandate), dependency_reader=Reader(self.dependency))
+
+    def provision(self, **overrides):
+        return self.port.provision(**{
+            "task_ref": "TASK-1", "task_revision": "TREV-1", "dependency_ref": "DEP-1",
+            "dependency_revision": "DREV-1", "mandate_ref": "HUMAN-MANDATE-1",
+            **overrides,
+        })
+
+    def basis(self):
+        from control_resolution_host import _authorized_dependency_basis
+        return _authorized_dependency_basis(
+            self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1"),
+            "TASK-1", "DEP-1")[2]
+
+    def test_legacy_capture_ineligible_until_owner_provisions_exact_mandate(self):
+        with self.assertRaisesRegex(ValueError, "OWNER_EPISODE_NOT_PROVISIONED"):
+            self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+        with self.assertRaisesRegex(ValueError, "EXACT_MANDATE_OR_DEPENDENCY_MISMATCH"):
+            self.provision(dependency_revision="FORGED-REV")
+        self.identity["authenticated"] = False
+        with self.assertRaisesRegex(ValueError, "CURRENT_HUMAN_AND_DEPENDENCY_READBACK_REQUIRED"):
+            self.provision()
+        self.identity["authenticated"] = True
+        self.mandate["authenticated_readback"] = False
+        with self.assertRaisesRegex(ValueError, "CURRENT_HUMAN_AND_DEPENDENCY_READBACK_REQUIRED"):
+            self.provision()
+        self.mandate["authenticated_readback"] = True
+        self.dependency["readback_verified"] = False
+        with self.assertRaisesRegex(ValueError, "CURRENT_HUMAN_AND_DEPENDENCY_READBACK_REQUIRED"):
+            self.provision()
+        self.dependency["readback_verified"] = True
+        self.assertEqual(self.provision()["state"], "PROVISIONED_READBACK")
+        current = self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+        self.assertTrue(current["owner_readback_verified"])
+        self.assertFalse(current["provider_verified_claim"])
+        self.assertEqual(current["task"]["selected_bytes"], self.raw)
+        self.assertEqual(current["task"]["authority_ref"], "HUMAN-DECISION-1")
+
+    def test_reservation_is_per_episode_cas_and_same_basis_cannot_reset(self):
+        self.provision()
+        basis = self.basis()
+        reserved = self.port.reserve_reconsideration(
+            task_ref="TASK-1", task_revision="TREV-1", dependency_ref="DEP-1",
+            dependency_revision="DREV-1", basis_fingerprint=basis)
+        self.assertEqual(reserved["state"], "RESERVED")
+        self.assertEqual(self.port.reserve_reconsideration(
+            task_ref="TASK-1", task_revision="TREV-1", dependency_ref="DEP-1",
+            dependency_revision="DREV-1", basis_fingerprint=basis)["state"],
+            "STALE_OR_ALREADY_RESERVED")
+        self.assertEqual(self.port.record_reconsideration_result(
+            task_ref="TASK-1", dependency_ref="DEP-1", basis_fingerprint=basis,
+            result="SENT_ACCEPTED", delivery_ref="DELIVERY-1")["state"], "RECORDED")
+        self.assertEqual(self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+                         ["prior_reconsideration"]["result"], "SENT_ACCEPTED")
+        with self.assertRaisesRegex(ValueError, "SAME_BASIS_RESERVATION_CANNOT_RESET"):
+            self.provision(expected_episode_revision=3)
+
+    def test_mandate_or_dependency_staleness_blocks_readback(self):
+        self.provision()
+        self.mandate["revision"] = "MREV-2"
+        with self.assertRaisesRegex(ValueError, "STALE_MANDATE_OR_DEPENDENCY"):
+            self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+        self.mandate["revision"] = "MREV-1"
+        self.dependency["revision"] = "DREV-2"
+        with self.assertRaisesRegex(ValueError, "STALE_MANDATE_OR_DEPENDENCY"):
+            self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+
+    def test_restart_and_fault_batch_keeps_uncertain_reservation_non_retryable(self):
+        self.provision()
+        args = {"task_ref": "TASK-1", "task_revision": "TREV-1",
+                "dependency_ref": "DEP-1", "dependency_revision": "DREV-1",
+                "basis_fingerprint": self.basis()}
+        state_path = Path(self.capture["capture_path"]).parent / "owner-state.json"
+        before = state_path.read_bytes()
+        with mock.patch.object(capture_module.os, "fsync", side_effect=OSError("sync failed")):
+            with self.assertRaisesRegex(OSError, "sync failed"):
+                self.port.reserve_reconsideration(**args)
+        self.assertEqual(state_path.read_bytes(), before)
+        self.assertIsNone(self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+                          ["prior_reconsideration"])
+        self.assertEqual(self.port.reserve_reconsideration(**args)["state"], "RESERVED")
+
+        restarted = capture_module.BoundRomAOwnerEpisodePort(
+            capture_record=Path(self.capture["capture_path"]),
+            owner_identity_reader=self.port.owner_identity_reader,
+            mandate_reader=self.port.mandate_reader,
+            dependency_reader=self.port.dependency_reader)
+        prior = restarted.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+        self.assertEqual(prior["prior_reconsideration"]["result"], "RESERVED_UNCERTAIN")
+        self.assertEqual(restarted.reserve_reconsideration(**args)["state"],
+                         "STALE_OR_ALREADY_RESERVED")
+        with self.assertRaisesRegex(ValueError, "SAME_BASIS_RESERVATION_CANNOT_RESET"):
+            restarted.provision(task_ref="TASK-1", task_revision="TREV-1",
+                                dependency_ref="DEP-1", dependency_revision="DREV-1",
+                                mandate_ref="HUMAN-MANDATE-1", expected_episode_revision=2)
+
+        with mock.patch.object(capture_module.os, "fsync", side_effect=OSError("result sync failed")):
+            with self.assertRaisesRegex(OSError, "result sync failed"):
+                restarted.record_reconsideration_result(
+                    task_ref="TASK-1", dependency_ref="DEP-1", basis_fingerprint=args["basis_fingerprint"],
+                    result="SENT_ACCEPTED", delivery_ref="DELIVERY-1")
+        again = capture_module.BoundRomAOwnerEpisodePort(
+            capture_record=Path(self.capture["capture_path"]),
+            owner_identity_reader=self.port.owner_identity_reader,
+            mandate_reader=self.port.mandate_reader,
+            dependency_reader=self.port.dependency_reader)
+        self.assertEqual(again.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+                         ["prior_reconsideration"]["result"], "RESERVED_UNCERTAIN")
+        self.assertEqual(again.reserve_reconsideration(**args)["state"],
+                         "STALE_OR_ALREADY_RESERVED")
+
+    def test_reservation_refuses_pause_revocation_and_refall_at_same_revision(self):
+        for field, value, target in (("paused", True, self.mandate),
+                                     ("revoked", True, self.mandate),
+                                     ("state", "REOPENED", self.dependency)):
+            with self.subTest(field=field):
+                state_path = self.port.episode / "owner-state.json"
+                revision = json.loads(state_path.read_text())["episode_revision"] if state_path.exists() else 0
+                self.provision(expected_episode_revision=revision)
+                basis = self.basis()
+                original = target[field]
+                target[field] = value
+                try:
+                    result = self.port.reserve_reconsideration(
+                        task_ref="TASK-1", task_revision="TREV-1", dependency_ref="DEP-1",
+                        dependency_revision="DREV-1", basis_fingerprint=basis)
+                    self.assertEqual(result["state"], "CURRENT_OWNER_BASIS_OR_GATE_CHANGED")
+                    self.assertIsNone(self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+                                      ["prior_reconsideration"])
+                finally:
+                    target[field] = original
+
+    def test_normal_host_constructor_binds_exact_owner_episode_and_selected_sender(self):
+        from control_resolution_host import BoundControlResolutionHost
+
+        class Persistence:
+            def verify(self, **_kwargs):
+                return {}
+
+        class Capability:
+            def is_available(self, **_kwargs):
+                return False
+
+            def executor(self, **_kwargs):
+                raise AssertionError("unused")
+
+        class Sender:
+            def __init__(self):
+                self.count = 0
+
+            def send_selected(self, **kwargs):
+                self.count += 1
+                return {"state": "ACCEPTED", "recipient_ref": kwargs["recipient_ref"],
+                        "selected_sha256": kwargs["selected_sha256"],
+                        "delivery_ref": "SYNTHETIC-DELIVERY-1"}
+
+        sender = Sender()
+        host = BoundControlResolutionHost.for_rom_a_owner_episode(
+            capture_record=Path(self.capture["capture_path"]),
+            owner_identity_reader=self.port.owner_identity_reader,
+            human_mandate_reader=self.port.mandate_reader,
+            dependency_reader=self.port.dependency_reader,
+            selected_sender=sender, persistence_verifier=Persistence(),
+            capability_resolver=Capability())
+        host._authorized_task_dependency_reader.provision(
+            task_ref="TASK-1", task_revision="TREV-1", dependency_ref="DEP-1",
+            dependency_revision="DREV-1", mandate_ref="HUMAN-MANDATE-1")
+        with (mock.patch("control_resolution_host.material_commitment_preflight.resolve",
+                         return_value={"result": "PASS", "receipt": {"schema": "test"}}),
+              mock.patch("control_resolution_host.material_commitment_preflight.consume",
+                         return_value={"result": "PASS"})):
+            first = host.reconsider_authorized_task_dependency("TASK-1", "DEP-1")
+            second = host.reconsider_authorized_task_dependency("TASK-1", "DEP-1")
+        self.assertEqual(first["reason"], "OWNER_FENCED_DISPATCH_UNBOUND")
+        self.assertEqual(second["reason"], "OWNER_FENCED_DISPATCH_UNBOUND")
+        self.assertEqual(sender.count, 0)
 
 
 if __name__ == "__main__":

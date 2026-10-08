@@ -33,7 +33,7 @@ class Reader:
     def __init__(self):
         payload = b"existing authorized task bytes\n"
         self.current = {
-            "provider_readback_verified": True, "currentness": "CURRENT",
+            "owner_readback_verified": True, "currentness": "CURRENT",
             "task": {
                 "task_ref": "TASK-1", "task_revision": "TREV-1", "actor_ref": "ACTOR-1",
                 "authority_ref": "AUTH-1", "authority_state": "AUTHORIZED",
@@ -54,6 +54,8 @@ class Reader:
         self.reservations = []
         self.records = []
         self.change_on_second_read = False
+        self.pause_on_reserve = False
+        self.revoke_on_reserve = False
 
     def read_current(self, *, task_ref, dependency_ref):
         assert (task_ref, dependency_ref) == ("TASK-1", "DEP-1")
@@ -64,9 +66,25 @@ class Reader:
 
     def reserve_reconsideration(self, **kwargs):
         self.reservations.append(kwargs)
+        if self.pause_on_reserve:
+            self.current["task"]["paused"] = True
+        if self.revoke_on_reserve:
+            self.current["task"]["revoked"] = True
         return {"state": "RESERVED", "basis_fingerprint": kwargs["basis_fingerprint"],
                 "task_revision": kwargs["task_revision"],
                 "dependency_revision": kwargs["dependency_revision"]}
+
+    def send_selected_under_owner_fence(self, *, selected_sender, basis_fingerprint,
+                                         dependency_ref, **kwargs):
+        current = self.read_current(task_ref=kwargs["task_ref"], dependency_ref=dependency_ref)
+        from control_resolution_host import _authorized_dependency_basis
+        task, dependency, observed = _authorized_dependency_basis(
+            current, kwargs["task_ref"], dependency_ref)
+        if (observed != basis_fingerprint or task["paused"] or task["revoked"]
+                or task["authority_state"] != "AUTHORIZED"
+                or dependency["state"] != "RESOLVED"):
+            return {"state": "REFUSED"}
+        return selected_sender.send_selected(**kwargs)
 
     def record_reconsideration_result(self, **kwargs):
         self.records.append(kwargs)
@@ -167,6 +185,15 @@ class DependencyContinuationTests(unittest.TestCase):
                              "RECONSIDERATION_NOT_EXCLUSIVELY_RESERVED")
         self.assertEqual(self.sender.sent, [])
         self.assertEqual(self.reader.reservations, [])
+
+    def test_pause_or_revocation_after_reservation_never_calls_sender(self):
+        for field in ("pause_on_reserve", "revoke_on_reserve"):
+            with self.subTest(field=field):
+                self.reader, self.sender = Reader(), Sender()
+                self.host = host(self.reader, self.sender)
+                setattr(self.reader, field, True)
+                self.assertEqual(self.run_once()["action"], "PRECISE_REPAIR")
+                self.assertEqual(self.sender.sent, [])
 
     def test_uncertain_prior_and_missing_consumer_fail_closed(self):
         first = self.run_once()
