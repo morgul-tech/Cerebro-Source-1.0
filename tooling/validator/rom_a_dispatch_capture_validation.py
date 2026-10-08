@@ -201,6 +201,12 @@ class OwnerEpisodeAdapter(unittest.TestCase):
             **overrides,
         })
 
+    def basis(self):
+        from control_resolution_host import _authorized_dependency_basis
+        return _authorized_dependency_basis(
+            self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1"),
+            "TASK-1", "DEP-1")[2]
+
     def test_legacy_capture_ineligible_until_owner_provisions_exact_mandate(self):
         with self.assertRaisesRegex(ValueError, "OWNER_EPISODE_NOT_PROVISIONED"):
             self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
@@ -227,16 +233,17 @@ class OwnerEpisodeAdapter(unittest.TestCase):
 
     def test_reservation_is_per_episode_cas_and_same_basis_cannot_reset(self):
         self.provision()
+        basis = self.basis()
         reserved = self.port.reserve_reconsideration(
             task_ref="TASK-1", task_revision="TREV-1", dependency_ref="DEP-1",
-            dependency_revision="DREV-1", basis_fingerprint="b" * 64)
+            dependency_revision="DREV-1", basis_fingerprint=basis)
         self.assertEqual(reserved["state"], "RESERVED")
         self.assertEqual(self.port.reserve_reconsideration(
             task_ref="TASK-1", task_revision="TREV-1", dependency_ref="DEP-1",
-            dependency_revision="DREV-1", basis_fingerprint="b" * 64)["state"],
+            dependency_revision="DREV-1", basis_fingerprint=basis)["state"],
             "STALE_OR_ALREADY_RESERVED")
         self.assertEqual(self.port.record_reconsideration_result(
-            task_ref="TASK-1", dependency_ref="DEP-1", basis_fingerprint="b" * 64,
+            task_ref="TASK-1", dependency_ref="DEP-1", basis_fingerprint=basis,
             result="SENT_ACCEPTED", delivery_ref="DELIVERY-1")["state"], "RECORDED")
         self.assertEqual(self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
                          ["prior_reconsideration"]["result"], "SENT_ACCEPTED")
@@ -257,7 +264,7 @@ class OwnerEpisodeAdapter(unittest.TestCase):
         self.provision()
         args = {"task_ref": "TASK-1", "task_revision": "TREV-1",
                 "dependency_ref": "DEP-1", "dependency_revision": "DREV-1",
-                "basis_fingerprint": "f" * 64}
+                "basis_fingerprint": self.basis()}
         state_path = Path(self.capture["capture_path"]).parent / "owner-state.json"
         before = state_path.read_bytes()
         with mock.patch.object(capture_module.os, "fsync", side_effect=OSError("sync failed")):
@@ -285,7 +292,7 @@ class OwnerEpisodeAdapter(unittest.TestCase):
         with mock.patch.object(capture_module.os, "fsync", side_effect=OSError("result sync failed")):
             with self.assertRaisesRegex(OSError, "result sync failed"):
                 restarted.record_reconsideration_result(
-                    task_ref="TASK-1", dependency_ref="DEP-1", basis_fingerprint="f" * 64,
+                    task_ref="TASK-1", dependency_ref="DEP-1", basis_fingerprint=args["basis_fingerprint"],
                     result="SENT_ACCEPTED", delivery_ref="DELIVERY-1")
         again = capture_module.BoundRomAOwnerEpisodePort(
             capture_record=Path(self.capture["capture_path"]),
@@ -296,6 +303,27 @@ class OwnerEpisodeAdapter(unittest.TestCase):
                          ["prior_reconsideration"]["result"], "RESERVED_UNCERTAIN")
         self.assertEqual(again.reserve_reconsideration(**args)["state"],
                          "STALE_OR_ALREADY_RESERVED")
+
+    def test_reservation_refuses_pause_revocation_and_refall_at_same_revision(self):
+        for field, value, target in (("paused", True, self.mandate),
+                                     ("revoked", True, self.mandate),
+                                     ("state", "REOPENED", self.dependency)):
+            with self.subTest(field=field):
+                state_path = self.port.episode / "owner-state.json"
+                revision = json.loads(state_path.read_text())["episode_revision"] if state_path.exists() else 0
+                self.provision(expected_episode_revision=revision)
+                basis = self.basis()
+                original = target[field]
+                target[field] = value
+                try:
+                    result = self.port.reserve_reconsideration(
+                        task_ref="TASK-1", task_revision="TREV-1", dependency_ref="DEP-1",
+                        dependency_revision="DREV-1", basis_fingerprint=basis)
+                    self.assertEqual(result["state"], "CURRENT_OWNER_BASIS_OR_GATE_CHANGED")
+                    self.assertIsNone(self.port.read_current(task_ref="TASK-1", dependency_ref="DEP-1")
+                                      ["prior_reconsideration"])
+                finally:
+                    target[field] = original
 
     def test_normal_host_constructor_binds_exact_owner_episode_and_selected_sender(self):
         from control_resolution_host import BoundControlResolutionHost
@@ -338,9 +366,9 @@ class OwnerEpisodeAdapter(unittest.TestCase):
                          return_value={"result": "PASS"})):
             first = host.reconsider_authorized_task_dependency("TASK-1", "DEP-1")
             second = host.reconsider_authorized_task_dependency("TASK-1", "DEP-1")
-        self.assertEqual(first["action"], "CONTINUATION_SENT")
-        self.assertEqual(second["action"], "QUIET_REUSE")
-        self.assertEqual(sender.count, 1)
+        self.assertEqual(first["reason"], "OWNER_FENCED_DISPATCH_UNBOUND")
+        self.assertEqual(second["reason"], "OWNER_FENCED_DISPATCH_UNBOUND")
+        self.assertEqual(sender.count, 0)
 
 
 if __name__ == "__main__":

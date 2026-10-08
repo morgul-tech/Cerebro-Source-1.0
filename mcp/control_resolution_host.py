@@ -563,6 +563,9 @@ class BoundControlResolutionHost:
             return finish("PRECISE_REPAIR", "SAME_BASIS_UNCERTAIN_OR_UNRESOLVED")
         if self._rom_a_selected_dispatcher is None:
             return finish("PRECISE_REPAIR", "NORMAL_CONSUMER_UNBOUND")
+        fenced_dispatch = getattr(reader, "send_selected_under_owner_fence", None)
+        if not callable(fenced_dispatch):
+            return finish("PRECISE_REPAIR", "OWNER_FENCED_DISPATCH_UNBOUND")
 
         request = task["preflight_request"]
         if (not isinstance(request, dict)
@@ -595,7 +598,9 @@ class BoundControlResolutionHost:
         payload = task["selected_bytes"]
         selected_sha256 = hashlib.sha256(payload).hexdigest()
         try:
-            sent = self._rom_a_selected_dispatcher.send_selected(
+            sent = fenced_dispatch(
+                selected_sender=self._rom_a_selected_dispatcher,
+                basis_fingerprint=basis, dependency_ref=dependency_ref,
                 recipient_ref=task["actor_ref"], selected_bytes=payload,
                 selected_sha256=selected_sha256, selection="DEPENDENCY_CONTINUATION",
                 task_ref=task_ref, task_revision=task["task_revision"])

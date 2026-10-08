@@ -168,7 +168,9 @@ implementation_learning_loop:
       legacy_capture_alone_is_authority: false
       local_file_fsync_rename_proves_remote_or_crash_durability: false
       producer: host-bound-current-task-and-dependency-owner-readback
-      consumer: existing-rom-a-selected-dispatcher-after-atomic-owner-basis-reservation
+      consumer: existing-rom-a-selected-dispatcher-only-under-owner-fence-through-send
+      owner_episode_file_lock_fences_external_mandate_or_dependency: false
+      missing_fenced_owner_dispatch: PRECISE_REPAIR_NO_SEND
       exact_basis: [task_ref, task_revision, authority_ref, dependency_ref, dependency_revision, dependency_source_ref, selected_sha256]
       same_basis: QUIET_REUSE
       changed_basis: REVALIDATE_EXISTING_AUTHORITY_AND_REMAINING_GATES

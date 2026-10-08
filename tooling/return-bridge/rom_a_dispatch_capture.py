@@ -435,6 +435,18 @@ class BoundRomAOwnerEpisodePort:
             current = self.read_current(task_ref=task_ref, dependency_ref=dependency_ref)
             if current["episode_revision"] != latest["episode_revision"]:
                 return {"state": "STALE_OR_ALREADY_RESERVED"}
+            from control_resolution_host import _authorized_dependency_basis
+            task, dependency, observed_basis = _authorized_dependency_basis(
+                current, task_ref, dependency_ref)
+            if (observed_basis != basis_fingerprint
+                    or task["authority_state"] != "AUTHORIZED"
+                    or task["paused"] is not False or task["revoked"] is not False
+                    or task["progress_state"] != "WAITING_DEPENDENCY"
+                    or task["all_dependencies_resolved"] is not True
+                    or task["other_unresolved_gates"]
+                    or dependency["state"] != "RESOLVED"
+                    or dependency["applicable"] is not True):
+                return {"state": "CURRENT_OWNER_BASIS_OR_GATE_CHANGED"}
             latest["reservation"] = {"basis_fingerprint": basis_fingerprint,
                                      "result": "RESERVED_UNCERTAIN"}
             latest["episode_revision"] += 1
