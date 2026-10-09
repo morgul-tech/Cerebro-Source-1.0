@@ -21,7 +21,7 @@ from .pm_x9_cli import _load_settings
 PROFILE_SCHEMA = "cerebro-bk07-normal-use-profile/v1"
 SUBJECT = "cerebro.v1.artifact.pointer"
 MAX_PROFILE_BYTES = 16 * 1024
-QUALIFIED_FACTORY = "providers.pm_x9_live_host:make_ports"
+QUALIFIED_FACTORY = "signalvev_client.pm_x9_live_host:make_ports"
 
 
 class HostRefused(ValueError):
@@ -64,7 +64,7 @@ def compose(profile_path: Path, binding_path: Path, sender_path: Path, receiver_
     if settings.ports_factory != QUALIFIED_FACTORY:
         raise HostRefused("QUALIFIED_HOST_FACTORY_REQUIRED")
     try:
-        provider = importlib.import_module("providers.pm_x9_live_host")
+        provider = importlib.import_module("signalvev_client.pm_x9_live_host")
     except (ImportError, AttributeError) as exc:
         raise HostRefused("CURRENT_HOST_BACKING_UNAVAILABLE") from exc
     if (type(host_runtime) is not getattr(provider, "LiveRuntimeBindings", None)
