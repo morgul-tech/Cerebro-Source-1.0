@@ -547,6 +547,69 @@ def selftest() -> dict[str, Any]:
           and rom_host._bounded_content_provider is rom_reader
           and rom_host._rom_a_selected_dispatcher is rom_sender
           and rom_reader.calls == [] and rom_sender.calls == [])
+    # Trusted constructor configuration only; no caller-selected output route.
+    from unittest.mock import patch
+    import control_context_remote_runtime as runtime_module
+    from rom_a_google_docs_ports import FixedGoogleDocsNamedRangeReader
+    docs_args = dict(config=config, connection_factory=ProbeFactory(),
+                     token_verifier=StaticTokenVerifier(), resolution_attestation_verifier=attestor,
+                     pm_profile_verifier=RuntimePmProfileVerifier(),
+                     rom_a_bounded_content_provider=rom_reader,
+                     rom_a_selected_dispatcher=rom_sender, clock=lambda: NOW)
+    fixed_output = SOURCE_ROOT / "fixture-docs-output-not-created"
+    docs_runtime = assemble_postgres_control_context_remote_runtime_from_connection_factory(
+        **docs_args, rom_a_docs_out_dir=fixed_output)
+    docs_host = docs_runtime.bind_control_resolution_host(
+        persistence_verifier=RuntimePersistenceVerifier(),
+        capability_resolver=RuntimeCapabilityResolver())
+    check("ROMA-docs-fixed-output-reaches-normal-host-without-effect",
+          docs_runtime.rom_a_docs_out_dir is fixed_output
+          and docs_host._rom_a_docs_out_dir is fixed_output
+          and rom_reader.calls == [] and rom_sender.calls == [])
+    dsn_args = {key: value for key, value in docs_args.items() if key != "connection_factory"}
+    with patch.object(runtime_module, "make_psycopg_connection_factory",
+                      return_value=ProbeFactory()):
+        dsn_runtime = runtime_module.assemble_postgres_control_context_remote_runtime(
+            **dsn_args, postgres_dsn="fixture:never-connected", rom_a_docs_out_dir=fixed_output)
+    dsn_host = dsn_runtime.bind_control_resolution_host(
+        persistence_verifier=RuntimePersistenceVerifier(),
+        capability_resolver=RuntimeCapabilityResolver())
+    check("ROMA-docs-dsn-factory-forwards-same-fixed-output",
+          dsn_host._rom_a_docs_out_dir is fixed_output
+          and rom_reader.calls == [] and rom_sender.calls == [])
+    # A typed inert reader reaches the None-output fence before any provider call.
+    old_reader = rom_host._bounded_content_provider
+    rom_host._bounded_content_provider = object.__new__(FixedGoogleDocsNamedRangeReader)
+    try:
+        rom_host.dispatch_rom_a_docs_selection(
+            target={}, recipient_ref="fixture:A1", task_ref="fixture:task",
+            task_revision="fixture:r1")
+        none_closed = False
+    except ValueError as exc:
+        none_closed = str(exc) == "host-rom-a-docs-fixed-output-unbound"
+    finally:
+        rom_host._bounded_content_provider = old_reader
+    check("ROMA-docs-default-None-fails-closed-before-provider-or-send",
+          rom_runtime.rom_a_docs_out_dir is None
+          and rom_host._rom_a_docs_out_dir is None and none_closed
+          and rom_reader.calls == [] and rom_sender.calls == [])
+    check("ROMA-docs-relative-or-string-output-rejected",
+          all(_expect_error(lambda bad=bad:
+              assemble_postgres_control_context_remote_runtime_from_connection_factory(
+                  **docs_args, rom_a_docs_out_dir=bad), ControlContextRemoteRuntimeError)
+              for bad in (Path("relative-output"), str(fixed_output))))
+    check("ROMA-docs-caller-output-injection-rejected",
+          _expect_error(lambda: docs_host.dispatch_rom_a_docs_selection(
+              target={}, recipient_ref="fixture:A1", task_ref="fixture:task",
+              task_revision="fixture:r1", out_dir=str(fixed_output)), TypeError)
+          and _expect_error(lambda: docs_host.dispatch_rom_a_docs_selection(
+              target={}, recipient_ref="fixture:A1", task_ref="fixture:task",
+              task_revision="fixture:r1", rom_a_docs_out_dir=fixed_output), TypeError)
+          and _expect_error(lambda: docs_runtime.bind_control_resolution_host(
+              persistence_verifier=RuntimePersistenceVerifier(),
+              capability_resolver=RuntimeCapabilityResolver(),
+              rom_a_docs_out_dir=fixed_output), TypeError)
+          and rom_reader.calls == [] and rom_sender.calls == [])
     check("ROMA-normal-runtime-refuses-one-sided-or-invalid-ports",
           _expect_error(lambda: assemble_postgres_control_context_remote_runtime_from_connection_factory(
               config=config, connection_factory=ProbeFactory(), token_verifier=StaticTokenVerifier(),
