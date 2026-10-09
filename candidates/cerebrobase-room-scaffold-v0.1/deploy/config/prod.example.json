@@ -1,0 +1,20 @@
+{
+ "config_schema": "cerebrobase.config/v1",
+ "environment": "PROD",
+ "build_id": "<16-hex build_id from the installed artifact BUILD_INFO.json>",
+ "db_path": "/srv/cerebrobase-prod/data/db/rooms.sqlite3",
+ "private_data_root": "/srv/cerebrobase-prod/data/private",
+ "public_assets_root": "/srv/cerebro/www",
+ "runtime_root": "/srv/cerebrobase-prod/run",
+ "bind_host": "127.0.0.1",
+ "port": 8473,
+ "public_origin": "https://cerebrobase.net",
+ "auth_mode": "EXTERNAL",
+ "cookie_secure": true,
+ "session_ttl_seconds": 3600,
+ "capabilities": {"tools": {}},
+ "integrations": {"auth_provider": {"enabled": true, "secret_ref": "auth_client_secret"}},
+ "secret_refs": {"auth_client_secret": "file:/etc/cerebrobase-prod/secrets/auth_client_secret"},
+ "limits": {"max_body_bytes": 16384, "rate_per_minute": 240, "max_header_bytes": 8192},
+ "min_free_bytes": 1073741824
+}

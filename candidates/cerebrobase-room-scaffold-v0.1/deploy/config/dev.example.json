@@ -1,0 +1,20 @@
+{
+ "config_schema": "cerebrobase.config/v1",
+ "environment": "DEV",
+ "build_id": "SOURCE_TREE",
+ "db_path": "/home/USER/cerebrobase-dev/data/db/rooms.sqlite3",
+ "private_data_root": "/home/USER/cerebrobase-dev/data/private",
+ "public_assets_root": "/home/USER/cerebrobase-dev/public",
+ "runtime_root": "/home/USER/cerebrobase-dev/run",
+ "bind_host": "127.0.0.1",
+ "port": 8471,
+ "public_origin": "http://127.0.0.1:8471",
+ "auth_mode": "SYNTHETIC",
+ "cookie_secure": false,
+ "session_ttl_seconds": 3600,
+ "capabilities": {"tools": {"fixture.echo": true}},
+ "integrations": {"postkasse": {"enabled": false, "secret_ref": "postkasse_token"}},
+ "secret_refs": {"postkasse_token": "env:CB_POSTKASSE_TOKEN"},
+ "limits": {"max_body_bytes": 16384, "rate_per_minute": 240, "max_header_bytes": 8192},
+ "min_free_bytes": 67108864
+}
