@@ -26,6 +26,14 @@ CURRENT_CONFORMANCE_SCHEMA = "cerebro-runtime2-human-execution-handoff-current-c
 CANDIDATE_SCOPE_SCHEMA = "cerebro-runtime2-candidate-scope/v1"
 SNAPSHOT_SCHEMA = "cerebro-runtime2-source-snapshot/v1"
 PROFILE = "HASH_BOUND_RUNTIME2_CMD"
+RECIPIENT_FIELDS = ("actor_ref", "generation_ref", "thread_ref", "carrier_ref", "continuation_ref")
+RECIPIENT_CONTRACT = {
+    "required_fields": list(RECIPIENT_FIELDS),
+    "intended_source": "HASH_BOUND_ENVELOPE_NOT_IDENTITY_AUTHORITY",
+    "actual_source": "TRUSTED_HOST_PROJECTION_AT_CONSUME",
+    "missing_actual_effect": "BLOCK_BEFORE_LAUNCH",
+    "caller_alias_authority": False,
+}
 BINDING_ID = "RUNTIME2_HUMAN_EXECUTION_HANDOFF_TRANSPORT"
 CONTEXT_BINDING_ID = "RUNTIME2-HUMAN-EXECUTION-HANDOFF-CONTINUE"
 CONSUMER_RELATIVE = "tooling/runtime-host/runtime2_handoff_consumer.py"
@@ -284,6 +292,18 @@ def _binding_fingerprint(binding: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
+def validate_recipient_binding(value: Any, label: str) -> dict[str, str]:
+    _require(isinstance(value, dict) and set(value) == set(RECIPIENT_FIELDS), f"{label}-field-set-invalid")
+    for field in RECIPIENT_FIELDS:
+        item = value[field]
+        _require(
+            isinstance(item, str) and bool(item) and item == item.strip()
+            and len(item) <= 256 and not any(ord(char) < 32 for char in item),
+            f"{label}-{field}-invalid",
+        )
+    return {field: value[field] for field in RECIPIENT_FIELDS}
+
+
 def load_runtime2_context_binding(source_root: Path) -> dict[str, Any]:
     registry = json.loads((source_root / REGISTRY_RELATIVE).read_text(encoding="utf-8"))
     _require(registry.get("active_binding_id") == "C02-P002-CASE-FINAL-CONTINUE", "c02-active-binding-was-silently-rebased")
@@ -292,6 +312,8 @@ def load_runtime2_context_binding(source_root: Path) -> dict[str, Any]:
     _require(len(matches) == 1, "runtime2-active-binding-cardinality-invalid")
     binding = matches[0]
     _require(binding.get("binding_fingerprint") == _binding_fingerprint(binding), "runtime2-active-binding-fingerprint-mismatch")
+    _require(binding.get("recipient_binding_contract") == RECIPIENT_CONTRACT, "runtime2-recipient-binding-contract-mismatch")
+    _require(binding.get("readiness") == "READY_AFTER_TRANSPORT_AND_TRUSTED_HOST_RECIPIENT_PROJECTION", "runtime2-recipient-projection-readiness-mismatch")
     _require(binding.get("current_basis_ref") == "CTX-BASIS-RUNTIME2-HUMAN-EXECUTION-HANDOFF-20260901-001", "runtime2-current-basis-ref-mismatch")
     _require(binding.get("full_payload_ref") == WORKING_CONTEXT_RELATIVE + "#CTX-BASIS-RUNTIME2-HUMAN-EXECUTION-HANDOFF-20260901-001", "runtime2-full-payload-ref-mismatch")
     context_text = (source_root / WORKING_CONTEXT_RELATIVE).read_text(encoding="utf-8")
@@ -304,11 +326,12 @@ def envelope_fingerprint(envelope: dict[str, Any]) -> str:
     return hashlib.sha256(_canonical_json(subject)).hexdigest()
 
 
-def generate_envelope(cmd_sha256: str, source_revision: str, context_binding: dict[str, Any]) -> dict[str, Any]:
+def generate_envelope(cmd_sha256: str, source_revision: str, context_binding: dict[str, Any], recipient_binding: dict[str, str]) -> dict[str, Any]:
     revision = str(source_revision or "").strip().lower()
     _require(bool(REVISION_RE.fullmatch(revision)), "source-revision-invalid")
     _require(context_binding.get("binding_id") == CONTEXT_BINDING_ID, "runtime2-context-binding-id-mismatch")
     _require(context_binding.get("binding_fingerprint") == _binding_fingerprint(context_binding), "runtime2-context-binding-fingerprint-mismatch")
+    _require(context_binding.get("recipient_binding_contract") == RECIPIENT_CONTRACT, "runtime2-recipient-binding-contract-mismatch")
     envelope = {
         "schema": SCHEMA,
         "profile": PROFILE,
@@ -318,6 +341,7 @@ def generate_envelope(cmd_sha256: str, source_revision: str, context_binding: di
             "binding_id": CONTEXT_BINDING_ID,
             "binding_fingerprint": context_binding["binding_fingerprint"],
         },
+        "recipient_binding": validate_recipient_binding(recipient_binding, "intended-recipient"),
         "artifact": {
             "kind": "WINDOWS_CMD",
             "extension": ".cmd",
@@ -329,7 +353,7 @@ def generate_envelope(cmd_sha256: str, source_revision: str, context_binding: di
 
 
 def validate_envelope(envelope: dict[str, Any], context_binding: dict[str, Any]) -> dict[str, Any]:
-    _require(set(envelope) == {"schema", "profile", "binding_id", "source_revision", "context_binding", "artifact", "handoff_fingerprint"}, "runtime2-envelope-field-set-invalid")
+    _require(set(envelope) == {"schema", "profile", "binding_id", "source_revision", "context_binding", "recipient_binding", "artifact", "handoff_fingerprint"}, "runtime2-envelope-field-set-invalid")
     _require(envelope.get("schema") == SCHEMA, "runtime2-envelope-schema-mismatch")
     _require(envelope.get("profile") == PROFILE, "runtime2-envelope-profile-mismatch")
     _require(envelope.get("profile") != "HASH_BOUND_POWERSHELL", "runtime2-cmd-mislabeled-as-powershell")
@@ -337,6 +361,8 @@ def validate_envelope(envelope: dict[str, Any], context_binding: dict[str, Any])
     _require(bool(REVISION_RE.fullmatch(str(envelope.get("source_revision") or ""))), "source-revision-invalid")
     expected_context = {"binding_id": CONTEXT_BINDING_ID, "binding_fingerprint": context_binding.get("binding_fingerprint")}
     _require(envelope.get("context_binding") == expected_context, "runtime2-context-binding-envelope-mismatch")
+    _require(context_binding.get("recipient_binding_contract") == RECIPIENT_CONTRACT, "runtime2-recipient-binding-contract-mismatch")
+    recipient = validate_recipient_binding(envelope.get("recipient_binding"), "intended-recipient")
     artifact = envelope.get("artifact")
     _require(isinstance(artifact, dict) and set(artifact) == {"kind", "extension", "sha256"}, "runtime2-envelope-must-contain-exactly-one-cmd-artifact-identity")
     _require(artifact.get("kind") == "WINDOWS_CMD" and artifact.get("extension") == ".cmd", "runtime2-envelope-artifact-must-be-cmd")
@@ -350,6 +376,7 @@ def validate_envelope(envelope: dict[str, Any], context_binding: dict[str, Any])
         "profile": PROFILE,
         "cmd_sha256": cmd_sha,
         "context_binding_id": CONTEXT_BINDING_ID,
+        "recipient_binding": recipient,
         "handoff_fingerprint": expected_fingerprint,
     }
 
@@ -366,9 +393,9 @@ def generate_command(envelope_sha256: str, source_root: Path) -> str:
     ))
 
 
-def generate_handoff(cmd_sha256: str, source_revision: str, source_root: Path) -> dict[str, Any]:
+def generate_handoff(cmd_sha256: str, source_revision: str, source_root: Path, recipient_binding: dict[str, str]) -> dict[str, Any]:
     binding = load_runtime2_context_binding(source_root)
-    envelope = generate_envelope(cmd_sha256, source_revision, binding)
+    envelope = generate_envelope(cmd_sha256, source_revision, binding, recipient_binding)
     envelope_bytes = _canonical_json(envelope)
     envelope_sha = hashlib.sha256(envelope_bytes).hexdigest()
     return {
@@ -408,13 +435,17 @@ def selftest() -> dict[str, Any]:
         "full_payload_ref": "engines/context/working-context.yaml#CTX-BASIS", "constraints_refs": [], "evidence_refs": [],
         "maturity": "LOCKED", "readiness": "READY", "source_revision": "fixture",
         "required_next_behavior": [], "resume_order": [], "alternative_paths": [],
+        "recipient_binding_contract": copy.deepcopy(RECIPIENT_CONTRACT),
     }
     binding["binding_fingerprint"] = _binding_fingerprint(binding)
-    envelope = generate_envelope("1" * 64, "a" * 40, binding)
+    recipient = {field: f"fixture-{field}" for field in RECIPIENT_FIELDS}
+    envelope = generate_envelope("1" * 64, "a" * 40, binding, recipient)
     valid = validate_envelope(envelope, binding)
     wrong_profile = copy.deepcopy(envelope); wrong_profile["profile"] = "HASH_BOUND_POWERSHELL"
     extra_artifact = copy.deepcopy(envelope); extra_artifact["artifacts"] = [copy.deepcopy(envelope["artifact"])]
     wrong_context = copy.deepcopy(envelope); wrong_context["context_binding"]["binding_fingerprint"] = "2" * 64
+    changed_recipient = copy.deepcopy(envelope); changed_recipient["recipient_binding"]["thread_ref"] = "other-thread"
+    missing_recipient = copy.deepcopy(envelope); missing_recipient.pop("recipient_binding")
     with tempfile.TemporaryDirectory() as raw:
         root = Path(raw)
         payload = b"@echo off\r\nexit /b 0\r\n"
@@ -432,6 +463,8 @@ def selftest() -> dict[str, Any]:
         "active_binding_fingerprint_required": _must_block(validate_envelope, wrong_context, binding),
         "powershell_profile_for_cmd_rejected": _must_block(validate_envelope, wrong_profile, binding),
         "extra_artifact_identity_rejected": _must_block(validate_envelope, extra_artifact, binding),
+        "recipient_fingerprint_tamper_rejected": _must_block(validate_envelope, changed_recipient, binding),
+        "recipient_missing_rejected": _must_block(validate_envelope, missing_recipient, binding),
         "zero_hash_match_rejected": missing_blocked,
         "multiple_hash_matches_rejected": duplicate_blocked,
         "target_bytes_unchanged_by_resolution": unchanged,
@@ -507,7 +540,8 @@ def _exercise_validate_only_consumer(source_root: Path, source_revision: str) ->
         target = root / "never-launch.cmd"
         target.write_bytes(payload)
         target_sha = _hash_file(target)
-        envelope = generate_envelope(target_sha, source_revision, binding)
+        recipient = {field: f"fixture-{field}" for field in RECIPIENT_FIELDS}
+        envelope = generate_envelope(target_sha, source_revision, binding, recipient)
         envelope_path = root / "envelope.json"
         envelope_path.write_bytes(_canonical_json(envelope))
         before = _hash_file(target)
@@ -518,6 +552,7 @@ def _exercise_validate_only_consumer(source_root: Path, source_revision: str) ->
             raise Runtime2HandoffError("runtime2-current-conformance-launch-tripwire")
 
         patches = [
+            mock.patch.object(consumer, "_trusted_host_recipient_projection", return_value=recipient),
             mock.patch.object(subprocess, "run", side_effect=block_launch),
             mock.patch.object(subprocess, "Popen", side_effect=block_launch),
             mock.patch.object(os, "system", side_effect=block_launch),
@@ -552,11 +587,85 @@ def _must_block_scope(*args) -> bool:
     return False
 
 
+def _exercise_recipient_guard_consumer(source_root: Path, source_revision: str) -> dict[str, bool]:
+    """Synthetic host dictionaries test the seam, not a real host adapter."""
+    binding = load_runtime2_context_binding(source_root)
+    consumer = _load_exact_consumer(source_root)
+    with tempfile.TemporaryDirectory(prefix="CerebroRuntime2Recipient-") as raw:
+        root = Path(raw)
+        target = root / "never-real-launch.cmd"
+        target.write_bytes(b"@echo off\r\nexit /b 0\r\n")
+        target_sha = _hash_file(target)
+        intended = {
+            "actor_ref": "fixture-actor", "generation_ref": "fixture-generation",
+            "thread_ref": "fixture-thread", "carrier_ref": "fixture-carrier",
+            "continuation_ref": "fixture-continuation",
+        }
+        envelope = generate_envelope(target_sha, source_revision, binding, intended)
+        envelope_path = root / "envelope.json"
+        envelope_path.write_bytes(_canonical_json(envelope))
+        before = _hash_file(target)
+
+        def attempt(actual: Any, *, execute: bool = True) -> tuple[dict[str, Any] | None, str, int]:
+            with mock.patch.object(consumer, "_trusted_host_recipient_projection", return_value=actual), \
+                    mock.patch.object(consumer.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as launch:
+                try:
+                    receipt, _ = consumer.consume(envelope_path, root, execute=execute)
+                    return receipt, "", launch.call_count
+                except consumer.Runtime2HandoffError as exc:
+                    return None, str(exc), launch.call_count
+
+        positive, _, positive_launches = attempt(intended)
+        wrong_thread = {**intended, "thread_ref": "other-thread-same-account"}
+        wrong_generation = {**intended, "generation_ref": "other-generation"}
+        wrong_carrier = {**intended, "carrier_ref": "other-carrier"}
+        wrong_continuation = {**intended, "continuation_ref": "other-continuation"}
+        negatives = {
+            "wrong_thread_same_account_blocked": attempt(wrong_thread),
+            "changed_generation_blocked": attempt(wrong_generation),
+            "wrong_carrier_blocked": attempt(wrong_carrier),
+            "wrong_continuation_blocked": attempt(wrong_continuation),
+            "missing_host_tuple_blocked": attempt(None),
+            "caller_only_alias_blocked": attempt({"alias": "fixture-actor"}),
+        }
+        with mock.patch.object(consumer.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as launch:
+            try:
+                consumer.consume(envelope_path, root, execute=True)
+                default_error = ""
+            except consumer.Runtime2HandoffError as exc:
+                default_error = str(exc)
+            default_launches = launch.call_count
+        resumed, _, resumed_launches = attempt(intended, execute=False)
+        next_intended = {**intended, "continuation_ref": "fixture-next-continuation"}
+        next_envelope = generate_envelope(target_sha, source_revision, binding, next_intended)
+        envelope_path.write_bytes(_canonical_json(next_envelope))
+        next_receipt, _, next_launches = attempt(next_intended, execute=False)
+        return {
+            "exact_intended_recipient_one_mocked_launch": positive is not None and positive_launches == 1,
+            "recipient_receipt_binds_handoff_and_target_hash": positive is not None
+            and positive.get("recipient_binding") == intended
+            and positive.get("recipient_binding_verified") is True
+            and positive.get("handoff_fingerprint") == envelope["handoff_fingerprint"]
+            and positive.get("target_sha256") == before == _hash_file(target),
+            **{name: receipt is None and bool(error) and launches == 0
+               for name, (receipt, error, launches) in negatives.items()},
+            "default_unwired_host_adapter_blocks_before_launch":
+                "runtime2-trusted-host-recipient-projection-unavailable" in default_error
+                and "actor_ref,generation_ref,thread_ref,carrier_ref,continuation_ref" in default_error
+                and default_launches == 0,
+            "correct_target_resumable_without_launch": resumed is not None and resumed_launches == 0,
+            "same_actor_next_continuation_validate_only": next_receipt is not None
+            and next_receipt.get("recipient_binding") == next_intended and next_launches == 0,
+            "synthetic_host_fixture_not_actual_adapter_proof": True,
+        }
+
+
 def selftest_current_conformance(source_root: Path) -> dict[str, Any]:
     """Exercise the v2 scope and no-launch path without invoking legacy selftest()."""
     root = source_root.resolve()
     head = _run_git(root, "rev-parse", "HEAD").decode().strip().lower()
     consumer_checks = _exercise_validate_only_consumer(root, head)
+    recipient_checks = _exercise_recipient_guard_consumer(root, head)
     with tempfile.TemporaryDirectory(prefix="CerebroRuntime2Scope-") as raw:
         fixture_root = Path(raw)
         target = fixture_root / "candidate.txt"
@@ -597,9 +706,12 @@ def selftest_current_conformance(source_root: Path) -> dict[str, Any]:
             "clean_candidate_envelope_rejected": _must_block_scope(clean, "CLEAN_COMMITTED", scope, "d" * 64),
             "legacy_selftest_not_invoked": True,
         }
-    all_checks = {**consumer_checks, **canaries}
+    all_checks = {**consumer_checks, **recipient_checks, **canaries}
     _require(all(all_checks.values()), "runtime2-current-conformance-selftest-failed")
-    return {"result": "PASS", "schema": "cerebro-runtime2-current-conformance-selftest/v1", **all_checks}
+    return {
+        "result": "PASS", "schema": "cerebro-runtime2-current-conformance-selftest/v1",
+        "actual_host_adapter_status": "UNWIRED_FAIL_CLOSED", **all_checks,
+    }
 
 
 def current_conformance_probe(
@@ -638,6 +750,7 @@ def current_conformance_probe(
         "binding_id": BINDING_ID,
         "proves_bindings": [BINDING_ID],
         "proof_kind": "CURRENT_CONFORMANCE_NO_EFFECT",
+        "actual_host_adapter_status": "UNWIRED_FAIL_CLOSED",
         "scope_mode": scope_mode,
         "source_root": str(root),
         "base_head": before["head"],
@@ -677,6 +790,8 @@ def main() -> int:
     p_generate = sub.add_parser("generate")
     p_generate.add_argument("--cmd-sha256", required=True); p_generate.add_argument("--source-revision", required=True)
     p_generate.add_argument("--source-root", required=True); p_generate.add_argument("--output-envelope"); p_generate.add_argument("--output")
+    for field in RECIPIENT_FIELDS:
+        p_generate.add_argument("--recipient-" + field.replace("_", "-"), required=True)
     p_validate = sub.add_parser("validate-envelope")
     p_validate.add_argument("--input", required=True); p_validate.add_argument("--source-root", required=True)
     p_probe = sub.add_parser("activation-probe"); p_probe.add_argument("--source-root", required=True); p_probe.add_argument("--output")
@@ -693,7 +808,8 @@ def main() -> int:
     args = parser.parse_args()
     try:
         if args.command == "generate":
-            result = generate_handoff(args.cmd_sha256, args.source_revision, Path(args.source_root))
+            recipient = {field: getattr(args, "recipient_" + field) for field in RECIPIENT_FIELDS}
+            result = generate_handoff(args.cmd_sha256, args.source_revision, Path(args.source_root), recipient)
             if args.output_envelope:
                 _write(Path(args.output_envelope), result["envelope"])
         elif args.command == "validate-envelope":
