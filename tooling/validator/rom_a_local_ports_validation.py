@@ -193,6 +193,22 @@ class FixedPortsTest(unittest.TestCase):
             self.send(sender)
         self.assertEqual(len(calls), 1)
 
+    def test_docs_selection_requires_new_protected_registry_not_old_pr101_label(self):
+        sender = self.sender(lambda *a, **k: self.fail("queue called"))
+        with self.assertRaisesRegex(ValueError, "SELECTION_BINDING_MISMATCH"):
+            sender.validate_selected(recipient_ref="actor:655", selected_bytes=self.payload,
+                selected_sha256=self.payload_hash, selection="DOCS_NAMED_RANGE_SELECTED",
+                task_ref="task:bk04", task_revision="r1")
+        self.write_registry(selection="DOCS_NAMED_RANGE_SELECTED")
+        sender = self.sender(lambda *a, **k: self.fail("queue called"))
+        sender.validate_selected(recipient_ref="actor:655", selected_bytes=self.payload,
+            selected_sha256=self.payload_hash, selection="DOCS_NAMED_RANGE_SELECTED",
+            task_ref="task:bk04", task_revision="r1")
+        with self.assertRaisesRegex(ValueError, "BINDING_MISMATCH"):
+            sender.validate_selected(recipient_ref="actor:1B", selected_bytes=self.payload,
+                selected_sha256=self.payload_hash, selection="DOCS_NAMED_RANGE_SELECTED",
+                task_ref="task:bk04", task_revision="r1")
+
     def test_executable_bytes_change_with_identical_metadata_rejected(self):
         sender = self.sender(lambda *a, **k: self.fail("queue called"))
         before = self.exe.stat()

@@ -524,6 +524,73 @@ def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
             "recipient_use": "NOT_OBSERVED"}
 
 
+def _prepare_docs_selected(*, selected: dict[str, Any], out_dir: str,
+                           recipient_ref: str, task_ref: str,
+                           task_revision: str) -> dict[str, Any]:
+    """Host-only selected context, using the existing durable no-retry dispatch.
+
+    This does not authenticate Docs or the recipient. The bound host reader and
+    protected sender must independently do those jobs before a queue effect.
+    """
+    for name, value in (("RECIPIENT", recipient_ref), ("TASK", task_ref),
+                        ("REVISION", task_revision)):
+        _text(value, name)
+    if not isinstance(selected, dict) or selected.get("schema") != "cerebro-bounded-content-selection/v1" or \
+            selected.get("selector_kind") != "SECTION" or \
+            selected.get("provider_readback_verified") is not True or \
+            selected.get("access_verified") is not True:
+        raise ValueError("DOCS_HOST_SELECTION_REQUIRED")
+    for name in ("content_ref", "revision", "selector", "access_scope_ref", "authority_ref"):
+        _text(selected.get(name), "DOCS_" + name.upper())
+    refs = selected.get("provenance_refs")
+    if not selected["content_ref"].startswith("gdocs:") or \
+            not isinstance(refs, list) or not any(
+                isinstance(ref, str) and ref.startswith("named-range:") for ref in refs):
+        raise ValueError("DOCS_NAMED_RANGE_PROVENANCE_REQUIRED")
+    text = selected.get("selected_text")
+    if not isinstance(text, str) or not text.strip():
+        raise ValueError("DOCS_SELECTED_TEXT_INVALID")
+    payload = text.encode("utf-8")
+    if len(payload) > 16_384 or _sha(payload) != selected.get("selected_sha256"):
+        raise ValueError("DOCS_SELECTED_BYTES_MISMATCH")
+    out = Path(out_dir)
+    if not out.is_absolute() or out.exists() or out.is_symlink() or not out.parent.is_dir():
+        raise ValueError("OUTPUT_TARGET_INVALID")
+    pending = Path(tempfile.mkdtemp(prefix=".rom-a-docs-pending-", dir=out.parent))
+    try:
+        selected_path = pending / "context_selected.txt"
+        with selected_path.open("xb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        receipt = {"schema": "cerebro-rom-a-docs-selected/v1",
+                   "adoption": {"actor_ref": recipient_ref, "task_ref": task_ref,
+                                "task_revision": task_revision},
+                   "selected": {"file": selected_path.name, "sha256": _sha(payload),
+                                "bytes": len(payload), "selection": "DOCS_NAMED_RANGE_SELECTED"},
+                   "basis": {key: selected[key] for key in
+                             ("content_ref", "revision", "selector_kind", "selector",
+                              "selected_sha256", "access_scope_ref", "authority_ref",
+                              "provenance_refs")},
+                   "dispatch": {"state": "NOT_SENT", "delivery_ref": None,
+                                "recipient_ref": recipient_ref},
+                   "recipient_use": {"state": "NOT_OBSERVED", "readback_ref": None},
+                   "authority": "NONE", "effect": "NONE_CLAIMED"}
+        receipt_path = pending / "receipt.json"
+        with receipt_path.open("xb") as stream:
+            stream.write((json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8"))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.rename(pending, out)
+        return {"receipt": str(out / receipt_path.name),
+                "selected": str(out / selected_path.name),
+                "selection": "DOCS_NAMED_RANGE_SELECTED", "selected_sha256": _sha(payload),
+                "recipient_use": "NOT_OBSERVED", "authority": "NONE"}
+    finally:
+        if pending.exists():
+            shutil.rmtree(pending)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--capture-record", required=True)
