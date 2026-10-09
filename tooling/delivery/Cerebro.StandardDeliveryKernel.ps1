@@ -474,14 +474,28 @@ public static class CerebroKernelRecoveryHandle {
     [DllImport("kernel32.dll", SetLastError=true)]
     static extern bool SetFileInformationByHandle(SafeFileHandle handle, int kind,
         ref Disposition info, uint length);
-    public static FileStream Open(string path) {
+    [StructLayout(LayoutKind.Sequential)]
+    struct AttributeTag { public uint Attributes; public uint ReparseTag; }
+    [DllImport("kernel32.dll", SetLastError=true)]
+    static extern bool GetFileInformationByHandleEx(SafeFileHandle handle, int kind,
+        out AttributeTag info, uint length);
+    public static FileStream OpenRead(string path) { return Open(path,true); }
+    public static FileStream Open(string path) { return Open(path,false); }
+    static FileStream Open(string path, bool readOnly) {
         // GENERIC_READ | GENERIC_WRITE | DELETE; FILE_SHARE_READ; OPEN_EXISTING.
-        var handle=CreateFile(path, 0xC0010000, 1, IntPtr.Zero, 3, 0x00200000, IntPtr.Zero);
+        var handle=CreateFile(path, readOnly ? 0x80000000u : 0xC0010000u, 1, IntPtr.Zero, 3, 0x00200000, IntPtr.Zero);
         if(handle.IsInvalid) {
             int error=Marshal.GetLastWin32Error(); handle.Dispose();
             throw new Win32Exception(error);
         }
         try {
+            if(readOnly) {
+                AttributeTag info;
+                if(!GetFileInformationByHandleEx(handle,9,out info,8))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                if((info.Attributes & (0x10u | 0x400u)) != 0)
+                    throw new IOException("RECOVERY_MANIFEST_TYPE_INVALID");
+            }
             var name=new StringBuilder(32768);
             uint size=GetFinalPathNameByHandle(handle,name,(uint)name.Capacity,0);
             if(size==0 || size>=name.Capacity) throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -490,7 +504,7 @@ public static class CerebroKernelRecoveryHandle {
             else if(final.StartsWith(@"\\?\")) final=final.Substring(4);
             if(!String.Equals(Path.GetFullPath(path),final,StringComparison.OrdinalIgnoreCase))
                 throw new IOException("RECOVERY_HANDLE_PATH_MISMATCH");
-            return new FileStream(handle,FileAccess.ReadWrite,4096,false);
+            return new FileStream(handle,readOnly ? FileAccess.Read : FileAccess.ReadWrite,4096,false);
         } catch {handle.Dispose(); throw;}
     }
     public static void Delete(FileStream stream) {
@@ -569,9 +583,18 @@ function Invoke-KernelBoundedRollback {
         backup_manifest=$manifestPath;attempt_id=$AttemptId;recovery_evidence=$receiptPath;targets=@()
     }
     try{
-        if([string]::IsNullOrWhiteSpace([string]$State.BackupManifestSha256) -or
-           (Get-Sha256 $manifestPath) -ne [string]$State.BackupManifestSha256){throw 'BACKUP_MANIFEST_IDENTITY_MISMATCH'}
-        $manifest=Get-Content -LiteralPath $manifestPath -Raw|ConvertFrom-Json
+        $manifestPath=Assert-KernelRecoveryPath -Root $State.BackupDirectory -RelativePath 'BACKUP_MANIFEST.json'
+        Initialize-KernelRecoveryHandle
+        $manifestStream=[CerebroKernelRecoveryHandle]::OpenRead($manifestPath)
+        $manifestBuffer=[IO.MemoryStream]::new()
+        try{
+            # Read once while write/delete are denied; hash and parse this buffer only.
+            $manifestStream.CopyTo($manifestBuffer)
+            $manifestBuffer.Position=0
+            if([string]::IsNullOrWhiteSpace([string]$State.BackupManifestSha256) -or
+               (Get-Sha256FromStream $manifestBuffer) -ne [string]$State.BackupManifestSha256){throw 'BACKUP_MANIFEST_IDENTITY_MISMATCH'}
+            $manifest=[Text.Encoding]::UTF8.GetString($manifestBuffer.ToArray())|ConvertFrom-Json
+        }finally{$manifestBuffer.Dispose();$manifestStream.Dispose()}
         if([string]$manifest.schema -ne 'cerebro-standard-backup-manifest/v1' -or
            [string]$manifest.source_root -ne [IO.Path]::GetFullPath($WorkingSourcePath) -or
            [string]$manifest.patch_id -ne [string]$State.Manifest.patch_id -or

@@ -184,6 +184,48 @@ Assert-Test ($logText -match 'THROWN:TERMINAL_APPLY_FAILURE') 'ORIGINAL_THROW_LO
 Assert-Test ($logText -match 'FAILURE_FAMILY=FAILED_RECOVERY_REQUIRED') 'TERMINAL_FAMILY_MISSING'
 [IO.File]::WriteAllText((Join-Path $c.root 'terminal-output.txt'),$logText)
 $results += [ordered]@{case=$c.name;result='PASS';recovery_result='FAILED_RECOVERY_REQUIRED';evidence=(Join-Path $c.root 'terminal-output.txt')}
+# Deterministic A4 hash-to-parse substitution: forge an unknown create identity.
+$c=New-TestCase 'manifest-hash-to-parse-race' 'create'
+Write-TestBytes $c.target 'CONCURRENT_UNKNOWN'
+$forged=Get-Content -LiteralPath $c.bound.path -Raw|ConvertFrom-Json
+$forged.entries[0].payload_sha256=Get-Sha256 $c.target
+$forged.entries[0].payload_length=([IO.FileInfo]$c.target).Length
+$script:manifestRacePath=$c.bound.path
+$script:manifestRaceJson=$forged|ConvertTo-Json -Depth 10
+$script:manifestRaceExercised=$false
+$script:manifestWriteDenied=$false
+$script:manifestRenameDenied=$false
+$originalBufferHash=(Get-Item Function:Get-Sha256FromStream).ScriptBlock
+$originalPathHash=(Get-Item Function:Get-Sha256).ScriptBlock
+function Invoke-TestManifestSubstitution {
+    $script:manifestRaceExercised=$true
+    try{Write-TestBytes $script:manifestRacePath $script:manifestRaceJson}
+    catch{$script:manifestWriteDenied=$true}
+    try{[IO.File]::Move($script:manifestRacePath,$script:manifestRacePath+'.substituted')}
+    catch{$script:manifestRenameDenied=$true}
+}
+function Get-Sha256FromStream {
+    param([IO.Stream]$Stream)
+    $hash=& $originalBufferHash $Stream
+    if($Stream -is [IO.MemoryStream] -and -not$script:manifestRaceExercised){Invoke-TestManifestSubstitution}
+    return $hash
+}
+# Also exercise the frozen vulnerable implementation's exact hash/reopen seam.
+function Get-Sha256 {
+    param([string]$Path)
+    $hash=& $originalPathHash $Path
+    if($Path -eq $script:manifestRacePath -and -not$script:manifestRaceExercised){Invoke-TestManifestSubstitution}
+    return $hash
+}
+try{$r=Run-TestRollback $c}
+finally{
+    Set-Item Function:Get-Sha256FromStream -Value $originalBufferHash
+    Set-Item Function:Get-Sha256 -Value $originalPathHash
+}
+Assert-Test $script:manifestRaceExercised 'MANIFEST_RACE_NOT_EXERCISED'
+Assert-Test ($script:manifestWriteDenied -and $script:manifestRenameDenied) 'MANIFEST_HASH_TO_PARSE_MUTATION_NOT_DENIED'
+Assert-Test ($r.targets[0].error -match 'CURRENT_TARGET_IDENTITY_UNKNOWN') 'MANIFEST_RACE_UNKNOWN_REASON_MISSING'
+Record-Test $c $r 'FAILED_RECOVERY_REQUIRED' 'CONCURRENT_UNKNOWN'
 $receipt=[ordered]@{schema='cerebro-kernel-rollback-offline-test/v1';result='PASS';tests=$results.Count;kernel_sha256=(Get-Sha256 $KernelPath);effect='DISPOSABLE_FIXTURES_ONLY';evidence_root=$EvidenceRoot;cases=$results}
 $json=$receipt|ConvertTo-Json -Depth 10
 [IO.File]::WriteAllText((Join-Path $EvidenceRoot 'test-receipt.json'),$json,[Text.UTF8Encoding]::new($false))
