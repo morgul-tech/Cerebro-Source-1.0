@@ -388,6 +388,7 @@ class ControlContextRemoteRuntime:
     human_t3_host: HumanT3BreakGlassHost | None = field(default=None, repr=False)
     rom_a_bounded_content_provider: Any | None = field(default=None, repr=False)
     rom_a_selected_dispatcher: Any | None = field(default=None, repr=False)
+    rom_a_docs_out_dir: Path | None = field(default=None, repr=False)
 
     def descriptor(self) -> dict[str, Any]:
         sdk = official_mcp_sdk_runtime()
@@ -453,6 +454,7 @@ class ControlContextRemoteRuntime:
             pm_disposition_publisher=guarded_publisher,
             bounded_content_provider=self.rom_a_bounded_content_provider,
             rom_a_selected_dispatcher=self.rom_a_selected_dispatcher,
+            rom_a_docs_out_dir=self.rom_a_docs_out_dir,
         )
 
 
@@ -484,6 +486,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     human_t3_effect_capability: Any | None = None,
     rom_a_bounded_content_provider: Any | None = None,
     rom_a_selected_dispatcher: Any | None = None,
+    rom_a_docs_out_dir: Path | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -516,6 +519,9 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         (rom_a_bounded_content_provider is None) == (rom_a_selected_dispatcher is None),
         "runtime-rom-a-normal-return-ports-must-bind-together",
     )
+    if rom_a_docs_out_dir is not None:
+        _require(isinstance(rom_a_docs_out_dir, Path) and rom_a_docs_out_dir.is_absolute(),
+                 "runtime-rom-a-docs-fixed-output-required")
     if rom_a_bounded_content_provider is not None:
         _require(callable(getattr(rom_a_bounded_content_provider, "read_current", None)),
                  "runtime-rom-a-bounded-content-provider-invalid")
@@ -590,6 +596,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         machine_diary_effect_verifier=machine_diary_effect_verifier,
         rom_a_bounded_content_provider=rom_a_bounded_content_provider,
         rom_a_selected_dispatcher=rom_a_selected_dispatcher,
+        rom_a_docs_out_dir=rom_a_docs_out_dir,
     )
 
 
@@ -621,6 +628,7 @@ def assemble_postgres_control_context_remote_runtime(
     human_t3_effect_capability: Any | None = None,
     rom_a_bounded_content_provider: Any | None = None,
     rom_a_selected_dispatcher: Any | None = None,
+    rom_a_docs_out_dir: Path | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
@@ -658,6 +666,7 @@ def assemble_postgres_control_context_remote_runtime(
         human_t3_effect_capability=human_t3_effect_capability,
         rom_a_bounded_content_provider=rom_a_bounded_content_provider,
         rom_a_selected_dispatcher=rom_a_selected_dispatcher,
+        rom_a_docs_out_dir=rom_a_docs_out_dir,
         clock=clock,
         manifest_path=manifest_path,
     )
