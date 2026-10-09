@@ -18,6 +18,7 @@ from typing import Any, Callable, Mapping
 import control_owner_routing
 import control_resolution
 from human_t3_break_glass import HumanT3BreakGlassHost
+from rom_a_google_docs_ports import FixedGoogleDocsNamedRangeReader
 
 
 OWNER_ORDER = ("project", "quality", "convergence", "context")
@@ -334,6 +335,7 @@ class BoundControlResolutionHost:
         pm_disposition_publisher: Any | None = None,
         bounded_content_provider: Any | None = None,
         rom_a_selected_dispatcher: Any | None = None,
+        rom_a_docs_out_dir: Path | None = None,
     ):
         _require(callable(getattr(persistence_verifier, "verify", None)), "host-persistence-verifier-required")
         _require(callable(getattr(capability_resolver, "is_available", None)), "host-capability-resolver-required")
@@ -353,6 +355,9 @@ class BoundControlResolutionHost:
         if rom_a_selected_dispatcher is not None:
             _require(callable(getattr(rom_a_selected_dispatcher, "send_selected", None)),
                      "host-rom-a-selected-dispatcher-invalid")
+        if rom_a_docs_out_dir is not None:
+            _require(isinstance(rom_a_docs_out_dir, Path) and rom_a_docs_out_dir.is_absolute(),
+                     "host-rom-a-docs-fixed-output-required")
         self._persistence_verifier = persistence_verifier
         self._capability_resolver = capability_resolver
         self._canonical_resolver = canonical_resolver
@@ -360,6 +365,7 @@ class BoundControlResolutionHost:
         self._pm_disposition_publisher = pm_disposition_publisher
         self._bounded_content_provider = bounded_content_provider
         self._rom_a_selected_dispatcher = rom_a_selected_dispatcher
+        self._rom_a_docs_out_dir = rom_a_docs_out_dir
 
     def select_bounded_content(self, target: dict[str, Any], *, root: Path = control_resolution.SOURCE_ROOT) -> dict[str, Any]:
         """Normal-host operation: a caller names a target, never a provider reader."""
@@ -418,6 +424,56 @@ class BoundControlResolutionHost:
         if self._rom_a_selected_dispatcher is not None:
             return module._dispatch_selected(result, self._rom_a_selected_dispatcher)
         return result
+
+    def dispatch_rom_a_docs_selection(self, *, target: dict[str, Any],
+                                      recipient_ref: str,
+                                      task_ref: str, task_revision: str) -> dict[str, Any]:
+        """Normal-host-only selected Docs return; absent bindings are a HOLD.
+
+        The protected sender validates exact A1 recipient/task/bytes before
+        durable intent.  A fresh authenticated Docs read immediately before the
+        one queue attempt checks both access and revision again.  Queue receipt
+        is not receiver START or use.
+        """
+        _require(type(self._bounded_content_provider) is FixedGoogleDocsNamedRangeReader,
+                 "host-authenticated-docs-reader-unbound")
+        _require(self._rom_a_docs_out_dir is not None,
+                 "host-rom-a-docs-fixed-output-unbound")
+        sender = self._rom_a_selected_dispatcher
+        _require(sender is not None and callable(getattr(sender, "validate_selected", None)),
+                 "host-protected-docs-recipient-unbound")
+        _require(isinstance(target, dict), "host-docs-target-required")
+        fixed_target = copy.deepcopy(target)
+        selected = self.select_bounded_content(fixed_target)
+        payload = selected["selected_text"].encode("utf-8")
+        args = {"recipient_ref": recipient_ref, "selected_bytes": payload,
+                "selected_sha256": selected["selected_sha256"],
+                "selection": "DOCS_NAMED_RANGE_SELECTED", "task_ref": task_ref,
+                "task_revision": task_revision}
+        sender.validate_selected(**args)  # no receipt or queue effect on a known mismatch
+        source = control_resolution.SOURCE_ROOT / "tooling/return-bridge/rom_a_normal_path.py"
+        spec = importlib.util.spec_from_file_location("host_rom_a_docs_return", source)
+        _require(spec is not None and spec.loader is not None,
+                 "host-rom-a-docs-return-unavailable")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        result = module._prepare_docs_selected(
+            selected=selected, out_dir=str(self._rom_a_docs_out_dir), recipient_ref=recipient_ref,
+            task_ref=task_ref, task_revision=task_revision)
+
+        class FreshAccessSender:
+            def send_selected(self, **bound: Any) -> dict[str, Any]:
+                current = self_host.select_bounded_content(fixed_target)
+                if any(current.get(key) != selected.get(key) for key in
+                       ("content_ref", "revision", "selector_kind", "selector",
+                        "selected_sha256", "access_scope_ref", "authority_ref",
+                        "provenance_refs")) or current.get("access_verified") is not True:
+                    raise ValueError("ROMA_DOCS_CURRENT_ACCESS_OR_REVISION_DRIFT_NO_RETRY")
+                sender.validate_selected(**bound)
+                return sender.send_selected(**bound)
+
+        self_host = self
+        return module._dispatch_selected(result, FreshAccessSender())
 
     def publish_pm_durable_disposition(self, proposal: dict[str, Any]) -> dict[str, Any]:
         _require(

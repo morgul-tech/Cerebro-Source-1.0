@@ -217,7 +217,8 @@ class FixedCodexQueueSender:
             raise ValueError("ROMA_PROTECTED_REGISTRY_BINDING_MISMATCH") from exc
         _require(all(bool(_REF.fullmatch(value)) for value in
                      (binding.recipient_ref, binding.task_ref, binding.task_revision)) and
-                 binding.selection in {"FULL_ORIGINAL_TASK", "BK05_STRUCTURAL_CAPSULE_CANDIDATE"} and
+                 binding.selection in {"FULL_ORIGINAL_TASK", "BK05_STRUCTURAL_CAPSULE_CANDIDATE",
+                                       "DOCS_NAMED_RANGE_SELECTED"} and
                  bool(_SHA.fullmatch(binding.selected_sha256)) and
                  0 < len(selected) <= MAX_BYTES and
                  hashlib.sha256(selected).hexdigest() == binding.selected_sha256,
@@ -255,9 +256,10 @@ class FixedCodexQueueSender:
                  "ROMA_ASSOCIATION_RECEIPT_MISMATCH")
         return hashlib.sha256(raw).hexdigest(), binding, exe, exe_root, exe_sha
 
-    def send_selected(self, *, recipient_ref: str, selected_bytes: bytes,
-                      selected_sha256: str, selection: str, task_ref: str,
-                      task_revision: str) -> dict:
+    def validate_selected(self, *, recipient_ref: str, selected_bytes: bytes,
+                          selected_sha256: str, selection: str, task_ref: str,
+                          task_revision: str) -> None:
+        """Preflight a protected exact bind without causing a queue effect."""
         bound = self._binding
         _require(self._sid_reader() == self._sid, "ROMA_WRONG_PRINCIPAL")
         _require((recipient_ref, selected_bytes, selected_sha256, task_ref, task_revision) ==
@@ -267,6 +269,14 @@ class FixedCodexQueueSender:
         _require(not self._attempted, "ROMA_QUEUE_OUTCOME_UNKNOWN_NO_RETRY")
         _require(self._check_registry()[0] == self._registry_sha256,
                  "ROMA_REGISTRY_CHANGED_NO_SEND")
+
+    def send_selected(self, *, recipient_ref: str, selected_bytes: bytes,
+                      selected_sha256: str, selection: str, task_ref: str,
+                      task_revision: str) -> dict:
+        self.validate_selected(recipient_ref=recipient_ref, selected_bytes=selected_bytes,
+                               selected_sha256=selected_sha256, selection=selection,
+                               task_ref=task_ref, task_revision=task_revision)
+        bound = self._binding
         message = ("ROM_A_NORMAL_RETURN\n"
                    f"TASK={task_ref}\nREVISION={task_revision}\n"
                    f"SELECTION={selection}\nSHA256={selected_sha256}\n"
