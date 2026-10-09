@@ -170,7 +170,9 @@ def _select_bounded_content_from_host_readback(read: dict[str, Any], current: di
     selector_kind = read.get("selector_kind")
     if selector_kind not in {"TAB", "SECTION", "RANGE"}:
         raise ValueError("bounded-read-selector-kind-invalid")
-    if read.get("depth") == "DEEPER_READ" and not read.get("task_need_ref"):
+    if read.get("depth") == "DEEPER_READ" and (
+        not isinstance(read.get("task_need_ref"), str) or not read["task_need_ref"].strip()
+    ):
         raise ValueError("bounded-read-deeper-task-need-required")
     if not isinstance(current, dict) or current.get("currentness") != "CURRENT" or current.get("provider_readback_verified") is not True:
         raise ValueError("bounded-read-current-provider-readback-required")
@@ -472,6 +474,13 @@ def selftest() -> dict[str, Any]:
         ("stale-provider-readback-refused", bounded, {**reader.state, "currentness": "STALE"}),
         ("missing-selector-refused", {**bounded, "selector": "missing"}, {**reader.state, "parts": {}}),
         ("unjustified-deeper-read-refused", {**bounded, "depth": "DEEPER_READ"}, reader.state),
+        ("deeper-empty-task-need-refused", {**bounded, "depth": "DEEPER_READ", "task_need_ref": ""}, reader.state),
+        ("deeper-blank-task-need-refused", {**bounded, "depth": "DEEPER_READ", "task_need_ref": " \t\n "}, reader.state),
+        ("deeper-number-task-need-refused", {**bounded, "depth": "DEEPER_READ", "task_need_ref": 42}, reader.state),
+        ("deeper-list-task-need-refused", {**bounded, "depth": "DEEPER_READ", "task_need_ref": ["caller-label"]}, reader.state),
+        ("deeper-object-task-need-refused", {**bounded, "depth": "DEEPER_READ", "task_need_ref": {"ref": "caller-label"}}, reader.state),
+        ("deeper-boolean-task-need-refused", {**bounded, "depth": "DEEPER_READ", "task_need_ref": True}, reader.state),
+        ("deeper-null-task-need-refused", {**bounded, "depth": "DEEPER_READ", "task_need_ref": None}, reader.state),
         ("changed-authority-cache-refused", bounded,
          {**reader.state, "revision": "r1", "parts": None, "authority_ref": "source:other"}),
         ("same-revision-content-conflict-refused", bounded,
