@@ -23,6 +23,8 @@ $State = [ordered]@{
     SyncStarted = $false
     BackupDirectory = $null
     Manifest = $null
+    BackupManifestSha256 = ''
+    RecoveryResult = $null
     ActivationProofs = @()
     TransientCleanup = @()
     FullRecoverySnapshot = $null
@@ -414,6 +416,284 @@ function New-VerifiedFullRecoverySnapshot {
         Remove-Item -LiteralPath $item.receipt -Force
     }
     return [pscustomobject]@{archive_path=$archivePath;receipt_path=$receiptPath;archive_sha256=[string]$receipt.archive_sha256;inventory_sha256=$inventoryIdentity}
+}
+
+
+function Assert-KernelRecoveryPath {
+    param([string]$Root,[string]$RelativePath)
+    if([IO.Path]::IsPathRooted($RelativePath) -or $RelativePath -match '(^|[\\/])\.\.?([\\/]|$)'){
+        throw ('RECOVERY_PATH_INVALID:{0}' -f $RelativePath)
+    }
+    $rootFull=[IO.Path]::GetFullPath($Root).TrimEnd([char[]]'\/')
+    $path=[IO.Path]::GetFullPath((Join-Path $rootFull $RelativePath))
+    if(-not $path.StartsWith($rootFull+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)){
+        throw ('RECOVERY_PATH_ESCAPE:{0}' -f $RelativePath)
+    }
+    # A path through a junction/symlink is not this bounded target.
+    $probe=$path
+    while($probe.Length -ge $rootFull.Length){
+        if(Test-Path -LiteralPath $probe){
+            if(([IO.File]::GetAttributes($probe) -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+                throw ('RECOVERY_REPARSE_POINT:{0}' -f $probe)
+            }
+        }
+        if($probe -eq $rootFull){break}
+        $probe=Split-Path -Parent $probe
+    }
+    return $path
+}
+
+function Get-KernelRecoveryStreamHash {
+    param([IO.Stream]$Stream)
+    $Stream.Position=0
+    $hash=Get-Sha256FromStream -Stream $Stream
+    $Stream.Position=0
+    return $hash
+}
+
+function Initialize-KernelRecoveryHandle {
+    if('CerebroKernelRecoveryHandle' -as [type]){return}
+    # Windows handle sharing denies competing write/delete through the entire
+    # hash-to-restore window. Delete disposition uses that same verified handle.
+    Add-Type -TypeDefinition @'
+using System;
+using System.ComponentModel;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.Win32.SafeHandles;
+public static class CerebroKernelRecoveryHandle {
+    [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+    static extern SafeFileHandle CreateFile(string path, uint access, uint share,
+        IntPtr security, uint disposition, uint flags, IntPtr template);
+    [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+    static extern uint GetFinalPathNameByHandle(SafeFileHandle handle,
+        StringBuilder path, uint length, uint flags);
+    [StructLayout(LayoutKind.Sequential)]
+    struct Disposition { public byte DeleteFile; }
+    [DllImport("kernel32.dll", SetLastError=true)]
+    static extern bool SetFileInformationByHandle(SafeFileHandle handle, int kind,
+        ref Disposition info, uint length);
+    [StructLayout(LayoutKind.Sequential)]
+    struct AttributeTag { public uint Attributes; public uint ReparseTag; }
+    [DllImport("kernel32.dll", SetLastError=true)]
+    static extern bool GetFileInformationByHandleEx(SafeFileHandle handle, int kind,
+        out AttributeTag info, uint length);
+    public static FileStream OpenRead(string path) { return Open(path,true); }
+    public static FileStream Open(string path) { return Open(path,false); }
+    static FileStream Open(string path, bool readOnly) {
+        // GENERIC_READ | GENERIC_WRITE | DELETE; FILE_SHARE_READ; OPEN_EXISTING.
+        var handle=CreateFile(path, readOnly ? 0x80000000u : 0xC0010000u, 1, IntPtr.Zero, 3, 0x00200000, IntPtr.Zero);
+        if(handle.IsInvalid) {
+            int error=Marshal.GetLastWin32Error(); handle.Dispose();
+            throw new Win32Exception(error);
+        }
+        try {
+            if(readOnly) {
+                AttributeTag info;
+                if(!GetFileInformationByHandleEx(handle,9,out info,8))
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                if((info.Attributes & (0x10u | 0x400u)) != 0)
+                    throw new IOException("RECOVERY_MANIFEST_TYPE_INVALID");
+            }
+            var name=new StringBuilder(32768);
+            uint size=GetFinalPathNameByHandle(handle,name,(uint)name.Capacity,0);
+            if(size==0 || size>=name.Capacity) throw new Win32Exception(Marshal.GetLastWin32Error());
+            string final=name.ToString();
+            if(final.StartsWith(@"\\?\UNC\")) final=@"\\"+final.Substring(8);
+            else if(final.StartsWith(@"\\?\")) final=final.Substring(4);
+            if(!String.Equals(Path.GetFullPath(path),final,StringComparison.OrdinalIgnoreCase))
+                throw new IOException("RECOVERY_HANDLE_PATH_MISMATCH");
+            return new FileStream(handle,readOnly ? FileAccess.Read : FileAccess.ReadWrite,4096,false);
+        } catch {handle.Dispose(); throw;}
+    }
+    public static void Delete(FileStream stream) {
+        var info=new Disposition {DeleteFile=1};
+        if(!SetFileInformationByHandle(stream.SafeFileHandle,4,ref info,1))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+    }
+}
+'@
+}
+
+function New-KernelBackupManifest {
+    param($PatchManifest,[string]$SourceRoot,[string]$BackupDirectory,[string]$SourceCommit,[string]$PayloadRoot,[string]$BoundAttemptId,[string]$KernelSha256)
+    $entries=@()
+    foreach($entry in @($PatchManifest.files)){
+        $relative=[string]$entry.path
+        $operation=[string]$entry.operation
+        if(@('create','replace','delete') -notcontains $operation){throw 'BACKUP_OPERATION_INVALID'}
+        $target=Assert-KernelRecoveryPath -Root $SourceRoot -RelativePath $relative
+        $backup=Assert-KernelRecoveryPath -Root $BackupDirectory -RelativePath $relative
+        if($relative -eq 'BACKUP_MANIFEST.json' -or $relative -eq 'RECOVERY_RECEIPT.json'){
+            throw 'BACKUP_RESERVED_PATH'
+        }
+        $baseline=''
+        $baselineLength=0L
+        if($operation -eq 'create'){
+            if(Test-Path -LiteralPath $target){throw ('BACKUP_CREATE_TARGET_EXISTS:{0}' -f $relative)}
+        }
+        else{
+            $baselineStream=[IO.File]::Open($target,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+            try{
+                $baselineLength=$baselineStream.Length
+                $baseline=Get-KernelRecoveryStreamHash -Stream $baselineStream
+                [IO.Directory]::CreateDirectory((Split-Path -Parent $backup))|Out-Null
+                $output=[IO.File]::Open($backup,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+                try{$baselineStream.CopyTo($output);$output.Flush($true)}finally{$output.Dispose()}
+                if((Get-Sha256 $backup) -ne $baseline){throw ('BACKUP_HASH_MISMATCH:{0}' -f $relative)}
+            }finally{$baselineStream.Dispose()}
+        }
+        $payload=if($operation -eq 'delete'){''}else{[string]$entry.sha256}
+        if($operation -ne 'delete' -and $payload -notmatch '^[0-9a-f]{64}$'){throw 'BACKUP_PAYLOAD_IDENTITY_INVALID'}
+        $payloadLength=0L
+        if($operation -ne 'delete'){
+            $payloadPath=Assert-KernelRecoveryPath -Root $PayloadRoot -RelativePath ([string]$entry.payload_path)
+            $payloadStream=[IO.File]::Open($payloadPath,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+            try{
+                $payloadLength=$payloadStream.Length
+                if((Get-KernelRecoveryStreamHash $payloadStream) -ne $payload){throw 'BACKUP_PAYLOAD_IDENTITY_MISMATCH'}
+            }finally{$payloadStream.Dispose()}
+        }
+        $entries += [ordered]@{
+            path=$relative;operation=$operation
+            baseline_exists=($operation -ne 'create');baseline_type=if($operation -eq 'create'){'ABSENT'}else{'FILE'}
+            baseline_sha256=$baseline;baseline_length=$baselineLength
+            post_exists=($operation -ne 'delete');post_type=if($operation -eq 'delete'){'ABSENT'}else{'FILE'}
+            payload_sha256=$payload;payload_length=$payloadLength;backup_path=$backup
+        }
+    }
+    $manifest=[ordered]@{
+        schema='cerebro-standard-backup-manifest/v1';patch_id=[string]$PatchManifest.patch_id
+        source_root=[IO.Path]::GetFullPath($SourceRoot);source_commit=$SourceCommit;kernel_sha256=$KernelSha256;attempt_id=$BoundAttemptId;entries=$entries
+    }
+    $path=Join-Path $BackupDirectory 'BACKUP_MANIFEST.json'
+    $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($manifest|ConvertTo-Json -Depth 8))
+    $stream=[IO.File]::Open($path,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+    try{$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)}finally{$stream.Dispose()}
+    return [pscustomobject]@{path=$path;sha256=(Get-Sha256 $path)}
+}
+
+function Invoke-KernelBoundedRollback {
+    param([string]$OriginalFailure)
+    $manifestPath=Join-Path $State.BackupDirectory 'BACKUP_MANIFEST.json'
+    $receiptPath=Join-Path $State.BackupDirectory 'RECOVERY_RECEIPT.json'
+    $report=[ordered]@{
+        schema='cerebro-standard-recovery-receipt/v1';result='ROLLED_BACK';original_failure=$OriginalFailure
+        backup_manifest=$manifestPath;attempt_id=$AttemptId;recovery_evidence=$receiptPath;targets=@()
+    }
+    try{
+        $manifestPath=Assert-KernelRecoveryPath -Root $State.BackupDirectory -RelativePath 'BACKUP_MANIFEST.json'
+        Initialize-KernelRecoveryHandle
+        $manifestStream=[CerebroKernelRecoveryHandle]::OpenRead($manifestPath)
+        $manifestBuffer=[IO.MemoryStream]::new()
+        try{
+            # Read once while write/delete are denied; hash and parse this buffer only.
+            $manifestStream.CopyTo($manifestBuffer)
+            $manifestBuffer.Position=0
+            if([string]::IsNullOrWhiteSpace([string]$State.BackupManifestSha256) -or
+               (Get-Sha256FromStream $manifestBuffer) -ne [string]$State.BackupManifestSha256){throw 'BACKUP_MANIFEST_IDENTITY_MISMATCH'}
+            $manifest=[Text.Encoding]::UTF8.GetString($manifestBuffer.ToArray())|ConvertFrom-Json
+        }finally{$manifestBuffer.Dispose();$manifestStream.Dispose()}
+        if([string]$manifest.schema -ne 'cerebro-standard-backup-manifest/v1' -or
+           [string]$manifest.source_root -ne [IO.Path]::GetFullPath($WorkingSourcePath) -or
+           [string]$manifest.patch_id -ne [string]$State.Manifest.patch_id -or
+           [string]$manifest.attempt_id -ne $AttemptId){throw 'BACKUP_MANIFEST_BINDING_MISMATCH'}
+        foreach($entry in @($manifest.entries)){
+            $target=Join-Path $WorkingSourcePath ([string]$entry.path)
+            $backup=Join-Path $State.BackupDirectory ([string]$entry.path)
+            $item=[ordered]@{
+                path=[string]$entry.path;operation=[string]$entry.operation;target=$target;backup=$backup
+                result='PENDING';error='';action='NONE';after_state='NOT_PROVEN'
+                baseline_sha256=[string]$entry.baseline_sha256;baseline_length=[long]$entry.baseline_length
+                payload_sha256=[string]$entry.payload_sha256;payload_length=[long]$entry.payload_length
+                backup_observed_sha256='UNREADABLE';backup_observed_length=$null
+                observed_state='UNREADABLE';observed_sha256='';observed_length=$null
+            }
+            $backupStream=$null
+            $targetStream=$null
+            $temporary=''
+            try{
+                $target=Assert-KernelRecoveryPath -Root $WorkingSourcePath -RelativePath ([string]$entry.path)
+                $backup=Assert-KernelRecoveryPath -Root $State.BackupDirectory -RelativePath ([string]$entry.path)
+                if([string]$entry.operation -ne 'create'){
+                    $backupStream=[IO.File]::Open($backup,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+                    $item.backup_observed_sha256=Get-KernelRecoveryStreamHash $backupStream
+                    $item.backup_observed_length=$backupStream.Length
+                    if($item.backup_observed_sha256 -ne [string]$entry.baseline_sha256 -or
+                       $backupStream.Length -ne [long]$entry.baseline_length){throw 'BACKUP_CONTENT_IDENTITY_MISMATCH'}
+                }
+                if(Test-Path -LiteralPath $target){
+                    if(Test-Path -LiteralPath $target -PathType Container){$item.observed_state='DIRECTORY';throw 'CURRENT_TARGET_TYPE_UNKNOWN:DIRECTORY'}
+                    Initialize-KernelRecoveryHandle
+                    $targetStream=[CerebroKernelRecoveryHandle]::Open($target)
+                    $current=Get-KernelRecoveryStreamHash $targetStream
+                    $item.observed_state='FILE'
+                    $item.observed_length=$targetStream.Length
+                    $item.observed_sha256=$current
+                    if($current -eq [string]$entry.baseline_sha256 -and $targetStream.Length -eq [long]$entry.baseline_length -and [string]$entry.operation -ne 'create'){
+                        $item.result='BASELINE_ALREADY_PRESENT';$item.after_state='BASELINE_VERIFIED'
+                    }
+                    elseif($current -eq [string]$entry.payload_sha256 -and $targetStream.Length -eq [long]$entry.payload_length -and [string]$entry.operation -ne 'delete'){
+                        if([string]$entry.operation -eq 'create'){
+                            $item.action='REMOVE_OWNED_CREATE'
+                            [CerebroKernelRecoveryHandle]::Delete($targetStream)
+                            $targetStream.Dispose();$targetStream=$null
+                            if(Test-Path -LiteralPath $target){throw 'RESTORE_ABSENCE_VERIFY_FAILED'}
+                        }
+                        else{
+                            $item.action='RESTORE_VERIFIED_BACKUP'
+                            $targetStream.SetLength(0)
+                            $backupStream.CopyTo($targetStream)
+                            $targetStream.Flush($true)
+                            if((Get-KernelRecoveryStreamHash $targetStream) -ne [string]$entry.baseline_sha256 -or $targetStream.Length -ne [long]$entry.baseline_length){throw 'RESTORE_HASH_VERIFY_FAILED'}
+                        }
+                        $item.result='RESTORED_VERIFIED';$item.after_state=if([string]$entry.operation -eq 'create'){'ABSENT_VERIFIED'}else{'BASELINE_VERIFIED'}
+                    }
+                    else{throw 'CURRENT_TARGET_IDENTITY_UNKNOWN'}
+                }
+                elseif([string]$entry.operation -eq 'create'){$item.result='BASELINE_ALREADY_ABSENT';$item.observed_state='ABSENT';$item.after_state='ABSENT_VERIFIED'}
+                elseif([string]$entry.operation -eq 'delete'){
+                    $item.observed_state='ABSENT';$item.action='RESTORE_VERIFIED_BACKUP'
+                    # Move never replaces a file that appears after this absent read.
+                    $temporary=Join-Path (Split-Path -Parent $target) ('.cerebro-restore-'+[guid]::NewGuid().ToString('N'))
+                    $output=[IO.File]::Open($temporary,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+                    try{$backupStream.CopyTo($output);$output.Flush($true)}finally{$output.Dispose()}
+                    if((Get-Sha256 $temporary) -ne [string]$entry.baseline_sha256){throw 'RESTORE_TEMP_HASH_VERIFY_FAILED'}
+                    [IO.File]::Move($temporary,$target)
+                    $temporary=''
+                    Initialize-KernelRecoveryHandle
+                    $targetStream=[CerebroKernelRecoveryHandle]::Open($target)
+                    if((Get-KernelRecoveryStreamHash $targetStream) -ne [string]$entry.baseline_sha256 -or $targetStream.Length -ne [long]$entry.baseline_length){throw 'RESTORE_HASH_VERIFY_FAILED'}
+                    $item.result='RESTORED_VERIFIED';$item.after_state='BASELINE_VERIFIED'
+                }
+                else{$item.observed_state='ABSENT';throw 'CURRENT_TARGET_IDENTITY_UNKNOWN:ABSENT'}
+            }
+            catch{
+                $item.result='FAILED_RECOVERY_REQUIRED';$item.error=$_.Exception.Message;$report.result='FAILED_RECOVERY_REQUIRED'
+                if($item.error -match 'RECOVERY_REPARSE_POINT'){$item.observed_state='LINK_OR_REPARSE_POINT'}
+            }
+            finally{
+                if($null -ne $targetStream){$targetStream.Dispose()}
+                if($null -ne $backupStream){$backupStream.Dispose()}
+                # Preserve any failed restore temporary as named recovery evidence.
+                if(-not[string]::IsNullOrWhiteSpace($temporary)){$item['restore_temporary']=$temporary}
+            }
+            $report.targets += $item
+        }
+    }
+    catch{
+        $report.result='FAILED_RECOVERY_REQUIRED'
+        $report['manifest_error']=$_.Exception.Message
+        $report.targets=@($State.Manifest.files|ForEach-Object{[ordered]@{path=[string]$_.path;target=(Join-Path $WorkingSourcePath ([string]$_.path));backup=(Join-Path $State.BackupDirectory ([string]$_.path));result='NOT_TOUCHED_MANIFEST_UNVERIFIED'}})
+    }
+    try{
+        [IO.File]::WriteAllText($receiptPath,($report|ConvertTo-Json -Depth 10),[Text.UTF8Encoding]::new($false))
+        $readback=Get-Content -LiteralPath $receiptPath -Raw|ConvertFrom-Json
+        if([string]$readback.result -ne [string]$report.result -or [string]$readback.original_failure -ne $OriginalFailure){throw 'RECOVERY_RECEIPT_REREAD_FAILED'}
+    }
+    catch{$report.result='FAILED_RECOVERY_REQUIRED';$report['evidence_error']=$_.Exception.Message}
+    return [pscustomobject]$report
 }
 
 function Assert-DeclaredTargetMutationCapabilities {
@@ -2134,19 +2414,10 @@ function Invoke-Apply {
         $State.ReachedStage = 'BACKUP'
         $backupRoot = 'D:\Cerebro\Run\Recovery\Backups'
         [IO.Directory]::CreateDirectory($backupRoot) | Out-Null
-        $State.BackupDirectory = Join-Path -Path $backupRoot -ChildPath ('delivery-kernel-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
-        [IO.Directory]::CreateDirectory($State.BackupDirectory) | Out-Null
-        foreach ($fileEntry in @($State.Manifest.files)) {
-            if (@('replace','delete') -notcontains [string]$fileEntry.operation) { continue }
-            $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
-            $backup = Join-Path -Path $State.BackupDirectory -ChildPath (([string]$fileEntry.path) -replace '/','\')
-            [IO.Directory]::CreateDirectory((Split-Path -Parent $backup)) | Out-Null
-            Copy-Item -LiteralPath $target -Destination $backup -Force
-            if ((Get-Sha256 $backup) -ne (Get-Sha256 $target)) {
-                $State.FailureFamily = 'BACKUP_INTEGRITY'
-                throw ('BACKUP_HASH_MISMATCH:{0}' -f $fileEntry.path)
-            }
-        }
+        $State.BackupDirectory = Join-Path $backupRoot ('delivery-kernel-'+[guid]::NewGuid().ToString('N'))
+        [IO.Directory]::CreateDirectory($State.BackupDirectory)|Out-Null
+        $backupManifest=New-KernelBackupManifest -PatchManifest $State.Manifest -SourceRoot $WorkingSourcePath -BackupDirectory $State.BackupDirectory -SourceCommit $localHead -PayloadRoot $BundleRoot -BoundAttemptId $AttemptId -KernelSha256 (Get-Sha256 $PSCommandPath)
+        $State.BackupManifestSha256=[string]$backupManifest.sha256
 
         $State.ReachedStage = 'ASSURANCE_KERNEL_PERMIT'
         $installedAssuranceKernel = Join-Path $WorkingSourcePath 'tooling\assurance\assurance_kernel.py'
@@ -2289,6 +2560,8 @@ function Invoke-Apply {
         foreach ($fileEntry in @($State.Manifest.files)) {
             $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
             if([string]$fileEntry.operation -ne 'delete' -and (Test-Path -LiteralPath $target -PathType Leaf) -and (Get-Sha256 -LiteralPath $target) -eq [string]$fileEntry.sha256){continue}
+            # Even a failed/partial filesystem operation requires known-state recovery.
+            $State.MutationStarted = $true
             if([string]$fileEntry.operation -eq 'delete'){
                 Remove-ExactTargetFile -TargetPath $target
             }
@@ -2484,24 +2757,12 @@ catch {
     $errorText = $_.Exception.Message
     if ($State.MutationStarted -and -not $State.SyncStarted -and $null -ne $State.Manifest -and
         -not [string]::IsNullOrWhiteSpace($State.BackupDirectory)) {
-        try {
-            foreach ($fileEntry in @($State.Manifest.files)) {
-                $target = Join-Path -Path $WorkingSourcePath -ChildPath (([string]$fileEntry.path) -replace '/','\')
-                if (@('replace','delete') -contains [string]$fileEntry.operation) {
-                    $backup = Join-Path -Path $State.BackupDirectory -ChildPath (([string]$fileEntry.path) -replace '/','\')
-                    if (Test-Path -LiteralPath $backup -PathType Leaf) {
-                        [IO.Directory]::CreateDirectory((Split-Path -Parent $target)) | Out-Null
-                        Copy-Item -LiteralPath $backup -Destination $target -Force
-                    }
-                }
-                else {
-                    if (Test-Path -LiteralPath $target -PathType Leaf) {
-                        Remove-Item -LiteralPath $target -Force
-                    }
-                }
-            }
+        $State.RecoveryResult=Invoke-KernelBoundedRollback -OriginalFailure $errorText
+        if([string]$State.RecoveryResult.result -eq 'FAILED_RECOVERY_REQUIRED'){
+            $State.FailureFamily='FAILED_RECOVERY_REQUIRED'
         }
-        catch {}
+        Write-Host ('RECOVERY_RESULT={0}' -f [string]$State.RecoveryResult.result)
+        Write-Host ('RECOVERY_EVIDENCE={0}' -f ($State.RecoveryResult|ConvertTo-Json -Depth 10 -Compress))
     }
     Write-Host ''
     Write-Host 'CEREBRO_STANDARD_DELIVERY_KERNEL=FAIL'
