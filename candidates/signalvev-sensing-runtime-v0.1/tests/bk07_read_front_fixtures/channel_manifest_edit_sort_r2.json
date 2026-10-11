@@ -1,0 +1,24 @@
+{
+  "assertion": "SYNTHETIC_TEST_ONLY",
+  "source": "fixture-channel",
+  "revision": "channel-r2",
+  "coverage": {
+    "scope": "fixture-known-BK07-rows",
+    "complete": true,
+    "max_rows": 128
+  },
+  "rows": [
+    {
+      "message_id": "fixture-bk11-message",
+      "row": 6,
+      "content": "BK11 independent ready",
+      "owner_ref": "owner:fixture-a1"
+    },
+    {
+      "message_id": "fixture-bk07-message",
+      "row": 7,
+      "content": "BK07 source binding supplied, session unknown",
+      "owner_ref": "owner:fixture-pm"
+    }
+  ]
+}

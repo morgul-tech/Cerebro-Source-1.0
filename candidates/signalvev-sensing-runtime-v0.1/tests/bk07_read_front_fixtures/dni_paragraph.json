@@ -1,0 +1,10 @@
+{
+  "documentId": "fixture-doc-bk07",
+  "revisionId": "fixture-r1",
+  "resolvedRange": {
+    "tabId": "fixture-tab",
+    "startIndex": 1,
+    "endIndex": 77,
+    "matchedText": "BK07 synthetic orientation: configured source/session ports remain unproven."
+  }
+}

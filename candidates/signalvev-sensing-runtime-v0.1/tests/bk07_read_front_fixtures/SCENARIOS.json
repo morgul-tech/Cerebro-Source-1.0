@@ -1,0 +1,18 @@
+{
+  "assertion": "SYNTHETIC_TEST_ONLY",
+  "cases": [
+    "cold read then restart/reuse unchanged revision and fresh access",
+    "registry owner replacement -> only BK07 entry invalidated",
+    "same message_id edited before old highwater -> reconsume",
+    "same rows sorted -> message identities preserved, row locators rebuilt",
+    "known row removed -> tombstone/invalidated, no stale output",
+    "duplicate message_id with different hashes -> AMBIGUOUS/no content",
+    "permission removed after cache fill -> DENIED/no payload",
+    "revision changes during read -> invalidate/retry only via caller",
+    "unknown revision/access/coverage -> FALLBACK_REQUIRED, never CURRENT",
+    "corrupt cache or bookmark -> cold bounded read/no stale output",
+    "late provider response or impossible result cap -> CAP26 typed failure",
+    "unchanged BK11 independent entry remains intact after BK07 change",
+    "active Human conversation -> no model wake/no interjection"
+  ]
+}

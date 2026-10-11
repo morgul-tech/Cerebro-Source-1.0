@@ -1,0 +1,19 @@
+{
+  "note": "SYNTHETIC_TEST_ONLY",
+  "bindings": [
+    {
+      "content_ref": "fixture:bk07-front",
+      "path": "bk07-r1.txt",
+      "owner_ref": "owner:fixture-pm",
+      "revision": "fixture-r1",
+      "sha256": "4e457a1c2fac86fffaec9da6d57d429e6a5bb090a135f48d2cf96ed82161b0ae",
+      "authorized_subjects": [
+        "actor:fixture-x2"
+      ],
+      "head_relation": "SAME",
+      "semantic_currentness": "UNKNOWN",
+      "owner_seq": 1,
+      "way_home": "fixture:bk07-original"
+    }
+  ]
+}

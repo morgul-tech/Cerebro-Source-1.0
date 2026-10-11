@@ -1,0 +1,31 @@
+{
+  "schema": "bk07-read-front-import-fixture/v1",
+  "revision": "fixture-registry-r1",
+  "assertion": "SYNTHETIC_TEST_ONLY",
+  "entries": [
+    {
+      "knagg": "BK07.READ_FRONT",
+      "file_id": "fixture-doc-bk07",
+      "content_ref": "fixture:bk07-front",
+      "owner_ref": "owner:fixture-pm",
+      "status": "CURRENT",
+      "revision": "fixture-r1",
+      "superseded_by": null,
+      "representation": "CANONICAL_UTF8_EXPORT_V1",
+      "section": {
+        "tab_id": "fixture-tab",
+        "semantic_anchor": "BK07_SYNTHETIC_ORIENTATION",
+        "selector": {
+          "kind": "UTF8_BYTE_RANGE",
+          "start": 33,
+          "end": 126,
+          "expected_slice_sha256": "18caebea0d8d6c00ba9747d0ba6e9fc736331e2bace0aab0a0ad6593aa179e38"
+        }
+      },
+      "full_sha256": "4e457a1c2fac86fffaec9da6d57d429e6a5bb090a135f48d2cf96ed82161b0ae",
+      "way_home": "fixture:bk07-original",
+      "evidence_ref": "fixture:owner-observation-r1",
+      "authority": "SYNTHETIC_ORIENTATION_ONLY"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "note": "SYNTHETIC owner supplied fixture binding, not authentication proof",
+  "bindings": [
+    {
+      "content_ref": "fixture:public-report",
+      "path": "original.txt",
+      "owner_ref": "owner:fixture",
+      "revision": "r1",
+      "sha256": "8e88c52d73dfb6cd69d264fb37913c266da336a18e34e0e34d691a505a0f7b0c",
+      "authorized_subjects": [
+        "actor:fixture-x2"
+      ],
+      "head_relation": "SAME",
+      "semantic_currentness": "UNKNOWN",
+      "owner_seq": 1,
+      "way_home": "fixture:canonical-home"
+    }
+  ]
+}

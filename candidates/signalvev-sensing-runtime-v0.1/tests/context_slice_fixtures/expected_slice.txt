@@ -1,0 +1,3 @@
+row 0010: owner remains canonical; selector yields exact bounded bytes.
+row 0011: owner remains canonical; selector yields exact bounded bytes.
+row 0012: owner remains canonical; selector yields exact bounded bytes.

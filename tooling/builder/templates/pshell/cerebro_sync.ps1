@@ -5,7 +5,8 @@ param(
     [string]$Branch = 'main',
     [string]$CommitMessage = 'Sync local Working Source to authoritative Source',
     [string[]]$Paths = @(),
-    [switch]$AllowRemainingChanges
+    [switch]$AllowRemainingChanges,
+    [string]$ExpectedRemoteCommit = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -98,6 +99,13 @@ $stagingStarted = $false
 $locationPushed = $false
 
 try {
+    if (
+        $ExpectedRemoteCommit -ne '' -and
+        $ExpectedRemoteCommit -notmatch '\A[0-9a-fA-F]{40}\z'
+    ) {
+        throw 'EXPECTED_REMOTE_COMMIT_INVALID_FULL_40_HEX_REQUIRED'
+    }
+
     if (-not (Test-Path -LiteralPath $repo -PathType Container)) {
         throw "REPOSITORY_PATH_NOT_FOUND:$repo"
     }
@@ -157,6 +165,13 @@ try {
     )).stdout
 
     $baselineCommit = $remoteBefore
+
+    if (
+        $ExpectedRemoteCommit -ne '' -and
+        $remoteBefore -ne $ExpectedRemoteCommit
+    ) {
+        throw "EXPECTED_REMOTE_COMMIT_MISMATCH expected=$ExpectedRemoteCommit fetched=$remoteBefore"
+    }
 
     if ($localBefore -eq $remoteBefore) {
         $baselineStatus = 'MATCH'

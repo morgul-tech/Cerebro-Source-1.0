@@ -1,0 +1,20 @@
+{
+  "content_ref": "fixture:public-report",
+  "expected_revision": "r1",
+  "expected_content_sha256": "8e88c52d73dfb6cd69d264fb37913c266da336a18e34e0e34d691a505a0f7b0c",
+  "selector": {
+    "kind": "UTF8_BYTE_RANGE",
+    "start": 774,
+    "end": 990,
+    "expected_slice_sha256": "bbdacb7d339e59a1ba75b873f1c8502e6331e93d4da293d6ea8278202686a2ca"
+  },
+  "subject_ref": "actor:fixture-x2",
+  "owner_ref": "owner:fixture",
+  "way_home": "fixture:canonical-home",
+  "limits": {
+    "max_source_bytes": 1048576,
+    "max_slice_bytes": 1024,
+    "max_result_bytes": 4096,
+    "max_provider_calls": 2
+  }
+}

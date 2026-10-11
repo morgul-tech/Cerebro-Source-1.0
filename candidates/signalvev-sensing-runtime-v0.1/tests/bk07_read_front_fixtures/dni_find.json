@@ -1,0 +1,10 @@
+{
+  "documentId": "fixture-doc-bk07",
+  "revisionId": "fixture-r1",
+  "resolvedRange": {
+    "tabId": "fixture-tab",
+    "startIndex": 1,
+    "endIndex": 5,
+    "matchedText": "BK07"
+  }
+}
