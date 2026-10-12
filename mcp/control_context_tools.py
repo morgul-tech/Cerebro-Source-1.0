@@ -1013,6 +1013,24 @@ def tool_definitions() -> list[dict[str, Any]]:
 
     return human_t3_tool_definitions() + [
         {
+            "name": "read_authenticated_binding_basis_v1",
+            "title": "Read own authenticated binding basis",
+            "description": "Private own-caller read; no role, grant or native authority.",
+            "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+            "outputSchema": json.loads((SOURCE_ROOT/'mcp/authenticated-binding-basis.schema.json').read_text(encoding='utf-8')),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "read_standing_worker_policy_observation_v1",
+            "title": "Observe resident standing worker policy",
+            "description": "Private own-caller read; no role, grant or native authority.",
+            "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+            "outputSchema": json.loads((SOURCE_ROOT/'mcp/standing-worker-policy-observation.schema.json').read_text(encoding='utf-8')),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
             "name":"read_authenticated_caller_observation_v1",
             "title":"Observe this authenticated caller",
             "description":"Private signed-client observation; no installed binding or grant.",
@@ -1515,6 +1533,8 @@ class ControlContextMcpTools:
 
     def dispatch(self, tool_name: str, args: Any, context: McpToolCallContext) -> dict[str, Any]:
         handlers = {
+            "read_authenticated_binding_basis_v1": self.read_authenticated_binding_basis_v1,
+            "read_standing_worker_policy_observation_v1": self.read_standing_worker_policy_observation_v1,
             "read_authenticated_caller_observation_v1": self.read_authenticated_caller_observation_v1,
             "create_ready_unbound_boot_generation": self.create_ready_unbound_boot_generation,
             "create_pre_role_generation": self.create_pre_role_generation,
@@ -2087,6 +2107,60 @@ class ControlContextMcpTools:
 
     def confirm_human_t3_break_glass(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         return self._human_t3("confirm", args, context)
+
+    @staticmethod
+    def _private_read_result(value):
+        # No generic identity/session correlation metadata or private headers.
+        return {'structuredContent': value, '_meta': {
+            'cerebro/repositoryPermissionRequired': False,
+            'cerebro/sessionCorrelationPresent': False,
+            'cerebro/subjectCorrelationPresent': False,
+            'cerebro/correlationProvenance': 'NOT_ASSERTED',
+        }}
+
+    def _private_read_identity(self, args, context):
+        if type(args) is not dict or args:
+            raise ControlContextToolError('private-read-empty-arguments-required')
+        identity = self._identity(context)
+        if 'project_state:read' not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError('private-read-scope-required')
+        return identity
+
+    def read_authenticated_binding_basis_v1(self, args, context):
+        identity = self._private_read_identity(args, context)
+        observation = context.verified_caller_observation
+        bound = (type(observation) is _HostCallerObservation
+                 and observation._host_key is _HOST_OBSERVATION_KEY
+                 and observation.identity is identity)
+        return self._private_read_result({
+            'schema': 'cerebro-authenticated-binding-basis/v1',
+            'tenant_ref': identity.tenant_ref,
+            'workspace_ref': identity.workspace_ref,
+            'principal_ref': identity.principal_ref,
+            'consumer_ref': identity.consumer_ref,
+            'read_eligible': 'project_state:read' in identity.state_scopes,
+            'transition_eligible': 'project_state:transition' in identity.state_scopes,
+            'host_observation_status': 'AVAILABLE' if bound else 'UNKNOWN',
+            'issuer': observation.issuer if bound else None,
+            'resource': observation.resource if bound else None,
+            'signed_client_ref': observation.client_ref if bound else None,
+            'signed_client_status': observation.client_status if bound else 'UNKNOWN_NOT_AVAILABLE',
+            'authority': 'NONE',
+        })
+
+    def read_standing_worker_policy_observation_v1(self, args, context):
+        identity = self._private_read_identity(args, context)
+        value = {
+            'schema': 'cerebro-standing-worker-policy-observation/v1',
+            'status': 'UNBOUND', 'provenance': 'UNBOUND',
+            'revision': None, 'scope': None, 'current': None,
+            'revoked': None, 'policy_digest': None,
+            'owner_policy_currentness': 'UNKNOWN', 'revocation_fence': 'UNKNOWN',
+            'inflight_status': 'UNKNOWN', 'expiry_status': 'UNKNOWN',
+            'destination_eligibility': 'UNKNOWN', 'authority': 'NONE',
+        }
+        # Formal Source has no standing adapter or resident grant field.
+        return self._private_read_result(value)
 
     def read_authenticated_caller_observation_v1(self, args, context):
         if type(args)is not dict or args:

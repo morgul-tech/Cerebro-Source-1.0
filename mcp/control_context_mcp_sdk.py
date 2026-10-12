@@ -185,7 +185,7 @@ def create_official_mcp_server(service: ControlContextRemoteMcpService) -> Any:
 
     async def on_call_tool(context: Any, params: Any) -> Any:
         try:
-            if params.name=='read_authenticated_caller_observation_v1':
+            if params.name in ('read_authenticated_caller_observation_v1', 'read_authenticated_binding_basis_v1', 'read_standing_worker_policy_observation_v1'):
                 if type(params.arguments)is not dict or params.arguments:
                     raise ControlContextToolError('authenticated-caller-observation-empty-arguments-required')
                 transport=_observe_host_transport_metadata(getattr(params,'meta',None))

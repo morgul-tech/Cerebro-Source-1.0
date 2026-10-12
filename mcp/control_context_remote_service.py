@@ -38,6 +38,8 @@ STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
 PACKAGE_BUILD_SCOPE = "package_build:verify"
 SUPPORTED_SCOPES = STATE_SCOPES | {PACKAGE_BUILD_SCOPE}
 TOOL_REQUIRED_SCOPES = {
+    "read_authenticated_binding_basis_v1": "project_state:read",
+    "read_standing_worker_policy_observation_v1": "project_state:read",
     "read_authenticated_caller_observation_v1": "project_state:read",
     "create_ready_unbound_boot_generation": "project_state:transition",
     "create_pre_role_generation": "project_state:transition",
@@ -530,7 +532,7 @@ class ControlContextRemoteMcpService:
         required_scope = TOOL_REQUIRED_SCOPES[tool_name]
         try:
             observation=None;transport=None
-            if tool_name=='read_authenticated_caller_observation_v1':
+            if tool_name in ('read_authenticated_caller_observation_v1', 'read_authenticated_binding_basis_v1', 'read_standing_worker_policy_observation_v1'):
                 identity,observation=self._authenticator.authenticate_with_observation(headers,required_scope=required_scope)
                 transport=_observe_host_transport_metadata(request_meta) if host_transport_observation is None else host_transport_observation
             else:

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "tenant_ref",
+    "workspace_ref",
+    "principal_ref",
+    "consumer_ref",
+    "read_eligible",
+    "transition_eligible",
+    "host_observation_status",
+    "issuer",
+    "resource",
+    "signed_client_ref",
+    "signed_client_status",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-authenticated-binding-basis/v1"
+    },
+    "tenant_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "workspace_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "principal_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "consumer_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "read_eligible": {
+      "type": "boolean"
+    },
+    "transition_eligible": {
+      "type": "boolean"
+    },
+    "host_observation_status": {
+      "enum": [
+        "AVAILABLE",
+        "UNKNOWN"
+      ]
+    },
+    "issuer": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "resource": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "signed_client_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "signed_client_status": {
+      "enum": [
+        "OBSERVED_SIGNED_CLAIM",
+        "UNKNOWN_ABSENT",
+        "UNKNOWN_INVALID_OR_CONFLICT",
+        "UNKNOWN_NOT_AVAILABLE"
+      ]
+    },
+    "authority": {
+      "const": "NONE"
+    }
+  }
+}
