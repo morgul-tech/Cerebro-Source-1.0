@@ -15,16 +15,24 @@ from typing import Any
 from .transport import AckUnconfirmed, CapacityRejected, LookupUnavailable, PubAckInfo, PublishUnknown, RawDelivery
 
 MAX_DELIVERIES_ADVISORY = "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.{stream}.{consumer}"
+_ROLE_INBOX_PREFIX = {'publisher': b'_INBOX.CEREBRO_BK11_PUBLISHER',
+                      'receiver': b'_INBOX.CEREBRO_BK11_RECEIVER'}
+_INSTALLER_INBOX_PREFIX = b'_INBOX.CEREBRO_BK11_INSTALLER'
 _CAPACITY_CODES = {10077, 10078, 10054}    # max messages / max bytes / message size exceeds maximum
 
 
 class NatsJetStreamTransport:
     def __init__(self, server_url: str, *, connect_timeout: float = 3.0, call_timeout: float = 10.0,
                  name: str = "d1js", credentials_path: str | None = None,
-                 runtime_role: str | None = None) -> None:
+                 runtime_role: str | None = None, installer_inbox: bool = False) -> None:
         if runtime_role not in (None, "publisher", "receiver") or (runtime_role is not None and not credentials_path):
             raise ValueError("PRODUCTION_ROLE_AND_CUSTODY_CREDENTIAL_REQUIRED")
+        if type(installer_inbox) is not bool or (installer_inbox and (runtime_role is not None or not credentials_path)):
+            raise ValueError('EXPLICIT_SEPARATE_INSTALLER_CUSTODY_REQUIRED')
         self._credentials_path, self._runtime_role = credentials_path, runtime_role
+        # Existing trusted factory role; no caller-supplied prefix or identity inference.
+        self._inbox_prefix = (_ROLE_INBOX_PREFIX[runtime_role] if runtime_role is not None
+                              else _INSTALLER_INBOX_PREFIX if installer_inbox else None)
         self.server_url, self.connect_timeout, self.call_timeout, self.name = server_url, connect_timeout, call_timeout, name
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._run_loop, name="d1js-nats-loop", daemon=False)
@@ -67,6 +75,8 @@ class NatsJetStreamTransport:
                 return None
 
             private_credentials = {} if self._credentials_path is None else {"user_credentials": self._credentials_path}
+            if self._inbox_prefix is not None:
+                private_credentials['inbox_prefix'] = self._inbox_prefix
             self._nc = await nats.connect(servers=[self.server_url], name=self.name,
                                           connect_timeout=self.connect_timeout, allow_reconnect=True,
                                           max_reconnect_attempts=60, reconnect_time_wait=0.25,
