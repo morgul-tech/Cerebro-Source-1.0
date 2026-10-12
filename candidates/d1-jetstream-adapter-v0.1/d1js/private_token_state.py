@@ -1,6 +1,6 @@
-"""Role-private POSIX FD/dir custody. Never a grant, Windows ACL or peer-UID isolation claim."""
+"""Role-private Linux O_PATH ancestry and readable final-directory custody. Never a grant, generic POSIX, Windows ACL or peer-UID isolation claim."""
 from __future__ import annotations
-import contextlib,hashlib,json,os,stat,time,uuid
+import contextlib,hashlib,json,os,stat,sys,time,uuid
 
 class TokenCustodyRefused(RuntimeError):pass
 MAX_BYTES=65536
@@ -30,13 +30,17 @@ def strict_json(raw):
 class ProtectedRoleTokenStore:
     """Existing role state only. Installer creates directory; no auto budget reset."""
     def __init__(self,path,role):
-        need(os.name=='posix' and hasattr(os,'geteuid') and os.geteuid()>0,'QUALIFIED_POSIX_ROLE_REQUIRED')
+        need(sys.platform.startswith('linux') and hasattr(os,'O_PATH') and hasattr(os,'geteuid') and os.geteuid()>0,'QUALIFIED_LINUX_OPATH_ROLE_REQUIRED')
         need(role in ('publisher','receiver') and path==f'/var/lib/cerebro/bk11/{role}/token-custody','INSTALLED_EXACT_ROLE_STATE_PATH_REQUIRED')
         self.path=path;self.role=role;self.uid=os.geteuid();self._dir=None;self._lock=None
 
     def _directory(self):
-        flags=os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC
-        fd=os.open('/',flags)
+        need(sys.platform.startswith('linux') and hasattr(os,'O_PATH'),'LINUX_SEARCH_ONLY_ANCESTRY_REQUIRED')
+        # Intermediate directories need search, not read/list permission. O_PATH
+        # supports fstat/dirfd traversal, but never final-directory I/O or fsync.
+        path_flags=os.O_PATH|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC
+        read_flags=os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC
+        fd=os.open('/',path_flags)
         try:
             parts=self.path.split('/')[1:]
             for index,part in enumerate(parts):
@@ -44,6 +48,7 @@ class ProtectedRoleTokenStore:
                 info=os.fstat(fd)
                 need(stat.S_ISDIR(info.st_mode) and info.st_uid in (0,self.uid)
                   and not stat.S_IMODE(info.st_mode)&0o022,'ROLE_ANCESTRY_CUSTODY_REQUIRED')
+                flags=read_flags if index==len(parts)-1 else path_flags
                 next_fd=os.open(part,flags,dir_fd=fd);os.close(fd);fd=next_fd
             info=os.fstat(fd)
             need(stat.S_ISDIR(info.st_mode) and info.st_uid==self.uid and stat.S_IMODE(info.st_mode)==0o700,'ROLE_DIRECTORY_0700_REQUIRED')
