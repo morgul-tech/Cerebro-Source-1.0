@@ -16,7 +16,8 @@ import json
 import re
 import sys
 import copy
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -96,10 +97,72 @@ class VerifiedMcpIdentity:
         return set(self.scopes.intersection(STATE_SCOPES))
 
 
+_HOST_OBSERVATION_KEY = object()
+
+@dataclass(frozen=True, slots=True, repr=False)
+class _HostCallerObservation:
+    identity: VerifiedMcpIdentity
+    issuer: str
+    resource: str
+    service_revision: str
+    client_status: str
+    client_ref: str | None
+    claim_sources: tuple[str, ...]
+    _host_key: object = field(default=None, repr=False, compare=False)
+
+def _bind_verified_caller_observation(identity, issuer, resource, service_revision,
+                                     client_status, client_ref, claim_sources):
+    """Trusted service-only binding after SAME successful auth, not a cryptographic seal."""
+    return _HostCallerObservation(identity,issuer,resource,service_revision,
+        client_status,client_ref,tuple(claim_sources),_HOST_OBSERVATION_KEY)
+
+@dataclass(frozen=True, slots=True, repr=False)
+class _HostTransportObservation:
+    status: str
+    source: str | None
+    _host_key: object = field(default=None, repr=False, compare=False)
+
+def _observe_host_transport_metadata(meta):
+    """Host ingress computes bounded status BEFORE alias normalization. No raw values retained."""
+    def result(status,source=None):return _HostTransportObservation(status,source,_HOST_OBSERVATION_KEY)
+    if meta is None:return result('ABSENT')
+    if not isinstance(meta,Mapping):return result('AMBIGUOUS_INVALID')
+    values=[];local=[];invalid=False;alias=False
+    def add(raw,target):
+        nonlocal invalid
+        try:
+            valid=(type(raw)is str and bool(raw.strip()) and len(raw.encode('utf-8'))<=512
+                   and not any(ord(c)<32 or ord(c)==127 for c in raw))
+        except UnicodeError:valid=False
+        if valid:target.append(raw.strip())
+        else:invalid=True
+    if 'openai/session' in meta:add(meta['openai/session'],values)
+    if 'cerebro/session' in meta:add(meta['cerebro/session'],local)
+    if 'threadId' in meta:alias=True;add(meta['threadId'],values)
+    if 'x-codex-turn-metadata' in meta:
+        turn=meta['x-codex-turn-metadata']
+        if not isinstance(turn,Mapping):invalid=True
+        else:
+            for key in ('session_id','thread_id'):
+                if key in turn:alias=True;add(turn[key],values)
+    if invalid or (local and values) or len(set(values))>1:return result('AMBIGUOUS_INVALID')
+    if local:return result('AVAILABLE','cerebro/session')
+    if values:return result('AVAILABLE','SDK_SESSION_ALIASES' if alias else 'openai/session')
+    return result('ABSENT')
+
+def _host_transport_values(value):
+    if (type(value)is _HostTransportObservation and value._host_key is _HOST_OBSERVATION_KEY
+        and value.status in ('AVAILABLE','ABSENT','AMBIGUOUS_INVALID')
+        and value.source in (None,'openai/session','cerebro/session','SDK_SESSION_ALIASES')):
+        return value.status,value.source
+    return 'AMBIGUOUS_INVALID',None
+
 @dataclass(frozen=True)
 class McpToolCallContext:
     identity: VerifiedMcpIdentity
     request_meta: Mapping[str, Any]
+    verified_caller_observation: _HostCallerObservation | None = field(default=None, repr=False, compare=False)
+    verified_transport_observation: _HostTransportObservation | None = field(default=None, repr=False, compare=False)
 
     def session_ref(self) -> str:
         self.identity.validate()
@@ -950,6 +1013,15 @@ def tool_definitions() -> list[dict[str, Any]]:
 
     return human_t3_tool_definitions() + [
         {
+            "name":"read_authenticated_caller_observation_v1",
+            "title":"Observe this authenticated caller",
+            "description":"Private signed-client observation; no installed binding or grant.",
+            "inputSchema":{"type":"object","properties":{},"additionalProperties":False},
+            "outputSchema":json.loads((SOURCE_ROOT/'mcp/authenticated-caller-observation.schema.json').read_text(encoding='utf-8')),
+            "securitySchemes":[{"type":"oauth2","scopes":["project_state:read"]}],
+            "annotations":{"readOnlyHint":True,"destructiveHint":False,"openWorldHint":False},
+        },
+        {
             "name": "create_ready_unbound_boot_generation",
             "title": "Create READY_UNBOUND Boot generation",
             "description": (
@@ -1443,6 +1515,7 @@ class ControlContextMcpTools:
 
     def dispatch(self, tool_name: str, args: Any, context: McpToolCallContext) -> dict[str, Any]:
         handlers = {
+            "read_authenticated_caller_observation_v1": self.read_authenticated_caller_observation_v1,
             "create_ready_unbound_boot_generation": self.create_ready_unbound_boot_generation,
             "create_pre_role_generation": self.create_pre_role_generation,
             "complete_pre_role_generation": self.complete_pre_role_generation,
@@ -2014,6 +2087,41 @@ class ControlContextMcpTools:
 
     def confirm_human_t3_break_glass(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         return self._human_t3("confirm", args, context)
+
+    def read_authenticated_caller_observation_v1(self, args, context):
+        if type(args)is not dict or args:
+            raise ControlContextToolError('authenticated-caller-observation-empty-arguments-required')
+        identity=self._identity(context)
+        if 'project_state:read' not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError('authenticated-caller-observation-read-scope-required')
+        observation=context.verified_caller_observation
+        bound=(type(observation)is _HostCallerObservation
+               and observation._host_key is _HOST_OBSERVATION_KEY
+               and observation.identity is identity)
+        status,origin=_host_transport_values(context.verified_transport_observation)
+        value={
+            'schema':'cerebro-authenticated-caller-observation/v1',
+            'status':'AVAILABLE' if bound else 'NOT_AVAILABLE',
+            'service_revision':observation.service_revision if bound else None,
+            'resource':{'ref':observation.resource if bound else None,'source':'SERVICE_CONFIG' if bound else 'NOT_AVAILABLE'},
+            'issuer':{'ref':observation.issuer if bound else None,'source':'SAME_VERIFIED_BEARER_ISS' if bound else 'NOT_AVAILABLE'},
+            'consumer_ref':identity.consumer_ref,
+            'client_observation':{'status':observation.client_status if bound else 'UNKNOWN_NOT_AVAILABLE',
+                'client_ref':observation.client_ref if bound else None,
+                'claim_sources':list(observation.claim_sources) if bound else [],
+                'owner_match_possible':bool(bound and observation.client_status=='OBSERVED_SIGNED_CLAIM')},
+            'transport_observation':{'status':status,'source':origin,'authority':'REQUEST_METADATA_UNATTESTED'},
+            'receipt_ref':'CALLER-OBS-'+uuid.uuid4().hex,
+            'authority':'NONE','installed_B1_binding':'NOT_ESTABLISHED',
+            'role_grant_generation_admission':'NOT_ESTABLISHED',
+        }
+        # Generic _result asserts correlation unconditionally; leave other tools unchanged.
+        return {'structuredContent':value,'_meta':{
+            'cerebro/repositoryPermissionRequired':False,
+            'cerebro/sessionCorrelationPresent':status=='AVAILABLE',
+            'cerebro/subjectCorrelationPresent':False,
+            'cerebro/correlationProvenance':'REQUEST_METADATA_UNATTESTED',
+        }}
 
     def read_project_control_state(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
         identity = self._identity(context)

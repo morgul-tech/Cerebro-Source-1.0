@@ -24,6 +24,8 @@ from control_context_tools import (
     ControlContextToolError,
     McpToolCallContext,
     VerifiedMcpIdentity,
+    _bind_verified_caller_observation,
+    _observe_host_transport_metadata,
     tool_definitions,
 )
 
@@ -36,6 +38,7 @@ STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
 PACKAGE_BUILD_SCOPE = "package_build:verify"
 SUPPORTED_SCOPES = STATE_SCOPES | {PACKAGE_BUILD_SCOPE}
 TOOL_REQUIRED_SCOPES = {
+    "read_authenticated_caller_observation_v1": "project_state:read",
     "create_ready_unbound_boot_generation": "project_state:transition",
     "create_pre_role_generation": "project_state:transition",
     "complete_pre_role_generation": "project_state:transition",
@@ -280,6 +283,12 @@ class OAuthBearerAuthenticator:
         return parts[1]
 
     def authenticate(self, headers: Mapping[str, Any], *, required_scope: str) -> VerifiedMcpIdentity:
+        return self._authenticate(headers,required_scope=required_scope,observe=False)[0]
+
+    def authenticate_with_observation(self, headers: Mapping[str, Any], *, required_scope: str):
+        return self._authenticate(headers,required_scope=required_scope,observe=True)
+
+    def _authenticate(self, headers: Mapping[str, Any], *, required_scope: str, observe: bool):
         token = self._bearer(headers, required_scope=required_scope)
         try:
             verified = self._token_verifier.verify(token)
@@ -364,7 +373,26 @@ class OAuthBearerAuthenticator:
             consumer_ref="CHATGPT_REMOTE_MCP",
         )
         identity.validate()
-        return identity
+        observation=None
+        if observe:
+            present=tuple(key for key in ('azp','client_id') if key in claims)
+            status='UNKNOWN_ABSENT';client_ref=None;sources=()
+            if present:
+                values=[];valid=True
+                for key in present:
+                    raw=claims[key]
+                    try:
+                        ok=(type(raw)is str and bool(raw) and raw==raw.strip() and len(raw.encode('utf-8'))<=256
+                            and not any(ord(c)<32 or ord(c)==127 for c in raw))
+                    except UnicodeError:ok=False
+                    if not ok:valid=False
+                    else:values.append(raw)
+                status='UNKNOWN_INVALID_OR_CONFLICT'
+                if valid and len(set(values))==1:
+                    status='OBSERVED_SIGNED_CLAIM';client_ref=values[0];sources=present
+            observation=_bind_verified_caller_observation(identity,issuer,self._config.resource,
+                self._config.service_version,status,client_ref,sources)
+        return identity,observation
 
 
 def _quote_auth_parameter(value: str) -> str:
@@ -495,19 +523,30 @@ class ControlContextRemoteMcpService:
         args: Any,
         headers: Mapping[str, Any],
         request_meta: Mapping[str, Any],
+        host_transport_observation=None,
     ) -> dict[str, Any]:
         if tool_name not in TOOL_REQUIRED_SCOPES:
             raise ControlContextToolError(f"unknown-control-context-tool:{tool_name}")
         required_scope = TOOL_REQUIRED_SCOPES[tool_name]
         try:
-            identity = self._authenticator.authenticate(headers, required_scope=required_scope)
+            observation=None;transport=None
+            if tool_name=='read_authenticated_caller_observation_v1':
+                identity,observation=self._authenticator.authenticate_with_observation(headers,required_scope=required_scope)
+                transport=_observe_host_transport_metadata(request_meta) if host_transport_observation is None else host_transport_observation
+            else:
+                identity=self._authenticator.authenticate(headers,required_scope=required_scope)
         except RemoteMcpAuthenticationError as exc:
             return self.authentication_error_result(exc)
         context = McpToolCallContext(
             identity=identity,
-            request_meta=self._request_meta(request_meta),
+            # Observer reports malformed/ambiguous transport as partial UNKNOWN;
+            # never use it for signed client claims or change other tools' gate.
+            request_meta={} if observation is not None else self._request_meta(request_meta),
+            verified_caller_observation=observation,
+            verified_transport_observation=transport,
         )
         return self._tools.dispatch(tool_name, args, context)
+
 
     def commission_project_engine_v01(
         self, *, args: dict[str, Any], headers: Mapping[str, Any],

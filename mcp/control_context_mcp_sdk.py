@@ -28,7 +28,7 @@ from control_context_remote_service import (
     ControlContextRemoteMcpService,
     RemoteMcpAuthenticationError,
 )
-from control_context_tools import ControlContextToolError
+from control_context_tools import ControlContextToolError, _observe_host_transport_metadata
 
 
 OFFICIAL_MCP_SDK_DISTRIBUTION = "mcp"
@@ -185,12 +185,19 @@ def create_official_mcp_server(service: ControlContextRemoteMcpService) -> Any:
 
     async def on_call_tool(context: Any, params: Any) -> Any:
         try:
-            value = service.invoke(
-                tool_name=params.name,
-                args=params.arguments or {},
-                headers=_request_headers(context),
-                request_meta=_request_meta(params),
-            )
+            if params.name=='read_authenticated_caller_observation_v1':
+                if type(params.arguments)is not dict or params.arguments:
+                    raise ControlContextToolError('authenticated-caller-observation-empty-arguments-required')
+                transport=_observe_host_transport_metadata(getattr(params,'meta',None))
+                value=service.invoke(tool_name=params.name,args=params.arguments,
+                    headers=_request_headers(context),request_meta={},host_transport_observation=transport)
+            else:
+                value = service.invoke(
+                    tool_name=params.name,
+                    args=params.arguments or {},
+                    headers=_request_headers(context),
+                    request_meta=_request_meta(params),
+                )
         except ControlContextToolError:
             value = {
                 "content": [
