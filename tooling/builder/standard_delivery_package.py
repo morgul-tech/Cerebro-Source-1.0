@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -437,7 +438,22 @@ def verify_source_and_p801_lock(declared: dict[str, Any]) -> tuple[Path, list[di
     return root, verified, target_digest
 
 
+def build_freeze_consumer_assessment(declared: dict[str, Any]) -> dict[str, Any]:
+    """Real mature package freeze uses the existing MCP assessment, no second engine."""
+    path=Path(__file__).resolve().parents[2]/'mcp/material_commitment_preflight.py'
+    spec=importlib.util.spec_from_file_location('cerebro_material_build_consumer',path)
+    require(spec is not None and spec.loader is not None,'CURRENT_MCP_BUILD_CONSUMER_UNAVAILABLE')
+    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    assessment=module.assess_build_consumer_plan({
+        'build_boundary':'MATURE_INTERNAL','build_owner_ref':declared.get('authorization',{}).get('actor'),
+        'build_consumer_plan':declared.get('standard_manifest',{}).get('build_consumer_plan')},
+        declared['source']['base_commit'].lower())
+    require(assessment['component_freeze'],'BUILD_CONSUMER_PLAN_REQUIRED:'+','.join(assessment.get('issues',[])))
+    return assessment
+
+
 def build_standard_manifest(declared: dict[str, Any], files: list[dict[str, Any]]) -> dict[str, Any]:
+    build_consumer = build_freeze_consumer_assessment(declared)
     exact35 = declared["identity"].get("profile") == EXACT35_PROFILE
     if exact35:
         exact35_evidence(declared)
@@ -481,10 +497,11 @@ def build_standard_manifest(declared: dict[str, Any], files: list[dict[str, Any]
             "cerebro-sealed-delivery-control-binding/v1", "control binding schema mismatch")
     require(envelope.get("delivery_control_binding", {}).get("source_commit", "").lower() ==
             declared["source"]["base_commit"].lower(), "control binding base mismatch")
-    require(set(envelope).isdisjoint({"schema", "files", "branch", "expected_base_commit"}),
+    require(set(envelope).isdisjoint({"schema", "files", "branch", "expected_base_commit", "build_consumer_assessment"}),
             "manifest derived fields must not be caller supplied")
     manifest = {"schema": MANIFEST_SCHEMA, "branch": BRANCH,
                 "expected_base_commit": declared["source"]["base_commit"].lower(), **envelope}
+    manifest["build_consumer_assessment"] = build_consumer
     manifest["files"] = [{"path": item["path"], "operation": item["operation"],
                           "payload_path": f'payload/{item["path"]}', "sha256": item["sha256"],
                           "final_git_blob_sha": item["final_git_blob_sha"],
@@ -583,6 +600,7 @@ def write_bundle_atomically_outside_source(declared: dict[str, Any], source_root
     if declared["identity"].get("profile") == EXACT35_PROFILE:
         exact35_evidence(declared)
         exact35_authority(declared, trusted_authority_check)
+    build_freeze_consumer_assessment(declared) # Before any emitted/frozen bytes.
     root = output_path(declared, source_root, disposable)
     temporary = Path(tempfile.mkdtemp(prefix=".standard-delivery-builder-", dir=root.parent))
     try:

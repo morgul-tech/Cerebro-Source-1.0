@@ -75,6 +75,57 @@ def canonical_fingerprint(value: Any) -> str:
     )
 
 
+def assess_build_consumer_plan(request: dict[str, Any], source_identity: str) -> dict[str, Any]:
+    """Before mature freeze: qualify the declared plan, never attest its effect.
+
+    Existing evidence/owner references remain attributable inputs. A later binding
+    is buildable only with a concrete authorized action/input/resume point.
+    """
+    relevant=request.get('build_boundary') in ('MATURE_INTERNAL','MATURE_EXTERNAL')
+    result={'schema':'cerebro-build-consumer-assessment/v1','relevant':relevant,
+            'disposition':'NOT_APPLICABLE','component_freeze':True,'authority':'NONE'}
+    if not relevant:return result
+    plan=request.get('build_consumer_plan');issues=[];gaps=[]
+    def text(value):return type(value)is str and bool(value.strip())
+    def refs(value):return type(value)is list and bool(value) and all(text(v) for v in value)
+    if type(plan)is not dict:plan={}
+    if plan.get('schema')!='cerebro-build-consumer-plan/v1':issues.append('PLAN_SCHEMA_REQUIRED')
+    if not (text(source_identity) and len(source_identity)==40 and all(c in '0123456789abcdef' for c in source_identity)) or plan.get('source_commit')!=source_identity:issues.append('CURRENT_SOURCE_PLAN_BINDING_REQUIRED')
+    environment=plan.get('builder_environment',{});target=plan.get('target_runtime',{});consumer=plan.get('consumer',{})
+    if type(environment)is not dict or not all(text(environment.get(k)) for k in ('os','source_ref')):issues.append('ACTUAL_BUILDER_ENVIRONMENT_REQUIRED')
+    if type(target)is not dict or not all(text(target.get(k)) for k in ('os','client_ref')) or not refs(target.get('required_properties')):
+        issues.append('INTENDED_TARGET_PROPERTIES_REQUIRED');properties=[]
+    else:properties=target['required_properties']
+    if type(consumer)is not dict or not all(text(consumer.get(k)) for k in ('actor_ref','callsite_ref','effect_ref')):issues.append('INTERNAL_CONSUMER_REQUIRED')
+    evidence=plan.get('reused_evidence_refs')
+    if type(evidence)is not list or not all(text(v) for v in evidence):issues.append('REUSED_EVIDENCE_DISPOSITION_REQUIRED')
+    controls=plan.get('changed_risk_controls');covered=set()
+    if type(controls)is not list or not controls:issues.append('CHANGED_RISK_CONTROL_ROUTE_REQUIRED');controls=[]
+    for control in controls:
+        if type(control)is not dict or not refs(control.get('properties')):
+            issues.append('CONTROL_PROPERTIES_REQUIRED');continue
+        availability=control.get('availability')
+        qualified=availability in ('AVAILABLE','PLANNED_BOUND') and all(text(control.get(k)) for k in ('route_ref','actor_ref','next_action','mandate_ref','resume_ref')) and refs(control.get('input_refs'))
+        if availability=='AVAILABLE':qualified=qualified and refs(control.get('evidence_refs'))
+        if not qualified:issues.append('CONCRETE_CONTROL_OWNER_ACTION_INPUT_MANDATE_RESUME_REQUIRED');continue
+        covered.update(control['properties'])
+        if availability=='PLANNED_BOUND':gaps.append(dict(control))
+    if set(properties)-covered:issues.append('TARGET_PROPERTY_CONTROL_COVERAGE_REQUIRED')
+    effect=plan.get('first_effect')
+    if type(effect)is not dict or not all(text(effect.get(k)) for k in ('ref','actor_ref','next_action','mandate_ref','resume_ref')) or not refs(effect.get('input_refs')) or effect.get('availability') not in ('AVAILABLE','PLANNED_BOUND'):
+        issues.append('FIRST_EFFECT_OWNER_ACTION_INPUT_RESUME_REQUIRED')
+    elif effect['availability']=='PLANNED_BOUND':gaps.append(dict(effect))
+    # A planned route is not yet proof that the dependent effect is available.
+    if gaps and type(effect)is dict and effect.get('availability')=='AVAILABLE':issues.append('PLANNED_CONTROL_CANNOT_ATTEST_AVAILABLE_EFFECT')
+    result.update(disposition='REQUIRED_PLAN' if issues else 'BUILDABLE_COMPONENT_NARROW_EFFECT_GAP' if gaps else 'BUILDABLE_COMPONENT_DECLARED_ROUTE',
+                  component_freeze=not issues,issues=sorted(set(issues)),effect_gaps=gaps,
+                  plan_basis_fingerprint=canonical_fingerprint(plan),source_identity=source_identity,
+                  next_owner=str(request.get('build_owner_ref') or 'EXISTING_TASK_OWNER'),
+                  next_action='Bind missing actual target/consumer/control owner/action/input/resume before mature freeze' if issues else 'Continue existing named next action; qualify only the first unavailable effect',
+                  evidence_status='ATTRIBUTED_PLAN_NOT_NATIVE_OR_PRODUCTION_ATTESTATION')
+    return result
+
+
 def resolve_solution_escalation_preflight(
     config: dict[str, Any], relevance_basis_fingerprint: str = ""
 ) -> dict[str, Any]:
@@ -345,7 +396,9 @@ def conflict_resolution(request: dict[str, Any], root: Path) -> dict[str, Any]:
 
 
 def build_control_state(request: dict[str, Any], retrieval: dict[str, Any], semantics: dict[str, str], conflict: dict[str, Any], source_identity: str, current_context_identity: str, solution_escalation: dict[str, Any] | None = None) -> dict[str, Any]:
+    build_consumer = assess_build_consumer_plan(request, source_identity)
     material = {
+        "build_consumer_plan": request.get("build_consumer_plan") if build_consumer["relevant"] else None,
         "source_identity": source_identity,
         "context_identity": current_context_identity,
         "objective": semantics["objective"],
@@ -370,6 +423,7 @@ def build_control_state(request: dict[str, Any], retrieval: dict[str, Any], sema
     fingerprint = sha256_bytes(json.dumps(material, sort_keys=True, separators=(",", ":")).encode("utf-8"))
     return {
         "schema": "cerebro-control-state/material-commitment-v1",
+        "build_consumer_assessment": build_consumer,
         "control_state_id": "CTRL-" + fingerprint[:16].upper(),
         "domain": str(request.get("domain") or "CEREBRO"),
         "objective_ref": str(request.get("objective_ref") or semantics["objective"]),
@@ -400,6 +454,9 @@ def mcp_decide(request: dict[str, Any], control_state: dict[str, Any], retrieval
     material = bool(request.get("material")) or stage in MATERIAL_STAGES
     blockers: list[str] = []
     if material:
+        build_consumer = assess_build_consumer_plan(request, control_state["source_identity"])
+        if not build_consumer["component_freeze"]:
+            blockers.append("BUILD_CONSUMER_PLAN_REQUIRED")
         if control_state["semantic_resolution_state"] != "RESOLVED":
             blockers.append("SEMANTIC_RESOLUTION_NOT_RESOLVED")
         if retrieval.get("retrieval_state") != "COMPLETE":
@@ -521,6 +578,7 @@ def _resolve(request: dict[str, Any], root: Path, selected: dict[str, Any] | Non
         "control_state_ref": control_state["control_state_id"],
         "control_decision_ref": decision["control_decision_id"],
         "solution_escalation_assessment": solution_escalation,
+        "build_consumer_assessment": control_state["build_consumer_assessment"],
         "bounded_context": bounded_context,
         "issued_at": utc_now(),
         "authority": "DERIVED_CONTROL_EVIDENCE",
@@ -534,6 +592,7 @@ def _resolve(request: dict[str, Any], root: Path, selected: dict[str, Any] | Non
         "control_state": control_state,
         "mcp_control_decision": decision,
         "solution_escalation_assessment": solution_escalation,
+        "build_consumer_assessment": control_state["build_consumer_assessment"],
         "bounded_context": bounded_context,
         "receipt": receipt,
     }
@@ -580,6 +639,7 @@ def _consume(request: dict[str, Any], receipt: dict[str, Any], root: Path,
         "applicable_history_refs",
         "relevance_source_fingerprints",
         "solution_escalation_assessment",
+        "build_consumer_assessment",
         "bounded_context",
     )
     for field in freshness_fields:
