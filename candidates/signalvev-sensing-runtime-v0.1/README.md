@@ -10,6 +10,7 @@ resultatet er et bidrag, ikke Cerebro-sannhet. Merge/deploy/adopsjon er separate
 - **Source-opptaksbasis:** `bf5a7b83fd0115c771f9995682699b40bc18dbc0` (PR31 inkludert); opptak som isolert kandidat er en egen PR og gir ingen live myndighet.
 - **Arkitektur:** [docs/ARKITEKTUR.md](docs/ARKITEKTUR.md)
 - **Felles ordinær leserregel:** [BK07 ordinary reader binding — rule v1](BK07_ORDINARY_READER_BINDING.md); rom-/calleranvendelser er avledet, og Source-opptak gir ingen runtime-aktivering.
+- **Fersk native normalrutine v2:** [same-isolate JS-projeksjon og normal managed-readerinngang](BK07_NATIVE_NORMAL_ROUTINE_V2.md); sterk cross-read reuse er separat OFF.
 
 ## Endrede filer
 `candidates/signalvev-sensing-runtime-v0.1/**` (component.yaml, README, docs/ARKITEKTUR.md, src/signalvev_sensing/*.py, tests/*.py) og

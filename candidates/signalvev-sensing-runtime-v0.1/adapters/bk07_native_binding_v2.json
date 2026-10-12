@@ -1,0 +1,23 @@
+{
+  "profile": "FRESH_NATIVE_SUPPORTED_ORCHESTRATION/v2",
+  "source_files": [
+    {
+      "path": "bk07_checked_js_loader_v2.js",
+      "sha256": "64d7a9c5f0047ad2f73c86faa737aa46c3d0ff18a55a89069f1eafc9843771fd",
+      "bytes": 3327
+    },
+    {
+      "path": "bk07_native_reader_v2.js",
+      "sha256": "e5825db710150dc95771a4e2c8b7449b737f631eb721128b27574f4710e58a8c",
+      "bytes": 11720
+    },
+    {
+      "path": "bk07_normal_routine_v2.js",
+      "sha256": "befa8eacbdc30c296a58a16187245c4291a6bb566f9fa2fb2219e782ddd9a8e3",
+      "bytes": 743
+    }
+  ],
+  "strong_reuse": false,
+  "protected_context": "UNKNOWN",
+  "purpose": "REVIEW_CUT_BYTE_BINDING_NOT_GLOBAL_SOURCE_AUTHORITY"
+}
