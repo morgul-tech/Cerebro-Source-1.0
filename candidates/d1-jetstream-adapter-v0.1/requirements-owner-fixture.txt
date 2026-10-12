@@ -1,0 +1,10 @@
+# BK11 owner-outbox fixture dependencies (test fixture only; not a runtime dependency of d1js).
+# nats-py: install only from the supplied wheel (see requirements-fixture.txt; same pinned hash).
+nats-py==2.16.0 --hash=sha256:aeb1ff123966c05833d26c7df7e1d54c1c6d32b612428b21677a2e921f1fecae
+# psycopg 3 (pure Python impl over the system libpq). Tested: upstream tag 3.2.10, commit
+# 6cc2adfb45464f201bb7a15dd95189a7af16c26e (PyPI was unreachable in the test host; the package dir was taken from
+# the tag source, so psycopg.__version__ reports 0.0.0.0). On a normal host prefer:
+psycopg==3.2.10
+# python < 3.13 only (psycopg requirement); tested 4.16.0
+typing_extensions>=4.6; python_version < "3.13"
+# PyJWT and cryptography: used by fixture/context_pg.FixtureTokens; tested PyJWT 2.14.0/2.7.0, cryptography 50.0.1/41.0.7
