@@ -1,0 +1,1 @@
+These fixed, local-only fixtures use synthetic folder/document IDs and a synthetic owner email (`test-owner@example.test`). The Markdown is a test payload. They do not reproduce provider records, personal permission data, or private R1 inputs, and do not require a network or provider read.

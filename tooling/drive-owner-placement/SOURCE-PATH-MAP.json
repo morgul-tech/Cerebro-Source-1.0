@@ -1,0 +1,20 @@
+{
+  "schema": "e2-source-candidate-path-map/v1",
+  "status": "PROPOSED_PENDING_A1_FIT_AND_ADMISSION",
+  "candidate_root": "candidate/",
+  "proposed_source_root": "tooling/drive-owner-placement/",
+  "mapping": [
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/normalwriter.py", "proposed_source": "tooling/drive-owner-placement/normalwriter.py"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/placement-contract.json", "proposed_source": "tooling/drive-owner-placement/placement-contract.json"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/README.md", "proposed_source": "tooling/drive-owner-placement/README.md"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/NORMAL-CONSUMER-RECIPE.md", "proposed_source": "tooling/drive-owner-placement/NORMAL-CONSUMER-RECIPE.md"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/SOURCE-PATH-MAP.json", "proposed_source": "tooling/drive-owner-placement/SOURCE-PATH-MAP.json"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/tests/test_parallell8_controls.py", "proposed_source": "tooling/drive-owner-placement/tests/test_parallell8_controls.py"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/tests/README.md", "proposed_source": "tooling/drive-owner-placement/tests/README.md"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/tests/fixtures/fixture-contract.json", "proposed_source": "tooling/drive-owner-placement/tests/fixtures/fixture-contract.json"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/tests/fixtures/README.md", "proposed_source": "tooling/drive-owner-placement/tests/fixtures/README.md"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/tests/fixtures/outbox-parent-metadata.json", "proposed_source": "tooling/drive-owner-placement/tests/fixtures/outbox-parent-metadata.json"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/tests/fixtures/handoff.md", "proposed_source": "tooling/drive-owner-placement/tests/fixtures/handoff.md"},
+    {"candidate_relative": "candidate/tooling/drive-owner-placement/tests/fixtures/plan-input.json", "proposed_source": "tooling/drive-owner-placement/tests/fixtures/plan-input.json"}
+  ]
+}

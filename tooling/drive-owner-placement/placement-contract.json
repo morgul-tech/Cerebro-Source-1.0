@@ -1,0 +1,40 @@
+{
+  "schema": "cerebro-owner-placement/v0.2",
+  "contract_id": "E1-PARALLELL8-NORMALWRITER-CANDIDATE-CARD-20261013-001",
+  "revision": 1,
+  "owner": "E1_6F2C9A71",
+  "owner_lane": "SAME_E1",
+  "case_id": "P23-X9-DAG-PARALLELL8-B-E-POLICY-SIGNALVEV-20261013-001",
+  "scope": "ONE_HUMAN_HANDOFF_VIA_APPROVED_OUTBOX",
+  "coordinator_parent_id": "165VAUNZ9bdUuI9JOgeUr34Mrg0OY7-A8",
+  "placements": {
+    "HUMAN_HANDOFF": {
+      "parent_id": "14SGi2OgU1DwzhzgsvgIm3cb-Z6ZWtRDc",
+      "mime_type": "text/markdown",
+      "file_suffix": ".md"
+    }
+  },
+  "owner_home": {
+    "url": "https://docs.google.com/document/d/1kg6GQi1UsMtmhMVibXIOKlPJ8_zZP36RcmRY7QBaNoo/edit?tab=t.xr76a4ex96am"
+  },
+  "owner_basis": {
+    "required_metadata_visibility": "permission_metadata_available",
+    "expected_owner_email": "Morgul@gmail.com",
+    "expected_owner_count": 1,
+    "scope_note": "Observed account-owner evidence only; not universal effective-access attestation."
+  },
+  "writer": "mcp__codex_apps__google_drive_upload_file",
+  "reader": "mcp__codex_apps__google_drive_get_file_metadata + google_drive_fetch",
+  "authority": "NONE",
+  "source_admission": "PENDING_A1_IF_SELECTED",
+  "rules": [
+    "Unknown owner/case/fileclass/parent: typed HOLD; never use root or fallback.",
+    "Caller must provide current parent metadata and the expected owner basis; local checks do not establish authority or freshness.",
+    "HUMAN_HANDOFF is the only bound fileclass and maps exactly to OUTBOX 14SGi2OgU1DwzhzgsvgIm3cb-Z6ZWtRDc as text/markdown with .md suffix.",
+    "The handoff payload must contain the exact original owner-home URL above; its pointer is also returned in the local plan receipt.",
+    "Unknown write outcome means reconcile the same logical artifact before any further write; never retry automatically.",
+    "Release recipient link only after exact file ID, MIME type, and sole expected parent are read back; content readback remains separate.",
+    "Repair is plan-only for the exact same file ID and requires current owner-approved placement basis matching all observed parent changes.",
+    "No ACL/share change, credential lookup, network transport, autosender, Source admission, or native authority is provided by this helper."
+  ]
+}

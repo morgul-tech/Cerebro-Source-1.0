@@ -1,0 +1,9 @@
+{
+  "id": "test-outbox-folder-12345",
+  "mime_type": "application/vnd.google-apps.folder",
+  "parent_ids": ["test-coordinator-12345"],
+  "permissions": [
+    {"type": "user", "role": "owner", "emailAddress": "test-owner@example.test"}
+  ],
+  "source_visibility_status": "permission_metadata_available"
+}

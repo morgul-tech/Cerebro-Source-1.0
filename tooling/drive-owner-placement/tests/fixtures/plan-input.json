@@ -1,0 +1,16 @@
+{
+  "owner": "E1_6F2C9A71",
+  "case": "P23-X9-DAG-PARALLELL8-B-E-POLICY-SIGNALVEV-20261013-001",
+  "fileclass": "HUMAN_HANDOFF",
+  "local_path": "tooling/drive-owner-placement/tests/fixtures/handoff.md",
+  "parent_metadata": {
+    "id": "test-outbox-folder-12345",
+    "mime_type": "application/vnd.google-apps.folder",
+    "parent_ids": ["test-coordinator-12345"],
+    "permissions": [
+      {"type": "user", "role": "owner", "emailAddress": "test-owner@example.test"}
+    ],
+    "source_visibility_status": "permission_metadata_available"
+  },
+  "original_home_pointer": "https://docs.google.com/document/d/test-owner-home-12345/edit"
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "cerebro-owner-placement/v0.2",
+  "contract_id": "E1-PARALLELL8-NORMALWRITER-CANDIDATE-CARD-20261013-001",
+  "revision": 1,
+  "owner": "E1_6F2C9A71",
+  "owner_lane": "SAME_E1",
+  "case_id": "P23-X9-DAG-PARALLELL8-B-E-POLICY-SIGNALVEV-20261013-001",
+  "scope": "TEST_FIXTURE_ONLY",
+  "coordinator_parent_id": "test-coordinator-12345",
+  "placements": {
+    "HUMAN_HANDOFF": {
+      "parent_id": "test-outbox-folder-12345",
+      "mime_type": "text/markdown",
+      "file_suffix": ".md"
+    }
+  },
+  "owner_home": {
+    "url": "https://docs.google.com/document/d/test-owner-home-12345/edit"
+  },
+  "owner_basis": {
+    "required_metadata_visibility": "permission_metadata_available",
+    "expected_owner_email": "test-owner@example.test",
+    "expected_owner_count": 1,
+    "scope_note": "Synthetic non-provider fixture only."
+  },
+  "authority": "NONE"
+}
