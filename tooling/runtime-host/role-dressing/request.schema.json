@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "cerebro-role-dressing-request/v1"
+    },
+    "boot_attempt_id": {
+      "type": "string",
+      "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"
+    },
+    "source_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "method_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "destination_ref": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,31}$"
+    },
+    "owner_expectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "origin": {
+          "enum": [
+            "SYNTHETIC_MODEL",
+            "OWNER_DOCUMENT_REF"
+          ]
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "tenant_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "workspace_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "principal_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "assigned_consumers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "session_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "overlay_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "actor_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "actor_generation_ref": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "recipient_ref": {
+              "const": "A1"
+            }
+          },
+          "required": [
+            "overlay_ref",
+            "actor_ref",
+            "actor_generation_ref",
+            "recipient_ref"
+          ]
+        }
+      },
+      "required": [
+        "origin",
+        "ref",
+        "revision",
+        "tenant_ref",
+        "workspace_ref",
+        "principal_ref",
+        "assigned_consumers",
+        "session_ref",
+        "target"
+      ]
+    },
+    "selected_role": {
+      "const": "ASSISTANT"
+    },
+    "role_method_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "cerebro-role-method-projection/v1"
+        },
+        "role": {
+          "const": "ASSISTANT"
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "method_profile_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "contract_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "uniqueItems": true
+        },
+        "contract_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "authority": {
+          "const": "NONE"
+        }
+      },
+      "required": [
+        "schema",
+        "role",
+        "source_revision",
+        "method_profile_fingerprint",
+        "contract_refs",
+        "contract_fingerprint",
+        "authority"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "boot_attempt_id",
+    "source_revision",
+    "method_fingerprint",
+    "destination_ref",
+    "owner_expectation",
+    "selected_role",
+    "role_method_projection"
+  ]
+}

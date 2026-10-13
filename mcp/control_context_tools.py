@@ -54,6 +54,7 @@ from boot_birth_source import (
     verify_role_method_projection,
 )
 from worker_context_auth import WorkerContextAuthError
+from assistant_trial_owner import AssistantTrialOwnerRefused
 
 
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
@@ -1859,61 +1860,72 @@ class ControlContextMcpTools:
         issuer = self._assistant_overlay_attestation_issuer
         if not callable(getattr(resolver, "resolve", None)) or not callable(getattr(issuer, "seal", None)):
             raise ControlContextToolAuthorizationError("trusted-assistant-overlay-resolution-owner-not-bound")
-        current = self._read_pre_role(identity, context, generation_ref)
-        if current["lifecycle"] != "READY_UNBOUND":
-            raise ControlContextToolError("assistant-overlay-resume-ready-unbound-required")
-        if current["revision"] != expected_revision:
-            raise ControlContextToolError("assistant-overlay-resume-expected-revision-mismatch")
-        if current["source_revision"] != source_revision:
-            raise ControlContextToolError("assistant-overlay-resume-source-mismatch")
-        source = self._assistant_overlay_source_continuity_verifier(
-            source_revision, current["civilization_method_attestation"]["method_fingerprint"],
-        )
-        if (
-            not isinstance(source, dict)
-            or source.get("source_revision") != source_revision
-            or source.get("method_fingerprint") != current["civilization_method_attestation"]["method_fingerprint"]
-            or source.get("method_unchanged") is not True
-            or source.get("ancestry_verified") is not True
-        ):
-            raise ControlContextToolAuthorizationError("assistant-overlay-resume-current-method-mismatch")
-        decision = resolver.resolve(
-            pre_role_generation=copy.deepcopy(current),
-            verified_source=copy.deepcopy(source),
-            identity=identity,
-            session_ref=context.session_ref(),
-        )
-        if not isinstance(decision, dict) or set(decision) != {
-            "result", "decision_ref", "pre_role_fingerprint", "ready_unbound_receipt_fingerprint", "overlay_payload",
-        } or decision.get("result") != "ALLOW":
-            raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-denied")
-        if (
-            decision["pre_role_fingerprint"] != current["fingerprint"]
-            or decision["ready_unbound_receipt_fingerprint"] != current["ready_unbound_receipt"]["receipt_fingerprint"]
-        ):
-            raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-stale")
-        decision_ref = _require_text(decision, "decision_ref")
-        payload = decision["overlay_payload"]
-        required = {
-            "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
-            "actor_generation_ref", "source_revision",
-        }
-        if not isinstance(payload, dict) or set(payload) != required:
-            raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-invalid")
-        if (
-            payload["generation_ref"] != generation_ref
-            or payload["expected_revision"] != expected_revision
-            or payload["source_revision"] != source_revision
-            or payload["role"] != "ASSISTANT"
-        ):
-            raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-mismatch")
-        attestation = issuer.seal(
-            operation="attach_role_overlay", payload=copy.deepcopy(payload), context=context,
-        )
-        attached = self.attach_role_overlay(
-            {**copy.deepcopy(payload), "control_resolution_attestation": attestation}, context,
-        )["structuredContent"]
-        return self._result({**attached, "control_decision_ref": decision_ref}, context)
+        hold = getattr(resolver, 'hold_admission_window', None)
+        if not callable(hold) or not callable(getattr(resolver, 'check_admission_current', None)):
+            raise ControlContextToolAuthorizationError('trusted-assistant-overlay-admission-window-not-bound')
+        try:
+            # Actual installed reader must serialize owner changes through atomic
+            # attach/readback; code alone does not attest that external boundary.
+            with hold():
+                current = self._read_pre_role(identity, context, generation_ref)
+                if current["lifecycle"] != "READY_UNBOUND":
+                    raise ControlContextToolError("assistant-overlay-resume-ready-unbound-required")
+                if current["revision"] != expected_revision:
+                    raise ControlContextToolError("assistant-overlay-resume-expected-revision-mismatch")
+                if current["source_revision"] != source_revision:
+                    raise ControlContextToolError("assistant-overlay-resume-source-mismatch")
+                source = self._assistant_overlay_source_continuity_verifier(
+                    source_revision, current["civilization_method_attestation"]["method_fingerprint"],
+                )
+                if (
+                    not isinstance(source, dict)
+                    or source.get("source_revision") != source_revision
+                    or source.get("method_fingerprint") != current["civilization_method_attestation"]["method_fingerprint"]
+                    or source.get("method_unchanged") is not True
+                    or source.get("ancestry_verified") is not True
+                ):
+                    raise ControlContextToolAuthorizationError("assistant-overlay-resume-current-method-mismatch")
+                decision = resolver.resolve(
+                    pre_role_generation=copy.deepcopy(current),
+                    verified_source=copy.deepcopy(source),
+                    identity=identity,
+                    session_ref=context.session_ref(),
+                )
+                if not isinstance(decision, dict) or set(decision) != {
+                    "result", "decision_ref", "pre_role_fingerprint", "ready_unbound_receipt_fingerprint", "overlay_payload",
+                } or decision.get("result") != "ALLOW":
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-denied")
+                if (
+                    decision["pre_role_fingerprint"] != current["fingerprint"]
+                    or decision["ready_unbound_receipt_fingerprint"] != current["ready_unbound_receipt"]["receipt_fingerprint"]
+                ):
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-stale")
+                decision_ref = _require_text(decision, "decision_ref")
+                payload = decision["overlay_payload"]
+                required = {
+                    "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+                    "actor_generation_ref", "source_revision",
+                }
+                if not isinstance(payload, dict) or set(payload) != required:
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-invalid")
+                if (
+                    payload["generation_ref"] != generation_ref
+                    or payload["expected_revision"] != expected_revision
+                    or payload["source_revision"] != source_revision
+                    or payload["role"] != "ASSISTANT"
+                ):
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-mismatch")
+                resolver.check_admission_current()
+                attestation = issuer.seal(
+                    operation="attach_role_overlay", payload=copy.deepcopy(payload), context=context,
+                )
+                resolver.check_admission_current()
+                attached = self.attach_role_overlay(
+                    {**copy.deepcopy(payload), "control_resolution_attestation": attestation}, context,
+                )["structuredContent"]
+                return self._result({**attached, "control_decision_ref": decision_ref}, context)
+        except AssistantTrialOwnerRefused:
+            raise ControlContextToolAuthorizationError('assistant-trial-owner-not-current-or-matched') from None
 
     def resume_ready_unbound_worker_overlay(
         self, args: dict[str, Any], context: McpToolCallContext,

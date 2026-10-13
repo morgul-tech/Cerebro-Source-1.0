@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "cerebro-role-dressing-client-result/v1"
+    },
+    "status": {
+      "enum": [
+        "PREPARED_DURABLE_LOCAL_REQUEST",
+        "EXACT_ORIGINAL_REUSE",
+        "PROPOSAL",
+        "ROLE_NOT_ADMITTED",
+        "HOLD_BIRTH_PENDING",
+        "OBSERVED_READY",
+        "OBSERVED_ATTACHED",
+        "HOLD_UNKNOWN_OUTCOME",
+        "CONSUMER_DECISION_RECORDED",
+        "PREPARED",
+        "CREATE_REQUESTED",
+        "ATTACH_REQUESTED",
+        "REFUSED",
+        "OBSERVATION"
+      ]
+    },
+    "details": {
+      "type": "object"
+    },
+    "authority": {
+      "const": "NONE"
+    },
+    "native_effect": {
+      "const": false
+    }
+  },
+  "required": [
+    "schema",
+    "status",
+    "details",
+    "authority",
+    "native_effect"
+  ]
+}

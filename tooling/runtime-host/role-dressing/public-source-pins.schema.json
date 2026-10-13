@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "source_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "method_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "role_method_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "cerebro-role-method-projection/v1"
+        },
+        "role": {
+          "const": "ASSISTANT"
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "method_profile_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "contract_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "uniqueItems": true
+        },
+        "contract_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "authority": {
+          "const": "NONE"
+        }
+      },
+      "required": [
+        "schema",
+        "role",
+        "source_revision",
+        "method_profile_fingerprint",
+        "contract_refs",
+        "contract_fingerprint",
+        "authority"
+      ]
+    }
+  },
+  "required": [
+    "source_revision",
+    "method_fingerprint",
+    "role_method_projection"
+  ]
+}

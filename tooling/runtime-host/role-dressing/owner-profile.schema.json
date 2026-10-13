@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "cerebro-isolated-assistant-trial-profile/v1"
+    },
+    "profile_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "owner_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "owner_revision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "enabled": {
+      "const": true
+    },
+    "trial_scope": {
+      "const": "BUILD7_SINGLE_ISOLATED_ASSISTANT"
+    },
+    "caller": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tenant_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "workspace_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "principal_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "consumer_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "session_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "required": [
+        "tenant_ref",
+        "workspace_ref",
+        "principal_ref",
+        "consumer_ref",
+        "session_ref"
+      ]
+    },
+    "generation_ref": {
+      "type": "string",
+      "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"
+    },
+    "source_revision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "method_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "expected_revision": {
+      "type": "integer",
+      "const": 2
+    },
+    "decision_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "overlay_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "actor_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "actor_generation_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "recipient_ref": {
+      "const": "A1"
+    },
+    "trial_target_ref": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,31}$"
+    },
+    "not_before": {
+      "type": "number"
+    },
+    "not_after": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "schema",
+    "profile_ref",
+    "owner_ref",
+    "owner_revision",
+    "enabled",
+    "trial_scope",
+    "caller",
+    "generation_ref",
+    "source_revision",
+    "method_fingerprint",
+    "expected_revision",
+    "decision_ref",
+    "overlay_ref",
+    "actor_ref",
+    "actor_generation_ref",
+    "recipient_ref",
+    "trial_target_ref",
+    "not_before",
+    "not_after"
+  ]
+}
