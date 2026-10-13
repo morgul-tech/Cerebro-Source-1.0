@@ -507,13 +507,104 @@ function Test-CerebroPrincipalSuccessionPermit {
     }
 }
 
+function Resolve-CerebroHumanInteractionMethod {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ContractPath,
+        [Parameter(Mandatory)][string]$MethodFingerprint,
+        [Parameter(Mandatory)][string]$ActorRole,
+        [object]$BasisObservation
+    )
+    if ($ActorRole -cne 'PRINCIPAL') { throw 'HUMAN_METHOD_SELECTED_PRINCIPAL_CONSUMER_REQUIRED' }
+    if ($MethodFingerprint -cnotmatch '^[0-9a-f]{64}$') { throw 'HUMAN_METHOD_FINGERPRINT_REQUIRED' }
+    $text = [IO.File]::ReadAllText($ContractPath)
+    $rows = [regex]::Matches($text, '(?m)^  contract:\s*([^\r\n]+)\r?$')
+    if ($rows.Count -ne 1) { throw 'HUMAN_METHOD_SINGLE_CONTRACT_REQUIRED' }
+    $contract = $rows[0].Groups[1].Value | ConvertFrom-Json
+    if ($contract.id -cne 'HUMAN_INTERACTION_METHOD' -or $contract.version -cne '1.0' -or
+        $contract.authority -cne 'NONE' -or
+        $contract.source_refs.living_family -cne 'gdocs:1d6YzpBu8b3t_497bUsL_dlvlRtBMZgHtr6_lmwYiJrE' -or
+        $contract.source_refs.shared_base -cne 'gdocs:1hqT7XWKXxLar9GsFxyAQE1g5vwhuTQL0LUoN2idLVzQ') {
+        throw 'HUMAN_METHOD_SOURCE_CONTRACT_MISMATCH'
+    }
+    $result = [ordered]@{
+        method_ref=$contract.id; method_version=$contract.version; method_fingerprint=$MethodFingerprint
+        source_refs=$contract.source_refs; authority='NONE'
+        loaded='PORTABLE_SOURCE_CONTRACT_ONLY'; uptake='NOT_ATTESTED'; observable_behavior='NOT_OBSERVED'
+        identity_attested=$false; source_consumption_attested=$false; runtime_cognition_proven=$false
+        assertion='CALLER_REPORTED_METADATA_NOT_PROVIDER_OR_COGNITION_ATTESTATION'
+        basis_status='NOT_ATTESTED'; missing_basis=@(); basis=$null
+    }
+    if ($null -eq $BasisObservation) {
+        $result.missing_basis=@('living_family','shared_base','actor_family','red_thread')
+        return $result
+    }
+    $expected=@('schema','method_fingerprint','basis_status','sources','uptake','behavior')
+    if ((@($BasisObservation.PSObject.Properties.Name | Sort-Object) -join '|') -cne
+        (($expected | Sort-Object) -join '|') -or
+        $BasisObservation.schema -cne 'cerebro-human-method-basis/v1' -or
+        $BasisObservation.method_fingerprint -cne $MethodFingerprint) {
+        throw 'HUMAN_METHOD_BASIS_BINDING_MISMATCH'
+    }
+    $states=@{
+        INITIAL_OR_UNCONFIRMED='FULL_RELEVANT_CONSUMED'
+        UNCHANGED_ACCEPTED='REUSED_ACCEPTED_BASIS'
+        DELTA_OR_CONTEXT_BREAK='TARGETED_DELTA_CONSUMED'
+    }
+    if (-not $states.ContainsKey([string]$BasisObservation.basis_status)) { throw 'HUMAN_METHOD_BASIS_STATUS_INVALID' }
+    $required=@('living_family','shared_base','actor_family','red_thread')
+    foreach ($p in $BasisObservation.sources.PSObject.Properties) {
+        if ($required -cnotcontains $p.Name) { throw 'HUMAN_METHOD_PRIVATE_OR_EXTRA_SOURCE_FIELD' }
+    }
+    foreach ($key in $required) {
+        $property=$BasisObservation.sources.PSObject.Properties[$key]
+        if ($null -eq $property) { $result.missing_basis+=@($key); continue }
+        $item=$property.Value
+        if ((@($item.PSObject.Properties.Name | Sort-Object) -join '|') -cne
+            'consumption|evidence_ref|revision|source_ref') { throw 'HUMAN_METHOD_SOURCE_FIELDS_INVALID' }
+        if ($key -in @('living_family','shared_base') -and
+            $item.source_ref -cne $contract.source_refs.PSObject.Properties[$key].Value) {
+            throw ('HUMAN_METHOD_SOURCE_REF_MISMATCH:'+$key)
+        }
+        if ($item.consumption -ceq 'NOT_ATTESTED') { $result.missing_basis+=@($key); continue }
+        if ($item.consumption -cne $states[[string]$BasisObservation.basis_status]) {
+            throw ('HUMAN_METHOD_CONSUMPTION_MODE_MISMATCH:'+$key)
+        }
+        foreach ($field in @('source_ref','revision','evidence_ref')) {
+            if ($item.$field -isnot [string] -or $item.$field -cnotmatch '^\S{1,512}$' -or
+                $item.$field -cne $item.$field.Trim()) { throw ('HUMAN_METHOD_BASIS_FIELD_REQUIRED:'+$key+'.'+$field) }
+        }
+    }
+    foreach ($name in @('uptake','behavior')) {
+        $item=$BasisObservation.PSObject.Properties[$name].Value
+        if ((@($item.PSObject.Properties.Name | Sort-Object) -join '|') -cne 'evidence_ref|state') {
+            throw 'HUMAN_METHOD_OBSERVATION_FIELDS_INVALID'
+        }
+        $unknown=if($name -ceq 'uptake'){'NOT_ATTESTED'}else{'NOT_OBSERVED'}
+        $positive=if($name -ceq 'uptake'){'USED'}else{'OBSERVED'}
+        if ($item.state -ceq $unknown) {
+            if ($null -ne $item.evidence_ref) { throw 'HUMAN_METHOD_UNKNOWN_EVIDENCE_CONFLICT' }
+        } elseif ($item.state -ceq $positive) {
+            if ($result.missing_basis.Count -ne 0 -or $item.evidence_ref -isnot [string] -or
+                -not $item.evidence_ref.Trim()) { throw 'HUMAN_METHOD_OBSERVATION_BASIS_REQUIRED' }
+        } else { throw 'HUMAN_METHOD_OBSERVATION_STATE_INVALID' }
+    }
+    $result.basis_status=$BasisObservation.basis_status
+    $result.uptake=$BasisObservation.uptake.state
+    $result.observable_behavior=$BasisObservation.behavior.state
+    $result.basis=$BasisObservation
+    return $result
+}
+
+
 function Resolve-CerebroCivilizationMethod {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$SourceRoot,
         [Parameter(Mandatory)][string]$SourceHead,
         [Parameter(Mandatory)][string]$ActorRole,
-        [switch]$MethodProfileOnly
+        [switch]$MethodProfileOnly,
+        [object]$HumanInteractionBasis
     )
     if ($SourceHead -cnotmatch '^[0-9a-f]{40}$' -or $ActorRole -cnotmatch '^[A-Z][A-Z0-9_]{0,63}$') {
         throw 'CIVILIZATION_METHOD_EXACT_SOURCE_AND_ROLE_REQUIRED'
@@ -579,15 +670,15 @@ function Resolve-CerebroCivilizationMethod {
         }
     }
     if ($profile.id -cne 'CURRENT_CIVILIZATION_METHOD_PROFILE' -or
-        $profile.version -isnot [string] -or $profile.version -cne '1.0' -or
+        $profile.version -isnot [string] -or $profile.version -cne '1.1' -or
         $profile.authority -cne 'NONE') {
         throw 'CIVILIZATION_METHOD_ID_VERSION_AUTHORITY_INVALID'
     }
     $methods = @('CURRENTNESS_FIRST','METHOD_NE_AUTHORITY','NO_LIVE_STATE_INHERITANCE',
-        'VERIFY_LOAD_CONSUME_READBACK','TASK_SEMANTICS_ON_DEMAND')
+        'VERIFY_LOAD_CONSUME_READBACK','TASK_SEMANTICS_ON_DEMAND','HUMAN_CONTEXT_ROLE_SCOPED')
     $refs = @('mcp/constitution.yaml','mcp/boot-architecture-control.yaml',
         'engines/presentation/component.yaml','engines/presentation/rules.yaml',
-        'standards/development/implementation-learning-loop.yaml')
+        'standards/development/implementation-learning-loop.yaml','standards/human-interaction-method.yaml')
     $roleContractOwners = [regex]::Matches($text, '(?m)^  role_method_contract_profile:\s*([^\r\n]+)\r?$')
     if ($roleContractOwners.Count -ne 1) { throw 'CIVILIZATION_ROLE_CONTRACT_SINGLE_OWNER_REQUIRED' }
     $roleContractProfile = $roleContractOwners[0].Groups[1].Value | ConvertFrom-Json
@@ -644,6 +735,11 @@ function Resolve-CerebroCivilizationMethod {
         id='ROLE_METHOD_PROJECTION'; role=$ActorRole; source_head=$SourceHead
         method_profile_fingerprint=$fingerprint; durable_method=$methods
         role_contract_refs=$roleRefs; role_contract_fingerprint=$roleContractFingerprint; authority='NONE'
+    }
+    if ($ActorRole -ceq 'PRINCIPAL') {
+        $projection.human_interaction = Resolve-CerebroHumanInteractionMethod -ContractPath (Join-Path $SourceRoot 'standards/human-interaction-method.yaml') -MethodFingerprint $fingerprint -ActorRole $ActorRole -BasisObservation $HumanInteractionBasis
+    } elseif ($null -ne $HumanInteractionBasis) {
+        throw 'HUMAN_METHOD_NOT_ORDINARY_WORKER_OR_BIRTH_GATE'
     }
     $projection.fingerprint = Get-CerebroBootSha256Text ($projection | ConvertTo-Json -Compress -Depth 8)
     return [ordered]@{ method_profile=$current; role_method_projection=$projection }

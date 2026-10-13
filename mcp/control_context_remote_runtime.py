@@ -388,6 +388,7 @@ class ControlContextRemoteRuntime:
     human_t3_host: HumanT3BreakGlassHost | None = field(default=None, repr=False)
     rom_a_bounded_content_provider: Any | None = field(default=None, repr=False)
     rom_a_selected_dispatcher: Any | None = field(default=None, repr=False)
+    rom_a_capacity_reader: Any | None = field(default=None, repr=False)
     rom_a_docs_out_dir: Path | None = field(default=None, repr=False)
 
     def descriptor(self) -> dict[str, Any]:
@@ -423,6 +424,7 @@ class ControlContextRemoteRuntime:
                 self.rom_a_bounded_content_provider is not None
                 and self.rom_a_selected_dispatcher is not None
             ),
+            "rom_a_capacity_reader_bound": self.rom_a_capacity_reader is not None,
             "rom_a_recipient_use_proven": False,
             "deployed": False,
         }
@@ -454,6 +456,7 @@ class ControlContextRemoteRuntime:
             pm_disposition_publisher=guarded_publisher,
             bounded_content_provider=self.rom_a_bounded_content_provider,
             rom_a_selected_dispatcher=self.rom_a_selected_dispatcher,
+            rom_a_capacity_reader=self.rom_a_capacity_reader,
             rom_a_docs_out_dir=self.rom_a_docs_out_dir,
         )
 
@@ -486,11 +489,17 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     human_t3_effect_capability: Any | None = None,
     rom_a_bounded_content_provider: Any | None = None,
     rom_a_selected_dispatcher: Any | None = None,
+    rom_a_capacity_reader: Any | None = None,
     rom_a_docs_out_dir: Path | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
     """Assemble the complete ASGI runtime around an injected PostgreSQL pool/factory."""
+
+    _require(rom_a_capacity_reader is None or (
+        callable(getattr(rom_a_capacity_reader, "read_dispatch", None))
+        and callable(getattr(rom_a_capacity_reader, "read_uptake", None))),
+        "runtime-rom-a-capacity-reader-invalid")
 
     _require(isinstance(config, ControlContextRemoteRuntimeConfig), "runtime-config-required")
     _require(callable(connection_factory), "runtime-connection-factory-required")
@@ -596,6 +605,7 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
         machine_diary_effect_verifier=machine_diary_effect_verifier,
         rom_a_bounded_content_provider=rom_a_bounded_content_provider,
         rom_a_selected_dispatcher=rom_a_selected_dispatcher,
+        rom_a_capacity_reader=rom_a_capacity_reader,
         rom_a_docs_out_dir=rom_a_docs_out_dir,
     )
 
@@ -628,11 +638,17 @@ def assemble_postgres_control_context_remote_runtime(
     human_t3_effect_capability: Any | None = None,
     rom_a_bounded_content_provider: Any | None = None,
     rom_a_selected_dispatcher: Any | None = None,
+    rom_a_capacity_reader: Any | None = None,
     rom_a_docs_out_dir: Path | None = None,
     clock: Callable[[], float] = time.time,
     manifest_path: str | Path = DEFAULT_MANIFEST,
 ) -> ControlContextRemoteRuntime:
     """Assemble from an injected DSN without persisting or exposing it."""
+
+    _require(rom_a_capacity_reader is None or (
+        callable(getattr(rom_a_capacity_reader, "read_dispatch", None))
+        and callable(getattr(rom_a_capacity_reader, "read_uptake", None))),
+        "runtime-rom-a-capacity-reader-invalid")
 
     connection_factory = make_psycopg_connection_factory(
         postgres_dsn,
@@ -666,6 +682,7 @@ def assemble_postgres_control_context_remote_runtime(
         human_t3_effect_capability=human_t3_effect_capability,
         rom_a_bounded_content_provider=rom_a_bounded_content_provider,
         rom_a_selected_dispatcher=rom_a_selected_dispatcher,
+        rom_a_capacity_reader=rom_a_capacity_reader,
         rom_a_docs_out_dir=rom_a_docs_out_dir,
         clock=clock,
         manifest_path=manifest_path,

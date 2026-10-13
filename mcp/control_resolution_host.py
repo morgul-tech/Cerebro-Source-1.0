@@ -335,6 +335,7 @@ class BoundControlResolutionHost:
         pm_disposition_publisher: Any | None = None,
         bounded_content_provider: Any | None = None,
         rom_a_selected_dispatcher: Any | None = None,
+        rom_a_capacity_reader: Any | None = None,
         rom_a_docs_out_dir: Path | None = None,
     ):
         _require(callable(getattr(persistence_verifier, "verify", None)), "host-persistence-verifier-required")
@@ -355,6 +356,10 @@ class BoundControlResolutionHost:
         if rom_a_selected_dispatcher is not None:
             _require(callable(getattr(rom_a_selected_dispatcher, "send_selected", None)),
                      "host-rom-a-selected-dispatcher-invalid")
+        _require(rom_a_capacity_reader is None or (
+            callable(getattr(rom_a_capacity_reader, "read_dispatch", None))
+            and callable(getattr(rom_a_capacity_reader, "read_uptake", None))),
+            "host-rom-a-capacity-reader-invalid")
         if rom_a_docs_out_dir is not None:
             _require(isinstance(rom_a_docs_out_dir, Path) and rom_a_docs_out_dir.is_absolute(),
                      "host-rom-a-docs-fixed-output-required")
@@ -365,6 +370,7 @@ class BoundControlResolutionHost:
         self._pm_disposition_publisher = pm_disposition_publisher
         self._bounded_content_provider = bounded_content_provider
         self._rom_a_selected_dispatcher = rom_a_selected_dispatcher
+        self._rom_a_capacity_reader = rom_a_capacity_reader
         self._rom_a_docs_out_dir = rom_a_docs_out_dir
 
     def select_bounded_content(self, target: dict[str, Any], *, root: Path = control_resolution.SOURCE_ROOT) -> dict[str, Any]:
@@ -415,15 +421,58 @@ class BoundControlResolutionHost:
         spec.loader.exec_module(module)
         context_path = kwargs.get("bounded_context")
         _require(isinstance(context_path, str) and bool(context_path), "host-bounded-return-context-required")
-        _require(not any(key in kwargs for key in ("provider_reader", "bounded_provider_reader", "_host_selection")),
+        _require(not any(key in kwargs for key in ("provider_reader", "bounded_provider_reader", "_host_selection", "_host_owner_port_return")),
                  "host-bounded-return-caller-provider-injection")
         _, raw = module._read(context_path)
         target = module._json(raw)
         selected = self.select_bounded_content(target)
-        result = module._prepare(**kwargs, _host_selection=selected)
+        _, _, _, capture_refs = module._capture(kwargs["capture_record"])
+        capacity = capture_refs.get("task_capacity_care")
+        port_return = None
+        if capacity is not None and capacity["binding"]["schema"] == "cerebro-task-capacity-care/v2":
+            reader = self._rom_a_capacity_reader
+            _require(callable(getattr(reader, "read_material_return", None)),
+                     "host-rom-a-owner-port-material-reader-unbound")
+            port_return = reader.read_material_return(capacity["binding"])
+        result = module._prepare(**kwargs, _host_selection=selected,
+                                 _host_owner_port_return=port_return)
         if self._rom_a_selected_dispatcher is not None:
-            return module._dispatch_selected(result, self._rom_a_selected_dispatcher)
+            return module._dispatch_selected(
+                result, self._rom_a_selected_dispatcher,
+                capacity_reader=self._rom_a_capacity_reader,
+            )
         return result
+
+    def accept_rom_a_task_uptake(self, *, capture_record: str) -> dict[str, Any]:
+        """Ordinary pre-START caller reads the exact owner's task reservation record."""
+        _require(type(self) is BoundControlResolutionHost, "host-rom-a-uptake-origin-invalid")
+        reader = self._rom_a_capacity_reader
+        _require(callable(getattr(reader, "read_uptake", None)),
+                 "host-rom-a-capacity-uptake-reader-unbound")
+        source = control_resolution.SOURCE_ROOT / "tooling/return-bridge/rom_a_normal_path.py"
+        spec = importlib.util.spec_from_file_location("host_rom_a_uptake", source)
+        _require(spec is not None and spec.loader is not None, "host-rom-a-normal-return-unavailable")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _require(isinstance(capture_record, str) and bool(capture_record),
+                 "host-rom-a-uptake-capture-required")
+        _, _, _, refs = module._capture(capture_record)
+        capacity = refs.get("task_capacity_care")
+        _require(isinstance(capacity, dict) and isinstance(capacity.get("binding"), dict),
+                 "host-rom-a-uptake-capacity-binding-required")
+        result = reader.read_uptake(capacity["binding"])
+        _require(isinstance(result, dict) and set(result) == {"provenance", "observation_raw", "uptake"},
+                 "host-rom-a-uptake-observation-invalid")
+        _require(isinstance(result["provenance"], dict) and isinstance(result["observation_raw"], bytes)
+                 and isinstance(result["uptake"], dict), "host-rom-a-uptake-observation-invalid")
+        return {"schema": "cerebro-rom-a-task-uptake-receipt/v1",
+                "capture_record": refs["record_path"],
+                "capture_sha256": refs["record_sha256"],
+                "capacity_binding_sha256": capacity["sha256"],
+                "owner_record": result["provenance"], "uptake": result["uptake"],
+                "action": "CALLER_MAY_CONTINUE_TO_EXISTING_START_GATE",
+                "authority": "NONE",
+                "assertion": "OWNER_OBSERVED_NOT_NATIVE_LOCKED"}
 
     def dispatch_rom_a_docs_selection(self, *, target: dict[str, Any],
                                       recipient_ref: str,

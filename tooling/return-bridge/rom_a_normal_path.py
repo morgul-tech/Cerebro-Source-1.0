@@ -138,7 +138,29 @@ def _capture(record_path_text: str) -> tuple[dict[str, Any], Path, bytes, dict[s
     if record != expected or record_path.parent.name != "capture-" + key:
         raise ValueError("CAPTURE_READBACK_MISMATCH")
     original.decode("utf-8", errors="strict")
-    return task, original_path, original, {
+    profile_path = record_path.with_name("task_local_profile.json")
+    profile_ref = {}
+    profile_bound = None
+    if profile_path.exists() or profile_path.is_symlink():
+        _, profile_raw = _read(str(profile_path))
+        profile_module = _module("task_local_profile_normal", SOURCE_ROOT /
+                                 "tooling/return-bridge/task_local_profile.py")
+        profile_bound = profile_module.read_binding(profile_raw, task, record_raw, original)
+        profile_ref["task_local_profile"] = {"path": str(profile_path),
+                                             "sha256": _sha(profile_raw), "binding": profile_bound}
+    capacity_path = record_path.with_name("task_capacity_care.json")
+    if capacity_path.exists() or capacity_path.is_symlink():
+        if profile_bound is None:
+            raise ValueError("CAPACITY_PROFILE_BINDING_REQUIRED")
+        _, capacity_raw = _read(str(capacity_path))
+        capacity_module = _module("task_capacity_care_normal", SOURCE_ROOT /
+                                  "tooling/return-bridge/task_capacity_care.py")
+        capacity_bound = capacity_module.read_binding(
+            capacity_raw, task, record_raw, original, profile_bound)
+        profile_ref["task_capacity_care"] = {
+            "path": str(capacity_path), "sha256": _sha(capacity_raw),
+            "binding": capacity_bound}
+    return task, original_path, original, {**profile_ref,
         "record_path": str(record_path), "record_sha256": _sha(record_raw),
         "original_path": str(original_path), "original_sha256": _sha(original),
         "original_bytes": len(original), "publish_durability": record["publish_durability"],
@@ -285,9 +307,15 @@ def _bind_delta(raw: bytes, actor: str, verifier_raw: bytes
 
 def prepare(**kwargs: Any) -> dict[str, Any]:
     """Public file/CLI path cannot transport a reader or self-issued selection."""
-    if any(key in kwargs for key in ("bounded_provider_reader", "provider_reader", "_host_selection")):
+    if any(key in kwargs for key in ("bounded_provider_reader", "provider_reader", "_host_selection", "_host_owner_port_return")):
         raise ValueError("bounded-context-normal-host-binding-required")
-    return _prepare(**kwargs)
+    try:
+        return _prepare(**kwargs)
+    except (ValueError, OSError) as exc:
+        reflex = _module("work_reflex_failure", SOURCE_ROOT /
+                         "tooling/return-bridge/work_error_reflex.py")
+        exc.work_error_reflex = reflex.local_failure(type(exc).__name__)
+        raise
 
 
 def _prepare(*, capture_record: str, return_input: str, out_dir: str,
@@ -295,10 +323,69 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
             parent_manifest: str | None = None, verifier: str | None = None,
             verifier_delta: str | None = None, currentness: str | None = None,
             prior_record: str | None = None,
-            bounded_context: str | None = None, _host_selection: dict[str, Any] | None = None) -> dict[str, Any]:
+            bounded_context: str | None = None, resume_input: str | None = None, work_error_observation: str | None = None,
+            profile_observation: str | None = None, capacity_care_observation: str | None = None,
+            _host_selection: dict[str, Any] | None = None,
+            _host_owner_port_return: dict[str, Any] | None = None) -> dict[str, Any]:
     """Prepare one selection and receipt; never send it or assert recipient use."""
     task, original_path, original, capture_ref = _capture(capture_record)
     returned, return_ref, return_facts, human_return = _return_input(return_input)
+    profile_receipt = None
+    bound_ref = capture_ref.get("task_local_profile")
+    if profile_observation is not None and bound_ref is None:
+        raise ValueError("PROFILE_OBSERVATION_WITHOUT_BINDING")
+    if bound_ref is not None:
+        profile_module = _module("task_local_profile_consumer", SOURCE_ROOT /
+                                 "tooling/return-bridge/task_local_profile.py")
+        observed = None
+        if profile_observation is not None:
+            _, observed_raw = _read(profile_observation)
+            observed = profile_module.decode(observed_raw)
+        profile_receipt = profile_module.consume(
+            bound_ref["binding"], observed, returned, capture_ref["original_sha256"])
+    capacity_ref = capture_ref.get("task_capacity_care")
+    if capacity_care_observation is not None and capacity_ref is None:
+        raise ValueError("CARE_OBSERVATION_WITHOUT_CAPACITY_BINDING")
+    return_care = None
+    owner_port_return = None
+    if capacity_ref is not None:
+        care_module = _module("task_capacity_care_return", SOURCE_ROOT /
+                              "tooling/return-bridge/task_capacity_care.py")
+        care_raw = None
+        if capacity_care_observation is not None:
+            _, care_raw = _read(capacity_care_observation)
+        owner_port_return = care_module.owner_port_material_return(
+            capacity_ref["binding"], _host_owner_port_return)
+        return_care = care_module.evaluate_return_care(
+            capacity_ref["binding"], profile_receipt, care_raw)
+    resume_receipt = None
+    if resume_input is not None:
+        _, resume_raw = _read(resume_input)
+        profile_module = _module("work_resume_consumer", SOURCE_ROOT /
+                                 "tooling/return-bridge/task_local_profile.py")
+        resume_receipt = profile_module.consume_resume(
+            task, capture_ref["original_sha256"], bound_ref["sha256"] if bound_ref else None,
+            _json(resume_raw))
+        resume_receipt["input_ref"] = {"path": resume_input, "sha256": _sha(resume_raw), "bytes": len(resume_raw)}
+        resume_receipt["method_source_sha256"] = _sha((SOURCE_ROOT / resume_receipt["learning"]["method_source_ref"]).read_bytes())
+    work_reflex = None
+    candidate = Path(return_ref["path"]).with_name("work_error.json")
+    if work_error_observation is None and (candidate.exists() or candidate.is_symlink()):
+        work_error_observation = str(candidate)
+    if work_error_observation is not None:
+        _, work_raw = _read(work_error_observation)
+        reflex = _module("work_reflex_consumer", SOURCE_ROOT /
+                         "tooling/return-bridge/work_error_reflex.py")
+        work_reflex = reflex.evaluate(
+            task, capture_ref["original_sha256"], bound_ref["sha256"] if bound_ref else None,
+            returned, _json(work_raw), root=SOURCE_ROOT)
+    if resume_receipt is not None and work_reflex is not None:
+        if work_reflex["event"]["attempt_ref"] != resume_receipt["current_task"]["attempt_ref"]:
+            raise ValueError("RESUME_ERROR_ATTEMPT_MISMATCH")
+        work_reflex["continuation_learning"] = resume_receipt["learning"]
+        fresh = resume_receipt["fact_delta"]
+        if fresh is not None and work_reflex["event"]["next_step"]["uses_premise_ref"] == fresh["premise_ref"]:
+            raise ValueError("RESUME_STALE_PREMISE_AFTER_FRESH_FACT")
     supplied = {"owner_facts": owner_facts, "owner_binding": owner_binding,
                 "parent_manifest": parent_manifest, "verifier": verifier,
                 "verifier_delta": verifier_delta, "currentness": currentness,
@@ -435,6 +522,27 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
                                 "recipient_ref": task["actor_ref"]},
                    "authority": "NONE", "provider_currentness_proven": False,
                    "semantic_review_proven": False, "effect": "NONE_CLAIMED"}
+        if resume_receipt is not None:
+            receipt["work_resume"] = resume_receipt
+        if work_reflex is not None:
+            receipt["work_error_reflex"] = work_reflex
+        if profile_receipt is not None:
+            receipt["task_local_profile"] = profile_receipt
+        if capacity_ref is not None:
+            capacity_binding = capacity_ref["binding"]
+            receipt["task_capacity_care"] = {
+                "schema": "cerebro-task-capacity-care-normal-receipt/v1",
+                "binding_path": capacity_ref["path"],
+                "binding_sha256": capacity_ref["sha256"],
+                "binding": capacity_binding,
+                "dispatch_recheck": {"state": "REQUIRED_BEFORE_INTENT_AND_SENDER",
+                                     "authority": "NONE"},
+                "return_care": return_care,
+                "care_update_consumption": capacity_binding["care_update_consumption"],
+                "assertion": "CALLER_RECORDED_NOT_NATIVE_RESERVATION_OR_CARE_ATTESTATION",
+            }
+        if owner_port_return is not None:
+            receipt["task_capacity_care"]["owner_port_return"] = owner_port_return
         if context_ref is not None:
             receipt["bounded_context"] = context_ref
         if human_return is not None:
@@ -442,16 +550,36 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
         (pending / "receipt.json").write_text(
             json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
         os.rename(pending, out)
-        return {"receipt": str(out / "receipt.json"), "selected": str(out / name),
-                "selection": adoption["selection"], "selected_sha256": _sha(payload),
-                "missing_inputs": missing, "recipient_use": "NOT_OBSERVED", "authority": "NONE",
-                "human_return": human_return}
+        result = {"receipt": str(out / "receipt.json"), "selected": str(out / name),
+                  "selection": adoption["selection"], "selected_sha256": _sha(payload),
+                  "missing_inputs": missing, "recipient_use": "NOT_OBSERVED", "authority": "NONE",
+                  "human_return": human_return}
+        if return_care is not None:
+            result["return_care"] = return_care
+        if owner_port_return is not None:
+            result["owner_port_return"] = owner_port_return
+        return result
     finally:
         if pending.exists():
             shutil.rmtree(pending)
 
 
-def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
+def _capacity_dispatch_read(reader: Any, binding: dict, capacity_module: Any) -> dict[str, Any]:
+    method = getattr(reader, "read_dispatch", None)
+    if callable(method):
+        observed = method(binding)
+        if (not isinstance(observed, dict) or set(observed) != {"provenance", "observation_raw"}
+                or not isinstance(observed["provenance"], dict)
+                or not isinstance(observed["observation_raw"], bytes)):
+            raise ValueError("CAPACITY_OWNER_DISPATCH_READ_INVALID")
+        check = capacity_module.check_current(binding, observed["observation_raw"])
+        return {**check, "owner_record": observed["provenance"]}
+    if callable(reader):  # retained for the internal legacy helper tests only
+        return capacity_module.check_current(binding, reader())
+    raise ValueError("CAPACITY_RECHECK_REQUIRED")
+
+
+def _dispatch_selected(result: dict[str, Any], sender: Any, *, capacity_reader: Any = None) -> dict[str, Any]:
     """Host-owned one-attempt send; uncertain outcomes never authorize a retry.
 
     The intent and receipt have local fsync/readback only. A hard crash cannot
@@ -471,6 +599,22 @@ def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
             or _sha(payload) != selected.get("sha256")
             or receipt.get("dispatch", {}).get("state") != "NOT_SENT"):
         raise ValueError("SELECTED_DISPATCH_READBACK_MISMATCH")
+    resume = receipt.get("work_resume")
+    if resume is not None and resume.get("next_material_step_qualified") is not True:
+        raise ValueError("WORK_RESUME_UNQUALIFIED")
+    reflex = receipt.get("work_error_reflex")
+    if reflex is not None and reflex.get("next_material_step_qualified") is not True:
+        raise ValueError("WORK_ERROR_NEXT_MATERIAL_STEP_UNQUALIFIED")
+    capacity_receipt = receipt.get("task_capacity_care")
+    capacity_module = None
+    first_capacity_check = None
+    if capacity_receipt is not None:
+        if not callable(getattr(capacity_reader, "read_dispatch", None)) and not callable(capacity_reader):
+            raise ValueError("CAPACITY_RECHECK_REQUIRED")
+        capacity_module = _module("task_capacity_care_dispatch", SOURCE_ROOT /
+                                  "tooling/return-bridge/task_capacity_care.py")
+        first_capacity_check = _capacity_dispatch_read(
+            capacity_reader, capacity_receipt["binding"], capacity_module)
     recipient = adoption["actor_ref"]
     intent_path = receipt_path.with_name(".receipt-dispatch-intent.json")
     intent = {"state": "UNKNOWN_NO_RETRY", "recipient_ref": recipient,
@@ -478,6 +622,8 @@ def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
               "selected_sha256": selected["sha256"], "selection": selected["selection"],
               "assertion": "LOCAL_ATTEMPT_INTENT_NOT_DELIVERY_OR_RECIPIENT_USE",
               "way_home": "RECONCILE_EXACT_SENDER_OUTCOME_BEFORE_ANY_NEW_DISPATCH"}
+    if first_capacity_check is not None:
+        intent["capacity_recheck_before_intent"] = first_capacity_check
     try:
         with intent_path.open("xb") as stream:
             stream.write((json.dumps(intent, sort_keys=True) + "\n").encode("utf-8"))
@@ -499,6 +645,58 @@ def _dispatch_selected(result: dict[str, Any], sender: Any) -> dict[str, Any]:
     os.replace(before_send, receipt_path)
     if receipt_path.read_bytes() != unknown:
         raise ValueError("SELECTED_DISPATCH_INTENT_READBACK_FAILED")
+    if capacity_receipt is not None:
+        try:
+            second_capacity_check = _capacity_dispatch_read(
+                capacity_reader, capacity_receipt["binding"], capacity_module)
+        except Exception as exc:
+            raw_code = getattr(exc, "code", None)
+            if raw_code is None and type(exc) is ValueError and exc.args:
+                raw_code = exc.args[0]
+            reason = (raw_code if isinstance(raw_code, str)
+                      and re.fullmatch(r"[A-Z0-9_]+", raw_code)
+                      else "CAPACITY_RECHECK_UNAVAILABLE")
+            blocked = {**intent, "state": "NOT_SENT_CAPACITY_RECHECK_FAILED",
+                       "sender_called": False,
+                       "capacity_recheck_failure": reason}
+            refusal_details = getattr(exc, "details", None)
+            if isinstance(refusal_details, dict):
+                blocked["capacity_refusal"] = refusal_details
+            intent_temp = intent_path.with_name(".receipt-capacity-blocked.json")
+            with intent_temp.open("xb") as stream:
+                stream.write((json.dumps(blocked, sort_keys=True) + "\n").encode("utf-8"))
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(intent_temp, intent_path)
+            receipt["dispatch"] = blocked
+            receipt["effect"] = "NONE_CLAIMED"
+            receipt["task_capacity_care"]["dispatch_recheck"] = {
+                "state": "FAILED_BEFORE_SENDER", "authority": "NONE",
+                "reason": blocked["capacity_recheck_failure"]}
+            blocked_receipt = (json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+            receipt_temp = receipt_path.with_name(".receipt-capacity-blocked.json")
+            with receipt_temp.open("xb") as stream:
+                stream.write(blocked_receipt)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(receipt_temp, receipt_path)
+            raise ValueError("CAPACITY_CHANGED_BEFORE_SENDER_NO_RETRY") from exc
+        intent["capacity_recheck_before_sender"] = second_capacity_check
+        receipt["dispatch"] = intent
+        receipt["task_capacity_care"]["dispatch_recheck"] = {
+            "state": "PASS_LOCAL_OBSERVATION_BEFORE_INTENT_AND_SENDER",
+            "before_intent": first_capacity_check,
+            "before_sender": second_capacity_check,
+            "authority": "NONE"}
+        checked = (json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+        checked_temp = receipt_path.with_name(".receipt-capacity-rechecked.json")
+        with checked_temp.open("xb") as stream:
+            stream.write(checked)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(checked_temp, receipt_path)
+        if receipt_path.read_bytes() != checked:
+            raise ValueError("CAPACITY_RECHECK_READBACK_FAILED")
     response = sender.send_selected(
         recipient_ref=recipient, selected_bytes=payload,
         selected_sha256=selected["sha256"], selection=selected["selection"],
@@ -597,7 +795,8 @@ def main() -> int:
     parser.add_argument("--return-input", required=True)
     parser.add_argument("--out-dir", required=True)
     for name in ("owner-facts", "owner-binding", "parent-manifest", "verifier",
-                 "verifier-delta", "currentness", "prior-record", "bounded-context"):
+                 "verifier-delta", "currentness", "prior-record", "bounded-context",
+                 "profile-observation", "work-error-observation", "capacity-care-observation", "resume-input"):
         parser.add_argument("--" + name)
     args = parser.parse_args()
     try:
@@ -606,11 +805,19 @@ def main() -> int:
                          owner_binding=args.owner_binding, parent_manifest=args.parent_manifest,
                          verifier=args.verifier, verifier_delta=args.verifier_delta,
                          currentness=args.currentness, prior_record=args.prior_record,
-                         bounded_context=args.bounded_context)
+                         bounded_context=args.bounded_context, profile_observation=args.profile_observation,
+                         work_error_observation=args.work_error_observation,
+                         capacity_care_observation=args.capacity_care_observation, resume_input=args.resume_input)
         print(json.dumps(result, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, UnicodeError) as exc:
-        print(json.dumps({"result": "REFUSED", "reason": str(exc).split(":", 1)[0]}))
+        output = {"result": "REFUSED", "reason": getattr(exc, "code", str(exc).split(":", 1)[0]),
+                  **({"work_error_reflex": exc.work_error_reflex}
+                     if hasattr(exc, "work_error_reflex") else {})}
+        details = getattr(exc, "details", None)
+        if isinstance(details, dict):
+            output["capacity_refusal"] = details
+        print(json.dumps(output, sort_keys=True))
         return 2
 
 

@@ -22,11 +22,13 @@ OWNER = "standards/boot-critical-path-architecture.yaml"
 METHODS = (
     "CURRENTNESS_FIRST", "METHOD_NE_AUTHORITY", "NO_LIVE_STATE_INHERITANCE",
     "VERIFY_LOAD_CONSUME_READBACK", "TASK_SEMANTICS_ON_DEMAND",
+    "HUMAN_CONTEXT_ROLE_SCOPED",
 )
 REFS = (
     "mcp/constitution.yaml", "mcp/boot-architecture-control.yaml",
     "engines/presentation/component.yaml", "engines/presentation/rules.yaml",
     "standards/development/implementation-learning-loop.yaml",
+    "standards/human-interaction-method.yaml",
 )
 ROLE_NAMES = ("PRINCIPAL", "ASSISTANT", "PROJECT_MANAGER", "IMPLEMENTER", "WORKER", "RESEARCHER")
 ROLE_PROJECTION_SCHEMA = "cerebro-role-method-projection/v1"
@@ -102,7 +104,7 @@ def _method_contract_at_head(
         not isinstance(profile, dict)
         or set(profile) != {"id", "version", "authority", "durable_method", "contract_refs"}
         or profile["id"] != "CURRENT_CIVILIZATION_METHOD_PROFILE"
-        or profile["version"] != "1.0"
+        or profile["version"] != "1.1"
         or profile["authority"] != "NONE"
         or profile["durable_method"] != list(METHODS)
         or profile["contract_refs"] != list(REFS)

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -104,7 +105,28 @@ def _validate_request(request: object) -> dict[str, Any]:
     return {"task": task, "provenance": provenance, "semantic_review": review}
 
 
-def _readback(directory: Path, expected: dict[str, Any]) -> dict[str, Any]:
+def _profile_module():
+    spec = importlib.util.spec_from_file_location(
+        "task_local_profile_capture", Path(__file__).with_name("task_local_profile.py"))
+    if spec is None or spec.loader is None:
+        raise ValueError("PROFILE_MODULE_UNAVAILABLE")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _capacity_module():
+    spec = importlib.util.spec_from_file_location(
+        "task_capacity_care_capture", Path(__file__).with_name("task_capacity_care.py"))
+    if spec is None or spec.loader is None:
+        raise ValueError("CAPACITY_MODULE_UNAVAILABLE")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _readback(directory: Path, expected: dict[str, Any], profile_raw: bytes | None = None,
+              capacity_raw: bytes | None = None) -> dict[str, Any]:
     record_path = directory / "capture.json"
     original_path = directory / "original_task.txt"
     if (not directory.is_dir() or directory.is_symlink() or record_path.is_symlink()
@@ -120,12 +142,35 @@ def _readback(directory: Path, expected: dict[str, Any]) -> dict[str, Any]:
             or len(raw) != expected["original_bytes"]
             or _sha(raw) != expected["original_sha256"]):
         raise ValueError("COLLISION")
-    return {"state": "EXACT_REUSE", "capture_path": str(record_path),
-            "original_path": str(original_path), "receipt": observed,
-            "publish_durability": PUBLISH_DURABILITY}
+    if profile_raw is not None:
+        sidecar = directory / "task_local_profile.json"
+        if sidecar.is_symlink() or not sidecar.is_file() or sidecar.read_bytes() != profile_raw:
+            raise ValueError("PROFILE_SIDECAR_COLLISION")
+    capacity_path = directory / "task_capacity_care.json"
+    if capacity_raw is not None:
+        if capacity_path.is_symlink() or not capacity_path.is_file() or capacity_path.read_bytes() != capacity_raw:
+            raise ValueError("CAPACITY_SIDECAR_COLLISION")
+        profile_path = directory / "task_local_profile.json"
+        if profile_path.is_symlink() or not profile_path.is_file():
+            raise ValueError("CAPACITY_PROFILE_BINDING_REQUIRED")
+        profile_module = _profile_module()
+        profile_bound = profile_module.read_binding(
+            profile_raw if profile_raw is not None else profile_path.read_bytes(),
+            expected["task"], record_bytes, raw)
+        capacity_module = _capacity_module()
+        capacity_module.read_binding(capacity_raw, expected["task"], record_bytes, raw, profile_bound)
+    elif capacity_path.exists() or capacity_path.is_symlink():
+        raise ValueError("CAPACITY_SIDECAR_COLLISION")
+    result = {"state": "EXACT_REUSE", "capture_path": str(record_path),
+              "original_path": str(original_path), "receipt": observed,
+              "publish_durability": PUBLISH_DURABILITY}
+    if capacity_raw is not None:
+        result["capacity_binding_path"] = str(capacity_path)
+    return result
 
 
-def capture(root: Path, request: object, original: bytes) -> dict[str, Any]:
+def capture(root: Path, request: object, original: bytes, *, profile: object | None = None,
+            capacity_observation: bytes | None = None) -> dict[str, Any]:
     """Atomically install one immutable (task_ref, revision) record or read it back."""
     if not isinstance(original, bytes) or not original or len(original) > MAX_PROMPT_BYTES:
         raise ValueError("ORIGINAL_BYTES_INVALID")
@@ -147,24 +192,45 @@ def capture(root: Path, request: object, original: bytes) -> dict[str, Any]:
         "authority": "NONE", "effect": "NONE_CLAIMED", "work_consumed": False,
         "recipient_read_or_use_proven": False,
     }
+    profile_raw = None
+    if profile is not None:
+        module = _profile_module()
+        profile_raw = module.canonical(module.binding(
+            task, profile, _canonical(record) + b"\n", original))
+    capacity_raw = None
+    if capacity_observation is not None:
+        if profile_raw is None:
+            raise ValueError("CAPACITY_PROFILE_BINDING_REQUIRED")
+        capacity_module = _capacity_module()
+        profile_module = _profile_module()
+        profile_bound = profile_module.read_binding(profile_raw, task, _canonical(record) + b"\n", original)
+        capacity_bound = capacity_module.bind(
+            task, _canonical(record) + b"\n", original, profile_bound, capacity_observation)
+        capacity_raw = capacity_module.canonical(capacity_bound)
     if root.is_symlink():
         raise ValueError("CAPTURE_ROOT_SYMLINK")
     root.mkdir(parents=True, exist_ok=True)
     destination = root / ("capture-" + key)
     if destination.exists() or destination.is_symlink():
-        return _readback(destination, record)
+        return _readback(destination, record, profile_raw, capacity_raw)
     temporary = Path(tempfile.mkdtemp(prefix=".capture-pending-", dir=root))
     try:
         _write_durable(temporary / "original_task.txt", original)
         _write_durable(temporary / "capture.json", _canonical(record) + b"\n")
+        if profile_raw is not None:
+            _write_durable(temporary / "task_local_profile.json", profile_raw)
+        if capacity_raw is not None:
+            _write_durable(temporary / "task_capacity_care.json", capacity_raw)
         try:
             os.rename(temporary, destination)
         except OSError:
             if destination.exists() or destination.is_symlink():
-                return _readback(destination, record)
+                return _readback(destination, record, profile_raw, capacity_raw)
             raise
-        result = _readback(destination, record)
+        result = _readback(destination, record, profile_raw, capacity_raw)
         result["state"] = "CAPTURED_READBACK"
+        if capacity_raw is not None:
+            result["capacity_binding_path"] = str(destination / "task_capacity_care.json")
         return result
     finally:
         if temporary.exists():
@@ -185,6 +251,9 @@ def main() -> int:
     parser.add_argument("--request", required=True, type=Path)
     parser.add_argument("--original", required=True, type=Path)
     parser.add_argument("--capture-root", required=True, type=Path)
+    parser.add_argument("--profile-binding", type=Path)
+    parser.add_argument("--capacity-observation", type=Path,
+                        help="Canonical local owner observation; requires --profile-binding")
     args = parser.parse_args()
     try:
         if not args.request.is_file() or args.request.is_symlink() or args.request.stat().st_size > 100_000:
@@ -193,8 +262,27 @@ def main() -> int:
             raise ValueError("ORIGINAL_FILE_INVALID")
         request = json.loads(args.request.read_bytes(), object_pairs_hook=_unique_pairs,
                              parse_constant=lambda _: (_ for _ in ()).throw(ValueError("NONFINITE_JSON")))
-        result = capture(args.capture_root, request, args.original.read_bytes())
-        print(json.dumps({"state": result["state"], "capture_path": result["capture_path"],
+        profile = None
+        if args.profile_binding is not None:
+            path = args.profile_binding
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 100_000:
+                raise ValueError("PROFILE_INPUT_INVALID")
+            profile = _profile_module().decode(path.read_bytes())
+        capacity_observation = None
+        if args.capacity_observation is not None:
+            path = args.capacity_observation
+            if path.is_symlink() or not path.is_file() or path.stat().st_size > 100_000:
+                raise ValueError("CAPACITY_INPUT_INVALID")
+            capacity_observation = path.read_bytes()
+        result = capture(args.capture_root, request, args.original.read_bytes(), profile=profile,
+                         capacity_observation=capacity_observation)
+        if profile is not None:
+            result["profile_binding_path"] = str(Path(result["capture_path"]).with_name("task_local_profile.json"))
+        print(json.dumps({**({"profile_binding_path": result["profile_binding_path"]}
+                           if profile is not None else {}),
+                          **({"capacity_binding_path": result["capacity_binding_path"]}
+                             if "capacity_binding_path" in result else {}),
+                          "state": result["state"], "capture_path": result["capture_path"],
                           "original_path": result["original_path"],
                           "original_sha256": result["receipt"]["original_sha256"],
                           "original_bytes": result["receipt"]["original_bytes"],
@@ -202,7 +290,12 @@ def main() -> int:
                           "authority": "NONE"}, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, UnicodeError, json.JSONDecodeError) as exc:
-        print(json.dumps({"state": "REFUSED", "reason": str(exc).split(":", 1)[0]}))
+        refusal = {"state": "REFUSED",
+                   "reason": getattr(exc, "code", str(exc).split(":", 1)[0])}
+        details = getattr(exc, "details", None)
+        if isinstance(details, dict):
+            refusal["capacity_refusal"] = details
+        print(json.dumps(refusal, sort_keys=True))
         return 2
 
 
