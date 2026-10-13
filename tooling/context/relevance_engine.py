@@ -225,6 +225,73 @@ def _select_bounded_content_from_host_readback(read: dict[str, Any], current: di
             "model_part_count": 1}
 
 
+def _source_learning_encounter(knowledge, selected_refs, catalog_sha256):
+    """Selected Source-public fields only; never provider content or caller payload.
+
+    The caller selects this projection profile, not trust or authority. Admission
+    of public summaries belongs to the ordinary Source owner/review path.
+    """
+    fields = {'failure_family', 'observation', 'application', 'exception',
+              'next_action', 'scope', 'evidence_refs', 'evidence_state',
+              'causal_state', 'recurrence', 'counterevidence'}
+    records = knowledge_records(knowledge)
+    items, omissions = [], []
+    total = 0
+    for ref in selected_refs[:5]:
+        matches = [item for item in records if item.get('id') == ref]
+        if len(matches) != 1:
+            omissions.append({'ref': ref, 'reason': 'AMBIGUOUS_SOURCE_RECORD'})
+            continue
+        item = matches[0]
+        projection = item.get('actor_encounter')
+        if projection is None:
+            continue
+        validity = item.get('validity')
+        provenance = item.get('provenance')
+        if (not knowledge_eligible(item)[0] or type(validity) is not dict
+                or validity.get('state') != 'CURRENT'
+                or type(provenance) is not dict
+                or provenance.get('summary_class') != 'SOURCE_PUBLIC_NONSECRET'
+                or type(projection) is not dict or set(projection) != fields):
+            omissions.append({'ref': ref, 'reason': 'UNAVAILABLE_PUBLIC_SOURCE_PROJECTION'})
+            continue
+        scalar_fields = fields - {'evidence_refs', 'counterevidence'}
+        valid = all(type(projection[k]) is str and projection[k].strip()
+                    for k in scalar_fields)
+        for key in ('evidence_refs', 'counterevidence'):
+            values = projection[key]
+            valid = valid and type(values) is list and 1 <= len(values) <= 5
+            if type(values) is list:
+                valid = valid and all(type(v) is str and v.strip() for v in values)
+        valid = valid and projection['evidence_state'] == 'ATTRIBUTED_OBSERVATION'
+        valid = valid and projection['causal_state'] == 'OWNER_DIAGNOSIS_NOT_PROVEN'
+        valid = valid and projection['recurrence'] == 'UNKNOWN'
+        if valid:
+            try:
+                values = [projection[k] for k in scalar_fields]
+                values += projection['evidence_refs'] + projection['counterevidence']
+                valid = all(len(v.encode('utf-8')) <= 2048 for v in values)
+                body = {'ref': ref, **projection, 'authority': 'EVIDENCE_ONLY'}
+                size = len(json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
+                valid = valid and size <= 8192
+            except UnicodeError:
+                valid = False
+        if not valid:
+            omissions.append({'ref': ref, 'reason': 'INVALID_OR_OVERSIZED_PUBLIC_PROJECTION'})
+            continue
+        if total + size > 16384:
+            omissions.append({'ref': ref, 'reason': 'SELECTED_CONTENT_BUDGET'})
+            continue
+        total += size
+        items.append(body)
+    return {'schema': 'cerebro-source-learning-encounter/v1',
+            'status': 'PARTIAL' if items and omissions else ('SELECTED' if items else ('UNKNOWN' if omissions else 'ABSENT')),
+            'items': items, 'omissions': omissions,
+            'source_catalog_sha256': catalog_sha256,
+            'authority': 'EVIDENCE_ONLY', 'provider_readback': 'NOT_CLAIMED',
+            'native_or_work_authority': 'NONE', 'projection_utf8_bytes': total}
+
+
 def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]:
     if not request.get("current_objective") or not request.get("current_scope"):
         raise ValueError("current_objective-and-current_scope-required")
@@ -326,7 +393,7 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
     else:
         next_event = "CONTROL_RESOLUTION"
 
-    return {
+    result = {
         "schema": "cerebro-relevance-assessment/v0.3",
         "assessment_id": "REL-" + fingerprint[:16].upper(),
         "objective_ref": basis_value["objective_ref"],
@@ -349,6 +416,13 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
         "human_insight_checkpoint": "CRITIQUE_AND_REASSESS" if checkpoint else "NONE",
         "next_control_event": next_event,
     }
+
+    if 'learning_projection' in request:
+        if request['learning_projection'] != 'SOURCE_PUBLIC_ENCOUNTER_V1':
+            raise ValueError('unsupported-source-learning-projection')
+        result['source_learning_encounter'] = _source_learning_encounter(
+            knowledge, knowledge_refs, fingerprints['knowledge'])
+    return result
 
 
 def feedback(value: dict[str, Any]) -> dict[str, Any]:

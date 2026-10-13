@@ -20,6 +20,7 @@ relevance_retrieval:
       - expected_prior_learning
       - coverage_audit_complete
       - coverage_audit_refs
+      - learning_projection
 
   semantic_normalization:
     implementation_scope: deterministic-surface-normalization-only
@@ -140,3 +141,24 @@ relevance_retrieval:
     - parallel-Learning-Engine
     - parallel-Research-Engine
     - parallel-Decision-Engine
+
+  source_actor_encounter:
+    profile: SOURCE_PUBLIC_ENCOUNTER_V1
+    opt_in: RELEVANT_NORMAL_PREFLIGHT_QUERY_ONLY
+    placement: existing_selected_Knowledge_records_and_normal_preflight_retrieval
+    implementation: tooling/context/relevance_engine.py#_source_learning_encounter
+    consumer: mcp/material_commitment_preflight.py#resolve
+    result_field: retrieval.source_learning_encounter
+    selection: ONLY_ALREADY_RANKED_ELIGIBLE_KNOWLEDGE_REFS
+    privacy: SOURCE_PUBLIC_NONSECRET_FIELDS_ONLY
+    evidence_authority: EVIDENCE_ONLY
+    control_or_provider_authority: NONE
+    missing_private_stale_ambiguous_projection: NARROW_ABSENT_OR_UNKNOWN_NO_FULL_HISTORY_FALLBACK
+    default_existing_output: UNCHANGED_WITHOUT_PROFILE
+    provider_reader_boundary: EXISTING_NORMAL_HOST_UNCHANGED_FAIL_CLOSED
+    first_consumer: D1_NEXT_GENUINE_BK11_HUMAN_OPERATOR_DECISION
+    second_consumer: X9_RELEVANT_NORMAL_DEPENDENCY_ASSESSMENT
+    consumer_action: Read_selected_public_application_provenance_exception_and_next_action_before_relevant_decision
+    consumer_disposition: Own_APPLIED_NO_CHANGE_NOT_APPLICABLE_or_precise_owner_rest_in_existing_normal_result
+    no_automatic_episode_replay_or_operator_effect: true
+    no_new_registry_engine_watcher_actorwake_or_per_message_gate: true

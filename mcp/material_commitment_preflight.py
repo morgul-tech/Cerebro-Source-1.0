@@ -547,6 +547,8 @@ def _resolve(request: dict[str, Any], root: Path, selected: dict[str, Any] | Non
         "coverage_audit_complete": request.get("coverage_audit_complete", False),
         "coverage_audit_refs": request.get("coverage_audit_refs", []),
     }
+    if 'learning_projection' in request:
+        retrieval_request['learning_projection'] = request['learning_projection']
     retrieval = engine.retrieve(retrieval_request, root)
     solution_escalation = None
     if "solution_escalation" in request:

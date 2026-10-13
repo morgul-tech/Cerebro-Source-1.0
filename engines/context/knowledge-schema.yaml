@@ -32,3 +32,17 @@ invariants:
   - verification-does-not-create-Wisdom-or-Source-authority
   - external-or-version-sensitive-Knowledge-declares-validity-scope
   - records-are-bounded-and-reference-detailed-evidence
+
+# Optional Source-owned public application envelope; no new evidence/control store.
+actor_encounter_optional:
+  selector: SOURCE_PUBLIC_ENCOUNTER_V1
+  fields: [failure_family, observation, application, exception, next_action, scope, evidence_refs, evidence_state, causal_state, recurrence, counterevidence]
+  provenance_class: SOURCE_PUBLIC_NONSECRET
+  validity_state: CURRENT
+  evidence_state: ATTRIBUTED_OBSERVATION
+  causal_state: OWNER_DIAGNOSIS_NOT_PROVEN
+  recurrence: UNKNOWN
+  content_utf8_limits: {field: 2048, item: 8192, total: 16384, selected_items: 5}
+  evidence_authority: EVIDENCE_ONLY
+  source_owner_review_required: true
+  privacy: PUBLIC_SEMANTIC_SUMMARY_ONLY_NO_RAW_PRIVATE_OR_PROVIDER_BODY
