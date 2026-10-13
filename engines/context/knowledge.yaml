@@ -72,4 +72,297 @@ knowledge:
         prevention and total benefit remain UNKNOWN.
       - 'A helper can fail before writing a receipt: missing local output does not
         prove never-run and does not justify blind retry.'
-  revision: 2
+  - id: KNOW-BUILD7-RAW_SIGNED_IDENTIFIER_EXACTNESS-20261013-001
+    claim: 'AD1 §48 attributes B3 R3 FAIL, same1B r4 repair and B3 R4 76/76 across two physical
+      planes to one incident: strip() collapsed differing signed azp/client_id into apparent
+      owner match. Repair validates raw against trimmed validity then preserves and compares
+      exact raw. This was observation semantics, not demonstrated authentication bypass.'
+    knowledge_type: PROCEDURE
+    scope: raw signed opaque identifier owner identity method whitespace exactness
+    provenance:
+      summary_class: SOURCE_PUBLIC_NONSECRET
+      source_ref: https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      source_revision: AHj4eMTDwP2A29tlmcPWpqRAPdQDU87mll_xDvBhm66txrh3GGOu150FnTAxNiXMbF_QfQsSCMZX-6X3ZLt06TbuPBt31BMHAuqZor7UAGE
+      source_marker: BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001 / E1
+      attribution: Actually full native consumed AD1 public original + Human/P23 Build7 and
+        A1 current continuation; underlying owner/reviewer outcome remains attributed. Same1B
+        bounded semantic synthesis, no raw managed/private body.
+      build_order_ref: https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      build_order_revision: AHj4eMRGqOt9J7ATrZcB_w-T4Wey50A0fIODi45DlkBuNbYhTHxRv6ux0npD-KJ_9ojIs_wwVRfB9otLvijIfSCAyIEfZgHNFNp3sBf5jtA
+    verification:
+      state: VERIFIED
+      scope: Actually consumed original content and attributed dated episode only. No new provider/native/SQL/live
+        caller or causal verification.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - https://docs.google.com/document/d/1_dG-yAP23QpOc4y46lUb4hRJ41v5radqgbXV9c5UGvs/edit?tab=t.ixtm6bk28xzr#BEGIN_B1-B3-CALLER-OBSERVER-R4-REPAIR-DELTA-REVIEW-20261012-001
+    contradiction:
+      state: NO_MATERIAL_CONTRADICTION_HELD
+      counterevidence: B3 independent focused review 76/76 and 1B repair are original-owner
+        outcomes, not new independent or provider proof here.
+    validity:
+      state: CURRENT
+      as_of: '2026-10-13'
+      scope: Dated public learning observation/proposed application, not current external binding/provider/credential/runtime
+        fact.
+    status: ACTIVE
+    tags:
+    - raw
+    - signed
+    - identifier
+    - identity
+    - owner
+    - method
+    actor_encounter:
+      failure_family: RAW_SIGNED_IDENTIFIER_EXACTNESS
+      observation: 'AD1 §48 attributes B3 R3 FAIL, same1B r4 repair and B3 R4 76/76 across two
+        physical planes to one incident: strip() collapsed differing signed azp/client_id into
+        apparent owner match. Repair validates raw against trimmed validity then preserves and
+        compares exact raw. This was observation semantics, not demonstrated authentication
+        bypass.'
+      application: Before relevant identity/owner/method choice preserve declared raw signed
+        or opaque identifiers and compare under the actual authoritative field contract. Use
+        whitespace-differing raw values as a countermodel; future prevention is not proven by
+        this episode.
+      exception: Canonicalisation is legitimate only when that exact field contract permits
+        it; normal free text is different. Do not generalise to a ban on authorised normalisation.
+      next_action: At S2 immutable role/target/source/method design keep opaque values exact,
+        review field-specific validity, and retain the prior witness. Do not re-repair or rerun
+        the historical suite.
+      scope: Relevant raw signed opaque identifier owner identity method whitespace exactness
+        design/candidate/decision boundary; public Source advice only, no all-message injection.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - https://docs.google.com/document/d/1_dG-yAP23QpOc4y46lUb4hRJ41v5radqgbXV9c5UGvs/edit?tab=t.ixtm6bk28xzr#BEGIN_B1-B3-CALLER-OBSERVER-R4-REPAIR-DELTA-REVIEW-20261012-001
+      evidence_state: ATTRIBUTED_OBSERVATION
+      causal_state: OWNER_DIAGNOSIS_NOT_PROVEN
+      recurrence: UNKNOWN
+      counterevidence:
+      - B3 independent focused review 76/76 and 1B repair are original-owner outcomes, not new
+        independent or provider proof here.
+      - Documented local repair is positive bounded evidence; later spontaneous prevention,
+        recurrence and net benefit remain UNKNOWN.
+  - id: KNOW-BUILD7-HANDLER_OUTPUT_SCHEMA_COMPLETENESS-20261013-001
+    claim: AD1 §48 attributes the B3 r2 finding to actual UNKNOWN_ABSENT output with both optional
+      client claims absent while its schema enum omitted that status. Exact enum addition closed
+      it; B3 independently checked eight cases per plane through SDK callbacks/synthetic verifier
+      and actual handler, with no effect.
+    knowledge_type: PROCEDURE
+    scope: handler output schema absent unknown client successful refused outcome
+    provenance:
+      summary_class: SOURCE_PUBLIC_NONSECRET
+      source_ref: https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      source_revision: AHj4eMTDwP2A29tlmcPWpqRAPdQDU87mll_xDvBhm66txrh3GGOu150FnTAxNiXMbF_QfQsSCMZX-6X3ZLt06TbuPBt31BMHAuqZor7UAGE
+      source_marker: BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001 / E2
+      attribution: Actually full native consumed AD1 public original + Human/P23 Build7 and
+        A1 current continuation; underlying owner/reviewer outcome remains attributed. Same1B
+        bounded semantic synthesis, no raw managed/private body.
+      build_order_ref: https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      build_order_revision: AHj4eMRGqOt9J7ATrZcB_w-T4Wey50A0fIODi45DlkBuNbYhTHxRv6ux0npD-KJ_9ojIs_wwVRfB9otLvijIfSCAyIEfZgHNFNp3sBf5jtA
+    verification:
+      state: VERIFIED
+      scope: Actually consumed original content and attributed dated episode only. No new provider/native/SQL/live
+        caller or causal verification.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - https://docs.google.com/document/d/1_dG-yAP23QpOc4y46lUb4hRJ41v5radqgbXV9c5UGvs/edit?tab=t.ixtm6bk28xzr#BEGIN_B1-B3-TWO-READ-SEAMS-SCHEMA-REPAIR-R2-FOCUSED-CLOSURE-20261013-001
+    contradiction:
+      state: NO_MATERIAL_CONTRADICTION_HELD
+      counterevidence: The original B3 closure proves only its repaired optional-claim schema
+        seam; producer repetitions and old passing controls remain separate attribution.
+    validity:
+      state: CURRENT
+      as_of: '2026-10-13'
+      scope: Dated public learning observation/proposed application, not current external binding/provider/credential/runtime
+        fact.
+    status: ACTIVE
+    tags:
+    - handler
+    - output
+    - schema
+    - client
+    - unknown
+    actor_encounter:
+      failure_family: HANDLER_OUTPUT_SCHEMA_COMPLETENESS
+      observation: AD1 §48 attributes the B3 r2 finding to actual UNKNOWN_ABSENT output with
+        both optional client claims absent while its schema enum omitted that status. Exact
+        enum addition closed it; B3 independently checked eight cases per plane through SDK
+        callbacks/synthetic verifier and actual handler, with no effect.
+      application: Before relevant handler/client finalisation compare actual successful, refused,
+        absent and unknown outcomes against the same published output schema. Preserve unknown
+        as a legitimate outcome; future consistency is not guaranteed by one repair.
+      exception: Different physical planes or schemas need their own exact contract. A synthetic
+        verifier or local schema PASS is not genuine identity/provider or runtime-effect evidence.
+      next_action: For S2 recipe/client planning enumerate owner-not-bound, exact read, unknown
+        effect and role-attached outcomes before finalising its own schema. Reuse the existing
+        focused witness; do not coerce unknown into success.
+      scope: Relevant handler output schema absent unknown client successful refused outcome
+        design/candidate/decision boundary; public Source advice only, no all-message injection.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - https://docs.google.com/document/d/1_dG-yAP23QpOc4y46lUb4hRJ41v5radqgbXV9c5UGvs/edit?tab=t.ixtm6bk28xzr#BEGIN_B1-B3-TWO-READ-SEAMS-SCHEMA-REPAIR-R2-FOCUSED-CLOSURE-20261013-001
+      evidence_state: ATTRIBUTED_OBSERVATION
+      causal_state: OWNER_DIAGNOSIS_NOT_PROVEN
+      recurrence: UNKNOWN
+      counterevidence:
+      - The original B3 closure proves only its repaired optional-claim schema seam; producer
+        repetitions and old passing controls remain separate attribution.
+      - Documented local repair is positive bounded evidence; later spontaneous prevention,
+        recurrence and net benefit remain UNKNOWN.
+  - id: KNOW-BUILD7-BOUNDED_READ_OVERFLOW_COVERAGE-20261013-001
+    claim: 'AD1 §48 attributes D1 selected-operator repair: LIMIT5 with cap5 plus fetchone could
+      hide a sixth binding, and LIMIT17 a further attempt group. The existing operator was corrected
+      to LIMIT6/cap5 and LIMIT18/cap17 to detect SELECTED_BOUND_EXCEEDED before stop. No private
+      SQL rows or new query execution were read here.'
+    knowledge_type: PROCEDURE
+    scope: bounded read cap overflow coverage candidate reconciliation selection
+    provenance:
+      summary_class: SOURCE_PUBLIC_NONSECRET
+      source_ref: https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      source_revision: AHj4eMTDwP2A29tlmcPWpqRAPdQDU87mll_xDvBhm66txrh3GGOu150FnTAxNiXMbF_QfQsSCMZX-6X3ZLt06TbuPBt31BMHAuqZor7UAGE
+      source_marker: BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001 / E4
+      attribution: Actually full native consumed AD1 public original + Human/P23 Build7 and
+        A1 current continuation; underlying owner/reviewer outcome remains attributed. Same1B
+        bounded semantic synthesis, no raw managed/private body.
+      build_order_ref: https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      build_order_revision: AHj4eMRGqOt9J7ATrZcB_w-T4Wey50A0fIODi45DlkBuNbYhTHxRv6ux0npD-KJ_9ojIs_wwVRfB9otLvijIfSCAyIEfZgHNFNp3sBf5jtA
+    verification:
+      state: VERIFIED
+      scope: Actually consumed original content and attributed dated episode only. No new provider/native/SQL/live
+        caller or causal verification.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - D1-D2-R3-BOUNDED-WINDOW-LIMIT-CORRECTION-20261013-001
+    contradiction:
+      state: NO_MATERIAL_CONTRADICTION_HELD
+      counterevidence: D1 selected repair and AD1 textual consumption are attributed evidence,
+        not new native SQL/row coverage proof from Source projection.
+    validity:
+      state: CURRENT
+      as_of: '2026-10-13'
+      scope: Dated public learning observation/proposed application, not current external binding/provider/credential/runtime
+        fact.
+    status: ACTIVE
+    tags:
+    - bounded
+    - read
+    - cap
+    - overflow
+    - coverage
+    - candidate
+    - reconciliation
+    actor_encounter:
+      failure_family: BOUNDED_READ_OVERFLOW_COVERAGE
+      observation: 'AD1 §48 attributes D1 selected-operator repair: LIMIT5 with cap5 plus fetchone
+        could hide a sixth binding, and LIMIT17 a further attempt group. The existing operator
+        was corrected to LIMIT6/cap5 and LIMIT18/cap17 to detect SELECTED_BOUND_EXCEEDED before
+        stop. No private SQL rows or new query execution were read here.'
+      application: When a bounded candidate/read/reconciliation decision requires coverage,
+        qualify cap-1, cap and cap+1 or retain explicit unknown coverage. Exhausting a cap does
+        not prove none remain; causal prevention and future habit are not yet established.
+      exception: Legitimate partial sampling is allowed when partial/unknown coverage is declared;
+        no obligation to scan the entire system or widen private access.
+      next_action: At S2 candidate discovery/read/recovery decide whether completeness is required,
+        retain overflow/unknown as a legal result and identify the existing owner for necessary
+        exact-ref readback. Do not rerun D1 operator job.
+      scope: Relevant bounded read cap overflow coverage candidate reconciliation selection
+        design/candidate/decision boundary; public Source advice only, no all-message injection.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - D1-D2-R3-BOUNDED-WINDOW-LIMIT-CORRECTION-20261013-001
+      evidence_state: ATTRIBUTED_OBSERVATION
+      causal_state: OWNER_DIAGNOSIS_NOT_PROVEN
+      recurrence: UNKNOWN
+      counterevidence:
+      - D1 selected repair and AD1 textual consumption are attributed evidence, not new native
+        SQL/row coverage proof from Source projection.
+      - Documented local repair is positive bounded evidence; later spontaneous prevention,
+        recurrence and net benefit remain UNKNOWN.
+  - id: KNOW-BUILD7-AFFECTED_ACTIVE_CONSUMER_POLICY_COHERENCE-20261013-001
+    claim: AD1 §48 attributes startup failure X9_PM_PRODUCER_POLICY_MISMATCH after new PM policy
+      met a prior enabled X9 producer; local runtime binding was also affected. A1 selected
+      bounded config recovery preserving new PM policy, and D1/B1 later reported successful
+      serving. A1 newer Build7 intake reports current PM/B1/B2 completion; the earlier episode
+      is dated, not a current global failure.
+    knowledge_type: PROCEDURE
+    scope: actor policy role assistant owner active consumer runtime binding generation composition
+    provenance:
+      summary_class: SOURCE_PUBLIC_NONSECRET
+      source_ref: https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      source_revision: AHj4eMTDwP2A29tlmcPWpqRAPdQDU87mll_xDvBhm66txrh3GGOu150FnTAxNiXMbF_QfQsSCMZX-6X3ZLt06TbuPBt31BMHAuqZor7UAGE
+      source_marker: BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001 / E5
+      attribution: Actually full native consumed AD1 public original + Human/P23 Build7 and
+        A1 current continuation; underlying owner/reviewer outcome remains attributed. Same1B
+        bounded semantic synthesis, no raw managed/private body.
+      build_order_ref: https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      build_order_revision: AHj4eMRGqOt9J7ATrZcB_w-T4Wey50A0fIODi45DlkBuNbYhTHxRv6ux0npD-KJ_9ojIs_wwVRfB9otLvijIfSCAyIEfZgHNFNp3sBf5jtA
+    verification:
+      state: VERIFIED
+      scope: Actually consumed original content and attributed dated episode only. No new provider/native/SQL/live
+        caller or causal verification.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - https://docs.google.com/document/d/1SGp9UkjTsqjzvQfhiZ3RJrDR-UeEagdJlTs-CijmqbM/edit?tab=t.0#BEGIN_A1-PUBLISH-INSTALL-ACTUAL-BOOT-TRIAL-CLOSED-20261013-001
+    contradiction:
+      state: NO_MATERIAL_CONTRADICTION_HELD
+      counterevidence: Human estimated roughly four-six hours without measurement; this is attributed
+        testimony, not causal cost. Serving recovery and completed selected WORKER do not admit
+        another live role.
+    validity:
+      state: CURRENT
+      as_of: '2026-10-13'
+      scope: Dated public learning observation/proposed application, not current external binding/provider/credential/runtime
+        fact.
+    status: ACTIVE
+    tags:
+    - actor
+    - policy
+    - role
+    - assistant
+    - owner
+    - consumer
+    - runtime
+    - binding
+    - generation
+    - composition
+    actor_encounter:
+      failure_family: AFFECTED_ACTIVE_CONSUMER_POLICY_COHERENCE
+      observation: AD1 §48 attributes startup failure X9_PM_PRODUCER_POLICY_MISMATCH after new
+        PM policy met a prior enabled X9 producer; local runtime binding was also affected.
+        A1 selected bounded config recovery preserving new PM policy, and D1/B1 later reported
+        successful serving. A1 newer Build7 intake reports current PM/B1/B2 completion; the
+        earlier episode is dated, not a current global failure.
+      application: Before actual actor/policy mutation identify precisely affected active consumers,
+        runtime bindings and issuer-owner dependencies and requalify that coherent changed set.
+        A new policy or repository HEAD alone does not establish loaded compatibility.
+      exception: Genuinely unrelated consumers and competent direct work need no new check.
+        Local recovery config stays RUNTIME_ONLY; no blind all-ID replacement, all-actor audit,
+        full BK11 prerequisite or global CPU gate.
+      next_action: At S2 Assistant design name affected resolver/issuer/caller/exposure and
+        method-continuity owners. Keep realm/principal, actor/generation, carrier/session and
+        enabled bindings distinct; defer only the unqualified live effect, not S1 or offline
+        code.
+      scope: Relevant actor policy role assistant owner active consumer runtime binding generation
+        composition design/candidate/decision boundary; public Source advice only, no all-message
+        injection.
+      evidence_refs:
+      - https://docs.google.com/document/d/1tKl8PPJFsXor4o5aoky9isCc9FHaxzydjMMpLhI5U9s/edit?tab=t.23q1bdxgwk3#BEGIN_AD1-A7-WORKER-LEARNING-EARLY-ASSURANCE-CASESET-20261013-001
+      - https://docs.google.com/document/d/11zU4M0ulFLGT-A1_5IjaVOiQWSjQrbujPbV8B9cnUEU/edit?tab=t.0#BEGIN_P23-X9-DAG-BYGG7-SOURCE-LARING-ROLLEPAKLEDNING-20261013-001
+      - https://docs.google.com/document/d/1SGp9UkjTsqjzvQfhiZ3RJrDR-UeEagdJlTs-CijmqbM/edit?tab=t.0#BEGIN_A1-PUBLISH-INSTALL-ACTUAL-BOOT-TRIAL-CLOSED-20261013-001
+      evidence_state: ATTRIBUTED_OBSERVATION
+      causal_state: OWNER_DIAGNOSIS_NOT_PROVEN
+      recurrence: UNKNOWN
+      counterevidence:
+      - Human estimated roughly four-six hours without measurement; this is attributed testimony,
+        not causal cost. Serving recovery and completed selected WORKER do not admit another
+        live role.
+      - Documented local repair is positive bounded evidence; later spontaneous prevention,
+        recurrence and net benefit remain UNKNOWN.
+  revision: 3
