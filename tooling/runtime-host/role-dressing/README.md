@@ -9,7 +9,8 @@ fixed-ASSISTANT original. Never open or convert the finished WORKER journal.
 target, role ASSISTANT, expected public Source/method/projection and independent
 owner expectation. `public-source-pins.schema.json` is public expected data, not
 provider/currentness/owner proof. Real A1/B1 must first consume exact published
-code/registry/schema/Source projections and D1 qualified admission. Empty Assistant
+code/registry/schema/Source projections. Actual effects additionally require A1
+release and D1 qualified host admission. Empty Assistant
 role refs are valid; common method remains mandatory. A new HEAD requires a new
 qualified original or explicitly qualified server continuity, never journal rewrite.
 
@@ -18,7 +19,7 @@ are compiled once without hash-then-reopen. Opaque request fields are never trim
 to create equality. Decoder rejects duplicate/nonfinite JSON and secret/seal keys.
 Registry validation and stricter semantic checks accompany the JSON schemas.
 
-## CLI: local preparation/observations, default missing-owner denial
+## CLI: local proposals and observations, authenticated host effects
 
 Run the actual qualified Python with `-I -B` and the published file:
 
@@ -32,37 +33,42 @@ role_dressing_client.py --source-pins <same-pins.json> --db <same-db> unknown --
 role_dressing_client.py --source-pins <same-pins.json> --db <same-db> status --attempt <same-original> --fingerprint <same-fingerprint>
 ```
 
-CLI deliberately has NO `--owner-admitted`, role switch, seal/token or network
-option. Without a real constructor-bound owner dependency, `next` at PREPARED or
-before attach returns ROLE_NOT_ADMITTED without a create/attach proposal/event.
-After an already proposed/unknown effect it can propose exact-ref read without
-fresh owner availability, preserving original recovery. `prepare` is only a local
-durable original, not native birth/reservation. Client results use their own
-client-result schema; ROLE_NOT_ADMITTED is not a success-shaped server reply.
+CLI has no `--owner-admitted`, role switch, seal/token or network option.
+`next` at PREPARED can journal and emit a role-neutral create proposal; after an
+exact READY read and method decision it can emit strict Assistant resume arguments.
+Each proposal is authority NONE, native_effect false and
+requires_authenticated_host_gate true. It is not admission, a successful server
+reply or permission to invoke a provider. Operational A1 effect release stays
+separate. `prepare` is a local durable original, not native birth/reservation.
+Client results keep their own client-result schema; a host refusal is not success.
 
-## Qualified host-mediated API after real owner admission
+## Non-authoritative Windows journal API
 
 ```python
 journal = Journal(new_protected_path,
-                  source_pins=actual_expected_public_source_pins,
-                  owner_gate=actual_constructor_bound_admission_checker)
+                  source_pins=actual_expected_public_source_pins)
 ```
 
-`owner_gate.check_client_admission(request)` must raise on absent/stale/mismatching
-admission. It is an installation-owned interface, not a caller JSON boolean.
-`AssistantTrialOwnerResolver.check_client_admission` is the provided implementation
-over the real protected reader/window/clock described in OWNER-CONSTRUCTION.md.
-Actual D1/B1 bridging/custody of that dependency must be qualified: source code or
-local expected tuple does NOT authenticate a caller. No actual adapter is supplied
-or implicitly enabled by this package. Missing it is the exact local proposal
-boundary; it does not prevent offline schema/journal preparation.
+The prior `owner_gate` constructor/checker prerequisite is removed. A server-only
+protected profile/reader/clock object cannot be transported into this Windows
+journal through the existing interface. No replacement boolean, caller admission
+flag, copied profile, fake signature or new RPC is accepted or required. Frozen
+owner_expectation remains unverified caller data for exact observation/target
+comparison; it authenticates nothing. No server DB or signing credential belongs
+in the client. Existing server host_args remain legitimate at their own boundary.
 
-After a genuine owner check, `next_call` persists the proposal before returning
-existing create/read or strict three-argument Assistant resume. B1 separately
-invokes its existing authenticated host port under A1/D1 admission. A READY exact
-read and APPLIED/NO_CHANGE consumption of the exact public method are required
-before attach. NOT_APPLICABLE cannot skip mandatory common method. The actual host
-revalidates its identity/session/current profile and seals internally.
+`next_call` durably records a proposal before returning existing create/read or
+strict three-argument Assistant resume. B1 invokes the existing authenticated host
+port only after the separately qualified A1 effect disposition. The host controls
+real identity/scope/Source/verifier/issuer for role-neutral birth and all protected
+Assistant owner/profile/currentness/window/seal checks for attachment. Client
+proposal or expected JSON cannot replace these actual host controls. Source
+publication alone does not install or admit anything.
+
+A READY exact read and APPLIED/NO_CHANGE consumption of the exact public method
+are still required before attach. NOT_APPLICABLE cannot skip mandatory common
+method. Unknown/restart can only propose reading the same original, never replay
+create/attach or invent a new attempt. No local checker result is called admission.
 
 After effect, ingest only an actual exact `read_boot_generation_state` result with
 authenticated_binding and pre_role_generation. An isError wrapper is refused even

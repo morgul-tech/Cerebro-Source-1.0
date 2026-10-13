@@ -4,6 +4,16 @@ Actual current owner binding is UNKNOWN_OWNER_BINDING. This construction is code
 and a dependency contract, not installation or a grant. No Source file/env loader,
 default profile, real private values, key generation or credential is supplied.
 
+These are server effect-time constructor dependencies. The Windows proposal
+journal does not receive this protected server object, reader, DB or signing key.
+Its former owner_gate prerequisite has been removed after the actual D1/B1
+unsupported-interface finding. Local proposals grant no authority and execute no
+provider; A1 operational release and the actual authenticated host controls remain
+mandatory for every real create/attach effect. Existing D1 host_args are legitimate
+in the server process. No new client RPC or copied admission flag replaces them.
+The resolver's existing check_client_admission method is unchanged as an optional
+in-host check; it is not a required Windows binding or a serving transport.
+
 Construct `AssistantTrialOwnerResolver` from the qualified Source
 `mcp/assistant_trial_owner.py` module closure with:
 

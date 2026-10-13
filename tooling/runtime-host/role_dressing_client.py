@@ -155,25 +155,17 @@ def safe_path(path):
 
 
 class Journal:
-    def __init__(self, path, *, source_pins, owner_gate=None):
+    def __init__(self, path, *, source_pins):
         # Public expected Source pins are data, never provider/currentness proof.
         if type(source_pins) is not dict or set(source_pins) != {'source_revision','method_fingerprint','role_method_projection'}:
             raise Hold('EXACT_PUBLIC_SOURCE_PINS_REQUIRED')
         no_secrets(source_pins)
         self._source_pins = copy.deepcopy(source_pins)
-        self._owner_gate = owner_gate
         self.path = safe_path(path)
 
     def _match_source_pins(self, request):
         if any(request[k] != self._source_pins[k] for k in self._source_pins):
             raise Hold('IMMUTABLE_EXPECTED_SOURCE_PINS_MISMATCH')
-
-    def _owner_available(self, request):
-        checker = getattr(self._owner_gate,'check_client_admission',None)
-        if not callable(checker):return False
-        try:checker(copy.deepcopy(request))
-        except Exception:return False
-        return True
 
     @contextmanager
     def transaction(self, initialize=False):
@@ -293,11 +285,6 @@ class Journal:
             request, phase, state, _ = self.row(conn, attempt, fingerprint)
             tool = "read_boot_generation_state"
             args = {"generation_ref": attempt}
-            if (phase == 'PREPARED' and not attach) or (phase == 'OBSERVED_READY' and attach):
-                if not self._owner_available(request):
-                    return {'result':'ROLE_NOT_ADMITTED','attempt':attempt,
-                            'request_fingerprint':fingerprint,'reason':'CONSTRUCTOR_BOUND_OWNER_INPUT_REQUIRED',
-                            'native_effect':False,'authority':'NONE'}
             if phase == "PREPARED" and not attach:
                 tool = "create_ready_unbound_boot_generation"
                 args = {"boot_attempt_id": attempt, "source_revision": request["source_revision"]}
@@ -315,7 +302,7 @@ class Journal:
             elif phase == "PREPARED" and attach:
                 raise Hold("ATTACH_BEFORE_BIRTH_PROHIBITED")
             self.event(conn, attempt, {"kind": "PROPOSED_EXISTING_TOOL", "tool": tool, "args": args})
-        return {"tool": tool, "args": args, "request_fingerprint": fingerprint, "authority": "NONE", "native_effect": False, "requires_authenticated_host_gate": True, "owner_input_assertion": "CALLER_SUPPLIED_NOT_AUTHENTICATED_BY_CLIENT"}
+        return {"tool": tool, "args": args, "request_fingerprint": fingerprint, "authority": "NONE", "native_effect": False, "requires_authenticated_host_gate": True}
 
     def ingest_read(self, attempt, fingerprint, payload, *, evidence_class):
         if evidence_class not in EVIDENCE_CLASSES:
