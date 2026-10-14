@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.4"
+  version: "1.5"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -97,6 +97,43 @@ implementation_learning_loop:
       actual_model_tokens_require: DIRECT_PROVIDER_TELEMETRY
       after_material_budget: RETURN_PARTIAL_WITH_NAMED_REST
       do_not_cache_native_document_raw_bodies: true
+
+  field_case_basis:
+    disposition: SOURCE_REQUIRED_NOW
+    adoption: PENDING_NATURAL_TASK
+    provenance:
+      selected_by: Human_P23_remaining_learning_order_20261014
+      synthesis_sha256: 54808ec3568383a994b15e52588cfc47629980a749472db3ef6d84ff26ff5e1a
+      human_P20_lineage: PRESERVED_THROUGH_EXISTING_QUALIFIED_ORIGIN
+      exact_P20_anchor: HUMAN_ATTRIBUTED_UNKNOWN_NO_NEW_ARCHIVE_READ
+    cases:
+      - id: SAME_FRONT_CHANGED_MANDATE
+        kind: CORRECTION
+        collection_original_sha256: 558f0826d5f9de96243cae3ec9c025fb56274d532a2a3bd9c948788dde0cf914
+        introduction_original_sha256: 5dcf708ed77e872df0a4704022f38945cae9bfa6cc7ab18d302d60044ac8408f
+        observed_sequence: collection_scope_then_Human_five_point_selection_then_A1_appended_current_binding_correction
+        lesson: SAME_FRONT_DOES_NOT_IMPLY_UNCHANGED_MANDATE_OR_REVISION
+        preserve: [historical_originals, first_receipt, dated_correction]
+      - id: DATED_OFF_HOLD_AND_NEW_QUALIFIED_STATE
+        kind: CORRECTION
+        historical_scope: BK11_OFF_HOLD_IN_20261011_20261012_REPORT_BOUNDARIES
+        newer_state: QUALIFIED_BK11_ON_AND_ACK_REPORTED_IN_LATER_P23_RETURN
+        lesson: UPDATE_CURRENT_PICTURE_WITH_SCOPE_DATE_AND_PROVENANCE_WITHOUT_REWRITING_ORIGINALS
+        later_runtime_state_from_this_case: NOT_ATTESTED
+      - id: REPEATED_HUMAN_PASSWORD_BURDEN
+        kind: USER_CORRECTION
+        witness: HUMAN_REPORT_APPROXIMATELY_30_PLUS_REPEATED_PASSWORD_ACTIONS
+        evidence_limit: MATERIAL_BURDEN_SIGNAL_NOT_EXACT_MACHINE_MEASUREMENT
+        reuse: [repeated_human_retry, solution_escalation_preflight, human_action_first_normal_return]
+        before_repeated_Human_action: NEW_DECISION_RELEVANT_INFORMATION_AND_PREPARED_CONTINUOUS_WORK
+        access_extension_or_credential_effect: NONE
+      - id: POSITIVE_SAME_ARC_RECOVERY
+        kind: SUPPORT
+        examples: [T02_same_reviewer_continuation, DD480419_same_attempt_reconciliation, C_local_harness_fix_preserving_work]
+        reuse: standards/development/reflective-adjustment-loop.yaml#wisdom_evidence_feedback
+        lesson: HARVEST_SUPPORT_AND_CHECK_PLACEMENT_BEFORE_HARDER_CONTROL
+        automatic_control_promotion: false
+    runtime_or_new_gate: false
 
   human_action_first_normal_return:
     id: P22-T7-HUMAN-COMMUNICATION-ACTION-FIRST-20261008-001
