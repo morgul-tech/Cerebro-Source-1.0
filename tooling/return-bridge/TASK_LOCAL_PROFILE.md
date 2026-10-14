@@ -52,6 +52,30 @@ Same actor/generation may choose a different primary coat on a different task.
 A new profile revision for an already frozen task revision requires a new task
 revision; never rewrite history. No BOOT or formal role update is involved.
 
+## Selected A–E workwave method fit
+Use these clarifications only within an already selected task and the existing
+mechanisms below. Before substantive action, confirm the owner-selected task/revision/original
+binding, reached stage, pending obligations and next action. Reuse the held
+original within the same arc when it is current and sufficient; read the full
+original when the task/revision changes or the held basis is missing, stale or
+insufficient. Before an independent assignment, check the selected actor's current work,
+pending intent/assignment, uptake and required-tool fit; a material input to the
+same active task is not a new assignment. Existing owner observations are not an
+atomic scheduler lock.
+
+At the first unexpected failure, preserve the exact attempt, reached stage,
+mutation and effect state; compare a challenged validator premise with the actual
+installed contract before changing the target, and reconcile UNKNOWN effects on
+the same attempt before any repeat. Before return, derive hashes, counts, dates
+and source/chain mappings from the final materialized candidate; keep mechanical
+self-check separate from semantic review. For a declared owner dependency, close
+only on a matched current owner release and the next consumer's USED evidence
+linked to that release. Report read operations, unique files/bytes and cumulative
+bytes separately; distinguish emitted/model-context bytes from actual token
+telemetry. After the task's material budget, return the supported partial result
+and named rest. These are method clarifications, not new runtime gates or proof
+of actor use.
+
 Validation: python -B tooling/validator/task_local_profile_validation.py
 The fixture assertions are isolated test observations, never actual actor/tool proof.
 After solewriter publication + exact parent/path/byte readback, use this binding

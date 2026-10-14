@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.3"
+  version: "1.4"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -61,6 +61,42 @@ implementation_learning_loop:
     shortened_context_may_drop_necessary_original_or_authority: false
     no_new_registry_or_truth_store: true
     no_role_or_work_authority_from_method: true
+
+  selected_workwave_refinement:
+    id: P23-AE-WORKWAVE-REFINEMENT-20261014-001
+    authority: NONE
+    scope: EXISTING_METHOD_PATHS_ONLY
+    changes_runtime_or_adds_global_gate: false
+    current_task_before_action:
+      confirm_binding: [owner_selected_task, revision, original_basis, reached_stage, pending_obligations, next_action]
+      full_original_when: [task_or_revision_changed, basis_missing, basis_stale, basis_insufficient]
+      reuse_held_basis_within_same_arc_when_current_and_sufficient: true
+      before_independent_dispatch: [selected_actor_current_work, pending_intent_or_assignment, uptake, required_tool_fit]
+      same_task_material_input_is_new_assignment: false
+      implementation_refs: [tooling/return-bridge/task_local_profile.py#consume_resume, tooling/return-bridge/task_capacity_care.py#check_current, tooling/return-bridge/task_capacity_care.py#check_uptake]
+      owner_observation_is_atomic_scheduler_lock: false
+    first_failure:
+      preserve: [reached_stage, mutation_state, effect_state, exact_attempt]
+      before_target_changing_repair: compare_challenged_validator_premise_with_actual_installed_contract
+      unknown_effect: reconcile_same_attempt_before_repeat
+      implementation_ref: tooling/return-bridge/work_error_reflex.py#evaluate
+    material_return_integrity:
+      derive_from_one_final_materialized_candidate: [hashes, counts, dates, source_and_chain_mappings]
+      require_explicit_alias_mapping_before_join: true
+      worker_mechanical_self_check: REQUIRED
+      independent_semantic_review: ONLY_FOR_GENUINELY_CHANGED_RISK
+      machine_checks_prove_authority_or_consumer_use: false
+    declared_owner_consumer_dependency:
+      applies_only_when_current_task_declares_dependency: true
+      closure_evidence: [matched_current_owner_release, next_consumer_used_linked_to_same_release]
+      board_request_or_handoff_alone_closes_dependency: false
+      implementation_refs: [tooling/return-bridge/task_capacity_care.py#current_owner_ports, tooling/return-bridge/task_capacity_care.py#owner_port_material_return]
+      authority: NONE
+    source_read_resource_reporting:
+      distinguish: [read_operations, unique_source_files, unique_source_bytes, cumulative_source_bytes, emitted_or_model_context_bytes, actual_model_tokens]
+      actual_model_tokens_require: DIRECT_PROVIDER_TELEMETRY
+      after_material_budget: RETURN_PARTIAL_WITH_NAMED_REST
+      do_not_cache_native_document_raw_bodies: true
 
   human_action_first_normal_return:
     id: P22-T7-HUMAN-COMMUNICATION-ACTION-FIRST-20261008-001
