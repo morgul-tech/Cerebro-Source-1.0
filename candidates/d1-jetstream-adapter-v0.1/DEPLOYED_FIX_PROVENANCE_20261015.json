@@ -10,7 +10,7 @@
   },
   "evidence": {
     "d1": {
-      "work_commit": "7affb9e93f9c534d4e02695806bd46a283770cc",
+      "work_commit": "7affb9e93f9c534d4e02695806bd46a283770cc0",
       "path": "candidates/D1/INTEGRATED-DEPLOYED-SOURCE-DISPOSITION.json",
       "bytes": 8080,
       "sha256": "474d8cb8398105b3b6f2056afb561d06c60609661f3cf376bfec242b85bdae23"
@@ -118,7 +118,7 @@
   },
   "result": {
     "standalone_source_code_patch_count": 0,
-    "source_main_publication": "NOT_PERFORMED",
+    "source_main_publication_at_candidate_cut": "NOT_PERFORMED",
     "feature_admission_or_runtime_effect": "NOT_CLAIMED",
     "consumer_action": "A2 consumed corrected D1/D2 map into this recipe/provenance candidate; A1 existing writer owns publication",
     "qualified_rr1": "CLOSED_NO_REPLAY",
