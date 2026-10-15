@@ -115,6 +115,22 @@ Existing _dispatch_selected rejects an unqualified next material step before
 intent or sender call. This controls this selected Source path, not every Work
 tool or runtime actor. Reading a finding receipt remains possible while held.
 
+At an actual access boundary, apply the existing learning-loop
+`human_action_first_normal_return.access_boundary_clarification` before building
+alternate access or repeating host/device investigation. Human's first-hand
+reconnect/login/unlock observations are material evidence, not a diagnosis of
+every refusal. Return the actual actor, service, original action and observed
+error through the main conversation, with the exact known safe window/locator,
+expected prompt and one needed Human action; say UNKNOWN rather than inventing
+a window or leaving Human to search rooms. Prepare coherent work before unlock,
+reuse only actually valid authorized access, and keep secrets out of chat.
+Reconnect grants no missing write right. After Human reports done, continue the
+original path in a bounded way with existing same-attempt/UNKNOWN-effect rules;
+an unchanged failure gets a precise remainder, not another prompt loop. This is
+method guidance, not a new schema, helper, universal approval gate or runtime
+enforcement. Actual use in the A3/A4 case was stopping old-carrier diagnosis and
+preparing Human-selected Work continuation; transfer remains NOT_OBSERVED.
+
 Known PROVEN narrow local fix remains DIRECT_KNOWN_FIX without deep ceremony.
 BOUNDED_RETRY requires exact {contract_ref,evidence_ref,qualified,idempotent,
 attempt_number,max_attempts,expires_at,failure_class}; KNOWN_TRANSIENT, positive

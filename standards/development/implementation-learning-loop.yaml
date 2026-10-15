@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.5"
+  version: "1.6"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -150,6 +150,22 @@ implementation_learning_loop:
     caller_observation_ne_provider_or_recipient_proof: true
     no_model_review_per_return: true
     no_new_service_or_authority: true
+    access_boundary_clarification:
+      origin: P23-HUMAN-ACCESS-BOUNDARY-TESTIMONY-20261015
+      origin_sha256: 5b50669a507ab4ee7da2b94455723092451d7b4c34e93d20f0193beeb99d428a
+      evidence_limit: FIRST_HAND_HUMAN_BURDEN_AND_ACCESS_OBSERVATIONS_NOT_EVERY_FAILURE_DIAGNOSIS
+      consider_early_from_available_evidence: [Human_reconnect, visible_login, local_unlock, supported_Work_window_continuation]
+      before_alternate_access_construction: address_plausible_simple_authorized_Human_route_for_the_affected_path
+      concrete_return: [actual_actor, service, original_intended_action, observed_error, exact_known_safe_window_or_locator, expected_prompt, one_required_Human_action]
+      unknown_window_or_prompt: SAY_UNKNOWN_DO_NOT_GUESS_OR_SILENTLY_SEND_HUMAN_SEARCHING_ROOMS
+      Human_action_location: MAIN_CONVERSATION_THROUGH_EXISTING_OWNER_ROUTE
+      before_unlock: PREPARE_COHERENT_OPERATION_AND_REUSE_ACTUALLY_VALID_AUTHORIZED_ACCESS_UNTIL_EXPIRY
+      secrets_in_chat_or_new_reconnect_write_authority: NONE
+      after_Human_reports_done: BOUNDED_ORIGINAL_PATH_CONTINUATION_WITH_EXISTING_SAME_ATTEMPT_UNKNOWN_EFFECT_RECONCILIATION
+      unchanged_failure: PRECISE_REMAINDER_AND_NEXT_DECISION_NO_PROMPT_OR_PROBE_LOOP
+      observed_method_use: A1_X9_P23_STOPPED_OLD_CARRIER_DIAGNOSIS_AND_PREPARED_SELECTED_HUMAN_WORK_UI_CONTINUATION
+      A3_A4_actual_continuation_outcome: NOT_OBSERVED
+      universal_approval_gate_or_runtime_enforcement: false
 
   same_patch_feedback:
     generalizable_learning_discovered_during_patch: MUST_BE_INCORPORATED_BEFORE_CLOSURE
