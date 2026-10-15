@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.7"
+  version: "1.8"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -80,6 +80,20 @@ implementation_learning_loop:
       before_target_changing_repair: compare_challenged_validator_premise_with_actual_installed_contract
       unknown_effect: reconcile_same_attempt_before_repeat
       implementation_ref: tooling/return-bridge/work_error_reflex.py#evaluate
+      human_directed_boot_model_policy:
+        origin: P23-W-E4CF-BOOT-PASS-AND-CONDUCTOR-NEXT-20261015
+        origin_sha256: 22eae904dd3ab239b13b59f2be8d3d6678729320219ccaccbf2578eb77255d2c
+        applies_at: [HUMAN_DIRECTED_CEREBRO_BOOT_PREFLIGHT, BOOT_FIRST_FAILURE]
+        selected_model: Sol_6_1
+        minimum_reasoning: Medium
+        Luna_lower_reasoning_or_other_substitution_requires: NEW_EXPLICIT_HUMAN_CHOICE
+        before_technical_rebuild_compare_together: [actual_selected_model_and_reasoning_or_UNKNOWN, observed_error, required_sequence_and_observed_deviation]
+        selected_configuration_is_served_model_proof: false
+        Human_witness: REPEATED_LOW_REASONING_SEQUENCE_SHORTCUTS_AND_SOL_6_1_MEDIUM_BOOT_PASS
+        evidence_limit: FIRST_HAND_OPERATIONAL_TESTIMONY_NOT_CONTROLLED_MODEL_STUDY_OR_UNIVERSAL_LUNA_FAILURE
+        demonstrated_server_defect: REPAIR_ACTUAL_DEFECT_DO_NOT_EXPLAIN_AWAY_AS_MODEL
+        unrelated_task_model_policy: UNCHANGED
+        automatic_model_BOOT_runtime_or_provider_effect: NONE
     material_return_integrity:
       derive_from_one_final_materialized_candidate: [hashes, counts, dates, source_and_chain_mappings]
       require_explicit_alias_mapping_before_join: true

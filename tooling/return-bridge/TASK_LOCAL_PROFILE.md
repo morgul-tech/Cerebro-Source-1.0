@@ -115,6 +115,18 @@ Existing _dispatch_selected rejects an unqualified next material step before
 intent or sender call. This controls this selected Source path, not every Work
 tool or runtime actor. Reading a finding receipt remains possible while held.
 
+For Human-directed Cerebro BOOT, apply the learning-loop's existing first-failure
+seam `selected_workwave_refinement.first_failure.human_directed_boot_model_policy`:
+Human selects Sol 6.1 with at least Medium reasoning. Luna, lower reasoning or
+another substitution requires a new explicit Human choice; other task-model
+policies stay unchanged. At BOOT failure inspect actual selected model/reasoning
+(UNKNOWN if unavailable), observed error and concrete required-sequence deviation
+together before technical rebuilding. Selected configuration is not serving-model
+proof. Human's repeated low-reasoning shortcuts and Sol 6.1 Medium BOOT PASS are
+first-hand operational testimony, not a controlled model study or proof that all
+Luna configurations fail. A demonstrated server defect still needs its actual
+repair. This method text changes no model setting, BOOT, role or runtime state.
+
 At task entry or handoff/environment change, compare the required environment
 with the actual selection using available held evidence: WorkMode does not prove
 local disk or callable filesystem access. If selection is unknown for a local
