@@ -135,6 +135,39 @@ provider/credential/host diagnosis; no room hunt or routine per-step check.
 Human currently controls window opening/transfer. The A3/A4 cloud/disk mismatch
 is Human-observed; post-transfer local access remains unobserved.
 
+Activate that existing reflex at whole-job selection and a material dependency or
+architecture change. Name the shortest necessary host/surface/caller/read-write/
+permission-owner path to the next consumer. Reuse valid held evidence first;
+resolve only indispensable uncertain ports with the least sufficient observation
+before dependent building. Recheck on relevant access change, expiry, lost basis
+or actual error, not every step or service. Preserve pending/full originals and
+continue independent work. Human DONE is not own-surface permission readback.
+
+For an actual unlock, read the existing protected receipt for the selected session
+first, checking actual release fingerprint and freshness. PID or empty window title
+is not prompt state; missing receipt is UNKNOWN, not proof of a failed key or Human
+error. UI is for necessary prompt guidance or absent qualified receipt. Validate
+the actually finished whole release against its existing typed launcher contract
+before calling Human. Reuse its status/result path, not per-step model calls/ACKs.
+Explicit launcher state transitions remain named next maintenance, not a new gate
+or change to the running frozen package.
+
+Only a relevant external contract/tool/metadata exposure change activates the
+consumer chain: implemented -> deployed -> wire-advertised -> consumer registered/
+callable -> own authenticated action -> useful result. Server catalog/test/health
+does not prove consumer use. Plan needed Human metadata action before a short
+privileged window; refresh after descriptors are actually available, before the
+dependent consumer action, not on local code alone. Context Refresh tools and OAuth
+Reconnect are distinct; do not assume substitution. After a genuinely new completed
+action the same consumer checks its own catalog/binding once. If uptake is missing,
+qualify that link and any documented same-actor client continuity path; do not
+default to new worker/BOOT, redeploy, reconnect loop or privilege-window extension.
+Keep source publication and actual uptake/use as separate evidence. The R1-R3
+owner case preserves planning/serialization/observation mistakes without Human/key
+blame; later own W ACK, one committed publication, method950 adoption and bounded
+entry use qualify the publication boundary, not an isolated cache-cause claim.
+Historical W method950 adoption is never rewritten or repeated just for a new HEAD.
+
 At an actual access boundary, apply the existing learning-loop
 `human_action_first_normal_return.access_boundary_clarification` before building
 alternate access or repeating host/device investigation. Human's first-hand

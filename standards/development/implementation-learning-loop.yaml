@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.8"
+  version: "1.9"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -187,6 +187,38 @@ implementation_learning_loop:
       current_hybrid_window_open_or_transfer_owner: HUMAN_NO_AUTOMATIC_AGENT_WINDOW_ACTION
       cloud_disk_case_before: HUMAN_OBSERVED_A3_A4_CLOUD_SELECTION_WHILE_TASK_REQUIRED_LOCAL_DISK
       cloud_disk_case_after: PENDING_ACTUAL_LOCAL_ENVIRONMENT_AND_ACCESS_READBACK
+      activation_at: [WHOLE_JOB_SELECTION, MATERIAL_DEPENDENCY_OR_ARCHITECTURE_CHANGE]
+      necessary_consumer_path: [actual_host, surface, caller, required_read_write, required_permission, authority_owner, next_consumer]
+      before_dependent_implementation: REUSE_VALID_HELD_EVIDENCE_THEN_LEAST_SUFFICIENT_OBSERVATION_ONLY_FOR_INDISPENSABLE_UNRESOLVED_PORTS
+      recheck_when: [required_access_changes, evidence_expires, necessary_context_lost, actual_access_error]
+      unresolved_dependency: PRESERVE_FULL_ORIGINAL_AND_PENDING_CONTINUE_INDEPENDENT_WORK_PREPARE_ONE_EXACT_HUMAN_ACTION_IF_NEEDED
+      Human_done_vs_access: HUMAN_REPORT_IS_NOT_OWN_SURFACE_PERMISSION_READBACK_CHECK_ORIGINAL_PATH_ONCE_AFTER_DONE
+      whole_job_readiness: DISPOSE_KNOWN_NECESSARY_ACCESS_DEPENDENCIES_BEFORE_CONSOLIDATED_EXECUTION
+      unlock_observation: EXISTING_SESSION_BOUND_MACHINE_RECEIPT_FIRST_WITH_ACTUAL_RELEASE_FINGERPRINT_AND_FRESHNESS
+      missing_receipt: UNKNOWN_NOT_PROOF_OF_WAITING_PROMPT_FAILED_KEY_OR_HUMAN_ERROR
+      pid_or_window_title_proves_prompt_status: false
+      UI_when_needed: [HUMAN_PROMPT_GUIDANCE_REQUIRED, QUALIFIED_SESSION_RECEIPT_UNAVAILABLE]
+      before_Human_launcher_call: VALIDATE_ACTUAL_FINISHED_WHOLE_RELEASE_AGAINST_EXISTING_TYPED_CONTRACT_NOT_ONLY_DRAFT
+      observation_channel: REUSE_EXISTING_PROTECTED_STATUS_PATH_AND_RESULT_CHANNEL_NO_PERSTEP_MODEL_ACK
+      consumer_uptake_trigger: RELEVANT_EXTERNAL_CONTRACT_TOOL_OR_METADATA_EXPOSURE_CHANGE_ONLY
+      consumer_effect_chain: [IMPLEMENTED, DEPLOYED, WIRE_ADVERTISED, CONSUMER_REGISTERED_OR_CALLABLE, OWN_AUTHENTICATED_ACTION, USEFUL_RESULT]
+      server_catalog_test_or_health_proves_consumer_use: false
+      before_short_privileged_window: PLAN_NECESSARY_HUMAN_METADATA_ACTION_FOR_NAMED_CONSUMER
+      metadata_refresh_timing: AFTER_DESCRIPTORS_ACTUALLY_AVAILABLE_BEFORE_DEPENDENT_CONSUMER_ACTION_NOT_ON_LOCAL_CODE_ALONE
+      Context_Refresh_vs_OAuth_Reconnect: DISTINCT_ACTIONS_NO_SUBSTITUTION_ASSUMED
+      after_actual_new_Human_action: SAME_CONSUMER_OWN_CATALOG_AND_BINDING_CHECK_ONCE
+      missing_uptake: QUALIFY_SPECIFIC_LINK_NOT_DEFAULT_REDEPLOY_NEW_WORKER_BOOT_RECONNECT_OR_PRIVILEGE_EXTENSION
+      continuity_when_needed: QUALIFY_DOCUMENTED_SAME_ACTOR_CLIENT_PATH_DO_NOT_ASSUME_NEW_IDENTITY_OR_SUCCESS
+      early_access_R1_R3_provenance:
+        early_access_original_sha256: efe16eb074e212e135f87e830780b8339fa40f88055cd9468355a87f3a1931d8
+        unlock_R2_original_sha256: 0e4be10d4046afb23138e89a0465d38b9c019ad6b009f75befa0c61ea6e17a28
+        consumer_R3_original_sha256: 87eea78b7ae9ef862e1f763b7a9562e1c172ec01c6ea097e6c6755b7cccf6fc1
+        qualified_owner_cleanup_sha256: 241cf2776314749410e2d5cb09c192ca2644ced19782e3bc28ccce0e0b8729fa
+        retained_owner_errors: [late_publisher_permission_dependency, ISO_instead_of_typed_epoch, first_DateTime_comparison_failure, Refresh_Reconnect_conflation]
+        observed_after: OWNER_REPORTED_SAME_W_OWN_ACK_ONE_COMMITTED_PUBLICATION_METHOD950_ADOPTION_ROLE_READBACK_AND_BOUNDED_ENTRY_USE
+        cleanup_limit: LAUNCHER_EXIT_ZERO_SIX_PROCESSES_GONE_SEPARATE_SOCKET_PATH_NOT_OBSERVED
+        causal_limit: NO_ISOLATED_CACHE_CAUSE_OR_GLOBAL_SESSION_EXPIRY_PROOF_NO_HUMAN_KEY_BLAME
+        historical_W_method950_adoption: IMMUTABLE_NO_AUTOMATIC_READOPTION_ON_NEW_SOURCE_HEAD
 
   same_patch_feedback:
     generalizable_learning_discovered_during_patch: MUST_BE_INCORPORATED_BEFORE_CLOSURE
