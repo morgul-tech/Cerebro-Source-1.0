@@ -1,0 +1,181 @@
+{
+  "schema": "deployed-source-fix-provenance/v1",
+  "task_ref": "P23-X9-COMMON-WORK-ADOPTION-SOURCE-20261015-001-A",
+  "revision": "1.0",
+  "source_candidate": {
+    "canonical_commit": "1337baf70e366412baf358bd0129233778719cc3",
+    "candidate_home": "candidates/d1-jetstream-adapter-v0.1",
+    "document": "PRODUCTION.md",
+    "standalone_code_patch_count": 0,
+    "main_publication": "NOT_PERFORMED"
+  },
+  "selected_order": {
+    "work_commit": "5222bd5ed015f9c62ccadb668ea28d9ae0da0a94",
+    "original_path": "work/P23-X9-COMMON-WORK-ADOPTION-SOURCE-20261015-001/1.0/original/A1-A2-SOURCE-WHOLE-JOB.txt",
+    "original_bytes": 6431,
+    "original_sha256": "fdbec21fa825c43d1d930ef743c3d31c48a15832df5b854ca909ebd09087fe9d"
+  },
+  "integrated_evidence": [
+    {
+      "owner": "D1",
+      "work_commit": "7affb9e93f9c534d4e02695806bd46a283770cc",
+      "path": "candidates/D1/INTEGRATED-DEPLOYED-SOURCE-DISPOSITION.json",
+      "bytes": 8080,
+      "sha256": "474d8cb8398105b3b6f2056afb561d06c60609661f3cf376bfec242b85bdae23"
+    },
+    {
+      "owner": "D2",
+      "work_commit": "a8ae541ccb26b1a51db5856a5ed1121d9f8ec08a",
+      "path": "evidence/D2/P23-X9-COMMON-WORK-ADOPTION-SOURCE-20261015.md",
+      "bytes": 13285,
+      "sha256": "3db6f53700958b06288cf868bf0c0caa38d538434c4de7e50905fc36bed809b8"
+    },
+    {
+      "owner": "D1_EARLY_DEPENDENCY_RECORD",
+      "path": "candidates/D1/EARLY-CANONICAL-PARENT-DEPENDENCIES.json",
+      "bytes": 3618,
+      "sha256": "a97c3f06b782b56b7e55df00758a9fe45554194213db6e5d887e3a6df33607dc"
+    }
+  ],
+  "deployment": {
+    "deployment_ref": "038f835e-a4f4-4fe5-b84d-1db9a4202745",
+    "source_artifact_sha256": "40f62ced6f89a42bd6670596874ea22098821d7c563df410cefb7cf9c83229ed",
+    "source_index_sha256": "00bb35c02bfc48d9114c9cb64dd7b16ed58fd78fad7e84edea8ab9edb0bbc18e",
+    "closed_delivery_receipt_sha256": "9a634898c5ff7cea5677b46f3cc0e8bd160ca8d6a0cdb6611f9debd4dfdb842c",
+    "runtime_receipt_rr1": "CLOSED_NO_REPLAY",
+    "runtime_evidence_is_source_publication": false
+  },
+  "deployed_pins": [
+    {
+      "path": "mcp/room_return_d1_outbox.py",
+      "role": "principal",
+      "bytes": 25875,
+      "sha256": "897519ee3f55d9f39a06b7ab23c72e57c7f2535b14526a57f549d74a4c698bb0",
+      "repair_before_sha256": "b3bf9d0ce7af8cfec4fbfdeaf75fb4d795d2c7de9bb2029280f0aa1684ce32b9"
+    },
+    {
+      "path": "mcp/bk11_service_custody.py",
+      "role": "disposition",
+      "bytes": 23556,
+      "sha256": "bedaacf6bfc2443a3cb9bd6f8a3d54531cdb2684d0e9c53ae2bbcb793a1b9a83",
+      "repair_before_sha256": "ffd5c48db9f10ce1b7da40b62b5399c028f8867029cc634c8f0685dec8d5a40f"
+    },
+    {
+      "path": "r5/runtime_once.py",
+      "role": "final_runner",
+      "bytes": 24451,
+      "sha256": "018a49acd88843b6afc51fc049b1d0666e579041392f356bff307d097332dc34",
+      "delta": "returns None after cursor validation when the cursor value is None"
+    },
+    {
+      "path": "r5/runtime_once.py",
+      "role": "intermediate_consolidated_runner",
+      "sha256": "7c7f0a54702c3962e2648b91c46e793dc5842df9889f1727e74784c6706a3f17",
+      "delta": "runtime-specific family-plan wrapper declares REF and validates session_ref, session_binding_id, and assignment_ref; not the final closure runner"
+    },
+    {
+      "path": "core/owner_protocol.py",
+      "role": "room_port_after",
+      "bytes": 1987,
+      "sha256": "614372ba57ed98057d390a2b06c122c5baa3f8df83df2cbe7649751f51d5f953",
+      "before_sha256": "d5f9ffd3f734114b532d2b398fb51feca3cd2c163f762f3c0b2be69293923fc5"
+    }
+  ],
+  "canonical_source_pins": [
+    {
+      "path": "candidates/d1-jetstream-adapter-v0.1/d1js/edge_adapter.py",
+      "sha256": "2e4a6b699f10a52c46788a6d3184d3d0fd508b8ebba1df3f784c31a4bb038f53",
+      "premise": "maps original operation ID to bk11attempt:<sha256>, preserves original attempt reference on recovery, and accepts a null cursor"
+    },
+    {
+      "path": "candidates/d1-jetstream-adapter-v0.1/d1js/production_runtime.py",
+      "sha256": "c66c047a81af1585dca562138218c71c83ebd1c6b6096d77bd7bf6e22c4a1284",
+      "premise": "declares the selected REF expression, uses it in current validation paths, and accepts None cursor"
+    },
+    {
+      "path": "candidates/d1-jetstream-adapter-v0.1/d1js/owner_protocol.py",
+      "sha256": "d5f9ffd3f734114b532d2b398fb51feca3cd2c163f762f3c0b2be69293923fc5",
+      "premise": "matches the deployed owner_protocol before pin; exact-type allowlist has the existing classes only"
+    },
+    {
+      "path": "tooling/context/control_context_postgres_migrations.json",
+      "sha256": "dd68aed72b97a6254a169dfacd57bb6d775c18f568cf50a8b51e0249ad5563bd",
+      "premise": "canonical migration set has 0001-0005"
+    }
+  ],
+  "deployed_migration_manifest": {
+    "sha256": "0b8b8bca4237d3f9c04e40f60e042dd333fdb5ca0158763a941cb6dcb28f00e4",
+    "migration_count": 11,
+    "migration_0011_checksum": "572df5967051039b6faf5ee957066e6c8fe2d55e7f0fddf124c4a2272abef1dd",
+    "canonical_0010_and_0011_sql_present": false
+  },
+  "ref_expression": "\\A[A-Za-z0-9][A-Za-z0-9_.:@/#=-]{0,159}\\Z",
+  "source_fit_dispositions": [
+    {
+      "group": "principal_grammar",
+      "disposition": "ABSENT_PARENT_MODULE_NO_STANDALONE_PATCH",
+      "deployed_path": "mcp/room_return_d1_outbox.py",
+      "source_parent": "Absent by exact path and basename at canonical commit 1337baf; D1 early dependency record identifies an unpublished ROOM_RETURN producer parent."
+    },
+    {
+      "group": "REF_declaration",
+      "disposition": "RUNTIME_STANDALONE_WRAPPER_REPAIR_CANONICAL_DECLARATION_ALREADY_PRESENT",
+      "deployed_final_runner_sha256": "018a49acd88843b6afc51fc049b1d0666e579041392f356bff307d097332dc34",
+      "deployed_intermediate_consolidated_runner_sha256": "7c7f0a54702c3962e2648b91c46e793dc5842df9889f1727e74784c6706a3f17",
+      "canonical_path": "candidates/d1-jetstream-adapter-v0.1/d1js/production_runtime.py",
+      "scope": "Canonical declaration is present; family-plan wrapper equivalence is not established."
+    },
+    {
+      "group": "null_cursor",
+      "disposition": "RUNTIME_STANDALONE_WRAPPER_REPAIR_NULL_VALUE_CONTRACT_ALREADY_PRESENT",
+      "deployed_sha256": "018a49acd88843b6afc51fc049b1d0666e579041392f356bff307d097332dc34",
+      "canonical_paths": [
+        "candidates/d1-jetstream-adapter-v0.1/d1js/edge_adapter.py",
+        "candidates/d1-jetstream-adapter-v0.1/d1js/production_runtime.py"
+      ],
+      "scope": "Both selected Source paths accept None; no complete family-wrapper equivalence or prior canonical defect is claimed."
+    },
+    {
+      "group": "publisher_receiver_disposition_predicate",
+      "disposition": "ABSENT_PARENT_MODULE_NO_STANDALONE_PATCH",
+      "deployed_path": "mcp/bk11_service_custody.py",
+      "source_parent": "Absent by exact path and basename at canonical commit 1337baf; backend custody requires its selected SQL/RLS/FK context."
+    },
+    {
+      "group": "exact_leased_ROOM_owner_port",
+      "disposition": "ROOM_PARENT_CLASS_DEPENDENCY_NO_IMPORT_ONLY_PATCH",
+      "deployed_path": "core/owner_protocol.py",
+      "before_sha256": "d5f9ffd3f734114b532d2b398fb51feca3cd2c163f762f3c0b2be69293923fc5",
+      "after_sha256": "614372ba57ed98057d390a2b06c122c5baa3f8df83df2cbe7649751f51d5f953",
+      "canonical_path": "candidates/d1-jetstream-adapter-v0.1/d1js/owner_protocol.py",
+      "prerequisite": "ServiceLeasedRoomReturnOwnerPort and its ROOM_RETURN parent implementation are absent; retain exact-type guard and do not add an import-only allowlist entry."
+    },
+    {
+      "group": "outer_legacy_original_attempt",
+      "disposition": "EXISTING_ORIGINAL_ATTEMPT_CORRELATION_NO_STANDALONE_PATCH",
+      "deployed_sha256": "018a49acd88843b6afc51fc049b1d0666e579041392f356bff307d097332dc34",
+      "canonical_path": "candidates/d1-jetstream-adapter-v0.1/d1js/edge_adapter.py",
+      "scope": "Canonical adapter/runtime preserves the legacy original-attempt proof; the additional family wrapper is EDGE-runtime-specific."
+    },
+    {
+      "group": "0011_canonical_checksum",
+      "disposition": "MIGRATION_SET_PARENT_DEPENDENCY_NO_CHECKSUM_ONLY_PATCH",
+      "canonical_migration_count": 5,
+      "deployed_migration_count": 11,
+      "deployed_0011_checksum": "572df5967051039b6faf5ee957066e6c8fe2d55e7f0fddf124c4a2272abef1dd",
+      "prerequisite": "Matching canonical 0010/0011 SQL and migration-family admission are absent; do not add a checksum-only entry."
+    }
+  ],
+  "consumer_action": {
+    "action": "A2 consumed the corrected D1/D2 map into this Source recipe and provenance candidate.",
+    "candidate_publication": "PENDING_A1_EXISTING_SOURCE_WRITER",
+    "source_main_publication": "NOT_PERFORMED",
+    "feature_admission_or_runtime_effect": "NOT_CLAIMED"
+  },
+  "controls_and_limits": {
+    "qualified_rr1": "CLOSED_NO_REPLAY",
+    "affected_prior_controls": "Retained at their previously qualified scope; no broad suite rerun.",
+    "provider_db_broker_credentials_deployment_actor_effect": "NONE",
+    "model_or_token_savings": "UNKNOWN_NOT_CLAIMED"
+  }
+}
