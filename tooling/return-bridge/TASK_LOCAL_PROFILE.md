@@ -115,6 +115,14 @@ Existing _dispatch_selected rejects an unqualified next material step before
 intent or sender call. This controls this selected Source path, not every Work
 tool or runtime actor. Reading a finding receipt remains possible while held.
 
+At task entry or handoff/environment change, compare the required environment
+with the actual selection using available held evidence: WorkMode does not prove
+local disk or callable filesystem access. If selection is unknown for a local
+file/exec gap, obtain one targeted Human observation for the named actor before
+provider/credential/host diagnosis; no room hunt or routine per-step check.
+Human currently controls window opening/transfer. The A3/A4 cloud/disk mismatch
+is Human-observed; post-transfer local access remains unobserved.
+
 At an actual access boundary, apply the existing learning-loop
 `human_action_first_normal_return.access_boundary_clarification` before building
 alternate access or repeating host/device investigation. Human's first-hand

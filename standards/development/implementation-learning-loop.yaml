@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.6"
+  version: "1.7"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -166,6 +166,13 @@ implementation_learning_loop:
       observed_method_use: A1_X9_P23_STOPPED_OLD_CARRIER_DIAGNOSIS_AND_PREPARED_SELECTED_HUMAN_WORK_UI_CONTINUATION
       A3_A4_actual_continuation_outcome: NOT_OBSERVED
       universal_approval_gate_or_runtime_enforcement: false
+      environment_witness_sha256: f87c78edd00b5b4d35204442dfceaa204e763cbf10a9e820fea7c3b3e5e4e87a
+      task_entry_or_handoff_environment_fit: COMPARE_TASK_REQUIRED_ENVIRONMENT_WITH_ACTUAL_SELECTION_USING_AVAILABLE_HELD_EVIDENCE
+      Work_mode_label_proves_local_disk_or_callable_access: false
+      unknown_environment_for_local_file_exec_gap: ONE_TARGETED_HUMAN_UI_OBSERVATION_FOR_NAMED_ACTOR_IF_NOT_AVAILABLE_BEFORE_PROVIDER_CREDENTIAL_HOST_DIAGNOSIS
+      current_hybrid_window_open_or_transfer_owner: HUMAN_NO_AUTOMATIC_AGENT_WINDOW_ACTION
+      cloud_disk_case_before: HUMAN_OBSERVED_A3_A4_CLOUD_SELECTION_WHILE_TASK_REQUIRED_LOCAL_DISK
+      cloud_disk_case_after: PENDING_ACTUAL_LOCAL_ENVIRONMENT_AND_ACCESS_READBACK
 
   same_patch_feedback:
     generalizable_learning_discovered_during_patch: MUST_BE_INCORPORATED_BEFORE_CLOSURE
