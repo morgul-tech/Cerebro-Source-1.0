@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.14"
+  version: "1.15"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -83,6 +83,63 @@ implementation_learning_loop:
       integration remains separate. Keep existing current/original, whole-job/ports,
       Zenon, first-failure, Code Doctor and ordinary-return boundaries; add no poll or
       proof task.
+    production_maturation_and_task_model: >
+      For new or complex jobs, Room E matures one execution-ready plan for the
+      whole assignment across all affected rooms: natural packages with inputs,
+      outputs, critical prerequisites, reuse, dependencies, ordering or
+      parallelism, model and reasoning needs, integration and named owners.
+      X9 qualifies actual active and pending capacity and effect ports before
+      assignment; room leaders execute and distribute work locally within
+      mandate; one accountable whole-job owner integrates the result. PM is
+      used only for a genuinely non-delegated choice, priority conflict or
+      unresolved cross-dependency. Small known jobs use the existing recipe
+      directly; this adds no universal E/PM gate or required four-lane activity.
+      Waiting responsibility does not automatically reserve the whole actor.
+      Current identifies actually bound work and capacity that can be freed
+      without losing the duty, plus the continuation owner and concrete event.
+      A real handoff names when the old writer stops, who actually accepts the
+      remainder, and who integrates joined package outputs.
+      Diagnosis and ordinary correction are work, not automatic escalation for
+      a new error. Hold only action depending on an unresolved fault or premise
+      and continue valid independent work. Escalate only a named real limit of
+      competence, authority or a still-unresolved critical premise, preserving
+      reached work and the concrete deviation on the same task. For important
+      finish claims, record expected observation, actual observation, evidence
+      and its limit; the check must contain the relationship it claims to prove.
+      Reject ABCD for content only when the selected contract requires exactly
+      ABC; necessary helper code, tests or documentation within scope are not
+      thereby forbidden.
+      Keep specialty profile, actor identity, effect authority and model choice
+      separate. Room E proposes the relevant specialty and any additional lens;
+      the room leader selects the actual performer within mandate. Reuse an
+      existing profile reference/version and minimum relevant basis. Give an
+      added lens one concrete question and finish condition; stop when answered
+      or no longer needed. A profile does not create an actor, role, access or
+      Gartner gate.
+      For each coherent package, distinguish normal profile, requested model
+      and reasoning, accepted/confirmed selection, and actual observed run with
+      source; retain UNKNOWN where unobserved. Use supported dispatch with both
+      model and reasoning fields only at an authorized start. Omitted fields may
+      preserve a prior override; text alone does not change the model. A new task
+      selects again; resume of unchanged work reuses a valid choice and basis.
+      Never silently inherit a stale Luna override. Normal profiles are future
+      configuration guidance, not evidence that any actor model was changed.
+      Luna may complete bounded packages and routine corrections; a named
+      competence, authority or critical-premise limit gets a sufficient profile
+      on the same task, not an endless hypothesis loop or Principal ACK per fault.
+      In the ordinary return, preserve material positive and negative learning,
+      including relevant order/correction contribution, actual profile effect
+      or friction, and uncertainty. When fit, use a known recipe first next time;
+      connect a finding to the concrete change or preserved recipe, its existing
+      home, responsible owner and next natural action. Learning can remove
+      unnecessary controls or lenses. No publication or proof job is required
+      after every small error.
+      Reuse existing scripts/tools and check Work/Atlas before creating durable
+      tooling. Keep exact model profiles in the Work offering, not hardwired
+      Source actor IDs or new enums. This method refinement changes no active
+      actor model, app setting, dispatch, provider, session, router or runtime.
+      Preserve existing writer/API settings; if actual settings are unobserved,
+      keep them UNKNOWN. It adds no new authority or lifecycle effect.
     affected_code_fit: >
       Reuse the existing executor/reviewer code-doctor function at candidate preparation
       and before release or privileged use for materially changed code and affected
