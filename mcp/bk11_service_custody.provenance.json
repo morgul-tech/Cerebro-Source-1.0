@@ -1,0 +1,24 @@
+{
+  "intake": "same P55-X9-C1-BK11-CONNECTION-20261015 revision1 pair-first correction",
+  "canonical_parent": "f7964c04e3abc34c109244f4dd51ae8ebe35799f",
+  "placement": "New Source module plus unchanged direct _row dependency; neither file existed at this parent. Not an in-place main-file patch.",
+  "runtime_base_module_sha256": "bedaacf6bfc2443a3cb9bd6f8a3d54531cdb2684d0e9c53ae2bbcb793a1b9a83",
+  "corrected_module_sha256": "5454376ac9217f759c1e8c015d804757ff16b775209b86966bba2f640b7a1e0a",
+  "dependency_sha256": "894e2d8b9d3c9d67b8804da080b35d090da5135aedf5f80eef54d80ff440bfa7",
+  "runtime417_manifest_sha256": "87bf7c0e02804e297c5e81f6e6a46deec4279cf21c11eab757eacbd7c0407332",
+  "parent_revision1_manifest_sha256": "8484caf4a91b025655d0d660d212094f0ed3874d149339e157aa2e509a672219",
+  "candidate_manifest_sha256": "0ff50545d0b59b9cd53fb0b32101ccf805fd013ae4fc4f0432e87639f4a4a6f4",
+  "candidate_archive_sha256": "2ad43ab8febdfb85c60ce162c761d03d6a66f30323595dd31027e0d27c8169f3",
+  "producer": "same E2 under E1; no A1/A2 code edit to either module",
+  "producer_focused_tests": {
+    "count": 4,
+    "result": "PASS",
+    "seconds": 0.002,
+    "test_result_sha256": "f8d9f4e2a20853addf9c8ffb7967cd3505c0ce12b4a0f7850f21823258cf31e3",
+    "qualification_sha256": "58458938688cbda6d9229f6e2cf93a9b039575ff377b3dcf41f45fa4d29dc03c",
+    "attribution": "producer actual run consumed by E1/A1; not rerun for publication"
+  },
+  "semantic_delta": "Only publisher + empty obligations + prior outcome RECONCILED additionally returns original reconciliation; all nonempty disposition/current caller/assignment/original operation/lease/fencing guards retained.",
+  "integration_limit": "Import closure for ContextBk11ServiceCustody and ContextBk11ServiceHost with supplied actual state port; no automatic host registration/tool exposure/schema/install/runtime authority. pm_owner_atomic optional PM outbox constructor path is not selected by this intake and still requires its external runtime dependencies. Actual service composition remains qualified revision1 421-file package, not this Source repository alone.",
+  "excluded": "No whole runtime import,0014,Source host/descriptor wiring, schema, role/grant, native adoption, provider/key/install/recovery/timer restore, learning R4/R5 or unrelated candidate changes."
+}
