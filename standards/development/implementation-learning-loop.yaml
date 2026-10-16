@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.12"
+  version: "1.13"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -67,6 +67,22 @@ implementation_learning_loop:
     authority: NONE
     scope: EXISTING_METHOD_PATHS_ONLY
     changes_runtime_or_adds_global_gate: false
+    adaptive_work_contract: >
+      For each new Human- or owner-selected task, choose and apply a proportionate
+      work contract in its existing original; an idea may first need maturation and
+      does not itself authorize implementation. Make the recipient effect and finish
+      observation, recoverable basis, material prerequisites, accountable whole-outcome
+      owner, executor, actual effect ports and capacity, within-mandate action space,
+      finite relevant stages/evidence/resources, stop rules and ordinary return clear.
+      A small task may do this in a few sentences; a build uses the existing fuller
+      profile, not seven files or a new approval chain. Reuse AD1's build profile for
+      code work: wash/refactor what materially affects the result, and, where feasible,
+      exercise the connected harmless local materializer-to-entry-to-produced-state
+      path before a costly field session; reuse valid unaffected evidence. A double
+      covers only its external effect, not the local seam; target-only or authenticated
+      integration remains separate. Keep existing current/original, whole-job/ports,
+      Zenon, first-failure, Code Doctor and ordinary-return boundaries; add no poll or
+      proof task.
     affected_code_fit: >
       Reuse the existing executor/reviewer code-doctor function at candidate preparation
       and before release or privileged use for materially changed code and affected
