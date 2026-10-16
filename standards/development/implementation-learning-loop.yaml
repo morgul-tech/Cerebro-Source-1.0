@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.13"
+  version: "1.14"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -284,6 +284,15 @@ implementation_learning_loop:
       consumer_effect_chain: [IMPLEMENTED, DEPLOYED, WIRE_ADVERTISED, CONSUMER_REGISTERED_OR_CALLABLE, OWN_AUTHENTICATED_ACTION, USEFUL_RESULT]
       server_catalog_test_or_health_proves_consumer_use: false
       before_short_privileged_window: PLAN_NECESSARY_HUMAN_METADATA_ACTION_FOR_NAMED_CONSUMER
+      whole_chain_window_fit: >
+        Before asking Human for a finite privileged window, size the complete remaining
+        critical chain: multiply each bounded operation by its actual remaining call
+        count and real maximum duration, and include input/custody transfers, required
+        recipient actions and readbacks, and cleanup reserve. Reuse applicable bounds
+        already held; an unknown necessary bound makes fit UNKNOWN, never PASS and does
+        not authorize a new probe. If the chain will not fit, choose one honest coherent
+        phase preserving custody and cleanup with the remainder named; do not silently
+        extend access or present multiple windows as one.
       metadata_refresh_timing: AFTER_DESCRIPTORS_ACTUALLY_AVAILABLE_BEFORE_DEPENDENT_CONSUMER_ACTION_NOT_ON_LOCAL_CODE_ALONE
       Context_Refresh_vs_OAuth_Reconnect: DISTINCT_ACTIONS_NO_SUBSTITUTION_ASSUMED
       after_actual_new_Human_action: SAME_CONSUMER_OWN_CATALOG_AND_BINDING_CHECK_ONCE
