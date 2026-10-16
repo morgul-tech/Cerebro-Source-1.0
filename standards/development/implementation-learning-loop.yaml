@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.10"
+  version: "1.11"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -67,6 +67,34 @@ implementation_learning_loop:
     authority: NONE
     scope: EXISTING_METHOD_PATHS_ONLY
     changes_runtime_or_adds_global_gate: false
+    affected_code_fit: >
+      Reuse the existing executor/reviewer code-doctor function at candidate preparation
+      and before release or privileged use for materially changed code and affected
+      dependencies, APIs, schemas, runtime, target OS/architecture, packaging and
+      launchers, or an actual failure contradicting prior evidence. Batch coherent
+      edits and reuse valid checks; unchanged messages, handoffs, phases and hash reads
+      do not retrigger the pass. Wrappers, generated scripts and cross-language joins
+      are affected code. First use actual project configuration and installed tool
+      versions for relevant parser/compiler/type/lint and command/parameter/import/API
+      fit; consult version-matched primary documentation only where needed. Where
+      executable without production credentials, exercise the actual harmless native
+      entry/boundary and material success, failure, receipt, exit and cleanup paths;
+      isolate external effects and label test doubles separately from the real wrapper.
+      Syntax/help alone or a replacement-helper fixture is not runtime/entry proof.
+      Use a bounded model code-doctor lens for unresolved semantic, contract or
+      multi-runtime uncertainty; executor self-check is legitimate and independent
+      review follows existing genuinely-changed-risk rules, not every machine pass.
+      Missing tools/host access are named gaps or qualified existing alternatives,
+      never fictitious PASS or automatic toolchain installation. Block only actual
+      correctness, target compatibility, authority, material safety or selected-effect
+      defects; defer style/refactoring wishes. The same capable executor fixes within
+      mandate and rechecks affected evidence only, retaining the cumulative same-problem
+      repair budget and stable finish criteria; budget never replaces needed proof.
+      Return one consolidated ordinary result bound to candidate/dependency/runtime/
+      configuration pins, actual commands/versions, outcomes/evidence locators and
+      limits with ready next action or precise residue. No new actor, control ID,
+      ledger, orchestrator, mandatory extra model/reviewer, whole-suite replay,
+      review-the-review, per-step ACK, clock or unqualified integration/effect claim.
     current_task_before_action:
       confirm_binding: [owner_selected_task, revision, original_basis, reached_stage, pending_obligations, next_action]
       full_original_when: [task_or_revision_changed, basis_missing, basis_stale, basis_insufficient]
