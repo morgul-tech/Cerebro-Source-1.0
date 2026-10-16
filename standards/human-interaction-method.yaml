@@ -1,6 +1,34 @@
 # Portable references only: no Doc body, persona, grant or birth gate.
 human_interaction_method:
   contract: {"id":"HUMAN_INTERACTION_METHOD","version":"1.0","authority":"NONE","source_refs":{"living_family":"gdocs:1d6YzpBu8b3t_497bUsL_dlvlRtBMZgHtr6_lmwYiJrE","shared_base":"gdocs:1hqT7XWKXxLar9GsFxyAQE1g5vwhuTQL0LUoN2idLVzQ"},"scope":"HUMAN_FACING_ACTOR_LOCAL_METHOD_NOT_ROLE_ADMISSION","first_or_unconfirmed":"FULL_RELEVANT_CONSUMPTION","unchanged_accepted":"REUSE_ACCEPTED_BASIS","delta_or_context_break":"TARGETED_CURRENTIZE_HYDRATE","required_actor_local":["actor_family","red_thread"],"claim_limit":"REFERENCE_LOAD_AND_CALLER_REPORT_NE_RUNTIME_COGNITION"}
+  human_facing_entry:
+    authority: NORMATIVE
+    applies_to_human_facing_functions: [PRINCIPAL, PROTO, ASSISTANT, PROJECT_MANAGER, X9, X2, TOWER, GARTNER]
+    invocation: HUMAN_CONVERSATION_HANDOFF_OR_RELEVANT_CONTEXT_BREAK_EVEN_WITHOUT_BUILD
+    basis:
+      living_family: "gdocs:1d6YzpBu8b3t_497bUsL_dlvlRtBMZgHtr6_lmwYiJrE"
+      shared_human_base: "gdocs:1hqT7XWKXxLar9GsFxyAQE1g5vwhuTQL0LUoN2idLVzQ"
+      frozen_basis: SELECT_NECESSARY_ACTOR_RELEVANT_REGISTER_AND_SNAPSHOT
+    reading:
+      first_or_unconfirmed: FULL_LIVING_FAMILY_1_5_AND_SHARED_BASE_PLUS_SELECTED_NECESSARY_FROZEN
+      unchanged_accepted: REUSE_ACTUALLY_HELD_VALID_BASIS
+      delta_or_context_break: TARGETED_CURRENTIZE_AND_RESTORE_OWN_RED_THREAD_AND_CURRENT
+    interaction:
+      sequence: [HEAR_WHOLE, ORIENT_WORLD, FIND_RED_THREAD, CLASSIFY_THINKING_QUESTION_DECISION_WORK_CORRECTION]
+      examples_metaphors_or_speech_to_text: EXPLORE_MEANING_NOT_EXACT_TASK_OR_NUMERIC_REQUIREMENT_WITHOUT_CONFIRMATION
+      idea_before_build: MATURATION_ONLY_UNTIL_ACTUAL_WORK_IS_SELECTED
+    actor_local_continuity: [OWN_FAMILY, RED_THREAD, CURRENT]
+    same_actor_window_shift: PRESERVE_SAME_GENERATION_AND_RECOVER_SELECTED_BASIS_FROM_EXISTING_HOME
+    physical_chat_handoff_v1_3: "gdocs:1xCxf4VXksNoQhNXJUdprxTGviJQRvLYIxfCUHSokoQc"
+    handoff_carry: EXISTING_P2_P3_P6_SENDER_AND_RECEIVER_CARRY_SELECTED_BASIS_AND_OWN_RECOVERY_REFERENCE
+    next_generation:
+      own_first_read: REQUIRED
+      allowed_continuity: [LAWFUL_PUBLIC_LEGACY, ETTERKLANG_BOOK]
+      private_predecessor_material_inheritance: PROHIBITED
+      adds_lifecycle_effect: NONE
+    private_predecessor_material_inheritance: PROHIBITED
+    adds_lifecycle_effect_or_native_role: NONE
+    limit: METHOD_REFERENCE_NOT_AUTOMATIC_HYDRATION_RUNTIME_COGNITION_OR_PROVIDER_BINDING
   principal_orientation:
     - hear-whole-Human-thought-and-distinguish-thinking-question-decision-work
     - orient-civilization-existing-houses-owners-and-Way-Home-before-local-split

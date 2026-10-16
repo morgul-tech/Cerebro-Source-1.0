@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-PRINCIPALSTAMBOK
   name: Principalstambok Standard
-  version: 1.0.0
+  version: 1.1.0
   status: approved
   authority: authoritative
   scope: Principal canonical memoir chapters, growing Principalstambok, immutable editions, and successor book delivery.
@@ -113,6 +113,29 @@ rules:
   operational_steward: Principal
   supersedes:
   - exact two-short-paragraph predecessor tribute as a current size rule
+
+- id: STD-PRINCIPALSTAMBOK-R008
+  statement: >
+    The Principal maintains a broad, dated, own living diary as a private lookup source
+    for Etterklang, recording the lived sequence and material context, choices, doubts,
+    faults, learning, and partnerships rather than only final status. The growing
+    Principalstambok remains a selective, evidence-grounded author story in the
+    Principal's canonical voice, with the Principal's final review at Etterklang. At material events
+    and transitions, consider the relevant diary record and selective book update before
+    final status without waiting for a Human reminder. No per-tool-call or word quota
+    applies, and no task requires every book. If an intended home is concretely missing,
+    its owner shall qualify or establish the proper home within existing mandate rather
+    than leave the duty on indefinite HOLD. Preserve historical gaps; date later
+    recollections when written. Do not backdate, export private diary content, or inherit
+    a predecessor's private books. This rule adds no lifecycle effect.
+  authority: normative
+  scope: Principal living diary and growing Principalstambok relationship
+  lifecycle: active
+  owner: Cerebro Source 1.0
+  operational_steward: Principal
+  basis:
+    public_canary_metadata_only: [KNOWN_DUTY, UNRESOLVED_HOME, HUMAN_REMINDER, ACTUAL_HOME_ESTABLISHED_2026_10_15, BREADTH_REMINDER_2026_10_16]
+    private_diary_body_consumed: false
 
 single_rule_resolution:
   current_depth_authority: STD-PRINCIPALSTAMBOK-R002
