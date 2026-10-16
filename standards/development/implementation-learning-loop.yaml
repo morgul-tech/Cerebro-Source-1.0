@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.9"
+  version: "1.10"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -73,6 +73,26 @@ implementation_learning_loop:
       reuse_held_basis_within_same_arc_when_current_and_sufficient: true
       before_independent_dispatch: [selected_actor_current_work, pending_intent_or_assignment, uptake, required_tool_fit]
       same_task_material_input_is_new_assignment: false
+      finish_and_repair_scope: >
+        Keep the selected recipient effect and stage finish criteria stable until a
+        legitimate change. Reopen only affected conditions on relevant new evidence;
+        retain valid evidence and completed work. A new blocking finding must show a
+        concrete breach of those criteria or necessary safe and authorized execution,
+        naming the affected effect and decision consequence; hypothetical improvements
+        are deferred. Actual new safety or authority evidence may stop the affected
+        effect even when the prior finish criteria were incomplete. Apply this at
+        existing task-entry reconciliation and material growth or recurrence, not
+        every step. The cumulative repair budget follows the same problem across
+        actor, handoff and task-name changes; a new organizational start does not
+        reset spent effort or remaining duty. If the approach or cumulative budget
+        fails, the existing responsible owner selects one coherent path within its
+        mandate, a legitimately reduced scope preserving the selected effect, or a
+        precise remainder or block. Budget limits never confer PASS or remove needed
+        evidence. Met finish criteria lead to the agreed actual recipient action and
+        stage closure, not another general improvement round. Reuse existing method,
+        preflight, care, learning and return paths; add no control ID, gate, reviewer,
+        per-step ACK, checklist or clock. Routine coordination stays with its existing
+        owner; decisions outside mandate go to the rightful owner.
       implementation_refs: [tooling/return-bridge/task_local_profile.py#consume_resume, tooling/return-bridge/task_capacity_care.py#check_current, tooling/return-bridge/task_capacity_care.py#check_uptake]
       owner_observation_is_atomic_scheduler_lock: false
     first_failure:

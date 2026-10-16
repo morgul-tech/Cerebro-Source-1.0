@@ -63,6 +63,11 @@ pending intent/assignment, uptake and required-tool fit; a material input to the
 same active task is not a new assignment. Existing owner observations are not an
 atomic scheduler lock.
 
+For stable recipient effects, cumulative same-problem repair scope and actual
+stage closure, reuse `implementation-learning-loop.yaml` selected_workwave_refinement
+current_task_before_action.finish_and_repair_scope; new concrete safety/authority
+evidence still governs the affected effect, and a budget never substitutes for proof.
+
 At the first unexpected failure, preserve the exact attempt, reached stage,
 mutation and effect state; compare a challenged validator premise with the actual
 installed contract before changing the target, and reconcile UNKNOWN effects on
