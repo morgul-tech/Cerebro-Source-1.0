@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.11"
+  version: "1.12"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -101,6 +101,13 @@ implementation_learning_loop:
       reuse_held_basis_within_same_arc_when_current_and_sufficient: true
       before_independent_dispatch: [selected_actor_current_work, pending_intent_or_assignment, uptake, required_tool_fit]
       same_task_material_input_is_new_assignment: false
+      human_method_warning: >
+        When a Human warns of recurrence or process failure, reuse the active case.
+        The responsible owner chooses one concrete working-method change and follows
+        it through the next relevant executor action using the existing current and
+        ordinary return. Advice, an order, or Source publication alone does not close
+        the warning. Retain the responsible owner and next natural action until
+        handling is observed; create no proof task, coordinator, or status poll.
       finish_and_repair_scope: >
         Keep the selected recipient effect and stage finish criteria stable until a
         legitimate change. Reopen only affected conditions on relevant new evidence;
@@ -125,6 +132,15 @@ implementation_learning_loop:
       owner_observation_is_atomic_scheduler_lock: false
     first_failure:
       preserve: [reached_stage, mutation_state, effect_state, exact_attempt]
+      decision_relevant_diagnostics: >
+        Choose diagnosis for the next agreed decision. Preserve relevant lawfully
+        obtained observations and bounded original failure diagnostics in the
+        legitimate evidence home, including under HOLD; use a sanitized shared
+        pointer. Protect secrets without withholding cause information needed by the
+        rightful owner, within existing access and storage limits. If evidence is
+        insufficient, cause remains UNKNOWN; request no new access or probe. Reuse
+        existing A7/failure-family retrieval for affected sibling sites only; create
+        no general audit or new reader.
       before_target_changing_repair: compare_challenged_validator_premise_with_actual_installed_contract
       unknown_effect: reconcile_same_attempt_before_repeat
       implementation_ref: tooling/return-bridge/work_error_reflex.py#evaluate
