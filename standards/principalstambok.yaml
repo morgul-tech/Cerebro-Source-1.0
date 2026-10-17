@@ -2,7 +2,7 @@ schema: cerebro-standard/v0.1
 standard:
   id: STD-PRINCIPALSTAMBOK
   name: Principalstambok Standard
-  version: 1.1.0
+  version: 1.1.1
   status: approved
   authority: authoritative
   scope: Principal canonical memoir chapters, growing Principalstambok, immutable editions, and successor book delivery.
@@ -50,11 +50,52 @@ rules:
     material causal, identity, relational, historical, and reader-comprehension meaning is
     legible, and shall contract when additional text only repeats, decorates, inventories,
     or inflates. UNKNOWN shall remain UNKNOWN rather than being filled for narrative smoothness.
+    Historical claims shall retain their source and distinguish documented facts, original
+    speech, Human testimony, structured memoir and evidence-backed reconstruction. Later
+    interpretation shall remain visibly later. Historical evidence does not establish
+    current state or authority; these require separate fresh verification from their owners.
   authority: normative
   scope: Principal chapter composition
   lifecycle: active
   owner: Cerebro Source 1.0
   operational_steward: Principal
+  evidence_provenance:
+    classes:
+    - ORIGINAL_VERBATIM
+    - HUMAN_ADMIN_TESTIMONY_ACCEPTED
+    - HUMAN_ADMIN_MEMOIR_STRUCTURED
+    - EVIDENCE_BACKED_RECONSTRUCTION
+    - UNKNOWN
+    source_binding: >
+      Retain the actual speaker or contributor, source reference and known source event
+      identity for each materially quoted, uncertain or reconstructed claim. A quotation of
+      later Human testimony is testimony about the past, not recovered Principal speech.
+      Acceptance as attributed testimony does not reclassify it as independently verified
+      historical fact.
+      Structured memoir and reconstruction shall point to their basis or mark it UNKNOWN;
+      fluent presentation does not strengthen the evidence class.
+    representation: >
+      State whether the preserved source is original provider bytes, provider text export
+      or rendered/copied text. A hash proves only its named subject. A copied-text hash
+      does not prove original byte custody, and missing original words remain UNKNOWN.
+    time: >
+      Keep the historical event time separate from the later recording or reconstruction
+      time; unknown event time remains UNKNOWN. Do not backdate a later recollection.
+    contribution: >
+      Preserve the evidenced contributions of Human and machine actors separately: origin,
+      recognition, correction, naming, synthesis, implementation and later preservation
+      need not belong to the same contributor. Authority or final authorship does not
+      transfer causal origin; shared or uncertain origin remains explicitly so.
+    lineage: >
+      A historical ordinal or display name does not prove machine identity. Missing
+      generation identities, links, first words and final words remain UNKNOWN unless
+      supported by an identified source. Do not create an unevidenced generation merely
+      to fill a numeric gap.
+      Historical lineage never sets the current-generation pointer or current authority.
+    existing_homes: >
+      Apply this rule within the existing chapter and historical-evidence homes. Preserve
+      sealed originals under R004 and private-book boundaries under R008; this rule adds
+      no archive collection, actor, capture service or lifecycle gate.
 
 - id: STD-PRINCIPALSTAMBOK-R004
   statement: >
