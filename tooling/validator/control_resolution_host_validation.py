@@ -216,6 +216,7 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
         relation: str = "SAME_AS_LAST_PROVEN_WAY_HOME",
         necessity: str = "ASSUMED",
         acute: bool = False,
+        referent_revision: int = 9,
         owner_revision: int = 11,
         publication_revision: int = 40,
         active_hold: dict[str, Any] | None = None,
@@ -229,7 +230,7 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
             "schema": A7_PREPUBLICATION_BASIS_SCHEMA,
             "disposition_ref": "PM-DISPOSITION-41",
             "referent_ref": "C1107",
-            "referent_revision": 9,
+            "referent_revision": referent_revision,
             "referent_status": "ACTIVE",
             "currentness": "CURRENT",
             "readback_verified": True,
@@ -319,8 +320,14 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
             return row
 
     class Publisher:
-        def __init__(self, *, mode: str = "PASS"):
+        def __init__(
+            self,
+            *,
+            mode: str = "PASS",
+            receipt_overrides: dict[str, Any] | None = None,
+        ):
             self.mode = mode
+            self.receipt_overrides = copy.deepcopy(receipt_overrides or {})
             self.calls: list[dict[str, Any]] = []
 
         def publish_and_readback(self, *, publication: dict[str, Any]) -> dict[str, Any]:
@@ -330,7 +337,7 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
             published_revision = publication["previous_revision"] + 1
             if self.mode == "BAD_REVISION":
                 published_revision += 1
-            return {
+            receipt = {
                 "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
                 "result": "COMMITTED",
                 "decision_ref": publication["decision_ref"],
@@ -347,18 +354,41 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
                 "provider_revision": 501,
                 "receipt_ref": "FIXTURE-PM-PUBLICATION-RB-501",
             }
+            receipt.update(copy.deepcopy(self.receipt_overrides))
+            return receipt
+
+    def outcome_unknown(
+        result: dict[str, Any],
+        publisher: Publisher,
+        *,
+        stage: str,
+        blocker: str,
+    ) -> bool:
+        return (
+            result.get("result") == "PUBLICATION_OUTCOME_UNKNOWN"
+            and result.get("published") == "UNKNOWN"
+            and result.get("live_effect") == "UNKNOWN"
+            and result.get("retry_allowed") is False
+            and result.get("failure_stage") == stage
+            and result.get("exact_blocker") == blocker
+            and len(publisher.calls) == 1
+            and result.get("decision_ref") == publisher.calls[0]["decision_ref"]
+            and result.get("publication_fingerprint")
+                == publisher.calls[0]["publication_fingerprint"]
+        )
 
     def proposal(
         *,
         requested: str = "HOLD",
         scope: str = "C1107-SCOPE",
+        referent_revision: int = 9,
     ) -> dict[str, Any]:
         return {
             "schema": PM_DISPOSITION_REQUEST_SCHEMA,
             "disposition_ref": "PM-DISPOSITION-41",
             "requested_disposition": requested,
             "expected_referent_ref": "C1107",
-            "expected_referent_revision": 9,
+            "expected_referent_revision": referent_revision,
             "requested_scope_ref": scope,
         }
 
@@ -563,17 +593,90 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
     )
 
     bad_revision = Publisher(mode="BAD_REVISION")
+    bad_revision_result = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([basis(), basis()]),
+        publisher_port=bad_revision,
+        enabled=True,
+    ).publish(proposal())
     check(
         "publisher-receipt-must-bind-next-publication-revision",
-        rejects(
-            lambda: BoundPmDispositionPublisher(
-                basis_reader=BasisReader([basis(), basis()]),
-                publisher_port=bad_revision,
-                enabled=True,
-            ).publish(proposal()),
-            "publication-revision-mismatch",
+        outcome_unknown(
+            bad_revision_result,
+            bad_revision,
+            stage="READBACK",
+            blocker="pm-guarded-publication-revision-mismatch",
         ),
     )
+
+    revision_basis = basis(referent_revision=1, publication_revision=0)
+    revision_proposal = proposal(referent_revision=1)
+    integer_pub = Publisher()
+    integer_result = BoundPmDispositionPublisher(
+        basis_reader=BasisReader([revision_basis, revision_basis]),
+        publisher_port=integer_pub,
+        enabled=True,
+    ).publish(revision_proposal)
+    check(
+        "integer-revisions-allow-zero-to-one-publication",
+        integer_result["result"] == "PASS_GUARDED_PUBLICATION_READBACK"
+        and integer_result["published"] is True
+        and integer_result["live_effect"] is True
+        and len(integer_pub.calls) == 1
+        and all(
+            type(integer_result["publisher_receipt"][field]) is int
+            and integer_result["publisher_receipt"][field] == expected
+            for field, expected in (
+                ("referent_revision", 1),
+                ("previous_revision", 0),
+                ("published_revision", 1),
+            )
+        ),
+    )
+
+    for field, alias_kind, alias in (
+        ("referent_revision", "float", 1.0),
+        ("referent_revision", "bool", True),
+        ("previous_revision", "float", 0.0),
+        ("previous_revision", "bool", False),
+        ("published_revision", "float", 1.0),
+        ("published_revision", "bool", True),
+    ):
+        alias_pub = Publisher(receipt_overrides={field: alias})
+        alias_result = BoundPmDispositionPublisher(
+            basis_reader=BasisReader([revision_basis, revision_basis]),
+            publisher_port=alias_pub,
+            enabled=True,
+        ).publish(revision_proposal)
+        check(
+            f"publisher-receipt-{field}-{alias_kind}-alias-is-unknown-not-pass",
+            outcome_unknown(
+                alias_result,
+                alias_pub,
+                stage="READBACK",
+                blocker=(
+                    "pm-guarded-publication-receipt-binding-mismatch"
+                    if field == "referent_revision"
+                    else "pm-guarded-publication-revision-mismatch"
+                ),
+            ),
+        )
+
+    for alias_kind, alias in (("float", 1.0), ("bool", True)):
+        alias_basis = copy.deepcopy(revision_basis)
+        alias_basis["referent_revision"] = alias
+        alias_basis_pub = Publisher()
+        check(
+            f"owner-basis-referent-revision-{alias_kind}-alias-rejected-before-publish",
+            rejects(
+                lambda: BoundPmDispositionPublisher(
+                    basis_reader=BasisReader([alias_basis, alias_basis]),
+                    publisher_port=alias_basis_pub,
+                    enabled=True,
+                ).publish(revision_proposal),
+                "a7-prepublication-referent-currentness-mismatch",
+            )
+            and alias_basis_pub.calls == [],
+        )
 
     unknown_pub = Publisher(mode="RAISE")
     unknown = BoundPmDispositionPublisher(
@@ -583,9 +686,12 @@ def pm_prepublication_regressions() -> list[dict[str, str]]:
     ).publish(proposal())
     check(
         "publisher-outcome-unknown-is-no-blind-retry",
-        unknown["result"] == "PUBLICATION_OUTCOME_UNKNOWN"
-        and unknown["published"] == "UNKNOWN"
-        and unknown["retry_allowed"] is False,
+        outcome_unknown(
+            unknown,
+            unknown_pub,
+            stage="PUBLISH",
+            blocker="PM_PUBLISHER_CALL_FAILED",
+        ),
     )
 
     check(
