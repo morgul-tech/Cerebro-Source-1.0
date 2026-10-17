@@ -22,6 +22,7 @@ from runtime2_human_execution_handoff import (  # noqa: E402
     load_runtime2_context_binding,
     resolve_unique_cmd,
     validate_envelope,
+    validate_recipient_binding,
 )
 
 
@@ -29,9 +30,23 @@ def _hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _trusted_host_recipient_projection() -> dict[str, str]:
+    """Host-owned seam; never substitute CLI arguments, aliases, or envelope claims."""
+    raise Runtime2HandoffError(
+        "runtime2-trusted-host-recipient-projection-unavailable:"
+        "actor_ref,generation_ref,thread_ref,carrier_ref,continuation_ref:"
+        "adapter=tooling/runtime-host/runtime2_handoff_consumer.py::_trusted_host_recipient_projection"
+    )
+
+
 def consume(envelope_path: Path, search_root: Path, *, execute: bool = True) -> tuple[dict[str, object], int]:
     envelope = json.loads(envelope_path.read_text(encoding="utf-8"))
     validation = validate_envelope(envelope, load_runtime2_context_binding(SOURCE_ROOT))
+    actual_recipient = validate_recipient_binding(
+        _trusted_host_recipient_projection(), "trusted-host-recipient"
+    )
+    if actual_recipient != validation["recipient_binding"]:
+        raise Runtime2HandoffError("runtime2-intended-actual-recipient-mismatch")
     target = resolve_unique_cmd(search_root, validation["cmd_sha256"])
     before = _hash(target)
     if before != validation["cmd_sha256"]:
@@ -51,6 +66,8 @@ def consume(envelope_path: Path, search_root: Path, *, execute: bool = True) -> 
         "result": "PASS" if exit_code == 0 else "TARGET_EXIT_NONZERO",
         "binding_id": validation["binding_id"],
         "handoff_fingerprint": validation["handoff_fingerprint"],
+        "recipient_binding": actual_recipient,
+        "recipient_binding_verified": True,
         "target_sha256": before,
         "target_path": str(target),
         "unique_cardinality_verified": True,
