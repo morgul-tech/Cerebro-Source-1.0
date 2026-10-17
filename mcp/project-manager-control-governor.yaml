@@ -24,6 +24,12 @@ project_manager_control_governor:
     source_mutation: IMPLEMENTER_UNDER_DOCTOR
 
   activation:
+    # Scope clarification from the PR1 reconciliation: BoundControlResolutionHost
+    # retains its verifier at construction and forwards it separately in resolve;
+    # _reject_runtime_authority_injection rejects request-supplied verifier keys.
+    # project_manager_control_governor._verify_profile requires the bound verifier
+    # when PM governance is used. The general host also serves non-PM work, so this
+    # requirement is not a global prerequisite for every host construction.
     invoked_by: mcp/control_resolution.py
     applies_when: PROJECT_MANAGER_GOVERNANCE_CANDIDATE_PRESENT
     trusted_profile_binding_required: true
@@ -73,6 +79,16 @@ project_manager_control_governor:
     canonical_MCP_next_action_mismatch_effect: BLOCK
 
   shared_single_writer:
+    # This documents _shared_write_gate's semantic writer/readback contract, not
+    # an implementation of the legacy Shared EVENTS/WORKSPACES/CLAIMS/PACKETS
+    # provider, append frontier or START/PROCESS tuple consumer. PostgresPmOwner
+    # sequence/CAS/readback covers the narrower PM-ready state. Matching two
+    # caller-supplied provider fields does not establish authenticated readback.
+    # Any remaining legacy use belongs to its actual Shared provider/writer owner:
+    # identify the normal consumer, bound reader, append order and replay key
+    # before changing that path. Existing PM verifier coverage stays complete at
+    # its stated Source-code scope; it does not imply legacy provider equivalence
+    # or qualify live host/provider bindings.
     active_semantic_writer_count: EXACTLY_1
     overlapping_same_intent_attempts: PROHIBITED
     retry_without_fresh_read: PROHIBITED
