@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""C1006 default-off WORKER acceptance and negative fixture; no provider/live calls."""
+"""Synthetic C1006 WORKER fixtures only: in-memory state, no network/live calls."""
 from __future__ import annotations
 
 import copy
@@ -21,7 +21,10 @@ from control_context_tools import (  # noqa: E402
     ControlContextMcpTools, ControlContextToolAuthorizationError,
     ControlContextToolError, HmacControlResolutionAttestor, McpToolCallContext,
 )
-from worker_context_auth import BoundWorkerPolicyResolver, WorkerContextAuthError  # noqa: E402
+from worker_context_auth import (  # noqa: E402
+    BoundWorkerPolicyResolver, SourceStandingGrantWorkerPolicyResolver,
+    WorkerContextAuthError,
+)
 
 GENERATION = "CEREBRO-BOOT-WORKER-20261003-C1006"
 ACTOR = "WORKER_X1_C1006"
@@ -35,29 +38,38 @@ class Owners:
         self.method = method
         self.intent = "BOOT_WORKER"
         self.intent_current = True
+        self.intent_revision = 5
         self.intent_generation = GENERATION
         self.intent_session = context().session_ref()
         self.grantor = "HUMAN"
         self.mandate_current = True
         self.mandate_revision = 3
         self.mandate_generation = GENERATION
+        self.mandate_source = HEAD
         self.mandate_scopes = ["WORKER_ROLE_ATTACH", "WORKER_TASK_ISSUE"]
         self.allowed_task_scopes = ["TASK_EXECUTE"]
         self.claim_count = 0
         self.claim_refs: list[str] = []
         self.claim_revision = 7
+        self.claim_current = True
+        self.claim_readback_verified = True
+        self.claim_generation = GENERATION
         self.task_current = True
         self.task_mandate_revision = 3
         self.task_generation = GENERATION
         self.task_scope = ["TASK_EXECUTE"]
         self.task_method = method
+        self.human_reads = 0
+        self.task_reads = 0
 
     def human(self, **kwargs):
+        self.human_reads += 1
         return {"schema": "cerebro.worker-human-intent/v1", "intent": self.intent,
                 "current": self.intent_current, "revoked": not self.intent_current,
                 "principal_ref": kwargs["principal_ref"], "session_ref": self.intent_session,
                 "generation_ref": self.intent_generation, "source_revision": HEAD,
                 "method_fingerprint": self.method, "intent_ref": "HUMAN-BOOT-WORKER-001",
+                "owner_revision": self.intent_revision,
                 "readback_ref": "HUMAN-READBACK-001", "actor_ref": ACTOR,
                 "actor_generation_ref": ACTOR_GENERATION, "overlay_ref": "WORKER-OVERLAY-001"}
 
@@ -66,16 +78,37 @@ class Owners:
                 "current": self.mandate_current, "revoked": not self.mandate_current,
                 "grantor_role": self.grantor, "grantee_role": "PROJECT_MANAGER",
                 "generation_ref": self.mandate_generation, "actor_ref": ACTOR,
-                "source_revision": HEAD, "scopes": self.mandate_scopes,
+                "source_revision": self.mandate_source, "scopes": self.mandate_scopes,
                 "allowed_task_scopes": self.allowed_task_scopes,
                 "mandate_ref": "HUMAN-PM-MANDATE-001",
                 "owner_revision": self.mandate_revision, "readback_ref": "MANDATE-READBACK-001"}
 
+    def hold_human(self, *, generation_ref, principal_ref, session_ref,
+                   intent_ref, expected_revision):
+        owner = self
+        return OwnerFence(owner, "worker-human-intent-fence-stale", lambda: (
+            generation_ref == owner.intent_generation and
+            principal_ref == context().identity.principal_ref and
+            session_ref == owner.intent_session and
+            intent_ref == "HUMAN-BOOT-WORKER-001" and
+            expected_revision == owner.intent_revision and owner.intent_current
+        ))
+
+    def hold_mandate(self, *, generation_ref, actor_ref, mandate_ref,
+                     expected_revision):
+        owner = self
+        return OwnerFence(owner, "worker-parent-mandate-fence-stale", lambda: (
+            generation_ref == owner.mandate_generation and actor_ref == ACTOR and
+            mandate_ref == "HUMAN-PM-MANDATE-001" and
+            expected_revision == owner.mandate_revision and owner.mandate_current
+        ))
+
     def zero(self, **kwargs):
         with self.lock:
             return {"schema": "cerebro.worker-claim-current/v1",
-                    "generation_ref": GENERATION, "actor_ref": ACTOR,
-                    "current": True, "readback_verified": True,
+                    "generation_ref": self.claim_generation, "actor_ref": ACTOR,
+                    "current": self.claim_current,
+                    "readback_verified": self.claim_readback_verified,
                     "owner_revision": self.claim_revision,
                     "frontier_ref": "PM-FRONTIER-001", "claim_count": self.claim_count,
                     "active_claim_refs": copy.deepcopy(self.claim_refs)}
@@ -101,6 +134,7 @@ class Owners:
         return Fence()
 
     def task(self, **kwargs):
+        self.task_reads += 1
         return {"schema": "cerebro.worker-pm-task-decision/v1", "current": self.task_current,
                 "revoked": not self.task_current, "issued_by_role": "PROJECT_MANAGER",
                 "generation_ref": self.task_generation, "actor_ref": ACTOR,
@@ -122,8 +156,27 @@ class Owners:
 
 
 class Reader:
-    def __init__(self, call):
+    def __init__(self, call, hold=None):
         self.read_current = call
+        if hold is not None:
+            self.hold_current = hold
+
+
+class OwnerFence:
+    def __init__(self, owner, error, current):
+        self.owner, self.error, self.current = owner, error, current
+
+    def __enter__(self):
+        self.owner.lock.acquire()
+        return self
+
+    def __exit__(self, *_):
+        self.owner.lock.release()
+        return False
+
+    def assert_current(self):
+        if not self.current():
+            raise WorkerContextAuthError(self.error)
 
 
 class ClaimReader:
@@ -131,6 +184,101 @@ class ClaimReader:
         self.read_zero_claim = owners.zero
         self.hold_zero_claim = owners.hold
         self.read_current_task = owners.task
+
+
+class StandingGrantReader:
+    """Synthetic provider fixture; its receipts do not establish formal role."""
+
+    def __init__(self, owners, method):
+        self.owners = owners
+        self.method = method
+        self.current = True
+        self.revoked = False
+        self.readback_verified = True
+        self.generation = GENERATION
+        self.source = HEAD
+        self.grantor = "HUMAN"
+        self.grantee = "PROJECT_MANAGER"
+        self.scopes = ["WORKER_ROLE_ATTACH", "WORKER_TASK_ISSUE"]
+        self.revision = 11
+        self.reads = 0
+        self.missing_readback = False
+
+    def read_current(self, *, generation_ref, source_revision, method_fingerprint):
+        self.reads += 1
+        if self.missing_readback:
+            return None
+        return {"schema": "cerebro.worker-standing-grant-readback/v1",
+                "current": self.current, "revoked": self.revoked,
+                "readback_verified": self.readback_verified,
+                "generation_ref": self.generation, "source_revision": self.source,
+                "method_fingerprint": self.method, "grantor_role": self.grantor,
+                "grantee_role": self.grantee, "scopes": copy.deepcopy(self.scopes),
+                "grant_ref": "HUMAN-STANDING-WORKER-GRANT-001",
+                "owner_revision": self.revision, "readback_ref": "GRANT-READBACK-001"}
+
+    def hold_current(self, *, generation_ref, source_revision, method_fingerprint,
+                     grant_ref, expected_revision):
+        owner = self
+
+        class Fence:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def assert_current(self):
+                if (not owner.current or owner.revoked or not owner.readback_verified or
+                        owner.generation != generation_ref or owner.source != source_revision or
+                        owner.method != method_fingerprint or owner.revision != expected_revision or
+                        grant_ref != "HUMAN-STANDING-WORKER-GRANT-001"):
+                    raise WorkerContextAuthError("worker-standing-grant-fence-stale")
+
+        return Fence()
+
+
+class SyntheticFenceProbe:
+    """Observe an injected fixture fence without any production owner access."""
+
+    def __init__(self, inner, label, events, *, gate=None, on_enter=None,
+                 on_assert=None, exit_result=None, exit_error=None):
+        self.inner, self.label, self.events = inner, label, events
+        self.gate, self.on_enter, self.on_assert = gate, on_enter, on_assert
+        self.exit_result, self.exit_error = exit_result, exit_error
+        self.held = False
+
+    def __enter__(self):
+        if self.gate is not None:
+            self.gate.acquire()
+        try:
+            self.inner.__enter__()
+        except BaseException:
+            if self.gate is not None:
+                self.gate.release()
+            raise
+        self.held = True
+        self.events.append("enter:" + self.label)
+        if self.on_enter is not None:
+            self.on_enter()
+        return self
+
+    def assert_current(self):
+        self.inner.assert_current()
+        if self.on_assert is not None:
+            self.on_assert()
+
+    def __exit__(self, *args):
+        self.events.append("exit:" + self.label)
+        try:
+            result = self.inner.__exit__(*args)
+        finally:
+            self.held = False
+            if self.gate is not None:
+                self.gate.release()
+        if self.exit_error is not None:
+            raise RuntimeError(self.exit_error)
+        return result if self.exit_result is None else self.exit_result
 
 
 class WorkerOverlayProof(unittest.TestCase):
@@ -172,6 +320,44 @@ class WorkerOverlayProof(unittest.TestCase):
         return (tools or self.tools).dispatch(TOOL, self.args if args is None else args,
                                               context())["structuredContent"]
 
+    def fenced_owner_readers(self):
+        return (
+            Reader(self.owners.human, self.owners.hold_human),
+            Reader(self.owners.mandate, self.owners.hold_mandate),
+        )
+
+    def standing_fixture(self):
+        intent, mandate = self.fenced_owner_readers()
+        ports = {
+            "grant": StandingGrantReader(self.owners, self.owners.method),
+            "intent": intent, "mandate": mandate, "claim": ClaimReader(self.owners),
+        }
+        policy = SourceStandingGrantWorkerPolicyResolver(
+            ports["grant"], ports["intent"], ports["mandate"], ports["claim"],
+            enabled=True,
+        )
+        return policy, ports
+
+    def standing_decision(self, policy):
+        return policy.resolve(
+            pre_role_generation=self.birth,
+            verified_source={"source_revision": HEAD,
+                             "method_fingerprint": self.owners.method,
+                             "method_unchanged": True, "ancestry_verified": True},
+            identity=context().identity, session_ref=context().session_ref(),
+        )
+
+    @staticmethod
+    def decorate_standing_fences(ports, decorate):
+        for label, port in ports.items():
+            method = "hold_zero_claim" if label == "claim" else "hold_current"
+            original = getattr(port, method)
+
+            def hold(*, _label=label, _original=original, **kwargs):
+                return decorate(_label, _original(**kwargs), kwargs)
+
+            setattr(port, method, hold)
+
     def test_g0_g2_exact_attach_readback_and_zero_claim(self):
         self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
         self.assertIsNone(self.birth["authority_envelope"]["role"])
@@ -200,6 +386,496 @@ class WorkerOverlayProof(unittest.TestCase):
         disabled = BoundWorkerPolicyResolver(None, None, None)
         with self.assertRaises(ControlContextToolAuthorizationError):
             self.resume(tools=self.host(policy=disabled))
+
+    def test_standing_human_grant_composition_is_default_off_and_parity_only(self):
+        grant_reader = StandingGrantReader(self.owners, self.owners.method)
+        disabled = SourceStandingGrantWorkerPolicyResolver(
+            grant_reader, Reader(self.owners.human), Reader(self.owners.mandate),
+            ClaimReader(self.owners),
+        )
+        with self.assertRaisesRegex(WorkerContextAuthError, "worker-policy-default-off"):
+            disabled.resolve(pre_role_generation=self.birth,
+                             verified_source={"source_revision": HEAD,
+                                              "method_fingerprint": self.owners.method,
+                                              "method_unchanged": True,
+                                              "ancestry_verified": True},
+                             identity=context().identity, session_ref=context().session_ref())
+        self.assertEqual((grant_reader.reads, self.owners.human_reads), (0, 0))
+
+        intent_reader, mandate_reader = self.fenced_owner_readers()
+        enabled = SourceStandingGrantWorkerPolicyResolver(
+            grant_reader, intent_reader, mandate_reader,
+            ClaimReader(self.owners), enabled=True,
+        )
+        decision = enabled.resolve(
+            pre_role_generation=self.birth,
+            verified_source={"source_revision": HEAD,
+                             "method_fingerprint": self.owners.method,
+                             "method_unchanged": True, "ancestry_verified": True},
+            identity=context().identity, session_ref=context().session_ref(),
+        )
+        self.assertEqual(decision["result"], "ALLOW")
+        self.assertEqual(decision["overlay_payload"]["role"], "WORKER")
+        with enabled.hold_zero_claim(decision) as fence:
+            fence.assert_current()
+        self.assertEqual(grant_reader.reads, 1)
+        self.assertEqual(self.owners.human_reads, 1)
+        self.assertEqual(self.owners.zero()["claim_count"], 0)
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+        decision = enabled.resolve(
+            pre_role_generation=self.birth,
+            verified_source={"source_revision": HEAD,
+                             "method_fingerprint": self.owners.method,
+                             "method_unchanged": True, "ancestry_verified": True},
+            identity=context().identity, session_ref=context().session_ref(),
+        )
+        grant_reader.revoked = True
+        with self.assertRaisesRegex(WorkerContextAuthError,
+                                    "worker-standing-grant-fence-stale"):
+            with enabled.hold_zero_claim(decision):
+                self.fail("revoked grant crossed the pre-attach fence")
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_revoked_intent_after_allow_fails_held_attach_fence(self):
+        intent_reader, mandate_reader = self.fenced_owner_readers()
+        policy = SourceStandingGrantWorkerPolicyResolver(
+            StandingGrantReader(self.owners, self.owners.method), intent_reader,
+            mandate_reader, ClaimReader(self.owners), enabled=True,
+        )
+        decision = policy.resolve(
+            pre_role_generation=self.birth,
+            verified_source={"source_revision": HEAD,
+                             "method_fingerprint": self.owners.method,
+                             "method_unchanged": True, "ancestry_verified": True},
+            identity=context().identity, session_ref=context().session_ref(),
+        )
+        self.owners.intent_current = False
+        self.owners.intent_revision += 1
+        with self.assertRaisesRegex(WorkerContextAuthError,
+                                    "worker-human-intent-fence-stale"):
+            with policy.hold_zero_claim(decision):
+                self.fail("revoked Human intent crossed the pre-attach fence")
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_revoked_mandate_after_allow_fails_held_attach_fence(self):
+        intent_reader, mandate_reader = self.fenced_owner_readers()
+        policy = SourceStandingGrantWorkerPolicyResolver(
+            StandingGrantReader(self.owners, self.owners.method), intent_reader,
+            mandate_reader, ClaimReader(self.owners), enabled=True,
+        )
+        decision = policy.resolve(
+            pre_role_generation=self.birth,
+            verified_source={"source_revision": HEAD,
+                             "method_fingerprint": self.owners.method,
+                             "method_unchanged": True, "ancestry_verified": True},
+            identity=context().identity, session_ref=context().session_ref(),
+        )
+        self.owners.mandate_current = False
+        self.owners.mandate_revision += 1
+        with self.assertRaisesRegex(WorkerContextAuthError,
+                                    "worker-parent-mandate-fence-stale"):
+            with policy.hold_zero_claim(decision):
+                self.fail("revoked PM mandate crossed the pre-attach fence")
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_standing_grant_rejections_happen_before_intent_or_claim_reads(self):
+        for field, value in (("current", False), ("revoked", True),
+                             ("readback_verified", False), ("generation", "OTHER"),
+                             ("source", "0" * 40), ("method", "0" * 64),
+                             ("grantor", "PROJECT_MANAGER"),
+                             ("grantee", "WORKER"), ("scopes", ["WORKER_ROLE_ATTACH"])):
+            grant_reader = StandingGrantReader(self.owners, self.owners.method)
+            setattr(grant_reader, field, value)
+            policy = SourceStandingGrantWorkerPolicyResolver(
+                grant_reader, Reader(self.owners.human), Reader(self.owners.mandate),
+                ClaimReader(self.owners), enabled=True,
+            )
+            with self.subTest(field=field), self.assertRaises(WorkerContextAuthError):
+                policy.resolve(
+                    pre_role_generation=self.birth,
+                    verified_source={"source_revision": HEAD,
+                                     "method_fingerprint": self.owners.method,
+                                     "method_unchanged": True, "ancestry_verified": True},
+                    identity=context().identity, session_ref=context().session_ref(),
+                )
+            self.assertEqual(self.owners.human_reads, 0)
+            self.assertEqual(self.owners.task_reads, 0)
+            self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_standing_composition_owner_negative_guards_fail_before_attach(self):
+        cases = (
+            ("missing_provider_readback", "grant_missing", True),
+            ("missing_human_intent", "intent", None),
+            ("revoked_human_intent", "intent_current", False),
+            ("wrong_intent_generation", "intent_generation", "OTHER"),
+            ("wrong_intent_session", "intent_session", "OTHER"),
+            ("stale_parent_source", "mandate_source", "0" * 40),
+            ("wrong_parent_generation", "mandate_generation", "OTHER"),
+            ("nonzero_claim", "claim_count", 1),
+            ("stale_claim_readback", "claim_readback_verified", False),
+            ("wrong_claim_generation", "claim_generation", "OTHER"),
+        )
+        for label, field, value in cases:
+            with self.subTest(case=label):
+                grant_reader = StandingGrantReader(self.owners, self.owners.method)
+                before = None
+                if field == "grant_missing":
+                    grant_reader.missing_readback = True
+                else:
+                    before = getattr(self.owners, field)
+                    setattr(self.owners, field, value)
+                policy = SourceStandingGrantWorkerPolicyResolver(
+                    grant_reader, Reader(self.owners.human), Reader(self.owners.mandate),
+                    ClaimReader(self.owners), enabled=True,
+                )
+                try:
+                    with self.assertRaises(WorkerContextAuthError):
+                        policy.resolve(
+                            pre_role_generation=self.birth,
+                            verified_source={"source_revision": HEAD,
+                                             "method_fingerprint": self.owners.method,
+                                             "method_unchanged": True,
+                                             "ancestry_verified": True},
+                            identity=context().identity,
+                            session_ref=context().session_ref(),
+                        )
+                    self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+                    self.assertEqual(self.owners.task_reads, 0)
+                finally:
+                    if before is not None:
+                        setattr(self.owners, field, before)
+
+    def test_standing_composition_rejects_stale_source_method_before_intent_reads(self):
+        grant_reader = StandingGrantReader(self.owners, self.owners.method)
+        policy = SourceStandingGrantWorkerPolicyResolver(
+            grant_reader, Reader(self.owners.human), Reader(self.owners.mandate),
+            ClaimReader(self.owners), enabled=True,
+        )
+        for verified_source in (
+            {"source_revision": "0" * 40, "method_fingerprint": self.owners.method,
+             "method_unchanged": True, "ancestry_verified": True},
+            {"source_revision": HEAD, "method_fingerprint": "0" * 64,
+             "method_unchanged": False, "ancestry_verified": True},
+        ):
+            with self.assertRaises(WorkerContextAuthError):
+                policy.resolve(pre_role_generation=self.birth,
+                               verified_source=verified_source,
+                               identity=context().identity,
+                               session_ref=context().session_ref())
+            self.assertEqual(self.owners.human_reads, 0)
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_standing_regression_decision_mutation_blocks_before_fence_ports(self):
+        mutations = {
+            "actor": lambda d: d["overlay_payload"].update(actor_ref="OTHER-ACTOR"),
+            "actor_generation": lambda d: d["overlay_payload"].update(
+                actor_generation_ref="OTHER-GENERATION"),
+            "claim_revision": lambda d: d.update(zero_claim_revision=8),
+            "source": lambda d: d["overlay_payload"].update(source_revision="0" * 40),
+            "birth_receipt": lambda d: d.update(ready_unbound_receipt_fingerprint="0" * 64),
+            "extra_field": lambda d: d.update(unqualified_scope="OTHER"),
+            "equal_replacement_payload": lambda d: d.update(
+                overlay_payload=copy.deepcopy(d["overlay_payload"])),
+        }
+        for label, mutate in mutations.items():
+            with self.subTest(mutation=label):
+                policy, ports = self.standing_fixture()
+                calls = []
+
+                def observe(name, fence, _args):
+                    calls.append(name)
+                    return fence
+
+                self.decorate_standing_fences(ports, observe)
+                decision = self.standing_decision(policy)
+                mutate(decision)
+                with self.assertRaises(WorkerContextAuthError):
+                    with policy.hold_zero_claim(decision):
+                        self.fail("mutated admission reached the protected body")
+                self.assertEqual(calls, [], "mutation reached an owner fence factory")
+                self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_standing_regression_clone_replay_and_inactive_fence_rejected(self):
+        policy, _ports = self.standing_fixture()
+        decision = self.standing_decision(policy)
+        with self.assertRaises(WorkerContextAuthError):
+            policy.hold_zero_claim(copy.deepcopy(decision))
+        fence = policy.hold_zero_claim(decision)
+        with self.assertRaises(WorkerContextAuthError):
+            fence.assert_current()
+        with fence:
+            fence.assert_current()
+        for action in (lambda: policy.hold_zero_claim(decision),
+                       fence.assert_current, fence.__enter__):
+            with self.assertRaises(WorkerContextAuthError):
+                action()
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_standing_regression_mutation_during_fence_boundaries_is_rejected(self):
+        for phase in ("after_hold", "factory", "enter", "assert"):
+            with self.subTest(phase=phase):
+                policy, ports = self.standing_fixture()
+                events, claim_args = [], []
+                decision = self.standing_decision(policy)
+
+                def mutate():
+                    decision["overlay_payload"]["actor_ref"] = "OTHER-ACTOR"
+                    decision["zero_claim_revision"] = 8
+
+                def observe(label, inner, kwargs):
+                    if label == "claim":
+                        claim_args.append(kwargs)
+                    if label == "grant" and phase == "factory":
+                        mutate()
+                    return SyntheticFenceProbe(
+                        inner, label, events,
+                        on_enter=mutate if label == "grant" and phase == "enter" else None,
+                        on_assert=mutate if label == "claim" and phase == "assert" else None,
+                    )
+
+                self.decorate_standing_fences(ports, observe)
+                fence = policy.hold_zero_claim(decision)
+                self.assertEqual(claim_args[0]["actor_ref"], ACTOR)
+                self.assertEqual(claim_args[0]["expected_revision"], 7)
+                if phase == "after_hold":
+                    mutate()
+                with self.assertRaises(WorkerContextAuthError):
+                    with fence:
+                        self.fail("changed admission crossed the fence boundary")
+                entered = [e.removeprefix("enter:") for e in events if e.startswith("enter:")]
+                exited = [e.removeprefix("exit:") for e in events if e.startswith("exit:")]
+                self.assertEqual(exited, list(reversed(entered)))
+                if phase in {"after_hold", "factory"}:
+                    self.assertEqual(entered, [])
+
+    def test_standing_regression_postattach_stale_not_suppressed_by_owner_exit(self):
+        """A synthetic persisted attach remains UNKNOWN after a failed post-check."""
+        policy, ports = self.standing_fixture()
+        events = []
+        self.decorate_standing_fences(
+            ports, lambda label, inner, _args: SyntheticFenceProbe(
+                inner, label, events, exit_result=True if label == "grant" else None,
+            ),
+        )
+        host = self.host(policy=policy)
+        original = host.attach_role_overlay
+
+        def attach_then_revoke(*args, **kwargs):
+            result = original(*args, **kwargs)
+            ports["grant"].revoked = True
+            return result
+
+        host.attach_role_overlay = attach_then_revoke
+        with self.assertRaisesRegex(ControlContextToolError, "worker-overlay-postattach-.*unknown"):
+            self.resume(tools=host)
+        readback = host.dispatch(
+            "read_boot_generation_state", {"generation_ref": GENERATION},
+            context("project_state:read"),
+        )["structuredContent"]["pre_role_generation"]
+        self.assertEqual(readback["lifecycle"], "ROLE_ATTACHED")
+        self.assertEqual(readback["ready_unbound_receipt"], self.birth["ready_unbound_receipt"])
+        self.assertEqual([e for e in events if e.startswith("exit:")],
+                         ["exit:claim", "exit:mandate", "exit:intent", "exit:grant"])
+
+    def test_standing_regression_direct_policy_keeps_revisionless_intent_contract(self):
+        def revisionless_intent(**kwargs):
+            receipt = self.owners.human(**kwargs)
+            receipt.pop("owner_revision")
+            return receipt
+
+        intent = Reader(revisionless_intent, self.owners.hold_human)
+        mandate = Reader(self.owners.mandate, self.owners.hold_mandate)
+        claims = ClaimReader(self.owners)
+        direct = BoundWorkerPolicyResolver(intent, mandate, claims, enabled=True)
+        self.assertEqual(self.standing_decision(direct)["result"], "ALLOW")
+        standing = SourceStandingGrantWorkerPolicyResolver(
+            StandingGrantReader(self.owners, self.owners.method),
+            intent, mandate, claims, enabled=True,
+        )
+        with self.assertRaisesRegex(WorkerContextAuthError, "worker-current-owner-readbacks"):
+            self.standing_decision(standing)
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_standing_regression_operative_task_read_retains_existing_policy(self):
+        policy, ports = self.standing_fixture()
+        ports["grant"].revoked = True
+        task = policy.read_current_task(
+            generation_ref=GENERATION, actor_ref=ACTOR, source_revision=HEAD,
+            method_fingerprint=self.owners.method, task_ref="TASK-001",
+        )
+        self.assertEqual(task["decision_ref"], "PM-TASK-ISSUE-001")
+        self.assertEqual(ports["grant"].reads, 0)
+        self.assertEqual(self.owners.task_reads, 1)
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
+
+    def test_standing_regression_invalid_fence_and_release_failure_fail_closed(self):
+        for invalid in ("grant", "intent", "mandate", "claim"):
+            with self.subTest(invalid=invalid):
+                policy, ports = self.standing_fixture()
+                events = []
+                self.decorate_standing_fences(
+                    ports, lambda label, inner, _args: object() if label == invalid
+                    else SyntheticFenceProbe(inner, label, events),
+                )
+                with self.assertRaises(WorkerContextAuthError):
+                    with policy.hold_zero_claim(self.standing_decision(policy)):
+                        self.fail("invalid owner fence admitted a protected body")
+                self.assertEqual(events, [], "partial owner acquisition before interface rejection")
+        for failure in ("clean_exit", "body", "body_without_add_note", "entry"):
+            with self.subTest(failure=failure):
+                policy, ports = self.standing_fixture()
+                events = []
+
+                def reject_entry():
+                    raise WorkerContextAuthError("synthetic-entry-currentness-error")
+
+                self.decorate_standing_fences(
+                    ports, lambda label, inner, _args: SyntheticFenceProbe(
+                        inner, label, events,
+                        on_assert=reject_entry if label == "claim" and failure == "entry" else None,
+                        exit_error="synthetic-release-error" if label == "claim" else None,
+                    ),
+                )
+                expected = {
+                    "clean_exit": "fence-release-unavailable",
+                    "body": "synthetic-body-currentness-error",
+                    "body_without_add_note": "synthetic-body-currentness-error",
+                    "entry": "synthetic-entry-currentness-error",
+                }[failure]
+                body_error = None
+                with self.assertRaisesRegex(WorkerContextAuthError, expected) as caught:
+                    with policy.hold_zero_claim(self.standing_decision(policy)):
+                        if failure in {"body", "body_without_add_note"}:
+                            body_error = WorkerContextAuthError("synthetic-body-currentness-error")
+                            if failure == "body_without_add_note":
+                                body_error.add_note = None
+                            raise body_error
+                if failure != "clean_exit":
+                    self.assertIn("worker-standing-grant-fence-release-unavailable",
+                                  getattr(caught.exception, "__notes__", []))
+                if body_error is not None:
+                    self.assertIs(caught.exception, body_error)
+                self.assertEqual([e for e in events if e.startswith("exit:")],
+                                 ["exit:claim", "exit:mandate", "exit:intent", "exit:grant"])
+
+    def test_standing_regression_all_owner_fences_cover_synthetic_attach_readback(self):
+        """Four independent fixture locks hold off revocation through readback."""
+        policy, ports = self.standing_fixture()
+        gates = {label: threading.Lock() for label in ports}
+        probes, events = {}, []
+        at_readback, release_attach = threading.Event(), threading.Event()
+        attempted = {label: threading.Event() for label in ports}
+        blocked, finished = {}, {label: threading.Event() for label in ports}
+
+        def observe(label, inner, _args):
+            probes[label] = SyntheticFenceProbe(inner, label, events, gate=gates[label])
+            return probes[label]
+
+        self.decorate_standing_fences(ports, observe)
+        host = self.host(policy=policy)
+        original = host.attach_role_overlay
+
+        def attach_and_read_back(*args, **kwargs):
+            self.assertEqual(set(probes), set(ports))
+            self.assertTrue(all(probe.held for probe in probes.values()))
+            result = original(*args, **kwargs)
+            readback = host.dispatch(
+                "read_boot_generation_state", {"generation_ref": GENERATION},
+                context("project_state:read"),
+            )["structuredContent"]["pre_role_generation"]
+            self.assertEqual(readback, result["structuredContent"]["pre_role_generation"])
+            self.assertTrue(all(probe.held for probe in probes.values()))
+            at_readback.set()
+            self.assertTrue(release_attach.wait(5), "synthetic attach barrier timed out")
+            return result
+
+        def revoke(label):
+            acquired = gates[label].acquire(blocking=False)
+            blocked[label] = not acquired
+            if acquired:
+                gates[label].release()
+            attempted[label].set()
+            with gates[label]:
+                if label == "grant":
+                    ports["grant"].revoked = True
+                    ports["grant"].revision += 1
+                elif label == "intent":
+                    self.owners.intent_current = False
+                    self.owners.intent_revision += 1
+                elif label == "mandate":
+                    self.owners.mandate_current = False
+                    self.owners.mandate_revision += 1
+                else:
+                    self.owners.issue_claim()
+            finished[label].set()
+
+        host.attach_role_overlay = attach_and_read_back
+        try:
+            with ThreadPoolExecutor(max_workers=5) as pool:
+                attaching = pool.submit(self.resume, tools=host)
+                try:
+                    self.assertTrue(at_readback.wait(5), "synthetic readback barrier timed out")
+                    revoking = [pool.submit(revoke, label) for label in ports]
+                    self.assertTrue(all(event.wait(5) for event in attempted.values()))
+                    self.assertEqual(blocked, {label: True for label in ports})
+                    self.assertFalse(any(event.is_set() for event in finished.values()))
+                finally:
+                    release_attach.set()
+                result = attaching.result(timeout=5)
+                for future in revoking:
+                    future.result(timeout=5)
+        finally:
+            release_attach.set()
+        pre, actor = result["pre_role_generation"], result["actor_generation_shadow"]
+        self.assertEqual(pre["ready_unbound_receipt"], self.birth["ready_unbound_receipt"])
+        self.assertEqual(pre["role_overlay"]["method_projection"]["authority"], "NONE")
+        self.assertEqual((actor["role"], actor["lifecycle"], actor["authority"]),
+                         ("WORKER", "READY", "SHADOW_ONLY"))
+        self.assertEqual(result["zero_claim_owner_revision"], 7)
+        self.assertTrue(all(event.is_set() for event in finished.values()))
+        self.assertTrue(all(not probe.held for probe in probes.values()))
+
+    def test_standing_regression_runtime_composition_guards_are_inert(self):
+        from control_context_remote_runtime import (
+            ControlContextRemoteRuntimeError, _compose_worker_overlay_resolver,
+        )
+
+        empty = {
+            "worker_overlay_control_resolver": None,
+            "worker_standing_grant_reader": None, "worker_human_intent_reader": None,
+            "worker_parent_mandate_reader": None, "worker_claim_reader": None,
+            "enable_standing_worker_policy": False,
+        }
+        self.assertIsNone(_compose_worker_overlay_resolver(**empty))
+        self.assertIs(_compose_worker_overlay_resolver(
+            **{**empty, "worker_overlay_control_resolver": self.policy}), self.policy)
+        with self.assertRaises(ControlContextRemoteRuntimeError):
+            _compose_worker_overlay_resolver(**{**empty, "enable_standing_worker_policy": True})
+        _policy, ports = self.standing_fixture()
+        complete = {
+            **empty, "worker_standing_grant_reader": ports["grant"],
+            "worker_human_intent_reader": ports["intent"],
+            "worker_parent_mandate_reader": ports["mandate"],
+            "worker_claim_reader": ports["claim"],
+        }
+        for name in ("worker_standing_grant_reader", "worker_human_intent_reader",
+                     "worker_parent_mandate_reader", "worker_claim_reader"):
+            with self.subTest(missing=name), self.assertRaises(ControlContextRemoteRuntimeError):
+                _compose_worker_overlay_resolver(**{**complete, name: None})
+        for delta in ({"worker_overlay_control_resolver": self.policy},
+                      {"enable_standing_worker_policy": 1}):
+            with self.assertRaises(ControlContextRemoteRuntimeError):
+                _compose_worker_overlay_resolver(**{**complete, **delta})
+        disabled = _compose_worker_overlay_resolver(**complete)
+        with self.assertRaisesRegex(WorkerContextAuthError, "worker-policy-default-off"):
+            self.standing_decision(disabled)
+        self.assertEqual((ports["grant"].reads, self.owners.human_reads), (0, 0))
+        enabled = _compose_worker_overlay_resolver(
+            **{**complete, "enable_standing_worker_policy": True})
+        self.assertIsInstance(enabled, SourceStandingGrantWorkerPolicyResolver)
+        self.assertEqual(self.standing_decision(enabled)["result"], "ALLOW")
+        self.assertEqual(self.birth["lifecycle"], "READY_UNBOUND")
 
     def test_wrong_human_or_parent_mandate_denied(self):
         for field, value in (("intent", "BOOT_ASSISTANT"), ("intent_current", False),
