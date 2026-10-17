@@ -765,6 +765,7 @@ class BoundPmDispositionPublisher:
         )
         _require(
             basis.get("referent_ref") == proposal["expected_referent_ref"]
+            and type(basis.get("referent_revision")) is int
             and basis.get("referent_revision") == proposal["expected_referent_revision"],
             "a7-prepublication-referent-currentness-mismatch",
         )
@@ -1062,6 +1063,47 @@ class BoundPmDispositionPublisher:
         subject["_basis_snapshot_fingerprint"] = _canonical_sha256(basis)
         return subject
 
+    def _validate_publication_receipt(
+        self, *, receipt: Any, decision: dict[str, Any], publication: dict[str, Any]
+    ) -> None:
+        _require(
+            isinstance(receipt, dict),
+            "pm-guarded-publication-receipt-object-required",
+        )
+        _require(
+            receipt.get("schema") == PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA
+            and receipt.get("result") == "COMMITTED"
+            and receipt.get("decision_ref") == decision["decision_ref"]
+            and receipt.get("decision_fingerprint") == decision["decision_fingerprint"]
+            and receipt.get("publication_fingerprint")
+                == publication["publication_fingerprint"]
+            and receipt.get("referent_ref") == decision["referent_ref"]
+            and type(receipt.get("referent_revision")) is int
+            and receipt.get("referent_revision") == decision["referent_revision"]
+            and receipt.get("scope_ref") == decision["publication_scope_ref"]
+            and receipt.get("effective_disposition") == decision["effective_disposition"],
+            "pm-guarded-publication-receipt-binding-mismatch",
+        )
+        _require(
+            type(receipt.get("previous_revision")) is int
+            and receipt.get("previous_revision") == decision["publication_previous_revision"]
+            and type(receipt.get("published_revision")) is int
+            and receipt.get("published_revision")
+                == decision["publication_previous_revision"] + 1,
+            "pm-guarded-publication-revision-mismatch",
+        )
+        _require(
+            receipt.get("preserve_lane_refs") == decision["preserve_lane_refs"],
+            "pm-guarded-publication-parallel-lane-readback-mismatch",
+        )
+        _require(
+            receipt.get("readback_verified") is True
+            and type(receipt.get("provider_revision")) is int
+            and receipt["provider_revision"] >= 0
+            and self._ref(receipt.get("receipt_ref")),
+            "pm-guarded-publication-readback-unverified",
+        )
+
     def publish(self, proposal: dict[str, Any]) -> dict[str, Any]:
         decision = self.evaluate(proposal)
         if self._publisher_port is None:
@@ -1115,55 +1157,35 @@ class BoundPmDispositionPublisher:
         }
         publication["publication_fingerprint"] = _canonical_sha256(publication)
 
+        failure_stage = "PUBLISH"
         try:
             receipt = self._publisher_port.publish_and_readback(
                 publication=copy.deepcopy(publication)
             )
-        except Exception:
+            failure_stage = "READBACK"
+            self._validate_publication_receipt(
+                receipt=receipt, decision=decision, publication=publication
+            )
+        except Exception as exc:
+            # The publisher may already have written. Invalid readback cannot
+            # establish either a successful publication or permission to retry.
             return {
                 "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
                 "result": "PUBLICATION_OUTCOME_UNKNOWN",
                 "published": "UNKNOWN",
                 "live_effect": "UNKNOWN",
                 "retry_allowed": False,
+                "failure_stage": failure_stage,
+                "exact_blocker": (
+                    str(exc)
+                    if failure_stage == "READBACK" and isinstance(exc, ControlResolutionHostError)
+                    else "PM_PUBLISHER_CALL_FAILED" if failure_stage == "PUBLISH"
+                    else "PM_PUBLICATION_READBACK_VALIDATION_FAILED"
+                ),
                 "decision_ref": decision["decision_ref"],
                 "publication_fingerprint": publication["publication_fingerprint"],
             }
 
-        _require(
-            isinstance(receipt, dict),
-            "pm-guarded-publication-receipt-object-required",
-        )
-        _require(
-            receipt.get("schema") == PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA
-            and receipt.get("result") == "COMMITTED"
-            and receipt.get("decision_ref") == decision["decision_ref"]
-            and receipt.get("decision_fingerprint") == decision["decision_fingerprint"]
-            and receipt.get("publication_fingerprint")
-                == publication["publication_fingerprint"]
-            and receipt.get("referent_ref") == decision["referent_ref"]
-            and receipt.get("referent_revision") == decision["referent_revision"]
-            and receipt.get("scope_ref") == decision["publication_scope_ref"]
-            and receipt.get("effective_disposition") == decision["effective_disposition"],
-            "pm-guarded-publication-receipt-binding-mismatch",
-        )
-        _require(
-            receipt.get("previous_revision") == decision["publication_previous_revision"]
-            and receipt.get("published_revision")
-                == decision["publication_previous_revision"] + 1,
-            "pm-guarded-publication-revision-mismatch",
-        )
-        _require(
-            receipt.get("preserve_lane_refs") == decision["preserve_lane_refs"],
-            "pm-guarded-publication-parallel-lane-readback-mismatch",
-        )
-        _require(
-            receipt.get("readback_verified") is True
-            and type(receipt.get("provider_revision")) is int
-            and receipt["provider_revision"] >= 0
-            and self._ref(receipt.get("receipt_ref")),
-            "pm-guarded-publication-readback-unverified",
-        )
         return {
             "schema": PM_GUARDED_PUBLICATION_RECEIPT_SCHEMA,
             "result": "PASS_GUARDED_PUBLICATION_READBACK",
