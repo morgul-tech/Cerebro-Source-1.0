@@ -1,0 +1,218 @@
+{
+  "schema": "cerebro-sol6pro-source-integration-quality/v1",
+  "result": "PASS_SOURCE_INTEGRATION_ONLY",
+  "source_baseline": "8b83398981970019444d0d8dcc3268759d497192",
+  "evaluated_code_commit": "90aa187a4d44e0e1a1d45b8d1856de8dbb34613f",
+  "evaluated_code_tree": "798a710f946c4fad7ce4493bbb8217fba0cb2cd1",
+  "runtime": {
+    "python": "3.12.14",
+    "yaml": "6.0.3",
+    "os": "linux"
+  },
+  "checks": {
+    "approved_path_scope": "PASS_23_DECLARED_PATHS",
+    "changed_file_syntax": "PASS",
+    "combined_cold_import": {
+      "result": "PASS",
+      "modules": [
+        "control_context_remote_runtime",
+        "worker_context_auth",
+        "control_resolution_host",
+        "control_metabolism_vnext",
+        "runtime2_handoff_consumer",
+        "tooling.owner_state.rom_a_owner_episode_candidate",
+        "tooling.owner_state.project_d1_closure_return"
+      ],
+      "connections_or_effects_invoked": false
+    },
+    "PR1_parsed_semantics": "UNCHANGED",
+    "normal_owner_migration_and_MCP_selection": {
+      "result": "UNCHANGED",
+      "paths": [
+        "mcp/manifest.yaml",
+        "mcp/control_resolution.py",
+        "mcp/control_context_tools.py",
+        "tooling/owner_state/owner_state_persistence.py",
+        "tooling/context/control_context_postgres_migrations.json"
+      ]
+    },
+    "diff_hygiene": "PASS_EXISTING_CRLF_PRESERVED",
+    "PR95_relocated_candidate": "21/21: original 20 scripted cases against current helpers plus one new isolation check",
+    "PR37_no_DSN": "UNRUN_EXIT_2_BEFORE_DATABASE_ACCESS",
+    "independent_semantic_review": "NO_MATERIAL_FINDINGS; final tree identity checked separately",
+    "selected_pipeline": "SOURCE_COMPOSITION_ONLY; no release or runtime pipeline selected",
+    "canonical_active_source_closure": {
+      "exit_code": 0,
+      "powershell_version": "7.6.7",
+      "platform": "Unix",
+      "scope": "23 integration paths plus canonical fixed Source invariants",
+      "native_windows_evidence": false,
+      "stderr": "",
+      "canonical_result": {
+        "schema": "cerebro-active-source-closure-result/v0.1",
+        "result": "PASS",
+        "finding_count": 0,
+        "findings": [],
+        "checked_active_files": 23,
+        "checked_generated_files": 0
+      }
+    }
+  },
+  "reused_producer_evidence": {
+    "PR77": "22 tests, unchanged delivered bytes",
+    "PR76": "original control fields and real unbound BLOCK, unchanged delivered bytes",
+    "PR2": "structured provenance checks, unchanged delivered bytes",
+    "PR29": "19 canaries, unchanged module/validator bytes",
+    "issue41": "27 checks, unchanged delivered bytes",
+    "PR37": "10 cleanup cases, unchanged port/validator bytes",
+    "owner_state": "8/8 original checks retained; not rerun"
+  },
+  "not_claimed": [
+    "Windows or Runtime2 execution",
+    "PostgreSQL runtime or owner binding",
+    "provider publication or dispatch",
+    "Working Source equality",
+    "BK11 resume"
+  ],
+  "files": [
+    {
+      "path": ".github/workflows/project-d1-closure-ledger-disposable.yml",
+      "git_blob": "710db82d4550952759527f3615be2144fd8e87fa",
+      "sha256": "22dd2c598220ff53009ecad7649ea1ba80d0a17498d649c4c91c2e6dfdb4130b",
+      "syntax": "YAML_PASS"
+    },
+    {
+      "path": "engines/context/continuation-bindings.json",
+      "git_blob": "dfe8c21c10bbf2241a91e99b4794ea3e9d526d9c",
+      "sha256": "3e3c8695084702b3f174cb4532ce47f7c3a5b1d5ceccddf6f284ee24a454d1f8",
+      "syntax": "JSON_PASS"
+    },
+    {
+      "path": "mcp/control-metabolism-vnext-candidate.md",
+      "git_blob": "f04e2e7902596fdc571743f5773b49357164872d",
+      "sha256": "5f951a35af15667007ebb0d1d1a1b708fd3c38c0aa808c548ddc1d7aa864fec3",
+      "syntax": "NOT_APPLICABLE"
+    },
+    {
+      "path": "mcp/control_context_remote_runtime.py",
+      "git_blob": "09c1a4451742393636ac775aad056e8c4488a1df",
+      "sha256": "fb986e40ae973408ceca9b1667c3fc46a208c42a5d1ffcbc791d08f9470ff920",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "mcp/control_metabolism_vnext.py",
+      "git_blob": "d8b0f1cfe3109187728df55d18ce3f16fd7c5c24",
+      "sha256": "7e25baa69ea6d0077033e858da9296e730e751839de667f7cf5fda2831bb80ed",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "mcp/control_resolution_host.py",
+      "git_blob": "3c9dba61c9b8ca3291338c72f7a886e5a5cce65a",
+      "sha256": "c53507f1b4e7f7daf8c4a4eb3686690b1544fd4d3da42a3ea120e51db5828c22",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "mcp/project-manager-control-governor.yaml",
+      "git_blob": "4f35c4b9ff80c92cebaf354cd5857f7f274754f8",
+      "sha256": "038fd0eaf02621aa5dcbaa6f2cb2fe693babff83d6cde127c89b57377dbdc7da",
+      "syntax": "YAML_PASS"
+    },
+    {
+      "path": "mcp/worker_context_auth.py",
+      "git_blob": "15d4d67a9cdb976c5e264f65bb33b7ffa1766952",
+      "sha256": "51e9433d0c59c36d98be0fbc8ca16179e3355d734ba4f5aa73070078f2a14da8",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "standards/principalstambok.yaml",
+      "git_blob": "39c0a80b1da4d6b7893b50c404ed9c65f7b80797",
+      "sha256": "bb7d11abbd7e4bcd94daed9b9730edc81912acda9e0a67b669e57cb7d0d6a19e",
+      "syntax": "YAML_PASS"
+    },
+    {
+      "path": "tooling/context/control_context_rom_a_owner_migrations.json",
+      "git_blob": "e45c2e89140c2cde3dd584d6c3baae2ce1aa60f2",
+      "sha256": "354c5b39ff04909c0df83864c8914690cbe11a750b9286fd299e4f5461355595",
+      "syntax": "JSON_PASS"
+    },
+    {
+      "path": "tooling/context/control_context_state_postgres_0007_rom_a_owner_admission.sql",
+      "git_blob": "4fb7fb46aabe16fbf169a15d3f5eaf4d4dfd5cb7",
+      "sha256": "30002c12b26bc0292a43575ef1f6f424a294d8a5384efbd1ee944c96d601e11c",
+      "syntax": "NOT_APPLICABLE"
+    },
+    {
+      "path": "tooling/owner_state/project_d1_closure_ledger_candidate.sql",
+      "git_blob": "bc498b5647605d53cc4a2a43ffb2bcfadff358f8",
+      "sha256": "611e2e4ecde8b256feb9f786995c7211ab7fefb2d90241fe6dae93e92acfe950",
+      "syntax": "NOT_APPLICABLE"
+    },
+    {
+      "path": "tooling/owner_state/project_d1_closure_return.md",
+      "git_blob": "cab16510c84a702652504ef0b0852c70c1ddb9e1",
+      "sha256": "ac40efd118d109fd96b04a566d54d1f1c438eae06972b1f4234c11321e178584",
+      "syntax": "NOT_APPLICABLE"
+    },
+    {
+      "path": "tooling/owner_state/project_d1_closure_return.py",
+      "git_blob": "42f188daaf2597e892dd307a5740f74e86da0c8b",
+      "sha256": "66573084ea3d3bcbbfab182484ac67298584e5930017498e1c9c4df9ecb4f3c0",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/owner_state/rom_a_owner_episode_candidate.md",
+      "git_blob": "5a2187dda6b20572b951dbe233075a1067eb100c",
+      "sha256": "96704036d821dc1ea35845cdc16b22fe83048cd8db5d4f47d26c2a6c05043c78",
+      "syntax": "NOT_APPLICABLE"
+    },
+    {
+      "path": "tooling/owner_state/rom_a_owner_episode_candidate.py",
+      "git_blob": "bcddc68f9fb4ccc6867bb0f83812d083148c9f87",
+      "sha256": "7be2deb50b067bcf392212ab9bafdb132a55b8ee3c8624ce9d78c533c17036c0",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/runtime-host/runtime2_handoff_consumer.py",
+      "git_blob": "01dc64c131247506db28ef4c53d7c0dc109c478a",
+      "sha256": "4273f8602483bf175032d1f8cdf3f039ff1bc20169a2a6a5c907bbe698405b5f",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/validator/control_metabolism_vnext_validation.py",
+      "git_blob": "034dfc98ad862737bd2f6097dfc3af6f4182fec2",
+      "sha256": "48066b9caa3a5516fe56bbd3b091d646da126e4ec8e894580e4784d64bb45e36",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/validator/control_resolution_host_validation.py",
+      "git_blob": "77f1ac462bcebca1212255b22fc146312a69b668",
+      "sha256": "72db698d32c1423a7302707d76e38e62d6303353e3be463908a90b73185825d0",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/validator/project_d1_closure_postgres_integration.py",
+      "git_blob": "8f8c84c6f828d302bfb4824f1cda77780c6d281b",
+      "sha256": "918bbbee3be1e46dccaaa2e106a9318bc068e9999f65d9de0193bd1a961e279c",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/validator/rom_a_owner_transaction_validation.py",
+      "git_blob": "9767faa95b5e2ade32f1f62720d08cb5c1255126",
+      "sha256": "7994c2862b51f35fcab95962e0998a3726a2798141d5c5f8c4a5c1ceb372ce32",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/validator/runtime2_human_execution_handoff.py",
+      "git_blob": "bb5ea21cb11330f0eafab3a05dd543aa1831c704",
+      "sha256": "ef80801845baf9d377a7e79fe102a65e5cb9e877f151298dbe3df7257dd15426",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    },
+    {
+      "path": "tooling/validator/worker_overlay_way_home_validation.py",
+      "git_blob": "12c8e7944ab51014736d7351bfbed3ae281f5dd9",
+      "sha256": "b649e1e42a3351e946d7dd35ceac366d2f7c2bdcdaa60e07072b3233f1b040d9",
+      "syntax": "PYTHON_3_10_GRAMMAR_PASS_ON_3_12"
+    }
+  ],
+  "evaluated_code_commit_kind": "LOCAL_REVIEW_COMMIT; publication identity verified by exact tree"
+}
