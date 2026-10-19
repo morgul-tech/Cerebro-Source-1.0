@@ -85,48 +85,80 @@ implementation_learning_loop:
       proof task.
     official_workflow_0_5: >
       Current status is OFFICIAL_WORKFLOW_0_5, HUMAN_ADOPTED, NOT_FROZEN.
-      Preserve the adopted rev8 meaning; historical candidate adoption or
-      anchoring labels do not replace this current selection, and no rev9 is
-      implied. One current original and one accountable whole-job owner govern
-      the assignment. The ordinary six-step course is: (1) agree the result,
-      owners and action space; (2) clarify critical premises and choose the next
-      useful investment; (3) execute and correct within mandate; (4) preserve
-      progress responsibility without making a model a permanent watchdog;
-      (5) deliver, integrate and evaluate the whole result; (6) place learning
-      in its suitable existing home for the next ordinary use. Fit the steps to
-      the real task; they are not six approvals or a per-file checklist.
+      The adopted decision is P23-WORKFLOW05-ADOPTION-20261019-01; its selected
+      rev8 source is 02-WORKFLOW05-REV8.txt at SHA256
+      d41aa38da99af9d4697b67667c2a3869bb2e4ad2724ee0017d209f505f5201af.
+      Preserve that meaning; historical candidate or anchoring labels do not
+      replace this current selection, and no rev9 is implied. One current
+      original and one accountable whole-job owner govern the assignment. The
+      ordinary six-step course is: (1) agree the result, owners and action
+      space; (2) clarify critical premises and choose the next useful
+      investment; (3) execute and correct within mandate; (4) preserve progress
+      responsibility without making a model a permanent watchdog; (5) deliver,
+      integrate and evaluate the whole result; (6) place learning in its
+      suitable existing home for the next ordinary use. Fit the steps to the
+      real task; they are not six approvals or a per-file checklist.
       X9 is the normal operational project entry and owns the in-scope plan.
       Room leaders own expertise and local execution within mandate. PM has
       bounded standing authority for named portfolio decisions, priority or
       capacity conflicts, whole-course deviations and investment holds; PM is
       not an approver at every step and has no exemption from applicable
-      challenge. Principal retains un-delegated direction, scope, quality and
-      commitment choices. Human retains model choice and pause. These boundaries
-      grant no role, authority, access, credential or runtime effect.
+      challenge. This is organizational authority only within the named
+      mandate: a title grants no general authority, and it grants no native or
+      technical effect authority, credential or runtime access. Principal
+      retains un-delegated direction, scope, quality and commitment choices.
+      Human retains model choice and pause.
       Apply G1-G4 at material decision gates with AD1 as the normal challenge;
-      combine overlapping triggers into one relevant pass. Apply G5 before
-      generalizing local experience into a shared rule. Proto is a conceptual
-      reserve only when qualified for that question; otherwise use a qualified
-      technical reserve. Any exception is narrow: delegated authority, an
-      out-of-case owner, a reversible action and a recorded reason. Silence is
-      not approval; warning thresholds remain distinct from hard limits. At G2,
-      make a whole-course judgment before further material investment when the
-      agreed warning threshold is reached or drift/repetition leaves the path to
-      outcome unclear. This warning calls for judgment, not an automatic hard
-      stop. Include cumulative investment across tasks, rooms and revisions;
-      new machinery, organizational expansion or scope growth also calls for
-      that judgment before further material investment.
+      combine overlapping triggers into one relevant pass and reuse still-valid
+      evidence for the same decision. G1 is triggered by a materially new plan
+      or mechanism under uncertain premises. G2 requires a whole-course judgment
+      before further material investment when the agreed warning threshold is
+      reached or drift/repetition leaves the outcome path unclear; it is a
+      warning for judgment, not an automatic hard stop. Include cumulative
+      investment across tasks, rooms and revisions; new machinery,
+      organizational expansion or scope growth also calls for that judgment.
+      G3 is triggered by a proposed mandatory actor, port, control or dependency
+      without a clear requirement; ask whether the change addresses a concrete
+      failure or cost and reduces coordination burden. G4 is triggered by a
+      difficult-to-reverse commitment under a critically uncertain premise.
+      G5 applies before generalizing local experience into a shared rule. Proto
+      is a conceptual reserve only when qualified for that question; otherwise
+      use a qualified technical reserve. Confirm actual expertise fit,
+      availability and independence; do not shop reviewers, treat silence as
+      acceptance, or let a decision maker exempt its own required port, mandate
+      or premise from challenge. An exception needs delegated authority, an
+      out-of-case owner, a reversible action and a recorded reason. No exception
+      waives Human pause, hard limits, necessary technical acceptance, critical
+      unknown safety, or actual effect authority.
       Continue valid independent work while holding only actions dependent on
       an unresolved premise or fault. Give event-driven continuation one real
-      owner and concrete trigger; do not add a perpetual poll, timer or daemon.
-      Keep actual follow-through duties until the legitimate next owner accepts
-      them. Record expected and observed finish evidence with its limit. Place
-      material learning through existing owner disposition; distinguish
-      placement, publication, readback, application, consumer use and useful
-      effect. Retain uncertainty instead of manufacturing closure. Existing
-      profiles, tools, model-selection distinctions and ordinary-return paths
-      remain in force; this adopted method adds no active model change, new
-      dispatch, actor identity, service, gate or lifecycle effect.
+      owner, concrete trigger and available Human-authorized route. If that
+      route is unavailable or paused, retain a manual reserve for Human
+      retrieval and return the result, revision, owner and next action; do not
+      assume a parent-bound process survives a turn. Do not add a perpetual poll,
+      timer, daemon or automatic wake. Keep actual follow-through duties until
+      the legitimate next owner accepts them. Record expected and observed
+      finish evidence with its limit. For knowledge-home disposition, use the
+      actor's actually selected entry and real write rights to (a) update it
+      from material result/use and read it back, (b) record a reasoned no-change
+      disposition, or (c) state a precise documented remainder. Only (a) and
+      (b) close that document transition; a remainder transfers only on actual
+      legitimate owner acceptance. A prohibition's absence does not grant write
+      rights; do not imply all-copy sync or a central queue. Distinguish
+      placement/publication from actual entry, version choice, read, application,
+      consumer use and useful effect. The necessary entry for the selected next
+      work is a real finish obligation; later use outside that finish may remain
+      PENDING_NATURAL_TASK. The Source-to-Work-to-actual-home/read-chain path
+      must name the selected task version. A new Source HEAD alone is not a new
+      method selection or proof of auto-load; a running task continues on its
+      selected version unless a legitimate dated owner delta changes it, while
+      a newer legitimate pause or revocation governs its affected effect.
+      BK11's first operational use follows necessary anchoring and its own
+      explicit release; BK11 is HUMAN_PAUSED now. Workflow 0.5 remains
+      NOT_FROZEN. No pilot or fleet test is implied. Existing profiles, tools,
+      model-selection distinctions and ordinary-return paths remain in force;
+      this adopted method adds no active model change, new dispatch, actor
+      identity, service, gate or lifecycle effect.
     production_maturation_and_task_model: >
       For a new or complex assignment, mature one execution-ready whole-job
       plan across affected rooms: natural packages, inputs, outputs, critical
