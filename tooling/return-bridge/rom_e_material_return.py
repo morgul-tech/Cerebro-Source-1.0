@@ -246,6 +246,10 @@ def main() -> int:
     try:
         result = (presend if action == "presend" else finalize)(
             **{key: value for key, value in args.items() if value is not None})
+        if action == "presend":
+            result = {"state": result["state"], "capture_path": result["capture_path"],
+                      "original_sha256": result["receipt"]["original_sha256"],
+                      "original_bytes": result["receipt"]["original_bytes"], "authority": "NONE"}
         print(json.dumps(result, ensure_ascii=True, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, ImportError) as exc:

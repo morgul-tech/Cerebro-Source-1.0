@@ -95,6 +95,9 @@ class ChangedSeam(unittest.TestCase):
                        "--capture-root", str(self.root / "captures"))
         self.assertEqual(pre.returncode, 0, pre.stdout + pre.stderr)
         self.assertEqual(json.loads(pre.stdout)["state"], "EXACT_REUSE")
+        self.assertEqual(set(json.loads(pre.stdout)), {
+            "state", "capture_path", "original_sha256", "original_bytes", "authority"})
+        self.assertNotIn("SYN-E2-PRODUCER", pre.stdout)
         args = ("finalize", "--capture-record", self.capture, "--return-input", str(self.observation),
                 "--output-root", str(self.outroot))
         first = self.cli(*args)

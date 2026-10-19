@@ -29,7 +29,7 @@ Under the selected output root, one `return-KEY` uses task/revision/observation_
 
 Same key/same exact fingerprint and intact files returns EXACT_REUSE without rerunning control. Divergent bytes on the same key or changed output refuse. An incomplete existing output is retained with OUTPUT_INCOMPLETE_RECONCILE_SAME_ATTEMPT; do not start a new attempt to bypass it. Newly created output is exclusively reserved, and this call removes only its own incomplete output on failure. Caller originals/captures and other outputs are retained. Crash/parent-directory durability and malicious local filesystem mutation are not authenticated. Callers must keep the selected local job root under legitimate ownership.
 
-CLI exit 0: local capture/preparation or exact reuse; exit 2: bounded sanitized refusal. Parser usage errors also exit 2. Neither proves installation, delivery or consumer benefit. Full local paths/private originals are retained in owner-controlled output only; do not upload the output indiscriminately. A1 receives public code/pins/tests; E1's private real task data stays local.
+CLI exit 0: local capture/preparation or exact reuse; exit 2: bounded sanitized refusal. Presend stdout contains only state, capture path, original digest/size and authority; the full capture task/envelope stays in the local capture file. Parser usage errors also exit 2. Neither proves installation, delivery or consumer benefit. Full local paths/private originals are retained in owner-controlled output only; do not upload the output indiscriminately. A1 receives public code/pins/tests; E1's private real task data stays local.
 
 ## Admission and rollback
 
