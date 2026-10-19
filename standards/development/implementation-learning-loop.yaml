@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.15"
+  version: "1.16"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -83,22 +83,69 @@ implementation_learning_loop:
       integration remains separate. Keep existing current/original, whole-job/ports,
       Zenon, first-failure, Code Doctor and ordinary-return boundaries; add no poll or
       proof task.
+    official_workflow_0_5: >
+      Current status is OFFICIAL_WORKFLOW_0_5, HUMAN_ADOPTED, NOT_FROZEN.
+      Preserve the adopted rev8 meaning; historical candidate adoption or
+      anchoring labels do not replace this current selection, and no rev9 is
+      implied. One current original and one accountable whole-job owner govern
+      the assignment. The ordinary six-step course is: (1) agree the result,
+      owners and action space; (2) clarify critical premises and choose the next
+      useful investment; (3) execute and correct within mandate; (4) preserve
+      progress responsibility without making a model a permanent watchdog;
+      (5) deliver, integrate and evaluate the whole result; (6) place learning
+      in its suitable existing home for the next ordinary use. Fit the steps to
+      the real task; they are not six approvals or a per-file checklist.
+      X9 is the normal operational project entry and owns the in-scope plan.
+      Room leaders own expertise and local execution within mandate. PM has
+      bounded standing authority for named portfolio decisions, priority or
+      capacity conflicts, whole-course deviations and investment holds; PM is
+      not an approver at every step and has no exemption from applicable
+      challenge. Principal retains un-delegated direction, scope, quality and
+      commitment choices. Human retains model choice and pause. These boundaries
+      grant no role, authority, access, credential or runtime effect.
+      Apply G1-G4 at material decision gates with AD1 as the normal challenge;
+      combine overlapping triggers into one relevant pass. Apply G5 before
+      generalizing local experience into a shared rule. Proto is a conceptual
+      reserve only when qualified for that question; otherwise use a qualified
+      technical reserve. Any exception is narrow: delegated authority, an
+      out-of-case owner, a reversible action and a recorded reason. Silence is
+      not approval; warning thresholds remain distinct from hard limits. At G2,
+      make a whole-course judgment before further material investment when the
+      agreed warning threshold is reached or drift/repetition leaves the path to
+      outcome unclear. This warning calls for judgment, not an automatic hard
+      stop. Include cumulative investment across tasks, rooms and revisions;
+      new machinery, organizational expansion or scope growth also calls for
+      that judgment before further material investment.
+      Continue valid independent work while holding only actions dependent on
+      an unresolved premise or fault. Give event-driven continuation one real
+      owner and concrete trigger; do not add a perpetual poll, timer or daemon.
+      Keep actual follow-through duties until the legitimate next owner accepts
+      them. Record expected and observed finish evidence with its limit. Place
+      material learning through existing owner disposition; distinguish
+      placement, publication, readback, application, consumer use and useful
+      effect. Retain uncertainty instead of manufacturing closure. Existing
+      profiles, tools, model-selection distinctions and ordinary-return paths
+      remain in force; this adopted method adds no active model change, new
+      dispatch, actor identity, service, gate or lifecycle effect.
     production_maturation_and_task_model: >
-      For new or complex jobs, Room E matures one execution-ready plan for the
-      whole assignment across all affected rooms: natural packages with inputs,
-      outputs, critical prerequisites, reuse, dependencies, ordering or
-      parallelism, model and reasoning needs, integration and named owners.
-      X9 qualifies actual active and pending capacity and effect ports before
-      assignment; room leaders execute and distribute work locally within
-      mandate; one accountable whole-job owner integrates the result. PM is
-      used only for a genuinely non-delegated choice, priority conflict or
-      unresolved cross-dependency. Small known jobs use the existing recipe
-      directly; this adds no universal E/PM gate or required four-lane activity.
-      Waiting responsibility does not automatically reserve the whole actor.
-      Current identifies actually bound work and capacity that can be freed
-      without losing the duty, plus the continuation owner and concrete event.
-      A real handoff names when the old writer stops, who actually accepts the
-      remainder, and who integrates joined package outputs.
+      For a new or complex assignment, mature one execution-ready whole-job
+      plan across affected rooms: natural packages, inputs, outputs, critical
+      prerequisites, reuse, dependencies, ordering or parallelism, relevant
+      model and reasoning needs, integration and named owners. Apply the
+      OFFICIAL_WORKFLOW_0_5 six-step course proportionately; small known jobs
+      use the existing recipe directly. X9 qualifies actual active and pending
+      capacity and effect ports for the operational plan; room leaders execute
+      and distribute work locally within mandate; one accountable whole-job
+      owner integrates the result. PM exercises its bounded standing authority
+      for named portfolio decisions, priority/capacity conflicts, whole-course
+      deviations and investment holds, rather than being narrowed to exceptional
+      escalation or inserted as a per-step approver. Room E may mature a plan
+      where that is its selected function; this creates no universal E gate or
+      required four-lane activity. Waiting responsibility does not automatically
+      reserve the whole actor. Current identifies actually bound work and
+      capacity that can be freed without losing the duty, plus the continuation
+      owner and concrete event. A real handoff names when the old writer stops,
+      who accepts the remainder, and who integrates joined package outputs.
       Diagnosis and ordinary correction are work, not automatic escalation for
       a new error. Hold only action depending on an unresolved fault or premise
       and continue valid independent work. Escalate only a named real limit of
