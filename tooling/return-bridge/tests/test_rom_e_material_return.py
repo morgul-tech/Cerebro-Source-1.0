@@ -230,6 +230,65 @@ class ChangedSeam(unittest.TestCase):
         self.assertEqual(bad.returncode, 2)
         self.assertNotIn("PRIVATE-SENTINEL", bad.stdout + bad.stderr)
 
+    def test_reuse_rejects_changed_manifest_metadata(self):
+        result = self.run_entry()
+        path = Path(result["manifest"])
+        original = path.read_bytes()
+        baseline = json.loads(original)
+        mutations = [
+            ("selection", "BK05_STRUCTURAL_CAPSULE_CANDIDATE"),
+            ("selected", "capsule.json"), ("reason", "forged"),
+            ("key", "0" * 64), ("code_sha256", {}),
+            ("held_basis", {"exact": True}), ("missing_inputs", ["forged"]),
+            ("control_receipt", "elsewhere.json"), ("files", []),
+            ("input_sha256", []), ("authority", "forged"),
+        ]
+        for field, value in mutations:
+            with self.subTest(field=field):
+                mutated = copy.deepcopy(baseline)
+                mutated[field] = value
+                path.write_bytes(entry._canonical(mutated))
+                with self.assertRaisesRegex(ValueError, "OUTPUT_CONFLICT"):
+                    self.run_entry()
+                self.assertTrue(path.exists())  # Prior evidence is not deleted on refusal.
+        for label, mutated in (
+            ("not-object", []),
+            ("missing-field", {k: v for k, v in baseline.items() if k != "selection"}),
+            ("coherent-false-labels", {**baseline, "selection": "BK05_STRUCTURAL_CAPSULE_CANDIDATE",
+                                      "selected": "capsule.json", "held_basis": {"exact": True},
+                                      "reason": "OWNER_QUALIFIED_HELD_BYTES_STRUCTURALLY_RECONSTRUCTED"}),
+        ):
+            with self.subTest(case=label):
+                path.write_bytes(entry._canonical(mutated))
+                with self.assertRaisesRegex(ValueError, "OUTPUT_CONFLICT"):
+                    self.run_entry()
+        path.write_bytes(original)
+        self.assertEqual(self.run_entry()["state"], "EXACT_REUSE")
+        self.assertEqual(path.read_bytes(), original)
+
+    def test_reuse_full_and_short_follow_actual_control_and_held_inputs(self):
+        files = self.repair()
+        full = self.run_entry()
+        self.assertEqual(self.run_entry()["selection"], "FULL_ORIGINAL_TASK")
+        self.assertEqual(self.manifest(full)["reason"], "RECIPIENT_HELD_BASIS_NOT_QUALIFIED")
+        self.outroot = self.root / "qualified-short-results"
+        reader = lambda *args: ("SYN-qualified-current", files["parent.txt"], files["verifier.txt"])
+        short = self.run_entry(held_basis_reader=reader)
+        path = Path(short["manifest"])
+        raw = path.read_bytes()
+        control = (path.parent / "control/receipt.json").read_bytes()
+        repeated = self.run_entry(held_basis_reader=reader)
+        self.assertEqual((repeated["state"], repeated["selection"]),
+                         ("EXACT_REUSE", "BK05_STRUCTURAL_CAPSULE_CANDIDATE"))
+        self.assertEqual((path.parent / "control/receipt.json").read_bytes(), control)
+        bad = json.loads(raw)
+        bad["held_basis"]["exact"] = 1  # Equality must not silently coerce bool/int.
+        path.write_bytes(entry._canonical(bad))
+        with self.assertRaisesRegex(ValueError, "OUTPUT_CONFLICT"):
+            self.run_entry(held_basis_reader=reader)
+        path.write_bytes(raw)
+        self.assertEqual(self.run_entry(held_basis_reader=reader)["state"], "EXACT_REUSE")
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

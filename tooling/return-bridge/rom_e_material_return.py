@@ -79,29 +79,101 @@ def presend(*, request: str, original: str, capture_root: str) -> dict[str, Any]
     return capture.capture(_path(capture_root), obj, _read(original))
 
 
-def _reuse(out: Path, fingerprint: str) -> dict[str, Any]:
+def _representation(out: Path, normal: Any, receipt: dict, original: bytes,
+                    review: bytes | None, held: dict | None, kind: str) -> tuple[str, str, str, bytes]:
+    """Derive representation from control/payload bytes, never manifest labels.
+
+    Reconstruction here checks artifact integrity, not semantic held memory.
+    The separate, unchanged owner-qualified held-input boundary chooses short.
+    """
+    adoption, control = receipt["adoption"], receipt["selected"]
+    control_selection = adoption["selection"]
+    if control_selection not in {"FULL_ORIGINAL_TASK", "BK05_STRUCTURAL_CAPSULE_CANDIDATE"}:
+        raise ValueError("OUTPUT_CONFLICT")
+    control_file = "capsule.json" if control_selection.startswith("BK05_") else "original_task.txt"
+    raw = _read(out / "control" / control_file)
+    if (control["file"] != control_file or control["selection"] != control_selection or
+            type(control["bytes"]) is not int or control["bytes"] != len(raw) or
+            control["sha256"] != _sha(raw) or adoption["selected_sha256"] != _sha(raw) or
+            type(adoption["selected_bytes"]) is not int or adoption["selected_bytes"] != len(raw) or
+            adoption["original_sha256"] != _sha(original)):
+        raise ValueError("OUTPUT_CONFLICT")
+    selection, payload, reason = "FULL_ORIGINAL_TASK", original, "FULL_CURRENT_ORIGINAL_RESERVE"
+    if control_selection == "FULL_ORIGINAL_TASK":
+        if raw != original:
+            raise ValueError("OUTPUT_CONFLICT")
+    else:
+        if kind not in normal.REPAIR_KINDS or review is None:
+            raise ValueError("OUTPUT_CONFLICT")
+        core = normal._module("e_entry_bk05", ROOT / DEPENDENCIES[-1])
+        decision, _, _ = core.reconstruct(raw, original, review)
+        if decision != core.RECONSTRUCTED:
+            raise ValueError("CAPSULE_RECONSTRUCTION_REFUSED")
+        reason = "RECIPIENT_HELD_BASIS_NOT_QUALIFIED"
+        if held is not None and held["exact"]:
+            selection, payload = control_selection, raw
+            reason = "OWNER_QUALIFIED_HELD_BYTES_STRUCTURALLY_RECONSTRUCTED"
+    selected = "capsule.json" if selection.startswith("BK05_") else "original_task.txt"
+    return selection, selected, reason, payload
+
+
+def _reuse(out: Path, fingerprint: str, *, key: str, code: dict, held: dict | None,
+           captured: dict[str, bytes], normal: Any, kind: str, original: bytes) -> dict[str, Any]:
     manifest_path = out / "manifest.json"
     if not manifest_path.is_file():
         raise ValueError("OUTPUT_INCOMPLETE_RECONCILE_SAME_ATTEMPT")
-    manifest = json.loads(_read(manifest_path))
-    if manifest.get("input_sha256") != fingerprint:
+    try:
+        manifest = normal._json(_read(manifest_path))
+        if not isinstance(manifest.get("input_sha256"), str):
+            raise ValueError("OUTPUT_CONFLICT")
+    except (OSError, ValueError, TypeError) as exc:
+        raise ValueError("OUTPUT_CONFLICT") from exc
+    if manifest["input_sha256"] != fingerprint:
         raise ValueError("IDEMPOTENCY_CONFLICT")
-    expected = manifest.get("files")
-    if not isinstance(expected, dict):
-        raise ValueError("OUTPUT_CONFLICT")
-    actual = set()
-    for path in out.rglob("*"):
-        _path(path)
-        if path.is_file() and path != manifest_path:
-            rel = path.relative_to(out).as_posix()
-            actual.add(rel)
-            raw = _read(path)
-            if expected.get(rel) != {"bytes": len(raw), "sha256": _sha(raw)}:
+    try:
+        # These bytes and caller metadata are independent of manifest.files.
+        for rel, raw in captured.items():
+            if _read(out / "inputs" / rel) != raw:
                 raise ValueError("OUTPUT_CONFLICT")
-    if actual != set(expected):
-        raise ValueError("OUTPUT_CONFLICT")
+        receipt = normal._json(_read(out / "control/receipt.json"))
+        if receipt["return_input"]["sha256"] != _sha(captured["episode/return.json"]):
+            raise ValueError("OUTPUT_CONFLICT")
+        selection, selected, reason, payload = _representation(
+            out, normal, receipt, original, captured.get("episode/verifier.txt"), held, kind)
+        if _read(out / selected) != payload:
+            raise ValueError("OUTPUT_CONFLICT")
+        missing = receipt["missing_inputs"]
+        if not isinstance(missing, list) or any(not isinstance(item, str) for item in missing):
+            raise ValueError("OUTPUT_CONFLICT")
+        metadata = {"input_sha256": fingerprint, "key": key, "code_sha256": code,
+                    "held_basis": held, "selection": selection, "selected": selected,
+                    "reason": reason, "control_receipt": "control/receipt.json",
+                    "missing_inputs": missing,
+                    "qualification": "LOCAL_STRUCTURAL_ONLY_NOT_PROVIDER_OR_SEMANTIC_ATTESTATION",
+                    "recipient_use": "NOT_OBSERVED", "dispatch": "NOT_SENT", "authority": "NONE"}
+        if (set(manifest) != set(metadata) | {"files"} or
+                _canonical({name: manifest[name] for name in metadata}) != _canonical(metadata)):
+            raise ValueError("OUTPUT_CONFLICT")
+        expected = manifest["files"]
+        if not isinstance(expected, dict):
+            raise ValueError("OUTPUT_CONFLICT")
+        actual = set()
+        for path in out.rglob("*"):
+            _path(path)
+            if path.is_file() and path != manifest_path:
+                rel = path.relative_to(out).as_posix()
+                actual.add(rel)
+                raw, pin = _read(path), expected.get(rel)
+                if (not isinstance(pin, dict) or set(pin) != {"bytes", "sha256"} or
+                        type(pin["bytes"]) is not int or
+                        pin != {"bytes": len(raw), "sha256": _sha(raw)}):
+                    raise ValueError("OUTPUT_CONFLICT")
+        if actual != set(expected):
+            raise ValueError("OUTPUT_CONFLICT")
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise ValueError("OUTPUT_CONFLICT") from exc
     return {"state": "EXACT_REUSE", "manifest": str(manifest_path),
-            "selection": manifest["selection"], "authority": "NONE"}
+            "selection": selection, "authority": "NONE"}
 
 
 def finalize(*, capture_record: str, return_input: str, output_root: str,
@@ -173,12 +245,14 @@ def finalize(*, capture_record: str, return_input: str, output_root: str,
     root = _path(output_root)
     root.mkdir(parents=True, exist_ok=True)
     out = root / ("return-" + key)
+    reuse_basis = dict(key=key, code=code, held=held, captured=captured,
+                       normal=normal, kind=kind, original=original)
     if out.exists():
-        return _reuse(out, fingerprint)
+        return _reuse(out, fingerprint, **reuse_basis)
     try:
         out.mkdir()  # Exclusive reservation; an incomplete prior result is never replayed.
     except FileExistsError:
-        return _reuse(out, fingerprint)
+        return _reuse(out, fingerprint, **reuse_basis)
     try:
         for rel, raw in captured.items():
             path = out / "inputs" / rel
@@ -197,19 +271,8 @@ def finalize(*, capture_record: str, return_input: str, output_root: str,
             raise ValueError("BK05_INVALID_DELTA_BINDING_CONFLICT")
         if adoption["bk05"]["decision"] in {"INVALID_INPUT", "HOLD_STALE"}:
             raise ValueError("BK05_INVALID_OR_STALE_RECONCILE_SAME_ATTEMPT")
-        selection, payload = "FULL_ORIGINAL_TASK", original
-        reason = "FULL_CURRENT_ORIGINAL_RESERVE"
-        if result["selection"] == "BK05_STRUCTURAL_CAPSULE_CANDIDATE":
-            reason = "RECIPIENT_HELD_BASIS_NOT_QUALIFIED"
-            if held is not None and held["exact"]:
-                core = normal._module("e_entry_bk05", ROOT / DEPENDENCIES[-1])
-                capsule = Path(result["selected"]).read_bytes()
-                decision, _, _ = core.reconstruct(capsule, original, captured["episode/verifier.txt"])
-                if decision != core.RECONSTRUCTED:
-                    raise ValueError("CAPSULE_RECONSTRUCTION_REFUSED")
-                selection, payload = result["selection"], capsule
-                reason = "OWNER_QUALIFIED_HELD_BYTES_STRUCTURALLY_RECONSTRUCTED"
-        selected = "capsule.json" if selection.startswith("BK05_") else "original_task.txt"
+        selection, selected, reason, payload = _representation(
+            out, normal, receipt, original, captured.get("episode/verifier.txt"), held, kind)
         (out / selected).write_bytes(payload)
         files = {p.relative_to(out).as_posix(): {"bytes": p.stat().st_size, "sha256": _sha(p.read_bytes())}
                  for p in out.rglob("*") if p.is_file()}
