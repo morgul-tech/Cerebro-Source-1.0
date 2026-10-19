@@ -118,8 +118,11 @@ implementation_learning_loop:
       investment across tasks, rooms and revisions; new machinery,
       organizational expansion or scope growth also calls for that judgment.
       G3 is triggered by a proposed mandatory actor, port, control or dependency
-      without a clear requirement; ask whether the change addresses a concrete
-      failure or cost and reduces coordination burden. G4 is triggered by a
+      without a clear requirement. In one relevant pass ask: what concrete
+      failure would this port prevent, what cost does the port impose, and can
+      less coordination provide the same protection? Keep any binding owner
+      requirement and required protection in force while comparing additions;
+      this test does not suspend them. G4 is triggered by a
       difficult-to-reverse commitment under a critically uncertain premise.
       G5 applies before generalizing local experience into a shared rule. Proto
       is a conceptual reserve only when qualified for that question; otherwise
@@ -133,12 +136,15 @@ implementation_learning_loop:
       Continue valid independent work while holding only actions dependent on
       an unresolved premise or fault. Give event-driven continuation one real
       owner, concrete trigger and available Human-authorized route. If that
-      route is unavailable or paused, retain a manual reserve for Human
-      retrieval and return the result, revision, owner and next action; do not
-      assume a parent-bound process survives a turn. Do not add a perpetual poll,
-      timer, daemon or automatic wake. Keep actual follow-through duties until
-      the legitimate next owner accepts them. Record expected and observed
-      finish evidence with its limit. For knowledge-home disposition, use the
+      route is unavailable or paused, identify the actually selected, legitimate
+      and available manual or other reserve, with its owner, result, revision
+      and next action. Do not assume a reserve is available, make Human the
+      ordinary courier or retrieval service, or assume a parent-bound process
+      survives a turn. Human may choose a concrete action; do not infer an
+      automatic wake. Do not add a perpetual poll, timer or daemon. Keep actual
+      follow-through duties until the legitimate next owner accepts them.
+      Record expected and observed finish evidence with its limit. For
+      knowledge-home disposition, use the
       actor's actually selected entry and real write rights to (a) update it
       from material result/use and read it back, (b) record a reasoned no-change
       disposition, or (c) state a precise documented remainder. Only (a) and
