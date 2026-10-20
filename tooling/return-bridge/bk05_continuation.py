@@ -197,6 +197,10 @@ def profile(r, data):
         review = parse(data[INPUTS['reviewer_delta']])
         need(review['verifier_ref'] == r['review_ref']
              and review['verifier_sha256'] == pin(data[INPUTS['review']])['sha256'], 'REVIEW_REF_OR_BYTES_MISMATCH')
+    if 'parent_manifest' in present and 'producer_currentness' in present:
+        supplied = parse(data[INPUTS['producer_currentness']])
+        need(supplied['observed_parent_revision'] == parent['parent_revision'], 'PRODUCER_PARENT_REVISION_STALE')
+        need(supplied['observed_source_head'] == parent['source_head'], 'PRODUCER_SOURCE_HEAD_STALE')
     if len(present) != len(OPTIONAL):
         return {'selection': 'FULL_CONTINUATION', 'reason': 'CODE_PROFILE_BASIS_INCOMPLETE', 'core_decision': None}, None
     parent = parse(data[INPUTS['parent_manifest']]); review = parse(data[INPUTS['reviewer_delta']])
@@ -456,6 +460,8 @@ def read(*, manifest, expect_sha, mode, current_observation, part=None):
     action = 'READ_ONLY_NO_WORK_EXECUTED'
     if o['work_state'] == 'COMPLETED':
         action = 'ALREADY_COMPLETED_NO_REPLAY'
+        if o['send_outcome'] == 'UNKNOWN':
+            action = 'ALREADY_COMPLETED_NO_REPLAY_AND_RECONCILE_UNKNOWN_SEND_BEFORE_ACTION'
     elif o['work_state'] == 'UNKNOWN_EFFECT' or o['send_outcome'] == 'UNKNOWN':
         action = 'RECONCILE_UNKNOWN_SEND_OR_EFFECT_BEFORE_ACTION'
     output = {'state': 'VALIDATED_READ_NOT_UNDERSTOOD_OR_RELEASED', 'identity': identity(r),
@@ -463,7 +469,8 @@ def read(*, manifest, expect_sha, mode, current_observation, part=None):
               'selected_member': member, 'profile': result, 'action': action, 'authority': 'NONE',
               'observation': {'sha256': op['sha256'], 'source_current': o['source_current'], 'observed_at': o['observed_at'],
                               'provenance': o['provenance'], 'age': 'CALLER_SUPPLIED_NOT_JUDGED_BY_READER',
-                              'relevant_change': o['relevant_change'], 'newer_direction': o['newer_direction']},
+                              'relevant_change': o['relevant_change'], 'newer_direction': o['newer_direction'],
+                              'work_state': o['work_state'], 'send_outcome': o['send_outcome']},
               'necessary_originals': {name: {'path': str(path(manifest).parent / INPUTS[name]), **pin(data[INPUTS[name]])}
                                      for name in INPUTS if r['inputs'][name] is not None},
               'return_target': r['return_target'], 'way_home': r['way_home'],

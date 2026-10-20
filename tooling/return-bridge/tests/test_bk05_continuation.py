@@ -251,6 +251,45 @@ class OrdinaryPath(unittest.TestCase):
         self.assertEqual(result['profile']['reason'], 'CODE_PROFILE_NOT_SELECTED')
         self.assertIn(self.delta['action'], self.delivered_text(full_packet, 'short'))
 
+    def test_R1_completed_and_unknown_send_both_retained_same_packet(self):
+        packet = self.prepare(); before = self.snapshot(packet)
+        cases = [('COMPLETED', 'SENT', 'ALREADY_COMPLETED_NO_REPLAY'),
+                 ('COMPLETED', 'UNKNOWN', 'ALREADY_COMPLETED_NO_REPLAY_AND_RECONCILE_UNKNOWN_SEND_BEFORE_ACTION'),
+                 ('UNKNOWN_EFFECT', 'SENT', 'RECONCILE_UNKNOWN_SEND_OR_EFFECT_BEFORE_ACTION'),
+                 ('PARTIAL', 'UNKNOWN', 'RECONCILE_UNKNOWN_SEND_OR_EFFECT_BEFORE_ACTION')]
+        for work, send, expected in cases:
+            with self.subTest(work_state=work, send_outcome=send):
+                self.write('observation.json', dict(self.observation, work_state=work, send_outcome=send))
+                result = self.read(packet)
+                self.assertEqual(result['observation']['work_state'], work)
+                self.assertEqual(result['observation']['send_outcome'], send)
+                self.assertEqual(result['action'], expected)
+                self.assertEqual(result['manifest_sha256'], packet['manifest_sha256'])
+        self.assertEqual(self.snapshot(packet), before)
+
+    def test_R2_partial_matching_full_but_supplied_stale_pairs_refuse(self):
+        self.request['inputs']['reviewer_delta'] = None
+        self.write('request.json', self.request)
+        baseline = json.loads((self.root / 'producer-currentness.json').read_bytes())
+        cases = [('matching', None, None),
+                 ('stale_revision', 'observed_parent_revision', 'PRODUCER_PARENT_REVISION_STALE'),
+                 ('stale_head', 'observed_source_head', 'PRODUCER_SOURCE_HEAD_STALE')]
+        for name, field, expected in cases:
+            with self.subTest(case=name):
+                self.output = self.root / ('separate-inert-case-' + name); self.output.mkdir()
+                value = dict(baseline)
+                if field is not None:
+                    value[field] = 'SYN-EXPLICIT-CONTRADICTION'
+                self.write('producer-currentness.json', value)
+                result = self.prepare(ok=field is None)
+                if field is None:
+                    read = self.read(result)
+                    self.assertEqual(read['selected_member'], 'full.txt')
+                    self.assertEqual(read['profile']['reason'], 'CODE_PROFILE_BASIS_INCOMPLETE')
+                else:
+                    self.assertEqual(result['reason'], expected)
+                    self.assertEqual(list(self.output.iterdir()), [])
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
