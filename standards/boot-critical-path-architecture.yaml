@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.6"
+  version: "1.7"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -99,9 +99,26 @@ boot_critical_path:
   # Human-selected BIRTH-HOME-01; local admission does not alter native receipts.
   local_birth_instruction_home:
     owner: LEGITIMATE_BIRTH_RECEIVER_AND_EXISTING_METHOD_HOME_OWNER
-    work_offering_commit: e4f97c092b48ecc656598e149f9e838d9fe878e3
-    work_recipe: https://github.com/morgul-tech/Cerebro-Work/blob/e4f97c092b48ecc656598e149f9e838d9fe878e3/tooling/entry-continuity/BIRTH-HOME.md
+    work_offering_commit: 06d81dd8c71a9f2e207066b8381c5c31cb11a783
+    work_recipe: https://github.com/morgul-tech/Cerebro-Work/blob/06d81dd8c71a9f2e207066b8381c5c31cb11a783/tooling/entry-continuity/BIRTH-HOME.md
     work_placement_entry: tooling/entry-continuity/entry_check.py#establish_birth_home
+    ordinary_continuation: https://github.com/morgul-tech/Cerebro-Work/blob/06d81dd8c71a9f2e207066b8381c5c31cb11a783/tooling/entry-continuity/ORDINARY-ENTRY.md
+    ordinary_binding_entry: tooling/entry-continuity/entry_check.py --prepare-rehydration
+    package_scope: COMPLETE_PUBLISHED_PACKAGE_AND_EACH_OWN_LEGITIMATE_SELECTED_METHOD
+    binding_inputs: [actual_actor, same_generation, actual_session, actual_working_directory, own_instruction_home, owner_selected_current, legitimate_task_original]
+    preparation_effect: VALIDATED_RECORDS_AND_OWN_SESSION_DEFINITION_ONLY_NO_WRITE_INSTALL_OR_TRUST
+    no_current_task: ELIGIBLE_PENDING_LEGITIMATE_TASK_NO_FABRICATED_BINDING
+    ordinary_transitions: [legitimate_birth_continuation, same_actor_handoff, resume, actual_working_entry]
+    existing_compatible_entry: PRESERVE_BYTES_AND_RETURN_EXPLICIT_ORDINARY_CONTINUATION
+    checkpoint: LAST_CONFIRMED_DERIVED_STATUS_NOT_FRESH_OWNER_AUTHORITY_OR_HUMAN_OVERRIDE
+    missing_or_invalid_mapping: HOLD_DEPENDENT_EFFECT_ONLY_NO_REPLACEMENT_TASK
+    function_fit:
+      BK04: GENUINE_PRESEND_BEFORE_SEND_PRODUCER_OWNED_FACTS_EXISTING_FINALIZE_ACTUAL_RECIPIENT_DISPOSITION
+      BK05: ACTUAL_QUALIFIED_RECIPIENT_HELD_BASIS_READER_CALLBACK_REQUIRED_FULL_ORIGINAL_FALLBACK_NOT_SHORT_USE_CLOSURE
+      BK07: CALLER_BOUND_CHECKED_JS_NORMALREAD_AND_MANAGED_NATIVE_GET_IN_SAME_ISOLATE_NO_RAW_BODY_TO_SHELL_DISK_OR_SHARED_STORE
+    adoption_evidence: PER_ACTUAL_OWNER_TRANSITION_FUNCTION_FIT_AND_RECIPIENT_UTILITY_NOT_SINGLE_ACTOR_OR_FIXTURE
+    product_trust_and_event: SEPARATE_SUPPORTED_PRODUCT_QUALIFICATION_NO_BYPASS_OR_FORCED_TEST_EVENT
+    operational_mandate: NO_NEW_BOOT_ROLE_CLAIM_OR_PROTECTED_OPERATION
     establishment_port: SUPPORTED_LOCAL_WORK_RECEIVER_AFTER_ATTESTED_ROLE_NEUTRAL_BIRTH
     native_birth_receipt: IMMUTABLE_SEPARATE_CAPACITY_EVIDENCE
     identity_inputs: [legitimate_birth_reference, same_generation_reference, actual_working_directory, owner_selected_existing_home_if_any]
