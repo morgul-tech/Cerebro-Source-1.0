@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.16"
+  version: "1.17"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -259,6 +259,30 @@ implementation_learning_loop:
       reuse_held_basis_within_same_arc_when_current_and_sufficient: true
       before_independent_dispatch: [selected_actor_current_work, pending_intent_or_assignment, uptake, required_tool_fit]
       same_task_material_input_is_new_assignment: false
+      continuity_rehydration_and_resume:
+        selection:
+          requires: [owner_qualified_actor, generation_or_explicit_unknown, session_or_explicit_unknown, actual_cwd_or_admitted_workplace, selected_task_revision]
+          selects_exactly_one: [existing_instruction_home, owner_current]
+          never_select_by: [mtime, title, arbitrary_latest_path, transcript_guess]
+          missing_or_conflicting_selection: [short_deviation, retain_known_owner_or_home_pointer, no_substitute_task, no_automatic_start_or_write_or_replay]
+          hash_or_git_consistency_proves_current_owner_selection: false
+        checkpoint:
+          meaning: LAST_CONFIRMED_OWNER_STATE_NOT_FRESHNESS_OR_HUMAN_OVERRIDE
+          preserve_together: [selected_task_revision_and_original_ref, last_confirmed_stage_and_result_ref, unfinished_delivery_return_and_next_action, correction_origin_and_scope, unknown_external_effect_and_next_owner, revision_and_provenance]
+          reconcile_newer_human_instruction:
+            question_without_correction: preserve_open_work_and_return_obligations
+            explicit_correction_or_stop: apply_to_affected_scope
+            infer_human_intent_from_checkpoint: false
+        derived_status:
+          fixed_validated_fields_and_legitimate_refs_only: true
+          external_free_text_promoted_to_instruction: false
+          status_claims_authority_or_freshness: false
+          necessary_state_exceeds_projection: point_to_full_source_and_preserve_critical_holds
+        manual_fallback:
+          use_existing_selected_read_chain: true
+          missing_unknown_partial_or_corrupt_state: short_deviation_and_known_owner_pointer_no_random_fallback
+          universal_sessionstart_gate: false
+          reader_effects: [read_only, no_registration_or_dispatch, no_repair_or_work, no_replay, no_global_stop]
       human_method_warning: >
         When a Human warns of recurrence or process failure, reuse the active case.
         The responsible owner chooses one concrete working-method change and follows
