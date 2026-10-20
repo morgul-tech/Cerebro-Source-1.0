@@ -1,6 +1,8 @@
 # Ordinary E material entry — local candidate
 
-Owner basis: P23-BK0405-A1-SOURCE-20261019-01/rev2 and E1-BK0405-PRODUCER-BINDING-20261019-01/rev1. E1 owns later admission under its existing `work/BK05-returmottak/normal-entry/`; A1 owns Source disposition. This candidate grants neither. Existing capture, typed return, normal-path, BK04 and BK05 schemas and cores are unchanged. Python 3.10+ standard library; qualify the delivered complete Source version and interpreter before use.
+Owner basis: P23-BK0405-A1-SOURCE-20261019-01/rev2 and E1-BK0405-PRODUCER-BINDING-20261019-01/rev1. E1 owns later admission under its existing `work/BK05-returmottak/normal-entry/`; A1 owns Source disposition. This candidate grants neither. Existing capture, typed return, normal-path, BK04 and BK05 schemas and cores are unchanged. Python >=3.12 standard library; use the existing qualified3.13 where selected and qualify the delivered complete Source version/interpreter before use. The previous3.10+ claim did not cover the inherited core/runtime dependency.
+
+The distinct [complete recipient continuation](BK05_CONTINUATION.md) uses `bk05_continuation.py prepare/read` for genuine issuer→recipient REPAIR/REFINE while retaining the actual reviewer's separate identity and the owner's operative decision/delta. It does not pass a review through this producer return schema or alter finalize/held_basis_reader. This historical E material lane remains compatible and keeps its real own admission; no private E binding is copied.
 
 ## Ordinary local call
 
