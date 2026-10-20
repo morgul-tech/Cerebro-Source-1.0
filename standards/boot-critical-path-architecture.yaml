@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.5"
+  version: "1.6"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -95,6 +95,36 @@ boot_critical_path:
       changes_existing_role_enum_or_work_claim_FKs: false
       grants_live_authority: false
     failure_effect: HOLD_BEFORE_ROLE_OVERLAY
+
+  # Human-selected BIRTH-HOME-01; local admission does not alter native receipts.
+  local_birth_instruction_home:
+    owner: LEGITIMATE_BIRTH_RECEIVER_AND_EXISTING_METHOD_HOME_OWNER
+    work_offering_commit: e4f97c092b48ecc656598e149f9e838d9fe878e3
+    work_recipe: https://github.com/morgul-tech/Cerebro-Work/blob/e4f97c092b48ecc656598e149f9e838d9fe878e3/tooling/entry-continuity/BIRTH-HOME.md
+    work_placement_entry: tooling/entry-continuity/entry_check.py#establish_birth_home
+    establishment_port: SUPPORTED_LOCAL_WORK_RECEIVER_AFTER_ATTESTED_ROLE_NEUTRAL_BIRTH
+    native_birth_receipt: IMMUTABLE_SEPARATE_CAPACITY_EVIDENCE
+    identity_inputs: [legitimate_birth_reference, same_generation_reference, actual_working_directory, owner_selected_existing_home_if_any]
+    identity_inference_from_title_or_folder: PROHIBITED
+    sequence:
+    - reconcile-legitimate-existing-home-and-selected-method-current
+    - reuse-correct-existing-home-or-establish-authorized-role-neutral-home
+    - place-short-AGENTS-and-selected-method-readchain-current-reference
+    - read-back-created-or-preserved-entry
+    - receiver-explicitly-read-necessary-selected-basis-in-same-flow
+    - record-local-admission-separately-from-native-capacity
+    preserve: [valid-repo-instructions, existing-home, private-persona-boundaries, immutable-birth-receipt]
+    not_inherited: [role, phenotype, private-state, predecessor-live-state, credentials, claims, native-authority]
+    known_missing_entry: REPAIR_WITHIN_SAME_AUTHORIZED_FLOW_WITHOUT_NEW_BOOT
+    conflict_or_unavailable_host: PRECISE_AFFECTED_OWNER_REMAINDER_NO_OVERWRITE_NO_RETRY_LOOP
+    missing_home_or_unread_basis: LOCAL_INSTRUCTION_ADMISSION_OPEN_NOT_GENERIC_READY
+    later_role_or_phenotype: LEGITIMATE_LATER_BINDING_IN_SAME_HOME_ONLY
+    handoff: CARRY_SAME_HOME_GENERATION_SELECTED_METHOD_AND_CURRENT
+    chat_without_local_access: DELIVER_NECESSARY_CONTENT_OR_ACCESSIBLE_REFERENCES_NO_FICTITIOUS_HOME_OR_AUTOLOAD
+    return_to_work: QUALIFY_ACTUAL_CWD_AND_REATTACH_SAME_HOME
+    hook_trust_or_trigger_required: false
+    native_or_role_effect: NONE
+    first_natural_birth_use: SEPARATE_OBSERVED_OWNER_TRIGGER_NO_SYNTHETIC_ACTOR
 
   birth_kernels:
     receipt_required_before_first_operational_response: true
