@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.17"
+  version: "1.18"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -165,6 +165,25 @@ implementation_learning_loop:
       model-selection distinctions and ordinary-return paths remain in force;
       this adopted method adds no active model change, new dispatch, actor
       identity, service, gate or lifecycle effect.
+    actor_helpers_adoption_20261021:
+      status: HUMAN_ADOPTED_BOUNDED_CLARIFICATION
+      date: "2026-10-21"
+      order_ref: P23-ACTOR-HELPERS-INTRODUCTION-20261021-01/rev1
+      order_sha256: 88363f59e46e2d3c7139d5392b7b3525967992ab3004f85044ba051e3c883ee3
+      adopted_proposal_ref: P23-ACTOR-HELPERS-MATURATION-20261021-01/rev2
+      adopted_proposal_sha256: a96be9e59694d6a057b1eeb95445fe381738c2a52670dc10b20e3abf6ebf36ef
+      reused_assessment_ref: P23-ACTOR-HELPERS-LYSBORD-AD1-20261021-01/rev1
+      reused_assessment_sha256: 9aac82335f2d29d587418f71099e951386cd548737711f27bff391edcbfcf492
+      operative_work_recipe: Cerebro-Work/recipes/WORKFLOW.md
+      selected_text: two_adopted_paragraphs_at_steps_2_and_4
+      scope: >
+        Dated clarification of bounded help by existing named actors within a
+        valid assignment and its Human-authorized route, reusing unchanged
+        capacity, responsibility, model and return basis. The selected proposal
+        supplies the exact operative wording; no new actor role, mandatory
+        capacity port, general communication permission or technical authority
+        is created. Workflow remains 0.5 Living, not rev9. Publication, actual
+        normal-entry selection and recipient application remain distinct.
     production_maturation_and_task_model: >
       For a new or complex assignment, mature one execution-ready whole-job
       plan across affected rooms: natural packages, inputs, outputs, critical
