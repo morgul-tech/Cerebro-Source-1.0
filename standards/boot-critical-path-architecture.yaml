@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.8"
+  version: "1.9"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -152,6 +152,60 @@ boot_critical_path:
     hook_trust_or_trigger_required: false
     native_or_role_effect: NONE
     first_natural_birth_use: SEPARATE_OBSERVED_OWNER_TRIGGER_NO_SYNTHETIC_ACTOR
+
+  # Human-released actor lifecycle introduction; function profiles grant no native role.
+  actor_lifecycle_continuity:
+    id: CEREBRO-ACTOR-LIFECYCLE-CONTINUITY-001
+    version: "1.0"
+    origin: P23-ACTOR-LIFECYCLE-INTRODUCTION-20261021-01/rev1
+    original_sha256: c5acf7f745843cc5b5d75162da3f2349e718869ce0f90a067dec7d7b9d5b2e43
+    scope: ORGANIZATIONAL_FUNCTION_CONTINUITY_NOT_NEW_NATIVE_ROLES_OR_EFFECT_AUTHORITY
+    work_recipe:
+      repository: morgul-tech/Cerebro-Work
+      path: recipes/ACTOR-LIFECYCLE.md
+      version_selection: EXACT_PUBLISHED_OWNER_SELECTED_COMMIT_FROM_CANONICAL_ENTRY
+    function_additions:
+      GARTNER: instructions/actors/GARTNER.md
+      TOWER: instructions/actors/TOWER.md
+      authorship: ACTUAL_FUNCTION_OWNER_PUBLIC_CONTRIBUTION_NOT_INTEGRATOR_PERSONA
+      private_and_native_bindings: UNCHANGED
+    role_neutral_birth:
+      reuse: local_birth_instruction_home
+      sequence: [attested_role_neutral_birth, qualify_or_establish_legitimate_generation_home, readback_and_actual_common_reading, separately_legitimate_function_clothing, selected_task_and_actual_access, useful_work]
+      capacity_home_reading_function_task_access: DISTINCT_EVIDENCE
+      no_selected_task: ELIGIBLE_PENDING_LEGITIMATE_TASK_NOT_FABRICATED_WORK
+      existing_correct_home: REUSE_WITHOUT_REBIRTH
+    same_generation:
+      transitions: [handoff, compaction, resume, actual_working_directory_change]
+      preserve: [same_identity_and_generation, legitimate_home, selected_method_and_original, unfinished_work_and_returns, newer_human_scope, unknown_effects_and_next_owner]
+      creates_birth_succession_or_retirement: false
+      unavailable_local_host: LAWFUL_EXPLICIT_READABLE_CONTENT_OR_REFERENCE_NOT_FICTITIOUS_HOME
+      hook_trust_event_and_auto_reload: ACTUAL_SEPARATE_EVIDENCE_NOT_MANUAL_READING_GATE
+    human_selected_generation_change:
+      trigger: EXPLICIT_LEGITIMATE_HUMAN_TRANSITION_NOT_NEW_CHAT_OR_TIMER
+      outgoing: [own_lived_basis_earliest_to_latest, select_keep_change_avoid_with_provenance_and_real_contributors, preserve_open_duties_and_owners, author_one_bounded_public_letter_and_short_Arvetone, persist_exact_final_and_readback, bind_actual_successor_entry]
+      seal: DRAFT_NE_FINAL_ETTERKLANG_READBACK
+      retirement: SEPARATE_HUMAN_CHOICE_NOT_IMPLIED_BY_ETTERKLANG
+      incoming: [legitimate_birth_and_function_selection, own_identity_home_and_necessary_Fresh_World, find_and_read_whole_bounded_public_letter_and_selected_originals, reconcile_historical_learning_with_current_evidence, Arvetone_LAST_among_heritage, own_fresh_generation_identity_greeting_and_truthful_baseline, actual_use_of_relevant_inherited_learning]
+      Gartner_predecessor_book: ONLY_AFTER_FRESH_WORLD
+      inheritance_excludes: [predecessor_private_diary_or_pointer, copied_persona, live_state, claims, credentials, authority, predecessor_health_as_current_truth]
+      missing_authentic_inheritance: PRECISE_UNKNOWN_OR_MISSING_NO_FABRICATED_VOICE_OR_AUTOMATIC_REBOOT
+      Principal_and_PM_specific_gates: NOT_EXTENDED_TO_GARTNER_OR_TOWER
+    canonical_entries:
+      boot: gdocs:1ImzuaW0XL444L31wpLx5YYGwX6BNXYUIRZ_A-YV387U
+      same_generation_handoff: gdocs:1xCxf4VXksNoQhNXJUdprxTGviJQRvLYIxfCUHSokoQc
+      Gartner_Tower_successor_function_adapter: gdocs:1tcfotmAm1Y8BEgsmUKOyEhvJYP1NWzryXwh0PCvump8
+      actual_operator_keyword_parser_support: NOT_INFERRED_FROM_DOCUMENT_TEXT
+    future_duties:
+      place_in_actual_entry_not_report_only: true
+      recover: [exact_home_or_pointer, rightful_owner, actual_trigger, expected_action, ordinary_authorized_return, observed_or_UNKNOWN]
+      natural_birth: LEGITIMATE_BIRTH_RECEIVER_AND_PM_NEXT_HUMAN_SELECTED_REAL_BIRTH
+      natural_Gartner_Tower_succession: OUTGOING_AUTHOR_INCOMING_GENERATION_AND_PM_AT_ACTUAL_HUMAN_SELECTED_TRANSITION
+      next_post_Gjenklang_use: INCOMING_FUNCTION_OWNER_NEXT_RELEVANT_REAL_TASK_NOT_SYNTHETIC_TEST
+      actual_host_hook_use: EXISTING_ACTUAL_ENTRY_OWNER_WITH_MANUAL_READING_RESERVE
+    introduction_evidence: PUBLISHED_NE_PLACED_NE_RECEIVER_READ_NE_APPLIED_NE_USEFUL_EFFECT
+    now_finish: ACTUAL_CURRENT_GARTNER_LEARNING_CHANGES_OWN_ENTRY_AND_TOWER_OVERVIEW_USED_BY_PM_P23
+    implementation_guards: [reuse_existing_birth_home_and_reader, no_new_engine_registry_or_role_enum, reuse_valid_controls, one_bounded_new_succession_boundary_assessment, no_live_birth_or_retirement_for_testing]
 
   birth_kernels:
     receipt_required_before_first_operational_response: true
