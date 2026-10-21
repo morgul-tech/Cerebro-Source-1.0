@@ -1,7 +1,7 @@
 schema: cerebro-boot-critical-path-architecture/v1
 boot_critical_path:
   id: CEREBRO-BOOT-CRITICAL-PATH-001
-  version: "1.9"
+  version: "1.10"
   status: ACTIVE
   authority: Cerebro Source 1.0
 
@@ -99,10 +99,10 @@ boot_critical_path:
   # Human-selected BIRTH-HOME-01; local admission does not alter native receipts.
   local_birth_instruction_home:
     owner: LEGITIMATE_BIRTH_RECEIVER_AND_EXISTING_METHOD_HOME_OWNER
-    work_offering_commit: 6e77dae88b753f419b5033934d675eeaf79b81d7
-    work_recipe: https://github.com/morgul-tech/Cerebro-Work/blob/6e77dae88b753f419b5033934d675eeaf79b81d7/tooling/entry-continuity/BIRTH-HOME.md
+    work_offering_commit: 5405381140b34adf94d83c89eb02d88f1e77c423
+    work_recipe: https://github.com/morgul-tech/Cerebro-Work/blob/5405381140b34adf94d83c89eb02d88f1e77c423/tooling/entry-continuity/BIRTH-HOME.md
     work_placement_entry: tooling/entry-continuity/entry_check.py#establish_birth_home
-    ordinary_continuation: https://github.com/morgul-tech/Cerebro-Work/blob/6e77dae88b753f419b5033934d675eeaf79b81d7/tooling/entry-continuity/ORDINARY-ENTRY.md
+    ordinary_continuation: https://github.com/morgul-tech/Cerebro-Work/blob/5405381140b34adf94d83c89eb02d88f1e77c423/tooling/entry-continuity/ORDINARY-ENTRY.md
     ordinary_binding_entry: tooling/entry-continuity/entry_check.py --prepare-rehydration
     package_scope: COMPLETE_PUBLISHED_PACKAGE_AND_EACH_OWN_LEGITIMATE_SELECTED_METHOD
     binding_inputs: [actual_actor, same_generation, actual_session, actual_working_directory, own_instruction_home, owner_selected_current, legitimate_task_original]
@@ -162,6 +162,7 @@ boot_critical_path:
     scope: ORGANIZATIONAL_FUNCTION_CONTINUITY_NOT_NEW_NATIVE_ROLES_OR_EFFECT_AUTHORITY
     work_recipe:
       repository: morgul-tech/Cerebro-Work
+      commit: 5405381140b34adf94d83c89eb02d88f1e77c423
       path: recipes/ACTOR-LIFECYCLE.md
       version_selection: EXACT_PUBLISHED_OWNER_SELECTED_COMMIT_FROM_CANONICAL_ENTRY
     function_additions:
