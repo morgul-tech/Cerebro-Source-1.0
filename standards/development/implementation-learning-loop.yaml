@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.18"
+  version: "1.19"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -84,88 +84,149 @@ implementation_learning_loop:
       Zenon, first-failure, Code Doctor and ordinary-return boundaries; add no poll or
       proof task.
     official_workflow_0_5: >
-      Current status is OFFICIAL_WORKFLOW_0_5, HUMAN_ADOPTED, NOT_FROZEN.
-      The adopted decision is P23-WORKFLOW05-ADOPTION-20261019-01; its selected
-      rev8 source is 02-WORKFLOW05-REV8.txt at SHA256
-      d41aa38da99af9d4697b67667c2a3869bb2e4ad2724ee0017d209f505f5201af.
-      Preserve that meaning; historical candidate or anchoring labels do not
-      replace this current selection, and no rev9 is implied. One current
-      original and one accountable whole-job owner govern the assignment. The
-      ordinary six-step course is: (1) agree the result, owners and action
-      space; (2) clarify critical premises and choose the next useful
-      investment; (3) execute and correct within mandate; (4) preserve progress
-      responsibility without making a model a permanent watchdog; (5) deliver,
-      integrate and evaluate the whole result; (6) place learning in its
-      suitable existing home for the next ordinary use. Fit the steps to the
-      real task; they are not six approvals or a per-file checklist.
-      X9 is the normal operational project entry and owns the in-scope plan.
-      Room leaders own expertise and local execution within mandate. PM has
-      bounded standing authority for named portfolio decisions, priority or
-      capacity conflicts, whole-course deviations and investment holds; PM is
-      not an approver at every step and has no exemption from applicable
-      challenge. This is organizational authority only within the named
-      mandate: a title grants no general authority, and it grants no native or
-      technical effect authority, credential or runtime access. Principal
-      retains un-delegated direction, scope, quality and commitment choices.
-      Human retains model choice and pause.
-      Apply G1-G4 at material decision gates with AD1 as the normal challenge;
-      combine overlapping triggers into one relevant pass and reuse still-valid
-      evidence for the same decision. G1 is triggered by a materially new plan
-      or mechanism under uncertain premises. G2 requires a whole-course judgment
-      before further material investment when the agreed warning threshold is
-      reached or drift/repetition leaves the outcome path unclear; it is a
-      warning for judgment, not an automatic hard stop. Include cumulative
-      investment across tasks, rooms and revisions; new machinery,
-      organizational expansion or scope growth also calls for that judgment.
-      G3 is triggered by a proposed mandatory actor, port, control or dependency
-      without a clear requirement. In one relevant pass ask: what concrete
-      failure would this port prevent, what cost does the port impose, and can
-      less coordination provide the same protection? Keep any binding owner
-      requirement and required protection in force while comparing additions;
-      this test does not suspend them. G4 is triggered by a
-      difficult-to-reverse commitment under a critically uncertain premise.
-      G5 applies before generalizing local experience into a shared rule. Proto
-      is a conceptual reserve only when qualified for that question; otherwise
-      use a qualified technical reserve. Confirm actual expertise fit,
-      availability and independence; do not shop reviewers, treat silence as
-      acceptance, or let a decision maker exempt its own required port, mandate
-      or premise from challenge. An exception needs delegated authority, an
-      out-of-case owner, a reversible action and a recorded reason. No exception
-      waives Human pause, hard limits, necessary technical acceptance, critical
-      unknown safety, or actual effect authority.
-      Continue valid independent work while holding only actions dependent on
-      an unresolved premise or fault. Give event-driven continuation one real
-      owner, concrete trigger and available Human-authorized route. If that
-      route is unavailable or paused, identify the actually selected, legitimate
-      and available manual or other reserve, with its owner, result, revision
-      and next action. Do not assume a reserve is available, make Human the
-      ordinary courier or retrieval service, or assume a parent-bound process
-      survives a turn. Human may choose a concrete action; do not infer an
-      automatic wake. Do not add a perpetual poll, timer or daemon. Keep actual
-      follow-through duties until the legitimate next owner accepts them.
-      Record expected and observed finish evidence with its limit. For
-      knowledge-home disposition, use the
-      actor's actually selected entry and real write rights to (a) update it
-      from material result/use and read it back, (b) record a reasoned no-change
-      disposition, or (c) state a precise documented remainder. Only (a) and
-      (b) close that document transition; a remainder transfers only on actual
-      legitimate owner acceptance. A prohibition's absence does not grant write
-      rights; do not imply all-copy sync or a central queue. Distinguish
-      placement/publication from actual entry, version choice, read, application,
-      consumer use and useful effect. The necessary entry for the selected next
-      work is a real finish obligation; later use outside that finish may remain
-      PENDING_NATURAL_TASK. The Source-to-Work-to-actual-home/read-chain path
-      must name the selected task version. A new Source HEAD alone is not a new
-      method selection or proof of auto-load; a running task continues on its
-      selected version unless a legitimate dated owner delta changes it, while
-      a newer legitimate pause or revocation governs its affected effect.
-      BK11's first operational use follows necessary anchoring and its own
-      explicit release; BK11 is HUMAN_PAUSED now. Workflow 0.5 remains
-      NOT_FROZEN. No pilot or fleet test is implied. Existing profiles, tools,
-      model-selection distinctions and ordinary-return paths remain in force;
-      this adopted method adds no active model change, new dispatch, actor
-      identity, service, gate or lifecycle effect.
+      OFFICIAL_WORKFLOW_0_5, HUMAN_ADOPTED, NOT_FROZEN. The current coherent
+      organizational method is P23-WORKFLOW05-LIVING-20261022-01/rev9,
+      selected by Human/P23 under introduction order
+      P23-WORKFLOW05-REV9-INTRODUCTION-20261022-01/rev1. Its exact selected
+      WORKFLOW.md has SHA256
+      d40968cad33e8f16fec5af593b713e4f2d7d0281cb325a12a92f2afeb0803fad.
+      workflow_05_living_rev9 below is the current normative selection;
+      Cerebro-Work/recipes/WORKFLOW.md and its short task template carry the
+      coherent practical course. Earlier rev8 and dated clarifications remain
+      historical provenance in Git; their task-specific holds, active jobs and
+      publication stages do not select today's work or revoke actual effect
+      boundaries. A legitimate dated owner choice selects the version for an
+      actual task, not HEAD, a hash, title, current label or file placement.
+      Reuse valid held basis and only relevant situational profiles. This
+      introduces no automatic runtime binding, role, technical access, model
+      setting, mandatory package, suite, timer, new actor or fleet read claim.
+      Existing BK04/BK05 operative-v2, Verification B, lifecycle, private and
+      effect contracts remain domain-specific and unchanged. Running tasks
+      keep their legitimate owner/version unless a dated authorized delta
+      changes the affected decision; actual newer pause/revocation still
+      governs its effect. There is no active BK pause in the shared workflow.
+    workflow_05_living_rev9:
+      id: P23-WORKFLOW05-LIVING-20261022-01/rev9
+      status: HUMAN_SELECTED_COHERENT_METHOD
+      introduction_order: P23-WORKFLOW05-REV9-INTRODUCTION-20261022-01/rev1
+      introduction_order_sha256: 7246a50e962bc08f483d15ba78b82dfecbaecb4ebe632bf3bfb2002481f84ded
+      selected_original_sha256: d40968cad33e8f16fec5af593b713e4f2d7d0281cb325a12a92f2afeb0803fad
+      selected_template: KORT-OPPGAVEMAL.txt
+      operative_recipe: Cerebro-Work/recipes/WORKFLOW.md
+      adoption_boundary: ACTUAL_OWNER_VERSION_SELECTION_READ_AND_USE_NOT_AUTOMATIC_FROM_PUBLICATION
+      core:
+        K1: >
+          Preserve one task/original and one named accountable whole-outcome
+          owner, recipient effect and observable finish. Classify Human's
+          intent; select actual surface, capacity, delegated profile, visible
+          model choice or UNKNOWN, action space, resources and authorized
+          dispatch/return/continuation routes. A small job may do this briefly.
+        K2: >
+          Discover the few capabilities required by the recipient finish before
+          freezing the file selection. Follow decisive capabilities through
+          existing Atlas/World/Source/Work entrances to the rightful owner and
+          actual selected component/entry. Reuse still-valid discovery. Before
+          packing, on material return and before an affected effect reconcile
+          only relevant newer/concurrent delta; dated material is not current
+          effect authority. Resolve the first decision-relevant unknown with
+          the least lawful observation and compare simpler alternatives when
+          binding uncertainty is material. Not found in a sample is not absent.
+        K3: >
+          Batch coherent work and relevant controls; select independence for
+          changed risk or binding contract before the affected effect. Reuse
+          valid unchanged evidence. Repair known local faults in the same task,
+          preserving cause and relevant new checks. Scope, access, unknown
+          effect and critical uncertainty hold only dependent action. Bind
+          expected observation to actual evidence and its limit; no synthetic
+          PASS or NO_RETRY reset by another attempt.
+        K4: >
+          Preserve reached work, selected basis, open effects, concrete rest and
+          responsible next action at material delegation and natural breaks.
+          Reconcile old writer/process/effect before takeover. Waiting requires
+          an actual available authorized producer or trigger, recipient and
+          next action. Integrator disposes qualified own basis, reserve, dropped
+          need or precise owner rest at the real decision. No standing model
+          watch, implied Human courier, new clock or assumed process survival.
+        K5: >
+          Deliver and integrate one coherent version with necessary material,
+          actual recipient entrance, evidence, disagreement and named rest.
+          Separate made/checked/published/placed/sent/received/read/used/useful.
+          Reconcile own current and legitimate newer decision before use and
+          unknown send/write result before repeat at the actual target port.
+          The rightful owner updates/readbacks the next decision home, records
+          reasoned no-change, or owns a precise write/access remainder; only
+          the first two close that document transition. Silence or send alone
+          transfers no responsibility. Actual runtime duplicate protection is
+          not established by the phrase exactly once.
+        K6: >
+          Classify the actual finding and choose its appropriate existing home,
+          not automatically more norm. Preserve positive and negative learning
+          including order-owner error. Material learning connects source and
+          observation to change or reasoned preservation, actual home, owner
+          and recognizable next task/change; that task entrance points to the
+          learning and ordinary return records actual application. At material
+          transitions make one explicit combined reflection disposition:
+          changed choice, unchanged and why, relevant justified N/A and unknown
+          coverage. T7/C7/A7 and Living Family apply proportionately; full
+          FIREPASS retains its own contract and is not replaced by a short pass.
+      situational_profiles:
+        P1: SMALL_KNOWN_CHANGE_PROPORTIONATE_DIRECT_CONTROL_NO_SYNTHETIC_PROOF_JOB
+        P2: CODE_OPERATIONS_INTRODUCTION_OR_EFFECT_ACTUAL_ENTRY_CHAIN_RISK_ACCESS_AND_RECIPIENT_USE
+        P3: PACKAGE_CONTEXT_RETURN_TAKEOVER_ACTUAL_BYTES_CURRENTNESS_WRITER_AND_LEGITIMATE_FULL_OR_QUALIFIED_SHORT_ROUTE
+        P4: CREATIVE_HUMAN_PRODUCT_WHOLE_SELECTED_JOURNEY_LOCAL_DELIVERY_AND_ACTUAL_DELEGATION_PROFILE
+      one_binding_decision_part:
+        one_whole_owner: EXPLICIT_NAMED_OWNER_PRECEDES_NORMAL_OPERATIONAL_ROLE_NO_COMPETING_OWNERS
+        X9: NORMAL_OPERATIONAL_PROJECT_ENTRY_AND_IN_SCOPE_INTEGRATION_NOT_UNDELEGATED_PORTFOLIO_OWNER
+        PM: >
+          Retains explicitly delegated portfolio/investment/priority/capacity
+          choices, including justified investment holds and alternate plans at
+          actual escalation/delegated intervention/portfolio conflict outside
+          X9 mandate. Required challenge precedes new binding. A hold does not
+          automatically transfer technical plan ownership; PM may lift its own
+          satisfied hold, not Human pause or another owner's protection. Title
+          grants no general technical plan/write/effect authority.
+        Assistant_AD1: SAME_ACTOR_BOUNDED_SUPPORT_AND_NORMAL_G1_G5_LENS_NOT_NEW_OWNER_OR_UNIVERSAL_INTERMEDIARY
+        Principal: UNDELEGATED_DIRECTION_SCOPE_FINISH_QUALITY_TIME_RESOURCE_COMMITMENT_AND_OUT_OF_PM_MANDATE_CONFLICT
+        Human: RESERVED_EXPLICIT_PAUSE_RELEASE_MODEL_AND_OTHER_CHOICES_SILENCE_ADDS_NO_AUTHORITY
+        criticism: >
+          One relevant qualified challenge before material uncertain binding
+          for G1 new material plan/mechanism, G2 cumulative drift/repeated
+          investment before further material commitment, G3 new obligatory
+          actor/port/control/dependency, G4 hard-to-reverse uncertain binding,
+          or G5 promotion of local experience into shared norm. Reuse actual
+          independent coverage of the same generalization; combine overlaps.
+          AD1 is normal first lens; reserve requires actual qualified expertise,
+          availability/access/independence, never review shopping. Own obligatory
+          port/direct mandate interest/decisive own premise requires qualified
+          out-of-case scrutiny. Owner disposes material dissent within mandate.
+          Without qualified coverage choose already-covered lawful path, bounded
+          reversible step not evading the control, or hold dependent binding.
+          PM has no general dispensation. A narrow legitimate Principal exception
+          preserves explicit authority, outside-case owner, reason, one bounded
+          reversible action and remainder; Human pause, hard safeguards, required
+          technical admission, critical unknown safety and effect authority never
+          waived. Existing G1-G5 gate is retained, not expanded.
+        delta_and_help: >
+          Reconcile only changed decision-relevant task/scope/owner/source,
+          actual environment, request/contract, recipient, writer, access,
+          unknown effect, concurrent delivery, error or genuine expiry. Give
+          bounded helpers one need, qualified actual basis/capacity/model/route
+          and usable return; integrator actually uses it. Preserve explicit
+          local delegation profiles and D/E restrictions without globalization.
+          No new universal file package, model quota, minute deadline or suite.
+      existing_homes:
+        normative: standards/development/implementation-learning-loop.yaml#selected_workwave_refinement
+        practical: Cerebro-Work/recipes/WORKFLOW.md
+        specialist_routes: [READ-CHAINS, HUMAN-INTERACTION, CODE-DOCTOR, BUILD-PROFILE, ACTOR-LIFECYCLE, BK04_BK05_OPERATIVE_V2, VERIFICATION_B]
+        task_current: ACTUAL_SELECTED_VERSION_ACTIVE_SCOPE_CONTEMPORARY_DELIVERIES_AND_OWNED_REST
+        AGENTS: SHORT_STABLE_ENTRANCE_CORE_PLUS_ONLY_RELEVANT_PROFILES_NOT_HISTORY_MIRROR
+      historical_revisions_preserved_in_git:
+        rev8_selected_original_sha256: d41aa38da99af9d4697b67667c2a3869bb2e4ad2724ee0017d209f505f5201af
+        Source_before_rev9: 968428ef9e66f8f60387a966ed3e07ee526c309e
+      authority_or_runtime_change: NONE
     actor_helpers_adoption_20261021:
+      current_operative_reference: workflow_05_living_rev9
+      record_scope: HISTORICAL_20261021_ADOPTION_HELP_SCOPE_PRESERVED_IN_REV9_NOT_A_SEPARATE_CURRENT_WORKFLOW
       status: HUMAN_ADOPTED_BOUNDED_CLARIFICATION
       date: "2026-10-21"
       order_ref: P23-ACTOR-HELPERS-INTRODUCTION-20261021-01/rev1
