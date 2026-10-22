@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.20"
+  version: "1.21"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -115,24 +115,34 @@ implementation_learning_loop:
       operative_recipe: Cerebro-Work/recipes/WORKFLOW.md
       published_work_offering:
         repository: morgul-tech/Cerebro-Work
-        commit: 139399503308607eb7269b65eb21085220e98f43
+        commit: b62941f3f7cd65bd120b8ed8482cf4bb00808cd8
         semantic_Source_origin: 195c5e047f1d509cf85660815ebd4119e033c4d0
-        semantic_Source_version: "1.19"
+        semantic_Source_version: '1.19'
         semantic_Source_sha256: 7f6d1b0ba3ac515342f1483832a7efd83ee64bf79c99ed75949cbc9d1bc6e02d
         recipe:
           path: recipes/WORKFLOW.md
           sha256: d40968cad33e8f16fec5af593b713e4f2d7d0281cb325a12a92f2afeb0803fad
         short_template:
           path: recipes/KORT-OPPGAVEMAL.txt
-          sha256: 57bfa38b87b79d750036d777a664691ed1696b3b755c15003b86a8dafd024509
+          sha256: 812ed1a1d3318f044e35f32fbe42f574b09cfc1b85362193689f647d69cd209f
         normal_entry:
           path: recipes/WORKFLOW-ENTRY.md
-          sha256: c98396eebd4b4df1197b236679a8967fc07ba1d0cfb98343660fdab193da95ff
+          sha256: 3d3a9f38e45cd874ee7d58036b490970d82faa0a0f97c2d0d486defcce73265d
         common_AGENTS:
           path: AGENTS.md
           bytes: 1792
           sha256: e76c42c9bcfda061e904f800fe03e6adfc8421980d0b98cfa9619bf95e91d328
         scope: METADATA_ONLY_OFFERING_CLOSURE_NO_CIRCULAR_WORK_REPIN_OR_AUTOMATIC_ACTOR_ADMISSION
+        receipt_learning_recipe:
+          path: recipes/MOTTAK-SOM-LAERING.md
+          sha256: 799c2156326d3e4c9ca77dd9f142efd347aa8b7370e822bb8f9cdaa5921e5572
+          origin: P23-MOTTAK-SOM-LAERING-INTRODUCTION-20261022-01/rev1
+          Human_original_sha256: d693e2c0783753e8302e93a78e84bea20552dbfbeb9815d4f22a05c66ccc7fce
+          change: PRACTICAL_K5_K6_P3_RECIPE_NOT_NEW_NORM_OR_PORT
+        previous_offering:
+          commit: 139399503308607eb7269b65eb21085220e98f43
+          short_template_sha256: 57bfa38b87b79d750036d777a664691ed1696b3b755c15003b86a8dafd024509
+          normal_entry_sha256: c98396eebd4b4df1197b236679a8967fc07ba1d0cfb98343660fdab193da95ff
       adoption_boundary: ACTUAL_OWNER_VERSION_SELECTION_READ_AND_USE_NOT_AUTOMATIC_FROM_PUBLICATION
       core:
         K1: >
