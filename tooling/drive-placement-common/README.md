@@ -1,0 +1,21 @@
+# Common Drive placement — scoped candidate
+
+P23-DRIVE-CLEANUP-INTRODUCTION-20261023-01/rev2. This is an isolated **unreleased** candidate; actual independent 655 final review and A1 disposition precede code release. A1 owns Source publication/actual bindings; same1B owns this candidate and released Work integration. Cleanup, inventory, parent moves of existing objects and the one live routing map remain with the existing cleanup executor. No live Drive call is made by loading these files.
+
+The separate E1 `../drive-owner-placement/` contract/code is byte-unchanged. Only its qualified ideas of plan → same ID → placement/content readback are reused. No E1 identity, scope, credentials, job or authority is borrowed.
+
+`placement-factory.js` is the single policy/state-machine implementation, CommonJS **and** IIFE-loadable in functions/V8 without imports, filesystem, network or globals beyond standard JavaScript. `placement-cli.cjs` uses that exact factory with Node and caller-owned connector callbacks. `local-journal.cjs` is an existing-filesystem binding; `doc-journal-factory.js` is an import-free native Docs CAS binding. [CONTRACT](CONTRACT.md) defines input, callbacks, journals, recovery and actual proof limits. Fixtures/tests contain synthetic IDs, not a second live map.
+
+Local start, from this component's actual checked directory with the already qualified Node executable:
+
+```text
+node --test placement.test.mjs
+node placement-cli.cjs prepare --request OWN-request.json --routing EXACT-owner-map.json --payload OWN-private-payload.json --bindings OWN-qualified-bindings.mjs --parent-metadata OWN-fresh-parent.json
+node placement-cli.cjs execute --request OWN-request.json --routing EXACT-owner-map.json --payload OWN-private-payload.json --bindings OWN-qualified-bindings.mjs --journal-root OWN-prequalified-existing-journal-directory
+```
+
+The CLI never supplies credentials, an HTTP client, a new service or a default binding. `prepare` only reports safe plan fields; it neither calls tools nor releases private payload/argument values. `execute` is permitted only after actual code release, qualified caller/effect authority and an ordinary necessary delivery. The local journal requires a caller-preinstalled and filesystem-qualified `placement-journal.jsonl`; it never creates a missing WAL opportunistically before a provider effect. Tests use their own temporary folders and remove them in `finally`; no provider/network/BOOT/capability test or real artifact is created.
+
+Scope of implementation: direct-parent upload, folder and copy; native create/document/sheet/slide import using actual connection mode; own authorized raw-file same-ID update; fresh parent/ID/MIME/relevant content/observed URL checks. OAuth/delegated create/import omits parent arguments, requires explicit transient new-ID staging authorization, observes the actual My Drive root and completes only that own newly returned ID before delivery. No generic cleanup move, copy-delete, ACL or private payload logging occurs. Native in-place content updates require the proper separate component port and are refused here; native creation alone creates an empty artifact, so nonempty native content uses the qualified import/content workflow.
+
+Provider read→write is not CAS. No wrapper prevents raw tools, browser/mobile or local G: writes from bypassing it. Actual ChatGPT, Work/functions and script selection/use are separate owner evidence; Node tests, a callable V8 factory or an installed journal alone prove none of them.
