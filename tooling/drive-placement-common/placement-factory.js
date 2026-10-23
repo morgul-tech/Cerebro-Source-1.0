@@ -89,6 +89,11 @@
     if (m.id !== route.parent_id || m.mime !== FOLDER || !same(m.parents, sorted(route.expected_parent_ids))) fail('HOLD_PARENT_BASIS_MISMATCH');
     const a = route.access;
     if (!a) fail('HOLD_ACCESS_BASIS_UNKNOWN');
+    // A reserve for omitted fields cannot erase a fresh negative or malformed
+    // provider fact, regardless of the caller's selected access mode.
+    if (m.capabilities?.canAddChildren === false) fail('HOLD_CAPABILITY_EXPLICIT_DENY');
+    if (m.capabilities && 'canAddChildren' in m.capabilities && m.capabilities.canAddChildren !== true)
+      fail('HOLD_CAPABILITY_CONFLICT');
     if (a.mode === 'provider_capability') {
       if (m.capabilities?.canAddChildren !== true || m.trashed !== false) fail('HOLD_CAPABILITY_UNEXPOSED_OR_DENIED');
       return 'PROVIDER_CAN_ADD_CHILDREN_OBSERVED';
@@ -175,6 +180,7 @@
       let record = await storage.load();
       if (record && (record.schema !== 'cerebro-drive-placement-journal/v1' || record.intent_hash !== p.intentHash ||
           record.operation_id !== request.operation_id || !Number.isInteger(record.version))) fail('HOLD_JOURNAL_BINDING_CONFLICT');
+      const terminal = record?.state === 'VERIFIED_RELEASED';
       async function save(next) {
         const expected = record ? record.version : 0;
         const value = {...next, version: expected + 1};
@@ -204,6 +210,7 @@
       let m = metadata(await tools.readMetadata(record.file_id));
       if (m.id !== record.file_id || m.mime !== request.mime_type) fail('HOLD_ID_OR_MIME_READBACK', record.file_id);
       if (!same(m.parents, [route.parent_id])) {
+        if (terminal) fail('HOLD_RELEASED_ARTIFACT_DRIFT_OWNER_RECONCILE', record.file_id);
         if (!record.created_by_operation || !p.transient) fail('HOLD_PARENT_READBACK', record.file_id);
         // A previous uncertain placement is only read, never repeated automatically.
         if (['PLACE_INTENT', 'PLACEMENT_RETURNED'].includes(record.state)) fail('HOLD_UNKNOWN_PLACEMENT_RECONCILE_SAME_ID', record.file_id);
@@ -236,7 +243,7 @@
       try { url = new URL(m.url); } catch (_) { fail('HOLD_OBSERVED_LINK_UNKNOWN', record.file_id); }
       if (url.protocol !== 'https:' || !['drive.google.com', 'docs.google.com'].includes(url.hostname) ||
           !url.pathname.split('/').includes(record.file_id)) fail('HOLD_OBSERVED_LINK_ID_MISMATCH', record.file_id);
-      await save({...record, state: 'VERIFIED_RELEASED', content_readback: request.kind === 'folder' ? 'FOLDER_NAME_AND_TYPE' : 'EXPECTED_DIGEST_MATCH'});
+      if (!terminal) await save({...record, state: 'VERIFIED_RELEASED', content_readback: request.kind === 'folder' ? 'FOLDER_NAME_AND_TYPE' : 'EXPECTED_DIGEST_MATCH'});
       return {status: 'VERIFIED_RELEASED', file_id: record.file_id, parent_id: route.parent_id,
         url: m.url, mime_type: request.mime_type, access_qualification: p.access, authority: 'NONE_ADDED',
         concurrency_limit: 'READ_WRITE_NOT_CAS; caller must preserve exclusive producer and honest access limits'};

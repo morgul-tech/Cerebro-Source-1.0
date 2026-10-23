@@ -279,6 +279,72 @@ test('nativeDoc CAS conflict/unknown acquire/locked doc produces no provider cre
     if (mode === 'unknown') assert.notEqual(body.lock, null, 'unknown acquisition is not automatically cleared or stolen');
   }
 });
+
+test('REFINE-01 F1: explicit deny or malformed capability cannot use owner reserve; actual omission remains qualified', async () => {
+  for (const value of [false, 'false']) {
+    const h = harness('folder');
+    h.input.request.destination.access = {mode: 'owner_qualified_permission', permission_id: 'fixturePerm00001',
+      source_ref: 'fixture-owner-scope', revision: '1', unexposed_capabilities: 'OWNER_SCOPED_NOT_PROVIDER_ATTESTATION',
+      unexposed_trashed: 'OWNER_DISPOSITION_REQUIRED_IF_UNKNOWN'};
+    h.parent.permissions = [{id: 'fixturePerm00001', type: 'user', role: 'owner'}];
+    h.parent.source_visibility_status = 'permission_metadata_available';
+    h.parent.capabilities.canAddChildren = value;
+    await assert.rejects(() => api.execute(h.input));
+    assert.equal(h.calls.length, 0); assert.equal(h.record, null);
+    delete h.parent.capabilities; delete h.parent.trashed;
+    assert.equal((await api.execute(h.input)).status, 'VERIFIED_RELEASED');
+    assert.equal(h.calls.length, 1, 'legitimate omitted-field reserve preserved');
+  }
+});
+test('REFINE-01 F2: terminal native release cannot acquire new placement rights after parent drift', async () => {
+  for (const kind of ['create', 'import_document']) {
+    const h = harness(kind); h.state.output.parents = [ROOT];
+    await api.execute(h.input);
+    assert.equal(h.calls.length, 2); assert.equal(h.record.state, 'VERIFIED_RELEASED');
+    const terminal = clone(h.record);
+    h.state.output.parents = [ROOT];
+    await held('HOLD_RELEASED_ARTIFACT_DRIFT_OWNER_RECONCILE', () => api.execute(h.input));
+    assert.equal(h.calls.length, 2); assert.deepEqual(h.record, terminal);
+    h.state.output.parents = [PARENT];
+    const again = await api.execute(h.input);
+    assert.equal(again.status, 'VERIFIED_RELEASED');
+    assert.equal(h.calls.length, 2); assert.deepEqual(h.record, terminal, 'read-only terminal reuse must not rewrite release record');
+  }
+});
+test('REFINE-01 F2: unfinished new-ID staging still resumes, uncertain create/placement never repeats', async () => {
+  const h = harness('create'); h.state.output.parents = [ROOT];
+  const read = h.tools.readMetadata; let interrupted = true;
+  h.tools.readMetadata = async fileId => { if (fileId === FILE && interrupted) { interrupted = false; throw new Error('interrupted after persisted ID'); } return read(fileId); };
+  await assert.rejects(() => api.execute(h.input));
+  assert.equal(h.record.state, 'KNOWN_ID'); assert.equal(h.calls.length, 1);
+  await api.execute(h.input); assert.equal(h.calls.length, 2);
+  const noId = harness('create'); noId.tools.invoke = async () => { throw new Error('unknown'); };
+  await held('HOLD_UNKNOWN_CREATE_RECONCILE_EXACT_RECEIPT_NO_RETRY', () => api.execute(noId.input));
+  await held('HOLD_UNKNOWN_CREATE_RECONCILE_EXACT_RECEIPT_NO_RETRY', () => api.execute(noId.input));
+  const uncertain = harness('create'); uncertain.state.output.parents = [ROOT];
+  const invoke = uncertain.tools.invoke;
+  uncertain.tools.invoke = async (tool, args) => { if (tool === 'update_file') { uncertain.calls.push({name: tool, args}); throw new Error('unknown move'); } return invoke(tool, args); };
+  await held('HOLD_UNKNOWN_PLACEMENT_RECONCILE_SAME_ID', () => api.execute(uncertain.input));
+  await held('HOLD_UNKNOWN_PLACEMENT_RECONCILE_SAME_ID', () => api.execute(uncertain.input));
+  assert.equal(uncertain.calls.length, 2);
+});
+test('REFINE-01 F2: terminal artifact observation retains qualified native-journal housekeeping only', async () => {
+  const docJournal = require('./doc-journal-factory.js');
+  let revision = 1, writes = 0;
+  let body = {schema: 'cerebro-drive-doc-journal/v1', version: 1, lock: null, operations: {}};
+  const ports = {qualification: proof, newLockToken: async () => 'fixtureTerminalJournalToken01',
+    read: async () => ({revisionId: 'rev' + revision, text: JSON.stringify(body)}),
+    write: async ({requiredRevisionId, text}) => { assert.equal(requiredRevisionId, 'rev' + revision); body = JSON.parse(text); revision++; writes++; }};
+  const h = harness('folder'); h.state.externalJournal = true; h.input.journal = docJournal(ports);
+  await api.execute(h.input); const terminal = clone(body.operations.op1); const before = writes;
+  await api.execute(h.input);
+  assert.equal(h.calls.length, 1, 'no artifact mutation on terminal observation');
+  assert.equal(writes - before, 2, 'qualified journal lock and release are separate housekeeping');
+  assert.deepEqual(body.operations.op1, terminal, 'no gratuitous terminal operation save');
+  h.state.output.parents = [ROOT]; const prior = writes;
+  await held('HOLD_RELEASED_ARTIFACT_DRIFT_OWNER_RECONCILE', () => api.execute(h.input));
+  assert.equal(h.calls.length, 1); assert.equal(writes - prior, 2); assert.deepEqual(body.operations.op1, terminal);
+});
 test('CLI prepare uses same contract and does not print private title/path or call tools', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'placement-cli-'));
   try {
