@@ -345,6 +345,120 @@ test('REFINE-01 F2: terminal artifact observation retains qualified native-journ
   await held('HOLD_RELEASED_ARTIFACT_DRIFT_OWNER_RECONCILE', () => api.execute(h.input));
   assert.equal(h.calls.length, 1); assert.equal(writes - prior, 2); assert.deepEqual(body.operations.op1, terminal);
 });
+function actualNormalizedShape(h) {
+  delete h.parent.mimeType; delete h.parent.parents; delete h.parent.capabilities; delete h.parent.trashed;
+  Object.assign(h.parent, {title: 'Synthetic target', mime_type: FOLDER, parent_ids: [ABOVE],
+    source_visibility_status: 'permission_metadata_available', current_user_can_share: true,
+    permissions: [{type: 'user', role: 'owner', emailAddress: 'synthetic-owner@example.invalid', domain: '',
+      displayName: 'Synthetic anonymous fixture', allowFileDiscovery: false}]});
+  h.input.request.destination.access = {mode: 'owner_qualified_permission', source_ref: 'synthetic-anonymous-actual-shape', revision: '1',
+    principal_selector: {kind: 'observed_user_email', value: 'synthetic-owner@example.invalid', source_ref: 'synthetic-private-observed-value', revision: '1'},
+    unexposed_capabilities: 'OWNER_SCOPED_NOT_PROVIDER_ATTESTATION', unexposed_trashed: 'OWNER_DISPOSITION_REQUIRED_IF_UNKNOWN'};
+  return h;
+}
+function rootNull(h, rootValue = {id: ROOT, mime_type: FOLDER, parent_ids: null}) {
+  const read = h.tools.readMetadata;
+  h.tools.readMetadata = async fileId => fileId === 'root' ? clone(rootValue) : read(fileId);
+  h.input.binding.root_lookup = {lookup: 'literal_root', expected_id: ROOT,
+    source_ref: 'synthetic-literal-root-observation-and-owner-chain', revision: '1',
+    null_parent_disposition: 'ACTUAL_LITERAL_ROOT_NORMALIZER_OMITS_PARENTS'};
+  return h;
+}
+test('NORMALIZER-02 principal: exact anonymous normalized shape qualifies privately without fabricated permissionID', async () => {
+  const h = actualNormalizedShape(harness('folder'));
+  const r = await api.execute(h.input); assert.equal(r.status, 'VERIFIED_RELEASED');
+  assert.match(r.access_qualification, /NOT_PROVIDER_CAPABILITY/);
+  assert.doesNotMatch(JSON.stringify(h.record), /synthetic-owner@|principal_selector|emailAddress|displayName/);
+  assert.doesNotMatch(JSON.stringify(r), /synthetic-owner@|principal_selector|emailAddress/);
+  const originalId = harness('folder');
+  originalId.input.request.destination.access = {mode: 'owner_qualified_permission', permission_id: 'fixturePerm00001',
+    source_ref: 'synthetic-id-owner-basis', revision: '1', unexposed_capabilities: 'OWNER_SCOPED_NOT_PROVIDER_ATTESTATION',
+    unexposed_trashed: 'OWNER_DISPOSITION_REQUIRED_IF_UNKNOWN'};
+  originalId.parent.permissions = [{id: 'fixturePerm00001', type: 'user', role: 'owner'}];
+  originalId.parent.source_visibility_status = 'permission_metadata_available';
+  assert.equal((await api.execute(originalId.input)).status, 'VERIFIED_RELEASED', 'actual-ID selector remains supported');
+});
+test('NORMALIZER-02 principal: missing/duplicate/denied/malformed/conflicting selectors hold before intent or artifact', async () => {
+  for (const variant of ['missing-selector', 'missing-row', 'duplicate', 'denied', 'deleted', 'malformed', 'wrong-kind', 'missing-provenance', 'both-selectors', 'row-id-exposed', 'alias-conflict']) {
+    const h = actualNormalizedShape(harness('folder')); const a = h.input.request.destination.access;
+    if (variant === 'missing-selector') delete a.principal_selector;
+    if (variant === 'missing-row') h.parent.permissions = [];
+    if (variant === 'duplicate') h.parent.permissions.push(clone(h.parent.permissions[0]));
+    if (variant === 'denied') h.parent.permissions[0].role = 'reader';
+    if (variant === 'deleted') h.parent.permissions[0].deleted = true;
+    if (variant === 'malformed') a.principal_selector.value = 'not an email';
+    if (variant === 'wrong-kind') a.principal_selector.kind = 'display_name';
+    if (variant === 'missing-provenance') delete a.principal_selector.source_ref;
+    if (variant === 'both-selectors') a.permission_id = 'fixturePerm00001';
+    if (variant === 'row-id-exposed') h.parent.permissions[0].id = 'fixturePerm00001';
+    if (variant === 'alias-conflict') h.parent.permissions[0].email_address = 'other@example.invalid';
+    await assert.rejects(() => api.execute(h.input), undefined, variant);
+    assert.equal(h.calls.length, 0, variant); assert.equal(h.record, null, variant);
+  }
+});
+test('NORMALIZER-02 principal: explicit known deny still wins over new observed-email reserve', async () => {
+  const h = actualNormalizedShape(harness('folder')); h.parent.capabilities = {canAddChildren: false};
+  await held('HOLD_CAPABILITY_EXPLICIT_DENY', () => api.execute(h.input));
+  assert.equal(h.calls.length, 0); assert.equal(h.record, null);
+});
+test('NORMALIZER-02 root: bound normalized-null preflights before nativecreate/import and completes same newID', async () => {
+  for (const kind of ['create', 'import_document', 'import_spreadsheet', 'import_presentation']) {
+    const h = rootNull(actualNormalizedShape(harness(kind))); h.state.output.parents = [ROOT];
+    const read = h.tools.readMetadata; let rootReads = 0;
+    h.tools.readMetadata = async id => { if (id === 'root') rootReads++; return read(id); };
+    const invoke = h.tools.invoke;
+    h.tools.invoke = async (tool, args) => { if (tool !== 'update_file') assert.ok(rootReads >= 1, 'root qualified BEFORE first new artifact'); return invoke(tool, args); };
+    const r = await api.execute(h.input);
+    assert.equal(r.file_id, FILE); assert.equal(h.calls.length, 2); assert.ok(rootReads >= 2);
+    assert.equal(h.record.root_lookup_observation.id, ROOT);
+    assert.match(h.record.root_lookup_observation.parent_evidence, /NORMALIZED_NULL.*NOT_OBSERVED_EMPTY/);
+  }
+});
+test('NORMALIZER-02 root: unbound/mismatch/nonempty/aliasconflict/wrongMIME/null-target reject BEFORE nativecreate', async () => {
+  for (const variant of ['unbound', 'wrong-id', 'nonempty', 'alias-conflict', 'wrong-mime', 'wrong-lookup', 'missing-proof', 'ordinary-null']) {
+    const value = {id: ROOT, mime_type: FOLDER, parent_ids: null};
+    if (variant === 'nonempty') value.parent_ids = [ABOVE];
+    if (variant === 'alias-conflict') value.parents = [];
+    if (variant === 'wrong-mime') value.mime_type = DOC;
+    const h = rootNull(actualNormalizedShape(harness('create')), value);
+    if (variant === 'unbound') delete h.input.binding.root_lookup;
+    if (variant === 'wrong-id') h.input.binding.root_lookup.expected_id = 'differentRoot001';
+    if (variant === 'wrong-lookup') h.input.binding.root_lookup.lookup = 'folder_by_name';
+    if (variant === 'missing-proof') delete h.input.binding.root_lookup.source_ref;
+    if (variant === 'ordinary-null') h.parent.parent_ids = null;
+    await assert.rejects(() => api.execute(h.input), undefined, variant);
+    assert.equal(h.calls.length, 0, variant); assert.equal(h.record, null, variant);
+  }
+  assert.throws(() => api.metadata({id: ROOT, mime_type: FOLDER, parent_ids: null}), /HOLD_PARENT_METADATA_UNKNOWN/);
+});
+test('NORMALIZER-02 root: actual empty-parent branch and direct destinations remain, later root drift stops placement', async () => {
+  const empty = harness('create'); empty.state.output.parents = [ROOT];
+  await api.execute(empty.input); assert.equal(empty.calls.length, 2);
+  assert.equal(empty.record.root_lookup_observation.parent_evidence, 'ACTUAL_OBSERVED_EMPTY_PARENT_LIST');
+  const direct = actualNormalizedShape(harness('folder')); const read = direct.tools.readMetadata;
+  direct.tools.readMetadata = async id => { assert.notEqual(id, 'root', 'direct destination does not need root branch'); return read(id); };
+  await api.execute(direct.input); assert.equal(direct.calls.length, 1);
+  const h = rootNull(actualNormalizedShape(harness('create'))); h.state.output.parents = [ROOT];
+  const priorRead = h.tools.readMetadata; let reads = 0;
+  h.tools.readMetadata = async id => id === 'root' && ++reads > 1 ? {id: 'differentRoot001', mime_type: FOLDER, parent_ids: null} : priorRead(id);
+  await held('HOLD_ROOT_EXPECTED_ID_MISMATCH', () => api.execute(h.input));
+  assert.equal(h.calls.length, 1); assert.equal(h.record.file_id, FILE, 'known ID retained; no repeated create or wrong-root move');
+});
+test('NORMALIZER-02 CLI prepare never emits private principal selector to stdout', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'normalizer-cli-'));
+  try {
+    const h = actualNormalizedShape(harness('folder'));
+    for (const [key, value] of Object.entries({request: h.input.request, payload: h.input.payload, parent: h.parent}))
+      await writeFile(join(dir, key + '.json'), JSON.stringify(value));
+    await writeFile(join(dir, 'map.json'), h.input.routingMap.raw_json);
+    await writeFile(join(dir, 'bindings.mjs'), 'export const binding=' + JSON.stringify(h.input.binding) + ';');
+    const r = spawnSync(process.execPath, [new URL('./placement-cli.cjs', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'), 'prepare',
+      '--request', join(dir, 'request.json'), '--payload', join(dir, 'payload.json'), '--routing', join(dir, 'map.json'),
+      '--bindings', join(dir, 'bindings.mjs'), '--parent-metadata', join(dir, 'parent.json')], {encoding: 'utf8'});
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.doesNotMatch(r.stdout, /synthetic-owner@|principal_selector|emailAddress|PRIVATE/);
+  } finally { await rm(dir, {recursive: true}); }
+});
 test('CLI prepare uses same contract and does not print private title/path or call tools', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'placement-cli-'));
   try {

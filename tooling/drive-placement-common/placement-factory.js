@@ -102,12 +102,50 @@
     // Real connector errors remain holds. current_user_can_share is never used.
     if (a.mode !== 'owner_qualified_permission' || a.unexposed_capabilities !== 'OWNER_SCOPED_NOT_PROVIDER_ATTESTATION' ||
         a.unexposed_trashed !== 'OWNER_DISPOSITION_REQUIRED_IF_UNKNOWN') fail('HOLD_ACCESS_BASIS_UNKNOWN');
-    ref(a); id(a.permission_id);
+    ref(a);
+    const hasId = Object.prototype.hasOwnProperty.call(a, 'permission_id');
+    const hasPrincipal = Object.prototype.hasOwnProperty.call(a, 'principal_selector');
+    if (hasId === hasPrincipal) fail('HOLD_PERMISSION_SELECTOR_MISSING_OR_CONFLICTING');
     if (m.visibility !== 'permission_metadata_available' || !Array.isArray(m.permissions)) fail('HOLD_PERMISSION_METADATA_UNKNOWN');
-    const ps = m.permissions.filter(p => p.id === a.permission_id && p.type === 'user');
+    let ps;
+    if (hasId) {
+      id(a.permission_id);
+      ps = m.permissions.filter(p => p.id === a.permission_id && p.type === 'user');
+    } else {
+      const selector = a.principal_selector;
+      if (!selector || selector.kind !== 'observed_user_email' || typeof selector.value !== 'string' ||
+          selector.value.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(selector.value)) fail('HOLD_PRINCIPAL_SELECTOR_MALFORMED');
+      ref(selector);
+      // Exact privately observed value, no casing/name/account inference and no
+      // manufactured provider permission ID. Conflicting aliases remain HOLD.
+      ps = m.permissions.filter(p => p.type === 'user' && alias(p, 'emailAddress', 'email_address') === selector.value);
+      if (ps.some(p => 'id' in p || 'permission_id' in p)) fail('HOLD_PRINCIPAL_RESERVE_ID_EXPOSED_USE_ID_SELECTOR');
+    }
     if (ps.length !== 1 || !['owner', 'writer', 'organizer', 'fileOrganizer'].includes(ps[0].role) || ps[0].deleted === true)
       fail('HOLD_OWNER_PERMISSION_DENIED');
     return 'OWNER_QUALIFIED_PERMISSION_ROUTE_NOT_PROVIDER_CAPABILITY';
+  }
+  function qualifyRoot(value, binding, route) {
+    if (!value || typeof value !== 'object') fail('HOLD_ROOT_METADATA_UNKNOWN');
+    const rootId = id(value.id);
+    if (alias(value, 'mimeType', 'mime_type') !== FOLDER || value.trashed === true || rootId === route.parent_id)
+      fail('HOLD_ROOT_ID_OR_TYPE');
+    const parents = alias(value, 'parents', 'parent_ids');
+    const admitted = binding.root_lookup;
+    if (admitted) {
+      if (admitted.lookup !== 'literal_root') fail('HOLD_ROOT_LOOKUP_BINDING');
+      ref(admitted);
+      if (id(admitted.expected_id) !== rootId) fail('HOLD_ROOT_EXPECTED_ID_MISMATCH');
+    }
+    if (Array.isArray(parents)) {
+      if (parents.length) fail('HOLD_ROOT_HAS_PARENTS');
+      return {id: rootId, parent_evidence: 'ACTUAL_OBSERVED_EMPTY_PARENT_LIST'};
+    }
+    if (parents !== null || !admitted || admitted.null_parent_disposition !== 'ACTUAL_LITERAL_ROOT_NORMALIZER_OMITS_PARENTS')
+      fail('HOLD_ROOT_NULL_BINDING_REQUIRED');
+    // This narrowly qualified root fact is NOT an observed empty list. Generic
+    // metadata() remains strict and cannot consume null parent metadata.
+    return {id: rootId, parent_evidence: 'ACTUAL_LITERAL_ROOT_NORMALIZED_NULL_OWNER_BOUND_NOT_OBSERVED_EMPTY'};
   }
   function toolSpec(request, payload, route, binding) {
     if (!payload || typeof payload !== 'object') fail('HOLD_PAYLOAD_UNKNOWN');
@@ -181,6 +219,9 @@
       if (record && (record.schema !== 'cerebro-drive-placement-journal/v1' || record.intent_hash !== p.intentHash ||
           record.operation_id !== request.operation_id || !Number.isInteger(record.version))) fail('HOLD_JOURNAL_BINDING_CONFLICT');
       const terminal = record?.state === 'VERIFIED_RELEASED';
+      // Known unsupported root normalization must hold BEFORE the first new
+      // native artifact is created, not strand an avoidable root-staged ID.
+      const initialRoot = p.transient && !record ? qualifyRoot(await tools.readMetadata('root'), binding, route) : null;
       async function save(next) {
         const expected = record ? record.version : 0;
         const value = {...next, version: expected + 1};
@@ -192,7 +233,11 @@
         record = value;
       }
       let fresh = false;
-      if (!record) { await save(safeIntent(request, p)); fresh = true; }
+      if (!record) {
+        const intent = safeIntent(request, p);
+        if (initialRoot) intent.root_lookup_observation = initialRoot;
+        await save(intent); fresh = true;
+      }
       if (!record.file_id) {
         if (!fresh) fail('HOLD_UNKNOWN_CREATE_RECONCILE_EXACT_RECEIPT_NO_RETRY');
         let observedId;
@@ -214,8 +259,8 @@
         if (!record.created_by_operation || !p.transient) fail('HOLD_PARENT_READBACK', record.file_id);
         // A previous uncertain placement is only read, never repeated automatically.
         if (['PLACE_INTENT', 'PLACEMENT_RETURNED'].includes(record.state)) fail('HOLD_UNKNOWN_PLACEMENT_RECONCILE_SAME_ID', record.file_id);
-        const root = metadata(await tools.readMetadata('root'));
-        if (root.mime !== FOLDER || root.parents.length || root.id === route.parent_id || !same(m.parents, [root.id]))
+        const root = qualifyRoot(await tools.readMetadata('root'), binding, route);
+        if ((record.root_lookup_observation && record.root_lookup_observation.id !== root.id) || !same(m.parents, [root.id]))
           fail('HOLD_TRANSIENT_PARENT_NOT_OBSERVED_MY_DRIVE_ROOT', record.file_id);
         const args = {fileId: record.file_id, addParents: route.parent_id, removeParents: root.id};
         // Requalify the destination immediately before the actual placement.
