@@ -147,6 +147,21 @@
     // metadata() remains strict and cannot consume null parent metadata.
     return {id: rootId, parent_evidence: 'ACTUAL_LITERAL_ROOT_NORMALIZED_NULL_OWNER_BOUND_NOT_OBSERVED_EMPTY'};
   }
+  function observedLink(value, fileId) {
+    // Validate only the admitted canonical Drive/Docs link subset. This is not
+    // a general URL parser/polyfill and needs no host-global URL or imports.
+    if (typeof value !== 'string' || !value || /[^\x21-\x7e]/.test(value) || value.includes('\\') || /%(?![0-9a-f]{2})/i.test(value))
+      fail('HOLD_OBSERVED_LINK_UNKNOWN', fileId);
+    const parts = /^https:\/\/([^/?#]+)(\/[^?#]*)(?:\?[^#]*)?(?:#.*)?$/i.exec(value);
+    if (!parts || !['drive.google.com', 'docs.google.com'].includes(parts[1].toLowerCase()))
+      fail('HOLD_OBSERVED_LINK_ID_MISMATCH', fileId);
+    const path = parts[2];
+    // Raw exact components only: no encoded separators/IDs, dot-segment
+    // normalization, empty middle components, credentials or explicit ports.
+    if (!/^\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*\/?$/.test(path) || !path.split('/').includes(fileId))
+      fail('HOLD_OBSERVED_LINK_ID_MISMATCH', fileId);
+    return value; // Only the unchanged actually observed metadata URL.
+  }
   function toolSpec(request, payload, route, binding) {
     if (!payload || typeof payload !== 'object') fail('HOLD_PAYLOAD_UNKNOWN');
     if (!binding || !['oauth_my_drive', 'direct_shared_drive'].includes(binding.connection)) fail('HOLD_CONNECTION_BINDING_UNKNOWN');
@@ -284,10 +299,7 @@
       m = metadata(await tools.readMetadata(record.file_id));
       if (m.id !== record.file_id || m.mime !== request.mime_type || !same(m.parents, [route.parent_id])) fail('HOLD_FINAL_PARENT_READBACK', record.file_id);
       if (request.kind === 'folder' && m.name !== payload.name) fail('HOLD_FOLDER_NAME_READBACK', record.file_id);
-      let url;
-      try { url = new URL(m.url); } catch (_) { fail('HOLD_OBSERVED_LINK_UNKNOWN', record.file_id); }
-      if (url.protocol !== 'https:' || !['drive.google.com', 'docs.google.com'].includes(url.hostname) ||
-          !url.pathname.split('/').includes(record.file_id)) fail('HOLD_OBSERVED_LINK_ID_MISMATCH', record.file_id);
+      observedLink(m.url, record.file_id);
       if (!terminal) await save({...record, state: 'VERIFIED_RELEASED', content_readback: request.kind === 'folder' ? 'FOLDER_NAME_AND_TYPE' : 'EXPECTED_DIGEST_MATCH'});
       return {status: 'VERIFIED_RELEASED', file_id: record.file_id, parent_id: route.parent_id,
         url: m.url, mime_type: request.mime_type, access_qualification: p.access, authority: 'NONE_ADDED',

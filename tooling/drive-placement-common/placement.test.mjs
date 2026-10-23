@@ -459,6 +459,72 @@ test('NORMALIZER-02 CLI prepare never emits private principal selector to stdout
     assert.doesNotMatch(r.stdout, /synthetic-owner@|principal_selector|emailAddress|PRIVATE/);
   } finally { await rm(dir, {recursive: true}); }
 });
+async function observedLinkWithoutURL(value, kind = 'folder') {
+  const h = harness(kind); h.state.output.webViewLink = value;
+  const source = await readFile(new URL('./placement-factory.js', import.meta.url), 'utf8');
+  const data = {request: h.input.request, payload: h.input.payload, routingMap: h.input.routingMap,
+    binding: h.input.binding, parent: h.parent, output: h.state.output, fileId: FILE, parentId: PARENT, proof};
+  const context = vm.createContext({sha256, DATA_JSON: JSON.stringify(data)});
+  assert.equal(vm.runInContext('typeof URL', context), 'undefined');
+  vm.runInContext(source, context);
+  // Data, callbacks and journal records are created in the V8 realm itself;
+  // only the qualified hash callback returns a primitive across that boundary.
+  const raw = await vm.runInContext(`(async () => {
+    const d=JSON.parse(DATA_JSON), api=CerebroDrivePlacement({sha256});
+    const p=await api.prepare({...d,parentMetadata:d.parent});
+    let record={schema:'cerebro-drive-placement-journal/v1',version:2,intent_hash:p.intentHash,
+      operation_id:d.request.operation_id,task:d.request.task,purpose:d.request.purpose,kind:d.request.kind,
+      parent_id:d.parentId,mime_type:d.request.mime_type,routing:d.request.routing,
+      state:'KNOWN_ID',file_id:d.fileId,created_by_operation:true};
+    let mutations=0,saves=0;
+    const journal={qualification:d.proof,runExclusive:async(_,fn)=>fn({
+      load:async()=>JSON.parse(JSON.stringify(record)),
+      commit:async(version,next)=>{if(version!==record.version)throw Error('conflict');record=next;saves++;
+        return {durable:true,version:next.version,evidence_ref:'synthetic-vm-commit'};}})};
+    const tools={supports:()=>true,readMetadata:async id=>id===d.parentId?d.parent:d.output,
+      invoke:async()=>{mutations++;throw Error('no new artifact is allowed');},
+      readContent:async()=>({file_id:d.fileId,source_ref:'synthetic-content-readback',observed_sha256:d.request.content.sha256})};
+    let result;
+    try { result=await api.execute({...d,journal,tools}); }
+    catch(e){result={status:e.code||e.message};}
+    return JSON.stringify({result,mutations,saves,record,URL_type:typeof URL});
+  })()`, context);
+  return JSON.parse(raw);
+}
+test('ACTUAL-V8-URL: absent global releases observed folder/document/raw links from knownID without new create', async () => {
+  for (const [url, kind] of [
+    ['https://drive.google.com/drive/folders/' + FILE, 'folder'],
+    ['https://docs.google.com/document/d/' + FILE + '/edit?tab=t.0', 'create'],
+    ['https://drive.google.com/file/d/' + FILE + '/view?usp=drivesdk', 'upload'],
+    ['https://docs.google.com/spreadsheets/d/' + FILE + '/edit#gid=0', 'create'],
+    ['https://drive.google.com/drive/u/0/folders/' + FILE + '/', 'folder']]) {
+    const r = await observedLinkWithoutURL(url, kind);
+    assert.equal(r.URL_type, 'undefined'); assert.equal(r.result.status, 'VERIFIED_RELEASED', url);
+    assert.equal(r.result.url, url, 'only exact observed URL released');
+    assert.equal(r.mutations, 0); assert.equal(r.record.file_id, FILE); assert.equal(r.saves, 1);
+  }
+});
+test('ACTUAL-V8-URL: absent global retains strict malformed/authority/path-ID negatives and knownID', async () => {
+  const valid = 'https://drive.google.com/drive/folders/' + FILE;
+  for (const value of [null, '', {}, 'http://drive.google.com/drive/folders/' + FILE,
+    'https://user@drive.google.com/drive/folders/' + FILE,
+    'https://user:synthetic-password@drive.google.com/drive/folders/' + FILE,
+    'https://drive.google.com:443/drive/folders/' + FILE,
+    'https://drive.google.com.evil.invalid/drive/folders/' + FILE,
+    'https://drive.google.com./drive/folders/' + FILE,
+    'https://drive.google.com\\@evil.invalid/drive/folders/' + FILE,
+    'https://evil.invalid/drive.google.com/' + FILE,
+    'https://drive.google.com/drive/folders/otherFile00001',
+    valid + 'suffix', 'https://drive.google.com/open?id=' + FILE,
+    'https://drive.google.com/drive/folders/%2F' + FILE,
+    valid + '/../otherFile00001', valid + '\n', ' ' + valid,
+    valid + '?malformed=%GG', 'https://drive.google.com//drive/folders/' + FILE]) {
+    const r = await observedLinkWithoutURL(value);
+    assert.notEqual(r.result.status, 'VERIFIED_RELEASED', String(value));
+    assert.equal(r.mutations, 0); assert.equal(r.saves, 0);
+    assert.equal(r.record.state, 'KNOWN_ID'); assert.equal(r.record.file_id, FILE);
+  }
+});
 test('CLI prepare uses same contract and does not print private title/path or call tools', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'placement-cli-'));
   try {
