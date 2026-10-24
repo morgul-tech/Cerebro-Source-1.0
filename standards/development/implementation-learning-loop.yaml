@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.24"
+  version: "1.25"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -34,6 +34,12 @@ implementation_learning_loop:
   - add-or-strengthen-machine-regression-control
   - rebuild-from-clean-basis-when-repeated-failure-policy-requires
   - persist-generalizable-learning-in-Source
+
+  mandatory_sequence_scope_ref: implementation_learning_loop.selected_workwave_refinement.current_task_before_action.finish_and_repair_scope
+  mandatory_sequence_scope: >
+    Interpret final-candidate inspection and all knowable applicable defect repair
+    within that existing selected-promise, affected-action and finish rule; do not
+    create a separate perfection criterion or an unbounded improvement round.
 
   pre_implementation_inheritance:
     mandatory_question: >
