@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.25"
+  version: "1.26"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -501,6 +501,35 @@ implementation_learning_loop:
         preflight, care, learning and return paths; add no control ID, gate, reviewer,
         per-step ACK, checklist or clock. Routine coordination stays with its existing
         owner; decisions outside mandate go to the rightful owner.
+      zenon_t7_published_work_offering:
+        task: P23-ZENON-T7-INTRODUCTION-20261025-01/rev1
+        repository: morgul-tech/Cerebro-Work
+        commit: 1c656c10815dead657cf580c9b8fa0d752d23f48
+        normative_Source_origin: 57936b85f9068bb2e2a0d6ea3aa1a778a285c056
+        normative_Source_version: "1.25"
+        normative_Source_sha256: 0d1d466174972a94142b71e7fa37e6cd41645f64202d1aa22111f7d7e9d7f46c
+        finish_scope_home: implementation_learning_loop.selected_workwave_refinement.current_task_before_action.finish_and_repair_scope
+        scope: METADATA_DISCOVERY_ONLY_NO_AUTOMATIC_ACTOR_SELECTION_OR_USE
+        work_application: [K3_CONCRETE_STOP, K5_SUFFICIENT_PROOF_AND_NEXT_ACTION, D4_MODEL_AND_LEVEL_BY_WORKSTEP]
+        files:
+        - path: AGENTS.md
+          bytes: 2301
+          sha256: 113302179628c04846008fef47fab3602f9664a26a9d52f21156c8e59879369a
+        - path: recipes/WORKFLOW.md
+          bytes: 32719
+          sha256: 3f40a162ea8a5a29b7535e2d2d2e0be274a643b9ddb88aeef63007e794665d2d
+        - path: recipes/WORKFLOW-ENTRY.md
+          bytes: 3642
+          sha256: dc74c0bd29f8e670096f6e9901bac5776294d31ec71a343f9e6545ff218cb90b
+        - path: recipes/KORT-OPPGAVEMAL.txt
+          bytes: 6294
+          sha256: 3fc1ba3d0863452a82c7aca6c47b7adce61a664aa3ea7ae21976796501c262c0
+        - path: instructions/PROVENANCE.md
+          bytes: 81902
+          sha256: b80ebdd10eacfc80e0bf064b2a15cb9011b17f0628bbe713edfa61f98f631f2b
+        - path: instructions/INSTRUCTION-SET.json
+          bytes: 66889
+          sha256: 62d537da295cf48d0f1cddce95dbce8e055c04ced0ed568efd4ddf782db11057
       implementation_refs: [tooling/return-bridge/task_local_profile.py#consume_resume, tooling/return-bridge/task_capacity_care.py#check_current, tooling/return-bridge/task_capacity_care.py#check_uptake]
       owner_observation_is_atomic_scheduler_lock: false
     first_failure:
