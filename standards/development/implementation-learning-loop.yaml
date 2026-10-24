@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.23"
+  version: "1.24"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -84,6 +84,26 @@ implementation_learning_loop:
       proof. Missing claim, expectation, adapter or recipient coverage is a named
       mechanical gap with owner and natural trigger, never fabricated PASS.
     work_recipe_ref: recipes/SYNTHETIC-FIRST.md
+    published_work_offering:
+      task: P23-SYNTHETIC-FIRST-METHOD-20261024-01/rev1
+      repository: morgul-tech/Cerebro-Work
+      commit: 1132186f07f0c870efb7c393d74350c6ad3c7d22
+      semantic_Source_origin: 4f5bff3f6b5d871a2d00b3a8d71ed076d2a61cc9
+      semantic_Source_version: '1.23'
+      semantic_Source_sha256: 60803ccc604e08f6e643f061b2ca2d80daddbf52f0d4b652af2e1a0e4f384a48
+      scope: METADATA_ONLY_DISCOVERY_NO_AUTOMATIC_ACTOR_SELECTION_OR_USE
+      recipe:
+        path: recipes/SYNTHETIC-FIRST.md
+        sha256: 4cbc3eb6baa7000cd6fd26b1d3056ae8f6cf05cc862441bfdad6b7aadedf1881
+      workflow:
+        path: recipes/WORKFLOW.md
+        sha256: 660fed4858d54bee25ab489aad648cedc4c7144e3f2433e39d62860883b2231e
+      normal_entry:
+        path: recipes/WORKFLOW-ENTRY.md
+        sha256: 0df6b3a88360ffae0cf9fefb1a87d788135fd4f62a2f405d99bbacbf9f7c930d
+      short_template:
+        path: recipes/KORT-OPPGAVEMAL.txt
+        sha256: 64e6742240bfa60462a22ff603315640620a62314a0b1e5de6066cff0761eee2
     authority_or_runtime_change: NONE
 
   ordinary_operational_reflex:
