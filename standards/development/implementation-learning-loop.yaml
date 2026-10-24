@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.22"
+  version: "1.23"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -40,6 +40,51 @@ implementation_learning_loop:
       Which prior failure families, corrections, delivery contracts and validation
       rules apply to this implementation before it is designed?
     applicable_learning_must_be_applied_before_delivery: true
+
+  first_technical_qualification:
+    origin: P23-SYNTHETIC-FIRST-METHOD-20261024-01/rev1
+    principle: ARTIFICIAL_INPUT_THROUGH_REAL_ORDINARY_ROUTE_BEFORE_DEPENDENT_NORMAL_USE
+    trigger: NEW_OR_MATERIALLY_CHANGED_TECHNICAL_FUNCTION_OR_CONNECTION
+    sequence: >
+      Before dependent normal use, select a small representative harmless synthetic
+      input or load and an observable expected result. Bind the actual selected
+      component edition, ordinary entry, target environment and legitimate access;
+      execute that real route, preserve the observed result and return, and check
+      the recipient's promised result. Synthetic describes the input or load, not
+      a replacement connection. A double cannot prove the link it replaces.
+    equivalent_evidence: >
+      Reuse valid equivalent evidence with exact edition, route, environment,
+      attribution and limits. Cover materially different entries/environments
+      where relevant; do not repeat per task or actor or generalize one local PASS.
+      Fault, interruption, retry and recovery checks are required only for the
+      selected promise and gaps not already covered by valid evidence.
+    text_only_change: >
+      Direct readback and relevant link or syntax checks suffice for text-only
+      changes; do not manufacture an integration test or production-use claim.
+    disposition_labels:
+      built_connection_trial_pending: "Bygget, koblingsprøve gjenstår"
+      technically_qualified_in_scope: "Teknisk kvalifisert innen angitt omfang"
+      used_in_real_work: "Brukt i virkelig arbeid"
+    evidence_boundary: >
+      A pending connection trial is unfinished technical delivery. Technical
+      qualification applies only to the proved scope. Synthetic execution is not
+      production or natural work. Actual real-work use and useful recipient effect
+      need their own observations; explicitly promised usefulness remains open.
+    continuation: >
+      Correct known local faults within mandate on the same task and recheck the
+      affected evidence. Reconcile unknown effects before repeating; preserve
+      NO_RETRY, legitimate access, private and effect boundaries. Add no universal
+      one-attempt limit, Human-per-fault gate or whole-suite requirement.
+    component_control_and_reader: >
+      Keep executable checks, regressions and receipts in the component's ordinary
+      CODE-DOCTOR, BUILD-PROFILE, introduction and Verification B paths. Map actual
+      edition/environment/entry, expected and observed results, return and limits
+      into existing supported evidence and ordinary result reading. A prose rule
+      or COMPLETE over selected claims is not automatic enforcement or whole-use
+      proof. Missing claim, expectation, adapter or recipient coverage is a named
+      mechanical gap with owner and natural trigger, never fabricated PASS.
+    work_recipe_ref: recipes/SYNTHETIC-FIRST.md
+    authority_or_runtime_change: NONE
 
   ordinary_operational_reflex:
     id: CEREBRO-ORDINARY-BOUNDED-REFLEX-001
