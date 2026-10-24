@@ -14,9 +14,11 @@ application with its approved process and network runtime.
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.metadata
 import json
 import logging
+import re
 from collections.abc import Iterable, Mapping
 from typing import Any
 from urllib.parse import urlsplit
@@ -165,6 +167,117 @@ def _call_tool_result(types: Any, value: Mapping[str, Any]) -> Any:
         raise ControlContextMcpSdkBindingError("tool-result-invalid-for-official-SDK") from exc
 
 
+_ADMISSION_REJECTION_STAGES = {
+    "ADMISSION_OPERATION_REQUIRED": "ARGUMENT_VALIDATION",
+    "EXACT_FIELDS_REQUIRED": "ARGUMENT_VALIDATION",
+    "REFERENCE_INVALID": "ARGUMENT_VALIDATION",
+    "ADMISSION_SCOPE_REQUIRED": "REQUEST_SCOPE",
+    "OWN_TRANSPORT_METADATA_REQUIRED": "CALLER_CONTEXT",
+    "OWN_ACTOR_AMBIGUOUS_OR_MISSING": "ACTOR_BINDING",
+    "OWN_CURRENT_EXECUTION_FENCED": "ACTOR_BINDING",
+    "ACTOR_ACCESS_EXPIRED": "ACTOR_ACCESS",
+    "OWN_CURRENT_SESSION_BINDING_CHANGED_REQUALIFY_DESTINATION": "SESSION_BINDING",
+    "OWN_NATIVE_CHANGED_REQUALIFY_OWNER": "NATIVE_BINDING",
+    "OWN_EXISTING_W_NATIVE_REQUIRED": "NATIVE_BINDING",
+    "OWN_IMMUTABLE_BIRTH_LINK_REQUIRED": "NATIVE_BINDING",
+    "OWNER_EXPECTED_OLD_CONFLICT": "OWNER_CAS",
+    "OWNER_CAS_CONFLICT_RELOAD_NO_REPLAY": "OWNER_CAS",
+    "SAME_OPERATION_CHANGED_BYTES": "OPERATION_BINDING",
+    "SELECTED_TASK_PHASE_REQUIRED": "TASK_PHASE",
+    "CURRENT_TASK_PEER_ROUTE_SCOPE_REVOKED": "TASK_ROUTE",
+    "CURRENT_TASK_ROUTE_BINDING_REVOKED": "TASK_ROUTE",
+    "TASK_PERMISSION_EXPIRED_OR_NOT_YET_VALID": "TASK_WINDOW",
+    "TASK_EXPIRED_BEFORE_COMMIT": "TASK_WINDOW",
+    "BOUNDED_REAL_MATERIAL_REQUIRED": "CONTENT_POLICY",
+    "LEGACY_TASK_CONTENT_POLICY_REQUIRES_NEW_AUTHORIZED_TASK": "CONTENT_POLICY",
+    "AUTHORIZED_TASK_CONTENT_DIGEST_MISMATCH": "CONTENT_POLICY",
+    "EXACT_PORTABLE_ARTIFACT_RULE_REQUIRED": "ARTIFACT_BINDING",
+    "ARTIFACT_REFERENCE_BOUND": "ARTIFACT_BINDING",
+    "PORTABLE_ARTIFACT_BYTES_DIGEST_MISMATCH": "ARTIFACT_BINDING",
+    "ENVELOPE_INVALID": "ENVELOPE_BINDING",
+    "OWNER_SELECTED_ENVELOPE_MISMATCH": "ENVELOPE_BINDING",
+    "EXACT_PORTABLE_ENVELOPE_ARTIFACT_REQUIRED": "ENVELOPE_BINDING",
+    "MATERIAL_CONFLICT_SAME_ATTEMPT_NO_REPLAY": "MATERIAL_BINDING",
+    "ADMISSION_OWNER_STATE_INTEGRITY": "OWNER_STATE",
+    "ACTUAL_EXISTING_ACTIVE_PROJECT_REQUIRED": "PROJECT_BINDING",
+    "COMMIT_READBACK_CHANGED_RECONCILE_ORIGINAL": "COMMIT_READBACK",
+    "COMMIT_OUTCOME_UNKNOWN_READ_SAME_OPERATION_NO_REPLAY": "COMMIT_OUTCOME_UNKNOWN",
+}
+_DIAGNOSTIC_OPERATION = re.compile(r"\A(?:W|X9|PM)-[A-Z0-9][A-Z0-9_-]{0,119}\Z")
+_DIAGNOSTIC_SECRET_MARKERS = (
+    "SECRET", "TOKEN", "PASSWORD", "CREDENTIAL", "PRINCIPAL", "SESSION",
+    "BEARER", "APIKEY", "PRIVATE", "SK_", "SK-",
+)
+_DIAGNOSTIC_HEX = re.compile(r"\A[a-f0-9]{64}\Z")
+
+
+def _admission_log_correlation(args: dict[str, Any]) -> dict[str, str]:
+    """Hash only the bounded exact JSON shape; never log its values or context."""
+    if set(args) != {"op", "project_ref", "operation_ref", "expected_revision",
+                     "expected_fingerprint", "material"}:
+        return {}
+    operation = args["operation_ref"]
+    if (type(operation) is not str or not _DIAGNOSTIC_OPERATION.fullmatch(operation)
+            or any(marker in operation for marker in _DIAGNOSTIC_SECRET_MARKERS)):
+        return {}
+    if (type(args["project_ref"]) is not str or not 0 < len(args["project_ref"]) <= 160
+            or type(args["expected_revision"]) is not int or args["expected_revision"] < 0
+            or type(args["expected_fingerprint"]) is not str
+            or not _DIAGNOSTIC_HEX.fullmatch(args["expected_fingerprint"])):
+        return {}
+    material = args["material"]
+    if (type(material) is not dict or set(material) !=
+            {"task_ref", "attempt_ref", "phase", "material", "envelope", "artifact"}):
+        return {}
+    bounds = {"task_ref": 160, "attempt_ref": 160, "phase": 16,
+              "material": 16384, "envelope": 4096}
+    if any(type(material[k]) is not str or not 0 < len(material[k].encode("utf-8")) <= n
+           for k, n in bounds.items()):
+        return {}
+    artifact = material["artifact"]
+    if (type(artifact) is not dict or set(artifact) !=
+            {"repository", "commit", "path", "bytes", "sha256"}
+            or type(artifact["bytes"]) is not int or not 0 < artifact["bytes"] <= 16384
+            or any(type(artifact[k]) is not str or not 0 < len(artifact[k]) <= 512
+                   for k in ("repository", "commit", "path", "sha256"))):
+        return {}
+    raw = json.dumps(args, sort_keys=True, separators=(",", ":"),
+                     ensure_ascii=False, allow_nan=False).encode("utf-8")
+    if len(raw) > 32768:
+        return {}
+    return {"operation_ref": operation, "request_fingerprint": hashlib.sha256(raw).hexdigest()}
+
+
+def _log_admission_rejection(tool_name: Any, args: Any, error: Exception,
+                             *, unexpected: bool = False) -> bool:
+    """Best effort service log only; no auth claim, calls, exception text or state.
+
+    True means this exact operation was selected, even if logging failed. It
+    prevents a secondary logging error falling through to a raw traceback.
+    Correlation is a constrained request identifier, never caller attestation.
+    """
+    if (type(tool_name) is not str or tool_name != "manage_actor_admission_v1"
+            or type(args) is not dict or type(args.get("op")) is not str
+            or args["op"] != "admit_material"):
+        return False
+    try:
+        reason = error.args[0] if type(error.args) is tuple and len(error.args) == 1 else None
+        stage = _ADMISSION_REJECTION_STAGES.get(reason) if type(reason) is str and not unexpected else None
+        record = {"schema": "cerebro-admission-rejection-log/v1",
+                  "stage": stage or ("REQUEST_FAILURE" if unexpected else "REQUEST_REJECTION"),
+                  "reason": reason if stage else ("UNEXPECTED_EXCEPTION" if unexpected else "UNCLASSIFIED_REJECTION"),
+                  "caller_authentication": "NOT_ATTESTED_BY_DIAGNOSTIC"}
+        try:
+            correlation = _admission_log_correlation(args)
+        except Exception:
+            correlation = {}  # Bad correlation cannot suppress the fixed reason.
+        record.update(correlation)
+        logger.warning("admission_rejection %s", json.dumps(record, sort_keys=True, separators=(",", ":")))
+    except Exception:
+        pass  # Diagnostics must not replace the primary error or response.
+    return True
+
+
 def create_official_mcp_server(service: ControlContextRemoteMcpService) -> Any:
     """Bind service handlers to the official SDK's low-level typed server."""
 
@@ -198,15 +311,17 @@ def create_official_mcp_server(service: ControlContextRemoteMcpService) -> Any:
                     headers=_request_headers(context),
                     request_meta=_request_meta(params),
                 )
-        except ControlContextToolError:
+        except ControlContextToolError as error:
+            _log_admission_rejection(params.name, params.arguments, error)
             value = {
                 "content": [
                     {"type": "text", "text": "The project-control request was rejected."}
                 ],
                 "isError": True,
             }
-        except Exception:
-            logger.exception("project-control MCP tool invocation failed")
+        except Exception as error:
+            if not _log_admission_rejection(params.name, params.arguments, error, unexpected=True):
+                logger.exception("project-control MCP tool invocation failed")
             value = {
                 "content": [
                     {
