@@ -30,7 +30,8 @@ class OwnerOutboxPort(Protocol):
 def require_owner_port(owner: Any) -> Any:
     from .context_owner_port import ContextOwnerOutboxPort
     from .owner import SyntheticProjectOwner
-    from .production_runtime import ServiceLeasedOwnerPort
-    if type(owner) not in (SyntheticProjectOwner, ContextOwnerOutboxPort, ServiceLeasedOwnerPort):
+    from .production_runtime import ServiceLeasedOwnerPort, ServiceLeasedRoomReturnOwnerPort
+    if type(owner) not in (SyntheticProjectOwner, ContextOwnerOutboxPort, ServiceLeasedOwnerPort,
+                           ServiceLeasedRoomReturnOwnerPort):
         raise OwnerPortRejected("OWNER_PORT_MUST_BE_SYNTHETIC_FIXTURE_OR_SERVICE_OWNED_CONTEXT_OUTBOX")
     return owner

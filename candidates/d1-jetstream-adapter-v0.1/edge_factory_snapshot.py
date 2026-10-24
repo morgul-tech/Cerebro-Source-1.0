@@ -32,7 +32,7 @@ class _CapturedCore(importlib.abc.MetaPathFinder,importlib.abc.Loader):
         module.__file__=path
         exec(compile(raw,path,'exec'),module.__dict__)
 
-def open_runtime(admission):
+def open_runtime(admission,*,operation_id=None):
     try:
         bound=admission['core_manifest'];path=_protected(bound['path']);raw=path.read_bytes()
         if len(raw)>65536 or hashlib.sha256(raw).hexdigest()!=bound['sha256']:raise ValueError()
@@ -58,5 +58,5 @@ def open_runtime(admission):
                 for name in snapshots:importlib.import_module(prefix+'.'+name)
             finally:sys.meta_path.remove(finder)
         else:entry=sys.modules[prefix+'.edge_adapter']
-        return entry.open_runtime(admission)
+        return entry.open_runtime(admission,operation_id=operation_id)
     except Exception:raise RuntimeError('REVIEWED_CAPTURED_CORE_UNAVAILABLE') from None

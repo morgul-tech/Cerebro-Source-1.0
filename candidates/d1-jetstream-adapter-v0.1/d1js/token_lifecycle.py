@@ -104,13 +104,19 @@ def cached_token(value,now,binding):
     return value['access_token'] if now<value['effective_expiry'] else None
 
 class TokenLifecycle:
-    def __init__(self,store,*,clock=system_clock):self._store=store;self._clock=clock
+    def __init__(self,store,*,clock=system_clock,diagnostic_stage=None):
+        self._store=store;self._clock=clock;self._diagnostic_stage=diagnostic_stage
+    def _step(self,stage):
+        if self._diagnostic_stage is not None:
+            try:self._diagnostic_stage(stage)
+            except Exception:pass # Diagnostic observation never changes lifecycle semantics.
     def initialize(self,binding):
         # Explicit installation action under actual role custody, never an implicit
         # cold-miss/reset path. Existing budget cannot be overwritten.
         with self._store.locked() as store:store.save(empty_state(binding,self._clock()),initialize=True)
     def token(self,binding,acquire):
         with self._store.locked() as store:
+            self._step('STATE_LOAD')
             state=validate_state(store.load(),binding['role']);old=state['binding']
             epochs=['credential_epoch','grant_epoch','clock_epoch']
             need(all(binding[k]>=old[k] for k in epochs),'INSTALLATION_EPOCH_ROLLBACK_REFUSED')
@@ -118,37 +124,52 @@ class TokenLifecycle:
                 need(any(binding[k]>old[k] for k in epochs),'FOREIGN_REF_OR_UNQUALIFIED_BINDING_CHANGE')
                 if old['credential_ref']!=binding['credential_ref']:
                     need(binding['credential_epoch']>old['credential_epoch'],'CREDENTIAL_REF_ROTATION_EPOCH_REQUIRED')
+            self._step('CLOCK_VALIDATE')
             try:now=checkpoint(self._clock(),state['clock'],clock_epoch_changed=old.get('clock_epoch')!=binding['clock_epoch'])
             except Exception:
                 if old!=binding:
                     state.update(binding=dict(binding),token=None,profile_hold=None)
+                    self._step('EPOCH_COMMIT')
                     store.save(state) # Refused clock must not undo learned epoch.
+                self._step('CLOCK_VALIDATE')
                 raise
             # Binding/epoch rotation discards credential only; rolling allowance,
             # unknown attempts and cooldown survive process/credential changes.
             if old!=binding:
                 state.update(binding=dict(binding),token=None,profile_hold=None,clock=now)
+                self._step('EPOCH_COMMIT')
                 store.save(state) # Durable high-water/disposal BEFORE later refusals.
             state['clock']=now
             need(all(item['at']<=now['wall'] for item in state['attempts']),'FUTURE_ATTEMPT_LEDGER_REFUSED')
             state['attempts']=[item for item in state['attempts'] if item['at']>now['wall']-WINDOW]
+            self._step('CACHE_VALIDATE')
             reuse=cached_token(state['token'],now['wall'],binding)
-            if reuse is not None:store.save(state);return reuse
+            if reuse is not None:
+                self._step('CACHE_COMMIT')
+                store.save(state);return reuse
+            self._step('ACQUISITION_GUARDS')
             need(state['profile_hold'] is None,'QUALIFIED_INITIAL_VALIDITY_PROFILE_REQUIRED')
             need(len(state['attempts'])<MAX_ATTEMPTS,'ROLLING_31_DAY_ATTEMPT_ALLOWANCE_EXHAUSTED')
             need(now['wall']>=state['next_allowed'],'PERSISTENT_ACQUISITION_COOLDOWN')
             attempt={'at':now['wall'],'id':uuid.uuid4().hex,'outcome':'UNKNOWN'}
             state['attempts'].append(attempt);state['token']=None;state['failures']=min(state['failures']+1,12)
             state['next_allowed']=now['wall']+min(300*(2**(state['failures']-1)),3600)
+            self._step('ACQUISITION_INTENT_COMMIT')
             store.save(state) # Durable attempt/cooldown BEFORE possible mint.
+            self._step('ISSUER_CALLBACK_ENTER')
             try:response=acquire()
             except Exception:raise TokenCustodyRefused('UNKNOWN_ISSUER_OUTCOME_ATTEMPT_RETAINED') from None
+            self._step('POST_ISSUER_VALIDATE')
             ended=checkpoint(self._clock(),now);state['clock']=ended
             known=type(response)is dict and type(response.get('access_token'))is str and bool(response['access_token'])
             if known:attempt['outcome']='KNOWN_ISSUER_RESPONSE';state['known_issuances']+=1
             try:window=token_window(response,now['wall'],ended['wall'],binding)
             except Exception:
-                state['profile_hold']='INITIAL_VALIDITY_UNQUALIFIED';store.save(state)
+                state['profile_hold']='INITIAL_VALIDITY_UNQUALIFIED'
+                self._step('TOKEN_COMMIT')
+                store.save(state)
                 raise TokenCustodyRefused('QUALIFIED_INITIAL_VALIDITY_PROFILE_REQUIRED') from None
-            state.update(token=window,failures=0,next_allowed=0,profile_hold=None);store.save(state)
+            state.update(token=window,failures=0,next_allowed=0,profile_hold=None)
+            self._step('TOKEN_COMMIT')
+            store.save(state)
             return window['access_token']

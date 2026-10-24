@@ -9,7 +9,7 @@ import hashlib,json,re
 from datetime import datetime
 from typing import Any
 from .production_config import ProductionD1Config,PROFILE
-from .context_owner_port import ContextOwnerOutboxPort
+from .context_owner_port import ContextOwnerOutboxPort,RoomReturnContextOwnerOutboxPort
 from .context_service_client import AuthenticatedContextServiceClient
 from .publisher import OwnerOutboxPublisher
 from .faults import Faults
@@ -20,6 +20,13 @@ CURSOR_SCHEMA='bk11-owner-route-keyset/v1'
 class ProductionRuntimeRefused(RuntimeError):pass
 def need(ok:bool,code:str):
     if not ok:raise ProductionRuntimeRefused(code)
+
+def family_from_referent(referent_type:str)->str:
+    """Use only the two existing owner referents; unknown kinds never default to PM."""
+    need(type(referent_type) is str,'OWNER_FAMILY_REFERENT_REQUIRED')
+    families={'PM_READY_HINT':'PM_OWNER','ROOM_RETURN':'ROOM_RETURN'}
+    need(referent_type in families,'OWNER_FAMILY_REFERENT_UNKNOWN')
+    return families[referent_type]
 
 def cursor_validate(value:Any)->dict|None:
     if value is None:return None
@@ -49,8 +56,16 @@ class ServiceLeasedOwnerPort(ContextOwnerOutboxPort):
     def pending(self,*args,**kwargs):self._guard('owner.pending');return super().pending(*args,**kwargs)
     def recovery_candidates(self,*args,**kwargs):self._guard('owner.recovery');return super().recovery_candidates(*args,**kwargs)
 
+class ServiceLeasedRoomReturnOwnerPort(RoomReturnContextOwnerOutboxPort):
+    def __init__(self,client,guard):super().__init__(client);self._guard=guard
+    def outbox(self,*args,**kwargs):self._guard('owner.read');return super().outbox(*args,**kwargs)
+    def outbox_transition(self,*args,**kwargs):self._guard('owner.settle');return super().outbox_transition(*args,**kwargs)
+    def pending(self,*args,**kwargs):self._guard('owner.pending');return super().pending(*args,**kwargs)
+    def recovery_candidates(self,*args,**kwargs):self._guard('owner.recovery');return super().recovery_candidates(*args,**kwargs)
+
 class ProductionRuntime:
-    def __init__(self,*,admission:dict,client:AuthenticatedContextServiceClient,transport:Any,config:ProductionD1Config):
+    def __init__(self,*,admission:dict,client:AuthenticatedContextServiceClient,transport:Any,config:ProductionD1Config,
+                 owns_resources:bool=True):
         need(type(config) is ProductionD1Config and config.validate().enabled is True,'EXPLICIT_ENABLED_PRODUCTION_CONFIG_REQUIRED')
         need(type(client) is AuthenticatedContextServiceClient,'ACTUAL_CONTEXT_SERVICE_CLIENT_REQUIRED')
         need(type(admission) is dict and admission.get('profile')==PROFILE,'PRODUCTION_ADMISSION_PROFILE_REQUIRED')
@@ -58,16 +73,28 @@ class ProductionRuntime:
             need(type(admission.get(name)) is str and REF.fullmatch(admission[name]) is not None,'NONSECRET_ADMISSION_REF_REQUIRED')
         need(admission.get('role') in ('publisher','receiver'),'ROLE_REQUIRED')
         self._admission=dict(admission);self._client=client;self._transport=transport;self._cfg=config;self._closed=False
+        self._owns_resources=owns_resources
+        requested_family=admission.get('owner_family','PM_OWNER')
+        need(requested_family in ('PM_OWNER','ROOM_RETURN'),'ADMISSION_OWNER_FAMILY_REQUIRED')
         self._lease=self._client.call('open_bk11_service_runtime_v1',
-          {k:admission[k] for k in ['assignment_ref','instance_ref','operation_ref','attempt_ref']})
+          {k:admission[k] for k in ['assignment_ref','instance_ref','operation_ref','attempt_ref']} | {'owner_family':requested_family})
         need(self._lease.get('schema')=='cerebro-bk11-service-lease/v1'
           and self._lease.get('assignment_ref')==admission['assignment_ref'] and self._lease.get('role')==admission['role']
           and type(self._lease.get('fencing_epoch')) is int and self._lease['fencing_epoch']>0
           and type(self._lease.get('lease_ref')) is str and REF.fullmatch(self._lease['lease_ref']) is not None,
           'SERVER_CURRENT_ASSIGNMENT_LEASE_REQUIRED')
+        self._owner_family=self._lease.get('owner_family')
+        need(self._owner_family in ('PM_OWNER','ROOM_RETURN'),'SERVER_OWNER_FAMILY_REQUIRED')
+        need(requested_family==self._owner_family,'OWNER_FAMILY_ADMISSION_MISMATCH')
+        if 'session_binding_id' in admission:
+            need(self._lease.get('session_binding_id')==admission['session_binding_id'],
+                 'OWNER_FAMILY_SESSION_BINDING_MISMATCH')
+        else:
+            need(requested_family=='PM_OWNER','ROOM_RETURN_SESSION_BINDING_PIN_REQUIRED')
         self._guard('open')
         self._transport=ServiceLeasedTransport(transport,self._guard)
-        self._port=ServiceLeasedOwnerPort(client,self._guard)
+        port_type=ServiceLeasedRoomReturnOwnerPort if self._owner_family=='ROOM_RETURN' else ServiceLeasedOwnerPort
+        self._port=port_type(client,self._guard)
         self._publisher=OwnerOutboxPublisher(owner=self._port,transport=self._transport,config=config,faults=Faults()) if admission['role']=='publisher' else None
 
     def _guard(self,seam:str):
@@ -75,6 +102,8 @@ class ProductionRuntime:
         got=self._client.call('verify_bk11_service_lease_v1',{'lease_ref':self._lease['lease_ref'],
           'fencing_epoch':self._lease['fencing_epoch'],'assignment_ref':self._admission['assignment_ref'],'seam':seam})
         need(got.get('schema')=='cerebro-bk11-service-lease-validation/v1' and got.get('valid') is True
+          and got.get('assignment_ref')==self._admission['assignment_ref']
+          and got.get('owner_family')==self._owner_family
           and got.get('lease_ref')==self._lease['lease_ref'] and got.get('fencing_epoch')==self._lease['fencing_epoch'],
           'SERVER_LEASE_FENCED_OR_CURRENT_ASSIGNMENT_UNKNOWN')
 
@@ -89,6 +118,7 @@ class ProductionRuntime:
         proof=self._client.call('control_bk11_service_attempt_v1',args)
         need(proof.get('schema')=='cerebro-bk11-server-attempt-proof/v1'
           and all(proof.get(k)==self._admission[k] for k in ['assignment_ref','operation_ref','attempt_ref'])
+          and proof.get('owner_family')==self._owner_family
           and proof.get('lease_ref')==self._lease['lease_ref'] and proof.get('fencing_epoch')==self._lease['fencing_epoch'],
           'MATCHING_SERVER_ATTEMPT_PROOF_REQUIRED')
         if phase!='recovery' and not phase.endswith('_observed'):
@@ -149,6 +179,7 @@ class ProductionRuntime:
             if delivery is None:break
             pointer=parse_pointer(delivery.data,max_ttl_seconds=self._cfg.pointer_ttl_s)
             need(delivery.headers.get('Nats-Msg-Id')==pointer.message_id,'DELIVERY_MESSAGE_ID_MISMATCH')
+            need(family_from_referent(pointer.referent_type)==self._owner_family,'CROSS_FAMILY_DELIVERY_REQUIRES_ROLE_INGRESS')
             self._attempt('receive_item',[{'message_id':pointer.message_id,'pointer_sha256':pointer.raw_sha256}])
             readback=self._accept_readback(pointer.message_id,pointer.raw_sha256)
             self._guard('before_ack');self._transport.ack(delivery)
@@ -164,15 +195,155 @@ class ProductionRuntime:
             readback=self._client.call('read_bk11_backend_disposition_v1',args)
             need(written==readback and readback.get('schema')=='cerebro-bk11-backend-disposition/v1'
               and readback.get('message_id')==message_id and readback.get('pointer_sha256')==pointer_sha256
+              and readback.get('owner_family')==self._owner_family
+              and readback.get('receiver_assignment_ref')==self._admission['assignment_ref']
               and readback.get('delivery_responsibility')=='DURABLE_BACKEND_CUSTODY'
               and readback.get('downstream_work')=='PENDING_NOT_MODEL_EXECUTED','DURABLE_SERVER_DISPOSITION_READBACK_REQUIRED_BEFORE_ACK')
             return readback
 
-    def close(self):
+    def validate_delivery(self,delivery):
+        pointer=parse_pointer(delivery.data,max_ttl_seconds=self._cfg.pointer_ttl_s)
+        need(delivery.headers.get('Nats-Msg-Id')==pointer.message_id,'DELIVERY_MESSAGE_ID_MISMATCH')
+        return pointer
+
+    def receive_delivery(self,delivery,pointer,*,begin:bool=True):
+        need(family_from_referent(pointer.referent_type)==self._owner_family,'CROSS_FAMILY_DELIVERY_REFUSED')
+        need(delivery.headers.get('Nats-Msg-Id')==pointer.message_id,'DELIVERY_MESSAGE_ID_MISMATCH')
+        if begin:self._attempt('receive_begin')
+        self._attempt('receive_item',[{'message_id':pointer.message_id,'pointer_sha256':pointer.raw_sha256}])
+        readback=self._accept_readback(pointer.message_id,pointer.raw_sha256)
+        self._guard('before_ack');self._transport.ack(delivery)
+        proof=self._attempt('receive_observed')
+        return {'completed':proof.get('effect_admitted') is True,'message_id':pointer.message_id,
+          'owner_family':self._owner_family,'backend_disposition':readback['status'],'ack':'TRANSIT_ONLY','model_wake':False}
+
+    def close(self,*,close_resources:bool|None=None):
         if self._closed:return
+        if close_resources is None:close_resources=self._owns_resources
         try:
             self._client.call('close_bk11_service_runtime_v1',{'lease_ref':self._lease['lease_ref'],
                 'fencing_epoch':self._lease['fencing_epoch']})
+        finally:
+            self._closed=True
+            if close_resources:
+                try:self._transport.close()
+                finally:self._client.close()
+
+
+class FamilyPlanRuntime:
+    """Serial owner-family leases over one existing role client and shared pull consumer."""
+    def __init__(self,*,families:dict,open_family,client,transport,role:str,ingress_writer=None):
+        need(set(families)=={'PM_OWNER','ROOM_RETURN'},'EXACT_TWO_FAMILY_PLAN_REQUIRED')
+        self._families=families;self._open_family=open_family;self._client=client;self._transport=transport
+        self._role=role;self._ingress_writer=ingress_writer;self._current=None;self._closed=False;self._counter=0
+
+    def _operation_id(self,family,value):
+        if type(value) is dict:return value.get(family)
+        return value
+
+    @staticmethod
+    def attempt_ref_for(operation_id,family):
+        token=hashlib.sha256(f'{operation_id}:{family}'.encode('utf-8')).hexdigest()[:32]
+        return 'a:'+token
+
+    def _open(self,family,operation_id,reconcile_attempt_ref=None):
+        need(not self._closed and self._current is None,'FAMILY_RUNTIME_OVERLAP_OR_CLOSED')
+        self._counter+=1
+        operation_id=self._operation_id(family,operation_id)
+        need(type(operation_id)is str and REF.fullmatch(operation_id) is not None,'FAMILY_OPERATION_ID_REQUIRED')
+        self._current=self._open_family(family,operation_id,self._counter,reconcile_attempt_ref)
+        need(self._current._owner_family==family,'SERVER_FAMILY_SELECTION_MISMATCH')
+        return self._current
+
+    def _close_current(self):
+        if self._current is None:return
+        current,self._current=self._current,None
+        current.close(close_resources=False)
+
+    def recover_pending_once(self,*,limit:int=1,after=None,reconcile_operation=None,
+                             reconcile_attempt_refs=None,operation_id=None):
+        need(type(limit)is int and 1<=limit<=1,'FAMILY_TICK_LIMIT_ONE_REQUIRED')
+        outcomes={};next_by_family={};proofs=[]
+        previous=reconcile_operation if type(reconcile_operation)is dict else {}
+        prior_refs=reconcile_attempt_refs if type(reconcile_attempt_refs)is dict else {}
+        for family in ('PM_OWNER','ROOM_RETURN'):
+            current_id=self._operation_id(family,operation_id)
+            previous_id=previous.get(family)
+            prior_attempt=prior_refs.get(family)
+            if prior_attempt is None and type(previous_id)is str:
+                prior_attempt=self.attempt_ref_for(previous_id,family)
+            need(prior_attempt is None or (type(prior_attempt)is str and REF.fullmatch(prior_attempt) is not None),
+                 'FAMILY_RECONCILE_ATTEMPT_REF_INVALID')
+            rt=self._open(family,current_id or 'family-recovery',prior_attempt)
+            try:
+                result=rt.recover_pending_once(limit=limit,after=(after or {}).get(family) if type(after)is dict else after)
+                outcomes[family]=result;next_by_family[family]=result.get('next_cursor');proofs.append(result.get('attempt_proof',{}))
+            finally:self._close_current()
+        complete=all(type(v) is dict and v.get('completed') is True for v in outcomes.values())
+        return {'completed':complete,'next_by_family':next_by_family,'family_results':outcomes,
+          'publication_reconciled':complete and all(p.get('reconciled_original_attempt') is True for p in proofs),
+          'reconciled_operation_id':operation_id,'republished':False,'downstream_work':'PENDING_NOT_MODEL_EXECUTED'}
+
+    def publish_pending_once(self,*,limit:int=1,after=None,operation_id=None):
+        need(self._role=='publisher','RECEIVER_PUBLISH_DENIED')
+        need(type(limit)is int and 1<=limit<=1,'FAMILY_TICK_LIMIT_ONE_REQUIRED')
+        results={};next_by_family={}
+        for family in ('PM_OWNER','ROOM_RETURN'):
+            rt=self._open(family,operation_id or 'family-publish')
+            try:
+                result=rt.publish_pending_once(limit=limit,after=(after or {}).get(family) if type(after)is dict else after)
+                results[family]=result;next_by_family[family]=result.get('next_cursor')
+            finally:self._close_current()
+        return {'completed':all(v.get('completed') is True for v in results.values()),
+          'family_results':results,'next_by_family':next_by_family,'publication_reconciled':False,'republished':False}
+
+    def drain_once(self,*,limit:int=1,operation_id=None,on_family_selection=None):
+        need(self._role=='receiver','PUBLISHER_DRAIN_DENIED')
+        need(type(limit)is int and 1<=limit<=1,'FAMILY_TICK_LIMIT_ONE_REQUIRED')
+        ingress=self._open('PM_OWNER',operation_id or 'family-receive-ingress')
+        try:
+            ingress._attempt('receive_begin')
+            ingress._guard('before_pull');delivery=ingress._transport.fetch_one(ingress._cfg.pull_timeout_s)
+            if delivery is None:
+                proof=ingress._attempt('receive_observed')
+                return {'completed':proof.get('effect_admitted') is True,'outcomes':[],'attempt_proof':proof,
+                  'next_cursor':None,'receiver_model_work':False}
+            pointer=ingress.validate_delivery(delivery)
+            try:family=family_from_referent(pointer.referent_type)
+            except ProductionRuntimeRefused:
+                marker={'schema':'bk11-family-ingress-handoff/v1','message_id':pointer.message_id,
+                  'pointer_sha256':pointer.raw_sha256,'owner_family':'UNKNOWN','referent_type':pointer.referent_type,
+                  'operation_id':operation_id,'state':'HOLD_UNKNOWN_REFERENT'}
+                need(callable(on_family_selection),'FAMILY_INGRESS_DURABLE_HOLD_REQUIRED')
+                on_family_selection(marker)
+                proof=ingress._attempt('receive_observed')
+                return {'completed':False,'outcomes':[],'attempt_proof':proof,'next_cursor':None,
+                  'receiver_model_work':False,'family_handoff_marker':marker}
+            marker={'schema':'bk11-family-ingress-handoff/v1','message_id':pointer.message_id,
+              'pointer_sha256':pointer.raw_sha256,'owner_family':family,'referent_type':pointer.referent_type,
+              'operation_id':operation_id}
+            if family!='PM_OWNER':
+                need(callable(on_family_selection),'FAMILY_HANDOFF_DURABLE_MARKER_REQUIRED')
+                on_family_selection(marker)
+            if family=='PM_OWNER':
+                outcome=ingress.receive_delivery(delivery,pointer,begin=False)
+                return {**outcome,'outcomes':[outcome],'next_cursor':None,'receiver_model_work':False}
+            ingress._attempt('receive_observed')
+        except Exception:
+            raise
+        finally:
+            self._close_current()
+        target=self._open(family,operation_id or 'family-receive-room')
+        try:
+            target._attempt('receive_begin')
+            outcome=target.receive_delivery(delivery,pointer,begin=False)
+            return {**outcome,'outcomes':[outcome],'next_cursor':None,'receiver_model_work':False,
+              'family_handoff_complete':True,'family_handoff_marker':marker}
+        finally:self._close_current()
+
+    def close(self):
+        if self._closed:return
+        try:self._close_current()
         finally:
             self._closed=True
             try:self._transport.close()

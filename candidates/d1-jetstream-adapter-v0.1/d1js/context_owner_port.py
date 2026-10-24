@@ -34,6 +34,8 @@ def _row(raw: dict[str, Any] | None) -> dict[str, Any] | None:
 
 class ContextOwnerOutboxPort:
     """Implements owner_protocol.OwnerOutboxPort against the Context service (no SQL, no caller state)."""
+    READ_TOOL = READ_TOOL
+    SETTLE_TOOL = SETTLE_TOOL
 
     def __init__(self, client: Any) -> None:
         if (callable(client) and not hasattr(client, "call")) or getattr(
@@ -49,9 +51,19 @@ class ContextOwnerOutboxPort:
         if message_id is None:
             raise ContextOwnerPortError("WHOLE_WORLD_OUTBOX_SCAN_REFUSED: use pending(after, limit)")
         self.reads += 1
-        got = self._client.call(READ_TOOL, {"op": "read_exact", "message_id": message_id})
+        got = self._client.call(self.READ_TOOL, {"op": "read_exact", "message_id": message_id})
         row = _row(got.get("row"))
         return [row] if row is not None else []
+
+    def pending(self, *, after: dict[str, str] | None = None, limit: int = 16) -> tuple[list[dict[str, Any]], dict[str, str] | None, bool]:
+        if not (1 <= limit <= 16):
+            raise ContextOwnerPortError("PENDING_LIMIT_OUT_OF_BOUNDS")
+        args: dict[str, Any] = {"op": "list_pending", "limit": limit}
+        if after is not None:
+            args["after"] = after
+        self.reads += 1
+        got = self._client.call(self.READ_TOOL, args)
+        return [_row(r) for r in got["rows"]], got.get("next"), bool(got.get("drain_enabled"))
 
     def outbox_transition(self, message_id: str, *, from_state: str, from_token: str | None,
                           **fields: Any) -> bool:
@@ -61,7 +73,7 @@ class ContextOwnerOutboxPort:
         if "puback_latency_ms" in fields and fields["puback_latency_ms"] is not None:
             fields["puback_latency_ms"] = float(fields["puback_latency_ms"])
         self.settles += 1
-        got = self._client.call(SETTLE_TOOL, {"message_id": message_id, "from_state": from_state,
+        got = self._client.call(self.SETTLE_TOOL, {"message_id": message_id, "from_state": from_state,
                                               "from_token": from_token, "fields": fields})
         if not isinstance(got.get("won"), bool):
             raise ContextOwnerPortError("SETTLE_RESULT_INVALID")
@@ -86,18 +98,14 @@ class ContextOwnerOutboxPort:
         args: dict[str, Any] = {"op": "list_recovery_candidates", "limit": limit}
         if after is not None: args["after"] = after
         self.reads += 1
-        got = self._client.call(READ_TOOL, args)
+        got = self._client.call(self.READ_TOOL, args)
         if not isinstance(got, dict) or type(got.get("rows")) is not list or len(got["rows"]) > limit:
             raise ContextOwnerPortError("RECOVERY_RESULT_INVALID")
         return [_row(r) for r in got["rows"]], got.get("next"), bool(got.get("drain_enabled"))
 
-    def pending(self, *, after: dict[str, str] | None = None, limit: int = 16) -> tuple[list[dict[str, Any]],
-                                                                                      dict[str, str] | None, bool]:
-        if not (1 <= limit <= MAX_LIST):
-            raise ContextOwnerPortError("PENDING_LIMIT_OUT_OF_BOUNDS")
-        args: dict[str, Any] = {"op": "list_pending", "limit": limit}
-        if after is not None:
-            args["after"] = after
-        self.reads += 1
-        got = self._client.call(READ_TOOL, args)
-        return [_row(r) for r in got["rows"]], got.get("next"), bool(got.get("drain_enabled"))
+
+class RoomReturnContextOwnerOutboxPort(ContextOwnerOutboxPort):
+    """Same bounded publisher protocol over the server-selected ROOM_RETURN owner family."""
+    READ_TOOL = "read_room_return_d1_outbox_v1"
+    SETTLE_TOOL = "settle_room_return_d1_outbox_v1"
+

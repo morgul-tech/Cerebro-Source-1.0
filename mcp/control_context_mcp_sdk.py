@@ -167,6 +167,50 @@ def _call_tool_result(types: Any, value: Mapping[str, Any]) -> Any:
         raise ControlContextMcpSdkBindingError("tool-result-invalid-for-official-SDK") from exc
 
 
+def _receive_error_result(tool_name: str, error: Exception, args: Any = None) -> dict[str, Any] | None:
+    """Fixed safe receive reasons only; never echo exception text or identity."""
+    if tool_name != 'read_accepted_room_return_v1':
+        return None
+    reasons = {
+        'OLD_CARRIER_EXECUTION_FENCED': ('OLD_CARRIER_EXECUTION_FENCED',
+            'This carrier is retired. Use only the currently qualified carrier; do not replay the old caller.'),
+        'ROOM_ACTOR_READ_PERMISSION_EXPIRED_OR_NOT_YET_VALID': ('ROOM_ACTOR_READ_PERMISSION_EXPIRED_OR_NOT_YET_VALID',
+            'The material read admission is outside its valid window. The owner must dispose the read admission; polling cannot renew it.'),
+        'ACTOR_ACCESS_EXPIRED': ('ACTOR_ACCESS_EXPIRED',
+            'Your ordinary receive access has expired. An owner access decision is required.'),
+        'OWN_ACCEPTED_READ_FIELDS': ('RECEIVE_ARGUMENTS_INVALID',
+            'The receive arguments do not match the current contract.'),
+        'OWN_ACCEPTED_READ_SHAPE': ('RECEIVE_ARGUMENTS_INVALID',
+            'The receive arguments do not match the current contract.'),
+        'REFERENCE_INVALID': ('RECEIVE_ARGUMENTS_INVALID',
+            'The receive arguments do not match the current contract.'),
+        'OWN_CURRENT_EXECUTION_FENCED': ('RECEIVE_BINDING_NOT_CURRENT',
+            'The current receive actor binding is unavailable. Preserve this error for the owner.'),
+        'OWN_CURRENT_SESSION_BINDING_CHANGED_REQUALIFY_DESTINATION': ('RECEIVE_BINDING_NOT_CURRENT',
+            'The current receive session binding has changed. Preserve this error for the owner.'),
+        'ACTUAL_NATIVE_ROLE_CHANGED_REQUALIFY_OWNER': ('RECEIVE_BINDING_NOT_CURRENT',
+            'The current receive actor binding has changed. Preserve this error for the owner.'),
+        'ROOM_ACTOR_CURRENT_STALE': ('RECEIVE_BINDING_NOT_CURRENT',
+            'The current receive binding is stale. Preserve this error for the owner.'),
+    }
+    selected = reasons.get(str(error))
+    if selected is None:
+        return None
+    code, text = selected
+    extra = {}
+    if code == 'OLD_CARRIER_EXECUTION_FENCED':
+        extra['owner_action'] = 'USE_CURRENT_QUALIFIED_CARRIER_NO_REPLAY'
+    elif code == 'ROOM_ACTOR_READ_PERMISSION_EXPIRED_OR_NOT_YET_VALID':
+        extra['owner_action'] = 'OWNER_READ_ADMISSION_DISPOSITION_REQUIRED_NO_RENEW'
+    if extra and type(args) is dict and set(args) <= {'op','message_id','material_ref','after'} and args.get('op') in ('list_accepted','read_exact'):
+        if all(type(v) is str and 0 < len(v) <= 160 and re.fullmatch(r'[A-Za-z0-9_.:@/#=-]+',v) for v in args.values()):
+            extra['request_sha256'] = hashlib.sha256(json.dumps(args,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    return {'content': [{'type': 'text', 'text': text}], 'isError': True,
+            'structuredContent': {'schema': 'cerebro-safe-receive-error/v1',
+                                  'error_code': code, 'retry_allowed': False,
+                                  'empty_result': False, **extra}}
+
+
 _ADMISSION_REJECTION_STAGES = {
     "ADMISSION_OPERATION_REQUIRED": "ARGUMENT_VALIDATION",
     "EXACT_FIELDS_REQUIRED": "ARGUMENT_VALIDATION",
@@ -313,7 +357,7 @@ def create_official_mcp_server(service: ControlContextRemoteMcpService) -> Any:
                 )
         except ControlContextToolError as error:
             _log_admission_rejection(params.name, params.arguments, error)
-            value = {
+            value = _receive_error_result(params.name, error, params.arguments) or {
                 "content": [
                     {"type": "text", "text": "The project-control request was rejected."}
                 ],

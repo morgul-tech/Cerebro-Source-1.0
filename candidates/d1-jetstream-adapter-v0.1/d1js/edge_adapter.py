@@ -68,4 +68,13 @@ class EdgeRuntimeAdapter:
             try:self._runtime.close()
             finally:self._runtime=None
 
-def open_runtime(admission):return EdgeRuntimeAdapter(admission)
+def open_runtime(admission,*,operation_id=None):
+    if admission.get('family_plan') is not None:
+        from .production_factory import open_runtime as open_family_runtime
+        from .ordinary_runtime import wrap_runtime
+        inner=open_family_runtime(admission,operation_id=operation_id)
+        try:return wrap_runtime(inner,admission)
+        except Exception:
+            inner.close()
+            raise
+    return EdgeRuntimeAdapter(admission)
