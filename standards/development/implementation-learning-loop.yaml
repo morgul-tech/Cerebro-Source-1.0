@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.27"
+  version: "1.28"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -416,6 +416,8 @@ implementation_learning_loop:
       actor model, app setting, dispatch, provider, session, router or runtime.
       Preserve existing writer/API settings; if actual settings are unobserved,
       keep them UNKNOWN. It adds no new authority or lifecycle effect.
+    terra_interpretation_and_work_economy: >
+      Ved ny eller reelt endret tildeling kan Terra 6.1 low velges for avgrenset kode-, tekst- eller skjermarbeid når grunnlaget er tilstrekkelig og årsak eller tolkningsregel er avklart. Terra medium krever en konkret, navngitt tolkningsusikkerhet; oppgavenavn, liten diff eller ukjent årsak alene begrunner ikke høyere nivå. Bruk eksisterende verktøy til kjent mekanikk. Når et reelt modellvalg foreligger, vurder tilstrekkelig kvalitet og samlet gjenstående arbeid, også innlesing, overlevering og retting. Behold samme kvalifiserte utfører når det sparer arbeid, men regn også med byrden av unødvendig historikk. Dette krever ingen egen sammenligningsrunde eller overlevering og endrer ikke ansvar eller fullmakt. Gyldig valg gjenbrukes til behovet faktisk endres. Luna HIGH står fast.
     affected_code_fit: >
       Reuse the existing executor/reviewer code-doctor function at candidate preparation
       and before release or privileged use for materially changed code and affected
