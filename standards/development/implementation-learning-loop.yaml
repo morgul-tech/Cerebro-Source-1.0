@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.26"
+  version: "1.27"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -449,6 +449,26 @@ implementation_learning_loop:
       full_original_when: [task_or_revision_changed, basis_missing, basis_stale, basis_insufficient]
       reuse_held_basis_within_same_arc_when_current_and_sufficient: true
       before_independent_dispatch: [selected_actor_current_work, pending_intent_or_assignment, uptake, required_tool_fit]
+      event_driven_continuation: >
+        Bevar alle aktive oppdrag/revisjoner, forventet retur, produsent, neste
+        mottaker/handling og faktisk autorisert retur-/vekkevei i eksisterende
+        Work/eier-CURRENT. Gjør egen uavhengig handling; når bare en annens arbeid
+        gjenstår, avslutt den rent ventende chatturen uten å pause, lukke eller
+        kansellere oppdraget eller avbryte utføreren. Produsenten bevarer faktisk
+        materiell retur i vanlig hjem og sender ett kort autorisert pekersignal
+        ved handlingsutløsende resultat, feil eller beslutningsbehov; uendret
+        mellomaktivitet gir ingen nye signaler eller ACK-kjede. Ukjent sending
+        avstemmes på samme forsøk før retry. Åpen mottaksplikt består til faktisk
+        disponering. Eksisterende helhets-/romoppfølging er reserve for konkret
+        ubehandlet retur, ikke nye godkjennere eller universell fjernvekkerett.
+        P55/BK11 bruker støttet kanal og faktisk ansvarlig mottaker. Ett begrunnet
+        avgrenset ventekall er tillatt ved nært resultat eller egen aktiv operasjon;
+        gjentatte wait/sleep-runder uten egen ny handling er ikke standard.
+        Bevar aktiv prosess, skriveansvar og ukjent effekt før turen avsluttes.
+        Ingen ny klokke, motor, skjema, testordre, kontrollkø, allaktør-ACK/vekking
+        eller leveranseport følger. Publisering, sendt signal og faktisk bruk
+        er forskjellige bevis. Bruk neste aktuelle overgang i aktive oppdrag;
+        én lokal observasjon er ikke allromsbruk eller målt ressursgevinst.
       same_task_material_input_is_new_assignment: false
       continuity_rehydration_and_resume:
         selection:
