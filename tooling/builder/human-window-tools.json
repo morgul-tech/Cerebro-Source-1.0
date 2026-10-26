@@ -1,0 +1,53 @@
+{
+  "schema": "cerebro-component-human-tools/v1",
+  "component": "builder",
+  "authority": "Documented source offering only; no installed or callable runtime is inferred.",
+  "basis": {
+    "repository": "morgul-tech/Cerebro-Source-1.0",
+    "commit": "64adcd5c1474553314649f032c2aafaae2ca720c",
+    "paths": [
+      "tooling/builder/component.yaml",
+      "tooling/builder/templates/pshell/Cerebro.Tools.psd1",
+      "tooling/builder/templates/pshell/Cerebro.Tools.psm1",
+      "tooling/builder/context_source_package.py"
+    ]
+  },
+  "human_window_tools": [
+    {
+      "id": "source.powershell.tools-status",
+      "title": "PowerShell-verktøystatus",
+      "description": "Dokumentert statusfunksjon for Cerebro.Tools1.5.0. Importert modul og lokal konfigurasjon må være avklart i det virkelige PowerShell-miljøet.",
+      "action": "guidance",
+      "environment": "Windows PowerShell5.1 eller kvalifisert kompatibel vert; riktig eksisterende Cerebro.Tools-modul må allerede være importert.",
+      "command": [
+        "cerebro_tools_status"
+      ],
+      "requires": [
+        "owner-bound-imported-module",
+        "actual-config"
+      ],
+      "availability": "DOCUMENTED_NOT_OBSERVED"
+    },
+    {
+      "id": "source.builder.context-source-package",
+      "title": "Avgrenset Python-kildepakke",
+      "description": "Veiledning for komponentens eksisterende kildepakkebygger. Krever valgt Source-kopi, kvalifisert Python/PyYAML, eksplisitt ny outputkatalog og forventet Source-revisjon. Ingen generell runner eller ettklikksbygging.",
+      "action": "guidance",
+      "environment": "Eieravklart Source-rot; kvalifisert Python3 med PyYAML og Git.",
+      "command": [
+        "python",
+        "tooling/builder/context_source_package.py",
+        "{output_directory}",
+        "--expected-source-revision",
+        "{source_commit}"
+      ],
+      "requires": [
+        "qualified-source-root",
+        "qualified-python-pyyaml",
+        "explicit-output-directory",
+        "expected-source-revision"
+      ],
+      "availability": "DOCUMENTED_NOT_OBSERVED"
+    }
+  ]
+}
