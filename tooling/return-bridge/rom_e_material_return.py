@@ -71,12 +71,174 @@ def _load(name: str):
     return module
 
 
-def presend(*, request: str, original: str, capture_root: str) -> dict[str, Any]:
+def presend(*, request: str, original: str, capture_root: str,
+            profile: str | None = None, capacity_observation: str | None = None) -> dict[str, Any]:
     """Caller invokes BEFORE its legitimate send, never after receipt/delivery."""
     capture = _load("rom_a_dispatch_capture")
     obj = json.loads(_read(request), object_pairs_hook=capture._unique_pairs,
                      parse_constant=lambda _: (_ for _ in ()).throw(ValueError("NONFINITE_JSON")))
-    return capture.capture(_path(capture_root), obj, _read(original))
+    profile_value = None if profile is None else json.loads(_read(profile))
+    capacity_raw = None if capacity_observation is None else _read(capacity_observation)
+    return capture.capture(_path(capture_root), obj, _read(original),
+                           profile=profile_value, capacity_observation=capacity_raw)
+
+
+def dispatch_task(*, request: str, original: str, capture_root: str, dispatch_root: str,
+                  candidates: str, sender: Any, capacity_reader: Any) -> dict[str, Any]:
+    """Ordinary host entry: owner-listed capacity -> capture -> existing sender.
+
+    This makes no reservation or grant. Each candidate carries its owner's v2
+    current/pending observation and task-local profile. The host still supplies
+    the legitimate sender and fresh read_dispatch port; neither is a CLI flag.
+    A stable task/attempt receipt owns the choice, even when later cuts change.
+    """
+    capture, capacity = _load("rom_a_dispatch_capture"), _load("task_capacity_care")
+    normal = _load("rom_a_normal_path")
+    if (not callable(getattr(sender, "send_selected", None)) or
+            not callable(getattr(sender, "qualify_recipient", None)) or
+            not callable(getattr(capacity_reader, "read_dispatch", None))):
+        raise ValueError("HOST_SENDER_AND_CAPACITY_PORT_REQUIRED")
+    obj = {"schema": capture.SCHEMA, **capture._validate_request(
+        json.loads(_read(request), object_pairs_hook=capture._unique_pairs))}
+    task = obj["task"]
+    payload = _read(original)
+    listed = capacity.decode(_read(candidates))
+    if not isinstance(listed, list) or not 1 <= len(listed) <= 16:
+        raise ValueError("BOUNDED_OWNER_CANDIDATES_REQUIRED")
+    observations, seen = [], set()
+    common = None
+    for candidate in listed:
+        if not isinstance(candidate, dict) or set(candidate) != {
+            "actor_ref", "generation_ref", "carrier_ref", "profile", "capacity_observation"
+        }:
+            raise ValueError("DISPATCH_CANDIDATE_FIELDS_INVALID")
+        for name in ("actor_ref", "generation_ref", "carrier_ref"):
+            capacity._text(candidate[name], "DISPATCH_CANDIDATE_ID_REQUIRED")
+        identity = candidate["actor_ref"], candidate["generation_ref"]
+        if identity in seen:
+            raise ValueError("DISPATCH_CANDIDATE_DUPLICATE")
+        seen.add(identity)
+        raw = _read(candidate["capacity_observation"])
+        obs = capacity._observation(raw)
+        if (obs["schema"] != capacity.OBSERVATION_SCHEMA_V2 or
+                obs["selected_actor_ref"] != candidate["actor_ref"] or
+                obs["task_ref"] != task["task_ref"] or obs["task_revision"] != task["task_revision"]):
+            raise ValueError("DISPATCH_CURRENT_PENDING_OBSERVATION_REQUIRED")
+        cut = {k: obs[k] for k in ("cut_ref", "cut_revision", "observer_ref", "task_ref",
+                                  "task_revision", "attempt_ref", "input_kind", "workers")}
+        if common is not None and cut != common:
+            raise ValueError("DISPATCH_CANDIDATES_DIFFERENT_CUT")
+        common = cut
+        observations.append((candidate, obs, raw))
+    scope = {k: task[k] for k in ("task_ref", "task_revision", "arc_ref")}
+    scope["attempt_ref"] = common["attempt_ref"]
+    home = _path(dispatch_root) / ("dispatch-" + _sha(_canonical(scope)))
+    result = {"receipt": str(home / "receipt.json"), "selected": str(home / "original_task.txt")}
+    input_hash = _sha(_canonical(obj) + payload)
+    if home.exists():
+        receipt = json.loads(_read(home / "receipt.json"))
+        if receipt.get("input_sha256") != input_hash or _read(home / "original_task.txt") != payload:
+            raise ValueError("DISPATCH_SAME_ATTEMPT_INPUT_CONFLICT")
+        saved_task, _, _, _ = normal._capture(receipt["capture_ref"])
+        # Already accepted is a recorded outcome, never a new recipient/use claim.
+        if receipt["dispatch"]["state"] == "SENT_ACCEPTED":
+            return {**result, "dispatch": "EXACT_SENT_REUSE", "recipient_use": "NOT_OBSERVED",
+                    "recipient_ref": receipt["adoption"]["actor_ref"],
+                    "delivery_ref": receipt["dispatch"]["delivery_ref"], "authority": "NONE"}
+        sender.qualify_recipient(saved_task["actor_ref"], saved_task["carrier_ref"])
+        return normal._dispatch_selected(result, sender, capacity_reader=capacity_reader)
+    preferred = (task["actor_ref"], task["generation_ref"])
+    observations.sort(key=lambda item: (item[0]["actor_ref"], item[0]["generation_ref"]) != preferred)
+    refusals = []
+    chosen = None
+    for candidate, obs, raw in observations:
+        if common["input_kind"] != "TASK_ASSIGNMENT" and (
+                candidate["actor_ref"], candidate["generation_ref"]) != preferred:
+            continue  # Same-attempt continuation is never automatically redistributed.
+        rebound = {**task, **{k: candidate[k] for k in ("actor_ref", "generation_ref", "carrier_ref")}}
+        try:
+            worker, _, _ = capacity._decision(obs, rebound)
+            capacity.require_owner_ports(obs)
+            if (worker["profile_source_ref"] != candidate["profile"]["source_ref"] or
+                    worker["profile_source_revision"] != candidate["profile"]["source_revision"]):
+                raise ValueError("DISPATCH_PROFILE_SOURCE_MISMATCH")
+        except (capacity.CapacityRefusal, capacity.OwnerPortRefusal) as exc:
+            refusals.append({"actor_ref": candidate["actor_ref"], "reason": exc.code})
+            continue
+        chosen = candidate, rebound, raw
+        break
+    if chosen is None:
+        error = ValueError("DISPATCH_OWNER_REBIND_OR_EVIDENCE_REQUIRED")
+        error.details = refusals
+        raise error
+    candidate, rebound, raw = chosen
+    sender.qualify_recipient(rebound["actor_ref"], rebound["carrier_ref"])
+    selected_request = {**obj, "task": rebound}
+    cap_root = _path(capture_root) / home.name
+    cap_root.mkdir(parents=True, exist_ok=True)
+    cap = capture.capture(cap_root, selected_request, payload,
+                          profile=candidate["profile"], capacity_observation=raw)
+    bound = json.loads(_read(Path(cap["capture_path"]).with_name("task_capacity_care.json")))
+    home.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        home.mkdir()
+    except FileExistsError as exc:
+        raise ValueError("DISPATCH_SAME_ATTEMPT_RECONCILE_REQUIRED") from exc
+    # No fake recipient return is manufactured to get into the existing sender.
+    receipt = {"schema": "cerebro-ordinary-task-dispatch/v1", "input_sha256": input_hash,
+               "adoption": {k: rebound[k] for k in ("actor_ref", "task_ref", "task_revision")},
+               "selected": {"file": "original_task.txt", "sha256": _sha(payload),
+                            "bytes": len(payload), "selection": "FULL_ORIGINAL_TASK"},
+               "capture_ref": cap["capture_path"], "scope": scope,
+               "selection_basis": {"rejected": refusals, "authority": "NONE",
+                                   "reservation": "CALLER_OBSERVED_NOT_NATIVE_LOCKED"},
+               "task_capacity_care": {"binding": bound},
+               "dispatch": {"state": "NOT_SENT"}, "authority": "NONE"}
+    for path, data in ((home / "original_task.txt", payload),
+                       (home / "receipt.json", _canonical(receipt))):
+        with path.open("xb") as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+    return normal._dispatch_selected(result, sender, capacity_reader=capacity_reader)
+
+
+class CodexThreadSender:
+    """Host-bound adapter to the actual ordinary send_message_to_thread tool.
+
+    The host supplies its supported tool callback and qualified actor -> chat
+    bindings. This does not create a native send port or authorize messaging.
+    Tool acceptance is not recipient reading/use or remote effect.
+    """
+    def __init__(self, tool_call: Callable, actor_threads: dict[str, str]):
+        if not callable(tool_call) or not isinstance(actor_threads, dict) or not actor_threads:
+            raise ValueError("HOST_THREAD_SENDER_BINDING_REQUIRED")
+        self.tool_call, self.actor_threads = tool_call, dict(actor_threads)
+
+    def qualify_recipient(self, actor_ref: str, carrier_ref: str) -> None:
+        if self.actor_threads.get(actor_ref) != carrier_ref:
+            raise ValueError("HOST_THREAD_CARRIER_BINDING_MISMATCH")
+
+    def send_selected(self, *, recipient_ref: str, selected_bytes: bytes,
+                      selected_sha256: str, selection: str, task_ref: str,
+                      task_revision: str) -> dict:
+        thread = self.actor_threads.get(recipient_ref)
+        if not isinstance(thread, str) or not thread.strip() or _sha(selected_bytes) != selected_sha256:
+            raise ValueError("HOST_THREAD_RECIPIENT_OR_BYTES_MISMATCH")
+        response = self.tool_call(threadId=thread, prompt=selected_bytes.decode("utf-8"))
+        if not isinstance(response, dict) or response.get("isError") is True:
+            raise ValueError("HOST_THREAD_SEND_NOT_ACCEPTED")
+        result = response.get("structuredContent", response)
+        if not isinstance(result, dict) or result.get("threadId") != thread:
+            blocks = response.get("content", [])
+            if len(blocks) != 1 or blocks[0].get("type") != "text":
+                raise ValueError("HOST_THREAD_SEND_NOT_ACCEPTED")
+            result = json.loads(blocks[0]["text"])
+        if not isinstance(result, dict) or result.get("threadId") != thread:
+            raise ValueError("HOST_THREAD_SEND_NOT_ACCEPTED")
+        return {"state": "ACCEPTED", "recipient_ref": recipient_ref,
+                "selected_sha256": selected_sha256,
+                "delivery_ref": "codex-thread:" + thread}
 
 
 def _representation(out: Path, normal: Any, receipt: dict, original: bytes,
@@ -299,6 +461,8 @@ def main() -> int:
     pre = sub.add_parser("presend")
     for name in ("request", "original", "capture-root"):
         pre.add_argument("--" + name, required=True)
+    pre.add_argument("--profile")
+    pre.add_argument("--capacity-observation")
     final = sub.add_parser("finalize")
     for name in ("capture-record", "return-input", "output-root"):
         final.add_argument("--" + name, required=True)

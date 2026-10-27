@@ -15,6 +15,74 @@ python -I -B ABS/rom_e_material_return.py finalize --capture-record ABS/captures
 
 `presend` delegates to `rom_a_dispatch_capture.capture` with the existing request schema and exact UTF-8 original bytes. The legitimate sender calls it before its actual sending action. It cannot prove timing or sender identity; incoming originals and historical deliveries must never be retrocaptured as presend. Sending remains separate. This implementation task itself is direct full-original/M0, not a positive BK04 episode.
 
+## Capacity-connected ordinary host dispatch
+
+For a new or materially changed assignment the ordinary host uses
+`rom_e_material_return.dispatch_task`, before freezing the recipient. This is
+the host integration seam, not a new repository-native messaging service. On
+the Codex host the actual effect remains the supported
+`mcp__codex_app.send_message_to_thread(threadId, prompt)` tool. The host binds
+that existing, Human-authorized tool callback with `CodexThreadSender`; it
+must not replace it with a success flag or claim that presend sent anything.
+An unbound file CLI cannot call the tool or claim installation/use.
+
+Inputs are absolute local request/original/capture-root/dispatch-root paths,
+an owner-listed candidate JSON file, the legitimate sender and an owner reader
+with `read_dispatch(binding)`. Each candidate contains exactly `actor_ref`,
+`generation_ref`, `carrier_ref` (the qualified Codex chat ID), `profile` (the
+existing task-local profile object) and `capacity_observation` (absolute path).
+Candidate observations use the existing canonical v2 capacity schema, the same
+task/revision/attempt/cut/observer/workers and their own selected actor/owner-port
+contract. Use only relevant, qualified alternatives, not a fleet inventory.
+The host's actor-to-chat mapping must equal the selected carrier before capture
+or sending. Profiles must match their observed source/revision.
+
+```python
+sender = entry.CodexThreadSender(host.send_message_to_thread, qualified_actor_chats)
+result = entry.dispatch_task(
+    request=request_path, original=original_path, candidates=candidates_path,
+    capture_root=capture_root, dispatch_root=dispatch_root,
+    sender=sender, capacity_reader=existing_capacity_owner_reader)
+```
+
+The reader returns `{provenance: {...}, observation_raw: canonical_bytes}`
+from the existing actual current/pending owner evidence for the bound selected
+actor. The existing dispatch path rechecks it before intent and before sender.
+No `IDLE` UI state becomes a reservation, observation does not grant access,
+and this adapter does not invent an owner reader or authenticate its evidence.
+
+Selection tries the requested actor, then the owner's ordered candidates only
+for `TASK_ASSIGNMENT`. Existing capacity/owner-port rules reject busy unrelated
+work, pending commitments, unknown evidence or unfit profiles. A qualified
+alternative changes the actual captured actor/profile/chat and actual sender
+arguments. For `SAME_TASK_CONTINUATION` and `MATERIAL_INPUT` the original actor
+is retained only when the existing same-attempt/current-work rules permit it;
+the entry never silently reallocates an active effect. Submit one complete
+component or short mechanical action, not a chain of artificial subtasks.
+
+The task/revision/arc/attempt owns one dispatch receipt independent of later
+recipient choices. Repeated accepted input returns `EXACT_SENT_REUSE` without
+calling the sender; changed input conflicts. Unknown outcome and a failed
+post-intent recheck retain the existing no-retry reconciliation boundary.
+Tool acceptance is only host acceptance, never recipient reading/use or native
+reservation. Capture/profile/capacity files and send intent belong to the same
+ordinary task output, not a second status master.
+
+For an already owner-selected presend that stays separate from host dispatch,
+the existing CLI now forwards both optional sidecars without sending:
+
+```text
+python -I -B rom_e_material_return.py presend --request ABS/request.json --original ABS/original.txt --capture-root ABS/captures --profile ABS/profile.json --capacity-observation ABS/capacity.json
+```
+
+This compatibility path validates the frozen recipient; it does not perform
+alternative selection. Do not use it plus an unchecked manual send as evidence
+that the capacity-connected host adapter was installed or used. A1 integrates
+the bounded Source contribution; PM binds the actual ordinary host callback and
+owner reader for F4. F3's inert tool-shaped callback is separate from that real
+use. No shared runtime, Core/VPS profile, credential or remote effect is changed
+by importing this component.
+
 `finalize` consumes the existing `cerebro-rom-a-return-observation/v1`. Only FACT_RETURN with real producer `facts` or genuine REPAIR/REFINE is eligible. It preserves the actual producer identity; E2's return is not relabeled E1. It snapshots exact inputs into the new local output, then calls existing `rom_a_normal_path.prepare` → `rom_a_return_adoption` → the unchanged classifier/core. FACT_RETURN requires structurally complete, nonconflicting facts; classifier UNKNOWN for authenticated use remains UNKNOWN. No model reconstructs facts from prose.
 
 Optional repair paths are `--parent-manifest`, `--verifier`, `--verifier-delta`, `--currentness`, `--prior-record`; otherwise only those exact same-episode filenames are considered. An existing `work_error.json` and capture-owned profile/capacity sidecars are retained for the existing normal control. No directory-wide historical search, provider, sender, callback loading from a file, wake, or external publication is performed.
