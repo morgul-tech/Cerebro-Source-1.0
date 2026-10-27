@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.28"
+  version: "1.29"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -356,6 +356,38 @@ implementation_learning_loop:
         capacity port, general communication permission or technical authority
         is created. Workflow remains 0.5 Living, not rev9. Publication, actual
         normal-entry selection and recipient application remain distinct.
+    actor_workwave_adoption_20261027:
+      status: HUMAN_ADOPTED_EXISTING_NAMED_ACTORS
+      order_ref: P23-ACTOR-WAVE-INTRODUCTION-20261027-01/rev1
+      order_sha256: 8070437505eca07b01af7be6800446915dc424f81e70b72bac0ade67d83aa9e0
+      operative_work_recipe: Cerebro-Work/recipes/WORKFLOW.md
+      selected_work_forms: >
+        Choose self/tool for small settled steps; source-grounded advice for
+        tightly coupled work while the integrator keeps production; a complete
+        bounded subproduct for independent interfaces/writing areas; whole
+        takeover when many tiny handoffs would copy nearly the whole task.
+      contribution_and_integration: >
+        Name the usable result and its place in the whole, relevant basis and
+        dependencies, writing/effect boundary, saved return and recipient's next
+        action in the existing assignment. Reuse valid mandate, capacity and
+        model choices. Integrate when the actual dependency needs the product,
+        without a global helper barrier or PM/X9 courier chain. PM retains whole
+        responsibility; qualified existing actors may work directly with the
+        integrator through the authorized route. One writer per shared surface;
+        branches do not isolate server state, processes, keys or effects.
+      actual_return_and_economy: >
+        Work holds task/material/result; chat carries an authorized pointer.
+        Dispatch is sent only on an actual supported tool outcome; reconcile an
+        unknown send before retry, without mandatory model ACK. Apply existing
+        current_task_before_action.event_driven_continuation for idle duty and
+        retained receipt obligations. Assess whole remaining effort, including
+        recipient rereading/rework; tools handle settled Git/hash/packing. Do
+        not delegate a model merely to push or claim unmeasured savings.
+      preserved_boundaries: >
+        Existing named actors only, no native subagent permission, new model,
+        authority, clock or method engine. Reuse valid independent assessment;
+        producer checks do not replace necessary independent coverage. Preserve
+        Human choices, Luna HIGH, critical work and private/effect boundaries.
     production_maturation_and_task_model: >
       For a new or complex assignment, mature one execution-ready whole-job
       plan across affected rooms: natural packages, inputs, outputs, critical
