@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.29"
+  version: "1.30"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -388,6 +388,45 @@ implementation_learning_loop:
         authority, clock or method engine. Reuse valid independent assessment;
         producer checks do not replace necessary independent coverage. Preserve
         Human choices, Luna HIGH, critical work and private/effect boundaries.
+      deeper_job_integration_rev2:
+        status: HUMAN_ADOPTED_ORDINARY_ENTRY_AND_ACTUAL_RECIPIENT_USE
+        order_ref: P23-ACTOR-WAVE-INTRODUCTION-20261027-01/rev2
+        order_Work: 8bbabb4747e0494e6f1d51f8ef4e86ba10f6e6b4
+        order_sha256: e376e8a39c7df551f0ff665deacaf57ba8d2d3ffa9dee67ddb67e10d787326d2
+        complete_parallel_contributions: >
+          Use a few directly usable complete contributions where they remove
+          real work or waiting. Qualified existing actors may own independent
+          code components and their checks; a coupled core writer is not a
+          monopoly on all code. Split by responsibility, dependencies and real
+          writing surfaces, not room/file count or helper quotas.
+        early_connected_trial: >
+          Agree the small necessary interface early. Exercise the real changed
+          ordinary entry and internal connections while independent work
+          proceeds, replacing only external effects with harmless ports where
+          needed. This moves the necessary trial earlier, not a new final gate.
+        preserve_and_repair: >
+          Preserve unchanged subproducts and valid evidence after failure.
+          Repair and test the affected part and connections; a new candidate
+          pin alone does not reopen the whole job. Reconcile actual unknown
+          target effects before repeating an affected effect, within existing
+          access and once boundaries.
+        integrator_and_operations: >
+          Integrator uses complete contributions directly and delivers actual
+          assembly/readiness; the main writer does not rewrite them. Operations
+          prepares necessary public inputs and target basis in parallel.
+          Necessary independent changed-risk review and independent operations
+          fit may run together on the same candidate. Existing tools handle
+          mechanical packing/hash/Git without a model handoff per push.
+        ordinary_entry_and_return: >
+          Keep one goal/integrator and one writer per truly shared surface;
+          branches do not isolate shared server/key/build state. Integrate when
+          a dependency needs a contribution, without a wait-for-all barrier.
+          Existing task/BUILD/return entries retain completed work, affected
+          remainder and next action owner. Reuse completed method trials and
+          independent assessment; no new engine, review-of-review, actor ACK,
+          native helper or model change. Luna HIGH and critical work persist.
+          Publication, recipient reading and actual integration use remain
+          separate; record chronology without attributing past work to rev2.
     production_maturation_and_task_model: >
       For a new or complex assignment, mature one execution-ready whole-job
       plan across affected rooms: natural packages, inputs, outputs, critical
