@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.30"
+  version: "1.31"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -52,12 +52,16 @@ implementation_learning_loop:
     principle: ARTIFICIAL_INPUT_THROUGH_REAL_ORDINARY_ROUTE_BEFORE_DEPENDENT_NORMAL_USE
     trigger: NEW_OR_MATERIALLY_CHANGED_TECHNICAL_FUNCTION_OR_CONNECTION
     sequence: >
-      Before dependent normal use, select a small representative harmless synthetic
-      input or load and an observable expected result. Bind the actual selected
-      component edition, ordinary entry, target environment and legitimate access;
-      execute that real route, preserve the observed result and return, and check
-      the recipient's promised result. Synthetic describes the input or load, not
-      a replacement connection. A double cannot prove the link it replaces.
+      Before dependent normal use, agree a small representative harmless input or
+      load, expected observation, necessary assumption to resolve and next action
+      owner. If delivery depends on a target host or service environment, move this
+      already necessary connected trial early through the planned legitimate entry
+      on that actual target, within already authorized effects; reuse valid target
+      evidence. Bind actual edition, route, environment and access, observe result,
+      return and promised recipient check. Static source and local doubles cover
+      only their own scope; a double cannot prove the connection it replaces. Name
+      the real access/environment remainder and continue independent work. Move
+      the existing trial earlier, never add a trial before the trial.
     equivalent_evidence: >
       Reuse valid equivalent evidence with exact edition, route, environment,
       attribution and limits. Cover materially different entries/environments
@@ -77,10 +81,15 @@ implementation_learning_loop:
       production or natural work. Actual real-work use and useful recipient effect
       need their own observations; explicitly promised usefulness remains open.
     continuation: >
-      Correct known local faults within mandate on the same task and recheck the
-      affected evidence. Reconcile unknown effects before repeating; preserve
-      NO_RETRY, legitimate access, private and effect boundaries. Add no universal
-      one-attempt limit, Human-per-fault gate or whole-suite requirement.
+      Return a sanitized concrete cause, known or UNKNOWN affected effect and a
+      supported next covered action, not just an error code when a missing fact
+      determines continuation. Expose only relevant non-secret information, never
+      arbitrary private logs or keys. The same responsible owner preserves good
+      parts and valid evidence, repairs covered local faults and rechecks affected
+      connections with correct new content/attempt bindings. Reconcile relevant
+      unknown effects before dependent new effects; changed access or authority
+      goes to its rightful owner. Preserve NO_RETRY and private/effect boundaries;
+      add no Human-per-fault gate, universal one-attempt limit or whole-suite replay.
     component_control_and_reader: >
       Keep executable checks, regressions and receipts in the component's ordinary
       CODE-DOCTOR, BUILD-PROFILE, introduction and Verification B paths. Map actual
@@ -147,11 +156,11 @@ implementation_learning_loop:
       finite relevant stages/evidence/resources, stop rules and ordinary return clear.
       A small task may do this in a few sentences; a build uses the existing fuller
       profile, not seven files or a new approval chain. Reuse AD1's build profile for
-      code work: wash/refactor what materially affects the result, and, where feasible,
-      exercise the connected harmless local materializer-to-entry-to-produced-state
-      path before a costly field session; reuse valid unaffected evidence. A double
-      covers only its external effect, not the local seam; target-only or authenticated
-      integration remains separate. Keep existing current/original, whole-job/ports,
+      code work: wash/refactor what materially affects the result and apply
+      first_technical_qualification early to the actual required route/target.
+      Reuse valid unaffected evidence; a local materializer/entry trial covers
+      only its proved seam and is not a separate gate before the target trial.
+      Keep existing current/original, whole-job/ports,
       Zenon, first-failure, Code Doctor and ordinary-return boundaries; add no poll or
       proof task.
     official_workflow_0_5: >
@@ -367,14 +376,12 @@ implementation_learning_loop:
         bounded subproduct for independent interfaces/writing areas; whole
         takeover when many tiny handoffs would copy nearly the whole task.
       contribution_and_integration: >
-        Name the usable result and its place in the whole, relevant basis and
-        dependencies, writing/effect boundary, saved return and recipient's next
-        action in the existing assignment. Reuse valid mandate, capacity and
-        model choices. Integrate when the actual dependency needs the product,
-        without a global helper barrier or PM/X9 courier chain. PM retains whole
-        responsibility; qualified existing actors may work directly with the
-        integrator through the authorized route. One writer per shared surface;
-        branches do not isolate server state, processes, keys or effects.
+        Use the existing assignment to name result/use, basis/dependencies, actual
+        writing/effect boundary, saved return and recipient next action. Apply
+        deeper_job_integration_rev2 for direct integration and continuation, reusing
+        mandate/capacity/model choices. PM retains whole responsibility; qualified
+        actors work directly with integrator on authorized routes. One writer per
+        shared surface; branches do not isolate server state, processes, keys or effects.
       actual_return_and_economy: >
         Work holds task/material/result; chat carries an authorized pointer.
         Dispatch is sent only on an actual supported tool outcome; reconcile an
@@ -393,6 +400,8 @@ implementation_learning_loop:
         order_ref: P23-ACTOR-WAVE-INTRODUCTION-20261027-01/rev2
         order_Work: 8bbabb4747e0494e6f1d51f8ef4e86ba10f6e6b4
         order_sha256: e376e8a39c7df551f0ff665deacaf57ba8d2d3ffa9dee67ddb67e10d787326d2
+        clarification_Work: c166c8f501244d127abdfc7cde39e0dc9c849590
+        clarification_sha256: e6c11bb1d42ea7052df6ed4a60e21e5d7c6ac88370d289595e31475b68540814
         complete_parallel_contributions: >
           Use a few directly usable complete contributions where they remove
           real work or waiting. Qualified existing actors may own independent
@@ -400,23 +409,29 @@ implementation_learning_loop:
           monopoly on all code. Split by responsibility, dependencies and real
           writing surfaces, not room/file count or helper quotas.
         early_connected_trial: >
-          Agree the small necessary interface early. Exercise the real changed
-          ordinary entry and internal connections while independent work
-          proceeds, replacing only external effects with harmless ports where
-          needed. This moves the necessary trial earlier, not a new final gate.
+          Agree the small necessary interface early and apply
+          first_technical_qualification through the real ordinary entry, required
+          internal consumers and actual target when delivery depends on it. Harmless
+          external doubles establish only their declared local scope; reuse valid
+          target evidence. Bind observation, assumption and next owner in existing
+          work, not a new checklist or trial-before-trial gate.
         preserve_and_repair: >
-          Preserve unchanged subproducts and valid evidence after failure.
-          Repair and test the affected part and connections; a new candidate
-          pin alone does not reopen the whole job. Reconcile actual unknown
-          target effects before repeating an affected effect, within existing
-          access and once boundaries.
+          Apply first_technical_qualification.continuation in the same responsibility
+          line: sanitized concrete cause, known/UNKNOWN affected effect and supported
+          next covered action. Integrator checks ordinary usability of that return.
+          Preserve good parts/proofs; correct new bytes get new bindings, not whole-job
+          restart. A local fault holds only dependent action; reconcile unknown relevant
+          effect before new effect and route changed authority to the rightful owner.
         integrator_and_operations: >
-          Integrator uses complete contributions directly and delivers actual
-          assembly/readiness; the main writer does not rewrite them. Operations
-          prepares necessary public inputs and target basis in parallel.
-          Necessary independent changed-risk review and independent operations
-          fit may run together on the same candidate. Existing tools handle
-          mechanical packing/hash/Git without a model handoff per push.
+          Integrator directly joins complete independent contributions; main writer
+          does not rewrite them. Operations prepares necessary public input/target
+          basis in parallel. Affected-risk review and independent operations fit use
+          the same candidate concurrently where dependencies permit. Keep one original
+          for common facts and derive required representations with existing tools;
+          group mechanical derivation/packing/publication without per-phase GO. Remove
+          duplicate text, hand copies and handoffs adding no decision, necessary control
+          or performed work. Repeated stops trigger integrator assessment of the whole
+          path to next effect, not an automatic new helper or approval queue.
         ordinary_entry_and_return: >
           Keep one goal/integrator and one writer per truly shared surface;
           branches do not isolate shared server/key/build state. Integrate when
