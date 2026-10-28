@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.31"
+  version: "1.32"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -52,16 +52,17 @@ implementation_learning_loop:
     principle: ARTIFICIAL_INPUT_THROUGH_REAL_ORDINARY_ROUTE_BEFORE_DEPENDENT_NORMAL_USE
     trigger: NEW_OR_MATERIALLY_CHANGED_TECHNICAL_FUNCTION_OR_CONNECTION
     sequence: >
-      Before dependent normal use, agree a small representative harmless input or
-      load, expected observation, necessary assumption to resolve and next action
-      owner. If delivery depends on a target host or service environment, move this
-      already necessary connected trial early through the planned legitimate entry
-      on that actual target, within already authorized effects; reuse valid target
-      evidence. Bind actual edition, route, environment and access, observe result,
-      return and promised recipient check. Static source and local doubles cover
-      only their own scope; a double cannot prove the connection it replaces. Name
-      the real access/environment remainder and continue independent work. Move
-      the existing trial earlier, never add a trial before the trial.
+      Before a large dependent build, bind the actual ordinary target/entry,
+      already necessary dependencies, legitimate access and supported error-to-
+      continuation path in the same task. Move the necessary harmless connected
+      trial early within already authorized effects, with expected observation,
+      assumption and next owner; reuse
+      valid actual-target evidence. Group independent safe observations of the
+      already required installation prerequisites, not a host audit. Unknown host
+      facts remain UNKNOWN, never fixture properties. Bind edition/environment,
+      result/return and promised recipient check. Static/local doubles prove only
+      their own scope. Access rest holds dependent effects only; independent work
+      continues. No trial before the trial or new installation gate.
     equivalent_evidence: >
       Reuse valid equivalent evidence with exact edition, route, environment,
       attribution and limits. Cover materially different entries/environments
@@ -81,15 +82,22 @@ implementation_learning_loop:
       production or natural work. Actual real-work use and useful recipient effect
       need their own observations; explicitly promised usefulness remains open.
     continuation: >
-      Return a sanitized concrete cause, known or UNKNOWN affected effect and a
-      supported next covered action, not just an error code when a missing fact
-      determines continuation. Expose only relevant non-secret information, never
-      arbitrary private logs or keys. The same responsible owner preserves good
-      parts and valid evidence, repairs covered local faults and rechecks affected
-      connections with correct new content/attempt bindings. Reconcile relevant
-      unknown effects before dependent new effects; changed access or authority
-      goes to its rightful owner. Preserve NO_RETRY and private/effect boundaries;
-      add no Human-per-fault gate, universal one-attempt limit or whole-suite replay.
+      The actual error recipient preserves one short disposition in the same
+      task/current: achieved work and valid proof; sanitized cause or precise
+      missing causal datum with original and affected part; known-not-performed,
+      known-performed or UNKNOWN current effect, separate from historical UNKNOWN;
+      next covered action and owner, naming only a real new boundary. This is
+      existing work content, not a universal schema or four-field ritual. The next
+      ordinary dispatch/execution uses it directly. For a covered known fault
+      with clear effect, repair/check the affected connection and continue without
+      general GO or whole rebuild. Reconcile UNKNOWN affected effect on the same
+      operation before possible duplicate effect; hold only collision. New scope,
+      rights, target or materially changed risk goes to its rightful owner only.
+      If cause is missing, use the legitimate existing cause route and repair the
+      ordinary return connection with the affected work, not a default separate
+      reader product. New bytes/session/technical identity are not a new project;
+      retain valid parts, actual bindings, expiry, private/platform and NO_RETRY
+      guards. Metadata is not cause, access, performed action or effect proof.
     component_control_and_reader: >
       Keep executable checks, regressions and receipts in the component's ordinary
       CODE-DOCTOR, BUILD-PROFILE, introduction and Verification B paths. Map actual
@@ -402,6 +410,8 @@ implementation_learning_loop:
         order_sha256: e376e8a39c7df551f0ff665deacaf57ba8d2d3ffa9dee67ddb67e10d787326d2
         clarification_Work: c166c8f501244d127abdfc7cde39e0dc9c849590
         clarification_sha256: e6c11bb1d42ea7052df6ed4a60e21e5d7c6ac88370d289595e31475b68540814
+        permanent_continuation_Work: 3a50443eccb8446bb56eafa2589cbd2256ecc59f
+        permanent_continuation_sha256: fd25b107a57fba9842eee22696fa21ccc20b84c8aad203d2ac43a3d676b36cb6
         complete_parallel_contributions: >
           Use a few directly usable complete contributions where they remove
           real work or waiting. Qualified existing actors may own independent
@@ -416,12 +426,13 @@ implementation_learning_loop:
           target evidence. Bind observation, assumption and next owner in existing
           work, not a new checklist or trial-before-trial gate.
         preserve_and_repair: >
-          Apply first_technical_qualification.continuation in the same responsibility
-          line: sanitized concrete cause, known/UNKNOWN affected effect and supported
-          next covered action. Integrator checks ordinary usability of that return.
-          Preserve good parts/proofs; correct new bytes get new bindings, not whole-job
-          restart. A local fault holds only dependent action; reconcile unknown relevant
-          effect before new effect and route changed authority to the rightful owner.
+          Use first_technical_qualification.continuation as the one same-current
+          disposition; do not duplicate its fields in another handoff/checklist.
+          Preserve good work/proof, group known related faults/dependencies and repair
+          only affected connections. A technical restart or FULL_ORIGINAL_TASK context
+          selection is not whole-job rebuild or retest. Repeated same error without
+          new causal information changes the next action to cause/ordinary-return
+          correction within the same job, not another committee or helper queue.
         integrator_and_operations: >
           Integrator directly joins complete independent contributions; main writer
           does not rewrite them. Operations prepares necessary public input/target
@@ -433,15 +444,18 @@ implementation_learning_loop:
           or performed work. Repeated stops trigger integrator assessment of the whole
           path to next effect, not an automatic new helper or approval queue.
         ordinary_entry_and_return: >
-          Keep one goal/integrator and one writer per truly shared surface;
-          branches do not isolate shared server/key/build state. Integrate when
-          a dependency needs a contribution, without a wait-for-all barrier.
-          Existing task/BUILD/return entries retain completed work, affected
-          remainder and next action owner. Reuse completed method trials and
-          independent assessment; no new engine, review-of-review, actor ACK,
-          native helper or model change. Luna HIGH and critical work persist.
-          Publication, recipient reading and actual integration use remain
-          separate; record chronology without attributing past work to rev2.
+          One whole owner/integrator and one writer per shared effect preserve the
+          original/current through return, qualified continuation and performed next
+          action. Use supported work_error_reflex/normal_path/BK05 where actually bound;
+          otherwise legitimate owner reading and the same current suffice. Optional
+          metadata/receipt preparation is not automatic current mutation or operation.
+          With sufficient affected evidence do the next already authorized action and
+          agreed recipient use; send, ACK, candidate and reading alone are not that use.
+          Keep publication, actual entry choice, action and useful effect distinct and
+          chronological. Reuse completed proof; no universal engine/schema, mandatory
+          room tooling, new reviewer, native helper, actor/model change or clock.
+          Luna HIGH, private boundaries and critical work persist. Existing followup
+          handles unprocessed owner action; method finish never gates product work.
     production_maturation_and_task_model: >
       For a new or complex assignment, mature one execution-ready whole-job
       plan across affected rooms: natural packages, inputs, outputs, critical
@@ -590,25 +604,24 @@ implementation_learning_loop:
         the warning. Retain the responsible owner and next natural action until
         handling is observed; create no proof task, coordinator, or status poll.
       finish_and_repair_scope: >
-        Keep the selected recipient effect and stage finish criteria stable until a
-        legitimate change. Reopen only affected conditions on relevant new evidence;
-        retain valid evidence and completed work. A new blocking finding must show a
-        concrete breach of those criteria or necessary safe and authorized execution,
-        naming the affected effect and decision consequence; hypothetical improvements
-        are deferred. Actual new safety or authority evidence may stop the affected
-        effect even when the prior finish criteria were incomplete. Apply this at
-        existing task-entry reconciliation and material growth or recurrence, not
-        every step. The cumulative repair budget follows the same problem across
-        actor, handoff and task-name changes; a new organizational start does not
-        reset spent effort or remaining duty. If the approach or cumulative budget
-        fails, the existing responsible owner selects one coherent path within its
-        mandate, a legitimately reduced scope preserving the selected effect, or a
-        precise remainder or block. Budget limits never confer PASS or remove needed
-        evidence. Met finish criteria lead to the agreed actual recipient action and
-        stage closure, not another general improvement round. Reuse existing method,
-        preflight, care, learning and return paths; add no control ID, gate, reviewer,
-        per-step ACK, checklist or clock. Routine coordination stays with its existing
-        owner; decisions outside mandate go to the rightful owner.
+        Keep the agreed recipient effect and stage finish stable until legitimate
+        change. Known covered repair preserves task, whole owner, achieved work and
+        valid proof; reopen only affected conditions and group already known related
+        faults. Use the same-current disposition and graded continuation in
+        first_technical_qualification.continuation; full original context is not full
+        rebuild/re-review. A new stop must show an actual breach of selected finish
+        or necessary safe authorized execution, affected action and next owner; defer
+        hypothetical improvements. Real new safety/authority evidence may hold that
+        effect even if earlier criteria were incomplete. Apply at material task/
+        return/recurrence, not every line. Cumulative repair resources follow the
+        same problem across actor/handoff/name/session changes; no reset or budget
+        PASS. If approach/resources fail, the existing owner chooses a coherent
+        covered path, legitimate reduced scope preserving the selected effect or
+        precise real remainder. With sufficient affected evidence perform the next
+        already authorized action through agreed recipient use and closure, not a
+        new improvement/control queue. Existing owner handles ordinary coordination;
+        only genuinely outside-mandate changes go to the rightful owner. No new
+        control ID, checklist, per-step GO/ACK, review round or clock.
       zenon_t7_published_work_offering:
         task: P23-ZENON-T7-INTRODUCTION-20261025-01/rev1
         repository: morgul-tech/Cerebro-Work
