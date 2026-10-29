@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.32"
+  version: "1.33"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -571,6 +571,7 @@ implementation_learning_loop:
         eller leveranseport følger. Publisering, sendt signal og faktisk bruk
         er forskjellige bevis. Bruk neste aktuelle overgang i aktive oppdrag;
         én lokal observasjon er ikke allromsbruk eller målt ressursgevinst.
+      project_access_continuity_ref: implementation_learning_loop.human_action_first_normal_return.access_boundary_clarification.project_access_continuity
       same_task_material_input_is_new_assignment: false
       continuity_rehydration_and_resume:
         selection:
@@ -755,6 +756,70 @@ implementation_learning_loop:
       origin: P23-HUMAN-ACCESS-BOUNDARY-TESTIMONY-20261015
       origin_sha256: 5b50669a507ab4ee7da2b94455723092451d7b4c34e93d20f0193beeb99d428a
       evidence_limit: FIRST_HAND_HUMAN_BURDEN_AND_ACCESS_OBSERVATIONS_NOT_EVERY_FAILURE_DIAGNOSIS
+      project_access_continuity:
+        origin: P23-STANDING-VPS-EXECUTOR-BUILD-20261026-01/rev2
+        Human_order: P23-PROSJEKTADGANG-FELLES-VIDEREFOERING-20261029
+        Human_order_sha256: d4e443c496db569cdafe36729c8558b02d18b21771d63de2a8f37a45b7ccadd6
+        distinguish: [project_mandate, technical_access, exact_attempt]
+        project_mandate: >
+          Bind the approved whole goal, selected profile/logical target, allowed
+          effects, responsible owner, validity and revocation in the existing
+          task/original. A closed or failed attempt does not by itself end that
+          mandate. Mandate, role, method text and locator do not grant credentials
+          or technical access. Covered dependencies, corrections, agreed checks,
+          return and required recipient use remain within the actual release.
+        technical_access: >
+          The rightful access custodian uses supported protected machine-managed
+          authentication/reconnect/session renewal only within the current approved
+          purpose/profile/host/effects and actual custody, expiry and revocation.
+          If the old access cannot carry the remainder, explicitly qualify a
+          legitimate successor under that still-valid mandate. Never rewrite an
+          old expiry/renewal restriction, revive SPENT input or invent a credential,
+          free shell, general admin grant or new secrets/transport platform.
+          A terminal/client connection need not remain open. Existing platform
+          rejection and private/UNKNOWN/NO_RETRY boundaries are not bypassed.
+        attempt_and_continuation: >
+          Keep exact content/predecessor/attempt/result bindings and history.
+          Reconcile UNKNOWN affected effect on that same operation before a
+          potentially duplicate effect; use a qualified new attempt when required
+          for corrected content, not mutation or replay of a used attempt. On
+          failure/resume/recovery or qualified executor change preserve the same
+          legitimate project/profile/owner and ordinary knowledge locator, achieved
+          work/valid proof, result/return reference and next owned action. Reconcile
+          the old writer and live effects before takeover; no identity, role,
+          credential or native authority transfers by handoff.
+        ordinary_references: >
+          Carry only relevant existing task/original/profile/logical-target/owner
+          references; technical-access state and rightful custodian; exact attempt,
+          predecessor/content/result and known or UNKNOWN effect; completed work,
+          reusable proof, next owner/action/return home; and existing knowledge
+          edition/time. Use current objects/fields, not a universal new envelope,
+          per-step form, status master or duplicate private material.
+        owner_knowledge: >
+          Reuse the legitimate existing server/inventory/dependency/runbook
+          originals and their qualified edition/time through the ordinary entry.
+          The rightful writer updates the affected original after actual changes
+          and readback, then returns its result and necessary derived references.
+          Do not reconstruct a host from chat or create another manually maintained
+          master. Secrets, raw configuration and private material hashes remain
+          with the existing protected custodian. A home without server need uses
+          the requester/relookup route; method placement grants no server right.
+        Human_action_and_normal_reserve: >
+          Keep normal managed profile use distinct from explicit establishment,
+          admin and recovery reserves. No personal unlock/GO per covered local
+          correction, step or new attempt. Only genuinely unavoidable supported
+          Human authentication is requested as one concrete action when the whole
+          next coherent run, necessary dependencies and actual return path are ready.
+          This never extends old access or makes Human an availability/file courier.
+        introduction_and_proof: >
+          Reuse permanent continuation, actor workwave, anti-bottleneck and existing
+          placement ownership. Incorporate relevant common entry/start/role/package/
+          handoff/error/resume/return/recovery references in the same followup,
+          without a new product installation gate. Method publication, placement,
+          own reading and actual supported reconnect/qualified takeover/use and
+          named retirement remain separate evidence. Keep required product finish
+          and open canary until actual useful effect; no all-actor ACK, method trial,
+          new BOOT, clock, model change or replay of earlier effects.
       consider_early_from_available_evidence: [Human_reconnect, visible_login, local_unlock, supported_Work_window_continuation]
       before_alternate_access_construction: address_plausible_simple_authorized_Human_route_for_the_affected_path
       concrete_return: [actual_actor, service, original_intended_action, observed_error, exact_known_safe_window_or_locator, expected_prompt, one_required_Human_action]
