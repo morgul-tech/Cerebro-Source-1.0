@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.33"
+  version: "1.34"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -47,22 +47,53 @@ implementation_learning_loop:
       rules apply to this implementation before it is designed?
     applicable_learning_must_be_applied_before_delivery: true
 
+  early_prerequisite_contributions:
+    origin: P23-STANDING-VPS-EXECUTOR-BUILD-20261026-01/rev2
+    order_Work: 2c7209a29f6e8999cc556fa45002848920286f18
+    order_sha256: 8277c0c5772971b6891d6f73a62a2c3429c363fbe0e925dfb378f900d3dc693a
+    proposal_Work: 64b02b061a9c606d2013604d5e80ae405eef8766
+    proposal_sha256: 16e01f64ee5469fa27717dd12947303ef01d6c528e01f7f6455c8a8d45972494
+    rule: >
+      Before substantial work or effect dependent on a decisive prerequisite,
+      bind the need to the actual selected target/account/ordinary entry and
+      next consuming action. Use the product's existing requirements and the
+      rightful environment original/edition/time: usable with valid evidence;
+      necessary gap or decision-relevant uncertainty; created by installation;
+      later or outside scope. Reuse already proved suitability without another
+      identical install/version attestation. Give a necessary clarification or
+      establishment as one usable contribution to a named qualified available
+      executor, with legitimate route/custodian, consumer and concrete next
+      action. Include obtaining missing legitimate access with its rightful
+      owner; project mandate is not login. Do not assign mere confirmation of
+      absence without an owned remedy. Use a supported establishment route
+      before the new normal profile exists. Existing knowledge/preparation may
+      mature before release; actual effects require their real release/access.
+      Newly discovered decisive prerequisites get this same disposition then,
+      not only at final installation. Independent environment and code work
+      proceed in parallel; one writer only for a real shared effect. The whole
+      environment need not be ready before independent development. Integrator
+      uses the result for the already necessary next authorized action when
+      affected evidence suffices, without another unchanged approval/check.
+      Preserve first-error direction and actionable return through
+      first_technical_qualification.continuation; fix capability-bootstrap cycles
+      and obscured causes in their existing product/return connection. Update
+      the affected existing owner original after real change/readback, retain
+      unknowns and whole recipient finish. No dependency engine, status master,
+      broad inventory or method gate; project/access/attempt/private/NO_RETRY
+      boundaries remain distinct and intact.
+
   first_technical_qualification:
     origin: P23-SYNTHETIC-FIRST-METHOD-20261024-01/rev1
     principle: ARTIFICIAL_INPUT_THROUGH_REAL_ORDINARY_ROUTE_BEFORE_DEPENDENT_NORMAL_USE
     trigger: NEW_OR_MATERIALLY_CHANGED_TECHNICAL_FUNCTION_OR_CONNECTION
     sequence: >
-      Before a large dependent build, bind the actual ordinary target/entry,
-      already necessary dependencies, legitimate access and supported error-to-
-      continuation path in the same task. Move the necessary harmless connected
-      trial early within already authorized effects, with expected observation,
-      assumption and next owner; reuse
-      valid actual-target evidence. Group independent safe observations of the
-      already required installation prerequisites, not a host audit. Unknown host
-      facts remain UNKNOWN, never fixture properties. Bind edition/environment,
-      result/return and promised recipient check. Static/local doubles prove only
-      their own scope. Access rest holds dependent effects only; independent work
-      continues. No trial before the trial or new installation gate.
+      Apply early_prerequisite_contributions before the first substantial dependent
+      work. Move the already necessary small connected trial early through the
+      real selected ordinary entry/target within authorized effects, or reuse
+      valid equivalent target evidence. Bind expected observation, assumption,
+      edition/environment, result/return, next owner and promised recipient check.
+      Unknown host facts remain UNKNOWN, never fixture properties; static/local
+      doubles prove only their scope. No trial before trial or new installation gate.
     equivalent_evidence: >
       Reuse valid equivalent evidence with exact edition, route, environment,
       attribution and limits. Cover materially different entries/environments
@@ -384,12 +415,13 @@ implementation_learning_loop:
         bounded subproduct for independent interfaces/writing areas; whole
         takeover when many tiny handoffs would copy nearly the whole task.
       contribution_and_integration: >
-        Use the existing assignment to name result/use, basis/dependencies, actual
-        writing/effect boundary, saved return and recipient next action. Apply
-        deeper_job_integration_rev2 for direct integration and continuation, reusing
-        mandate/capacity/model choices. PM retains whole responsibility; qualified
-        actors work directly with integrator on authorized routes. One writer per
-        shared surface; branches do not isolate server state, processes, keys or effects.
+        Apply early_prerequisite_contributions in the existing assignment:
+        result/use, basis, actual writing/effect boundary, saved return and named
+        consumer next action. Apply deeper_job_integration_rev2 for direct integration
+        and continuation, reusing valid mandate/capacity/model choices. PM retains
+        whole responsibility; qualified actors use authorized direct routes.
+        One writer per real shared effect; branches do not isolate server state,
+        processes, keys or effects.
       actual_return_and_economy: >
         Work holds task/material/result; chat carries an authorized pointer.
         Dispatch is sent only on an actual supported tool outcome; reconcile an
@@ -419,12 +451,10 @@ implementation_learning_loop:
           monopoly on all code. Split by responsibility, dependencies and real
           writing surfaces, not room/file count or helper quotas.
         early_connected_trial: >
-          Agree the small necessary interface early and apply
-          first_technical_qualification through the real ordinary entry, required
-          internal consumers and actual target when delivery depends on it. Harmless
-          external doubles establish only their declared local scope; reuse valid
-          target evidence. Bind observation, assumption and next owner in existing
-          work, not a new checklist or trial-before-trial gate.
+          Use early_prerequisite_contributions and first_technical_qualification:
+          agree the necessary interface early, use the actual ordinary entry/internal
+          consumers/target or valid equivalent evidence. Preserve expected observation,
+          assumption and next owner; no new checklist or prerequisite before trial.
         preserve_and_repair: >
           Use first_technical_qualification.continuation as the one same-current
           disposition; do not duplicate its fields in another handoff/checklist.
