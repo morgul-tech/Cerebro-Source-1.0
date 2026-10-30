@@ -15,6 +15,17 @@ python -I -B ABS/rom_e_material_return.py finalize --capture-record ABS/captures
 
 `presend` delegates to `rom_a_dispatch_capture.capture` with the existing request schema and exact UTF-8 original bytes. The legitimate sender calls it before its actual sending action. It cannot prove timing or sender identity; incoming originals and historical deliveries must never be retrocaptured as presend. Sending remains separate. This implementation task itself is direct full-original/M0, not a positive BK04 episode.
 
+Fill the existing request fields from the actual execution choice; this table adds no JSON fields, validator mode or effect authority:
+
+| Existing task field | Actual assignment content |
+|---|---|
+| `live_scope` | Target/account/result, one execution owner, supported command/plan and covered correction→install/start→agreed function/next consumer; an observation-only run is not installation-ready when apply is outside that journey. |
+| `effect_class`, `authority_class` | Actual bounded run/effects and legitimate release/access basis; text never widens a spent operation. Select established normal profile, or explicit legitimate admin establishment before it exists; no future engine prerequisite. |
+| `required_invariants` | Actual validity/policy/UNKNOWN/NO_RETRY and original/result preservation; same executor keeps covered local repairs and enough affected evidence, not an automatic integrator/reviewer/PM/unlock relay. |
+| `stop_edges` | Concrete new right/data/contract/risk boundary or unreconciled affected effect, holding only dependent action. Correct known covered input/path/schema faults in the same journey. |
+| `return_target`, `way_home` | Actual recipient/current home and next unperformed action with result/evidence; capture/send/local PASS is not installation or use. |
+
+
 ## Capacity-connected ordinary host dispatch
 
 For a new or materially changed assignment the ordinary host uses
@@ -105,7 +116,7 @@ CLI exit 0: local capture/preparation or exact reuse; exit 2: bounded sanitized 
 
 ## Admission and rollback
 
-E1 later pins the reviewed complete Source package, CLI/runtime and this contract in its selected normal-entry home, preserves its actual before-state privately and adds a short pointer at its real start/resume route. Keep existing historical scripts/episodes unchanged. Before installation there is no E1 delta applied. Rollback restores the saved E1 pointer/binding or disables that local entry while preserving originals, captures and receipts; the competent full-original route remains available. No core/schema/transport/provider/main/P55/BK11 effect follows. Separate 655 changed-risk review and A1 disposition precede any integration. Later three real uses/two contexts remain E1/P23 acceptance, without synthetic events or polling.
+E1 later pins the reviewed complete Source package, CLI/runtime and this contract in its selected normal-entry home, preserves its actual before-state privately and adds a short pointer at its real start/resume route. Keep existing historical scripts/episodes unchanged. Before installation there is no E1 delta applied. Rollback restores the saved E1 pointer/binding or disables that local entry while preserving originals, captures and receipts; the competent full-original route remains available. No core/schema/transport/provider/main/P55/BK11 effect follows. The original 655/A1 initial-admission evidence and E1/P23 three-use/two-context acceptance remain dated obligations in their own implementation scope. In an already admitted normal task, reuse that valid basis: covered local corrections stay with the same executor; only genuinely changed risk or an applicable binding contract needs further qualified review. Do not turn these historical initial-admission steps into a new relay or use count for every input/path/schema correction.
 
 Changed-seam check only:
 
