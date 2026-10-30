@@ -241,14 +241,15 @@ class CodexThreadSender:
                 "delivery_ref": "codex-thread:" + thread}
 
 
-def _representation(out: Path, normal: Any, receipt: dict, original: bytes,
+def _representation(out: Path, normal: Any, receipt: dict, task: dict, original: bytes,
                     review: bytes | None, held: dict | None, kind: str) -> tuple[str, str, str, bytes]:
     """Derive representation from control/payload bytes, never manifest labels.
 
     Reconstruction here checks artifact integrity, not semantic held memory.
     The separate, unchanged owner-qualified held-input boundary chooses short.
     """
-    adoption, control = receipt["adoption"], receipt["selected"]
+    adoption = receipt["adoption"]
+    control = receipt.get("base_selected", receipt["selected"])
     control_selection = adoption["selection"]
     if control_selection not in {"FULL_ORIGINAL_TASK", "BK05_STRUCTURAL_CAPSULE_CANDIDATE"}:
         raise ValueError("OUTPUT_CONFLICT")
@@ -275,12 +276,36 @@ def _representation(out: Path, normal: Any, receipt: dict, original: bytes,
         if held is not None and held["exact"]:
             selection, payload = control_selection, raw
             reason = "OWNER_QUALIFIED_HELD_BYTES_STRUCTURALLY_RECONSTRUCTED"
+    learning_ref = receipt.get("learning_material")
+    reflex = receipt.get("work_error_reflex")
+    if isinstance(reflex, dict) and reflex.get("schema") == "cerebro-work-error-reflex/v2-assessment":
+        normal._learning_material(reflex, task, _sha(original))
+    if learning_ref is not None:
+        material = normal._learning_material(receipt["work_error_reflex"], task, _sha(original))
+        material_raw = _canonical(material)
+        if (material is None or
+                learning_ref != {"file": "learning_material.json", "sha256": _sha(material_raw),
+                                 "bytes": len(material_raw), "authority": "EVIDENCE_ONLY"} or
+                _read(out / "control/learning_material.json") != material_raw):
+            raise ValueError("LEARNING_MATERIAL_READBACK_MISMATCH")
+        payload = normal._learning_payload(original, material)
+        selected_control = receipt["selected"]
+        if (selected_control.get("file") != "original_with_learning.txt" or
+                selected_control.get("selection") != "FULL_ORIGINAL_WITH_LEARNING" or
+                selected_control.get("sha256") != _sha(payload) or
+                selected_control.get("bytes") != len(payload) or
+                _read(out / "control/original_with_learning.txt") != payload):
+            raise ValueError("LEARNING_SELECTED_READBACK_MISMATCH")
+        return "FULL_ORIGINAL_WITH_LEARNING", "original_with_learning.txt", "LEARNING_REQUIRES_READABLE_FULL_ORIGINAL", payload
+    if ("base_selected" in receipt or
+            receipt.get("work_error_reflex", {}).get("learning_material") is not None):
+        raise ValueError("LEARNING_MATERIAL_READBACK_MISMATCH")
     selected = "capsule.json" if selection.startswith("BK05_") else "original_task.txt"
     return selection, selected, reason, payload
 
 
 def _reuse(out: Path, fingerprint: str, *, key: str, code: dict, held: dict | None,
-           captured: dict[str, bytes], normal: Any, kind: str, original: bytes) -> dict[str, Any]:
+           captured: dict[str, bytes], normal: Any, kind: str, task: dict, original: bytes) -> dict[str, Any]:
     manifest_path = out / "manifest.json"
     if not manifest_path.is_file():
         raise ValueError("OUTPUT_INCOMPLETE_RECONCILE_SAME_ATTEMPT")
@@ -301,7 +326,7 @@ def _reuse(out: Path, fingerprint: str, *, key: str, code: dict, held: dict | No
         if receipt["return_input"]["sha256"] != _sha(captured["episode/return.json"]):
             raise ValueError("OUTPUT_CONFLICT")
         selection, selected, reason, payload = _representation(
-            out, normal, receipt, original, captured.get("episode/verifier.txt"), held, kind)
+            out, normal, receipt, task, original, captured.get("episode/verifier.txt"), held, kind)
         if _read(out / selected) != payload:
             raise ValueError("OUTPUT_CONFLICT")
         missing = receipt["missing_inputs"]
@@ -408,7 +433,7 @@ def finalize(*, capture_record: str, return_input: str, output_root: str,
     root.mkdir(parents=True, exist_ok=True)
     out = root / ("return-" + key)
     reuse_basis = dict(key=key, code=code, held=held, captured=captured,
-                       normal=normal, kind=kind, original=original)
+                       normal=normal, kind=kind, task=task, original=original)
     if out.exists():
         return _reuse(out, fingerprint, **reuse_basis)
     try:
@@ -434,7 +459,7 @@ def finalize(*, capture_record: str, return_input: str, output_root: str,
         if adoption["bk05"]["decision"] in {"INVALID_INPUT", "HOLD_STALE"}:
             raise ValueError("BK05_INVALID_OR_STALE_RECONCILE_SAME_ATTEMPT")
         selection, selected, reason, payload = _representation(
-            out, normal, receipt, original, captured.get("episode/verifier.txt"), held, kind)
+            out, normal, receipt, task, original, captured.get("episode/verifier.txt"), held, kind)
         (out / selected).write_bytes(payload)
         files = {p.relative_to(out).as_posix(): {"bytes": p.stat().st_size, "sha256": _sha(p.read_bytes())}
                  for p in out.rglob("*") if p.is_file()}

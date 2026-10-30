@@ -97,6 +97,27 @@ def knowledge_eligible(item: dict[str, Any]) -> tuple[bool, str]:
     return True, "eligible"
 
 
+def _learning_v2_eligibility(item, request):
+    """A direct family ref is priority only after current Source admission/fit."""
+    relations = item.get("relations", {})
+    if relations.get("revoked_by_ref") or relations.get("superseded_by_ref"):
+        return False, "revoked-or-superseded"
+    if item.get("contradiction", {}).get("state") in {"FALSIFIED", "REFUTED", "RETRACTED"}:
+        return False, "counterevidence-refutes-advice"
+    validity = item.get("validity", {})
+    if validity.get("state") != "CURRENT":
+        return False, "learning-validity-not-current"
+    for field, key in (("edition_refs", "learning_edition_ref"), ("contract_refs", "learning_contract_ref")):
+        limits = validity.get(field)
+        if limits is not None:
+            if (type(limits) is not list or not limits or
+                    any(type(x) is not str or not x.strip() for x in limits)):
+                return False, "invalid-learning-applicability"
+            if request.get(key) not in limits:
+                return False, "learning-" + field + "-mismatch"
+    return True, "eligible"
+
+
 def wisdom_eligible(item: dict[str, Any], current_refs: set[str]) -> tuple[bool, str]:
     item_id = str(item.get("id", ""))
     if item_id not in current_refs:
@@ -225,7 +246,7 @@ def _select_bounded_content_from_host_readback(read: dict[str, Any], current: di
             "model_part_count": 1}
 
 
-def _source_learning_encounter(knowledge, selected_refs, catalog_sha256):
+def _source_learning_encounter(knowledge, selected_refs, catalog_sha256, *, v2=False):
     """Selected Source-public fields only; never provider content or caller payload.
 
     The caller selects this projection profile, not trust or authority. Admission
@@ -272,9 +293,20 @@ def _source_learning_encounter(knowledge, selected_refs, catalog_sha256):
                 values += projection['evidence_refs'] + projection['counterevidence']
                 valid = all(len(v.encode('utf-8')) <= 2048 for v in values)
                 body = {'ref': ref, **projection, 'authority': 'EVIDENCE_ONLY'}
+                if v2:
+                    validity_view = {k: validity.get(k, 'UNKNOWN') for k in ('state', 'as_of', 'scope')}
+                    source_ref = provenance.get('source_ref', 'UNKNOWN')
+                    source_revision = provenance.get('source_revision') or provenance.get('source_sha256') or 'UNKNOWN'
+                    if (any(type(value) is not str or not value.strip() or len(value.encode('utf-8')) > 2048 for value in validity_view.values())
+                            or any(type(value) is not str or not value.strip() or len(value.encode('utf-8')) > 2048
+                                   for value in (source_ref, source_revision))):
+                        raise ValueError('invalid-learning-provenance')
+                    body.update(record_revision=hashlib.sha256(json.dumps(item,sort_keys=True,ensure_ascii=False,
+                        separators=(',', ':'),allow_nan=False).encode('utf-8')).hexdigest(),
+                        validity=validity_view, source_ref=source_ref, source_revision=source_revision)
                 size = len(json.dumps(body, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
                 valid = valid and size <= 8192
-            except UnicodeError:
+            except (UnicodeError, ValueError):
                 valid = False
         if not valid:
             omissions.append({'ref': ref, 'reason': 'INVALID_OR_OVERSIZED_PUBLIC_PROJECTION'})
@@ -284,18 +316,25 @@ def _source_learning_encounter(knowledge, selected_refs, catalog_sha256):
             continue
         total += size
         items.append(body)
-    return {'schema': 'cerebro-source-learning-encounter/v1',
+    result = {'schema': 'cerebro-source-learning-encounter/v1',
             'status': 'PARTIAL' if items and omissions else ('SELECTED' if items else ('UNKNOWN' if omissions else 'ABSENT')),
             'items': items, 'omissions': omissions,
             'source_catalog_sha256': catalog_sha256,
             'authority': 'EVIDENCE_ONLY', 'provider_readback': 'NOT_CLAIMED',
             'native_or_work_authority': 'NONE', 'projection_utf8_bytes': total}
+    if v2 and len(json.dumps(result,sort_keys=True,ensure_ascii=False,separators=(',', ':'),allow_nan=False).encode('utf-8')) > 16384:
+        raise ValueError('learning-encounter-envelope-bound')
+    return result
 
 
 def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any]:
     if not request.get("current_objective") or not request.get("current_scope"):
         raise ValueError("current_objective-and-current_scope-required")
 
+    v2 = request.get("learning_projection") == "SOURCE_PUBLIC_ENCOUNTER_V2"
+    direct = request.get("direct_family_refs", []) if v2 else []
+    if type(direct) is not list or len(direct) > 32 or any(type(ref) is not str or not ref.strip() or len(ref.encode('utf-8')) > 2048 for ref in direct):
+        raise ValueError("learning-direct-family-refs-invalid")
     knowledge = load_yaml(root / "engines/context/knowledge.yaml")
     context = load_yaml(root / "engines/context/working-context.yaml")
     evidence = load_yaml(root / "engines/context/wisdom-evidence.yaml")
@@ -319,7 +358,20 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
         if not eligible:
             rejected.append({"ref": str(item.get("id")), "reason": reason})
             continue
+        if v2:
+            eligible, reason = _learning_v2_eligibility(item, request)
+            if not eligible:
+                rejected.append({"ref": str(item.get("id")), "reason": reason})
+                continue
         score, dimensions = rank(item, request, friction)
+        if v2:
+            family = item.get("actor_encounter", {}).get("failure_family")
+            bound = item.get("id") in direct or family in direct
+            if not bound and dimensions["state"] + dimensions["tags"] == 0:
+                rejected.append({"ref": str(item.get("id")), "reason": "no-current-learning-content-match"})
+                continue
+            dimensions["direct_family"] = 1000 if bound else 0
+            score += dimensions["direct_family"]
         if score < 3:
             rejected.append({"ref": str(item.get("id")), "reason": "below-relevance-threshold"})
             continue
@@ -418,10 +470,10 @@ def retrieve(request: dict[str, Any], root: Path = SOURCE_ROOT) -> dict[str, Any
     }
 
     if 'learning_projection' in request:
-        if request['learning_projection'] != 'SOURCE_PUBLIC_ENCOUNTER_V1':
+        if request['learning_projection'] not in {'SOURCE_PUBLIC_ENCOUNTER_V1', 'SOURCE_PUBLIC_ENCOUNTER_V2'}:
             raise ValueError('unsupported-source-learning-projection')
         result['source_learning_encounter'] = _source_learning_encounter(
-            knowledge, knowledge_refs, fingerprints['knowledge'])
+            knowledge, knowledge_refs, fingerprints['knowledge'], v2=v2)
     return result
 
 

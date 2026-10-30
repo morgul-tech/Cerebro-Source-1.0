@@ -1,7 +1,7 @@
 schema: cerebro-change-campaign-policy/v0.1
 policy:
   id: CEREBRO-CHANGE-CAMPAIGN-POLICY-001
-  version: 0.7.0
+  version: 0.8.0
   authority: SOURCE_DEFINED_POLICY
   regression_catalog_owner: tooling.change
 profiles:
@@ -200,3 +200,23 @@ positive_strengthening_metrics:
   fields: [user_execution_attempt, first_pass_success, resolved_failure_capsule_count, resulting_commit]
   authority: EVIDENCE_ONLY
   history_candidate_when: [FIRST_PASS_SUCCESS, REPEAT_FIRST_PASS_SUCCESS, MATERIAL_RELIABILITY_STRENGTHENING]
+
+# Bounded evidence reconciliation; existing common campaign checks remain unchanged.
+control_evidence_binding:
+  schema: cerebro-control-coverage/v1
+  selection: assurance.control_needs
+  need_fields: [control_id, reason, context]
+  catalog_match_effect: ADVISORY_NOT_UNIVERSAL_REQUIREMENT
+  selected_uncovered_need_effect: BLOCK_READY_TO_LOCK
+  receipt_schema: cerebro-control-evidence/v1
+  receipt_locator_fields: [path, sha256, reuse_basis]
+  evidence_root: CAPSULE_CONTAINED_FILES_ONLY
+  candidate_binding: EXACT_MANIFEST_EXCEPT_EVIDENCE_LOCATORS_PLUS_ENGINE_AND_POLICY_BYTES
+  reuse: EXACT_CANDIDATE_AND_CONTROL_AND_CONTEXT_WITH_CURRENT_REUSE_BASIS
+  context_requirement: INCLUDE_ALL_RELEVANT_INPUT_RUNTIME_AND_PRODUCER_VALIDITY_BOUNDARIES
+  executed_common_context: {execution_scope: LOCAL_CANDIDATE}
+  executed_common_controls: [target-baseline, payload-bytes, final-serialized-structured-parse, exact-changed-path-scope, machine-protocol-status-parse, git-diff-check]
+  proof_ceiling: LOCAL_CHECKS_AND_HASH_BOUND_PRODUCER_REPORTS_NOT_AUTHENTICATED_AUTHORITY
+  imported_receipt_truth: PRODUCER_RESPONSIBILITY_NOT_PROVEN_BY_HASH
+  no_selected_needs: NO_NEW_UNIVERSAL_CONTROL_REQUIREMENT
+  completed_campaigns: NOT_REPLAYED_TO_DISCOVER_EVIDENCE

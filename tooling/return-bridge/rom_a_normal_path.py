@@ -63,6 +63,124 @@ def _sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _canonical(value: Any) -> bytes:
+    return (json.dumps(value, sort_keys=True, ensure_ascii=False,
+                       separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
+
+
+def _learning_payload(original: bytes, material: dict[str, Any]) -> bytes:
+    """Readable transport preserves original text and identifies advice as evidence."""
+    original.decode("utf-8")
+    header = ("cerebro-original-with-learning/v1\n"
+              + "original_sha256: " + _sha(original) + "\n"
+              + "original_bytes: " + str(len(original)) + "\n"
+              + "--- ORIGINAL START ---\n").encode("utf-8")
+    advice = json.dumps(material, sort_keys=True, ensure_ascii=False, indent=2,
+                        allow_nan=False).encode("utf-8")
+    return header + original + b"\n--- ORIGINAL END; LEARNING EVIDENCE ONLY ---\n" + advice + b"\n"
+
+
+def _learning_material(assessment: dict[str, Any], task: dict[str, Any],
+                       original_sha256: str) -> dict[str, Any] | None:
+    """Reject malformed or cross-episode advice before selecting any bytes."""
+    material = assessment.get("learning_material")
+    if material is None:
+        if assessment.get("schema") == "cerebro-work-error-reflex/v2-assessment" and (
+                "learning_material" not in assessment or
+                assessment.get("source_learning_encounter") is not None or
+                assessment.get("disposition") not in {"DIRECT_KNOWN_FIX", "QUALIFIED_BOUNDED_TRANSIENT_RETRY"}):
+            raise ValueError("LEARNING_MATERIAL_MISSING")
+        return None
+    fields = {"schema", "binding", "observation_ref", "attempt_ref", "learning_context",
+              "source_learning_encounter", "authority"}
+    event = assessment.get("event")
+    binding = {**{k: task[k] for k in ("task_ref", "task_revision", "actor_ref",
+               "generation_ref", "carrier_ref", "arc_ref")}, "original_sha256": original_sha256}
+    if (not isinstance(material, dict) or set(material) != fields or
+            material["schema"] != "cerebro-learning-material/v1" or
+            material["authority"] != "EVIDENCE_ONLY" or not isinstance(event, dict) or
+            assessment.get("schema") != "cerebro-work-error-reflex/v2-assessment" or
+            event.get("schema") != "cerebro-work-error-reflex/v2" or
+            material["binding"] != binding or event.get("binding") != binding or
+            material["observation_ref"] != event.get("observation_ref") or
+            material["attempt_ref"] != event.get("attempt_ref") or
+            material["learning_context"] != event.get("learning_context") or
+            material["source_learning_encounter"] != assessment.get("source_learning_encounter") or
+            len(_canonical(material)) - 1 > 32768):
+        raise ValueError("LEARNING_MATERIAL_BINDING_OR_SHAPE_INVALID")
+    context = material["learning_context"]
+    context_fields = {"schema", "sanitized_failure", "challenged_premise", "considered_decision",
+                      "epistemic_state", "contract_ref", "edition_ref", "applicability",
+                      "original_ref", "tags"}
+    if (not isinstance(context, dict) or set(context) != context_fields or
+            context["schema"] != "cerebro-learning-context/v1" or
+            context["epistemic_state"] not in {"OBSERVED", "HYPOTHESIS", "UNKNOWN"} or
+            len(_canonical(context)) - 1 > 16384 or not isinstance(context["tags"], list) or
+            len(context["tags"]) > 16):
+        raise ValueError("LEARNING_CONTEXT_INVALID")
+    for key in context_fields - {"tags"}:
+        value = context[key]
+        if not isinstance(value, str) or not value.strip() or len(value.encode("utf-8")) > 2048:
+            raise ValueError("LEARNING_CONTEXT_INVALID")
+    if any(not isinstance(tag, str) or not tag.strip() or len(tag.encode("utf-8")) > 96
+           for tag in context["tags"]):
+        raise ValueError("LEARNING_CONTEXT_INVALID")
+    encounter = material["source_learning_encounter"]
+    envelope = {"schema", "status", "items", "omissions", "source_catalog_sha256", "authority",
+                "provider_readback", "native_or_work_authority", "projection_utf8_bytes"}
+    if (not isinstance(encounter, dict) or set(encounter) != envelope or
+            encounter["schema"] != "cerebro-source-learning-encounter/v1" or
+            encounter["authority"] != "EVIDENCE_ONLY" or
+            encounter["provider_readback"] != "NOT_CLAIMED" or
+            encounter["native_or_work_authority"] != "NONE" or
+            encounter["status"] not in {"PARTIAL", "SELECTED", "UNKNOWN", "ABSENT"} or
+            not isinstance(encounter["items"], list) or len(encounter["items"]) > 5 or
+            not isinstance(encounter["omissions"], list) or
+            type(encounter["projection_utf8_bytes"]) is not int or
+            not 0 <= encounter["projection_utf8_bytes"] <= 16384 or
+            len(_canonical(encounter)) - 1 > 16384):
+        raise ValueError("LEARNING_ENCOUNTER_INVALID")
+    item_fields = {"ref", "failure_family", "observation", "application", "exception",
+                   "next_action", "scope", "evidence_refs", "evidence_state", "causal_state",
+                   "recurrence", "counterevidence", "authority", "record_revision", "validity",
+                   "source_ref", "source_revision"}
+    def bounded(value: Any) -> bool:
+        return isinstance(value, str) and bool(value.strip()) and len(value.encode("utf-8")) <= 2048
+    if (not isinstance(encounter["source_catalog_sha256"], str) or
+            not re.fullmatch(r"[0-9a-f]{64}", encounter["source_catalog_sha256"])):
+        raise ValueError("LEARNING_ENCOUNTER_INVALID")
+    for item in encounter["items"]:
+        if (not isinstance(item, dict) or set(item) != item_fields or
+                item["authority"] != "EVIDENCE_ONLY" or
+                item["evidence_state"] != "ATTRIBUTED_OBSERVATION" or
+                item["causal_state"] != "OWNER_DIAGNOSIS_NOT_PROVEN" or
+                item["recurrence"] != "UNKNOWN" or
+                not isinstance(item["record_revision"], str) or
+                not re.fullmatch(r"[0-9a-f]{64}", item["record_revision"]) or
+                not isinstance(item["validity"], dict) or
+                set(item["validity"]) != {"state", "as_of", "scope"} or
+                item["validity"]["state"] != "CURRENT" or
+                not all(bounded(v) for v in item["validity"].values()) or
+                not all(bounded(item[k]) for k in item_fields -
+                        {"evidence_refs", "counterevidence", "validity"})):
+            raise ValueError("LEARNING_ITEM_INVALID")
+        for key in ("evidence_refs", "counterevidence"):
+            values = item[key]
+            if not isinstance(values, list) or not 1 <= len(values) <= 5 or not all(map(bounded, values)):
+                raise ValueError("LEARNING_ITEM_INVALID")
+    for omission in encounter["omissions"]:
+        if (not isinstance(omission, dict) or set(omission) != {"ref", "reason"} or
+                not all(map(bounded, omission.values()))):
+            raise ValueError("LEARNING_OMISSION_INVALID")
+    expected_status = ("PARTIAL" if encounter["items"] and encounter["omissions"] else
+                       "SELECTED" if encounter["items"] else
+                       "UNKNOWN" if encounter["omissions"] else "ABSENT")
+    if (encounter["status"] != expected_status or
+            encounter["projection_utf8_bytes"] != sum(len(_canonical(x)) - 1 for x in encounter["items"])):
+        raise ValueError("LEARNING_ENCOUNTER_INVALID")
+    return material
+
+
 def _pairs(items: list[tuple[str, Any]]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for key, value in items:
@@ -386,6 +504,8 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
         fresh = resume_receipt["fact_delta"]
         if fresh is not None and work_reflex["event"]["next_step"]["uses_premise_ref"] == fresh["premise_ref"]:
             raise ValueError("RESUME_STALE_PREMISE_AFTER_FRESH_FACT")
+    learning = (_learning_material(work_reflex, task, capture_ref["original_sha256"])
+                if work_reflex is not None else None)
     supplied = {"owner_facts": owner_facts, "owner_binding": owner_binding,
                 "parent_manifest": parent_manifest, "verifier": verifier,
                 "verifier_delta": verifier_delta, "currentness": currentness,
@@ -500,6 +620,15 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
         name = "capsule.json" if adoption["selection"].startswith("BK05_") else "original_task.txt"
         selected_path = pending / name
         selected_path.write_bytes(payload)
+        base_selected = None
+        if learning is not None:
+            base_selected = {"file": name, "sha256": _sha(payload), "bytes": len(payload),
+                             "selection": adoption["selection"],
+                             "recipient_delivery_qualified": False}
+            (pending / "learning_material.json").write_bytes(_canonical(learning))
+            name = "original_with_learning.txt"
+            payload = _learning_payload(original, learning)
+            (pending / name).write_bytes(payload)
         context_ref = None
         if selection is not None:
             context_path = pending / "context_selected.txt"
@@ -514,7 +643,7 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
                    "delta_field_repairs": repairs, "delta_field_conflicts": delta_conflicts,
                    "adoption": adoption,
                    "selected": {"file": name, "sha256": _sha(payload), "bytes": len(payload),
-                                "selection": adoption["selection"],
+                                "selection": "FULL_ORIGINAL_WITH_LEARNING" if learning is not None else adoption["selection"],
                                 "recipient_delivery_qualified": False},
                    "recipient_use": {"state": "NOT_OBSERVED", "readback_ref": None,
                                      "selected_sha256": _sha(payload)},
@@ -522,6 +651,12 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
                                 "recipient_ref": task["actor_ref"]},
                    "authority": "NONE", "provider_currentness_proven": False,
                    "semantic_review_proven": False, "effect": "NONE_CLAIMED"}
+        if base_selected is not None:
+            receipt["base_selected"] = base_selected
+            receipt["learning_material"] = {"file": "learning_material.json",
+                                             "sha256": _sha(_canonical(learning)),
+                                             "bytes": len(_canonical(learning)),
+                                             "authority": "EVIDENCE_ONLY"}
         if resume_receipt is not None:
             receipt["work_resume"] = resume_receipt
         if work_reflex is not None:
@@ -551,7 +686,7 @@ def _prepare(*, capture_record: str, return_input: str, out_dir: str,
             json.dumps(receipt, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
         os.rename(pending, out)
         result = {"receipt": str(out / "receipt.json"), "selected": str(out / name),
-                  "selection": adoption["selection"], "selected_sha256": _sha(payload),
+                  "selection": receipt["selected"]["selection"], "selected_sha256": _sha(payload),
                   "missing_inputs": missing, "recipient_use": "NOT_OBSERVED", "authority": "NONE",
                   "human_return": human_return}
         if return_care is not None:
@@ -605,6 +740,44 @@ def _dispatch_selected(result: dict[str, Any], sender: Any, *, capacity_reader: 
     reflex = receipt.get("work_error_reflex")
     if reflex is not None and reflex.get("next_material_step_qualified") is not True:
         raise ValueError("WORK_ERROR_NEXT_MATERIAL_STEP_UNQUALIFIED")
+    learning_ref = receipt.get("learning_material")
+    if isinstance(reflex, dict) and reflex.get("schema") == "cerebro-work-error-reflex/v2-assessment":
+        task_check, _, original_check, _ = _capture(receipt["capture"]["record_path"])
+        _learning_material(reflex, task_check, _sha(original_check))
+    if learning_ref is not None:
+        task, _, original, _ = _capture(receipt["capture"]["record_path"])
+        material = _learning_material(reflex, task, _sha(original))
+        if material is None:
+            raise ValueError("LEARNING_MATERIAL_READBACK_MISMATCH")
+        material_raw = _canonical(material)
+        if (learning_ref != {"file": "learning_material.json", "sha256": _sha(material_raw),
+                             "bytes": len(material_raw), "authority": "EVIDENCE_ONLY"} or
+                _read(str(receipt_path.parent / "learning_material.json"))[1] != material_raw or
+                selected.get("selection") != "FULL_ORIGINAL_WITH_LEARNING" or
+                payload != _learning_payload(original, material)):
+            raise ValueError("LEARNING_MATERIAL_READBACK_MISMATCH")
+        # The ordinary E finalizer writes its manifest last. No A7 dispatch may
+        # escape through the earlier control receipt before those bytes exist.
+        package = receipt_path.parent.parent
+        _, manifest_raw = _read(str(package / "manifest.json"))
+        manifest = _json(manifest_raw)
+        if (receipt_path.parent.name != "control" or
+                manifest.get("selection") != "FULL_ORIGINAL_WITH_LEARNING" or
+                manifest.get("selected") != "original_with_learning.txt" or
+                manifest.get("control_receipt") != "control/receipt.json"):
+            raise ValueError("LEARNING_MANIFEST_REQUIRED")
+        files = manifest.get("files")
+        if not isinstance(files, dict):
+            raise ValueError("LEARNING_MANIFEST_REQUIRED")
+        for name, data in (("control/receipt.json", receipt_raw),
+                           ("control/learning_material.json", material_raw),
+                           ("control/original_with_learning.txt", payload),
+                           ("original_with_learning.txt", payload)):
+            if (files.get(name) != {"bytes": len(data), "sha256": _sha(data)} or
+                    _read(str(package / name))[1] != data):
+                raise ValueError("LEARNING_MANIFEST_READBACK_MISMATCH")
+    elif "base_selected" in receipt or (isinstance(reflex, dict) and reflex.get("learning_material") is not None):
+        raise ValueError("LEARNING_MATERIAL_READBACK_MISMATCH")
     capacity_receipt = receipt.get("task_capacity_care")
     capacity_module = None
     first_capacity_check = None

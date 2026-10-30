@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -25,7 +25,7 @@ SCHEMA_ID = "cerebro-change-capsule/v0.2"
 REPORT_SCHEMA = "cerebro-change-campaign-report/v0.1"
 KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.2"
 LEGACY_KNOWLEDGE_SCHEMA = "cerebro-failure-knowledge/v0.1"
-ENGINE_VERSION = "0.5.0"
+ENGINE_VERSION = "0.6.0"
 
 PROFILE_RUNS = {"FAST": 1, "STANDARD": 2, "DEEP": 3}
 CAMPAIGN_POLICY_PATH = Path(__file__).with_name("campaign-policy.yaml")
@@ -184,17 +184,124 @@ def select_regression_bindings(manifest: dict[str, Any], diagnostic: dict[str, A
         if not (detection_match or explicit_match or trait_match):
             continue
         machine_checks = [str(value) for value in spec.get("machine_checks", [])]
-        if not machine_checks:
-            raise ChangeError("APPLICABLE_FAILURE_FAMILY_WITHOUT_MACHINE_CHECK", family)
         selected.append({
             "family": family,
             "matched_by": "explicit_family" if explicit_match else "diagnostic_detection" if detection_match else "candidate_traits",
             "prevention_refs": [str(value) for value in spec.get("prevention_refs", [])],
             "regression_refs": [str(value) for value in spec.get("regression_refs", [])],
             "machine_checks": machine_checks,
+            "coverage": "NOT_ESTABLISHED_BY_CATALOG_SELECTION",
         })
     return selected
 
+
+
+CONTROL_EVIDENCE_SCHEMA = "cerebro-control-evidence/v1"
+CONTROL_COVERAGE_SCHEMA = "cerebro-control-coverage/v1"
+# Only operations actually completed by one_campaign/semantic_candidate_checks.
+CAMPAIGN_CHECKS = (
+    "target-baseline", "payload-bytes", "final-serialized-structured-parse",
+    "exact-changed-path-scope", "machine-protocol-status-parse", "git-diff-check",
+)
+
+
+def value_fingerprint(value: Any) -> str:
+    raw = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+    return hashlib.sha256(raw.encode("ascii")).hexdigest()
+
+
+def control_subject(manifest: dict[str, Any]) -> str:
+    # Evidence locators can be added without changing the candidate being proved.
+    # Every other assurance field, selected need, payload/base and code/policy byte is bound.
+    candidate = json.loads(json.dumps(manifest))
+    candidate["assurance"].pop("control_evidence", None)
+    return value_fingerprint({"candidate": candidate,
+        "engine_sha256": sha256_file(Path(__file__)),
+        "policy_sha256": sha256_file(CAMPAIGN_POLICY_PATH)})
+
+
+def selected_control_needs(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    needs = manifest["assurance"].get("control_needs", [])
+    if not isinstance(needs, list):
+        raise ChangeError("INVALID_CONTROL_NEEDS", "control_needs must be an array")
+    seen: set[str] = set()
+    for item in needs:
+        if (not isinstance(item, dict) or set(item) != {"control_id", "reason", "context"}
+                or not isinstance(item["control_id"], str) or not item["control_id"].strip()
+                or item["control_id"] in seen
+                or not isinstance(item["reason"], str) or not item["reason"].strip()
+                or not isinstance(item["context"], dict) or not item["context"]):
+            raise ChangeError("INVALID_CONTROL_NEEDS", "unique control_id, reason and nonempty exact context required")
+        seen.add(item["control_id"])
+    return needs
+
+
+def campaign_control_evidence(manifest: dict[str, Any], run_id: str) -> list[dict[str, Any]]:
+    return [{"schema": CONTROL_EVIDENCE_SCHEMA, "control_id": name,
+        "candidate_fingerprint": control_subject(manifest),
+        "context": {"execution_scope": "LOCAL_CANDIDATE"},
+        "result": "PASS", "executed": True, "execution_ref": run_id,
+        "producer": {"id": "tooling/change/change_engine.py",
+                     "sha256": sha256_file(Path(__file__))},
+        "proof_ceiling": "LOCAL_CAMPAIGN_CHECK_ONLY"} for name in CAMPAIGN_CHECKS]
+
+
+def reconcile_control_evidence(capsule_root: Path, manifest: dict[str, Any],
+                               runs: list[CampaignRun]) -> dict[str, Any]:
+    needs = selected_control_needs(manifest)
+    subject = control_subject(manifest)
+    executed = [record for item in runs if item.result == "PASS" for record in item.control_evidence]
+    supplied = manifest["assurance"].get("control_evidence", [])
+    if not isinstance(supplied, list):
+        raise ChangeError("INVALID_CONTROL_EVIDENCE", "control_evidence must be an array")
+    reused: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for index, locator in enumerate(supplied):
+        try:
+            if (not isinstance(locator, dict) or set(locator) != {"path", "sha256", "reuse_basis"}
+                    or not isinstance(locator["path"], str) or not locator["path"].strip()
+                    or not isinstance(locator["reuse_basis"], str) or not locator["reuse_basis"].strip()
+                    or not re.fullmatch(r"[0-9a-f]{64}", str(locator["sha256"]))):
+                raise ValueError("exact file/hash and current reuse_basis required")
+            path = contained(capsule_root, locator["path"])
+            raw = path.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != locator["sha256"]:
+                raise ValueError("evidence bytes differ from bound hash")
+            record = json.loads(raw)
+            if not isinstance(record, dict):
+                raise ValueError("evidence JSON object required")
+            producer = record.get("producer", {})
+            if (record.get("schema") != CONTROL_EVIDENCE_SCHEMA
+                    or record.get("result") != "PASS" or record.get("executed") is not True
+                    or not isinstance(record.get("execution_ref"), str) or not record["execution_ref"].strip()
+                    or not isinstance(producer, dict) or not isinstance(producer.get("id"), str)
+                    or not producer["id"].strip()
+                    or not re.fullmatch(r"[0-9a-f]{64}", str(producer.get("sha256", "")))):
+                raise ValueError("executed PASS receipt with source producer and execution reference required")
+            if record.get("candidate_fingerprint") != subject:
+                raise ValueError("evidence candidate/code/policy basis differs")
+            if not any(record.get("control_id") == need["control_id"]
+                       and record.get("context") == need["context"] for need in needs):
+                raise ValueError("evidence does not match a selected need and exact context")
+            reused.append({"record": record, "locator": locator,
+                           "qualification": "HASH_AND_EXACT_SUBJECT_CONTEXT_MATCH"})
+        except (OSError, ValueError, TypeError, KeyError, ChangeError) as exc:
+            rejected.append({"index": index, "reason": str(exc)})
+    rows = []
+    for need in needs:
+        matches = [record for record in executed if record["control_id"] == need["control_id"]
+                   and record["candidate_fingerprint"] == subject and record["context"] == need["context"]]
+        old = [item for item in reused if item["record"]["control_id"] == need["control_id"]
+               and item["record"]["context"] == need["context"]]
+        state = "EXECUTED" if matches else "REUSED_VALID" if old else "UNCOVERED"
+        rows.append({**need, "state": state,
+                     "evidence_refs": [record["execution_ref"] for record in matches]
+                     + [item["locator"]["path"] for item in old]})
+    return {"schema": CONTROL_COVERAGE_SCHEMA, "candidate_fingerprint": subject,
+        "selected_needs": rows, "executed": executed, "reused": reused, "rejected": rejected,
+        "uncovered": [item["control_id"] for item in rows if item["state"] == "UNCOVERED"],
+        "catalog_role": "ADVISORY_SELECTION_NOT_EXECUTION_OR_UNIVERSAL_REQUIREMENT",
+        "proof_ceiling": "LOCAL_CHECKS_AND_HASH_BOUND_PRODUCER_REPORTS_NOT_AUTHENTICATED_AUTHORITY"}
 
 def learning_basis_fingerprint(bindings: list[dict[str, Any]], diagnostic: dict[str, Any] | None, generation: int) -> str:
     material = {
@@ -513,6 +620,7 @@ class CampaignRun:
     family: str | None
     detail: str
     worktree: str
+    control_evidence: list[dict[str, Any]] = field(default_factory=list)
 
 
 def load_knowledge(path: Path | None) -> dict[str, Any]:
@@ -600,7 +708,8 @@ def one_campaign(capsule_root: Path, source_repo: Path, manifest: dict[str, Any]
         git(source_repo, "worktree", "add", "--detach", "--force", str(worktree), base)
         apply_payload(capsule_root, worktree, manifest)
         semantic_candidate_checks(worktree, manifest)
-        return CampaignRun(run_id, index, "PASS", None, None, "", str(worktree))
+        return CampaignRun(run_id, index, "PASS", None, None, "", str(worktree),
+                           campaign_control_evidence(manifest, run_id))
     except ChangeError as exc:
         return CampaignRun(run_id, index, "FAIL", exc.classification, family_for(exc.classification), exc.detail, str(worktree))
     except Exception as exc:
@@ -621,6 +730,7 @@ def execute_campaigns(capsule_root: Path, source_repo: Path, manifest: dict[str,
     validate_manifest(manifest)
     verify_payloads(capsule_root, manifest)
     verify_repo_identity(source_repo, manifest)
+    selected_control_needs(manifest)
 
     declared_profile = manifest["assurance"]["profile"]
     if profile != declared_profile:
@@ -638,6 +748,14 @@ def execute_campaigns(capsule_root: Path, source_repo: Path, manifest: dict[str,
 
     knowledge = update_knowledge(previous, runs, manifest["change"]["id"])
     gate, blockers = stability_gate(runs, knowledge, required_runs)
+    coverage = reconcile_control_evidence(capsule_root, manifest, runs)
+    knowledge["control_coverage"] = coverage
+    if coverage["uncovered"]:
+        blockers.append("uncovered_relevant_control_needs:" + ",".join(coverage["uncovered"]))
+        gate = "BLOCK"
+    basis_fingerprint = value_fingerprint({"learning_basis": basis_fingerprint,
+        "control_subject": coverage["candidate_fingerprint"],
+        "coverage": coverage["selected_needs"]})
     report = {
         "schema": REPORT_SCHEMA,
         "engine_version": ENGINE_VERSION,
@@ -652,6 +770,8 @@ def execute_campaigns(capsule_root: Path, source_repo: Path, manifest: dict[str,
         "ready_to_lock": gate == "PASS",
         "diagnostic_basis": diagnostic,
         "applicable_regressions": regression_bindings,
+        "regression_bindings_role": "ADVISORY_NOT_COVERAGE",
+        "control_coverage": coverage,
         "learning_basis_fingerprint": basis_fingerprint,
         "learning_basis_authority": "EVIDENCE_ONLY",
         "created_at": now(),

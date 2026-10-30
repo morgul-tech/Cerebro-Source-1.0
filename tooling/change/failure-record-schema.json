@@ -84,6 +84,101 @@
     },
     "metrics": {
       "type": "object"
+    },
+    "control_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "candidate_fingerprint",
+        "selected_needs",
+        "executed",
+        "reused",
+        "rejected",
+        "uncovered",
+        "catalog_role",
+        "proof_ceiling"
+      ],
+      "properties": {
+        "schema": {
+          "const": "cerebro-control-coverage/v1"
+        },
+        "candidate_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "selected_needs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "control_id",
+              "reason",
+              "context",
+              "state",
+              "evidence_refs"
+            ],
+            "properties": {
+              "control_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "context": {
+                "type": "object",
+                "minProperties": 1
+              },
+              "state": {
+                "enum": [
+                  "EXECUTED",
+                  "REUSED_VALID",
+                  "UNCOVERED"
+                ]
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "executed": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "reused": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "rejected": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "uncovered": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "catalog_role": {
+          "type": "string"
+        },
+        "proof_ceiling": {
+          "type": "string"
+        }
+      }
     }
   }
 }

@@ -9,6 +9,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA = "cerebro-work-error-reflex/v1"
+SCHEMA_V2 = "cerebro-work-error-reflex/v2"
 IDENTITY = ("task_ref", "task_revision", "actor_ref", "generation_ref", "carrier_ref", "arc_ref")
 METHOD_REFS = ("standards/development/implementation-learning-loop.yaml",
                "standards/development/reflective-adjustment-loop.yaml")
@@ -46,11 +47,52 @@ def local_failure(reason):
             "authority": "NONE", "runtime_closed": False}
 
 
+def canonical(value):
+    return json.dumps(value, sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"), allow_nan=False).encode("utf-8")
+
+
+def validate_learning_context(value):
+    """Bound caller-sanitized data; no secret scrubber, reader or authority."""
+    fields = {"schema", "sanitized_failure", "challenged_premise", "considered_decision",
+              "epistemic_state", "contract_ref", "edition_ref", "applicability", "original_ref", "tags"}
+    exact(value, fields)
+    if value["schema"] != "cerebro-learning-context/v1" or value["epistemic_state"] not in {
+            "OBSERVED", "HYPOTHESIS", "UNKNOWN"}:
+        raise ValueError("WORK_REFLEX_LEARNING_CONTEXT_SCHEMA_OR_STATE")
+    try:
+        for name in fields - {"tags"}:
+            text(value[name])
+            if len(value[name].encode("utf-8")) > 2048:
+                raise ValueError("WORK_REFLEX_LEARNING_TEXT_BOUND")
+        tags = value["tags"]
+        if (type(tags) is not list or len(tags) > 16
+                or any(text(tag) != tag or len(tag.encode("utf-8")) > 96 for tag in tags)
+                or len(set(tags)) != len(tags) or len(canonical(value)) > 16384):
+            raise ValueError("WORK_REFLEX_LEARNING_CONTEXT_BOUND")
+    except UnicodeError as exc:
+        raise ValueError("WORK_REFLEX_LEARNING_UTF8_REQUIRED") from exc
+    return json.loads(canonical(value))
+
+
+def learning_material(event, context, encounter):
+    value = {"schema": "cerebro-learning-material/v1", "binding": event["binding"],
+             "observation_ref": event["observation_ref"], "attempt_ref": event["attempt_ref"],
+             "learning_context": context, "source_learning_encounter": encounter,
+             "authority": "EVIDENCE_ONLY"}
+    if len(canonical(value)) > 32768:
+        raise ValueError("WORK_REFLEX_LEARNING_MATERIAL_BOUND")
+    return json.loads(canonical(value))
+
+
 def evaluate(task, original_sha256, profile_sha256, returned, event, *, root=ROOT):
+    v2 = isinstance(event, dict) and event.get("schema") == SCHEMA_V2
     exact(event, {"schema", "binding", "profile_binding_sha256", "trigger", "observation_ref",
                   "attempt_ref", "reached_stage", "effect_state", "cause", "challenged_premise",
-                  "inherited_countermodel_refs", "next_step", "retry", "runtime_evidence"})
-    if (event["schema"] != SCHEMA or event["binding"] !=
+                  "inherited_countermodel_refs", "next_step", "retry", "runtime_evidence"} |
+          ({"learning_context"} if v2 else set()))
+    context = validate_learning_context(event["learning_context"]) if v2 else None
+    if (event["schema"] not in {SCHEMA, SCHEMA_V2} or event["binding"] !=
             {**{k: task[k] for k in IDENTITY}, "original_sha256": original_sha256}
             or event["profile_binding_sha256"] != profile_sha256
             or any(returned[k] != task[k] for k in IDENTITY)
@@ -141,9 +183,15 @@ def evaluate(task, original_sha256, profile_sha256, returned, event, *, root=ROO
     learning, vinkel = None, None
     if decision != "DIRECT_KNOWN_FIX" and decision != "QUALIFIED_BOUNDED_TRANSIENT_RETRY":
         relevance = module("work_reflex_relevance", root / "tooling/context/relevance_engine.py")
-        learning = relevance.retrieve({"current_objective": task["task_ref"],
+        request = {"current_objective": task["task_ref"],
             "current_scope": task["live_scope"], "task_need_ref": event["observation_ref"],
-            "learning_projection": "SOURCE_PUBLIC_ENCOUNTER_V1"}, root=root)["source_learning_encounter"]
+            "learning_projection": "SOURCE_PUBLIC_ENCOUNTER_V2" if v2 else "SOURCE_PUBLIC_ENCOUNTER_V1"}
+        if v2:
+            request.update(current_failure_state=context["sanitized_failure"] + " " + context["challenged_premise"],
+                current_decision_state=context["considered_decision"] + " " + context["applicability"],
+                tags=context["tags"], direct_family_refs=counters,
+                learning_edition_ref=context["edition_ref"], learning_contract_ref=context["contract_ref"])
+        learning = relevance.retrieve(request, root=root)["source_learning_encounter"]
     if step["kind"] == "STRUCTURAL_CHANGE" and event["effect_state"] != "UNKNOWN":
         preflight = module("work_reflex_material", root / "mcp/material_commitment_preflight.py")
         vinkel = preflight.resolve_solution_escalation_preflight({
@@ -152,10 +200,13 @@ def evaluate(task, original_sha256, profile_sha256, returned, event, *, root=ROO
             "supported_causal_layer": cause["layer"] if cause["state"] == "PROVEN" else "",
             "proposed_remedy": {"kind": "NEW_MECHANISM", "candidate_id": step["justification_ref"]}})
         decision, allowed = "EXISTING_VINKELPASS_" + vinkel["outcome"], False
-    return {"schema": SCHEMA + "-assessment", "binding": event["binding"],
+    result = {"schema": event["schema"] + "-assessment", "binding": event["binding"],
             "profile_binding_sha256": profile_sha256, "event": event, "method_refs": refs,
             "disposition": decision, "next_material_step_qualified": allowed,
             "source_learning_encounter": learning, "solution_escalation": vinkel,
             "assertion": "CALLER_RECORDED_PUBLIC_METADATA_NOT_CAUSE_OR_RUNTIME_ATTESTATION",
             "authority": "NONE", "runtime_closed": False,
             "reported_checkpoints": evidence, "native_effect": "NONE_BY_THIS_API"}
+    if v2:
+        result["learning_material"] = learning_material(event, context, learning) if learning is not None else None
+    return result

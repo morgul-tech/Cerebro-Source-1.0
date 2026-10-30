@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.34"
+  version: "1.35"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -44,7 +44,14 @@ implementation_learning_loop:
   pre_implementation_inheritance:
     mandatory_question: >
       Which prior failure families, corrections, delivery contracts and validation
-      rules apply to this implementation before it is designed?
+      rules apply to the actual sanitized failure and considered decision? Use
+      reached stage, observed/hypothesized/unknown cause and effect, challenged
+      premise, relevant contract/edition and legitimate original, not task/scope
+      labels alone. The explicit v2 learning_context extends exact v1; do not add
+      fields to old originals or fetch arbitrary referenced private material.
+      Select advice only within current applicability, edition and exceptions;
+      reject stale/irrelevant advice or counterevidence. DIRECT_KNOWN_FIX and
+      legitimate bounded transient continuation retain their short ordinary path.
     applicable_learning_must_be_applied_before_delivery: true
 
   early_prerequisite_contributions:
@@ -318,16 +325,30 @@ implementation_learning_loop:
           transfers no responsibility. Actual runtime duplicate protection is
           not established by the phrase exactly once.
         K6: >
-          Classify the actual finding and choose its appropriate existing home,
-          not automatically more norm. Preserve positive and negative learning
-          including order-owner error. Material learning connects source and
-          observation to change or reasoned preservation, actual home, owner
-          and recognizable next task/change; that task entrance points to the
-          learning and ordinary return records actual application. At material
-          transitions make one explicit combined reflection disposition:
-          changed choice, unchanged and why, relevant justified N/A and unknown
-          coverage. T7/C7/A7 and Living Family apply proportionately; full
-          FIREPASS retains its own contract and is not replaced by a short pass.
+          Classify the actual finding and choose its existing owner/home, not
+          automatically more norm. Preserve positive and negative learning and
+          order-owner error. Bind sanitized failure/premise/decision, legitimate
+          original/edition, applicability and counterevidence before selecting
+          advice. Before sealing a new derived handoff, include relevant advice
+          or a readable edition-bound reference in its manifest-bound material;
+          retain original bytes/hash separately. New A7 material uses one readable
+          full representation containing original and advice, not a sidecar-only
+          delivery or an old held-basis short. Qualify producer and actual reader.
+          A receipt alone is not the receiver's advice channel or proof of use.
+          The receiver finds sufficient material through its ordinary entry in
+          another task/context, then records the actual correction, justified
+          preservation, effect reconciliation or advice rejection and result in
+          the ordinary return. USED alone is not action. The rightful Source or
+          product owner qualifies generalizable learning in the existing catalog
+          and controls; Work retains event, correction and owner disposition.
+          Chosen control names are not performed coverage: join valid executed
+          or reused evidence, or name the relevant uncovered remainder. Catalog
+          advice alone creates no mandatory control. Preserve v1/full originals,
+          direct known fixes and bounded transient continuation; no universal A7
+          round, remote read, new database, model change or authority/replay grant.
+          At material transitions keep one explicit combined changed/unchanged/
+          justified N/A disposition with unknown coverage. T7/C7/A7 and Living
+          Family remain proportionate; full FIREPASS keeps its own contract.
       situational_profiles:
         P1: SMALL_KNOWN_CHANGE_PROPORTIONATE_DIRECT_CONTROL_NO_SYNTHETIC_PROOF_JOB
         P2: CODE_OPERATIONS_INTRODUCTION_OR_EFFECT_ACTUAL_ENTRY_CHAIN_RISK_ACCESS_AND_RECIPIENT_USE
