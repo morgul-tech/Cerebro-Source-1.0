@@ -211,6 +211,88 @@ def _receive_error_result(tool_name: str, error: Exception, args: Any = None) ->
                                   'empty_result': False, **extra}}
 
 
+_OUTBOX_READ_REJECTION_STAGES = {
+    "ROOM_RETURN_D1_OUTBOX_NOT_BOUND": "HOST_BINDING",
+    "ROOM_RETURN_READ_SHAPE_INVALID": "ARGUMENT_VALIDATION",
+    "ROOM_RETURN_READ_FIELDS": "ARGUMENT_VALIDATION",
+    "ROOM_RETURN_LIST_FIELDS": "ARGUMENT_VALIDATION",
+    "ROOM_RETURN_LIST_LIMIT": "ARGUMENT_VALIDATION",
+    "ROOM_RETURN_LIST_CURSOR": "ARGUMENT_VALIDATION",
+    "ROOM_RETURN_PUBLISHER_SCOPE_REQUIRED": "REQUEST_SCOPE",
+    "ROOM_RETURN_PUBLISHER_SESSION_REQUIRED": "SESSION_BINDING",
+    "ROOM_RETURN_PUBLISHER_ASSIGNMENT_UNAVAILABLE": "PUBLISHER_ASSIGNMENT",
+    "ROOM_RETURN_PUBLISHER_ASSIGNMENT_STALE": "PUBLISHER_ASSIGNMENT",
+    "ROOM_RETURN_PUBLISHER_PROJECT_STALE": "PROJECT_BINDING",
+    "ROOM_RETURN_PUBLISHER_ROUTE_STALE": "PUBLISHER_ROUTE",
+    "PROJECT_SCOPE_REQUIRES_ROOM_FAMILY": "MATERIAL_SCOPE",
+    "PROJECT_MATERIAL_OWNER_RECORD_REQUIRED": "MATERIAL_SCOPE",
+    "PROJECT_MATERIAL_OWNER_INTEGRITY": "MATERIAL_SCOPE",
+    "EXACT_DURABLE_MATERIAL_ADMISSION_REQUIRED": "MATERIAL_SCOPE",
+    "SERVICE_MATERIAL_SCOPE_MISMATCH": "MATERIAL_SCOPE",
+    "SERVICE_MATERIAL_CONTENT_INTEGRITY": "MATERIAL_SCOPE",
+}
+
+
+def _outbox_read_request_sha256(args: Any) -> str | None:
+    """Hash only the exact bounded public selector before dispatch mutates args."""
+    try:
+        if (type(args) is dict and set(args) == {"op", "message_id"}
+                and type(args["op"]) is str and args["op"] == "read_exact"
+                and type(args["message_id"]) is str
+                and re.fullmatch(r"d1:[a-f0-9]{40}", args["message_id"])):
+            return hashlib.sha256(json.dumps(
+                args, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    except Exception:
+        pass  # Invalid correlation input cannot replace the original refusal.
+    return None
+
+
+def _outbox_read_error_result(tool_name: Any, error: Exception, args: Any = None,
+                              *, unexpected: bool = False,
+                              request_sha256: str | None = None) -> dict[str, Any] | None:
+    """Exact public codes and fixed diagnostics; never exception text or context.
+
+    A rejection is not an empty outbox or a backend disposition. Unknown causes
+    remain unclassified, and diagnostics cannot admit a retry or a service role.
+    """
+    if type(tool_name) is not str or tool_name != "read_room_return_d1_outbox_v1":
+        return None
+    reason = None
+    try:
+        if not unexpected and type(error.args) is tuple and len(error.args) == 1:
+            candidate = error.args[0]
+            if (type(candidate) is str and len(candidate) <= 96
+                    and candidate in _OUTBOX_READ_REJECTION_STAGES):
+                reason = candidate
+    except Exception:
+        pass
+    detail = {
+        "schema": "cerebro-safe-outbox-read-error/v1",
+        "error_code": reason or ("OUTBOX_READ_FAILURE_UNCLASSIFIED" if unexpected
+                                 else "OUTBOX_READ_REJECTION_UNCLASSIFIED"),
+        "rejection_stage": _OUTBOX_READ_REJECTION_STAGES[reason] if reason else
+                           ("REQUEST_FAILURE" if unexpected else "REQUEST_REJECTION"),
+        "retry_allowed": False,
+        "empty_result": False,
+        "outbox_state": "NOT_OBSERVED",
+        "backend_disposition": "NOT_OBSERVED",
+    }
+    # This is correlation only, never caller/session attestation or retry right.
+    if request_sha256 is None:
+        request_sha256 = _outbox_read_request_sha256(args)
+    if type(request_sha256) is str and re.fullmatch(r"[a-f0-9]{64}", request_sha256):
+        detail["request_sha256"] = request_sha256
+    try:
+        logger.warning("outbox_read_error %s", json.dumps(
+            detail, sort_keys=True, separators=(",", ":")))
+    except Exception:
+        pass  # Logging cannot replace the refusal or expose a raw traceback.
+    text = ("The outbox read could not be completed; no delivery status was observed."
+            if unexpected else "The outbox read was rejected; no delivery status was observed.")
+    return {"content": [{"type": "text", "text": text}], "isError": True,
+            "structuredContent": detail}
+
+
 _ADMISSION_REJECTION_STAGES = {
     "ADMISSION_OPERATION_REQUIRED": "ARGUMENT_VALIDATION",
     "EXACT_FIELDS_REQUIRED": "ARGUMENT_VALIDATION",
@@ -341,6 +423,8 @@ def create_official_mcp_server(service: ControlContextRemoteMcpService) -> Any:
         )
 
     async def on_call_tool(context: Any, params: Any) -> Any:
+        outbox_request_sha256 = (_outbox_read_request_sha256(params.arguments)
+                                if params.name == "read_room_return_d1_outbox_v1" else None)
         try:
             if params.name in ('read_authenticated_caller_observation_v1', 'read_authenticated_binding_basis_v1', 'read_standing_worker_policy_observation_v1'):
                 if type(params.arguments)is not dict or params.arguments:
@@ -357,24 +441,29 @@ def create_official_mcp_server(service: ControlContextRemoteMcpService) -> Any:
                 )
         except ControlContextToolError as error:
             _log_admission_rejection(params.name, params.arguments, error)
-            value = _receive_error_result(params.name, error, params.arguments) or {
+            value = (_outbox_read_error_result(params.name, error, params.arguments,
+                                               request_sha256=outbox_request_sha256)
+                     or _receive_error_result(params.name, error, params.arguments)) or {
                 "content": [
                     {"type": "text", "text": "The project-control request was rejected."}
                 ],
                 "isError": True,
             }
         except Exception as error:
-            if not _log_admission_rejection(params.name, params.arguments, error, unexpected=True):
-                logger.exception("project-control MCP tool invocation failed")
-            value = {
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "The project-control service could not complete the request.",
-                    }
-                ],
-                "isError": True,
-            }
+            value = _outbox_read_error_result(params.name, error, params.arguments, unexpected=True,
+                                              request_sha256=outbox_request_sha256)
+            if value is None:
+                if not _log_admission_rejection(params.name, params.arguments, error, unexpected=True):
+                    logger.exception("project-control MCP tool invocation failed")
+                value = {
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "The project-control service could not complete the request.",
+                        }
+                    ],
+                    "isError": True,
+                }
         return _call_tool_result(types, value)
 
     return Server(
