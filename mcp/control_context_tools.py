@@ -55,6 +55,7 @@ from boot_birth_source import (
 )
 from worker_context_auth import WorkerContextAuthError
 from assistant_trial_owner import AssistantTrialOwnerRefused
+from pm_admission_owner import tool_definitions as pm_admission_tool_definitions
 
 
 STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
@@ -1012,7 +1013,7 @@ def _object_output_schema(
 def tool_definitions() -> list[dict[str, Any]]:
     """Return MCP-compatible tool descriptors with conservative annotations."""
 
-    return human_t3_tool_definitions() + [
+    return pm_admission_tool_definitions() + human_t3_tool_definitions() + [
         {
             "name": "read_authenticated_binding_basis_v1",
             "title": "Read own authenticated binding basis",
@@ -1515,6 +1516,23 @@ class ControlContextMcpTools:
         self._worker_overlay_attestation_issuer = worker_overlay_attestation_issuer
         self._worker_overlay_source_continuity_verifier = worker_overlay_source_continuity_verifier
         self._role_method_source_verifier = role_method_source_verifier
+        self._pm_admission_owner = None
+        self._pm_admission_issuer = None
+        self._boot_birth_source_continuity_verifier_for_pm = verify_existing_birth_method_continuity
+
+    def bind_pm_admission(self, owner: Any, issuer: Any) -> None:
+        from pm_admission_owner import PostgresPmAdmissionOwner
+        if type(owner) is not PostgresPmAdmissionOwner or self._pm_admission_owner is not None:
+            raise ControlContextToolAuthorizationError('PM_OWNER_BINDING_INVALID')
+        if issuer is not self._resolution_attestation_verifier or not callable(getattr(issuer, 'seal', None)):
+            raise ControlContextToolAuthorizationError('PM_PRIVATE_ISSUER_VERIFIER_BINDING_REQUIRED')
+        self._pm_admission_owner, self._pm_admission_issuer = owner, issuer
+
+
+    def resume_ready_unbound_pm_overlay(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        from pm_admission_owner import resume_pm
+        return resume_pm(self, self._pm_admission_owner, self._pm_admission_issuer, args, context)
+
 
     @staticmethod
     def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
@@ -1540,6 +1558,7 @@ class ControlContextMcpTools:
             "create_ready_unbound_boot_generation": self.create_ready_unbound_boot_generation,
             "create_pre_role_generation": self.create_pre_role_generation,
             "complete_pre_role_generation": self.complete_pre_role_generation,
+            "resume_ready_unbound_pm_overlay": self.resume_ready_unbound_pm_overlay,
             "attach_role_overlay": self.attach_role_overlay,
             "read_boot_generation_state": self.read_boot_generation_state,
             "resume_ready_unbound_assistant_overlay": self.resume_ready_unbound_assistant_overlay,
@@ -1757,6 +1776,18 @@ class ControlContextMcpTools:
             raise ControlContextToolError("attach-role-overlay-exact-fields-required")
         generation_ref = _require_text(payload, "generation_ref")
         current = self._read_pre_role(identity, context, generation_ref)
+        pm_guard = None
+        if payload.get('role') == 'PROJECT_MANAGER':
+            from pm_admission_owner import PostgresPmAdmissionOwner, PmAdmissionRefused
+            if type(self._pm_admission_owner) is not PostgresPmAdmissionOwner:
+                raise ControlContextToolAuthorizationError('PM_OWNER_ADMISSION_NOT_BOUND')
+            try:
+                pm_guard = self._pm_admission_owner.attach_guard(current, payload)
+            except PmAdmissionRefused as exc:
+                raise ControlContextToolAuthorizationError(str(exc)) from None
+            target = getattr(self._state_port, 'attach_role_overlay', None)
+            if not callable(target) or 'current_guard' not in inspect.signature(target).parameters:
+                raise ControlContextToolAuthorizationError('PM_ATOMIC_CURRENT_GUARD_PORT_REQUIRED')
         expected_revision = payload.get("expected_revision")
         if type(expected_revision) is not int or current["revision"] != expected_revision:
             raise ControlContextToolError("pre-role-generation-expected-revision-mismatch")
@@ -1793,23 +1824,37 @@ class ControlContextMcpTools:
             method_projection=copy.deepcopy(method_projection),
             principal_continuity_baseline=copy.deepcopy(payload.get("principal_continuity_baseline")),
         )
-        committed = self._pre_role_state_call(
-            "attach_role_overlay",
-            pre_role_state=pre_role_after,
-            actor_generation_state=actor_after,
-            expected_revision=expected_revision,
-            principal_ref=identity.principal_ref,
-            scopes={"project_state:transition"},
-        )
-        pre_readback = self._read_pre_role(identity, context, generation_ref)
-        actor_readback = self._pre_role_state_call(
-            "read_actor_generation_shadow",
-            tenant_ref=identity.tenant_ref, workspace_ref=identity.workspace_ref,
-            role=actor_after["role"], generation_ref=actor_after["generation_ref"],
-            principal_ref=identity.principal_ref, scopes={"project_state:read"},
-        )
+        committed = None
+        try:
+            committed = self._pre_role_state_call(
+                "attach_role_overlay",
+                pre_role_state=pre_role_after,
+                actor_generation_state=actor_after,
+                expected_revision=expected_revision,
+                principal_ref=identity.principal_ref,
+                scopes={"project_state:transition"},
+                **({"current_guard": pm_guard} if pm_guard is not None else {}),
+            )
+            pre_readback = self._read_pre_role(identity, context, generation_ref)
+            actor_readback = self._pre_role_state_call(
+                "read_actor_generation_shadow",
+                tenant_ref=identity.tenant_ref, workspace_ref=identity.workspace_ref,
+                role=actor_after["role"], generation_ref=actor_after["generation_ref"],
+                principal_ref=identity.principal_ref, scopes={"project_state:read"},
+            )
+        except Exception as exc:
+            from pm_admission_owner import PmAdmissionCommitUnknown
+            if pm_guard is not None and (committed is not None or isinstance(exc, PmAdmissionCommitUnknown)):
+                return self._result({'result': 'COMMITTED_READBACK_UNKNOWN' if committed is not None else 'COMMIT_OUTCOME_UNKNOWN',
+                    'pre_role_generation': pre_role_after, 'actor_generation_shadow': actor_after,
+                    'retry_allowed': False, 'repository_permission_required': False}, context)
+            raise
         if (pre_readback != committed["pre_role_generation"]
                 or actor_readback != committed["actor_generation_shadow"]):
+            if pm_guard is not None:
+                return self._result({'result':'COMMITTED_READBACK_MISMATCH',
+                    'pre_role_generation':pre_role_after, 'actor_generation_shadow':actor_after,
+                    'retry_allowed':False, 'repository_permission_required':False}, context)
             raise ControlContextToolError("pre-role-generation-role-overlay-readback-mismatch")
         return self._result({
             "pre_role_generation": pre_readback,

@@ -46,6 +46,7 @@ TOOL_REQUIRED_SCOPES = {
     "complete_pre_role_generation": "project_state:transition",
     "attach_role_overlay": "project_state:transition",
     "read_boot_generation_state": "project_state:read",
+    "resume_ready_unbound_pm_overlay": "project_state:transition",
     "resume_ready_unbound_assistant_overlay": "project_state:transition",
     "resume_ready_unbound_worker_overlay": "project_state:transition",
     "read_worker_operative_task": "project_state:read",

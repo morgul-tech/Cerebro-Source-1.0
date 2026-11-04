@@ -845,6 +845,7 @@ class InMemoryControlContextStatePort:
         actor_generation_state: dict[str, Any],
         expected_revision: int,
         scopes: set[str],
+        current_guard: Any = None,
     ) -> dict[str, Any]:
         """Atomically consume READY_UNBOUND and materialize the existing role shadow."""
 
@@ -880,8 +881,13 @@ class InMemoryControlContextStatePort:
             )
             _require(actor_key not in self._actor_generation_shadows,
                      "pre-role-generation-role-overlay-actor-exists", StateConflict)
-            self._actor_generation_shadows[actor_key] = copy.deepcopy(actor_generation_state)
-            self._pre_role_generations[key] = copy.deepcopy(pre_role_state)
+            actor_copy = copy.deepcopy(actor_generation_state)
+            pre_copy = copy.deepcopy(pre_role_state)
+            _require(current_guard is None or callable(current_guard), 'PM_CURRENT_GUARD_CALLABLE_REQUIRED', StateBindingError)
+            if current_guard is not None:
+                current_guard()
+            self._actor_generation_shadows[actor_key] = actor_copy
+            self._pre_role_generations[key] = pre_copy
             return {
                 "pre_role_generation": copy.deepcopy(pre_role_state),
                 "actor_generation_shadow": copy.deepcopy(actor_generation_state),

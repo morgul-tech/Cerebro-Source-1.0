@@ -31,6 +31,7 @@ mcp:
   - standards/immune-system.yaml
   - standards/doctor-assurance.yaml
   - mcp/project-manager-control-governor.yaml
+  - mcp/pm-2872-bounded-succession.json
 position:
   within: Cerebro
   defined_by: Cerebro Source 1.0

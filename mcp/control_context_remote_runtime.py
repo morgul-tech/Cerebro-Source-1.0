@@ -45,12 +45,16 @@ from control_context_state_postgres import (  # noqa: E402
 from control_context_tools import ContextLifecycleEffectAdapter, ControlContextMcpTools  # noqa: E402
 from control_context_principal_succession_provider import PrincipalSuccessionPermitProvider  # noqa: E402
 from control_resolution_host import HumanT3BreakGlassHost  # noqa: E402
+from pm_admission_owner import PostgresPmAdmissionOwner  # noqa: E402
 
 
 REMOTE_RUNTIME_SCHEMA = "cerebro-control-context-remote-runtime/v1"
 REMOTE_RUNTIME_CONFIG_SCHEMA = "cerebro-control-context-remote-runtime-config/v1"
 RUNTIME_BACKEND = "POSTGRESQL"
 APPLICATION_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$")
+PM_ADMISSION_POSTGRES_RELATIONS = (
+    "cerebro_pm_current_heads", "cerebro_pm_current_revisions", "cerebro_pm_admission_decisions",
+)
 REQUIRED_POSTGRES_RELATIONS = (
     "cerebro_schema_migrations",
     "cerebro_project_instances",
@@ -280,9 +284,13 @@ class PostgresStateServiceReadinessProbe:
         self,
         connection_factory: Callable[[], Any],
         manifest_path: str | Path = DEFAULT_MANIFEST,
+        *, require_pm_admission: bool = False,
     ) -> None:
         _require(callable(connection_factory), "readiness-connection-factory-required")
         self._connection_factory = connection_factory
+        _require(type(require_pm_admission) is bool, 'readiness-PM-enable-flag-invalid')
+        self._required_relations = REQUIRED_POSTGRES_RELATIONS + (
+            PM_ADMISSION_POSTGRES_RELATIONS if require_pm_admission else ())
         self._expected_migrations = self._load_manifest(manifest_path)
 
     @staticmethod
@@ -331,10 +339,10 @@ class PostgresStateServiceReadinessProbe:
                   FROM unnest(%s::text[]) AS required(relation_name)
                  WHERE to_regclass(required.relation_name) IS NOT NULL
                 """,
-                (list(REQUIRED_POSTGRES_RELATIONS),),
+                (list(self._required_relations),),
             )
             relation_row = cursor.fetchone()
-            if _row_value(relation_row, "present", 0) != len(REQUIRED_POSTGRES_RELATIONS):
+            if _row_value(relation_row, "present", 0) != len(self._required_relations):
                 return False
             migration_ids = [entry[0] for entry in self._expected_migrations]
             cursor.execute(
@@ -587,7 +595,8 @@ def assemble_postgres_control_context_remote_runtime_from_connection_factory(
     human_t3_host = (HumanT3BreakGlassHost(state_port=state_port, current_reader=human_t3_current_reader,
                                         effect_capability=human_t3_effect_capability)
                      if human_t3_current_reader is not None else None)
-    readiness_probe = PostgresStateServiceReadinessProbe(connection_factory, manifest_path)
+    readiness_probe = PostgresStateServiceReadinessProbe(connection_factory, manifest_path,
+        require_pm_admission=type(pm_profile_verifier) is PostgresPmAdmissionOwner)
     pm_lifecycle_verifier = (
         ContextLifecycleEffectAdapter(
             state_port,

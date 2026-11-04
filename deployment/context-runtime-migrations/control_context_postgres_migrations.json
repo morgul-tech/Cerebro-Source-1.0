@@ -1,0 +1,97 @@
+{
+  "schema": "cerebro-control-context-postgres-migrations/v1",
+  "backend": "POSTGRESQL",
+  "runtime_role_may_apply_migrations": false,
+  "migrations": [
+    {
+      "migration_id": "0001-control-context-state-service",
+      "schema_version": "1.0.0-candidate",
+      "path": "control_context_state_postgres.sql",
+      "checksum_sha256": "6312ab6d5fae58cfa52bfb1d13b1d361ebe73e3a4b37bb34f4875e480afc420d"
+    },
+    {
+      "migration_id": "0002-actor-generation-work-claim-shadow",
+      "schema_version": "1.1.0-shadow-candidate",
+      "path": "control_context_state_postgres_0002_actor_claim_shadow.sql",
+      "checksum_sha256": "9b51fa1cb0b46618f5677670a7ad48411ceb50febb05503c8948df8844e02b0c"
+    },
+    {
+      "migration_id": "0003-human-t3-break-glass",
+      "schema_version": "1.2.0-human-t3-custody-candidate",
+      "path": "control_context_state_postgres_0003_human_t3_break_glass.sql",
+      "checksum_sha256": "5c83038f88d7946554ee6cc7a01cdb703d23da739cd0734bd6c50b5e51a34167"
+    },
+    {
+      "migration_id": "0004-principal-succession-permit",
+      "schema_version": "1.3.0-principal-succession-custody-candidate",
+      "path": "control_context_state_postgres_0004_principal_succession_permit.sql",
+      "checksum_sha256": "71c64f0caca37fa116a68e8c05bb9b08c63671e80b132c1f85f34177f5fdfde6"
+    },
+    {
+      "migration_id": "0005-pre-role-generation",
+      "schema_version": "1.4.0-pre-role-generation-candidate",
+      "path": "control_context_state_postgres_0005_pre_role_generation.sql",
+      "checksum_sha256": "6465fec59b0ae07e43408fbc3d3394efe1ca6d4537f1c57bb35d06f6517207dd"
+    },
+    {
+      "migration_id": "0006-pm-owner-ready-custody",
+      "schema_version": "1.5.0-pm-owner-ready-candidate",
+      "path": "control_context_state_postgres_0006_pm_owner_ready.sql",
+      "checksum_sha256": "a11ea2b46ef33f404e97a5319e93a399353a94da061f0e5cf6daeb13c09f6332"
+    },
+    {
+      "migration_id": "0007-x9-session-channel-custody",
+      "schema_version": "1.6.0-x9-channel-candidate",
+      "path": "control_context_state_postgres_0007_x9_channel.sql",
+      "checksum_sha256": "139d6704defe4f6758fb1b285d5e5ba55fd4170697a103a0ab8eb391fdfd36b4"
+    },
+    {
+      "migration_id": "0008-assistant-overlay-decision",
+      "schema_version": "1.7.0-assistant-overlay-owner-decision-candidate",
+      "path": "control_context_state_postgres_0008_assistant_overlay_decision.sql",
+      "checksum_sha256": "e24301ac096da7bc30c917dfc84d525b7b5d96a6db12e52099c06d387a0933d1"
+    },
+    {
+      "migration_id": "0009-bk11-owner-backend-custody",
+      "schema_version": "1.8.0-bk11-service-owned-delivery-v1",
+      "path": "control_context_state_postgres_0009_bk11_owner_backend_custody.sql",
+      "checksum_sha256": "dd10acd0804bc4715d9243d9caf60522d7ba5262227623d9832dd44adf6ae6cc"
+    },
+    {
+      "migration_id": "0010-room-return-d1-outbox",
+      "schema_version": "1.9.0-room-return-owner-outbox-candidate",
+      "path": "control_context_state_postgres_0010_room_return_d1_outbox.sql",
+      "checksum_sha256": "eb54b59323c42f9d36a2a1b4d0f5a39d498f07b5e41f1019e85897e1caeb0f69"
+    },
+    {
+      "migration_id": "0011-bk11-assignment-family-discriminator",
+      "schema_version": "1.10.0-bk11-family-discriminator-candidate",
+      "path": "control_context_state_postgres_0011_bk11_assignment_family.sql",
+      "checksum_sha256": "572df5967051039b6faf5ee957066e6c8fe2d55e7f0fddf124c4a2272abef1dd"
+    },
+    {
+      "migration_id": "0012-worker-method-owner",
+      "schema_version": "1.11.0-worker-method-owner-candidate",
+      "path": "control_context_state_postgres_0012_worker_method_owner.sql",
+      "checksum_sha256": "160ebee19406ad9de937f87f3b1e227e1a9cebed1d6111b1445eaced31a8732c"
+    },
+    {
+      "migration_id": "0013-room-return-actor-read",
+      "schema_version": "1.12.0-room-return-actor-read-candidate",
+      "path": "control_context_state_postgres_0013_room_return_actor_read.sql",
+      "checksum_sha256": "e80444d02933ba37ecf10de2efada29de5150db08ec37506641619c5849f9967"
+    },
+    {
+      "migration_id": "0014-actor-admission-owner",
+      "schema_version": "1.13.0-actor-admission-owner-candidate",
+      "path": "control_context_state_postgres_0014_actor_admission_owner.sql",
+      "checksum_sha256": "2a460c9452b7306be08bfe9cd76beaeaeb68f41ca9e6baf37a6c1776f94e18b0"
+    },
+    {
+      "migration_id": "0015-pm-admission-owner",
+      "schema_version": "1.14.0-pm-admission-owner-candidate",
+      "path": "control_context_state_postgres_0015_pm_admission_owner.sql",
+      "checksum_sha256": "a80ad58627047f382c016dfa60d3682753189c72ca4ad74bb20ae2556d182b42"
+    }
+  ]
+}

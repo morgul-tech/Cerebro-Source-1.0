@@ -14,6 +14,19 @@ control_resolution:
     existing material/relevance control with the exact AA-003 shadow-validated
     adaptive resolver logic without moving control intelligence into Runtime or
     creating a parallel Adaptive Engine.
+  pm_2872_bounded_succession:
+    contract_ref: mcp/pm-2872-bounded-succession.json
+    qualification_implementation: mcp/pm_bounded_qualification.py
+    selected_generation: CEREBRO-BOOT-2872BF170DBF470C86A8A52C7B1179A1
+    scope: PROPOSED_CANDIDATE_ONLY_PENDING_LEGITIMATE_ISSUANCE
+    consumes_existing_owner_path: true
+    historical_strict_boot_pass: NOT_GRANTED
+    clean_frozen_order_pass: NOT_GRANTED
+    protected_stage_consumer: deployment/pm_protected_owner_entry.py#ProtectedOwnerAuthority
+    native_admission_consumer: mcp/pm_admission_owner.py#PostgresPmAdmissionOwner
+    transfer_consumer: tooling/context/pm_admission_owner_operator.py#apply_owner_plan
+    operative_profile_consumer: mcp/pm_admission_owner.py#PostgresPmAdmissionOwner.verify
+    new_authority_or_automatic_effect: false
   human_t3_break_glass:
     disposition: HG04_B_LOCAL_CANDIDATE
     implementation_ref: mcp/human_t3_break_glass.py

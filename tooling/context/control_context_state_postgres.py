@@ -588,6 +588,9 @@ class PostgresControlContextStatePort:
         read_only: bool = False,
         independent_of: Any = None,
         succession_write: bool = False,
+        repeatable_read: bool = False,
+        passthrough_errors: tuple[type[Exception], ...] = (),
+        pm_admission_commit: bool = False,
     ) -> Iterator[Any]:
         connection = None
         cursor = None
@@ -603,6 +606,8 @@ class PostgresControlContextStatePort:
             if succession_write:
                 self._succession_last_write_connection = connection
             cursor = connection.cursor()
+            if repeatable_read:
+                cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
             if read_only:
                 cursor.execute("SET TRANSACTION READ ONLY")
             cursor.execute("SELECT set_config('cerebro.tenant_ref', %s, true)", (tenant_ref,))
@@ -610,7 +615,13 @@ class PostgresControlContextStatePort:
             cursor.execute("SELECT set_config('cerebro.principal_ref', %s, true)", (principal_ref,))
             cursor.execute("SET CONSTRAINTS ALL DEFERRED")
             yield cursor
-            connection.commit()
+            try:
+                connection.commit()
+            except Exception as exc:
+                if pm_admission_commit:
+                    from pm_admission_owner import PmAdmissionCommitUnknown
+                    raise PmAdmissionCommitUnknown('PM_NATIVE_COMMIT_OUTCOME_UNKNOWN_NO_RETRY') from exc
+                raise
         except StatePortError:
             if connection is not None:
                 _safe_rollback(connection)
@@ -618,6 +629,12 @@ class PostgresControlContextStatePort:
         except Exception as exc:
             if connection is not None:
                 _safe_rollback(connection)
+            if pm_admission_commit:
+                from pm_admission_owner import PmAdmissionCommitUnknown
+                if isinstance(exc, PmAdmissionCommitUnknown):
+                    raise
+            if isinstance(exc, passthrough_errors):
+                raise
             raise _mapped_database_error(exc) from exc
         finally:
             if cursor is not None:
@@ -2062,10 +2079,12 @@ class PostgresControlContextStatePort:
         expected_revision: int,
         principal_ref: str,
         scopes: set[str],
+        current_guard: Any = None,
     ) -> dict[str, Any]:
         """Atomically consume READY_UNBOUND and create the unchanged actor shadow."""
 
         self._require_scope(scopes, "project_state:transition")
+        _require(current_guard is None or callable(current_guard), 'PM_CURRENT_GUARD_CALLABLE_REQUIRED', StateBindingError)
         validate_pre_role_generation(pre_role_state)
         validate_actor_generation_shadow(actor_generation_state)
         _require(pre_role_state["revision"] == expected_revision + 1,
@@ -2081,7 +2100,10 @@ class PostgresControlContextStatePort:
             tenant_ref=pre_role_state["tenant_ref"],
             workspace_ref=pre_role_state["workspace_ref"],
             principal_ref=principal_ref,
+            pm_admission_commit=current_guard is not None,
         ) as cursor:
+            if current_guard is not None:
+                current_guard()
             cursor.execute(
                 """
                 UPDATE cerebro_pre_role_generation_heads
@@ -2134,6 +2156,8 @@ class PostgresControlContextStatePort:
                  actor_generation_state["role"], actor_generation_state["generation_ref"],
                  actor_generation_state["revision"], actor_generation_state["fingerprint"], actor_payload),
             )
+            if current_guard is not None:
+                current_guard()
         return {
             "pre_role_generation": copy.deepcopy(pre_role_state),
             "actor_generation_shadow": copy.deepcopy(actor_generation_state),

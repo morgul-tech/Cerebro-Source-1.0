@@ -1,0 +1,100 @@
+{
+  "schema": "cerebro-candidate-bounded-succession-contract/v1",
+  "id": "PM-2872-BOUNDED-SUCCESSION-20261104-01",
+  "status": "ISSUED_BY_LEGITIMATE_CONTRACT_OWNER",
+  "authority": "NORMATIVE_CANDIDATE_CONTRACT_ONLY_NO_NATIVE_AUTHORITY",
+  "selection": {
+    "generation": "CEREBRO-BOOT-2872BF170DBF470C86A8A52C7B1179A1",
+    "chat": "01a1a700-0a7c-7322-8b78-9cb73953eaa6",
+    "birth_revision": 2,
+    "birth_Source": "2e2f75e938fba46bad5fb1cdfaa03c1bd8cc9a4c",
+    "method": "cd794305005b4a4fd2145386e2e9b7776c838c20898c9e27f9810b1d3b7a11fd",
+    "Human_qualification_choice_sha256": "1affdd1c4686cdcafd1a1441dbf41a8efb93b6aae27e9e8bca143c9b9a7ba45a"
+  },
+  "proposed_precedence": {
+    "owner": "Existing MCP/Source contract authority with actual Human/P24 disposition through CURRENT_PM",
+    "overrides_only": [
+      "BOOT_FULL POST_BOOT strict BOOT_PASS as prerequisite for THIS candidate's bounded PM uptake",
+      "standards/boot-critical-path-architecture.yaml#fresh_world_succession clean historical order assertion for THIS candidate",
+      "Universal succession A-F/D clean historical first-exposure assertion for THIS candidate"
+    ],
+    "does_not_override": [
+      "Strict BOOT result/classification/history",
+      "Identity/authentication/authorization/privacy/no replay",
+      "Actual source/method/revision/caller/profile/issuer verification",
+      "Sole-current and explicit transfer release",
+      "Future full Arvetone and truthful greeting before bounded activation",
+      "Any other generation or role"
+    ],
+    "frozen_order_handling": "Only existing early partial metadata exposure and unproven historical order may be reported as retained incompleteness; future full lineage/readback/greeting requirements remain mandatory; no blanket reorder or skip"
+  },
+  "claims": {
+    "strict_boot_pass": false,
+    "strict_boot_green": false,
+    "clean_frozen_order_pass": false,
+    "history": "UNPROVEN/NONPASS preserved; no fabricated EXECUTED_NONPASS",
+    "eligibility": "Current evidence may support same-generation protected PM admission after real contract issuance",
+    "native_state_now": "READY_UNBOUND rev2 / role null, attributed independent evidence",
+    "later_scope": "Actual verified PM profile only, no inherited authority",
+    "later_status": "Bounded CURRENT_PM only after separate genuine TRANSFER/native profile/currentness evidence and final receipts"
+  },
+  "consumers": {
+    "stage": "ProtectedOwnerAuthority binds digest(bounded_qualification) in exact future finite raw owner original; plans commit all receipts; no Human qualification answer used as execution authority",
+    "admission": "validate_decision/hold_admission/attach_guard require mandatory candidate qualification and retain R5 caller/source/locks/expiry/issuer/exact attach guards",
+    "transfer": "apply_owner_plan requires final bounded_activation bound to staged qualification, plus unchanged release/backend/actual attach/head CAS/readback",
+    "operative": "PostgresPmAdmissionOwner.verify requires exact bounded_activation from protected current head before PM profile PASS",
+    "strict_BIOS": "Unchanged; must never emit false strict green",
+    "generic_boot": "Unchanged; no this-contract autoactivation via generic boot CLI"
+  },
+  "receipts": {
+    "stage": [
+      "contract_owner_disposition",
+      "published_contract",
+      "candidate_method_consumption",
+      "Shared_and_diagnostic_readback",
+      "current_integrity_disposition",
+      "R5_technical_qualification",
+      "affected_contract_review"
+    ],
+    "activation": [
+      "actual_native_attach_readback",
+      "pretransfer_profile_contract_fit",
+      "sole_current_transition_disposition",
+      "open_returns_uptake",
+      "arvetone_last_full_consumption",
+      "own_identity_greeting",
+      "bounded_order_disposition"
+    ],
+    "semantics": "Refs/hashes must be content-qualified by protected owner, not client-supplied authority. One genuine combined owner/candidate artifact may satisfy multiple named facts; no per-step file or ACK ritual.",
+    "no_current_effect_receipts_fabricated": true,
+    "pretransfer_profile_contract_fit": "Technical fit of exact selected profile/constructor/actor/session/scope binding and expected pre-transfer NOT_SOLE_CURRENT refusal; never operative verify PASS. Actual PostgresPmAdmissionOwner.verify PASS is required only AFTER separate TRANSFER and retained as subsequent genuine operative evidence."
+  },
+  "issuance": {
+    "Human_choice": "Qualification only, already selected; no new general yes round",
+    "contract_scope_owner": "P24/current PM use legitimate existing Human decision lineage to issue exact scoped contract if qualification succeeds; any actually reserved wider choice remains explicit",
+    "Source": "A1 source integrator/publisher only after rightful exact publication disposition and affected review",
+    "BOOT_FULL_and_universal": "Actual canonical provider writer must adopt exact candidate appendix/read back; actor name or role is not writer-port proof",
+    "technical": "Existing D1 actual runtime custodian/operator boundary; E2 independent affected reviewer",
+    "Context": "Earlier P24 begin UNAUTHORIZED/reauth/oauth_refresh_token_missing preserved as historical. Later same idempotent begin success reported after Human reauth; no A1/D1 native proof, no automatic adoption of service-default TOTAL_MCP_REVISION.",
+    "Shared": "Already completed/P24 consumed per PM; no reopening old writer NOT_QUALIFIED"
+  },
+  "implementation_limits": {
+    "new_database_tables": false,
+    "SQL_migration_change": false,
+    "new_native_enum": false,
+    "new_remote_command": false,
+    "new_attempt": false,
+    "common_method_six_blobs_and_boot_architecture_unchanged": true,
+    "local_preparation_only": false,
+    "separate_fresh_observation": "Local proposed protected read-only staged preflight before final install input sealing; existing real custodian port and finite purpose still must be admitted, no observation executed",
+    "technical_operation_entries_remain_unissued": true
+  },
+  "issuance_record": {
+    "owner_disposition_id": "P24-PM-2872-CONTRACT-ISSUANCE-20261104-01",
+    "owner_disposition_sha256": "546a8013e51a7559a0e242d5cf9ddd26c007b9b23cc8173279e28f5cc143b4ed",
+    "owner": "P24 through CURRENT_PM to existing A1",
+    "scope": "Only this existing candidate contract; strict/history/private/security/actual admission and separate finite execution gates unchanged",
+    "Source_reference": "Actual containing commit and independent blob readback, never a circular embedded self-commit hash",
+    "technical_authority": "NONE; no signed MCP attestation, finite runtime original or actual role effect"
+  }
+}
