@@ -47,8 +47,8 @@ def close_owned(connection, cursor, *, committed):
             raise PmAdmissionRefused(reason)
 
 
-def apply_owner_plan(*, checked_connection_factory, plan, release, owner_original_bytes,
-                     verify_effect_authority, clock=time.time):
+def _apply_owner_plan(*, checked_connection_factory, plan, release, owner_original_bytes,
+                     verify_effect_authority, clock=time.time, accepted_authority=None):
     """BOOTSTRAP preserved old head, STAGE exact candidate, or TRANSFER current.
 
     All modes are explicit distinct effects. STAGE does not grant operative PM;
@@ -61,7 +61,14 @@ def apply_owner_plan(*, checked_connection_factory, plan, release, owner_origina
     fields = {"issuer", "operation", "operation_id", "input_sha256", "entry_sha256",
               "owner_original_sha256", "not_before", "expires_at"}
     need(type(release) is dict and set(release) == fields, "PM_FINITE_RELEASE_FIELDS")
-    need(release["issuer"] == "P24" and release["operation"] == "PM_OWNER_" + plan["action"], "PM_EXACT_PRINCIPAL_RELEASE")
+    if accepted_authority is None:
+        need(release["issuer"] == "P24" and release["operation"] == "PM_OWNER_" + plan["action"], "PM_EXACT_PRINCIPAL_RELEASE")
+    else:
+        from pm_principal_authority import AcceptedPmOperation
+        need(type(accepted_authority) is AcceptedPmOperation and accepted_authority.db is not None
+             and plan['action'] in ('STAGE', 'TRANSFER')
+             and decision_is_ordinary(plan), 'PM_EXACT_ACCEPTED_ORDINARY_AUTHORITY')
+        accepted_authority._bound(accepted_authority.db, release, plan, owner_original_bytes)
     need(type(owner_original_bytes) is bytes and hashlib.sha256(owner_original_bytes).hexdigest() == release["owner_original_sha256"], "PM_OWNER_ORIGINAL_HASH")
     need(release["input_sha256"] == digest(plan)
          and release["entry_sha256"] == hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), "PM_EXACT_PLAN_ENTRY")
@@ -133,6 +140,8 @@ def apply_owner_plan(*, checked_connection_factory, plan, release, owner_origina
                 expected_overlay = {"overlay_ref": decision["overlay_ref"], "actor_ref": decision["actor_ref"],
                     "role": "PROJECT_MANAGER", "actor_generation_ref": decision["actor_generation_ref"],
                     "ready_unbound_receipt_ref": "READY_" + decision["generation_ref"]}
+                if accepted_authority is not None:
+                    expected_overlay = ordinary_projected_overlay(birth, decision, expected_overlay)
                 need(birth is not None and birth["lifecycle"] == "ROLE_ATTACHED"
                      and birth["revision"] == decision["expected_revision"] + 1
                      and birth["role_overlay"] == expected_overlay, "PM_TRANSFER_ACTUAL_ROLE_ATTACH_REQUIRED")
@@ -190,3 +199,57 @@ def apply_owner_plan(*, checked_connection_factory, plan, release, owner_origina
         raise PmOwnerCommitUnknown("PM_OWNER_COMMITTED_READBACK_UNKNOWN_NO_RETRY") from exc
     return {"result": "COMMITTED_INDEPENDENT_READBACK_PASS", "action": plan["action"],
             "head_sha256": digest(after), "decision_sha256": digest(decision), "retry_allowed": False}
+
+
+def ordinary_projected_overlay(birth, decision, core):
+    """Exact admitted producer edition, not a permissive shape fallback.
+    Preserve valid five-field data under its qualified legacy registry. The
+    current six-field producer additionally requires validated method projection.
+    This helper never changes the separate installed P24/2872 path.
+    """
+    import control_context_registry as registry
+    registry_pin = hashlib.sha256(Path(registry.__file__).read_bytes()).hexdigest()
+    legacy_pin = '4ca14de7d182e0ddc38e64c2cc0065038d9e4ff63fa63af7dd12182bb8025fd7'
+    current_pin = 'a4717aa4de5c6230a1ee08cfc0e90d4d03bb33fbdd3dad9dc7f89aa2e9e9a7fd'
+    need(registry_pin in (legacy_pin, current_pin), 'PM_ORDINARY_REGISTRY_EDITION_NOT_QUALIFIED')
+    need(type(birth) is dict, 'PM_ORDINARY_ACTUAL_BIRTH_REQUIRED')
+    registry.validate_pre_role_generation(birth)
+    overlay = birth['role_overlay']
+    expected_fields = set(core) if registry_pin == legacy_pin else set(core) | {'method_projection'}
+    need(type(overlay) is dict and set(overlay) == expected_fields
+         and birth['source_revision'] == decision['source_revision']
+         and birth['civilization_method_attestation']['method_fingerprint'] == decision['method_fingerprint'],
+         'PM_ORDINARY_CURRENT_PROJECTION_BINDING_REQUIRED')
+    if registry_pin == legacy_pin:
+        return dict(core)
+    projection = registry.validate_role_method_projection(overlay['method_projection'],
+        expected_role='PROJECT_MANAGER', expected_source_revision=decision['source_revision'],
+        expected_method_fingerprint=decision['method_fingerprint'])
+    return {**core, 'method_projection': projection}
+
+
+def decision_is_ordinary(plan):
+    return type(plan.get('decision')) is dict and plan['decision'].get('generation_ref') != BOUNDED_GENERATION
+
+
+def apply_owner_plan(*, checked_connection_factory, plan, release, owner_original_bytes,
+                     verify_effect_authority, clock=time.time, operation_authority=None,
+                     isolated_test=False):
+    """Legacy P24 path unchanged; ordinary path requires actual protected acceptance.
+    The same epoch lock spans backend entry, precommit and independent readback.
+    No caller-provided issuer string or callback can select the ordinary path.
+    """
+    if operation_authority is None:
+        return _apply_owner_plan(checked_connection_factory=checked_connection_factory,
+            plan=plan, release=release, owner_original_bytes=owner_original_bytes,
+            verify_effect_authority=verify_effect_authority, clock=clock)
+    from pm_principal_authority import AcceptedPmOperation
+    need(type(operation_authority) is AcceptedPmOperation, 'PM_PROTECTED_ACCEPTANCE_REQUIRED')
+    with operation_authority.execution_guard(release=release, plan=plan,
+            owner_original_bytes=owner_original_bytes, isolated_test=isolated_test):
+        result = _apply_owner_plan(checked_connection_factory=checked_connection_factory,
+            plan=plan, release=release, owner_original_bytes=owner_original_bytes,
+            verify_effect_authority=operation_authority.verify, clock=clock,
+            accepted_authority=operation_authority)
+        operation_authority.record_result(result)
+        return result
