@@ -1,0 +1,3168 @@
+#!/usr/bin/env python3
+"""Transport-neutral MCP tool adapter for hierarchical project-control state.
+
+An HTTP/SSE MCP server can bind these handlers to its transport. This module does
+not open a network listener and does not provide a production persistence backend.
+It deliberately derives identity from a verified OAuth context and host metadata,
+never from tool arguments, and it exposes no repository mutation capability.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import inspect
+import json
+import re
+import sys
+import copy
+from contextlib import contextmanager
+from contextvars import ContextVar
+import uuid
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Mapping
+
+
+SOURCE_ROOT = Path(__file__).resolve().parents[1]
+CONTEXT_TOOLING = SOURCE_ROOT / "tooling" / "context"
+VALIDATOR_TOOLING = SOURCE_ROOT / "tooling" / "validator"
+for path in (CONTEXT_TOOLING, VALIDATOR_TOOLING):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from control_context_state_port import BEGIN_SCHEMA, StateBindingError
+from control_context_registry import (
+    ControlContextError,
+    attach_role_overlay as build_role_overlay,
+    actor_generation_shadow_fingerprint,
+    bootstrap_pre_role_generation,
+    complete_pre_role_generation,
+    principal_continuity_baseline_fingerprint,
+    validate_actor_generation_shadow,
+    validate_pre_role_generation,
+    validate_principal_continuity_baseline as validate_state_principal_continuity_baseline,
+)
+import project_manager_control_governor
+from control_resolution_host import consume_operational_pulse, HumanT3BreakGlassHost
+from human_t3_break_glass import HumanT3BreakGlassError
+from control_owner_effect_receipt import validate_owner_effect_receipt  # noqa: E402
+from human_navigation_surface_validation import (  # noqa: E402
+    validate_navigation_options,
+    validate_navigation_options_candidate,
+)
+from boot_birth_source import verify_current_method, verify_existing_birth_method_continuity
+from assistant_trial_owner import AssistantTrialOwnerRefused
+from pm_admission_owner import tool_definitions as pm_admission_tool_definitions
+
+
+STATE_SCOPES = frozenset({"project_state:read", "project_state:transition"})
+FORBIDDEN_IDENTITY_ARGUMENTS = frozenset(
+    {"tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref", "scopes"}
+)
+
+
+class ControlContextToolError(RuntimeError):
+    pass
+
+
+class ControlContextToolAuthorizationError(ControlContextToolError):
+    pass
+
+
+ATTESTATION_SCHEMA = "cerebro-mcp-control-resolution-attestation/v1"
+LIFECYCLE_EFFECT_VERIFICATION_SCHEMA = "cerebro-context-lifecycle-effect-verification/v1"
+
+
+@dataclass(frozen=True)
+class VerifiedMcpIdentity:
+    tenant_ref: str
+    workspace_ref: str
+    principal_ref: str
+    scopes: frozenset[str]
+    token_verified: bool
+    consumer_ref: str = "CHATGPT_REMOTE_MCP"
+    authenticated_client_ref: str | None = None
+
+    def validate(self) -> None:
+        if self.token_verified is not True:
+            raise ControlContextToolAuthorizationError("verified-OAuth-identity-required")
+        for field in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref"):
+            value = getattr(self, field)
+            if not isinstance(value, str) or not value.strip():
+                raise ControlContextToolAuthorizationError(f"verified-identity-{field}-required")
+
+    @property
+    def state_scopes(self) -> set[str]:
+        self.validate()
+        return set(self.scopes.intersection(STATE_SCOPES))
+
+
+_HOST_OBSERVATION_KEY = object()
+
+@dataclass(frozen=True, slots=True, repr=False)
+class _HostCallerObservation:
+    identity: VerifiedMcpIdentity
+    issuer: str
+    resource: str
+    service_revision: str
+    client_status: str
+    client_ref: str | None
+    claim_sources: tuple[str, ...]
+    _host_key: object = field(default=None, repr=False, compare=False)
+
+def _bind_verified_caller_observation(identity, issuer, resource, service_revision,
+                                     client_status, client_ref, claim_sources):
+    """Trusted service-only binding after SAME successful auth, not a cryptographic seal."""
+    return _HostCallerObservation(identity,issuer,resource,service_revision,
+        client_status,client_ref,tuple(claim_sources),_HOST_OBSERVATION_KEY)
+
+@dataclass(frozen=True, slots=True, repr=False)
+class _HostTransportObservation:
+    status: str
+    source: str | None
+    _host_key: object = field(default=None, repr=False, compare=False)
+
+def _observe_host_transport_metadata(meta):
+    """Host ingress computes bounded status BEFORE alias normalization. No raw values retained."""
+    def result(status,source=None):return _HostTransportObservation(status,source,_HOST_OBSERVATION_KEY)
+    if meta is None:return result('ABSENT')
+    if not isinstance(meta,Mapping):return result('AMBIGUOUS_INVALID')
+    values=[];local=[];invalid=False;alias=False
+    def add(raw,target):
+        nonlocal invalid
+        try:
+            valid=(type(raw)is str and bool(raw.strip()) and len(raw.encode('utf-8'))<=512
+                   and not any(ord(c)<32 or ord(c)==127 for c in raw))
+        except UnicodeError:valid=False
+        if valid:target.append(raw.strip())
+        else:invalid=True
+    if 'openai/session' in meta:add(meta['openai/session'],values)
+    if 'cerebro/session' in meta:add(meta['cerebro/session'],local)
+    if 'threadId' in meta:alias=True;add(meta['threadId'],values)
+    if 'x-codex-turn-metadata' in meta:
+        turn=meta['x-codex-turn-metadata']
+        if not isinstance(turn,Mapping):invalid=True
+        else:
+            for key in ('session_id','thread_id'):
+                if key in turn:alias=True;add(turn[key],values)
+    if invalid or (local and values) or len(set(values))>1:return result('AMBIGUOUS_INVALID')
+    if local:return result('AVAILABLE','cerebro/session')
+    if values:return result('AVAILABLE','SDK_SESSION_ALIASES' if alias else 'openai/session')
+    return result('ABSENT')
+
+def _host_transport_values(value):
+    if (type(value)is _HostTransportObservation and value._host_key is _HOST_OBSERVATION_KEY
+        and value.status in ('AVAILABLE','ABSENT','AMBIGUOUS_INVALID')
+        and value.source in (None,'openai/session','cerebro/session','SDK_SESSION_ALIASES')):
+        return value.status,value.source
+    return 'AMBIGUOUS_INVALID',None
+
+@dataclass(frozen=True)
+class McpToolCallContext:
+    identity: VerifiedMcpIdentity
+    request_meta: Mapping[str, Any]
+    private_headers: Mapping[str, Any] | None = field(default=None, repr=False, compare=False)
+    verified_caller_observation: _HostCallerObservation | None = field(default=None, repr=False, compare=False)
+    verified_transport_observation: _HostTransportObservation | None = field(default=None, repr=False, compare=False)
+
+    def transport_session(self) -> dict[str, str] | None:
+        """Return the host-delivered session reference without implying a persisted binding."""
+        self.identity.validate()
+        present = [
+            (key, self.request_meta.get(key))
+            for key in ("openai/session", "cerebro/session")
+            if key in self.request_meta
+        ]
+        if len(present) > 1:
+            raise ControlContextToolAuthorizationError("ambiguous-control-session-metadata")
+        if not present:
+            return None
+        source, raw = present[0]
+        if (not isinstance(raw, str) or not raw.strip()
+                or len(raw.strip().encode("utf-8")) > 512):
+            raise ControlContextToolAuthorizationError("invalid-control-session-metadata")
+        namespace = "chatgpt" if source == "openai/session" else "local"
+        return {"source": source, "session_ref": f"{namespace}:{raw.strip()}"}
+
+    def session_ref(self) -> str:
+        metadata = self.transport_session()
+        if metadata is None:
+            raise ControlContextToolAuthorizationError("stable-control-session-metadata-required")
+        return metadata["session_ref"]
+
+    @property
+    def subject_correlation(self) -> str | None:
+        value = self.request_meta.get("openai/subject")
+        return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def _require_args(args: Any) -> dict[str, Any]:
+    if not isinstance(args, dict):
+        raise ControlContextToolError("tool-arguments-object-required")
+    forbidden = sorted(FORBIDDEN_IDENTITY_ARGUMENTS.intersection(args))
+    if forbidden:
+        raise ControlContextToolAuthorizationError(
+            "identity-or-authority-arguments-prohibited:" + ",".join(forbidden)
+        )
+    return args
+
+
+def _require_text(args: dict[str, Any], field: str) -> str:
+    value = args.get(field)
+    if not isinstance(value, str) or not value.strip():
+        raise ControlContextToolError(f"{field}-required")
+    return value.strip()
+
+
+def _session_binding_id(context: McpToolCallContext, project_ref: str | None) -> str:
+    identity = context.identity
+    subject = {
+        "tenant_ref": identity.tenant_ref,
+        "workspace_ref": identity.workspace_ref,
+        "principal_ref": identity.principal_ref,
+        "consumer_ref": identity.consumer_ref,
+        "session_ref": context.session_ref(),
+        "project_ref": project_ref,
+    }
+    raw = json.dumps(subject, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return "CSB-" + hashlib.sha256(raw).hexdigest()[:24].upper()
+
+
+def _attestation_subject(*, operation: str, payload: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+    identity = context.identity
+    identity.validate()
+    return {
+        "tenant_ref": identity.tenant_ref,
+        "workspace_ref": identity.workspace_ref,
+        "principal_ref": identity.principal_ref,
+        "consumer_ref": identity.consumer_ref,
+        "session_ref": context.session_ref(),
+        "operation": operation,
+        "payload": copy.deepcopy(payload),
+    }
+
+
+class HmacControlResolutionAttestor:
+    """Reference/test attestor; production keys belong in a secret manager or HSM."""
+
+    def __init__(self, *, key_id: str, secret: bytes):
+        if not isinstance(key_id, str) or not key_id.strip():
+            raise ValueError("attestation-key-id-required")
+        if not isinstance(secret, bytes) or len(secret) < 32:
+            raise ValueError("attestation-secret-minimum-32-bytes")
+        self._key_id = key_id.strip()
+        self._secret = secret
+
+    def seal(
+        self,
+        *,
+        operation: str,
+        payload: dict[str, Any],
+        context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        subject = _attestation_subject(operation=operation, payload=payload, context=context)
+        raw = json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        return {
+            "schema": ATTESTATION_SCHEMA,
+            "algorithm": "HMAC-SHA256",
+            "key_id": self._key_id,
+            "subject_fingerprint": hashlib.sha256(raw).hexdigest(),
+            "signature": hmac.new(self._secret, raw, hashlib.sha256).hexdigest(),
+        }
+
+    def verify(
+        self,
+        *,
+        operation: str,
+        payload: dict[str, Any],
+        attestation: dict[str, Any],
+        context: McpToolCallContext,
+    ) -> None:
+        if not isinstance(attestation, dict):
+            raise ControlContextToolAuthorizationError("control-resolution-attestation-required")
+        expected = self.seal(
+            operation=operation,
+            payload=payload,
+            context=context,
+        )
+        for field in ("schema", "algorithm", "key_id", "subject_fingerprint"):
+            if attestation.get(field) != expected[field]:
+                raise ControlContextToolAuthorizationError(f"control-resolution-attestation-{field}-mismatch")
+        signature = attestation.get("signature")
+        if not isinstance(signature, str) or not hmac.compare_digest(signature, expected["signature"]):
+            raise ControlContextToolAuthorizationError("control-resolution-attestation-signature-invalid")
+
+
+
+PRINCIPAL_SUCCESSION_PERMIT_SCHEMA = "cerebro-principal-succession-permit/v1"
+_RECEIPT_KEYS = {"receipt_ref", "receipt_fingerprint", "durable", "readback_verified"}
+_PERMIT_EVIDENCE_KEYS = {
+    "living_ledger", "livspuls", "etterklang_review", "stambok_seal",
+    "gjenklang_publication", "human_readability", "predecessor_closeout",
+    "cold_successor_canary",
+}
+_PRINCIPAL_CONTINUITY_BASELINE_KEYS = {
+    "schema", "generation_ref", "source_head", "ready_epoch", "currentness",
+    "provider_revision", "covered_through_frontier", "diary_bound",
+    "living_ledger_baseline", "livspuls_baseline", "post_state_readback_verified",
+    "baseline_fingerprint",
+}
+
+
+def _principal_permit_fingerprint(permit: dict[str, Any]) -> str:
+    subject = copy.deepcopy(permit)
+    subject.pop("permit_fingerprint", None)
+    return hashlib.sha256(
+        json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+
+
+def _validate_content_blind_id(value: Any) -> None:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.@-]{0,255}", value) is None
+        or any(token in value.lower() for token in ("diary", "stambok"))
+    ):
+        raise ControlContextToolAuthorizationError("principal-succession-private-or-locator-ref-prohibited")
+
+
+def _validate_content_blind_receipt(value: Any, *, pass_required: bool = False) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ControlContextToolAuthorizationError("principal-succession-receipt-object-required")
+    allowed = set(_RECEIPT_KEYS)
+    if pass_required:
+        allowed.add("result")
+    if set(value) != allowed:
+        raise ControlContextToolAuthorizationError("principal-succession-receipt-fields-invalid")
+    ref = value.get("receipt_ref")
+    fingerprint = value.get("receipt_fingerprint")
+    _validate_content_blind_id(ref)
+    if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(ch not in "0123456789abcdef" for ch in fingerprint):
+        raise ControlContextToolAuthorizationError("principal-succession-receipt-fingerprint-invalid")
+    if value.get("durable") is not True or value.get("readback_verified") is not True:
+        raise ControlContextToolAuthorizationError("principal-succession-durable-readback-required")
+    if pass_required and value.get("result") != "PASS":
+        raise ControlContextToolAuthorizationError("principal-cold-successor-canary-pass-required")
+    return copy.deepcopy(value)
+
+
+def validate_principal_continuity_baseline(
+    baseline: dict[str, Any], *, expected_source_head: str,
+) -> dict[str, Any]:
+    if not isinstance(baseline, dict) or set(baseline) != _PRINCIPAL_CONTINUITY_BASELINE_KEYS:
+        raise ControlContextToolAuthorizationError("principal-continuity-baseline-fields-invalid")
+    try:
+        validated = validate_state_principal_continuity_baseline(
+            baseline, expected_source_head=expected_source_head,
+        )
+    except ControlContextError as exc:
+        raise ControlContextToolAuthorizationError(str(exc)) from exc
+    if validated["baseline_fingerprint"] != principal_continuity_baseline_fingerprint(validated):
+        raise ControlContextToolAuthorizationError("principal-continuity-baseline-fingerprint-mismatch")
+    return validated
+
+
+def qualify_lived_continuity_event(
+    event: dict[str, Any],
+    *,
+    machine_diary_effect_verifier: Any | None = None,
+) -> dict[str, Any]:
+    if not isinstance(event, dict):
+        raise ControlContextToolAuthorizationError("lived-continuity-event-object-required")
+    allowed = {
+        "event_id", "event_fingerprint", "qualification", "debt_state",
+        "machine_diary_effect_receipt",
+    }
+    if set(event).difference(allowed):
+        raise ControlContextToolAuthorizationError("lived-continuity-private-content-or-unknown-field-prohibited")
+    event_id = event.get("event_id")
+    fingerprint = event.get("event_fingerprint")
+    qualification = str(event.get("qualification") or "").upper()
+    debt_state = str(event.get("debt_state") or "").upper()
+    _validate_content_blind_id(event_id)
+    if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(ch not in "0123456789abcdef" for ch in fingerprint):
+        raise ControlContextToolAuthorizationError("lived-continuity-event-fingerprint-invalid")
+    if qualification not in {"CAPTURE", "NO_CAPTURE", "UNKNOWN"}:
+        raise ControlContextToolAuthorizationError("lived-continuity-qualification-invalid")
+    receipt = event.get("machine_diary_effect_receipt")
+    if qualification == "CAPTURE":
+        receipt = _validate_content_blind_receipt(receipt)
+        verify = getattr(machine_diary_effect_verifier, "verify_machine_diary_effect", None)
+        if not callable(verify):
+            raise ControlContextToolAuthorizationError("constructor-bound-machine-diary-effect-verifier-required")
+        verified = verify(event=copy.deepcopy(event), receipt=copy.deepcopy(receipt))
+        if not isinstance(verified, dict) or verified.get("result") != "PASS":
+            raise ControlContextToolAuthorizationError("machine-diary-effect-receipt-verification-nonpass")
+        if debt_state != "CLEAR":
+            raise ControlContextToolAuthorizationError("captured-lived-continuity-debt-must-be-clear")
+    elif qualification == "NO_CAPTURE":
+        if "machine_diary_effect_receipt" in event:
+            raise ControlContextToolAuthorizationError("no-capture-must-not-create-fake-diary-effect")
+        if debt_state != "CLEAR":
+            raise ControlContextToolAuthorizationError("no-capture-lived-continuity-debt-must-be-clear")
+    else:
+        if receipt is not None:
+            raise ControlContextToolAuthorizationError("unknown-lived-continuity-must-not-claim-diary-effect")
+        if debt_state != "UNKNOWN":
+            raise ControlContextToolAuthorizationError("unknown-lived-continuity-debt-required")
+    return {
+        "event_id": event_id,
+        "event_fingerprint": fingerprint,
+        "qualification": qualification,
+        "debt_state": debt_state,
+        "permit_eligible": qualification != "UNKNOWN",
+        "result": "PASS" if qualification != "UNKNOWN" else "UNKNOWN_HOLD",
+    }
+
+
+def validate_principal_succession_permit(
+    permit: dict[str, Any],
+    *,
+    expected_ref: str,
+    expected_fingerprint: str,
+    expected_source_head: str,
+    machine_diary_effect_verifier: Any | None = None,
+) -> dict[str, Any]:
+    if not isinstance(permit, dict):
+        raise ControlContextToolAuthorizationError("principal-succession-permit-object-required")
+    required = {
+        "schema", "permit_id", "predecessor_generation_id", "successor_generation_id",
+        "source_head", "currentness", "provider_revision", "covered_through_frontier",
+        "principal_continuity_baseline", "lived_continuity", "evidence",
+        "post_state_readback_verified", "permit_fingerprint",
+    }
+    if set(permit) != required:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-fields-invalid")
+    if permit.get("schema") != PRINCIPAL_SUCCESSION_PERMIT_SCHEMA:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-schema-mismatch")
+    for field in ("permit_id", "predecessor_generation_id"):
+        _validate_content_blind_id(permit.get(field))
+    if permit.get("successor_generation_id") is not None:
+        _validate_content_blind_id(permit["successor_generation_id"])
+    if not isinstance(permit.get("source_head"), str) or re.fullmatch(r"[0-9a-f]{40}", permit["source_head"]) is None:
+        raise ControlContextToolAuthorizationError("principal-succession-source-head-invalid")
+    if permit.get("permit_id") != expected_ref:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-ref-mismatch")
+    supplied = permit.get("permit_fingerprint")
+    if supplied != expected_fingerprint or supplied != _principal_permit_fingerprint(permit):
+        raise ControlContextToolAuthorizationError("principal-succession-permit-fingerprint-mismatch")
+    if permit.get("source_head") != expected_source_head:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-source-stale")
+    if permit.get("currentness") != "CURRENT" or permit.get("post_state_readback_verified") is not True:
+        raise ControlContextToolAuthorizationError("principal-succession-permit-current-readback-required")
+    if type(permit.get("provider_revision")) is not int or permit["provider_revision"] < 0:
+        raise ControlContextToolAuthorizationError("principal-succession-provider-revision-invalid")
+    if type(permit.get("covered_through_frontier")) is not int or permit["covered_through_frontier"] < 0:
+        raise ControlContextToolAuthorizationError("principal-succession-covered-frontier-invalid")
+    baseline = validate_principal_continuity_baseline(
+        permit.get("principal_continuity_baseline"), expected_source_head=expected_source_head,
+    )
+    if (
+        baseline["provider_revision"] != permit["provider_revision"]
+        or baseline["covered_through_frontier"] != permit["covered_through_frontier"]
+    ):
+        raise ControlContextToolAuthorizationError("principal-continuity-baseline-permit-currentness-mismatch")
+    lived = qualify_lived_continuity_event(
+        permit.get("lived_continuity"),
+        machine_diary_effect_verifier=machine_diary_effect_verifier,
+    )
+    if lived["permit_eligible"] is not True:
+        raise ControlContextToolAuthorizationError("unknown-lived-continuity-debt-blocks-permit")
+    evidence = permit.get("evidence")
+    if not isinstance(evidence, dict) or set(evidence) != _PERMIT_EVIDENCE_KEYS:
+        raise ControlContextToolAuthorizationError("principal-succession-evidence-set-incomplete")
+    verified_evidence = {
+        name: _validate_content_blind_receipt(
+            evidence[name], pass_required=name == "cold_successor_canary"
+        )
+        for name in sorted(_PERMIT_EVIDENCE_KEYS)
+    }
+    return {
+        "schema": PRINCIPAL_SUCCESSION_PERMIT_SCHEMA,
+        "result": "PASS",
+        "permit_id": permit["permit_id"],
+        "permit_fingerprint": supplied,
+        "predecessor_generation_id": permit["predecessor_generation_id"],
+        "successor_generation_id": permit["successor_generation_id"],
+        "source_head": permit["source_head"],
+        "provider_revision": permit["provider_revision"],
+        "covered_through_frontier": permit["covered_through_frontier"],
+        "principal_continuity_baseline": baseline,
+        "lived_continuity": lived,
+        "evidence": verified_evidence,
+    }
+
+
+class ContextLifecycleEffectAdapter:
+    """Constructor-bound Packet534 bridge over the existing actor shadow state port.
+
+    READY_CURRENT is derived effect evidence only. The persisted shadow remains
+    SHADOW_ONLY and stores lifecycle READY plus the exact target source revision.
+    """
+
+    _ROLES = ("ASSISTANT", "IMPLEMENTER", "PRINCIPAL", "PROJECT_MANAGER", "RESEARCHER", "WORKER")
+
+    def __init__(
+        self,
+        state_port: Any,
+        profile_verifier: Any,
+        principal_succession_reader: Any | None = None,
+        machine_diary_effect_verifier: Any | None = None,
+    ):
+        if not callable(getattr(profile_verifier, "verify", None)):
+            raise ControlContextToolAuthorizationError("pm-profile-verifier-required")
+        if principal_succession_reader is not None and not callable(
+            getattr(principal_succession_reader, "read_principal_succession_permit", None)
+        ):
+            raise ControlContextToolAuthorizationError("principal-succession-reader-invalid")
+        self._state_port = state_port
+        self._profile_verifier = profile_verifier
+        self._principal_succession_reader = principal_succession_reader
+        self._machine_diary_effect_verifier = (
+            machine_diary_effect_verifier
+            if machine_diary_effect_verifier is not None
+            else principal_succession_reader
+        )
+
+    @staticmethod
+    def _require(condition: bool, message: str) -> None:
+        if not condition:
+            raise ControlContextToolAuthorizationError(message)
+
+    def verify(self, *, binding: dict[str, Any], session: dict[str, Any]) -> dict[str, Any]:
+        return self._profile_verifier.verify(
+            binding=copy.deepcopy(binding),
+            session=copy.deepcopy(session),
+        )
+
+    def _state_call(self, method: str, **kwargs: Any) -> Any:
+        target = getattr(self._state_port, method, None)
+        self._require(callable(target), f"lifecycle-state-port-method-required:{method}")
+        parameters = inspect.signature(target).parameters
+        return target(**{key: value for key, value in kwargs.items() if key in parameters})
+
+    @staticmethod
+    def _pre_effect_fingerprint(candidate: dict[str, Any]) -> str:
+        subject = copy.deepcopy(candidate)
+        subject.pop("effect_evidence", None)
+        subject.pop("candidate_fingerprint", None)
+        return hashlib.sha256(
+            json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+
+    @staticmethod
+    def _effect_receipt_fingerprint(
+        *,
+        commit_ref: str,
+        commit_fingerprint: str,
+        candidate_fingerprint: str,
+        shadow: dict[str, Any],
+    ) -> str:
+        subject = {
+            "schema": "cerebro-context-lifecycle-effect-receipt/v1",
+            "context_commit_ref": commit_ref,
+            "context_commit_fingerprint": commit_fingerprint,
+            "candidate_fingerprint": candidate_fingerprint,
+            "actor_shadow_fingerprint": shadow["fingerprint"],
+            "actor_shadow_revision": shadow["revision"],
+        }
+        return hashlib.sha256(
+            json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
+
+    def _validate_pre_effect_candidate(self, candidate: dict[str, Any]) -> dict[str, Any]:
+        self._require(isinstance(candidate, dict), "actor-lifecycle-candidate-object-required")
+        self._require(candidate.get("effect_evidence") is None, "pre-effect-candidate-must-not-contain-effect-evidence")
+        self._require(candidate.get("authority_source") == "PROJECT_MANAGER+MCP", "actor-lifecycle-authority-source-mismatch")
+        try:
+            gate = project_manager_control_governor._lifecycle_mutation_gate(
+                {"lifecycle_mutation": copy.deepcopy(candidate)}
+            )
+        except Exception as exc:
+            raise ControlContextToolAuthorizationError(f"actor-lifecycle-candidate-invalid:{exc}") from exc
+        self._require(
+            gate.get("result") == "PASS_CANDIDATE_READY_FOR_CONTEXT"
+            and gate.get("ready_effect_allowed") is False,
+            "actor-lifecycle-candidate-not-ready-for-context",
+        )
+        return gate
+
+    def _read_unique_shadow(
+        self,
+        *,
+        tenant_ref: str,
+        workspace_ref: str,
+        principal_ref: str,
+        generation_ref: str,
+    ) -> dict[str, Any]:
+        matches: list[dict[str, Any]] = []
+        for role in self._ROLES:
+            try:
+                state = self._state_call(
+                    "read_actor_generation_shadow",
+                    tenant_ref=tenant_ref,
+                    workspace_ref=workspace_ref,
+                    role=role,
+                    generation_ref=generation_ref,
+                    principal_ref=principal_ref,
+                    scopes={"project_state:read"},
+                )
+            except StateBindingError:
+                continue
+            validate_actor_generation_shadow(state)
+            matches.append(state)
+        self._require(
+            len(matches) == 1,
+            f"actor-generation-shadow-unique-match-required:{generation_ref}:{len(matches)}",
+        )
+        return matches[0]
+
+    def verify_principal_succession(
+        self,
+        *,
+        candidate: dict[str, Any],
+        session: dict[str, Any],
+    ) -> dict[str, Any]:
+        self._require(isinstance(candidate, dict), "principal-succession-candidate-object-required")
+        generation_ref = str(candidate.get("actor_generation_id") or "")
+        self._require(generation_ref, "principal-succession-generation-required")
+        for field in ("tenant_ref", "workspace_ref", "principal_ref"):
+            self._require(
+                isinstance(session.get(field), str) and bool(session[field].strip()),
+                f"principal-succession-session-{field}-required",
+            )
+        shadow = self._read_unique_shadow(
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            generation_ref=generation_ref,
+        )
+        binding = candidate.get("principal_succession_permit_binding")
+        if shadow["role"] != "PRINCIPAL":
+            self._require(binding is None, "principal-permit-binding-on-nonprincipal-prohibited")
+            return {
+                "schema": "cerebro-principal-succession-verification/v1",
+                "applicable": False,
+                "result": "PASS_NON_PRINCIPAL_UNCHANGED",
+                "trusted_actor_role": shadow["role"],
+                "generation_ref": generation_ref,
+            }
+        self._require(isinstance(binding, dict), "principal-succession-permit-binding-required")
+        shadow_baseline = shadow.get("principal_continuity_baseline")
+        self._require(
+            shadow_baseline is not None,
+            "principal-current-generation-continuity-baseline-required",
+        )
+        try:
+            validate_state_principal_continuity_baseline(
+                shadow_baseline,
+                expected_generation_ref=generation_ref,
+                expected_source_head=shadow["source_revision"],
+            )
+        except ControlContextError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from exc
+        self._require(
+            set(binding) == {"permit_ref", "permit_fingerprint"},
+            "principal-succession-permit-binding-fields-invalid",
+        )
+        reader = getattr(self._principal_succession_reader, "read_principal_succession_permit", None)
+        self._require(callable(reader), "constructor-bound-principal-succession-reader-required")
+        permit = reader(
+            permit_ref=binding["permit_ref"],
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            actor_generation_id=generation_ref,
+        )
+        verified = validate_principal_succession_permit(
+            permit,
+            expected_ref=binding["permit_ref"],
+            expected_fingerprint=binding["permit_fingerprint"],
+            expected_source_head=shadow["source_revision"],
+            machine_diary_effect_verifier=self._machine_diary_effect_verifier,
+        )
+        observed_frontier = candidate.get("observed_event_frontier")
+        self._require(
+            type(observed_frontier) is int and observed_frontier >= 0,
+            "principal-succession-observed-frontier-required",
+        )
+        self._require(
+            verified["covered_through_frontier"] >= observed_frontier,
+            "principal-succession-permit-frontier-behind-observed",
+        )
+        operation = str(candidate.get("operation") or "").upper()
+        if operation == "RETIRE":
+            self._require(
+                verified["predecessor_generation_id"] == generation_ref,
+                "principal-retire-predecessor-generation-mismatch",
+            )
+        elif operation == "START":
+            self._require(
+                verified["successor_generation_id"] == generation_ref,
+                "principal-ready-successor-generation-mismatch",
+            )
+        else:
+            raise ControlContextToolAuthorizationError(
+                "principal-succession-permit-only-valid-for-retire-or-start"
+            )
+        permit_baseline = verified["principal_continuity_baseline"]
+        self._require(
+            permit_baseline["generation_ref"] == generation_ref,
+            "principal-continuity-baseline-operation-generation-mismatch",
+        )
+        self._require(
+            permit_baseline == shadow_baseline,
+            "principal-continuity-baseline-shadow-readback-mismatch",
+        )
+        return {
+            "schema": "cerebro-principal-succession-verification/v1",
+            "applicable": True,
+            "result": "PASS",
+            "trusted_actor_role": "PRINCIPAL",
+            "operation": operation,
+            "generation_ref": generation_ref,
+            "permit_id": verified["permit_id"],
+            "permit_fingerprint": verified["permit_fingerprint"],
+            "provider_revision": verified["provider_revision"],
+            "covered_through_frontier": verified["covered_through_frontier"],
+            "ready_epoch": permit_baseline["ready_epoch"],
+            "continuity_baseline_fingerprint": permit_baseline["baseline_fingerprint"],
+            "post_state_readback_verified": True,
+        }
+
+    def execute_lifecycle_effect(
+        self,
+        *,
+        candidate: dict[str, Any],
+        context: McpToolCallContext,
+        completion: dict[str, Any],
+        bound_directive: dict[str, Any],
+    ) -> dict[str, Any]:
+        gate = self._validate_pre_effect_candidate(candidate)
+        identity = context.identity
+        identity.validate()
+        generation_ref = candidate["actor_generation_id"]
+        expected_revision = candidate["expected_lifecycle_revision"]
+        previous_head = gate["previous_source_head"]
+        target_head = gate["target_source_head"]
+        pre_fingerprint = self._pre_effect_fingerprint(candidate)
+        self._require(
+            bound_directive.get("actor_lifecycle_mutation_candidate_fingerprint") == pre_fingerprint,
+            "context-directive-lifecycle-candidate-fingerprint-mismatch",
+        )
+        state_commit = completion.get("state_commit")
+        self._require(isinstance(state_commit, dict), "durable-state-commit-receipt-required")
+        commit_ref = str(state_commit.get("commit_ref") or "")
+        commit_fingerprint = str(state_commit.get("commit_fingerprint") or "")
+        self._require(commit_ref, "durable-state-commit-ref-required")
+        self._require(len(commit_fingerprint) == 64, "durable-state-commit-fingerprint-required")
+
+        current = self._read_unique_shadow(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            generation_ref=generation_ref,
+        )
+        self._require(current["authority"] == "SHADOW_ONLY", "actor-shadow-authority-must-remain-shadow-only")
+        self._require(current["lifecycle"] == "READY", "requalification-shadow-must-be-ready")
+
+        if current["revision"] == expected_revision and current["source_revision"] == previous_head:
+            after = copy.deepcopy(current)
+            after.update(
+                lifecycle="READY",
+                source_revision=target_head,
+                revision=current["revision"] + 1,
+            )
+            after["fingerprint"] = actor_generation_shadow_fingerprint(after)
+            validate_actor_generation_shadow(after)
+            self._state_call(
+                "write_actor_generation_shadow",
+                state=after,
+                expected_revision=current["revision"],
+                principal_ref=identity.principal_ref,
+                scopes={"project_state:transition"},
+            )
+        elif (
+            current["revision"] == expected_revision + 1
+            and current["source_revision"] == target_head
+            and current["lifecycle"] == "READY"
+        ):
+            after = current
+        else:
+            raise ControlContextToolAuthorizationError(
+                "actor-generation-shadow-stale-or-unexpected-poststate"
+            )
+
+        readback = self._read_unique_shadow(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            generation_ref=generation_ref,
+        )
+        self._require(readback == after, "actor-generation-shadow-exact-readback-mismatch")
+        self._require(readback["authority"] == "SHADOW_ONLY", "actor-shadow-authority-promotion-prohibited")
+        self._require(readback["lifecycle"] == "READY", "actor-shadow-ready-readback-required")
+        self._require(readback["source_revision"] == target_head, "actor-shadow-target-source-readback-required")
+        receipt_fingerprint = self._effect_receipt_fingerprint(
+            commit_ref=commit_ref,
+            commit_fingerprint=commit_fingerprint,
+            candidate_fingerprint=pre_fingerprint,
+            shadow=readback,
+        )
+        return {
+            "receipt_id": commit_ref,
+            "context_commit_result": "COMMITTED",
+            "durable": True,
+            "post_state_readback_verified": True,
+            "post_actor_generation_id": generation_ref,
+            "post_lifecycle_state": "READY_CURRENT",
+            "post_source_head": target_head,
+            "provider_revision": readback["revision"],
+            "receipt_fingerprint": receipt_fingerprint,
+        }
+
+    def verify_lifecycle_effect(
+        self,
+        *,
+        evidence: dict[str, Any],
+        candidate: dict[str, Any],
+        session: dict[str, Any],
+    ) -> dict[str, Any]:
+        self._require(isinstance(evidence, dict), "lifecycle-effect-evidence-object-required")
+        self._require(isinstance(candidate, dict), "lifecycle-effect-candidate-object-required")
+        for field in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref"):
+            self._require(
+                isinstance(session.get(field), str) and bool(session[field].strip()),
+                f"lifecycle-session-{field}-required",
+            )
+        self._require(evidence.get("context_commit_result") == "COMMITTED", "lifecycle-context-commit-required")
+        self._require(evidence.get("durable") is True, "lifecycle-durable-commit-required")
+        self._require(
+            evidence.get("post_state_readback_verified") is True,
+            "lifecycle-poststate-readback-required",
+        )
+        pre_fingerprint = self._pre_effect_fingerprint(candidate)
+        commit_ref = str(evidence.get("receipt_id") or "")
+        bundle = self._state_call(
+            "read_state_commit_evidence",
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            consumer_ref=session["consumer_ref"],
+            session_ref=session["session_ref"],
+            commit_ref=commit_ref,
+            scopes={"project_state:read"},
+        )
+        self._require(isinstance(bundle, dict), "durable-context-commit-evidence-bundle-required")
+        directive = bundle.get("directive")
+        commit = bundle.get("commit")
+        self._require(
+            isinstance(directive, dict) and isinstance(commit, dict),
+            "durable-context-commit-directive-required",
+        )
+        self._require(commit.get("commit_ref") == commit_ref, "durable-context-commit-ref-mismatch")
+        self._require(
+            directive.get("actor_lifecycle_mutation_candidate_fingerprint") == pre_fingerprint,
+            "durable-context-commit-lifecycle-candidate-mismatch",
+        )
+        readback = self._read_unique_shadow(
+            tenant_ref=session["tenant_ref"],
+            workspace_ref=session["workspace_ref"],
+            principal_ref=session["principal_ref"],
+            generation_ref=candidate["actor_generation_id"],
+        )
+        transition = candidate.get("source_transition") or {}
+        self._require(
+            readback["authority"] == "SHADOW_ONLY",
+            "verified-shadow-authority-must-remain-shadow-only",
+        )
+        self._require(readback["lifecycle"] == "READY", "verified-shadow-ready-required")
+        self._require(
+            readback["source_revision"] == transition.get("target_source_head"),
+            "verified-shadow-target-source-mismatch",
+        )
+        self._require(
+            readback["revision"] == evidence.get("provider_revision"),
+            "verified-shadow-provider-revision-mismatch",
+        )
+        expected_fingerprint = self._effect_receipt_fingerprint(
+            commit_ref=commit_ref,
+            commit_fingerprint=commit["commit_fingerprint"],
+            candidate_fingerprint=pre_fingerprint,
+            shadow=readback,
+        )
+        self._require(
+            evidence.get("receipt_fingerprint") == expected_fingerprint,
+            "lifecycle-effect-receipt-fingerprint-mismatch",
+        )
+        self._require(
+            evidence.get("post_actor_generation_id") == candidate["actor_generation_id"],
+            "verified-lifecycle-generation-mismatch",
+        )
+        self._require(
+            evidence.get("post_lifecycle_state") == "READY_CURRENT",
+            "verified-lifecycle-derived-state-mismatch",
+        )
+        self._require(
+            evidence.get("post_source_head") == readback["source_revision"],
+            "verified-lifecycle-source-mismatch",
+        )
+        return {
+            "schema": LIFECYCLE_EFFECT_VERIFICATION_SCHEMA,
+            "result": "PASS",
+            "receipt_id": evidence["receipt_id"],
+            "post_actor_generation_id": evidence["post_actor_generation_id"],
+            "post_lifecycle_state": evidence["post_lifecycle_state"],
+            "post_source_head": evidence["post_source_head"],
+            "provider_revision": evidence["provider_revision"],
+            "receipt_fingerprint": evidence["receipt_fingerprint"],
+            "verifier_ref": "CONTEXT-ACTOR-SHADOW-DURABLE-READBACK",
+        }
+
+
+def activate_committed_navigation_options(
+    candidate: dict[str, Any] | None,
+    completion: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Promote a non-renderable MCP candidate only after exact committed proof."""
+
+    if candidate is None:
+        return None
+    if not isinstance(candidate, dict):
+        raise ControlContextToolError("navigation-options-candidate-object-required")
+    if not isinstance(completion, dict):
+        raise ControlContextToolError("event-completion-object-required")
+    project = completion.get("project")
+    session = completion.get("session")
+    receipt = completion.get("receipt")
+    if not all(isinstance(value, dict) for value in (project, session, receipt)):
+        raise ControlContextToolError("completion-project-session-and-receipt-required")
+    if candidate.get("schema") != "cerebro-mcp-context-navigation-options-candidate/v1":
+        raise ControlContextToolError("navigation-options-candidate-schema-mismatch")
+    if candidate.get("render_authorized") is not False:
+        raise ControlContextToolError("precommit-navigation-candidate-cannot-authorize-render")
+    try:
+        validate_navigation_options_candidate(candidate, project, session, receipt)
+    except Exception as exc:
+        raise ControlContextToolError(str(exc)) from exc
+    if candidate.get("expected_transition_receipt_ref") != receipt.get("receipt_id"):
+        raise ControlContextToolError("navigation-options-receipt-ref-mismatch")
+    if candidate.get("expected_transition_receipt_fingerprint") != receipt.get("receipt_fingerprint"):
+        raise ControlContextToolError("navigation-options-receipt-fingerprint-mismatch")
+    for candidate_field, state_value in (
+        ("project_ref", project.get("project_ref")),
+        ("session_ref", session.get("session_ref")),
+        ("source_context_ref", session.get("active_context_ref")),
+        ("project_revision", project.get("revision")),
+        ("session_revision", session.get("session_revision")),
+        ("project_fingerprint", project.get("fingerprint")),
+        ("session_fingerprint", session.get("fingerprint")),
+    ):
+        if candidate.get(candidate_field) != state_value:
+            raise ControlContextToolError(f"navigation-options-committed-{candidate_field}-mismatch")
+    for candidate_field, receipt_field in (
+        ("project_revision", "project_revision_after"),
+        ("session_revision", "session_revision_after"),
+        ("project_fingerprint", "project_fingerprint_after"),
+        ("session_fingerprint", "session_fingerprint_after"),
+    ):
+        if candidate.get(candidate_field) != receipt.get(receipt_field):
+            raise ControlContextToolError(f"navigation-options-receipt-{candidate_field}-mismatch")
+
+    options = copy.deepcopy(candidate)
+    for field in (
+        "render_authorized", "activation_precondition", "expected_transition_receipt_ref",
+        "expected_transition_receipt_fingerprint", "candidate_fingerprint",
+    ):
+        options.pop(field, None)
+    options.update(
+        schema="cerebro-mcp-context-navigation-options/v1",
+        state_basis="COMMITTED_STATE",
+        render_precondition="COMMIT_RECEIPT_AND_STATE_MATCH_VERIFIED",
+        commit_verified=True,
+        commit_receipt_ref=receipt["receipt_id"],
+        commit_receipt_fingerprint=receipt["receipt_fingerprint"],
+        options_fingerprint="",
+    )
+    subject = copy.deepcopy(options)
+    subject.pop("options_fingerprint", None)
+    options["options_fingerprint"] = hashlib.sha256(
+        json.dumps(subject, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()
+    try:
+        validate_navigation_options(options, project, session, receipt)
+    except Exception as exc:
+        raise ControlContextToolError(str(exc)) from exc
+    return options
+
+
+def _attestation_input_schema() -> dict[str, Any]:
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["schema", "algorithm", "key_id", "subject_fingerprint", "signature"],
+        "properties": {
+            "schema": {"const": ATTESTATION_SCHEMA},
+            "algorithm": {"enum": ["HMAC-SHA256", "ED25519", "OPAQUE-SERVICE-SEAL"]},
+            "key_id": {"type": "string", "minLength": 1},
+            "subject_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "signature": {"type": "string", "minLength": 32},
+        },
+    }
+
+
+def _object_output_schema(
+    *,
+    required: tuple[str, ...],
+    properties: Mapping[str, dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "additionalProperties": True,
+        "required": list(required),
+        "properties": copy.deepcopy(dict(properties)),
+    }
+
+
+def pm_owner_tool_definitions() -> list[dict[str, Any]]:
+    text = {"type": "string", "minLength": 1}
+    commit = {
+        "idempotency_key": text, "referent_id": text, "claim_ref": text,
+        "packet_ref": text, "queue_ref": text, "claim_body": {"type": "object"},
+        "packet_body": {"type": "object"}, "queue_body": {"type": "object"},
+        "ready_state": {"enum": ["BIND_AVAILABLE", "MATERIAL_READY"]},
+        "way_home": {"type": "array", "minItems": 1, "items": text},
+        "expected_current_receipt_ref": {"type": ["string", "null"]},
+    }
+    return [
+        {"name": "commit_pm_owner_ready", "title": "Commit PM owner ready receipt",
+         "description": "PM-assigned current session only: atomically persist one genuine claim, packet and queue cut in the Context owner ledger.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "required": list(commit), "properties": commit},
+         "outputSchema": _object_output_schema(required=("record", "replayed", "repository_permission_required"),
+             properties={"record": {"type": "object"}, "replayed": {"type": "boolean"},
+                         "repository_permission_required": {"const": False}}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+         "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}},
+        {"name": "read_pm_owner_ready", "title": "Read PM owner ready receipt",
+         "description": "PM-assigned current session only: read one immutable receipt or current referent in one provider transaction.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "minProperties": 1, "maxProperties": 1,
+                         "properties": {"receipt_ref": text, "referent_id": text}},
+         "outputSchema": _object_output_schema(required=("record", "projection", "current", "repository_permission_required"),
+             properties={"record": {"type": "object"}, "projection": {"type": "object"},
+                         "current": {"type": "boolean"}, "repository_permission_required": {"const": False}}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+         "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}},
+    ]
+
+
+def x9_receiver_tool_definitions() -> list[dict[str, Any]]:
+    value = {"type": "string", "minLength": 1}
+    return [
+        {"name": "read_local_runtime_binding_v1", "title": "Read current local runtime binding",
+         "description": "Dedicated local runtime credential only: read the exact current persisted binding selected by server configuration; no caller identity or session arguments.",
+         "inputSchema": {"type": "object", "additionalProperties": False, "maxProperties": 0},
+         "outputSchema": _object_output_schema(
+             required=("schema", "binding", "currentness", "repository_permission_required"),
+             properties={"schema": {"const": "cerebro-local-runtime-binding-read/v1"},
+                         "binding": {"type": "object"}, "currentness": {"const": "CURRENT"},
+                         "repository_permission_required": {"const": False}}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+         "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}},
+        {"name": "transport_resolve_signalvev_notice_v1", "title": "Resolve Signalvev transport notice",
+         "description": "Separately bound local Cerebro runtime only: derive the durable pointer hash and current PM relation server-side; read only.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "required": ["event_id"], "properties": {"event_id": value}},
+         "outputSchema": _object_output_schema(
+             required=("schema", "state", "event_id", "repository_permission_required"),
+             properties={"schema": {"const": "cerebro-signalvev-transport-resolution/v1"},
+                         "state": value, "event_id": value,
+                         "pointer": {"type": "object"}, "pointer_sha256": value,
+                         "pm_current_cut": {"type": "object"},
+                         "repository_permission_required": {"const": False}}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+         "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}},
+        {"name": "observe_signalvev_notice_v1", "title": "Observe Signalvev notice",
+         "description": "X9-assigned current receiver only: read one durable pointer and its fresh current PM cut without disposition or consumption.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "required": ["event_id"], "properties": {"event_id": value}},
+         "outputSchema": _object_output_schema(
+             required=("schema", "state", "event_id", "repository_permission_required"),
+             properties={"schema": {"const": "cerebro-signalvev-notice-observation/v1"},
+                         "state": value, "event_id": value,
+                         "pointer": {"type": "object"}, "pm_current_cut": {"type": "object"},
+                         "repository_permission_required": {"const": False}}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+         "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}},
+        {"name": "read_x9_pointer", "title": "Read X9 pointer",
+         "description": "Read one governed X9 pointer in the assigned current receiver session.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "required": ["event_id"], "properties": {"event_id": value}},
+         "outputSchema": _object_output_schema(
+             required=("state", "event_id", "repository_permission_required"),
+             properties={"state": value, "event_id": value,
+                         "repository_permission_required": {"const": False}}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+         "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}},
+        {"name": "consume_x9_pointer", "title": "Consume X9 pointer",
+         "description": "Reread the scoped current PM owner receipt, calculate the receiver disposition and independently read it back.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "required": ["event_id"], "properties": {"event_id": value}},
+         "outputSchema": _object_output_schema(
+             required=("state", "reason", "event_id", "repository_permission_required"),
+             properties={"state": value, "reason": value, "event_id": value,
+                         "repository_permission_required": {"const": False}}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+         "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}},
+    ]
+
+
+def x9_producer_tool_definitions() -> list[dict[str, Any]]:
+    value = {"type": "string", "minLength": 1}
+    return [{
+        "name": "append_x9_pointer", "title": "Append X9 pointer from PM receipt",
+        "description": "PM-assigned current producer only: verify one immutable current MATERIAL_READY receipt, append its derived pointer once and independently read back the durable channel record. This is not NATS delivery or receiver consumption.",
+        "inputSchema": {"type": "object", "additionalProperties": False,
+                        "required": ["receipt_ref"], "properties": {"receipt_ref": value}},
+        "outputSchema": _object_output_schema(
+            required=("state", "reason", "event_id", "repository_permission_required"),
+            properties={"state": value, "reason": value, "event_id": value,
+                        "repository_permission_required": {"const": False}}),
+        "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+        "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+    }, {
+        "name": "prepare_signalvev_notice_v1", "title": "Prepare Signalvev notice",
+        "description": "PM-assigned current producer only: deposit one current MATERIAL_READY receipt pointer using existing custody, then return its immutable owner record for a separately hosted NATS notice. Does not send NATS or consume X9.",
+        "inputSchema": {"type": "object", "additionalProperties": False,
+                        "required": ["receipt_ref"], "properties": {"receipt_ref": value}},
+        "outputSchema": _object_output_schema(
+            required=("schema", "state", "event_id", "repository_permission_required"),
+            properties={"schema": {"const": "cerebro-signalvev-notice-preparation/v1"},
+                        "state": value, "event_id": value,
+                        "record": {"type": "object"}, "projection": {"type": "object"},
+                        "repository_permission_required": {"const": False}}),
+        "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+        "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+    }]
+
+
+def pm_owner_d1_outbox_tool_definitions() -> list[dict[str, Any]]:
+    """BK11: versioned D1 owner-outbox operations. Unbound unless the host constructs the outbox."""
+    text = {"type": "string", "minLength": 1}
+    cursor = {"type": ["object", "null"], "additionalProperties": False, "required": ["enqueued_at", "event_id"],
+              "properties": {"enqueued_at": text, "event_id": text}}
+    flag = {"repository_permission_required": {"const": False}}
+    return [
+        {"name": "read_pm_owner_d1_outbox_v1", "title": "Read PM owner D1 outbox (publisher)",
+         "description": "Host-assigned D1 publisher current session only: bounded scoped pending listing or one exact intent of its own route. Never material bodies.",
+         "inputSchema": {"type": "object", "additionalProperties": False, "required": ["op"],
+                         "properties": {"op": {"enum": ["list_pending", "list_recovery_candidates", "read_exact"]}, "message_id": text,
+                                        "after": cursor, "limit": {"type": "integer", "minimum": 1, "maximum": 64}}},
+         "outputSchema": _object_output_schema(required=("drain_enabled", "repository_permission_required"),
+                                               properties={"drain_enabled": {"type": "boolean"}, **flag}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+         "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}},
+        {"name": "settle_pm_owner_d1_outbox_v1", "title": "Settle PM owner D1 publication state (publisher)",
+         "description": "Host-assigned D1 publisher current session only, route draining enabled: one compare-and-set of publication state on (state, claim_token). Never identity or bytes.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "required": ["message_id", "from_state", "from_token", "fields"],
+                         "properties": {"message_id": text, "from_state": text,
+                                        "from_token": {"type": ["string", "null"]},
+                                        "fields": {"type": "object"}}},
+         "outputSchema": _object_output_schema(required=("won", "row", "repository_permission_required"),
+                                               properties={"won": {"type": "boolean"}, "row": {"type": "object"},
+                                                           **flag}),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+         "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}},
+        {"name": "resolve_d1_pointer_v1", "title": "Resolve D1 pointer to owner commit (X9 receiver)",
+         "description": "X9-assigned current receiver only: resolve one exact D1 pointer digest to its original PM event mapping and the referent's current owner cut, or verify an owner route.",
+         "inputSchema": {"type": "object", "additionalProperties": False,
+                         "required": ["op", "message_id", "pointer_sha256"],
+                         "properties": {"op": {"enum": ["resolve", "verify_route"]}, "message_id": text,
+                                        "pointer_sha256": text}},
+         "outputSchema": _object_output_schema(required=("repository_permission_required",), properties=flag),
+         "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+         "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False}},
+    ]
+
+
+def room_return_d1_outbox_tool_definitions() -> list[dict[str, Any]]:
+    text = {"type": "string", "minLength": 1}
+    return [
+        {"name":"manage_actor_admission_v1","title":"Authorized BK11 tasks and own actor admission",
+         "description":"Ordinary authorized task registration and selected material; own destination/readback. Private qualified issuer only for actor/session admission and initial round setup/owner read. History and original producers are preserved; no native role creation.",
+         "inputSchema":{"type":"object","additionalProperties":False,"required":["op","project_ref"],
+           "properties":{"op":{"enum":["preview_round","select_round","admit_actor","register_task","owner_read","read_operation","own_read","describe_own_destination","prepare_own_destination","confirm_own_readback","admit_material"]},
+             "project_ref":text,"actor_ref":text,"operation_ref":text,"request_fingerprint":text,
+             "expected_revision":{"type":"integer","minimum":0},"expected_fingerprint":text,
+             "epoch":{"type":"integer","minimum":1},"preview":{"type":"object"},"selection":{"type":"object"},
+             "admission":{"type":"object"},"task":{"type":"object"},"material":{"type":"object"},"destination":{"type":"object"},"native_selection":{"type":["object","null"]}}},
+         "securitySchemes":[{"type":"oauth2","scopes":["project_state:transition"]}],
+        },
+        {"name":"register_room_return_v1","title":"Register exact ROOM_RETURN material",
+         "description":"Authenticated installer-admitted exact producer; unique caller/current material match only. Creates one owner record and outbox duty atomically.",
+         "inputSchema":{"type":"object","additionalProperties":False,"required":["idempotency_key","material","envelope"],
+           "properties":{"idempotency_key":text,"material":text,"envelope":text}},
+         "securitySchemes":[{"type":"oauth2","scopes":["project_state:transition"]}],
+         "annotations":{"readOnlyHint":False,"destructiveHint":False,"openWorldHint":False}},
+        {"name":"read_room_return_d1_outbox_v1","title":"Read ROOM_RETURN D1 outbox",
+         "description":"Exact read or bounded pending list for the current host-assigned ROOM_RETURN publisher.",
+         "inputSchema":{"type":"object","additionalProperties":False,"required":["op"],
+           "properties":{"op":{"enum":["read_exact","list_pending","list_recovery_candidates"]},"message_id":text,
+             "after":{"type":"object"},"limit":{"type":"integer","minimum":1,"maximum":64}}},
+         "securitySchemes":[{"type":"oauth2","scopes":["project_state:read"]}],
+         "annotations":{"readOnlyHint":True,"destructiveHint":False,"openWorldHint":False}},
+        {"name":"read_accepted_room_return_v1","title":"Read own accepted ROOM_RETURN basis",
+         "description":"Intended actor only, under exact installer-owned caller/current/material permission. Read durable accepted basis after ACK, including expired notification with no effect authority. Does not dispatch, wake or record business completion. A next cursor may accompany an empty page; follow it within this bounded scan. Begin the next legitimate check from the start and deduplicate completed work by business_dedupe_key, never by a durable scan cursor.",
+         "inputSchema":{"type":"object","additionalProperties":False,"required":["op"],
+           "properties":{"op":{"enum":["read_exact","list_accepted"]},"message_id":text,"material_ref":text,"after":text}},
+         "securitySchemes":[{"type":"oauth2","scopes":["project_state:read"]}],
+         "annotations":{"readOnlyHint":True,"destructiveHint":False,"openWorldHint":False}},
+        {"name":"settle_room_return_d1_outbox_v1","title":"Settle ROOM_RETURN publication state",
+         "description":"Publisher-only compare-and-set on one exact owner event and claim token.",
+         "inputSchema":{"type":"object","additionalProperties":False,"required":["message_id","from_state","from_token","fields"],
+           "properties":{"message_id":text,"from_state":text,"from_token":{"type":["string","null"]},
+             "fields":{"type":"object"}}},
+         "securitySchemes":[{"type":"oauth2","scopes":["project_state:transition"]}],
+         "annotations":{"readOnlyHint":False,"destructiveHint":False,"openWorldHint":False}},
+    ]
+
+
+BK11_CUSTODY_METHODS = {
+    "discover_bk11_backend_obligations_v1": ("discover_backend_obligations", "project_state:read"),
+    "close_bk11_service_runtime_v1": ("close_runtime", "project_state:transition"),
+    "open_bk11_service_runtime_v1": ("open_runtime", "project_state:transition"),
+    "verify_bk11_service_lease_v1": ("verify_lease", "project_state:read"),
+    "control_bk11_service_attempt_v1": ("control_attempt", "project_state:transition"),
+    "accept_bk11_backend_delivery_v1": ("accept_delivery", "project_state:transition"),
+    "read_bk11_backend_disposition_v1": ("read_disposition", "project_state:read"),
+    "reconcile_bk11_backend_obligation_v1": ("reconcile_obligation", "project_state:read"),
+}
+
+def bk11_custody_tool_definitions() -> list[dict[str, Any]]:
+    return [{"name":name,"title":"BK11 protected service custody",
+             "description":"Service-owned current assignment/fenced lease and durable backend delivery duty; no model/native role admission.",
+             "inputSchema":{"type":"object","additionalProperties":True},
+             "securitySchemes":[{"type":"oauth2","scopes":[scope]}],
+             "annotations":{"readOnlyHint":scope=="project_state:read","destructiveHint":False,"openWorldHint":False}}
+            for name,(_method,scope) in BK11_CUSTODY_METHODS.items()]
+
+def worker_method_owner_tool_definitions():
+    text={"type":"string","minLength":1}
+    schemas={
+      'read_worker_method_evidence': {'generation_ref':text,'read_evidence_ref':text},
+      'acknowledge_worker_method_read': {'generation_ref':text,'expected_revision':{'type':'integer','minimum':2},
+        'source_revision':text,'expected_files':{'type':'object'},'expected_role_contracts':{'type':'object'},
+        'method_version':text,'delta_fingerprint':text,'changed_next_action':text},
+    }
+    return [{'name':name,'title':name.replace('_',' '),
+      'description':'Protected exact method admission. Own reading acknowledgment is a statement, not proof of cognition. Verified OAuth client and explicit owner-attributed generation mapping required; request session remains unattested.',
+      'inputSchema':{'type':'object','properties':properties,'required':(['generation_ref'] if name=='read_worker_method_evidence' else list(properties)),'additionalProperties':False},
+      'securitySchemes':[{'type':'oauth2','scopes':['project_state:read' if name=='read_worker_method_evidence' else 'project_state:transition']}],
+      'annotations':{'readOnlyHint':False,'destructiveHint':False,'openWorldHint':False}}
+      for name,properties in schemas.items()]
+
+def tool_definitions() -> list[dict[str, Any]]:
+    """Return MCP-compatible tool descriptors with conservative annotations."""
+
+    return (pm_admission_tool_definitions() + human_t3_tool_definitions() + pm_owner_tool_definitions()
+            + pm_owner_d1_outbox_tool_definitions() + room_return_d1_outbox_tool_definitions()
+            + bk11_custody_tool_definitions() + worker_method_owner_tool_definitions()
+            + x9_receiver_tool_definitions() + x9_producer_tool_definitions() + [
+        {
+            "name": "read_authenticated_binding_basis_v1",
+            "title": "Read own authenticated binding basis",
+            "description": "Private own-caller read; no role, grant or native authority.",
+            "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+            "outputSchema": json.loads((SOURCE_ROOT/'mcp/authenticated-binding-basis.schema.json').read_text(encoding='utf-8')),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "read_standing_worker_policy_observation_v1",
+            "title": "Observe resident standing worker policy",
+            "description": "Private own-caller read; no role, grant or native authority.",
+            "inputSchema": {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+            "outputSchema": json.loads((SOURCE_ROOT/'mcp/standing-worker-policy-observation.schema.json').read_text(encoding='utf-8')),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name":"read_authenticated_caller_observation_v1",
+            "title":"Observe this authenticated caller",
+            "description":"Private signed-client observation; no installed binding or grant.",
+            "inputSchema":{"type":"object","properties":{},"additionalProperties":False},
+            "outputSchema":json.loads((SOURCE_ROOT/'mcp/authenticated-caller-observation.schema.json').read_text(encoding='utf-8')),
+            "securitySchemes":[{"type":"oauth2","scopes":["project_state:read"]}],
+            "annotations":{"readOnlyHint":True,"destructiveHint":False,"openWorldHint":False},
+        },
+        {
+            "name": "create_ready_unbound_boot_generation",
+            "title": "Create READY_UNBOUND Boot generation",
+            "description": (
+                "For one OAuth-scoped BOOT CEREBRO attempt candidate, independently verify current Source "
+                "and method, then create and read back a role-neutral generation. "
+                "Returns no role, claim, scheduler or work authority."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["boot_attempt_id", "source_revision"],
+                "properties": {
+                    "boot_attempt_id": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "ready_unbound_receipt", "repository_permission_required"),
+                properties={
+                    "pre_role_generation": {"type": "object"},
+                    "ready_unbound_receipt": {"type": "object"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "adopt_worker_method", "title": "Adopt exact later Worker method",
+            "description": "Separate durable later method evidence; immutable birth preserved. Exact current owner authorization and actual later reading required; unbound hosts deny.",
+            "inputSchema": {"type": "object", "additionalProperties": False,
+                "required": ["generation_ref", "expected_revision", "source_revision", "method_read_ref"],
+                "properties": {"generation_ref": {"type": "string"}, "expected_revision": {"type": "integer", "minimum": 2},
+                               "source_revision": {"type": "string"}, "method_read_ref": {"type": "string"}}},
+            "outputSchema": _object_output_schema(required=("result", "pre_role_generation", "repository_permission_required"),
+                properties={"result": {"type": "string"}, "pre_role_generation": {"type": "object"}, "current_contract_validation": {"type": "object"}, "repository_permission_required": {"const": False}}),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "attach_worker_from_standing_grant",
+            "title": "Attach a native Worker from the standing Human grant",
+            "description": (
+                "Server-held, revocable Human WORKER_ATTACH grant and native Boot birth "
+                "readback are checked before a private attestation attaches one existing "
+                "READY_UNBOUND generation. The client supplies no seal, role or authority."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref", "expected_revision", "source_revision", "destination_ref"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                    "expected_revision": {"type": "integer", "minimum": 2},
+                    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+                    "destination_ref": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{0,31}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "actor_generation_shadow", "standing_grant_id",
+                          "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "actor_generation_shadow": {"type": "object"},
+                            "standing_grant_id": {"type": "string"},
+                            "current_contract_validation": {"type": "object"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "create_pre_role_generation",
+            "title": "Create pre-role generation",
+            "description": "Create one attested Fresh World generation with no role, claim, scheduler authority or predecessor live state.",
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "generation_ref", "source_revision", "method_ref", "method_version",
+                    "method_fingerprint", "provider_frontier_ref", "provider_revision",
+                    "control_resolution_attestation",
+                ],
+                "properties": {
+                    "generation_ref": {"type": "string", "minLength": 1},
+                    "source_revision": {"type": "string", "minLength": 1},
+                    "method_ref": {"type": "string", "minLength": 1},
+                    "method_version": {"type": "string", "minLength": 1},
+                    "method_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                    "provider_frontier_ref": {"type": "string", "minLength": 1},
+                    "provider_revision": {"type": "integer", "minimum": 0},
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "complete_pre_role_generation",
+            "title": "Complete pre-role generation",
+            "description": "Consume generic birth canaries and emit a durable READY_UNBOUND receipt with exact readback.",
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "generation_ref", "expected_revision", "source_revision",
+                    "generic_capability_canaries", "ready_unbound_receipt_ref",
+                    "control_resolution_attestation",
+                ],
+                "properties": {
+                    "generation_ref": {"type": "string", "minLength": 1},
+                    "expected_revision": {"type": "integer", "minimum": 1},
+                    "source_revision": {"type": "string", "minLength": 1},
+                    "generic_capability_canaries": {
+                        "type": "array", "minItems": 1,
+                        "items": {"type": "object", "additionalProperties": False,
+                                  "required": ["canary_ref", "result", "evidence_ref"],
+                                  "properties": {"canary_ref": {"type": "string", "minLength": 1},
+                                                 "result": {"const": "PASS"},
+                                                 "evidence_ref": {"type": "string", "minLength": 1}}},
+                    },
+                    "ready_unbound_receipt_ref": {"type": "string", "minLength": 1},
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "ready_unbound_receipt", "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "ready_unbound_receipt": {"type": "object"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "attach_role_overlay",
+            "title": "Attach role overlay",
+            "description": "Consume exactly one READY_UNBOUND generation and atomically create the existing role-specific actor-generation shadow.",
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": [
+                    "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+                    "actor_generation_ref", "source_revision", "control_resolution_attestation",
+                ],
+                "properties": {
+                    "generation_ref": {"type": "string", "minLength": 1},
+                    "expected_revision": {"type": "integer", "minimum": 1},
+                    "overlay_ref": {"type": "string", "minLength": 1},
+                    "actor_ref": {"type": "string", "minLength": 1},
+                    "role": {"enum": sorted(ContextLifecycleEffectAdapter._ROLES)},
+                    "actor_generation_ref": {"type": "string", "minLength": 1},
+                    "source_revision": {"type": "string", "minLength": 1},
+                    "principal_continuity_baseline": {"type": "object"},
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "actor_generation_shadow", "repository_permission_required"),
+                properties={"pre_role_generation": {"type": "object"},
+                            "actor_generation_shadow": {"type": "object"},
+                            "repository_permission_required": {"const": False}},
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "read_boot_generation_state",
+            "title": "Read an existing Boot generation",
+            "description": (
+                "Read the exact current pre-role generation and its durable receipt without "
+                "creating, completing, or attaching any role."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "authenticated_binding", "repository_permission_required"),
+                properties={
+                    "pre_role_generation": {"type": "object"},
+                    "authenticated_binding": {
+                        "type": "object", "additionalProperties": False,
+                        "required": ["tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref"],
+                        "properties": {
+                            field: {"type": "string", "minLength": 1}
+                            for field in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref", "session_ref")
+                        },
+                    },
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "resume_ready_unbound_assistant_overlay",
+            "title": "Resume a READY_UNBOUND Assistant overlay",
+            "description": (
+                "Read back an existing READY_UNBOUND generation, obtain the exact Assistant overlay "
+                "from a trusted server-bound current owner decision, fence that owner revision, and "
+                "attach it with a server-held attestation. The client supplies no actor, role, overlay or seal."
+            ),
+            "inputSchema": {
+                "type": "object", "additionalProperties": False,
+                "required": ["generation_ref", "expected_revision", "source_revision"],
+                "properties": {
+                    "generation_ref": {"type": "string", "pattern": "^CEREBRO-BOOT-[A-Z0-9-]{8,96}$"},
+                    "expected_revision": {"type": "integer", "minimum": 1},
+                    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("pre_role_generation", "actor_generation_shadow", "control_decision_ref", "repository_permission_required"),
+                properties={
+                    "pre_role_generation": {"type": "object"},
+                    "actor_generation_shadow": {"type": "object"},
+                    "control_decision_ref": {"type": "string"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "read_project_control_state",
+            "title": "Read project control state",
+            "description": "Use this when the user needs the authenticated workspace's current project-control snapshot.",
+            "inputSchema": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["project_ref"],
+                "properties": {"project_ref": {"type": "string", "minLength": 1}},
+            },
+            "outputSchema": _object_output_schema(
+                required=("project", "authenticated_caller", "repository_permission_required"),
+                properties={
+                    "project": {"type": "object"},
+                    "authenticated_caller": {"type": "object"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:read"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "resolve_project_manager_control_event",
+            "title": "Resolve own PM control event",
+            "description": "Resolve an existing own open event through canonical control and the operative PM governor. Attests resolution only; completion remains separate.",
+            "inputSchema": {"type": "object", "additionalProperties": False,
+                "required": ["event_id", "request"], "properties": {
+                    "event_id": {"type": "string", "minLength": 1}, "request": {"type": "object"}}},
+            "outputSchema": {"type": "object"},
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "begin_project_control_event",
+            "title": "Begin project control event",
+            "description": "Use this before project reasoning to bind this host session and begin one idempotent control event.",
+            "inputSchema": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["event_id", "idempotency_key"],
+                "properties": {
+                    "event_id": {"type": "string", "minLength": 1},
+                    "idempotency_key": {"type": "string", "minLength": 1},
+                    "project_ref": {"type": "string", "minLength": 1},
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=(
+                    "schema", "event_id", "project", "session",
+                    "expected_project_revision", "expected_project_fingerprint",
+                    "expected_session_revision", "expected_session_fingerprint",
+                    "repository_permission_required",
+                ),
+                properties={
+                    "schema": {"const": "cerebro-control-context-event-binding/v1"},
+                    "event_id": {"type": "string"},
+                    "project": {"type": "object"},
+                    "session": {"type": "object"},
+                    "expected_project_revision": {"type": "integer", "minimum": 1},
+                    "expected_project_fingerprint": {"type": "string"},
+                    "expected_session_revision": {"type": "integer", "minimum": 1},
+                    "expected_session_fingerprint": {"type": "string"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "complete_project_control_event",
+            "title": "Complete project control event",
+            "description": "Use this after canonical resolution to atomically commit its attested directive and matching navigation options.",
+            "inputSchema": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["event_id", "directive", "control_resolution_attestation"],
+                "properties": {
+                    "event_id": {"type": "string", "minLength": 1},
+                    "directive": {"type": "object"},
+                    "navigation_options_candidate": {"type": "object"},
+                    "context_owner_effect_candidate": {"type": "object"},
+                    "actor_lifecycle_mutation_candidate": {"type": "object"},
+                    "operational_pulse_request": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["stage", "actor_role", "objective_ref"],
+                        "properties": {
+                            "stage": {"enum": ["FRESH_WORLD", "CURRENT_CONTACT", "PRE_CLOSE"]},
+                            "actor_role": {"type": "string", "minLength": 1},
+                            "objective_ref": {"type": "string", "minLength": 1},
+                            "prior_watermarks": {"type": "object"},
+                        },
+                    },
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=(
+                    "result", "project", "session", "receipt",
+                    "mcp_context_navigation_options", "human_navigation_surface_required",
+                    "navigation_activation", "repository_permission_required",
+                ),
+                properties={
+                    "result": {"const": "PASS"},
+                    "project": {"type": "object"},
+                    "session": {"type": "object"},
+                    "receipt": {"type": "object"},
+                    "mcp_context_navigation_options": {
+                        "anyOf": [{"type": "object"}, {"type": "null"}]
+                    },
+                    "human_navigation_surface_required": {"type": "boolean"},
+                    "navigation_activation": {"type": "object"},
+                    "operational_pulse": {"type": "object"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "create_project_control_instance",
+            "title": "Create project control instance",
+            "description": "Use this when an authorized new project needs a distinct instance and single root context.",
+            "inputSchema": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": [
+                    "project_ref", "aggregate_id", "source_revision", "event_id", "decision_ref", "root",
+                    "control_resolution_attestation"
+                ],
+                "properties": {
+                    "project_ref": {"type": "string", "minLength": 1},
+                    "aggregate_id": {"type": "string", "minLength": 1},
+                    "source_revision": {"type": "string", "minLength": 1},
+                    "event_id": {"type": "string", "minLength": 1},
+                    "decision_ref": {"type": "string", "minLength": 1},
+                    "root": {"type": "object"},
+                    "make_default": {"type": "boolean"},
+                    "control_resolution_attestation": _attestation_input_schema(),
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("project", "receipt", "repository_permission_required"),
+                properties={
+                    "project": {"type": "object"},
+                    "receipt": {"type": "object"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+        {
+            "name": "set_default_project_control_instance",
+            "title": "Set default project control instance",
+            "description": "Use this to set the authenticated principal's default project for newly bound sessions.",
+            "inputSchema": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["project_ref", "control_resolution_attestation"],
+                "properties": {
+                    "project_ref": {"type": "string", "minLength": 1},
+                    "control_resolution_attestation": _attestation_input_schema()
+                },
+            },
+            "outputSchema": _object_output_schema(
+                required=("result", "project_ref", "repository_permission_required"),
+                properties={
+                    "result": {"const": "PASS"},
+                    "project_ref": {"type": "string"},
+                    "repository_permission_required": {"const": False},
+                },
+            ),
+            "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+            "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False},
+        },
+    ])
+
+
+def human_t3_tool_definitions() -> list[dict[str, Any]]:
+    """Private HG04 control operations: scoped/attested, not generic effects."""
+    candidate = json.loads((SOURCE_ROOT / "mcp" / "human-t3-break-glass.schema.json").read_text(encoding="utf-8"))["properties"]["candidate"]
+    result = []
+    for operation in ("arm", "confirm"):
+        properties = {"override_id": {"type": "string", "minLength": 1},
+                      "control_resolution_attestation": _attestation_input_schema()}
+        if operation == "arm":
+            properties["candidate"] = copy.deepcopy(candidate)
+        else:
+            properties["expected_revision"] = {"type": "integer", "minimum": 1}
+        result.append({"name": operation + "_human_t3_break_glass",
+                       "title": operation.upper() + " Human T3 break-glass",
+                       "description": "Private MCP-owned " + operation.upper() + " custody operation. Requires a distinct authenticated Human event and bound pre-Human T3 carrier; grants no general authority.",
+                       "inputSchema": {"type": "object", "additionalProperties": False, "required": list(properties), "properties": properties},
+                       "outputSchema": _object_output_schema(required=("result", "effect_attempted", "repository_permission_required"), properties={"result": {"type": "string"}, "effect_attempted": {"type": "boolean"}, "repository_permission_required": {"const": False}}),
+                       "securitySchemes": [{"type": "oauth2", "scopes": ["project_state:transition"]}],
+                       "annotations": {"readOnlyHint": False, "destructiveHint": False, "openWorldHint": False}})
+    return result
+
+
+class ControlContextMcpTools:
+    """MCP handler collection over an injected state-port implementation."""
+
+    def __init__(
+        self,
+        state_port: Any,
+        resolution_attestation_verifier: Any,
+        lifecycle_effect_adapter: Any | None = None,
+        provider_tail_reader: Any | None = None,
+        human_t3_host: HumanT3BreakGlassHost | None = None,
+        boot_birth_source_verifier: Any = verify_current_method,
+        boot_birth_attestation_issuer: Any | None = None,
+        assistant_overlay_control_resolver: Any | None = None,
+        assistant_overlay_attestation_issuer: Any | None = None,
+        assistant_overlay_source_continuity_verifier: Any = verify_existing_birth_method_continuity,
+        standing_worker_grant: dict[str, Any] | None = None,
+        worker_method_adoption_authorizer: Any | None = None,
+        worker_method_source_fetch: Any | None = None,
+        pm_owner: Any | None = None,
+        local_runtime_binding: Any | None = None,
+    ):
+        self._state_port = state_port
+        if not callable(getattr(resolution_attestation_verifier, "verify", None)):
+            raise ControlContextToolAuthorizationError("control-resolution-attestation-verifier-required")
+        if lifecycle_effect_adapter is not None:
+            for method in ("verify", "execute_lifecycle_effect", "verify_lifecycle_effect"):
+                if not callable(getattr(lifecycle_effect_adapter, method, None)):
+                    raise ControlContextToolAuthorizationError(f"lifecycle-effect-adapter-method-required:{method}")
+        if provider_tail_reader is not None and not callable(
+            getattr(provider_tail_reader, "read_operational_tails", None)
+        ):
+            raise ControlContextToolAuthorizationError("provider-tail-reader-invalid")
+        self._resolution_attestation_verifier = resolution_attestation_verifier
+        self._lifecycle_effect_adapter = lifecycle_effect_adapter
+        self._provider_tail_reader = provider_tail_reader
+        if human_t3_host is not None and not isinstance(human_t3_host, HumanT3BreakGlassHost):
+            raise ControlContextToolAuthorizationError("constructor-bound-Human-T3-host-required")
+        self._human_t3_host = human_t3_host
+        self._boot_birth_source_verifier = boot_birth_source_verifier
+        self._boot_birth_attestation_issuer = boot_birth_attestation_issuer
+        self._assistant_overlay_control_resolver = assistant_overlay_control_resolver
+        self._assistant_overlay_attestation_issuer = assistant_overlay_attestation_issuer
+        self._assistant_overlay_source_continuity_verifier = assistant_overlay_source_continuity_verifier
+        self._standing_worker_grant = copy.deepcopy(standing_worker_grant)
+        self._worker_method_adoption_authorizer = worker_method_adoption_authorizer
+        self._worker_method_source_fetch = worker_method_source_fetch
+        self._worker_method_attach_context = ContextVar("held_worker_method_attach", default=None)
+        self._pm_owner = pm_owner
+        self._public_pm_resolution = None
+        self._pm_admission_owner = None
+        self._pm_admission_issuer = None
+        self._boot_birth_source_continuity_verifier_for_pm = verify_existing_birth_method_continuity
+        self._local_runtime_binding = local_runtime_binding
+        self._x9_receiver = None
+        self._x9_producer = None
+        self._runtime_notice_resolver = None
+        self._pm_owner_d1_outbox = None
+        self._room_return_d1_outbox = None
+        self._actor_admission = None
+        self._bk11_service_custody = None
+
+    def bind_pm_admission(self, owner: Any, issuer: Any) -> None:
+        from pm_admission_owner import PostgresPmAdmissionOwner
+        if type(owner) is not PostgresPmAdmissionOwner or self._pm_admission_owner is not None:
+            raise ControlContextToolAuthorizationError('PM_OWNER_BINDING_INVALID')
+        if issuer is not self._resolution_attestation_verifier or not callable(getattr(issuer, 'seal', None)):
+            raise ControlContextToolAuthorizationError('PM_PRIVATE_ISSUER_VERIFIER_BINDING_REQUIRED')
+        self._pm_admission_owner, self._pm_admission_issuer = owner, issuer
+
+    def resume_ready_unbound_pm_overlay(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        from pm_admission_owner import resume_pm
+        return resume_pm(self, self._pm_admission_owner, self._pm_admission_issuer, args, context)
+
+    def bind_bk11_service_custody(self, host: Any) -> None:
+        from bk11_service_custody import ContextBk11ServiceHost
+        if type(host) is not ContextBk11ServiceHost or self._bk11_service_custody is not None:
+            raise ControlContextToolAuthorizationError("BK11_SERVICE_HOST_BINDING_INVALID")
+        self._bk11_service_custody=host
+
+    def _bk11_custody_call(self, name: str, args: dict, context: McpToolCallContext) -> dict:
+        from bk11_service_custody import Bk11CustodyRefused
+        if self._bk11_service_custody is None:
+            raise ControlContextToolAuthorizationError("BK11_SERVICE_CUSTODY_NOT_BOUND")
+        self._identity(context)
+        try:value=self._bk11_service_custody.call(BK11_CUSTODY_METHODS[name][0],args,context)
+        except Bk11CustodyRefused as exc:raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result(value,context)
+
+    def bind_pm_owner_d1_outbox(self, host: Any) -> None:
+        from pm_owner_d1_outbox import D1OutboxHost
+        if not isinstance(host, D1OutboxHost) or self._pm_owner_d1_outbox is not None:
+            raise ControlContextToolAuthorizationError("PM_OWNER_D1_OUTBOX_BINDING_INVALID")
+        self._pm_owner_d1_outbox = host
+
+    def bind_room_return_d1_outbox(self, host: Any) -> None:
+        from room_return_d1_outbox import RoomReturnOutboxHost
+        if type(host) is not RoomReturnOutboxHost or self._room_return_d1_outbox is not None:
+            raise ControlContextToolAuthorizationError("ROOM_RETURN_D1_OUTBOX_BINDING_INVALID")
+        self._room_return_d1_outbox = host
+
+    def bind_actor_admission(self,host):
+        from actor_admission_host import ActorAdmissionHost
+        if type(host)is not ActorAdmissionHost or self._actor_admission is not None:
+            raise ControlContextToolAuthorizationError('ACTOR_ADMISSION_HOST_BINDING_INVALID')
+        self._actor_admission=host
+
+    def _room_return_call(self, operation: str, args: dict, context: McpToolCallContext) -> dict:
+        from room_return_d1_outbox import RoomReturnRefused
+        from actor_admission_model import AdmissionRefused
+        if self._room_return_d1_outbox is None:
+            raise ControlContextToolAuthorizationError("ROOM_RETURN_D1_OUTBOX_NOT_BOUND")
+        self._identity(context)
+        try:
+            value = self._room_return_d1_outbox.call(operation, args, context)
+        except (RoomReturnRefused,AdmissionRefused) as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result(value, context)
+
+    def bind_runtime_notice_resolver(self, resolver: Any) -> None:
+        from signalvev_runtime_resolution import RuntimeResolutionHost
+        if not isinstance(resolver, RuntimeResolutionHost) or self._runtime_notice_resolver is not None:
+            raise ControlContextToolAuthorizationError("RUNTIME_NOTICE_BINDING_INVALID")
+        self._runtime_notice_resolver = resolver
+
+    def bind_x9_receiver(self, receiver: Any) -> None:
+        from x9_receiver_host import X9ReceiverHost
+        if not isinstance(receiver, X9ReceiverHost) or self._x9_receiver is not None:
+            raise ControlContextToolAuthorizationError("X9_RECEIVER_BINDING_INVALID")
+        self._x9_receiver = receiver
+
+    def bind_x9_producer(self, producer: Any) -> None:
+        from x9_producer_host import X9ProducerHost
+        if not isinstance(producer, X9ProducerHost) or self._x9_producer is not None:
+            raise ControlContextToolAuthorizationError("X9_PRODUCER_BINDING_INVALID")
+        self._x9_producer = producer
+
+    @staticmethod
+    def _identity(context: McpToolCallContext) -> VerifiedMcpIdentity:
+        context.identity.validate()
+        return context.identity
+
+    @staticmethod
+    def _result(value: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return {
+            "structuredContent": value,
+            "_meta": {
+                "cerebro/repositoryPermissionRequired": False,
+                "cerebro/sessionCorrelationPresent": True,
+                "cerebro/subjectCorrelationPresent": context.subject_correlation is not None,
+            },
+        }
+
+    def dispatch(self, tool_name: str, args: Any, context: McpToolCallContext) -> dict[str, Any]:
+        if tool_name=='manage_actor_admission_v1':
+            from actor_admission_model import AdmissionRefused
+            if self._actor_admission is None:raise ControlContextToolAuthorizationError('ACTOR_ADMISSION_HOST_NOT_BOUND')
+            self._identity(context)
+            try:value=self._actor_admission.call(_require_args(args),context)
+            except AdmissionRefused as error:raise ControlContextToolAuthorizationError(str(error)) from None
+            return self._result(value,context)
+        if tool_name in BK11_CUSTODY_METHODS:
+            return self._bk11_custody_call(tool_name,_require_args(args),context)
+        if tool_name == "register_room_return_v1":
+            return self._room_return_call("register", _require_args(args), context)
+        if tool_name == 'read_accepted_room_return_v1':
+            return self._room_return_call('read_accepted', _require_args(args), context)
+        if tool_name == "read_room_return_d1_outbox_v1":
+            values = _require_args(args)
+            op = values.pop("op", None)
+            if op == "read_exact" and set(values) == {"message_id"}:
+                return self._room_return_call(op, values, context)
+            if op in ("list_pending","list_recovery_candidates") and set(values) <= {"after","limit"}:
+                values["op"] = op
+                return self._room_return_call(op, values, context)
+            raise ControlContextToolAuthorizationError("ROOM_RETURN_READ_SHAPE_INVALID")
+        if tool_name == "settle_room_return_d1_outbox_v1":
+            return self._room_return_call("settle", _require_args(args), context)
+        handlers = {
+            "read_authenticated_binding_basis_v1": self.read_authenticated_binding_basis_v1,
+            "read_standing_worker_policy_observation_v1": self.read_standing_worker_policy_observation_v1,
+            "read_authenticated_caller_observation_v1": self.read_authenticated_caller_observation_v1,
+            "create_ready_unbound_boot_generation": self.create_ready_unbound_boot_generation,
+            "attach_worker_from_standing_grant": self.attach_worker_from_standing_grant,
+            "adopt_worker_method": self.adopt_worker_method,
+            "read_worker_method_evidence": self.read_worker_method_evidence,
+            "acknowledge_worker_method_read": self.acknowledge_worker_method_read,
+            "create_pre_role_generation": self.create_pre_role_generation,
+            "complete_pre_role_generation": self.complete_pre_role_generation,
+            "attach_role_overlay": self.attach_role_overlay,
+            "read_boot_generation_state": self.read_boot_generation_state,
+            "resume_ready_unbound_assistant_overlay": self.resume_ready_unbound_assistant_overlay,
+            "resume_ready_unbound_pm_overlay": self.resume_ready_unbound_pm_overlay,
+            "read_project_control_state": self.read_project_control_state,
+            "resolve_project_manager_control_event": self.resolve_project_manager_control_event,
+            "begin_project_control_event": self.begin_project_control_event,
+            "complete_project_control_event": self.complete_project_control_event,
+            "create_project_control_instance": self.create_project_control_instance,
+            "set_default_project_control_instance": self.set_default_project_control_instance,
+            "arm_human_t3_break_glass": self.arm_human_t3_break_glass,
+            "confirm_human_t3_break_glass": self.confirm_human_t3_break_glass,
+            "commit_pm_owner_ready": self.commit_pm_owner_ready,
+            "read_pm_owner_ready": self.read_pm_owner_ready,
+            "read_x9_pointer": self.read_x9_pointer,
+            "observe_signalvev_notice_v1": self.observe_signalvev_notice_v1,
+            "transport_resolve_signalvev_notice_v1": self.transport_resolve_signalvev_notice_v1,
+            "read_local_runtime_binding_v1": self.read_local_runtime_binding_v1,
+            "consume_x9_pointer": self.consume_x9_pointer,
+            "append_x9_pointer": self.append_x9_pointer,
+            "prepare_signalvev_notice_v1": self.prepare_signalvev_notice_v1,
+            "read_pm_owner_d1_outbox_v1": self.read_pm_owner_d1_outbox_v1,
+            "settle_pm_owner_d1_outbox_v1": self.settle_pm_owner_d1_outbox_v1,
+            "resolve_d1_pointer_v1": self.resolve_d1_pointer_v1,
+        }
+        if tool_name not in handlers:
+            raise ControlContextToolError(f"unknown-control-context-tool:{tool_name}")
+        return handlers[tool_name](_require_args(args), context)
+
+    def _d1_outbox_call(self, method: str, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._pm_owner_d1_outbox is None:
+            raise ControlContextToolAuthorizationError("PM_OWNER_D1_OUTBOX_NOT_BOUND")
+        from pm_owner_atomic import PmOwnerError
+        from providers.x9_postgres_custody import CustodyUnavailable
+        self._identity(context)
+        try:
+            value = getattr(self._pm_owner_d1_outbox, method)(args, context)
+        except (PmOwnerError, CustodyUnavailable) as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def read_pm_owner_d1_outbox_v1(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return self._d1_outbox_call("read", args, context)
+
+    def settle_pm_owner_d1_outbox_v1(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return self._d1_outbox_call("settle", args, context)
+
+    def resolve_d1_pointer_v1(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return self._d1_outbox_call("resolve", args, context)
+
+    def commit_pm_owner_ready(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._pm_owner is None:
+            raise ControlContextToolAuthorizationError("PM_OWNER_HOST_NOT_BOUND")
+        from pm_owner_atomic import PmOwnerError
+        try:
+            value = self._pm_owner.commit(args, self._identity(context), context.transport_session())
+        except PmOwnerError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def read_pm_owner_ready(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._pm_owner is None:
+            raise ControlContextToolAuthorizationError("PM_OWNER_HOST_NOT_BOUND")
+        from pm_owner_atomic import PmOwnerError
+        try:
+            value = self._pm_owner.read(args, self._identity(context), context.transport_session())
+        except PmOwnerError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def read_x9_pointer(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._x9_receiver is None:
+            raise ControlContextToolAuthorizationError("X9_RECEIVER_HOST_NOT_BOUND")
+        from x9_receiver_host import X9ReceiverError
+        try:
+            value = self._x9_receiver.read_pointer(args, context)
+        except X9ReceiverError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def consume_x9_pointer(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._x9_receiver is None:
+            raise ControlContextToolAuthorizationError("X9_RECEIVER_HOST_NOT_BOUND")
+        from x9_receiver_host import X9ReceiverError
+        try:
+            value = self._x9_receiver.consume(args, context)
+        except X9ReceiverError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def append_x9_pointer(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._x9_producer is None:
+            raise ControlContextToolAuthorizationError("X9_PRODUCER_HOST_NOT_BOUND")
+        from pm_owner_atomic import PmOwnerError
+        from providers.x9_postgres_custody import CustodyUnavailable
+        from x9_producer_host import X9ProducerError
+        try:
+            value = self._x9_producer.append_pointer(args, context)
+        except (X9ProducerError, PmOwnerError, CustodyUnavailable) as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def observe_signalvev_notice_v1(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._x9_receiver is None:
+            raise ControlContextToolAuthorizationError("X9_RECEIVER_HOST_NOT_BOUND")
+        from x9_receiver_host import X9ReceiverError
+        from providers.x9_postgres_custody import CustodyUnavailable
+        try:
+            value = self._x9_receiver.observe_signalvev_notice(args, context)
+        except (X9ReceiverError, CustodyUnavailable) as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def transport_resolve_signalvev_notice_v1(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        if self._runtime_notice_resolver is None:
+            raise ControlContextToolAuthorizationError("RUNTIME_NOTICE_RESOLVER_NOT_BOUND")
+        from signalvev_runtime_resolution import RuntimeResolutionError
+        try:
+            value = self._runtime_notice_resolver.resolve(args, self._identity(context))
+        except RuntimeResolutionError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def read_local_runtime_binding_v1(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        """Read only the host-configured runtime session under its verified credential."""
+        if args != {}:
+            raise ControlContextToolAuthorizationError("RUNTIME_BINDING_READ_NO_ARGUMENTS")
+        binding = self._local_runtime_binding
+        identity = self._identity(context)
+        if binding is None or identity.consumer_ref != "LOCAL_CEREBRO_RUNTIME" or (
+            identity.tenant_ref, identity.workspace_ref, identity.principal_ref
+        ) != (binding.tenant_ref, binding.workspace_ref, binding.principal_ref):
+            raise ControlContextToolAuthorizationError("RUNTIME_BINDING_IDENTITY_REQUIRED")
+        try:
+            project = self._state_port.read_project(
+                tenant_ref=binding.tenant_ref, workspace_ref=binding.workspace_ref,
+                principal_ref=binding.principal_ref, project_ref=binding.project_ref,
+                scopes=identity.state_scopes)
+            session = self._state_port.read_session(
+                tenant_ref=binding.tenant_ref, workspace_ref=binding.workspace_ref,
+                principal_ref=binding.principal_ref, consumer_ref="LOCAL_CEREBRO_RUNTIME",
+                session_ref=binding.session_ref, scopes=identity.state_scopes)
+        except StateBindingError as exc:
+            raise ControlContextToolAuthorizationError("RUNTIME_BINDING_NOT_CURRENT") from exc
+        if (project.get("project_status") != "ACTIVE"
+                or session.get("project_revision") != project.get("revision")
+                or (session.get("tenant_ref"), session.get("workspace_ref"),
+                    session.get("project_ref"), session.get("principal_ref"),
+                    session.get("consumer_ref"), session.get("session_ref")) != (
+                    binding.tenant_ref, binding.workspace_ref, binding.project_ref,
+                    binding.principal_ref, "LOCAL_CEREBRO_RUNTIME", binding.session_ref)
+                or not isinstance(session.get("session_binding_id"), str)
+                or not session["session_binding_id"]
+                or type(session.get("project_revision")) is not int
+                or type(session.get("session_revision")) is not int
+                or not isinstance(session.get("fingerprint"), str)
+                or len(session["fingerprint"]) != 64):
+            raise ControlContextToolAuthorizationError("RUNTIME_BINDING_NOT_CURRENT")
+        exact = {
+            "binding_id": session["session_binding_id"],
+            "binding_fingerprint": session["fingerprint"],
+            "project_revision": session["project_revision"],
+            "session_revision": session["session_revision"],
+            "session_ref": binding.session_ref,
+            "issuer": binding.issuer,
+            "client_id": binding.client_id,
+            "audience": binding.runtime_audience,
+            "tenant": binding.tenant_ref,
+            "workspace": binding.workspace_ref,
+            "project": binding.project_ref,
+            "principal": binding.principal_ref,
+            "enabled": binding.enabled is True,
+        }
+        return self._result({"schema": "cerebro-local-runtime-binding-read/v1",
+                             "binding": exact, "currentness": "CURRENT",
+                             "repository_permission_required": False}, context)
+
+    def prepare_signalvev_notice_v1(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        """One PM-authenticated, receipt-only custody preparation; NATS remains external."""
+        if self._x9_producer is None:
+            raise ControlContextToolAuthorizationError("SIGNALVEV_PM_CUSTODY_HOST_NOT_BOUND")
+        if (type(args) is not dict or set(args) != {"receipt_ref"}
+                or not isinstance(args["receipt_ref"], str)
+                or not args["receipt_ref"].startswith("pm-receipt:")):
+            raise ControlContextToolAuthorizationError("SIGNALVEV_RECEIPT_REF_ONLY")
+        from providers.x9_postgres_custody import CustodyUnavailable
+        from x9_producer_host import X9ProducerError
+        try:
+            deposit = self._x9_producer.append_pointer(args, context)
+            value = {"schema": "cerebro-signalvev-notice-preparation/v1",
+                     "state": deposit["state"], "event_id": deposit["event_id"],
+                     "repository_permission_required": False}
+            if deposit["state"] != "DEPOSITED_READBACK":
+                return self._result(value, context)
+            # The existing producer's receipt reader checks immutable packet
+            # and material hashes and locks the CURRENT owner pointer.
+            _channel, api = self._x9_producer._channel(context)
+            record, projection = self._x9_producer._receipt(api, args["receipt_ref"])
+            if (record.get("receipt_ref") != args["receipt_ref"]
+                    or record.get("ready_state") != "MATERIAL_READY"
+                    or record.get("event_id") != deposit["event_id"]):
+                raise ControlContextToolAuthorizationError("SIGNALVEV_OWNER_CHANGED_AFTER_DEPOSIT")
+            value["record"] = record
+            value["projection"] = projection
+            value["pointer_sha256"] = deposit.get("pointer_sha256")
+            value["subject"] = "cerebro.v1.artifact.pointer"
+            return self._result(value, context)
+        except (X9ProducerError, CustodyUnavailable) as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from None
+
+    def create_ready_unbound_boot_generation(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        """MCP-owned, source-verified role-neutral birth; never exposes the HMAC seal.
+
+        This is a deliberately narrow bridge for an OAuth-scoped birth candidate.
+        The Boot controller separately proves the Human trigger and its 15 steps.
+        The existing attested create/complete tools return durable readback;
+        role attachment remains a separate operation.
+        """
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        if set(args) != {"boot_attempt_id", "source_revision"}:
+            raise ControlContextToolError("boot-birth-exact-fields-required")
+        attempt_id = _require_text(args, "boot_attempt_id")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", attempt_id) is None:
+            raise ControlContextToolError("boot-birth-attempt-id-invalid")
+        source_revision = _require_text(args, "source_revision")
+        verifier = self._boot_birth_source_verifier
+        issuer = self._boot_birth_attestation_issuer
+        if not callable(verifier) or not callable(getattr(issuer, "seal", None)):
+            raise ControlContextToolAuthorizationError("trusted-boot-birth-owner-not-bound")
+        source = verifier(source_revision)
+        required_source = {
+            "source_revision", "method_ref", "method_version", "method_fingerprint",
+            "provider_frontier_ref", "provider_revision",
+        }
+        if not isinstance(source, dict) or set(source) != required_source:
+            raise ControlContextToolError("boot-birth-source-verification-invalid")
+        if source["source_revision"] != source_revision:
+            raise ControlContextToolError("boot-birth-source-head-mismatch")
+        generation_ref = attempt_id
+        try:
+            current = self._read_pre_role(identity, context, generation_ref)
+        except StateBindingError as exc:
+            if str(exc) != "pre-role-generation-not-found":
+                raise
+            create_payload = {"generation_ref": generation_ref, **source}
+            create_args = dict(create_payload)
+            create_args["control_resolution_attestation"] = issuer.seal(
+                operation="create_pre_role_generation", payload=create_payload, context=context,
+            )
+            current = self.create_pre_role_generation(create_args, context)["structuredContent"]["pre_role_generation"]
+        if (
+            current["source_revision"] != source_revision
+            or current["civilization_method_attestation"]["method_fingerprint"] != source["method_fingerprint"]
+        ):
+            raise ControlContextToolError("boot-birth-existing-generation-mismatch")
+        if current["lifecycle"] == "BIRTH_PENDING":
+            evidence = hashlib.sha256((attempt_id + ":" + source_revision).encode("utf-8")).hexdigest()[:20]
+            canaries = [
+                {"canary_ref": "AUTHENTICATED_TRANSITION_SCOPE", "result": "PASS", "evidence_ref": "OAUTH_" + evidence},
+                {"canary_ref": "CURRENT_SOURCE_AND_METHOD", "result": "PASS", "evidence_ref": "SOURCE_" + source_revision},
+                {"canary_ref": "STATE_CREATE_READBACK", "result": "PASS", "evidence_ref": "STATE_" + evidence},
+            ]
+            complete_payload = {
+                "generation_ref": generation_ref,
+                "expected_revision": current["revision"],
+                "source_revision": source_revision,
+                "generic_capability_canaries": canaries,
+                "ready_unbound_receipt_ref": "READY_" + attempt_id,
+            }
+            complete_args = dict(complete_payload)
+            complete_args["control_resolution_attestation"] = issuer.seal(
+                operation="complete_pre_role_generation", payload=complete_payload, context=context,
+            )
+            current = self.complete_pre_role_generation(complete_args, context)["structuredContent"]["pre_role_generation"]
+        if current["lifecycle"] != "READY_UNBOUND":
+            raise ControlContextToolError("boot-birth-generation-not-ready-unbound")
+        return self._result({
+            "pre_role_generation": current,
+            "ready_unbound_receipt": current["ready_unbound_receipt"],
+            "repository_permission_required": False,
+        }, context)
+
+    @contextmanager
+    def _held_worker_method_owner(self, birth, identity, context, source_revision, read_ref):
+        from worker_method_adoption import (WorkerMethodAdoptionError, verify_delta,
+            validate_authorization, verify_selected_contract_continuity, digest, OLD)
+        from boot_birth_source import _http_get, _source_head
+        from worker_attach_grant import validate_standing_grant
+        owner = self._worker_method_adoption_authorizer
+        if not callable(getattr(owner, 'hold', None)):
+            raise ControlContextToolAuthorizationError('WORKER_METHOD_ADOPTION_NOT_ISSUED')
+        who = {k: getattr(identity, k) for k in ('tenant_ref','workspace_ref','principal_ref','consumer_ref')}
+        who['session_ref'] = context.session_ref()
+        fetch = self._worker_method_source_fetch or _http_get
+        try:
+            from worker_method_owner import PostgresWorkerMethodOwner
+            if isinstance(owner,PostgresWorkerMethodOwner):
+                owner.qualify_caller(context,birth)
+            # hold() must fence the actual current owner/revocation record across commit.
+            with owner.hold(identity=copy.deepcopy(who), generation_ref=birth['generation_ref']) as lease:
+                if not callable(getattr(lease, 'check_current', None)) or type(getattr(lease, 'expected_files', None)) is not dict or type(getattr(lease, 'expected_role_contracts', None)) is not dict:
+                    raise WorkerMethodAdoptionError('method-adoption-owner-reader-invalid')
+                delta = verify_delta(birth, source_revision, fetch, lease.expected_files, lease.expected_role_contracts)
+                issued = validate_authorization(lease.check_current(), identity=who, birth=birth,
+                                                read_ref=read_ref, delta=delta)
+                def fence():
+                    validate_standing_grant(self._standing_worker_grant, identity)
+                    delta['current_validation'] = verify_selected_contract_continuity(fetch, delta['files']['new'], delta['role_contracts'],delta['new_source'])
+                    checked = validate_authorization(lease.check_current(), identity=who, birth=birth,
+                                                     read_ref=read_ref, delta=delta)
+                    if digest(checked) != digest(issued):
+                        raise WorkerMethodAdoptionError('method-adoption-owner-changed')
+                fence()
+                yield who, issued, delta, fence
+        except WorkerMethodAdoptionError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from exc
+
+    def read_worker_method_evidence(self,args,context):
+        from worker_method_evidence_tools import read_evidence
+        return self._result(read_evidence(self._method_owner_adapter(),args,context),context)
+
+    def _method_owner_adapter(self):
+        from worker_method_owner import PostgresWorkerMethodOwner
+        owner=self._worker_method_adoption_authorizer
+        if not isinstance(owner,PostgresWorkerMethodOwner):
+            raise ControlContextToolAuthorizationError('WORKER_METHOD_OWNER_NOT_CONFIGURED')
+        return owner
+
+    def acknowledge_worker_method_read(self,args,context):
+        owner=self._method_owner_adapter()
+        identity=self._identity(context)
+        birth=self._read_pre_role(identity,context,args.get('generation_ref'))
+        from worker_method_adoption import WorkerMethodCommitUnknown
+        try:ack=owner.acknowledge(args,context,birth)
+        except WorkerMethodCommitUnknown:
+            return self._result({'result':'COMMIT_OUTCOME_UNKNOWN','generation_ref':birth['generation_ref'],
+                'recovery':'Read own immutable acknowledgment before any repetition; no automatic retry'},context)
+        return self._result({'acknowledgment':ack,'repository_permission_required':False},context)
+
+    def adopt_worker_method(self, args, context):
+        from worker_method_adoption import make_adopted
+        identity = self._identity(context)
+        if 'project_state:transition' not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError('required-scope-missing:project_state:transition')
+        if set(args) != {'generation_ref','expected_revision','source_revision','method_read_ref'} or type(args['expected_revision']) is not int or args['expected_revision'] < 2:
+            raise ControlContextToolError('method-adoption-exact-fields-revision-required')
+        current = self._read_pre_role(identity, context, args['generation_ref'])
+        if current['revision'] != args['expected_revision'] or current['lifecycle'] != 'READY_UNBOUND':
+            raise ControlContextToolAuthorizationError('method-adoption-exact-ready-birth-required')
+        from worker_method_adoption import WorkerMethodCommitUnknown
+        committed=None
+        try:
+            with self._held_worker_method_owner(current, identity, context, args['source_revision'], args['method_read_ref']) as (who, issued, delta, fence):
+                candidate = make_adopted(current, identity=who, authorization=issued, delta=delta)
+                committed = self._pre_role_state_call('commit_worker_method_adoption', state=candidate,
+                    expected_revision=current['revision'], current_guard=fence, principal_ref=identity.principal_ref,
+                    scopes={'project_state:transition'})
+        except Exception as exc:
+            if isinstance(exc,WorkerMethodCommitUnknown) or committed is not None:
+                return self._result({'result':'COMMITTED_READBACK_UNKNOWN' if committed is not None else 'COMMIT_OUTCOME_UNKNOWN',
+                    'pre_role_generation':committed or current,'repository_permission_required':False},context)
+            raise
+        try:
+            readback = self._read_pre_role(identity, context, args['generation_ref'])
+        except Exception:
+            return self._result({'result':'COMMITTED_READBACK_UNKNOWN', 'pre_role_generation':committed,
+                                 'repository_permission_required':False}, context)
+        return self._result({'result':'ADOPTED_READBACK_PASS' if readback == committed else 'COMMITTED_READBACK_CHANGED',
+            'pre_role_generation':readback,'current_contract_validation':copy.deepcopy(delta['current_validation']),
+            'repository_permission_required':False}, context)
+
+    def attach_worker_from_standing_grant(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        """Use server-held Human grant and Boot state to attach one WORKER role."""
+        from worker_attach_grant import (
+            WorkerAttachGrantError, validate_standing_grant,
+            verify_native_boot_origin, worker_overlay_payload,
+        )
+
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        if set(args) != {"generation_ref", "expected_revision", "source_revision", "destination_ref"}:
+            raise ControlContextToolError("standing-worker-attach-exact-fields-required")
+        issuer = self._boot_birth_attestation_issuer
+        if not callable(getattr(issuer, "seal", None)):
+            raise ControlContextToolAuthorizationError("standing-worker-server-attestor-unbound")
+        current = self._read_pre_role(identity, context, args['generation_ref'])
+        adoption = current.get('worker_method_adoption')
+        if adoption is not None:
+            from worker_method_adoption import validate_adoption, digest
+            validate_adoption(current)
+            if args['destination_ref'] != adoption['destination_ref']:
+                raise ControlContextToolAuthorizationError('method-adoption-owner-destination-mismatch')
+            from worker_method_adoption import adoption_input_state
+            birth = adoption_input_state(current)
+            from worker_method_adoption import WorkerMethodCommitUnknown
+            held_result=None
+            try:
+                with self._held_worker_method_owner(birth, identity, context, args['source_revision'], adoption['read_evidence_ref']) as (who, issued, delta, fence):
+                    if digest(issued) != adoption['authorization_digest'] or digest(who) != adoption['caller_fingerprint']:
+                        raise ControlContextToolAuthorizationError('method-adoption-authorization-no-longer-matched')
+                    grant = validate_standing_grant(self._standing_worker_grant, identity)
+                    verify_native_boot_origin(current, generation_ref=args['generation_ref'],
+                        source_revision=args['source_revision'], verified_source=delta['verified_source'])
+                    payload = worker_overlay_payload(generation_ref=args['generation_ref'], expected_revision=args['expected_revision'],
+                        source_revision=current['source_revision'], destination_ref=args['destination_ref'], grant=grant, adopted_revision=current['revision'])
+                    if current['revision'] != payload['expected_revision']:
+                        raise ControlContextToolAuthorizationError('standing-worker-birth-revision-stale')
+                    fence()
+                    attested = {**payload, 'control_resolution_attestation': issuer.seal(operation='attach_role_overlay',payload=payload,context=context)}
+                    fence()
+                    token = self._worker_method_attach_context.set((current['generation_ref'], current['fingerprint'], who, adoption['authorization_digest'], fence))
+                    try:
+                        attached = self.attach_role_overlay(attested, context)['structuredContent']
+                    finally:
+                        self._worker_method_attach_context.reset(token)
+                    held_result=self._result({**attached,'standing_grant_id':grant['grant_id'],'current_contract_validation':copy.deepcopy(delta['current_validation']),'repository_permission_required':False},context)
+            except WorkerMethodCommitUnknown:
+                return self._result({**(held_result['structuredContent'] if held_result is not None else {}),
+                    'result':'COMMITTED_READBACK_UNKNOWN' if held_result is not None else 'COMMIT_OUTCOME_UNKNOWN',
+                    'generation_ref':current['generation_ref'],'repository_permission_required':False},context)
+            return held_result
+        try:
+            grant = validate_standing_grant(self._standing_worker_grant, identity)
+            payload = worker_overlay_payload(
+                generation_ref=args["generation_ref"],
+                expected_revision=args["expected_revision"],
+                source_revision=args["source_revision"],
+                destination_ref=args["destination_ref"], grant=grant,
+            )
+            current = self._read_pre_role(identity, context, payload["generation_ref"])
+            source = self._boot_birth_source_verifier(payload["source_revision"])
+            verify_native_boot_origin(current, generation_ref=payload["generation_ref"],
+                                      source_revision=payload["source_revision"],
+                                      verified_source=source)
+        except WorkerAttachGrantError as exc:
+            raise ControlContextToolAuthorizationError(str(exc)) from exc
+        if current["revision"] != payload["expected_revision"]:
+            raise ControlContextToolAuthorizationError("standing-worker-birth-revision-stale")
+        attested = dict(payload)
+        attested["control_resolution_attestation"] = issuer.seal(
+            operation="attach_role_overlay", payload=payload, context=context,
+        )
+        attached = self.attach_role_overlay(attested, context)["structuredContent"]
+        return self._result({
+            "pre_role_generation": attached["pre_role_generation"],
+            "actor_generation_shadow": attached["actor_generation_shadow"],
+            "standing_grant_id": grant["grant_id"],
+            "repository_permission_required": False,
+        }, context)
+
+    def _attested_payload(
+        self, operation: str, args: dict[str, Any], context: McpToolCallContext,
+    ) -> tuple[VerifiedMcpIdentity, dict[str, Any]]:
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        payload = {key: copy.deepcopy(value) for key, value in args.items()
+                   if key != "control_resolution_attestation"}
+        self._resolution_attestation_verifier.verify(
+            operation=operation,
+            payload=payload,
+            attestation=args.get("control_resolution_attestation"),
+            context=context,
+        )
+        return identity, payload
+
+    def _read_pre_role(
+        self, identity: VerifiedMcpIdentity, context: McpToolCallContext, generation_ref: str,
+    ) -> dict[str, Any]:
+        state = self._pre_role_state_call(
+            "read_pre_role_generation",
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            generation_ref=generation_ref,
+            principal_ref=identity.principal_ref,
+            scopes={"project_state:read"},
+        )
+        validate_pre_role_generation(state)
+        return state
+
+    def _pre_role_state_call(self, method: str, **kwargs: Any) -> Any:
+        target = getattr(self._state_port, method, None)
+        if not callable(target):
+            raise ControlContextToolError(f"pre-role-state-port-method-required:{method}")
+        parameters = inspect.signature(target).parameters
+        return target(**{key: value for key, value in kwargs.items() if key in parameters})
+
+    def create_pre_role_generation(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity, payload = self._attested_payload("create_pre_role_generation", args, context)
+        required = {
+            "generation_ref", "source_revision", "method_ref", "method_version", "method_fingerprint",
+            "provider_frontier_ref", "provider_revision",
+        }
+        if set(payload) != required:
+            raise ControlContextToolError("create-pre-role-generation-exact-fields-required")
+        state = bootstrap_pre_role_generation(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            generation_ref=_require_text(payload, "generation_ref"),
+            source_revision=_require_text(payload, "source_revision"),
+            method_ref=_require_text(payload, "method_ref"),
+            method_version=_require_text(payload, "method_version"),
+            method_fingerprint=_require_text(payload, "method_fingerprint"),
+            provider_frontier_ref=_require_text(payload, "provider_frontier_ref"),
+            provider_revision=payload.get("provider_revision"),
+        )
+        written = self._pre_role_state_call(
+            "write_pre_role_generation",
+            state=state,
+            expected_revision=0,
+            principal_ref=identity.principal_ref,
+            scopes={"project_state:transition"},
+        )
+        readback = self._read_pre_role(identity, context, state["generation_ref"])
+        if readback != written:
+            raise ControlContextToolError("pre-role-generation-create-readback-mismatch")
+        return self._result({"pre_role_generation": readback,
+                             "repository_permission_required": False}, context)
+
+    def complete_pre_role_generation(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity, payload = self._attested_payload("complete_pre_role_generation", args, context)
+        required = {
+            "generation_ref", "expected_revision", "source_revision", "generic_capability_canaries",
+            "ready_unbound_receipt_ref",
+        }
+        if set(payload) != required:
+            raise ControlContextToolError("complete-pre-role-generation-exact-fields-required")
+        generation_ref = _require_text(payload, "generation_ref")
+        current = self._read_pre_role(identity, context, generation_ref)
+        expected_revision = payload.get("expected_revision")
+        if type(expected_revision) is not int or current["revision"] != expected_revision:
+            raise ControlContextToolError("pre-role-generation-expected-revision-mismatch")
+        canaries = payload.get("generic_capability_canaries")
+        if not isinstance(canaries, list):
+            raise ControlContextToolError("pre-role-generation-generic-capability-canaries-required")
+        candidate = complete_pre_role_generation(
+            current,
+            source_revision=_require_text(payload, "source_revision"),
+            generic_capability_canaries=canaries,
+            receipt_ref=_require_text(payload, "ready_unbound_receipt_ref"),
+        )
+        written = self._pre_role_state_call(
+            "write_pre_role_generation",
+            state=candidate,
+            expected_revision=expected_revision,
+            principal_ref=identity.principal_ref,
+            scopes={"project_state:transition"},
+        )
+        readback = self._read_pre_role(identity, context, generation_ref)
+        if readback != written or readback["lifecycle"] != "READY_UNBOUND":
+            raise ControlContextToolError("pre-role-generation-ready-unbound-readback-mismatch")
+        return self._result({
+            "pre_role_generation": readback,
+            "ready_unbound_receipt": readback["ready_unbound_receipt"],
+            "repository_permission_required": False,
+        }, context)
+
+    def attach_role_overlay(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity, payload = self._attested_payload("attach_role_overlay", args, context)
+        required = {
+            "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+            "actor_generation_ref", "source_revision",
+        }
+        allowed = required | {"principal_continuity_baseline"}
+        if not required.issubset(payload) or set(payload).difference(allowed):
+            raise ControlContextToolError("attach-role-overlay-exact-fields-required")
+        generation_ref = _require_text(payload, "generation_ref")
+        current = self._read_pre_role(identity, context, generation_ref)
+        adoption = current.get('worker_method_adoption')
+        pm_guard = None
+        if payload.get('role') == 'PROJECT_MANAGER':
+            from pm_admission_owner import PostgresPmAdmissionOwner, PmAdmissionRefused
+            if type(self._pm_admission_owner) is not PostgresPmAdmissionOwner:
+                raise ControlContextToolAuthorizationError('PM_OWNER_ADMISSION_NOT_BOUND')
+            try:
+                pm_guard = self._pm_admission_owner.attach_guard(current, payload)
+            except PmAdmissionRefused as exc:
+                raise ControlContextToolAuthorizationError(str(exc)) from None
+        if adoption is not None:
+            who = {k:getattr(identity,k) for k in ('tenant_ref','workspace_ref','principal_ref','consumer_ref')}
+            who['session_ref'] = context.session_ref()
+            held = self._worker_method_attach_context.get()
+            if payload.get('role') != 'WORKER' or held is None or held[:4] != (current['generation_ref'], current['fingerprint'], who, adoption['authorization_digest']) or not callable(held[4]):
+                raise ControlContextToolAuthorizationError('method-adoption-held-worker-route-required')
+        expected_revision = payload.get("expected_revision")
+        if type(expected_revision) is not int or current["revision"] != expected_revision:
+            raise ControlContextToolError("pre-role-generation-expected-revision-mismatch")
+        pre_role_after, actor_after = build_role_overlay(
+            current,
+            overlay_ref=_require_text(payload, "overlay_ref"),
+            actor_ref=_require_text(payload, "actor_ref"),
+            role=_require_text(payload, "role"),
+            actor_generation_ref=_require_text(payload, "actor_generation_ref"),
+            source_revision=_require_text(payload, "source_revision"),
+            principal_continuity_baseline=copy.deepcopy(payload.get("principal_continuity_baseline")),
+        )
+        from worker_method_adoption import WorkerMethodCommitUnknown
+        committed=None
+        try:
+            committed = self._pre_role_state_call(
+                "attach_role_overlay",
+                pre_role_state=pre_role_after,
+                actor_generation_state=actor_after,
+                expected_revision=expected_revision,
+                principal_ref=identity.principal_ref,
+                scopes={"project_state:transition"},
+                current_guard=pm_guard or (held[4] if adoption is not None else None),
+            )
+            pre_readback = self._read_pre_role(identity, context, generation_ref)
+            actor_readback = self._pre_role_state_call(
+                "read_actor_generation_shadow",
+                tenant_ref=identity.tenant_ref, workspace_ref=identity.workspace_ref,
+                role=actor_after["role"], generation_ref=actor_after["generation_ref"],
+                principal_ref=identity.principal_ref, scopes={"project_state:read"},
+            )
+        except Exception as exc:
+            if (adoption is not None or pm_guard is not None) and (committed is not None or isinstance(exc,WorkerMethodCommitUnknown)):
+                return self._result({'result':'COMMITTED_READBACK_UNKNOWN' if committed is not None else 'COMMIT_OUTCOME_UNKNOWN',
+                    'pre_role_generation':pre_role_after,'actor_generation_shadow':actor_after,
+                    'repository_permission_required':False},context)
+            raise
+        if (pre_readback != committed["pre_role_generation"]
+                or actor_readback != committed["actor_generation_shadow"]):
+            if adoption is not None or pm_guard is not None:
+                return self._result({'result':'COMMITTED_READBACK_CHANGED','pre_role_generation':pre_readback,
+                    'actor_generation_shadow':actor_readback,'repository_permission_required':False},context)
+            raise ControlContextToolError("pre-role-generation-role-overlay-readback-mismatch")
+        return self._result({
+            "pre_role_generation": pre_readback,
+            "actor_generation_shadow": actor_readback,
+            "repository_permission_required": False,
+        }, context)
+
+    def read_boot_generation_state(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        identity = self._identity(context)
+        if "project_state:read" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:read")
+        if set(args) != {"generation_ref"}:
+            raise ControlContextToolError("boot-generation-read-exact-fields-required")
+        generation_ref = _require_text(args, "generation_ref")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", generation_ref) is None:
+            raise ControlContextToolError("boot-generation-read-boot-ref-required")
+        return self._result({
+            "pre_role_generation": self._read_pre_role(identity, context, generation_ref),
+            "authenticated_binding": {
+                "tenant_ref": identity.tenant_ref,
+                "workspace_ref": identity.workspace_ref,
+                "principal_ref": identity.principal_ref,
+                "consumer_ref": identity.consumer_ref,
+                "session_ref": context.session_ref(),
+            },
+            "repository_permission_required": False,
+        }, context)
+
+    def resume_ready_unbound_assistant_overlay(
+        self, args: dict[str, Any], context: McpToolCallContext,
+    ) -> dict[str, Any]:
+        """Resolve and seal one existing Assistant overlay entirely inside the MCP host."""
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        if set(args) != {"generation_ref", "expected_revision", "source_revision"}:
+            raise ControlContextToolError("assistant-overlay-resume-exact-fields-required")
+        generation_ref = _require_text(args, "generation_ref")
+        source_revision = _require_text(args, "source_revision")
+        if re.fullmatch(r"CEREBRO-BOOT-[A-Z0-9-]{8,96}", generation_ref) is None:
+            raise ControlContextToolError("assistant-overlay-resume-boot-generation-required")
+        expected_revision = args.get("expected_revision")
+        if type(expected_revision) is not int or expected_revision < 1:
+            raise ControlContextToolError("assistant-overlay-resume-expected-revision-invalid")
+        resolver = self._assistant_overlay_control_resolver
+        issuer = self._assistant_overlay_attestation_issuer
+        if not callable(getattr(resolver, "resolve", None)) or not callable(getattr(issuer, "seal", None)):
+            raise ControlContextToolAuthorizationError("trusted-assistant-overlay-resolution-owner-not-bound")
+        hold = getattr(resolver, 'hold_admission_window', None)
+        if not callable(hold) or not callable(getattr(resolver, 'check_admission_current', None)):
+            raise ControlContextToolAuthorizationError('trusted-assistant-overlay-admission-window-not-bound')
+        try:
+            # Actual installed reader must serialize owner changes through atomic
+            # attach/readback; code alone does not attest that external boundary.
+            with hold():
+                current = self._read_pre_role(identity, context, generation_ref)
+                if current["lifecycle"] != "READY_UNBOUND":
+                    raise ControlContextToolError("assistant-overlay-resume-ready-unbound-required")
+                if current["revision"] != expected_revision:
+                    raise ControlContextToolError("assistant-overlay-resume-expected-revision-mismatch")
+                if current["source_revision"] != source_revision:
+                    raise ControlContextToolError("assistant-overlay-resume-source-mismatch")
+                source = self._assistant_overlay_source_continuity_verifier(
+                    source_revision, current["civilization_method_attestation"]["method_fingerprint"],
+                )
+                if (
+                    not isinstance(source, dict)
+                    or source.get("source_revision") != source_revision
+                    or source.get("method_fingerprint") != current["civilization_method_attestation"]["method_fingerprint"]
+                    or source.get("method_unchanged") is not True
+                    or source.get("ancestry_verified") is not True
+                ):
+                    raise ControlContextToolAuthorizationError("assistant-overlay-resume-current-method-mismatch")
+                decision = resolver.resolve(
+                    pre_role_generation=copy.deepcopy(current),
+                    verified_source=copy.deepcopy(source),
+                    identity=identity,
+                    session_ref=context.session_ref(),
+                )
+                if not isinstance(decision, dict) or set(decision) != {
+                    "result", "decision_ref", "pre_role_fingerprint", "ready_unbound_receipt_fingerprint", "overlay_payload",
+                } or decision.get("result") != "ALLOW":
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-denied")
+                if (
+                    decision["pre_role_fingerprint"] != current["fingerprint"]
+                    or decision["ready_unbound_receipt_fingerprint"] != current["ready_unbound_receipt"]["receipt_fingerprint"]
+                ):
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-resolution-stale")
+                decision_ref = _require_text(decision, "decision_ref")
+                payload = decision["overlay_payload"]
+                required = {
+                    "generation_ref", "expected_revision", "overlay_ref", "actor_ref", "role",
+                    "actor_generation_ref", "source_revision",
+                }
+                if not isinstance(payload, dict) or set(payload) != required:
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-invalid")
+                if (
+                    payload["generation_ref"] != generation_ref
+                    or payload["expected_revision"] != expected_revision
+                    or payload["source_revision"] != source_revision
+                    or payload["role"] != "ASSISTANT"
+                ):
+                    raise ControlContextToolAuthorizationError("assistant-overlay-control-payload-mismatch")
+                resolver.check_admission_current()
+                attestation = issuer.seal(
+                    operation="attach_role_overlay", payload=copy.deepcopy(payload), context=context,
+                )
+                resolver.check_admission_current()
+                attached = self.attach_role_overlay(
+                    {**copy.deepcopy(payload), "control_resolution_attestation": attestation}, context,
+                )["structuredContent"]
+                return self._result({**attached, "control_decision_ref": decision_ref}, context)
+        except AssistantTrialOwnerRefused:
+            raise ControlContextToolAuthorizationError('assistant-trial-owner-not-current-or-matched') from None
+
+    def _human_t3(self, operation: str, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        identity = self._identity(context)
+        if "project_state:transition" not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError("required-scope-missing:project_state:transition")
+        fields = {"override_id", "control_resolution_attestation", "candidate" if operation == "arm" else "expected_revision"}
+        if set(args) != fields:
+            raise ControlContextToolError("exact-private-Human-T3-operation-fields-required")
+        override_id = _require_text(args, "override_id")
+        payload = {k: copy.deepcopy(v) for k, v in args.items() if k != "control_resolution_attestation"}
+        self._resolution_attestation_verifier.verify(operation=operation + "_human_t3_break_glass", payload=payload,
+                                                    attestation=args["control_resolution_attestation"], context=context)
+        if self._human_t3_host is None:
+            return self._result({"result": "HOLD_TRUSTED_HUMAN_T3_HOST_NOT_BOUND", "effect_attempted": False,
+                                 "repository_permission_required": False}, context)
+        host_identity = {k: getattr(identity, k) for k in ("tenant_ref", "workspace_ref", "principal_ref", "consumer_ref")}
+        host_identity["session_ref"] = context.session_ref()
+        try:
+            value = getattr(self._human_t3_host, operation)(identity=host_identity, override_id=override_id,
+                        scopes=identity.state_scopes, **{k: args[k] for k in fields - {"override_id", "control_resolution_attestation"}})
+        except HumanT3BreakGlassError as exc:
+            raise ControlContextToolError(str(exc)) from exc
+        return self._result({**value, "repository_permission_required": False}, context)
+
+    def arm_human_t3_break_glass(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return self._human_t3("arm", args, context)
+
+    def confirm_human_t3_break_glass(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        return self._human_t3("confirm", args, context)
+
+    @staticmethod
+    def _private_read_result(value):
+        # No generic identity/session correlation metadata or private headers.
+        return {'structuredContent': value, '_meta': {
+            'cerebro/repositoryPermissionRequired': False,
+            'cerebro/sessionCorrelationPresent': False,
+            'cerebro/subjectCorrelationPresent': False,
+            'cerebro/correlationProvenance': 'NOT_ASSERTED',
+        }}
+
+    def _private_read_identity(self, args, context):
+        if type(args) is not dict or args:
+            raise ControlContextToolError('private-read-empty-arguments-required')
+        identity = self._identity(context)
+        if 'project_state:read' not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError('private-read-scope-required')
+        return identity
+
+    def read_authenticated_binding_basis_v1(self, args, context):
+        identity = self._private_read_identity(args, context)
+        observation = context.verified_caller_observation
+        bound = (type(observation) is _HostCallerObservation
+                 and observation._host_key is _HOST_OBSERVATION_KEY
+                 and observation.identity is identity)
+        return self._private_read_result({
+            'schema': 'cerebro-authenticated-binding-basis/v1',
+            'tenant_ref': identity.tenant_ref,
+            'workspace_ref': identity.workspace_ref,
+            'principal_ref': identity.principal_ref,
+            'consumer_ref': identity.consumer_ref,
+            'read_eligible': 'project_state:read' in identity.state_scopes,
+            'transition_eligible': 'project_state:transition' in identity.state_scopes,
+            'host_observation_status': 'AVAILABLE' if bound else 'UNKNOWN',
+            'issuer': observation.issuer if bound else None,
+            'resource': observation.resource if bound else None,
+            'signed_client_ref': observation.client_ref if bound else None,
+            'signed_client_status': observation.client_status if bound else 'UNKNOWN_NOT_AVAILABLE',
+            'authority': 'NONE',
+        })
+
+    def read_standing_worker_policy_observation_v1(self, args, context):
+        identity = self._private_read_identity(args, context)
+        value = {
+            'schema': 'cerebro-standing-worker-policy-observation/v1',
+            'status': 'UNBOUND', 'provenance': 'UNBOUND',
+            'revision': None, 'scope': None, 'current': None,
+            'revoked': None, 'policy_digest': None,
+            'owner_policy_currentness': 'UNKNOWN', 'revocation_fence': 'UNKNOWN',
+            'inflight_status': 'UNKNOWN', 'expiry_status': 'UNKNOWN',
+            'destination_eligibility': 'UNKNOWN', 'authority': 'NONE',
+        }
+        # Same resident field consumed by attach, not a fresh configuration read.
+        # The resident dictionary is mutable; this copy is not an atomic fence.
+        value['provenance'] = 'RESIDENT_TOOLS_COPY'
+        resident = self._standing_worker_grant
+        if resident is None:
+            value['status'] = 'ABSENT'
+        elif type(resident) is not dict:
+            value['status'] = 'MALFORMED'
+        else:
+            snapshot = resident.copy()
+            required = {'schema', 'grant_id', 'issuer_principal_ref', 'tenant_ref',
+                        'workspace_ref', 'scope', 'revision', 'current', 'revoked'}
+            text_fields = ('schema', 'grant_id', 'issuer_principal_ref',
+                           'tenant_ref', 'workspace_ref', 'scope')
+            valid = (set(snapshot) == required
+                     and all(type(snapshot[k]) is str for k in text_fields)
+                     and snapshot['schema'] == 'cerebro-standing-worker-grant/v1'
+                     and bool(snapshot['grant_id'].strip())
+                     and snapshot['scope'] == 'WORKER_ATTACH'
+                     and type(snapshot['revision']) is int and snapshot['revision'] > 0
+                     and type(snapshot['current']) is bool
+                     and type(snapshot['revoked']) is bool)
+            if valid:
+                try:
+                    # Qualify UTF-8 without retaining or emitting private values.
+                    for key in text_fields:
+                        snapshot[key].encode('utf-8')
+                except UnicodeError:
+                    valid = False
+            if not valid:
+                value['status'] = 'MALFORMED'
+            elif (snapshot['issuer_principal_ref'] != identity.principal_ref
+                  or snapshot['tenant_ref'] != identity.tenant_ref
+                  or snapshot['workspace_ref'] != identity.workspace_ref):
+                value['status'] = 'UNMATCHED'
+            else:
+                canonical = json.dumps(snapshot, sort_keys=True, separators=(',', ':'),
+                                       ensure_ascii=False, allow_nan=False).encode('utf-8')
+                value.update(status='MATCHED', revision=snapshot['revision'],
+                             scope=snapshot['scope'], current=snapshot['current'],
+                             revoked=snapshot['revoked'],
+                             policy_digest=hashlib.sha256(canonical).hexdigest())
+        return self._private_read_result(value)
+
+    def read_authenticated_caller_observation_v1(self, args, context):
+        if type(args)is not dict or args:
+            raise ControlContextToolError('authenticated-caller-observation-empty-arguments-required')
+        identity=self._identity(context)
+        if 'project_state:read' not in identity.state_scopes:
+            raise ControlContextToolAuthorizationError('authenticated-caller-observation-read-scope-required')
+        observation=context.verified_caller_observation
+        bound=(type(observation)is _HostCallerObservation
+               and observation._host_key is _HOST_OBSERVATION_KEY
+               and observation.identity is identity)
+        status,origin=_host_transport_values(context.verified_transport_observation)
+        value={
+            'schema':'cerebro-authenticated-caller-observation/v1',
+            'status':'AVAILABLE' if bound else 'NOT_AVAILABLE',
+            'service_revision':observation.service_revision if bound else None,
+            'resource':{'ref':observation.resource if bound else None,'source':'SERVICE_CONFIG' if bound else 'NOT_AVAILABLE'},
+            'issuer':{'ref':observation.issuer if bound else None,'source':'SAME_VERIFIED_BEARER_ISS' if bound else 'NOT_AVAILABLE'},
+            'consumer_ref':identity.consumer_ref,
+            'client_observation':{'status':observation.client_status if bound else 'UNKNOWN_NOT_AVAILABLE',
+                'client_ref':observation.client_ref if bound else None,
+                'claim_sources':list(observation.claim_sources) if bound else [],
+                'owner_match_possible':bool(bound and observation.client_status=='OBSERVED_SIGNED_CLAIM')},
+            'transport_observation':{'status':status,'source':origin,'authority':'REQUEST_METADATA_UNATTESTED'},
+            'receipt_ref':'CALLER-OBS-'+uuid.uuid4().hex,
+            'authority':'NONE','installed_B1_binding':'NOT_ESTABLISHED',
+            'role_grant_generation_admission':'NOT_ESTABLISHED',
+        }
+        # Generic _result asserts correlation unconditionally; leave other tools unchanged.
+        return {'structuredContent':value,'_meta':{
+            'cerebro/repositoryPermissionRequired':False,
+            'cerebro/sessionCorrelationPresent':status=='AVAILABLE',
+            'cerebro/subjectCorrelationPresent':False,
+            'cerebro/correlationProvenance':'REQUEST_METADATA_UNATTESTED',
+        }}
+
+
+    def read_project_control_state(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        identity = self._identity(context)
+        project = self._state_port.read_project(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            project_ref=_require_text(args, "project_ref"),
+            scopes=identity.state_scopes,
+        )
+        transport_session = context.transport_session()
+        caller = {
+            "schema": "cerebro-authenticated-project-read-caller/v2",
+            "tenant_ref": identity.tenant_ref,
+            "workspace_ref": identity.workspace_ref,
+            "principal_ref": identity.principal_ref,
+            "consumer_ref": identity.consumer_ref,
+            "consumer_source": "SERVICE_BOUND",
+            "project_ref": project["project_ref"],
+            "oauth_verified": True,
+            "session_status": "NO_CURRENT_PERSISTED_SESSION",
+            "persisted_session": None,
+            "transport_session": {
+                "status": "AVAILABLE" if transport_session is not None else "ABSENT",
+                "source": transport_session["source"] if transport_session is not None else None,
+                "session_ref": transport_session["session_ref"] if transport_session is not None else None,
+                "authority": "TRANSPORT_METADATA_ONLY" if transport_session is not None else "NONE",
+            },
+        }
+        if transport_session is None:
+            caller["session_status"] = "NO_HOST_SESSION_METADATA"
+        else:
+            session_ref = transport_session["session_ref"]
+            try:
+                session = self._state_port.read_session(
+                    tenant_ref=identity.tenant_ref,
+                    workspace_ref=identity.workspace_ref,
+                    principal_ref=identity.principal_ref,
+                    consumer_ref=identity.consumer_ref,
+                    session_ref=session_ref,
+                    scopes=identity.state_scopes,
+                )
+            except StateBindingError as exc:
+                if str(exc) not in ("control-session-not-bound", "session-read-result-missing",
+                                    "control-session-stale-requires-begin-event-rehydrate"):
+                    raise
+            else:
+                if (session["tenant_ref"], session["workspace_ref"], session["principal_ref"],
+                    session["consumer_ref"], session["session_ref"]) != (
+                    identity.tenant_ref, identity.workspace_ref, identity.principal_ref,
+                    identity.consumer_ref, session_ref):
+                    raise ControlContextToolAuthorizationError("persisted-session-identity-mismatch")
+                if session["project_ref"] != project["project_ref"]:
+                    caller["session_status"] = "PERSISTED_SESSION_BOUND_TO_OTHER_PROJECT"
+                else:
+                    if session["project_revision"] != project["revision"]:
+                        raise ControlContextToolAuthorizationError("persisted-session-project-revision-mismatch")
+                    caller["session_status"] = "CURRENT_PERSISTED_SESSION"
+                    caller["persisted_session"] = {
+                        "session_ref": session_ref,
+                        "session_binding_id": session["session_binding_id"],
+                        "session_revision": session["session_revision"],
+                        "session_fingerprint": session["fingerprint"],
+                        "project_revision": session["project_revision"],
+                    }
+        return self._result({"project": project, "authenticated_caller": caller,
+                             "repository_permission_required": False}, context)
+
+    def bind_public_pm_resolution(self, port):
+        from pm_control_resolution_port import PublicPmControlResolution
+        if type(port) is not PublicPmControlResolution or port.state_port is not self._state_port:
+            raise ControlContextToolAuthorizationError("pm-public-port-state-binding-invalid")
+        if port.host._pm_profile_verifier is not self._lifecycle_effect_adapter:
+            raise ControlContextToolAuthorizationError("pm-public-port-profile-binding-invalid")
+        if port.attestation_verifier is not self._resolution_attestation_verifier:
+            raise ControlContextToolAuthorizationError("pm-public-port-attestation-binding-invalid")
+        if self._public_pm_resolution is not None:
+            raise ControlContextToolAuthorizationError("pm-public-port-already-bound")
+        self._public_pm_resolution = port
+
+    def resolve_project_manager_control_event(self, args, context):
+        self._identity(context)
+        if self._public_pm_resolution is None:
+            raise ControlContextToolAuthorizationError("pm-public-resolution-unbound")
+        return self._result(self._public_pm_resolution.resolve(args, context), context)
+
+    def begin_project_control_event(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        identity = self._identity(context)
+        project_ref = args.get("project_ref")
+        if project_ref is not None and (not isinstance(project_ref, str) or not project_ref.strip()):
+            raise ControlContextToolError("project_ref-must-be-nonempty-when-present")
+        project_ref = project_ref.strip() if isinstance(project_ref, str) else None
+        session_ref = context.session_ref()
+        self._state_port.bind_session(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            consumer_ref=identity.consumer_ref,
+            session_ref=session_ref,
+            session_binding_id=_session_binding_id(context, project_ref),
+            scopes=identity.state_scopes,
+            project_ref=project_ref,
+        )
+        binding = self._state_port.begin_event(
+            {
+                "schema": BEGIN_SCHEMA,
+                "tenant_ref": identity.tenant_ref,
+                "workspace_ref": identity.workspace_ref,
+                "principal_ref": identity.principal_ref,
+                "consumer_ref": identity.consumer_ref,
+                "session_ref": session_ref,
+                "event_id": _require_text(args, "event_id"),
+                "idempotency_key": _require_text(args, "idempotency_key"),
+            },
+            scopes=identity.state_scopes,
+        )
+        return self._result(binding, context)
+
+    def complete_project_control_event(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        identity = self._identity(context)
+        directive = args.get("directive")
+        if not isinstance(directive, dict):
+            raise ControlContextToolError("directive-object-required")
+        candidate = args.get("navigation_options_candidate")
+        if candidate is not None and not isinstance(candidate, dict):
+            raise ControlContextToolError("navigation-options-candidate-object-required")
+        owner_candidate = args.get("context_owner_effect_candidate")
+        if owner_candidate is not None:
+            if not isinstance(owner_candidate, dict):
+                raise ControlContextToolError("context-owner-effect-candidate-object-required")
+            try:
+                validated_owner_candidate = validate_owner_effect_receipt(
+                    owner_candidate,
+                    expected_owner="context",
+                    expected_control_decision_ref=directive.get("decision_ref"),
+                    expected_effect="REFRESH_GOVERNING_REFS",
+                )
+            except Exception as exc:
+                raise ControlContextToolError(str(exc)) from exc
+            if validated_owner_candidate["current"] is not False or owner_candidate.get("result") != "CANDIDATE":
+                raise ControlContextToolError("context-owner-effect-precommit-candidate-required")
+        lifecycle_candidate = args.get("actor_lifecycle_mutation_candidate")
+        if lifecycle_candidate is not None:
+            if not isinstance(lifecycle_candidate, dict):
+                raise ControlContextToolError("actor-lifecycle-mutation-candidate-object-required")
+            if self._lifecycle_effect_adapter is None:
+                raise ControlContextToolAuthorizationError("actor-lifecycle-effect-adapter-unbound")
+        pulse_request = args.get("operational_pulse_request")
+        if pulse_request is not None and not isinstance(pulse_request, dict):
+            raise ControlContextToolError("operational-pulse-request-object-required")
+        event_id = _require_text(args, "event_id")
+        signed_payload = {
+            "event_id": event_id,
+            "directive": copy.deepcopy(directive),
+            "navigation_options_candidate": copy.deepcopy(candidate),
+        }
+        if owner_candidate is not None:
+            signed_payload["context_owner_effect_candidate"] = copy.deepcopy(owner_candidate)
+        if lifecycle_candidate is not None:
+            signed_payload["actor_lifecycle_mutation_candidate"] = copy.deepcopy(lifecycle_candidate)
+        if pulse_request is not None:
+            signed_payload["operational_pulse_request"] = copy.deepcopy(pulse_request)
+        self._resolution_attestation_verifier.verify(
+            operation="complete_project_control_event",
+            payload=signed_payload,
+            attestation=args.get("control_resolution_attestation"),
+            context=context,
+        )
+        operational_pulse = None
+        if pulse_request is not None:
+            operational_pulse = consume_operational_pulse(
+                self._provider_tail_reader,
+                stage=pulse_request.get("stage"),
+                actor_role=pulse_request.get("actor_role"),
+                objective_ref=pulse_request.get("objective_ref"),
+                prior_watermarks=pulse_request.get("prior_watermarks"),
+            )
+            if operational_pulse.get("result") == "UNKNOWN_HOLD":
+                raise ControlContextToolAuthorizationError(
+                    "operational-pulse-unknown-hold:" + str(operational_pulse.get("exact_blocker"))
+                )
+        state_directive = copy.deepcopy(directive)
+        operational_pulse_ref = None
+        if operational_pulse is not None:
+            pulse_material = json.dumps(
+                operational_pulse["persistence_directive"],
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            operational_pulse_ref = "OPERATIONAL-PULSE-" + hashlib.sha256(pulse_material).hexdigest()
+            if operational_pulse.get("delta") == "DELTA":
+                project_operations = state_directive.get("project_operations")
+                if not isinstance(project_operations, list):
+                    raise ControlContextToolError("operational-pulse-project-operations-required")
+                refreshes = [
+                    item for item in project_operations
+                    if isinstance(item, dict) and item.get("operation") == "REFRESH_GOVERNING_REFS"
+                ]
+                if len(refreshes) != 1:
+                    raise ControlContextToolError("operational-pulse-single-refresh-governing-refs-required")
+                basis_refs = refreshes[0].get("basis_refs")
+                if not isinstance(basis_refs, list):
+                    raise ControlContextToolError("operational-pulse-refresh-basis-refs-required")
+                refreshes[0]["basis_refs"] = list(dict.fromkeys([*basis_refs, operational_pulse_ref]))
+            operational_pulse["persistence_ref"] = operational_pulse_ref
+        if lifecycle_candidate is not None:
+            state_directive["actor_lifecycle_mutation_candidate_fingerprint"] = (
+                self._lifecycle_effect_adapter._pre_effect_fingerprint(lifecycle_candidate)
+            )
+        principal_succession = None
+        if lifecycle_candidate is not None and isinstance(lifecycle_candidate.get("source_transition"), dict):
+            # A source-transition field must not bypass precommit authorization.
+            self._lifecycle_effect_adapter._validate_pre_effect_candidate(lifecycle_candidate)
+        elif lifecycle_candidate is not None:
+            # Authorization must precede the durable Context completion.
+            principal_succession = self._lifecycle_effect_adapter.verify_principal_succession(
+                candidate=copy.deepcopy(lifecycle_candidate),
+                session={
+                    "tenant_ref": identity.tenant_ref,
+                    "workspace_ref": identity.workspace_ref,
+                    "principal_ref": identity.principal_ref,
+                    "consumer_ref": identity.consumer_ref,
+                    "session_ref": context.session_ref(),
+                },
+            )
+            if principal_succession.get("applicable") is True and operational_pulse is None:
+                raise ControlContextToolAuthorizationError(
+                    "principal-lifecycle-operational-pulse-required-before-commit"
+                )
+        completion = self._state_port.complete_event(
+            {
+                "tenant_ref": identity.tenant_ref,
+                "workspace_ref": identity.workspace_ref,
+                "principal_ref": identity.principal_ref,
+                "consumer_ref": identity.consumer_ref,
+                "session_ref": context.session_ref(),
+                "event_id": event_id,
+                "directive": state_directive,
+                "navigation_options_candidate_fingerprint": (
+                    candidate.get("candidate_fingerprint") if isinstance(candidate, dict) else None
+                ),
+                "owner_effect_candidate": copy.deepcopy(owner_candidate),
+            },
+            scopes=identity.state_scopes,
+        )
+        if operational_pulse is not None:
+            receipt = completion.get("receipt")
+            if not isinstance(receipt, dict):
+                raise ControlContextToolError("operational-pulse-persistence-readback-required")
+            if operational_pulse.get("delta") == "DELTA":
+                project_readback = completion.get("project")
+                if (
+                    not isinstance(project_readback, dict)
+                    or operational_pulse_ref not in json.dumps(project_readback, sort_keys=True)
+                ):
+                    raise ControlContextToolError("operational-pulse-persistence-ref-readback-mismatch")
+            operational_pulse["persistence_readback_verified"] = True
+            operational_pulse["persistence_receipt_ref"] = (
+                receipt.get("receipt_ref") or receipt.get("event_id") or event_id
+            )
+            completion["operational_pulse"] = operational_pulse
+        if lifecycle_candidate is not None:
+            if isinstance(lifecycle_candidate.get("source_transition"), dict):
+                completion["actor_lifecycle_effect_evidence"] = (
+                    self._lifecycle_effect_adapter.execute_lifecycle_effect(
+                        candidate=copy.deepcopy(lifecycle_candidate),
+                        context=context,
+                        completion=completion,
+                        bound_directive=state_directive,
+                    )
+                )
+            else:
+                completion["principal_succession_verification"] = principal_succession
+        navigation_error = None
+        try:
+            options = activate_committed_navigation_options(candidate, completion)
+        except ControlContextToolError as exc:
+            options = None
+            navigation_error = str(exc)
+        completion["mcp_context_navigation_options"] = options
+        completion["human_navigation_surface_required"] = completion["mcp_context_navigation_options"] is not None
+        completion["navigation_activation"] = {
+            "result": "BLOCK" if navigation_error else ("PASS" if options is not None else "NOT_REQUESTED"),
+            "error": navigation_error,
+            "recovery": "RELOAD_AND_RERESOLVE" if navigation_error else None,
+            "state_commit_remains_valid": True,
+        }
+        return self._result(completion, context)
+
+    def create_project_control_instance(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        identity = self._identity(context)
+        root = args.get("root")
+        if not isinstance(root, dict):
+            raise ControlContextToolError("root-object-required")
+        signed_payload = {key: copy.deepcopy(value) for key, value in args.items() if key != "control_resolution_attestation"}
+        self._resolution_attestation_verifier.verify(
+            operation="create_project_control_instance",
+            payload=signed_payload,
+            attestation=args.get("control_resolution_attestation"),
+            context=context,
+        )
+        created = self._state_port.bootstrap_project(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            project_ref=_require_text(args, "project_ref"),
+            aggregate_id=_require_text(args, "aggregate_id"),
+            source_revision=_require_text(args, "source_revision"),
+            event_id=_require_text(args, "event_id"),
+            decision_ref=_require_text(args, "decision_ref"),
+            root=root,
+            scopes=identity.state_scopes,
+            make_default=args.get("make_default", True) is True,
+        )
+        created["repository_permission_required"] = False
+        return self._result(created, context)
+
+    def set_default_project_control_instance(self, args: dict[str, Any], context: McpToolCallContext) -> dict[str, Any]:
+        identity = self._identity(context)
+        project_ref = _require_text(args, "project_ref")
+        self._resolution_attestation_verifier.verify(
+            operation="set_default_project_control_instance",
+            payload={"project_ref": project_ref},
+            attestation=args.get("control_resolution_attestation"),
+            context=context,
+        )
+        self._state_port.set_default_project(
+            tenant_ref=identity.tenant_ref,
+            workspace_ref=identity.workspace_ref,
+            principal_ref=identity.principal_ref,
+            project_ref=project_ref,
+            scopes=identity.state_scopes,
+        )
+        return self._result(
+            {"result": "PASS", "project_ref": project_ref, "repository_permission_required": False},
+            context,
+        )

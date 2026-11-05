@@ -1,0 +1,143 @@
+{
+  "schema": "a1-canonical-pm-distribution-source-package-map/v1",
+  "state": "PUBLICATION_CANDIDATE_EXACT_QUALIFIED_BYTES_NO_INSTALLATION",
+  "source_repository": "morgul-tech/Cerebro-Source-1.0",
+  "expected_parent": "7f449fd1713ede66b00158f74823623c6e3c917e",
+  "profile": "deployment/pm-public-read-port-r2",
+  "existing_source_files_changed": 0,
+  "source_reconciliation": "Current canonical5 consumers differ from tested installed base; preserve all current files, publish exact independent distribution profile and bounded operator supplement. No unreviewed rebase.",
+  "package_sha256": "837859e655d2667009ba04bb30b2d4ee8d7f389bc23f33007bc43c5c74382203",
+  "held_installed_base_correlation_sha256": "1b87f51ae450b7f35c5d66f05ce14bc5911c741fead01823a391d2dc0cf55395",
+  "held_base_ceiling": "All439 historical actualbe7 capture hashes match package base; not fresh runtime/caller proof.",
+  "linux_owner_receipt_sha256": "fe50c0f83ccda827b919a9363bf1778b05072a4a4f9e42deb62d12ea2a2c6948",
+  "e2_config_review_sha256": "836114a8f6d5f5ccf4786fd0d77ffcfe8ae5310d1a5169faf3336869048bf1a3",
+  "auto_deployment_check": "Observed Context production repo=Cerebro-Context-Deploy branchbk07-runtime-binding-read-20261008, be7SUCCESS/no staged changes. Source three workflows trigger only named candidate branches and execute disposable validation; no observed Source-main production deploy trigger. No global webhook/other-account absence claim.",
+  "files": {
+    "deployment/pm-public-read-port-r2/source/deployment/app.py": {
+      "bytes": 22280,
+      "sha256": "eb3764018dad8507d30e7601d339deadf741ead7eed643632a91e6ce7dcb889a",
+      "git_blob": "3dcfc708c7ebcbc1fe62bb038f5d369f4a333b8e"
+    },
+    "deployment/pm-public-read-port-r2/source/deployment/pm_public_resolution_wiring.py": {
+      "bytes": 2161,
+      "sha256": "df308e5d961272f59ec70ab90622f463b463d9b8056ba428edab9a7963ae294b",
+      "git_blob": "2b0e28a5c0483f9db51c9e69ad85735301de30d0"
+    },
+    "deployment/pm-public-read-port-r2/source/Dockerfile": {
+      "bytes": 1493,
+      "sha256": "f10d9aebd2bd2d95238b47a3e89a6a1758c4078a3a5c49a2661312c04cc5177b",
+      "git_blob": "f9fa9d71069a568f51a71a2004a7c24a88c3d4ef"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/authenticated-binding-basis.schema.json": {
+      "bytes": 1598,
+      "sha256": "20319d809ef643b1da07c71bbac99b9f844965137bd64acf807692a4a786da5f",
+      "git_blob": "c434c74c1d6caa8d2c11b11a5e4c5c1148543f7f"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/authenticated-caller-observation.schema.json": {
+      "bytes": 3747,
+      "sha256": "fefd137611d032027408b89e07aa70946826232eabbb9a282b08029774152d75",
+      "git_blob": "cf5c20db9542a72720d981a5c75b2ab76308ba37"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/control_context_remote_runtime.py": {
+      "bytes": 33045,
+      "sha256": "adcf48ac44ba66f7a4cfe945efd0b51eaf52ed5a5afe9d0a731f63a9248c23a3",
+      "git_blob": "2bde1e3d1f8092301c926ae9949eccb53a1a9b3e"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/control_context_remote_service.py": {
+      "bytes": 30243,
+      "sha256": "3c7274d5c9d5bdba1d711174e32473d5bcd1d883c0ed9f338bf45023774d5780",
+      "git_blob": "6379137fdf8e654f62370fa557a4fa79f47ef919"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/control_context_tools.py": {
+      "bytes": 181923,
+      "sha256": "98e8e80d7c6412e2bd1b66a4ce584376887e35ed2259397529af3d51e10a9669",
+      "git_blob": "0a330786834541966846336b187e0fab603507fb"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/human-t3-break-glass.schema.json": {
+      "bytes": 5072,
+      "sha256": "a7a13cb59db2ce83f06b3180854096a6f1be879d45c4ca15b77cfeda29fbd1e4",
+      "git_blob": "0a05f13771c940c9d34b7ee365b69998b8bf368e"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/pm_control_resolution_port.py": {
+      "bytes": 6165,
+      "sha256": "89eeff13108506a9d32d85769580870cef08b4afdbf4522ba2d6c139234d5304",
+      "git_blob": "9907bcc3154f9f0e6c0c0b1deb56249b87d75a20"
+    },
+    "deployment/pm-public-read-port-r2/source/mcp/standing-worker-policy-observation.schema.json": {
+      "bytes": 2653,
+      "sha256": "f369c1fb446b2a4ee72d34aa511fd6c8d38f1b9ed6d061f6bde7d28ea8c07e1e",
+      "git_blob": "3b1aec07f5d577faf3966579dfe7ce8dabfaf6b0"
+    },
+    "deployment/pm-public-read-port-r2/source/requirements.txt": {
+      "bytes": 99,
+      "sha256": "84b6afdf49818b982c17955c99af6f2c3032ef259ab0a449597026be44ef93ed",
+      "git_blob": "3d8a999953500883e0e73a383c336cd456e50b80"
+    },
+    "deployment/pm-public-read-port-r2/source/tooling/context/control_context_state_port.py": {
+      "bytes": 54275,
+      "sha256": "213f7b35165ecd868c43168cb3477467624e92f81b35d324097730d7bf39787d",
+      "git_blob": "db0927ee915a6b507d502a2653afe4698f7c95c1"
+    },
+    "deployment/pm-public-read-port-r2/source/tooling/context/control_context_state_postgres.py": {
+      "bytes": 125592,
+      "sha256": "3603ce40a0f86fb1384a5c7892cdbccf7fd75f9340f0861d5ad79edd1e9b3c2c",
+      "git_blob": "8f5c3ed53f8dc0d0aa2c5410636f985af9cdffc7"
+    },
+    "deployment/pm-public-read-port-r2/PUBLIC-READ-PORT-SERVICE-PACKAGE.zip": {
+      "bytes": 5587147,
+      "sha256": "837859e655d2667009ba04bb30b2d4ee8d7f389bc23f33007bc43c5c74382203",
+      "git_blob": "e8651c9b65e114978bde0187bf969ffa0cbc7ff3"
+    },
+    "deployment/pm-public-read-port-r2/PACKAGE-MANIFEST.json": {
+      "bytes": 4713,
+      "sha256": "f9d9a9628b86bfdb55ac5d6d924a56b3cdba92d60e5091543b72a72b3cf1585c",
+      "git_blob": "32ece05c336c5bb2f1f12e54ac22db7d4ef00d3c"
+    },
+    "deployment/pm-public-read-port-r2/BASE-LOCAL-MANIFEST.json": {
+      "bytes": 69434,
+      "sha256": "e3e6f804f8bd8fcc1214cfbff3c15e705153e64d8e65a0c4876f1225bd917bf5",
+      "git_blob": "ccb99dd06ae73f3476ef8204bef12e739b3ea294"
+    },
+    "deployment/pm-public-read-port-r2/CANONICAL-MATERIAL-MANIFEST.json": {
+      "bytes": 224346,
+      "sha256": "7d40b61f72cd1049773e4c3efd92cd757a01aa9f4379ab04c66079f6d0869dfe",
+      "git_blob": "7bd02f12c6759d7276abb9d978423687853d328b"
+    },
+    "deployment/pm-public-read-port-r2/INSTALL-AND-READBACK.md": {
+      "bytes": 8747,
+      "sha256": "87ae20f42b9dd69b2ab65ef0f36cfa23ba2b32840663d002bb782fce80829fb5",
+      "git_blob": "4b6082f897881c2107f3326fc1a28461c6ae5e9b"
+    },
+    "deployment/pm-public-read-port-r2/PACKAGE-FIT-RESULT.json": {
+      "bytes": 828,
+      "sha256": "16af30c00a6f8dc98efcbda1adbff305f4863433365b95126ba57eab09f6f30f",
+      "git_blob": "231b70b8d8533a479c6bb272595a3a6cd6c8d972"
+    },
+    "deployment/pm-public-read-port-r2/pg-support/source/deployment/pm_2872_transfer_executor.py": {
+      "bytes": 18570,
+      "sha256": "63c24c12306d2c37896cc5add3f9a83866693bbec64948dda1bbf3cd384c6f50",
+      "git_blob": "bd11de84862119c35fd6037cc9acfa218e46516c"
+    },
+    "deployment/pm-public-read-port-r2/pg-support/source/deployment/pm_2872_postgres_store.py": {
+      "bytes": 13488,
+      "sha256": "c32d6a336860e08ec11f24d803f2dbf46136bf12097616a1dd6b0ebd7a5ab1d7",
+      "git_blob": "cf402073b73c3828a2cb703aed6975694426bb46"
+    },
+    "deployment/pm-public-read-port-r2/pg-support/source/tooling/context/pm_2872_accepted_store.sql": {
+      "bytes": 2224,
+      "sha256": "e78a3070c5ec924207bc1f04a30393deaa78cf1fd041f11f6e475c0e42761e73",
+      "git_blob": "2fe35e2285094653157c9441a1a7a9a7f5566965"
+    },
+    "deployment/pm-public-read-port-r2/pg-support/SOURCE-MANIFEST.json": {
+      "bytes": 1224,
+      "sha256": "b8dcdb2308dad5dbf1355cd07b3ba700b02e4010573735399310482f3c5d0847",
+      "git_blob": "24848a5980422bd16e178a5a6ce9e0ab1855f84c"
+    },
+    "deployment/pm-public-read-port-r2/README.md": {
+      "bytes": 2146,
+      "sha256": "936ccef953a468a3781e8f65beda5bd067b58a25db7d60e3343957cbad9ad2fd",
+      "git_blob": "c2724b392b94bf6936bcbaa56e6a470955303fa2"
+    }
+  },
+  "package_profile_match": "All14 source files exact original r2 overlay pins, full ZIP exact; pg3 exact separately reviewed bytes, no changes to signed core or image."
+}

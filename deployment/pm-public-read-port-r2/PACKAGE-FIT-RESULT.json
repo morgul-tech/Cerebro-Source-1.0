@@ -1,0 +1,12 @@
+{
+  "state": "PASS_NARROW_LOCAL_PACKAGE_DELTA_ONLY_NOT_LINUX_RUNTIME",
+  "predecessor_package_sha256": "1ad0dbeac8e87c2c71d9cb24a365d50abb76597878e83f2bb526a6171678b74d",
+  "only_changed_build_context_member": "Dockerfile",
+  "application_and_dependency_and_bundle_bytes_unchanged": true,
+  "system_safe_directory": "/opt/cerebro-pm-source/b1aafd7cee9385227dd757a64884df2f816296d4",
+  "system_config": "root:root mode0644",
+  "checks": "Exact one system entry; no wildcard/ownership transfer; full archive and existing overlay hash matching",
+  "r1_fit_reused_not_replayed": "2cd17bd8f88855ffeb2bff23b51939123d4d8ab7d942e5f287e8ea5d6b4d7099",
+  "actual_pending": "P24 sole real Linux UID10001/other-root rejection and startup test",
+  "effects": "No local Git configuration, build/install/deploy/PG/key/native/current action"
+}

@@ -1,0 +1,18 @@
+{
+  "state": "REVIEWED_BOUNDED_SOURCE_WITH_LOCAL_REAL_PG_PROOF_NOT_INSTALLED",
+  "files": {
+    "source/deployment/pm_2872_transfer_executor.py": {
+      "sha256": "63c24c12306d2c37896cc5add3f9a83866693bbec64948dda1bbf3cd384c6f50"
+    },
+    "source/deployment/pm_2872_postgres_store.py": {
+      "sha256": "c32d6a336860e08ec11f24d803f2dbf46136bf12097616a1dd6b0ebd7a5ab1d7"
+    },
+    "source/tooling/context/pm_2872_accepted_store.sql": {
+      "sha256": "e78a3070c5ec924207bc1f04a30393deaa78cf1fd041f11f6e475c0e42761e73"
+    }
+  },
+  "scope": "Only exact bounded2872 signed core; durable enrolled origin and global operation/nonce spend. Separate operator supplement, NOT inserted into exact read-port image or ZIP.",
+  "real_local_pg_owner_receipt_sha256": "7d10024d4c93401d86a0bc5500b42b2b9020e331335786f79a105f4f1e5f4689",
+  "dependencies": "Pinned core SOURCE_PINS require selected runtime legacy lowerb061/registry4ca and actual witnessb400, supplied by exact439 build-context base. Canonical Source root ordinarylower7c/currentregistrya471 are distinct; do not merge them by name.",
+  "effects": "No schema/grants/enrolment/runtime provisioning or standing Principal authority from publication."
+}

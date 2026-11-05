@@ -1,0 +1,1758 @@
+{
+  ".dockerignore": {
+    "bytes": 54,
+    "sha256": "93af0eac1af202abc8bf343594bd19256f020478342dc84ca98e58fe0675e99c"
+  },
+  ".gitignore": {
+    "bytes": 50,
+    "sha256": "92472130d6d6eb3e24030bb9df11a383632cceaa77ba63de5ebbaa9cca3821bb"
+  },
+  "adapters/__init__.py": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "adapters/x9_channel_ingress.py": {
+    "bytes": 20130,
+    "sha256": "51bdb45643980f4d3ccdc2817b06756240c44e287bc4173e92fac5cbb32d113a"
+  },
+  "cerebro.yaml": {
+    "bytes": 5165,
+    "sha256": "8d8e67413ed17185da1fff29bcd80cceff1cacceb12609d5b9e070c5d2a7b423"
+  },
+  "deployment/__init__.py": {
+    "bytes": 73,
+    "sha256": "8ef987ad592de5632ff7d96710e80443e099ca826aba82750eff387528cca3d0"
+  },
+  "deployment/actor_admission_issuer_port.py": {
+    "bytes": 5918,
+    "sha256": "01d29dcb0cea6be72e984589aa97ed74a3c309e414bd31593d818cd12b8a5bff"
+  },
+  "deployment/app.py": {
+    "bytes": 21960,
+    "sha256": "451b09a37db2a28a713a5cb4fa0c8f31db8d6ecfcc4a3a3a25652c42612e749b"
+  },
+  "deployment/assistant_trial_startup.py": {
+    "bytes": 13598,
+    "sha256": "b24e6af97dc719fbe0998ede4195d7db438d9331ac9650b646be8c717a9d3147"
+  },
+  "deployment/auth0-action.js": {
+    "bytes": 544,
+    "sha256": "50badcb8b0561ec2728cd7398b01b78ffe2d1bf8448cfb46ee94582d321166d9"
+  },
+  "deployment/BK07_RUNTIME_SESSION_BOOTSTRAP.md": {
+    "bytes": 1581,
+    "sha256": "c70816fe5dc8573f6cc0124f74a9dfd0224c7a51b9ba46d096a215853c4e0dc2"
+  },
+  "deployment/bk11_currentbase_migration.py": {
+    "bytes": 2249,
+    "sha256": "af51df405ecf9f523a8eb88f520d329c40cd90520ff5f9cc36fe11d33f7d4e65"
+  },
+  "deployment/bk11_ledger_preflight.py": {
+    "bytes": 9168,
+    "sha256": "f4ccc5017e3a2b3643033693a3a52357b61d152b24ee6e330d69df56a129696f"
+  },
+  "deployment/bk11_schema_qualification.py": {
+    "bytes": 5904,
+    "sha256": "ab97bf2007f8a02f9d297d1d29ba22652fe8ec46350641c7f2fd97cf925812a0"
+  },
+  "deployment/ENVIRONMENT.example": {
+    "bytes": 805,
+    "sha256": "15db0ca30638cf3ce0337e5158fefd691d0f205dee33ac4520b0bf1c199b0fe9"
+  },
+  "deployment/pm_admission_wiring.py": {
+    "bytes": 865,
+    "sha256": "04d512945ff1aaa4ccd6d2fcb09bed6b05b0297caac812029c8771218ac9e94e"
+  },
+  "deployment/pm_bounded_fresh_observation.py": {
+    "bytes": 8933,
+    "sha256": "cbcc865426b93a26a40e91aa4f818ac01fe1a697442bf72e1d13fb743b4c441c"
+  },
+  "deployment/PM_OWNER_D1_OUTBOX.md": {
+    "bytes": 6145,
+    "sha256": "5974ad4430071d4b7dc34222a8a9727f695c82eca22b86520251451558feac42"
+  },
+  "deployment/PM_OWNER_READY.md": {
+    "bytes": 3416,
+    "sha256": "29eb6f000400b17eac59a2ff46fdbb5eea0d9601220f5ba20cb00b17bb377fcd"
+  },
+  "deployment/pm_protected_owner_entry.py": {
+    "bytes": 14440,
+    "sha256": "b400ebf739710341fe0d698e53358d6426c12d61fdde6b62b26103547365c3f0"
+  },
+  "deployment/proposals/auth0-bk11-credentials-exchange.js": {
+    "bytes": 1766,
+    "sha256": "fb56e4eca89eb4656f6314cbb4f10c8c38c96663a9e0756bbbf2b577b836c061"
+  },
+  "deployment/proposals/bk07_runtime_pointer_read_policy.sql": {
+    "bytes": 6675,
+    "sha256": "98c509acca06c41a1c56787afd483573e8f6d616796d8b6d0291d3f0b322cff0"
+  },
+  "deployment/proposals/bk07_runtime_pointer_read_rollback.sql": {
+    "bytes": 961,
+    "sha256": "f079fca9888d97d9718d4ae226bb7b12172021aed90cf3318f950d0654849d66"
+  },
+  "deployment/proposals/bk11_backend_expected_schema.json": {
+    "bytes": 17048,
+    "sha256": "a399eaaf82a01b042132d68b538ae5f670684417f989caac61d20bdf6952986e"
+  },
+  "deployment/proposals/bk11_backend_service_custody.sql": {
+    "bytes": 3726,
+    "sha256": "3a540e6d985151d9398e5f7c81fef7e07cd8096749e2aa4067d8adc271c551a8"
+  },
+  "deployment/proposals/bk11_backend_service_role_binding.sql": {
+    "bytes": 4380,
+    "sha256": "60100b2b3d5f7057645719d3b45001bd45857ae9f843f7bfe3abb0f1640c3136"
+  },
+  "deployment/proposals/bk11_current8_base_manifest.json": {
+    "bytes": 2519,
+    "sha256": "1bee766c388a93d31967c0e1c34876a2790c1d91873a4e88fef89acb5d4113a2"
+  },
+  "deployment/proposals/bk11_pm_owner_d1_outbox_disable.sql": {
+    "bytes": 1014,
+    "sha256": "6f3f4843f72c2e9ceb173052ac34118626e4cad062809af78359ca3ada046d6a"
+  },
+  "deployment/proposals/bk11_pm_owner_d1_outbox_role_binding.sql": {
+    "bytes": 2117,
+    "sha256": "2662841bb1745245925281a07123bf1d21d3a3439b1a4c92e24aec9ab5d4d0e5"
+  },
+  "deployment/proposals/room_return_actor_base_migrations.json": {
+    "bytes": 4141,
+    "sha256": "a7184e588cb199c85a85fee37b78537e5fa7aa7e09c87b0062f9776e1b71f438"
+  },
+  "deployment/proposals/worker_method_owner_base_manifest.json": {
+    "bytes": 3528,
+    "sha256": "0b8b8bca4237d3f9c04e40f60e042dd333fdb5ca0158763a941cb6dcb28f00e4"
+  },
+  "deployment/provision_database.py": {
+    "bytes": 6873,
+    "sha256": "ef12a372c1f655dafc394788f2424abfe0747fd64b49f75fdccbc960e3f91b02"
+  },
+  "deployment/room_return_actor_migration.py": {
+    "bytes": 4930,
+    "sha256": "04e59de97b22828b14d413c794d4f15374184af13597c15c68905c5a982e5d32"
+  },
+  "deployment/ROOM_RETURN_D1.md": {
+    "bytes": 2175,
+    "sha256": "281e51a3c4b06665407ca99955993747046f03cfa57d49c2002e2a09c0204ab5"
+  },
+  "deployment/runtime_session_bootstrap.py": {
+    "bytes": 3654,
+    "sha256": "1a2184dad88cd156fe90a1450da45f33407731114783104b09721e9a9bea9375"
+  },
+  "deployment/SIGNALVEV_NOTICE_BRIDGE.md": {
+    "bytes": 1819,
+    "sha256": "0b730917121d6501743df41643b23fed5611e1fcb947f18037b8b6586bad8e13"
+  },
+  "deployment/SIGNALVEV_RUNTIME_BINDING_PROPOSAL.md": {
+    "bytes": 7472,
+    "sha256": "1ba40b2a3e1e12af7347181aa40aa9149dcf0d672307dd4af26641ce0420c8bb"
+  },
+  "deployment/worker_method_owner_migration.py": {
+    "bytes": 3704,
+    "sha256": "3d12e4b6ebdcf271d2720af6eb355f4cefe8b6fc781c7294c4493cdb2191685c"
+  },
+  "deployment/X9_RECEIVER.md": {
+    "bytes": 3056,
+    "sha256": "c89c31a19cc72e04e89b4799ac048ae26a631f614c8d3a35bd0630d2b8d43dd8"
+  },
+  "Dockerfile": {
+    "bytes": 293,
+    "sha256": "644bb08e50745f6c750e0bafa95b174acad9f96bea0f4cf9d0f71de0d1a18a6e"
+  },
+  "engines/context/change-learning-evidence.yaml": {
+    "bytes": 28395,
+    "sha256": "e549363d45d4c6868e3a7333e26c549559e2c38319c6966fc1edf9ec831b362a"
+  },
+  "engines/context/component.yaml": {
+    "bytes": 5980,
+    "sha256": "761adf3dba902bcecf107657d75cc115ea9e85f003adede4efd3c16b1414989b"
+  },
+  "engines/context/continuation-bindings.json": {
+    "bytes": 8209,
+    "sha256": "443fa52dc40cdbcc93270fa2854f7e91d60d21681f0f75b4e645e896faacf72a"
+  },
+  "engines/context/control-context-state.schema.json": {
+    "bytes": 30184,
+    "sha256": "c60ea8417ba6f05222be46be6e696f53931c33614ac5e4dd48ab4986fb893a90"
+  },
+  "engines/context/development-history-schema.yaml": {
+    "bytes": 850,
+    "sha256": "46609fc35e34def2300b5174e192cc395b328bddf7e78eab6a9a317fba2893c8"
+  },
+  "engines/context/development-history.yaml": {
+    "bytes": 30697,
+    "sha256": "bb81cc80d326c891814b580f99105fef8f910de0bbcb9557e08c3fa4355af995"
+  },
+  "engines/context/knowledge-schema.yaml": {
+    "bytes": 1142,
+    "sha256": "6ec39f6ff1c294d7c1f9d65b8e0a35094974fbb31e81fe29b730d481540e404d"
+  },
+  "engines/context/knowledge.yaml": {
+    "bytes": 155,
+    "sha256": "ce3ad12815d51d58a2b7a8d7c929dadd86d8ae96c2b1779d21c2766836b223cc"
+  },
+  "engines/context/rules.yaml": {
+    "bytes": 21960,
+    "sha256": "03822f704f42b655132c433105d4d498b92586320db8ceb4e3ec1b12ad49d4a8"
+  },
+  "engines/context/runtime-0.1-analysis-basis.yaml": {
+    "bytes": 8735,
+    "sha256": "a4ee610fe9d02f879d285e0bc9f1dbc9dd9b74c7a2f7eaf93305ef39b59aa991"
+  },
+  "engines/context/specification.md": {
+    "bytes": 840,
+    "sha256": "2eead56386c308a4cfccdffaafefb1c26171fbe088b11130ebdd842ed438951f"
+  },
+  "engines/context/wisdom-evidence-schema.yaml": {
+    "bytes": 2947,
+    "sha256": "e2ea0f91a7472cf5ab551935b00abb6400f191bafc95e3a520bcddfcc006fe4e"
+  },
+  "engines/context/wisdom-evidence.yaml": {
+    "bytes": 13312,
+    "sha256": "e738bf378c62be6767ee4d977e3d51eaba93aa390e697d106a497f6910dcb974"
+  },
+  "engines/context/working-context-schema.yaml": {
+    "bytes": 1586,
+    "sha256": "4b59ba46c6e517bfed725010fe4158babd26ca8c8c7402e99b1def731044c262"
+  },
+  "engines/context/working-context.yaml": {
+    "bytes": 298492,
+    "sha256": "654f59b8e4f9e27360d47413464ebeaab4a9871280382da125bf7ff1a172ec7b"
+  },
+  "engines/convergence/architecture.yaml": {
+    "bytes": 5693,
+    "sha256": "fee543a6bdd2363a75825a40b019e7f8644816000fb3ebd1732abb4a93bf286c"
+  },
+  "engines/convergence/component.yaml": {
+    "bytes": 3047,
+    "sha256": "b10c46130989abec261b0c6936b5e59aa275921cb974baf73fd6ad3e86e00910"
+  },
+  "engines/convergence/convergence-owner-state.schema.json": {
+    "bytes": 1577,
+    "sha256": "f5cc66ffba6dab8c65f1bb189b93b74687fd4210933b0bd21604fe333c377ab2"
+  },
+  "engines/convergence/convergence_owner_effect.py": {
+    "bytes": 9931,
+    "sha256": "c69189924407f8c4c2cec6b33b989655459adbc79adb1bd29c2abb066f82ec4a"
+  },
+  "engines/convergence/model.yaml": {
+    "bytes": 1905,
+    "sha256": "aeabaaa6fd8c3233b9cab351dc29e7815bac14eb47f8fb302780097545844c02"
+  },
+  "engines/convergence/rules.yaml": {
+    "bytes": 2325,
+    "sha256": "c6dfc0c7a515ec9494d39229f0807a11e6bedc7ec6c857ad89745504db7b3c19"
+  },
+  "engines/convergence/specification.md": {
+    "bytes": 2873,
+    "sha256": "d8703d7186a472bfdca07927e3a9ade62fc1a34b62db2335ef6b762f5bccecbc"
+  },
+  "engines/interaction/canonical_intent.py": {
+    "bytes": 4997,
+    "sha256": "f27137ae9042c45a4f336af699a9f2708b482426fdee9ae6da5aeb8f383dbffc"
+  },
+  "engines/interaction/component.yaml": {
+    "bytes": 3031,
+    "sha256": "c40c252cf6f0ee228b0e8797c040dfb44c25d1ec18e595c89bdb76b553da4fef"
+  },
+  "engines/interaction/context-consolidation-result.schema.json": {
+    "bytes": 3910,
+    "sha256": "62dfca1dcd24553ea0954cc7e69bdebeccc3c89c37fcbbe3edddfd52deabfef9"
+  },
+  "engines/interaction/context_consolidation.py": {
+    "bytes": 23883,
+    "sha256": "3d6834a30cddc16c24ec62853d9d4ca763866d41169c1ba0e560df0fdb4416c5"
+  },
+  "engines/interaction/control-context-intent-assessment.schema.json": {
+    "bytes": 2974,
+    "sha256": "394b795c3dbcfea03d898c7e33dd4645ec62cffe4e080347cfe32b840bf8d836"
+  },
+  "engines/interaction/control_context_intent.py": {
+    "bytes": 22259,
+    "sha256": "d960a75e1fa2c806b0df53d494923353ce53f06a622dffe9e25aaa1949313f9c"
+  },
+  "engines/interaction/integrity_intent.py": {
+    "bytes": 3858,
+    "sha256": "909c87039113b0e983f64095c10b38375697722c2150c4c01762aed5eb6896a4"
+  },
+  "engines/interaction/rules.yaml": {
+    "bytes": 49552,
+    "sha256": "a8afee89162a7c290844501aecc0590d674a63f84587c6ce126e89a864325103"
+  },
+  "engines/interaction/specification.md": {
+    "bytes": 2890,
+    "sha256": "47cee9a8c5e71bdc6f846599aa51947c278b557f88d0f3e526f10fc4ae88f869"
+  },
+  "engines/presentation/admin-bios.yaml": {
+    "bytes": 4704,
+    "sha256": "d1525e3dc7fb5dc27ff8d17a1b87f732ee4d21bfb98f09eeee9b471eca5cdf4c"
+  },
+  "engines/presentation/component.yaml": {
+    "bytes": 3605,
+    "sha256": "8245b957b92a6262ce86541a859b638fb3e576bdd2dc85a5566d0414251a3b29"
+  },
+  "engines/presentation/human-admin-projection.schema.json": {
+    "bytes": 14939,
+    "sha256": "e008c4978a323a90aae69263825acb556f5331a089e0c8a389b2f2771e412449"
+  },
+  "engines/presentation/human-navigation-surface-candidate.schema.json": {
+    "bytes": 2941,
+    "sha256": "bffca56b606fa27aecae700c346cf9801e7abff15266a08399bc401f925e8cb5"
+  },
+  "engines/presentation/human_admin_projection.py": {
+    "bytes": 39952,
+    "sha256": "a5c9f064d6135ccc9e7cff5da1e8752381c77db15efa46ca6b6f7c875dc2b841"
+  },
+  "engines/presentation/integrity_presentation.py": {
+    "bytes": 4640,
+    "sha256": "35db6773fd15e175ba08b011aac36eadef0ec6b00237d4494e7f466f55daf262"
+  },
+  "engines/presentation/kompass_obsidian.py": {
+    "bytes": 9353,
+    "sha256": "60b0a1653c17e450517aaf348d011e1c4ada1fd64ae71214f782282907ea2528"
+  },
+  "engines/presentation/live-shadow-projection.schema.json": {
+    "bytes": 2550,
+    "sha256": "fec2f03936f6057f73d607e3744e7998f9f05d0c46c054995dfc5a7203935ca0"
+  },
+  "engines/presentation/live_shadow_projection.py": {
+    "bytes": 5169,
+    "sha256": "c3150d21e9a42de83a4e4a76a1aebf9c3cd06ce4b2866f46f395c1dcfa99e76e"
+  },
+  "engines/presentation/roadmap-official.yaml": {
+    "bytes": 1692,
+    "sha256": "70f5058c7d8e290e72910e15b821ff8445fc59d8f7652102110048ed07ec0cdd"
+  },
+  "engines/presentation/roadmap_official.py": {
+    "bytes": 11733,
+    "sha256": "61656d34658ad044b76b14dca8d7f5d6a164ee07b07f05395a40bb19b749a620"
+  },
+  "engines/presentation/rules.yaml": {
+    "bytes": 35286,
+    "sha256": "f6e85ebe49c19d2f7de8a5275030bea2946b69ae22e0ef5a6171e9db32012f97"
+  },
+  "engines/presentation/specification.md": {
+    "bytes": 4482,
+    "sha256": "a3f67ef6f13d598afbba507a215302c54345934efb6126f525d96d7ff83156b5"
+  },
+  "engines/project/component.yaml": {
+    "bytes": 2448,
+    "sha256": "028c0d8ce80f172608074dd8791054fee295282f7db720346a02653726870c73"
+  },
+  "engines/project/project-basis-state.schema.json": {
+    "bytes": 774,
+    "sha256": "911402c74cedfcda33953804a14308d53d892be9f5b2cdb80958db990ec0c661"
+  },
+  "engines/project/project_owner_effect.py": {
+    "bytes": 6831,
+    "sha256": "309487abc1414454a1f4f3f95bcbfc6060295b9c9c58fd264d44cee317eb65e6"
+  },
+  "engines/project/roadmap-schema.yaml": {
+    "bytes": 2161,
+    "sha256": "0a86a38c13c16cffe07b8c369fdca611b96be76ad67c6f8f802d891623a209ca"
+  },
+  "engines/project/roadmap.yaml": {
+    "bytes": 64138,
+    "sha256": "3eb1aa0eeab3110e19290e5c81ffee8b579ab74d0d2889e69bf62c472bea14d3"
+  },
+  "engines/project/rules.yaml": {
+    "bytes": 10897,
+    "sha256": "9983ea4795bff5e6661e943d9d0240806abc4c74845d8011a9833b794fb2da5a"
+  },
+  "engines/project/specification.md": {
+    "bytes": 405,
+    "sha256": "0670bfac32c0bd296e247d4d7eb27c25bd7ec09dc6908e32d072d13ac806bd79"
+  },
+  "engines/quality/component.yaml": {
+    "bytes": 2076,
+    "sha256": "ba2667a3b4472d5bb40d1997172dd664a438bb5cbfccfceb53ca9c7cac7bf150"
+  },
+  "engines/quality/quality-trace.schema.json": {
+    "bytes": 1410,
+    "sha256": "2ea0463d1ffc2b89ffdf444a9b8c8b274d95adb37714e15bcfed9bcca678b5f4"
+  },
+  "engines/quality/quality_owner_effect.py": {
+    "bytes": 6864,
+    "sha256": "4ac995542e7a8b8ac19cdfe4b5e098bc682194b061531abccd3d9ed79335db37"
+  },
+  "engines/quality/rules.yaml": {
+    "bytes": 5272,
+    "sha256": "ea156f7943f015fa4c7ab74a1f8b485b20b97c5b4c7992264390f8421e83ef9d"
+  },
+  "engines/quality/specification.md": {
+    "bytes": 370,
+    "sha256": "5011ae226c1f56b54f030788cbe78e0afce0fc9391fcd1b7fe2e57914c46e6ae"
+  },
+  "history/C02_P001_CLOSEOUT_20260812.yaml": {
+    "bytes": 3131,
+    "sha256": "142dc5f9b19ddbc8c74c9da0a1b0a09bae85d491a7c287b38358d0ae597b9b13"
+  },
+  "history/C02_P001_IMPLEMENTATION_20260812.yaml": {
+    "bytes": 1476,
+    "sha256": "7705acb103da2bd710705a2276e2db7e972a9856a29c6445519d49eb47a2a08c"
+  },
+  "history/C02_P001_SPEC_FIX_LOCK_20260812.yaml": {
+    "bytes": 9340,
+    "sha256": "f892a8c3127b538641b262f47a48ef5ee05e7696b38cb27a0e2c3d9b6fc12ec3"
+  },
+  "history/C02_P002_ASC_GIT_REPRESENTATION_FIX_20260813.yaml": {
+    "bytes": 3777,
+    "sha256": "d734c025ded89e26c75b1e0fb6c822294c401d70b440258c9b80c1c51aa888fd"
+  },
+  "history/C02_P002_CASE_FINAL_20260813.yaml": {
+    "bytes": 10760,
+    "sha256": "7c9daf1b7782dc1a03239232e7d4fb6e73722b2d778b2fdd1b6b512bc1679697"
+  },
+  "history/C02_P002_CONVERGENCE_ARCH_LOCK_20260812.yaml": {
+    "bytes": 2514,
+    "sha256": "a702fe53cd56138b77f60fd4811b666a51f98cce455829bba0f421206d975a19"
+  },
+  "history/C02_P002_WORKSPACE_CONVERGENCE_CLOSEOUT_20260813.yaml": {
+    "bytes": 3869,
+    "sha256": "b95fe52d1e150d42c6114dd322046e1ebba1644862633e09585b13f75561b10b"
+  },
+  "history/CONSTITUTION_ADAPTIVE_ANALYSIS_LOCK_20260812.yaml": {
+    "bytes": 2814,
+    "sha256": "032910071d9f895b6fd7bd8a34f35cee6392e29a6a394de0b371dd8d0310fd15"
+  },
+  "history/DUALITYARC_WAVE_01_RETIREMENT.json": {
+    "bytes": 1221,
+    "sha256": "08a40c9730848483963e53e22842fff32e74bb25bdd414a608420677375e8ca7"
+  },
+  "history/evidence/C02_P002_CASE_EVIDENCE_20260813-154712-e8f08125_SUMMARY.json": {
+    "bytes": 480,
+    "sha256": "5d7453cfe757a861f84b2a6145e699e3200dfd1754f0c9125a8eabff63f7ef5c"
+  },
+  "history/evidence/C02_P002_CASE_FAILURE_LEDGER_20260813.json": {
+    "bytes": 17883,
+    "sha256": "a0b4c9460482e3914d37e28283cfd1cef4862c4df263d6f5c7413dc5b51d7c38"
+  },
+  "history/evidence/C02_P002_CASE_FINAL_CONCLUSION_20260813.md": {
+    "bytes": 18270,
+    "sha256": "0512624e8cf74c0ff0e5f74ae3b7cdc1733d9ee3f2cd8de6f3bd0d70e10b7482"
+  },
+  "history/evidence/C02_P002_CASE_FINAL_DECISION_20260813.json": {
+    "bytes": 14929,
+    "sha256": "83ec3eca556ae9d7c1977f6bcf03c097a7eaa755e7e90a1f7cc90f506c5c181a"
+  },
+  "history/evidence/C02_P002_DEPENDENCY_AUDIT_20260812.json": {
+    "bytes": 1134209,
+    "sha256": "a2d9fa4e69dddf509636b922886496498208a3a7039098a48fb15a8aff8e1fb4"
+  },
+  "history/evidence/C02_P002_WORKSPACE_DISCOVERY_20260812.json": {
+    "bytes": 360474,
+    "sha256": "5628a80eddc4dead3f074650cca540afc19adc50c45ca64b86dffe77914362ee"
+  },
+  "history/FILE_INVENTORY_v1.0.json": {
+    "bytes": 9056,
+    "sha256": "1528bc647ae643de9a7ecce5204b5ee7d87fdac484ebc6b05d87ac92fb3a1119"
+  },
+  "history/FINAL_VALIDATION.json": {
+    "bytes": 386,
+    "sha256": "5022d3c974cf873bb9fe032568e4f4f81bc6edc9472a73380dc15aee2eaefb4e"
+  },
+  "history/FULL_LOCAL_VALIDATION.json": {
+    "bytes": 108,
+    "sha256": "bb54462c6b23c7c3086d6ac14506772ae1a11538d4b11278c801ee81e673e5e3"
+  },
+  "history/IMPLEMENTATION_DELIVERY_FAILURE_EVIDENCE_2026-08-10.yaml": {
+    "bytes": 1203,
+    "sha256": "e1a0b91f79d4ebbbe089667588417720d293292a12d08c32f5441332c0cf51c6"
+  },
+  "history/MASTER_v1.1.txt": {
+    "bytes": 37311,
+    "sha256": "540db1b2f6612e202cdcd1729b91ee8b3d1039f3351d247b3d812e38181dbb73"
+  },
+  "history/MASTER_v1.1_COVERAGE.json": {
+    "bytes": 59689,
+    "sha256": "562520bb5ac97b11fa2497c5e371beb783c79b67e34854b0a85cbb64a49ff35e"
+  },
+  "history/MASTER_v1.1_COVERAGE.md": {
+    "bytes": 4594,
+    "sha256": "35b97fbae0a8be0b74449076fed47bf587ace3d9953f2fb97ad97d489c583929"
+  },
+  "history/MASTER_v1.1_MIGRATION.md": {
+    "bytes": 592,
+    "sha256": "879917fe33a3d891643012c1589ec553a23bb9b8103a24c4326ebf5722ac7d03"
+  },
+  "history/mcp/physical-target-resolution.yaml": {
+    "bytes": 929,
+    "sha256": "ce36d576065cf5fd04aa28f7dcf226eb2f715bcdc5cb8b8786dc25dd12c3e0fe"
+  },
+  "history/mcp/source-mapping.yaml": {
+    "bytes": 789,
+    "sha256": "513a43524592b3a47d6c530c19bc08c2e9dd9d22a20ca6a612b6e3abde551ccb"
+  },
+  "history/RULE_AUDIT_v1.0.json": {
+    "bytes": 64354,
+    "sha256": "98ce21e68e055c3a333afaae13d2903c3c3d1bcfba87702db1b7c9dbe191dd77"
+  },
+  "history/SOURCE_AUDIT_v1.0.json": {
+    "bytes": 338,
+    "sha256": "f2c4bf086cca5c52077e0edc2cbad7158086b9c8a59a381a36fffa88ecef1a94"
+  },
+  "mcp/accepted_material_consumer.py": {
+    "bytes": 5992,
+    "sha256": "a3cac63a3ad2dc4e07df39318241ae79f925ea4aa6b92f0f0aa09f8e47df86dc"
+  },
+  "mcp/activation.yaml": {
+    "bytes": 5101,
+    "sha256": "66aba1b79318071b110c3c3e1445326efc43ca1be110ad273cb488ad93cb67ff"
+  },
+  "mcp/actor-lifecycle-mutation.schema.json": {
+    "bytes": 6183,
+    "sha256": "58b049285a4ea31e31b85df4198e12d880cf51c4c163e9177b6233ed5ac8d8fb"
+  },
+  "mcp/actor_admission_host.py": {
+    "bytes": 18997,
+    "sha256": "9fdee573cc37fbf180415b3b2b66cbb286511d2976a595a563a7c996e96f0e31"
+  },
+  "mcp/actor_admission_model.py": {
+    "bytes": 25911,
+    "sha256": "d824c037cec399fa4f3edf2bb575c1e546dcafb23d0a5d2191a3085040bb9d35"
+  },
+  "mcp/actor_admission_store.py": {
+    "bytes": 7269,
+    "sha256": "2b482d6e4fadbf071f3f144647a6b9bb76a1afcca5a69b0456de4471ff82f6ba"
+  },
+  "mcp/actor_material_provider.py": {
+    "bytes": 15376,
+    "sha256": "13f291ee72d6ec577b909f3d1fcde961641ebf3087ef967556748eff23d08e8c"
+  },
+  "mcp/actor_service_room_scope.py": {
+    "bytes": 2745,
+    "sha256": "7f1f5eddf92c96e13f24ed8bd7660718cebebd7df3ccea218e48e983214b475d"
+  },
+  "mcp/adaptive-control-resolver.yaml": {
+    "bytes": 5762,
+    "sha256": "7c75e26eade7da6219f0d15c5422198d7a07c67b29ec44f86d2005cb9290aac5"
+  },
+  "mcp/adaptive_control_resolver.py": {
+    "bytes": 23838,
+    "sha256": "94af09063fb81c1f0a663b82d5821a76544cb810eeb8816c97bcb16c86e99303"
+  },
+  "mcp/architecture-dependency-integrity.yaml": {
+    "bytes": 1395,
+    "sha256": "bc4327f231aed52728e14addbdbd70aec230373a2a2a7e47068079d49667f6e6"
+  },
+  "mcp/architecture.yaml": {
+    "bytes": 2320,
+    "sha256": "18af9056d5059514018f49c652794f6a1a10d8aee4c3841be5b251a814642a17"
+  },
+  "mcp/assistant_overlay_owner.py": {
+    "bytes": 17452,
+    "sha256": "0a8d655a01573ec141e36be973d38872898cecb49b86a33c4b672dacbb7e686d"
+  },
+  "mcp/assistant_trial_owner.py": {
+    "bytes": 9643,
+    "sha256": "5f7f68e51db5cf25584ea841570284650fa78e97b54f2b4c456806700a8de070"
+  },
+  "mcp/assurance-continuity.yaml": {
+    "bytes": 5540,
+    "sha256": "9764cf12032a044733615f70c5296c23707baa22efe5440ccbe71b74b788c1b4"
+  },
+  "mcp/assurance-kernel-permit.schema.json": {
+    "bytes": 1010,
+    "sha256": "5c12ef048c037b97d9baf873686916f4abb813015bf8c9cb5f6c926a103c0b5d"
+  },
+  "mcp/assurance-kernel-receipt.schema.json": {
+    "bytes": 1347,
+    "sha256": "3f09927f0518a508bb2497c33e39e55b97dd5e6a47f6fdd7de9cf958629e1ae8"
+  },
+  "mcp/authenticated-binding-basis.schema.json": {
+    "bytes": 1598,
+    "sha256": "20319d809ef643b1da07c71bbac99b9f844965137bd64acf807692a4a786da5f"
+  },
+  "mcp/authenticated-caller-observation.schema.json": {
+    "bytes": 3747,
+    "sha256": "fefd137611d032027408b89e07aa70946826232eabbb9a282b08029774152d75"
+  },
+  "mcp/authority.yaml": {
+    "bytes": 2281,
+    "sha256": "c446bd09154db6aa4726600ea1820b28b1440f516d7fe7906b53787dcefb48a7"
+  },
+  "mcp/bk11_service_custody.py": {
+    "bytes": 24433,
+    "sha256": "62cb02595bc7eba8c95ed07c3d4ec8756ee4f81c728cbb607ecbec1773ecc037"
+  },
+  "mcp/boot-architecture-control.yaml": {
+    "bytes": 9616,
+    "sha256": "f413392ebd1debed60aca8e88bc076a5471c3fdce45b4f566c180145d71d7a51"
+  },
+  "mcp/boot_birth_source.py": {
+    "bytes": 10639,
+    "sha256": "b73228fdcd4e5d38e0116804d28b35a60bb3c8db7bd687946744cef5602e33c7"
+  },
+  "mcp/constitution.md": {
+    "bytes": 3270,
+    "sha256": "2112d2874ae36b5700d6cd7ba4d2524efef8446f3585ed7068e341defb869144"
+  },
+  "mcp/constitution.yaml": {
+    "bytes": 13273,
+    "sha256": "55be111af88fbb2f013714569e5cf6380a8766cd9b50b6480c9a9f9d30f79088"
+  },
+  "mcp/context-navigation-options-candidate.schema.json": {
+    "bytes": 2684,
+    "sha256": "3a35c443f82e0f285b3d16a1263a6db4e3451a9a06fef5ae3b51e99d5e63d372"
+  },
+  "mcp/context-navigation-options.schema.json": {
+    "bytes": 2732,
+    "sha256": "02b7e5018f8a325ec8e64845696c8b9ef7d7b076205a876f47d2f6ea260b6e17"
+  },
+  "mcp/control-context-mcp-sdk-requirements.txt": {
+    "bytes": 101,
+    "sha256": "eabd9b65c264a72a6aa6e75ba52990bf92462b48c28a29d5ee43529eeecae5c1"
+  },
+  "mcp/control-context-remote-runtime-config.schema.json": {
+    "bytes": 1760,
+    "sha256": "05ea2b292e8ec1070636372f8cad55f6b9ed6d418cac579c3b97815b614693e0"
+  },
+  "mcp/control-context-remote-service-config.schema.json": {
+    "bytes": 1858,
+    "sha256": "e427f141343387867618823daa5f4869ef38a6c410983698015b42d12c4fe3bc"
+  },
+  "mcp/control-owner-effect-plan.schema.json": {
+    "bytes": 5278,
+    "sha256": "951801c68af827f56fd814cd527ad74386cbac1d870f0a4c8aa5b8b051226b0a"
+  },
+  "mcp/control-resolution-attestation.schema.json": {
+    "bytes": 681,
+    "sha256": "926be5176a1b40872eeb90617bcd7ac95585241a2846f79673ead8830f364353"
+  },
+  "mcp/control-resolution.yaml": {
+    "bytes": 22983,
+    "sha256": "43e6a44ba544cb8becbfc7b0beb5034c59181286eb857d32eb02fdfc8bf5cb0a"
+  },
+  "mcp/control_context_mcp_sdk.py": {
+    "bytes": 29051,
+    "sha256": "f5e440a568e565c95237f9be01d1b0480cc1dc5f3918e3350e6cb5055ab71462"
+  },
+  "mcp/control_context_remote_runtime.py": {
+    "bytes": 32287,
+    "sha256": "e985db44dfe0f6caeb22af13e563cb8db5eb813d0956c11b7b6b5d5237e57434"
+  },
+  "mcp/control_context_remote_service.py": {
+    "bytes": 30169,
+    "sha256": "9df88565d92f679dbcd6dcc7792620ad6412a173e893013b53afa77f70178d63"
+  },
+  "mcp/control_context_tools.py": {
+    "bytes": 179804,
+    "sha256": "2179c45f6374677ba2cb55a67a58f1ecaf5fe85b25270d1cb41154560d8026fc"
+  },
+  "mcp/control_owner_effect_receipt.py": {
+    "bytes": 10010,
+    "sha256": "88e03ea88dc7616a887f211735c3f617fdeb0e6001f1c69a8d086c2a669289d0"
+  },
+  "mcp/control_owner_routing.py": {
+    "bytes": 32427,
+    "sha256": "049f2fffe21691c4491908bbb7061640fe189db62131d6291ec331a847b0f92e"
+  },
+  "mcp/control_resolution.py": {
+    "bytes": 160835,
+    "sha256": "61497f8e6273c8a19ea568cb2d54b04947f6afb24c85d289e8a7bbbd21929297"
+  },
+  "mcp/control_resolution_host.py": {
+    "bytes": 37563,
+    "sha256": "eedcb432fa451f7f1581b5d73b1acd8180bd696cad846cb99c84e118137a73e9"
+  },
+  "mcp/doctor-assurance-receipt.schema.json": {
+    "bytes": 1019,
+    "sha256": "41368c55ba762f75224b854a2de04bb4a94b119b860c16c6e3fadb6015934576"
+  },
+  "mcp/doctor-assurance-request.schema.json": {
+    "bytes": 411,
+    "sha256": "229b21163ce41aa1abc08f0aad044eeae73300c29b92e6ae032a8918335d4e9c"
+  },
+  "mcp/doctor-currentness-vector.schema.json": {
+    "bytes": 663,
+    "sha256": "36e1e030f3aed1b080c6b1b77d68b79d057ef82958ae6201b5c96501c2ac364e"
+  },
+  "mcp/doctor-trust-attestation.schema.json": {
+    "bytes": 753,
+    "sha256": "d9655219ea6ccc4120909fd6717a7f8c082501dda67d2fe450d09692b3e58fcb"
+  },
+  "mcp/doctor-trust-object.schema.json": {
+    "bytes": 849,
+    "sha256": "22093234eb222d9714c071758ef38f8173f58e6c65632a7dd7e49e87f3e20014"
+  },
+  "mcp/execution-surface-resolution.yaml": {
+    "bytes": 2112,
+    "sha256": "a5f91b7e81a3bab045974a4b4fef7e925abdba7b1238700b65d237f46029ee20"
+  },
+  "mcp/human-t3-break-glass.schema.json": {
+    "bytes": 5072,
+    "sha256": "a7a13cb59db2ce83f06b3180854096a6f1be879d45c4ca15b77cfeda29fbd1e4"
+  },
+  "mcp/human_t3_break_glass.py": {
+    "bytes": 13140,
+    "sha256": "ce44e8513e4b6988ed16014996e5fba03de38985d25eb2e588e61b4eaac67f2d"
+  },
+  "mcp/identity.yaml": {
+    "bytes": 1369,
+    "sha256": "10d954f258f29006415ad654828757c3398659de9e05e1bc8b3d4a69ded74008"
+  },
+  "mcp/immune-attestation.schema.json": {
+    "bytes": 5391,
+    "sha256": "c1ced1f8478b85817d9dc550ba19ae6738a4251981ec8a87a5543221765e58de"
+  },
+  "mcp/immune-material-permit.schema.json": {
+    "bytes": 2911,
+    "sha256": "041af363012a370124db7f563057671ca971d1d12dda3d7fbca3a8af2642e8db"
+  },
+  "mcp/immune-material-receipt.schema.json": {
+    "bytes": 6137,
+    "sha256": "0e6dd79e34d09b822eb262e630ee6764f20205779bab16208eee9ff752115c54"
+  },
+  "mcp/immune-migration.schema.json": {
+    "bytes": 7750,
+    "sha256": "ed32c3198a47c014a398161795ccf0f33bb697f6306a1116e22e18900fef8108"
+  },
+  "mcp/integrity-control.yaml": {
+    "bytes": 8803,
+    "sha256": "655133ed09bd087ab80afc69ccf15279228b4d3cb339587bb231c44cc06b6016"
+  },
+  "mcp/integrity_cli.py": {
+    "bytes": 3099,
+    "sha256": "d17f7fe0bc1fa40db6e3db6ed0c03bd83e71c0fb95023314ff0a92f6d988f701"
+  },
+  "mcp/integrity_control_adapter.py": {
+    "bytes": 19557,
+    "sha256": "b3486b955a0e4461b7faa0a4a30519ff06812d7a9ceddb8a6c5df4b89f570986"
+  },
+  "mcp/integrity_resolution.py": {
+    "bytes": 35180,
+    "sha256": "3df10270858ac6e1a5841a61c876cc3227e464dfd8aec7a9dc570c43b7b0ca42"
+  },
+  "mcp/manifest.yaml": {
+    "bytes": 19592,
+    "sha256": "e9ead63de59219d4b21e619ed99af2577263f07e6388d2554ba8a45584cbc8ba"
+  },
+  "mcp/material_commitment_preflight.py": {
+    "bytes": 43399,
+    "sha256": "081244107dd3bfb6a65313c570ba345af991066c707a057fe75ae7f167602cb3"
+  },
+  "mcp/owner-effect-receipt.schema.json": {
+    "bytes": 3509,
+    "sha256": "260e4f478fc2d02afb9f626b9addbb241839c7773fa83cb8f6b20617e111b3d2"
+  },
+  "mcp/owner-state-commit-receipt.schema.json": {
+    "bytes": 3586,
+    "sha256": "a10cbb2f3c491e468b796a6d73ff1dde78476f494527fce44fc6a818e2ad733b"
+  },
+  "mcp/owner-state-persistence-verification.schema.json": {
+    "bytes": 1144,
+    "sha256": "933eae30112aa36d4d3d106762ddfc8d09611828e19bc09b66385792ab534d0d"
+  },
+  "mcp/pm-2872-bounded-succession.json": {
+    "bytes": 6727,
+    "sha256": "3b7a2251ea983ed5093d52043bb7b7955525132e59224b7b6bef8f5f875036d1"
+  },
+  "mcp/pm_admission_owner.py": {
+    "bytes": 19849,
+    "sha256": "9ee6b63e025d3e863b061f8cc727f2e7b29a788d508d532b298c9345926fa895"
+  },
+  "mcp/pm_bounded_qualification.py": {
+    "bytes": 7840,
+    "sha256": "5f5a470a3e83edf8ecf576d8fa1381a3a5f9d17fc5dfa4ef696e772c59c743fb"
+  },
+  "mcp/pm_native_birth.py": {
+    "bytes": 1931,
+    "sha256": "44c276686e14d3e133478d225de36cf6e1f4d8147d78cedbc98c9310a11e56bb"
+  },
+  "mcp/pm_owner_atomic.py": {
+    "bytes": 15093,
+    "sha256": "894e2d8b9d3c9d67b8804da080b35d090da5135aedf5f80eef54d80ff440bfa7"
+  },
+  "mcp/pm_owner_d1_outbox.py": {
+    "bytes": 31861,
+    "sha256": "c81a2a81ca0cc00a6669815627f3622bc26c9ef578ec5eccf873056737a72467"
+  },
+  "mcp/postgres_assistant_trial_admission_reader.py": {
+    "bytes": 16937,
+    "sha256": "64b4dd1497810f49abe9982f083e6eee6fb3823e628ff0cfc4bc16597e43a1a5"
+  },
+  "mcp/principal-succession-permit.schema.json": {
+    "bytes": 5310,
+    "sha256": "2c5cab35c34736f574320d03a97a730f89d70a195ef92b94684823c2da2fd5e8"
+  },
+  "mcp/priorities.yaml": {
+    "bytes": 1608,
+    "sha256": "791c970a7217ca54889e63fcb3f2313fde6b4b4860114d720b5d79cfad6db3de"
+  },
+  "mcp/project-manager-control-governor-decision.schema.json": {
+    "bytes": 1894,
+    "sha256": "1cefaa6ca3251ab5ee4d24d2c524f92836c183fa42077757d24d03498b108872"
+  },
+  "mcp/project-manager-control-governor.yaml": {
+    "bytes": 10719,
+    "sha256": "643b0eb866c652ffc4a2e6eacedfc5b91abce602fda64ca921b11beb06e1f0d2"
+  },
+  "mcp/project_manager_control_governor.py": {
+    "bytes": 51933,
+    "sha256": "c8b91ce268d90848fd5807c1da30d9db656fa6dec5067aa18aeb91bf80aef05d"
+  },
+  "mcp/qualified_constructor_plan.py": {
+    "bytes": 2459,
+    "sha256": "d854dde461032bec18ff34b87e9351773733cfb7939bfe95acb535bbd8e4eab2"
+  },
+  "mcp/room_return_actor_reader.py": {
+    "bytes": 14676,
+    "sha256": "9ef7619c559d7e9272f4c93cb04099ae8e96c9b9933998c677e9d3d0047778d0"
+  },
+  "mcp/room_return_d1_outbox.py": {
+    "bytes": 30790,
+    "sha256": "c0de89192dfbdf94b1d94871e22843856fbc9115624d782b77608e02ddbf139b"
+  },
+  "mcp/signalvev_runtime_resolution.py": {
+    "bytes": 14793,
+    "sha256": "93f9bff058bff1305bea1393dda0a781fef4e47b369339dbf860433ca27a1704"
+  },
+  "mcp/standing-worker-policy-observation.schema.json": {
+    "bytes": 2653,
+    "sha256": "f369c1fb446b2a4ee72d34aa511fd6c8d38f1b9ed6d061f6bde7d28ea8c07e1e"
+  },
+  "mcp/state-service-commit-receipt.schema.json": {
+    "bytes": 2762,
+    "sha256": "2fe7fa0a04f2b3b950ebcdb3c7495eb35aeafd086b1e5d7a9803766cda996d6e"
+  },
+  "mcp/system-doctor-receipt.schema.json": {
+    "bytes": 608,
+    "sha256": "fc0269d38d9b476564ed3ffdc4c9e3400aee519ec7a52f93db3a5e96490404af"
+  },
+  "mcp/worker_attach_grant.py": {
+    "bytes": 5050,
+    "sha256": "180ee3909d7e00da96cf19980469860cae871b0533046ab4a3681c388f645842"
+  },
+  "mcp/worker_method_adoption.py": {
+    "bytes": 14903,
+    "sha256": "24c11a00dfee1dc1c2dab4f2f594c472c816050ef5afa69e8315d3a76195f2b6"
+  },
+  "mcp/worker_method_evidence_tools.py": {
+    "bytes": 2167,
+    "sha256": "6910337401bbe2c8224dfb456e59866f5669bbfad014a1a36b6711f919b47081"
+  },
+  "mcp/worker_method_operator_custody.py": {
+    "bytes": 6629,
+    "sha256": "f9cc5a1119d76d2e7179f12bb0ad9dcd46a6d76ee55ecae63da30b9ba358a606"
+  },
+  "mcp/worker_method_operator_input.py": {
+    "bytes": 3785,
+    "sha256": "3b7833667d80f7ddee42c859b4e1d9c119f6608ebd02f92cb59f0c17212b2d58"
+  },
+  "mcp/worker_method_owner.py": {
+    "bytes": 19236,
+    "sha256": "dfdb81e1bd2337f0523d372a9b544cee542a9a0aa9fbbac940531f0c6871b3db"
+  },
+  "mcp/worker_method_runtime_observation.py": {
+    "bytes": 3951,
+    "sha256": "ea50d958916e74bc47baf62affa216caf75071270c78e3e5aa29d2f64f40640b"
+  },
+  "mcp/x9_producer_host.py": {
+    "bytes": 11825,
+    "sha256": "f9e23a9bd0cdaeedaeffe8b0271fab406e31f1661ea60f0ca43b7c7645bc831d"
+  },
+  "mcp/x9_receiver_host.py": {
+    "bytes": 12391,
+    "sha256": "306f872e3083cfc0a8e10eb0465396f57e7ecb5f88d5d0828aa0a578b81bcb2a"
+  },
+  "modules/terminology/canonical-descriptors.yaml": {
+    "bytes": 5826,
+    "sha256": "2c9efc7272d6068b5c8199d9130296267a3f2733fcd6b9360af0f805ac36455c"
+  },
+  "modules/terminology/canonical-overrides.yaml": {
+    "bytes": 551,
+    "sha256": "9824a5fdb745f1c8074b849579c334adfe051b59cc024e53da8f7554b3b831c3"
+  },
+  "modules/terminology/component.yaml": {
+    "bytes": 603,
+    "sha256": "6edd5097c94debab9adfb1cae08aa85e19e280ba09bb5fe06badcac998aa64f3"
+  },
+  "modules/terminology/rules.yaml": {
+    "bytes": 3177,
+    "sha256": "2c3a65568c78841c2767c8c16943fc07bc7726d246af025c6d26e1232890f731"
+  },
+  "modules/terminology/specification.md": {
+    "bytes": 871,
+    "sha256": "a7cf61ae802f9f86e4115fb81fac15e8d2d1bb2c909f0822e32e4ccd1857a786"
+  },
+  "modules/terminology/terms.yaml": {
+    "bytes": 10213,
+    "sha256": "25dba2da180e737abfd8595ce90679462241e1817b6b360aef24e3c3727f1ead"
+  },
+  "modules/visual-language/component.yaml": {
+    "bytes": 982,
+    "sha256": "2cfcc768bc0169b2d3140b5e43bcdf8698d3032c2440c9395f7f790a959c48cc"
+  },
+  "modules/visual-language/semantics.yaml": {
+    "bytes": 4299,
+    "sha256": "3c5bb458ed025b41f29527fe6b4251b10ada2e0f679e25ad68f494c482f748d1"
+  },
+  "modules/visual-language/specification.md": {
+    "bytes": 1627,
+    "sha256": "de776a375da1a6a45230220acbf7f71452595b49dc40695910870325cdf45ce0"
+  },
+  "providers/__init__.py": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "providers/x9_postgres_custody.py": {
+    "bytes": 17458,
+    "sha256": "a565102384a82fb415e65a89f0e10300aac9fb6eba452617f3f21e46c7510994"
+  },
+  "providers/x9_role_binding.py": {
+    "bytes": 4292,
+    "sha256": "dbfe1c2b93c8150f47be8cd58359016eeaef201f1a159cde21c37a96ad117764"
+  },
+  "providers/x9_session_channel.py": {
+    "bytes": 11286,
+    "sha256": "e63deb5cd63d451579a2d8fc220aada12ad29d901550687362ed3d3d1dd6a770"
+  },
+  "railway.json": {
+    "bytes": 609,
+    "sha256": "66c7301ac195a1ed4edd7bee20568c96701982b21d4d2d278f28d6d408bda710"
+  },
+  "README.md": {
+    "bytes": 563,
+    "sha256": "0478b7b798f17c46d84de5c4c3b10786e8790a9925916d25a468dc2326d408cd"
+  },
+  "releases/README.md": {
+    "bytes": 105,
+    "sha256": "70e4bd86e1bfe7b0390ad25c401cf8aacd76868fb16b971edc5960236e9e5feb"
+  },
+  "requirements.txt": {
+    "bytes": 85,
+    "sha256": "a6a1be04a7c6c5ca72680fb4b10f8a3a56a7f85871ed93ea3a92a1d8e61dbf21"
+  },
+  "signalvev_sensing/__init__.py": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "signalvev_sensing/activation.py": {
+    "bytes": 1737,
+    "sha256": "0e4bd8bd82cddf85066d76ee8b558e834ed279ef806a2731bada654d648de526"
+  },
+  "signalvev_sensing/model.py": {
+    "bytes": 3645,
+    "sha256": "d79d864251e209a9cd969fe721d998dc33cb55d32f9f65c2b19405cc72c1cbd3"
+  },
+  "signalvev_sensing/return_sink.py": {
+    "bytes": 3517,
+    "sha256": "2e36deeb61d7df70acc50302560d6fcb39071b26520f6a06f778361c62efb4e5"
+  },
+  "standards/active-source-closure.yaml": {
+    "bytes": 5049,
+    "sha256": "7e3ae79682eb5006717f5e9b93a50ada4e832db42692b63b944ca5585468ed18"
+  },
+  "standards/assurance-kernel.yaml": {
+    "bytes": 7963,
+    "sha256": "5dfa07d914ae6aba5b5b4d942e3b44b01e84577b68ee93dfa837825ce0542f84"
+  },
+  "standards/boot-critical-path-architecture.yaml": {
+    "bytes": 14251,
+    "sha256": "6c48bad9a44e6e8b64c9382d933fe02bb7dff1b08537392047142998c53cf028"
+  },
+  "standards/canonical-definition-system.yaml": {
+    "bytes": 4815,
+    "sha256": "15c171a9a396dcab3dd59eb5abd8855757d27ac5b7957c98663a0390868f6046"
+  },
+  "standards/change-architecture.yaml": {
+    "bytes": 14259,
+    "sha256": "352d043481d5720accbd10445ae0d85e821924d6c45d593b8c07324735c10ae2"
+  },
+  "standards/change-campaign-closeout.yaml": {
+    "bytes": 2145,
+    "sha256": "e10aada628432da5e6047b87f3a1a9d418a611500b31cef88ac837991d27ee52"
+  },
+  "standards/change-delivery-convergence.yaml": {
+    "bytes": 6049,
+    "sha256": "9ceb3f8091816471ff78a573ecb70f8061236ce33f06216e0615b5fd8cabc09b"
+  },
+  "standards/change-delivery.yaml": {
+    "bytes": 31365,
+    "sha256": "f0f48af919814c4807048c5eaba551e805b55d6122864307acf900619553cbe5"
+  },
+  "standards/continuation-surface-system-policy.yaml": {
+    "bytes": 8406,
+    "sha256": "a8417f5ae7348a44f1273399604248ae80891a49ec8422826b7f97360adbed5a"
+  },
+  "standards/contract-activation-closure.yaml": {
+    "bytes": 5568,
+    "sha256": "ecf62677175603b68a5da269faedd7f3b2475e218dfe75fd869ba1d925ab1bf0"
+  },
+  "standards/control-architecture.yaml": {
+    "bytes": 19149,
+    "sha256": "9245827ef7004e5d39d664ab37934e2883c8c277acb7c9f8f88fcda23ba25744"
+  },
+  "standards/control-context-hierarchy.yaml": {
+    "bytes": 9074,
+    "sha256": "55843b0ae0a3f25c09740649124880668ddac638789ae8cbea18fe4df9d00769"
+  },
+  "standards/control-context-state-service.yaml": {
+    "bytes": 27324,
+    "sha256": "732e8a163153a999906cc76b7ef4a899531682131e286ee3757fe97347d96458"
+  },
+  "standards/delivery-kernel.yaml": {
+    "bytes": 19078,
+    "sha256": "7cdad6f801642440bcc2f3bcd69aee318f62dc903928efef6144bf5ab3e63646"
+  },
+  "standards/development/adaptive-analysis-model.yaml": {
+    "bytes": 8114,
+    "sha256": "a3e7c234d923623b8dacc6df595d87f27e10b803d58471eb368ef3fdc799e7af"
+  },
+  "standards/development/adaptive-quality-workform.yaml": {
+    "bytes": 10364,
+    "sha256": "ed91b1ee42669f23d57a7fa2ce6985402a4345cb9326aa0b4618a9a197fdf206"
+  },
+  "standards/development/architectural-regrounding.yaml": {
+    "bytes": 5790,
+    "sha256": "6e613072d95c5b0c2bc998ef26cf632aa22df85a0e7daf7fe6182c5bd0c68f24"
+  },
+  "standards/development/consolidate.yaml": {
+    "bytes": 8584,
+    "sha256": "e2b757fd24dd76c370c04379dbca829e91fa250744589c64de8c891e46a81968"
+  },
+  "standards/development/delivery-failure-regression.yaml": {
+    "bytes": 13184,
+    "sha256": "495ecc6555c6693d148f21140f95098989ed04009099e0b5aadebb7af1cad8fe"
+  },
+  "standards/development/implementation-learning-loop.yaml": {
+    "bytes": 6612,
+    "sha256": "47941ade6d0223add07fe3564f4dee1138693634f8e1240e66de9eb1d81d8c19"
+  },
+  "standards/development/material-commitment-preflight.yaml": {
+    "bytes": 6772,
+    "sha256": "3a15707b3916b093f64833edc49c48907f52689a40a24f1fc3626056399dacd3"
+  },
+  "standards/development/powershell-level3-delivery-assurance.yaml": {
+    "bytes": 9016,
+    "sha256": "cb361f75ccd171e20c5a00dfe6f50f1748cdf1b3800e1e22328dc53020f4f83b"
+  },
+  "standards/development/reflective-adjustment-loop.yaml": {
+    "bytes": 8368,
+    "sha256": "6079baf0de8e4846c830ea3b466de6b4fbd5245f65aca33c3998886e19e9f0da"
+  },
+  "standards/development/relevance-retrieval.yaml": {
+    "bytes": 4642,
+    "sha256": "aacdd87fab673a96927ab04f7a1261444869205f7b7d2cbd8e42bb40728a6e9c"
+  },
+  "standards/development/streamlined-patch-workform.yaml": {
+    "bytes": 17496,
+    "sha256": "821846c33f032f126ac53d277d7dfbc2b6c9a125f90d4af9eca2ce55b27e802a"
+  },
+  "standards/development/wisdom-control-binding.yaml": {
+    "bytes": 3904,
+    "sha256": "126b7e1ba2948f84ad394a8e24191b73b126a313885567d126383794c81315ef"
+  },
+  "standards/doctor-assurance.yaml": {
+    "bytes": 2391,
+    "sha256": "a6fe95b4f4c0b7e98695fb1fc82311aa02ee3fb796b05a7463b9c1ce71aefe93"
+  },
+  "standards/human-continuation-surface.yaml": {
+    "bytes": 14715,
+    "sha256": "1d55c3a7d0deb82258f3ff3fa9fb164610c0f013eb141df83b8a40cfc0960c42"
+  },
+  "standards/human-navigation-surface.yaml": {
+    "bytes": 5299,
+    "sha256": "1b5e22fee3c4e3489c3391c944c02de1cfe385a643671a8aad84d2900e048f81"
+  },
+  "standards/immune-system.yaml": {
+    "bytes": 9907,
+    "sha256": "e85ad6f2d3868f5bd792340256743a691110ada611e19a8a4798d28359565ce3"
+  },
+  "standards/machine-contract-composition.yaml": {
+    "bytes": 4835,
+    "sha256": "857ba3c3fb71c68fdb4a57085098274b394f70e0912f275dae3ed753ff3bf9a6"
+  },
+  "standards/mcp.yaml": {
+    "bytes": 5071,
+    "sha256": "ed24f87b17f29503ea7b8970daa9bb412d211e39c0000c9d689698ac5a8789ec"
+  },
+  "standards/native-substrate.yaml": {
+    "bytes": 4604,
+    "sha256": "fba10c31420b6be8b4bd66357aaa14b6879bc193ecd2195663c16260bd18b81a"
+  },
+  "standards/operational-evidence.yaml": {
+    "bytes": 16485,
+    "sha256": "0f35a27cd9b40ea8902e7790f3ca3a2e81b1423b2aa019912cfaf6fe02015d3e"
+  },
+  "standards/operational-progress.yaml": {
+    "bytes": 5797,
+    "sha256": "3a73e5e371f82aac872c7b7f88606475800283bc9715e62bb2a61777b70d82d7"
+  },
+  "standards/patch-attempt-history.yaml": {
+    "bytes": 2886,
+    "sha256": "bafc8c2aa01fdc8fb6ab76a39683a914c44105939c4deb1cb5e48d82587a5c5e"
+  },
+  "standards/patch-package.yaml": {
+    "bytes": 8295,
+    "sha256": "46b146ce44a6e2b5a49b4aac67f4c2c96f08ea0d7c76375724cb294473d8b180"
+  },
+  "standards/patch-result-return-bridge.yaml": {
+    "bytes": 6016,
+    "sha256": "3a745955e6c2f1c03abb9bc32d9280e73ff0f01eb85cccc3ac52610c362e6735"
+  },
+  "standards/principalstambok.yaml": {
+    "bytes": 5207,
+    "sha256": "cee1a4b12c81abc1d1e360aa81c5303313bd55646f9a461edac837c9b6bf4ae8"
+  },
+  "standards/project-status.yaml": {
+    "bytes": 2309,
+    "sha256": "b4afc4a096d84ac6b761c1e3b9bb47f757ecb39c5f05aef38ae8f6e4de8be0f4"
+  },
+  "standards/project-terminal-roadmap-projection.yaml": {
+    "bytes": 2960,
+    "sha256": "e6541e8f53aef5a69d92baeeddd326391cc3ad0823e7f6009f1dba20e19af206"
+  },
+  "standards/publication-gate.yaml": {
+    "bytes": 1192,
+    "sha256": "53a546c7d6b9ad6e7cdfcd86ae7f43f7870ac58709003720147b25b3bd5b7ba3"
+  },
+  "standards/quality-gate.yaml": {
+    "bytes": 6168,
+    "sha256": "c2b43890c91057e9d071278241fe0205aedae9bba1902ff6c27cc1e6f03815aa"
+  },
+  "standards/release-platform.yaml": {
+    "bytes": 2054,
+    "sha256": "dc61505e13bc791de0e189040b7616080078f34d13324baccd2b4f4b2e68971a"
+  },
+  "standards/rule-model.yaml": {
+    "bytes": 2408,
+    "sha256": "476299147b997cfbd68ac357fba73daea04442f5fbb1c7fb9c0c0b267c466c97"
+  },
+  "standards/runtime/handboot-bootstrap-state-schema.yaml": {
+    "bytes": 1316,
+    "sha256": "c24966e3027931de6bc9d18cafcc0c463df42a3a86cf47289eec962414901ffc"
+  },
+  "standards/runtime/handboot.yaml": {
+    "bytes": 13422,
+    "sha256": "4e2b7a2a2cb92eb847e9292072c127f7a53168c91669f9ad2e0334da6835e099"
+  },
+  "standards/runtime/idea-object-pipeline.yaml": {
+    "bytes": 2622,
+    "sha256": "621cddae659ba20628018750aea751d22f89d1d945d4b083f75687f25690c2fa"
+  },
+  "standards/runtime/minimal-runtime-bootstrap.yaml": {
+    "bytes": 5077,
+    "sha256": "a89b1a31794f1bc773cab1e451981625519186be6900b51eb41954cb92846416"
+  },
+  "standards/runtime/runtime-0.1-contracts.yaml": {
+    "bytes": 11589,
+    "sha256": "eba432d7a9ffaccfa35ec952f1dd42d872491c7c6054a75dec3f79487bad5a31"
+  },
+  "standards/runtime/RUNTIME_DESIGN_LESSONS_PATCH_001A.yaml": {
+    "bytes": 741,
+    "sha256": "030a70186486c4c7a15b20118e7b0e4e00c3dbf1893bd459a5cdbe7341e4e6bc"
+  },
+  "standards/session-handoff-schema.yaml": {
+    "bytes": 1497,
+    "sha256": "5c28e1878b574c13856557703d022b67389ce0a8aba557f702b20744b2269681"
+  },
+  "standards/session-handoff.yaml": {
+    "bytes": 4588,
+    "sha256": "dac91ae832cdfda162e8e4ecf4f2073e3ca1c57bc177c21879ea80437c4c8657"
+  },
+  "standards/source-authority.yaml": {
+    "bytes": 5840,
+    "sha256": "3a2f2713e81e541b1941bf6e6b78b199f37952ea72fc65cb66f73b524cec9e6e"
+  },
+  "standards/standards.yaml": {
+    "bytes": 5183,
+    "sha256": "05fd61a419a2b4e2d87bc712b1f4d3bd9a38a7ae5b6b2afeb56e5955e09b86c2"
+  },
+  "standards/system-lifecycle.yaml": {
+    "bytes": 1634,
+    "sha256": "bad5171d0d16e2427450c1a3e48a3e8de0b667bd67c9852560e3d12b446c8868"
+  },
+  "standards/system-metamodel.yaml": {
+    "bytes": 4402,
+    "sha256": "1c913bf7fede0ad045ec2082ef0fa63368ffdf6ce31bc4c0a863af1ca327d0f1"
+  },
+  "standards/user-operating-profile-schema.yaml": {
+    "bytes": 743,
+    "sha256": "c84a9164d62ba2bde45cac45bd7dfd0ef6bac2a126fb22ad6658447aaa2bbeca"
+  },
+  "standards/user-operating-profile.yaml": {
+    "bytes": 6933,
+    "sha256": "3b1422538e9c1a1d69eb6bced954b3bb5599b10e91a750f1433a6507c4e61a45"
+  },
+  "standards/valider-command.yaml": {
+    "bytes": 2158,
+    "sha256": "e5488db61144e870e753b1e8f2bd342566683c344b8d1279b82d8d9ea163eb41"
+  },
+  "tooling/assurance/assurance_kernel.py": {
+    "bytes": 108729,
+    "sha256": "aae26b3206560d7488d8069e3007e24fa863e4249177fc2e33c6d593e839dcc6"
+  },
+  "tooling/assurance/component.yaml": {
+    "bytes": 743,
+    "sha256": "06f937b80299c8dd9a2de40a8120deebc9cf72ed88ad8bc661d054fdbd9ceb8b"
+  },
+  "tooling/assurance/immune_attestation.py": {
+    "bytes": 10060,
+    "sha256": "439361c48292e9a72c26798744ef98d52660e3c49fcb66b328b377de2647a9d0"
+  },
+  "tooling/builder/builder.yaml": {
+    "bytes": 35665,
+    "sha256": "1317ebecb690e6d58b5c1fc53ed91786529972c143275777efa3a032487fb1b9"
+  },
+  "tooling/builder/cerebro_runtime_release.ps1": {
+    "bytes": 16528,
+    "sha256": "fa10010cd910ed84432c74aadaf4a5baf471d4dae4158e0909bd252be10c39ab"
+  },
+  "tooling/builder/component.yaml": {
+    "bytes": 1180,
+    "sha256": "b6c5a24883ae14690d4d074cda99b4545a3bb39ad6b689bddc765e45fa6e8ff6"
+  },
+  "tooling/builder/pipeline.yaml": {
+    "bytes": 1206,
+    "sha256": "ef65c09ecb1c6865716812fe96cc7344f56d3a17ac41ce1beebf5892d532ef64"
+  },
+  "tooling/builder/README.md": {
+    "bytes": 230,
+    "sha256": "c7204b790ad660133f7e0095d3718346a27433d80efcdad78a8c3758c7f1b6ff"
+  },
+  "tooling/builder/standard_delivery_package.py": {
+    "bytes": 38322,
+    "sha256": "bbc5d6bb8f394e8313446be4c952738d52b620b72866098cf9c5565b3d14dc54"
+  },
+  "tooling/builder/templates/pshell/Cerebro.Tools.psd1": {
+    "bytes": 702,
+    "sha256": "38ef25b09b890fa7e8372334166a5a0335023865e268e09fc91740def1589258"
+  },
+  "tooling/builder/templates/pshell/Cerebro.Tools.psm1": {
+    "bytes": 33406,
+    "sha256": "42d05096240adf1d7bab860e25f222738b47dbfa79249e37d14e39e0282427b5"
+  },
+  "tooling/builder/templates/pshell/cerebro_handoff.ps1": {
+    "bytes": 12142,
+    "sha256": "c5e4780984ef615a407612e2f70b751b32937aeef380f91283ba66774f99beed"
+  },
+  "tooling/builder/templates/pshell/cerebro_level3_runner.ps1": {
+    "bytes": 6359,
+    "sha256": "9d667bbafba7a0faac0cfc16f1850b2968d3b467ed19d8f1ae42b4a248aa5831"
+  },
+  "tooling/builder/templates/pshell/cerebro_sync.ps1": {
+    "bytes": 10851,
+    "sha256": "0ef9213a449340aa3207a19a5a938f883c2606bc6b0e5629fdc123ca426b427c"
+  },
+  "tooling/change/adaptive-control-shadow-scenarios.json": {
+    "bytes": 15190,
+    "sha256": "09fe7b48cd81e8f4110263d91f1324efa2131ce0a2111584f5c1065f925f9507"
+  },
+  "tooling/change/adaptive_control_shadow.py": {
+    "bytes": 12139,
+    "sha256": "6a7a9d439ded648f9b9390639c8a9258dc0e0d07cc534cdb3df8d45c9c3745c4"
+  },
+  "tooling/change/campaign-policy.yaml": {
+    "bytes": 11587,
+    "sha256": "218f17c27c4e6696bc552a258356dc8bd6615bfe70979472c0c6645abb066b48"
+  },
+  "tooling/change/capsule-schema.json": {
+    "bytes": 3682,
+    "sha256": "b39922b45056c018f3fb391bd39dbbd89a34f9ef05cd1ceae112cf776b333096"
+  },
+  "tooling/change/change_engine.py": {
+    "bytes": 41060,
+    "sha256": "b5c1f1ec12089cb54fbe0bba38254ab0249a1fbb4c1b45e8579b7cb37894086e"
+  },
+  "tooling/change/component.yaml": {
+    "bytes": 1960,
+    "sha256": "d64e631e09d12ea1c6c8f35d80d84a3e676abb1b03092ab1a24815cd1428b2a4"
+  },
+  "tooling/change/failure-record-schema.json": {
+    "bytes": 1808,
+    "sha256": "d04fcc642dbb3b471597135cfda9bc780c5e9736160be1c35867a3fe11e9a08e"
+  },
+  "tooling/closure/closure-input-schema.json": {
+    "bytes": 941,
+    "sha256": "a741b1c69c034b19d85d97ba6d20d2f931f058514bef828ac537a5d1f154080e"
+  },
+  "tooling/closure/closure_engine.py": {
+    "bytes": 11438,
+    "sha256": "d9ae81d0b97a31a30163f18143d601186ec3e60eed063f729c374dfd5abf9f5c"
+  },
+  "tooling/closure/component.yaml": {
+    "bytes": 667,
+    "sha256": "8a079dba6d4bb676ed9186adc90e1c66d4354f2e21fbac80e099517f7f19fa20"
+  },
+  "tooling/context/actor_admission_owner_operator.py": {
+    "bytes": 8571,
+    "sha256": "5c23ee76b786930089a4072a8cf21dc7fa46a82570b4028b0680b2ed0e040e2e"
+  },
+  "tooling/context/assistant_overlay_owner_operator.py": {
+    "bytes": 40563,
+    "sha256": "ff5b970f270394ac3491fe701478325a42cac8c458d5a41a07e90adbc5a7d4e5"
+  },
+  "tooling/context/control_context_owner_persistence.py": {
+    "bytes": 10015,
+    "sha256": "98449c6c1cfb1bb4a5f8b88aa4d1fcdb721d95976b47dffa853e49a32ba5909f"
+  },
+  "tooling/context/control_context_postgres_migrations.json": {
+    "bytes": 4746,
+    "sha256": "b956299d863187eea8dde6a8f1d74adc2a4c0a485f9017f496975a82cd84094a"
+  },
+  "tooling/context/control_context_principal_succession_provider.py": {
+    "bytes": 7098,
+    "sha256": "e70f8fefc3893291195b57aa4402b1c660254c359b863965b83653b48620310d"
+  },
+  "tooling/context/control_context_registry.py": {
+    "bytes": 82184,
+    "sha256": "4ca14de7d182e0ddc38e64c2cc0065038d9e4ff63fa63af7dd12182bb8025fd7"
+  },
+  "tooling/context/control_context_state_port.py": {
+    "bytes": 53081,
+    "sha256": "a351c719844144c32007bc7823b75e1cdc664994982e2b8d803518c288b0d63c"
+  },
+  "tooling/context/control_context_state_postgres.py": {
+    "bytes": 124041,
+    "sha256": "f5559357ba18ffe332be99d17f5a7c253f1a63285f8779c23a0cc5c041e30d98"
+  },
+  "tooling/context/control_context_state_postgres.sql": {
+    "bytes": 25922,
+    "sha256": "6312ab6d5fae58cfa52bfb1d13b1d361ebe73e3a4b37bb34f4875e480afc420d"
+  },
+  "tooling/context/control_context_state_postgres_0002_actor_claim_shadow.sql": {
+    "bytes": 6374,
+    "sha256": "9b51fa1cb0b46618f5677670a7ad48411ceb50febb05503c8948df8844e02b0c"
+  },
+  "tooling/context/control_context_state_postgres_0003_human_t3_break_glass.sql": {
+    "bytes": 3737,
+    "sha256": "5c83038f88d7946554ee6cc7a01cdb703d23da739cd0734bd6c50b5e51a34167"
+  },
+  "tooling/context/control_context_state_postgres_0004_principal_succession_permit.sql": {
+    "bytes": 3807,
+    "sha256": "71c64f0caca37fa116a68e8c05bb9b08c63671e80b132c1f85f34177f5fdfde6"
+  },
+  "tooling/context/control_context_state_postgres_0005_pre_role_generation.sql": {
+    "bytes": 4895,
+    "sha256": "6465fec59b0ae07e43408fbc3d3394efe1ca6d4537f1c57bb35d06f6517207dd"
+  },
+  "tooling/context/control_context_state_postgres_0006_pm_owner_ready.sql": {
+    "bytes": 3123,
+    "sha256": "a11ea2b46ef33f404e97a5319e93a399353a94da061f0e5cf6daeb13c09f6332"
+  },
+  "tooling/context/control_context_state_postgres_0007_x9_channel.sql": {
+    "bytes": 7803,
+    "sha256": "139d6704defe4f6758fb1b285d5e5ba55fd4170697a103a0ab8eb391fdfd36b4"
+  },
+  "tooling/context/control_context_state_postgres_0008_assistant_overlay_decision.sql": {
+    "bytes": 3306,
+    "sha256": "e24301ac096da7bc30c917dfc84d525b7b5d96a6db12e52099c06d387a0933d1"
+  },
+  "tooling/context/control_context_state_postgres_0009_bk11_owner_backend_custody.sql": {
+    "bytes": 18551,
+    "sha256": "dd10acd0804bc4715d9243d9caf60522d7ba5262227623d9832dd44adf6ae6cc"
+  },
+  "tooling/context/control_context_state_postgres_0010_room_return_d1_outbox.sql": {
+    "bytes": 11109,
+    "sha256": "eb54b59323c42f9d36a2a1b4d0f5a39d498f07b5e41f1019e85897e1caeb0f69"
+  },
+  "tooling/context/control_context_state_postgres_0011_bk11_assignment_family.sql": {
+    "bytes": 2940,
+    "sha256": "b3acb5b89aeef2c8534110b5fdbd76bda12932f95615092f1857ce3c12299814"
+  },
+  "tooling/context/control_context_state_postgres_0012_worker_method_owner.sql": {
+    "bytes": 5356,
+    "sha256": "410b461007c64846ec3edde3b2c7791770f8d89f0a5ac26090da3c32c57d4101"
+  },
+  "tooling/context/control_context_state_postgres_0013_room_return_actor_read.sql": {
+    "bytes": 8430,
+    "sha256": "e80444d02933ba37ecf10de2efada29de5150db08ec37506641619c5849f9967"
+  },
+  "tooling/context/control_context_state_postgres_0014_actor_admission_owner.sql": {
+    "bytes": 9292,
+    "sha256": "2a460c9452b7306be08bfe9cd76beaeaeb68f41ca9e6baf37a6c1776f94e18b0"
+  },
+  "tooling/context/control_context_state_postgres_0015_pm_admission_owner.sql": {
+    "bytes": 3164,
+    "sha256": "a80ad58627047f382c016dfa60d3682753189c72ca4ad74bb20ae2556d182b42"
+  },
+  "tooling/context/control_owner_effect.py": {
+    "bytes": 6576,
+    "sha256": "06fb9b68b695ece23a6d05b8a4146b08ba5939d7ea0d8db2ef4f70d8a68b662d"
+  },
+  "tooling/context/pm_admission_owner_operator.py": {
+    "bytes": 12994,
+    "sha256": "b0614e3b72fd7c7bb70cb0ba9d03b4f3063b54a17de02fb8c25299d33383b58c"
+  },
+  "tooling/context/relevance_engine.py": {
+    "bytes": 18274,
+    "sha256": "897f90b6dbe37cee6d9d53cdcd342a474925c41d78bb6ae07a3f66c3e9a6e4cf"
+  },
+  "tooling/context/worker_method_operator_material.py": {
+    "bytes": 1544,
+    "sha256": "9b8d0ab9fe773092ad932fb63fa5e2e4388f7ce034940fd113ae22880448af34"
+  },
+  "tooling/context/worker_method_owner_operator.py": {
+    "bytes": 11007,
+    "sha256": "c3a54e59454a15c15d905b3e975846febd9fd167624a4705d88cee41c68b6372"
+  },
+  "tooling/delivery/Cerebro.StandardDeliveryKernel.ps1": {
+    "bytes": 122287,
+    "sha256": "51a05167012271c2ee9ad221b4fa9d7a4a09265e2e3a2d8f77ee9227753dbfda"
+  },
+  "tooling/delivery/Cerebro.StandardDeliveryLauncher.ps1": {
+    "bytes": 31708,
+    "sha256": "02578abb0d02f4759745de46527e34ba1de961ec953208b59978ca3cdf04bf44"
+  },
+  "tooling/delivery/Cerebro.StandardDiagnosticBridge.ps1": {
+    "bytes": 8482,
+    "sha256": "9b78f1c2d464c7e61a84a80a13c65ba632ef76aad78d86e792ed46dd1c5946a9"
+  },
+  "tooling/delivery/Cerebro.WorkingSourceCurrentization.ps1": {
+    "bytes": 7379,
+    "sha256": "95b6cbe3abac0b553227bfb3e3cb9d0f36e95233aad0c034ab93eeecef95ab4f"
+  },
+  "tooling/delivery/cerebro_delivery.ps1": {
+    "bytes": 40172,
+    "sha256": "6dde3280cbdc5d27016fcef19a2f7749479169b5d68433e08a64ed8b7ef58eb7"
+  },
+  "tooling/delivery/component.yaml": {
+    "bytes": 4402,
+    "sha256": "46c6dcbee3af0b8f147b54f32ea0e8e7f9907413690530e84d125d6ccd3fb161"
+  },
+  "tooling/delivery/delivery_controller.py": {
+    "bytes": 14338,
+    "sha256": "5e0d3a82971a86c9e00fa67c48b30a126fe1fbb7bb23c84929ceef6fbce7910c"
+  },
+  "tooling/delivery/receipt-schema.json": {
+    "bytes": 677,
+    "sha256": "4471238ac4526d8bfc6b63139e59c06479f1964a9ce66a0deb52d764a33cbb47"
+  },
+  "tooling/delivery/selection-state-schema.json": {
+    "bytes": 6612,
+    "sha256": "c7f86c9209c6f57a9b7c8894565bb564b496eb34230d0a25d9f0265bea4663e5"
+  },
+  "tooling/delivery/working-source-currentization-receipt.schema.json": {
+    "bytes": 2085,
+    "sha256": "48881e1a857b29efda55e51208ed2eb92b77d5a56316d5c0cd412c132c37b4e8"
+  },
+  "tooling/doctor/component.yaml": {
+    "bytes": 509,
+    "sha256": "e24c5a0a34b0e84c209f178ca4262d0ee3e724312ddb0d18db97b624eddda0c3"
+  },
+  "tooling/doctor/doctor_gate.py": {
+    "bytes": 7981,
+    "sha256": "bc5f4705bd42a9ddea3bd95fd0515ed106cb29c33848e7550ab5654c04afdacb"
+  },
+  "tooling/doctor/doctor_trust.py": {
+    "bytes": 8593,
+    "sha256": "654f5125eb933c2923bf19d4862f0b399abb479879b76ad1e73858db24213d0c"
+  },
+  "tooling/doctor/system_doctor.py": {
+    "bytes": 13241,
+    "sha256": "fe7f775d528f34e207762168c399e2703973dca951a7a44b4ba28646df171efa"
+  },
+  "tooling/host/cerebro_host.py": {
+    "bytes": 112972,
+    "sha256": "2705643a5b3379f1d9400b742f725f9eedb1c2d55e394d9f46e6466bb822e81b"
+  },
+  "tooling/host/component.yaml": {
+    "bytes": 4432,
+    "sha256": "ea7e453fa9b833e1f75c6f574b1cd6ab8f01355920cf2e82694bd341c8d85c57"
+  },
+  "tooling/host/diagnostic_capsule.py": {
+    "bytes": 31293,
+    "sha256": "e9bce2ffdd212c80df0082f0620240c99fcb60a2ee56a8831c16666c43711231"
+  },
+  "tooling/host/human_admin_projection_sources.py": {
+    "bytes": 5248,
+    "sha256": "b2f156e13c7e6af290dafa292bce740ae972c428df7002ed38f82f5cfc342f04"
+  },
+  "tooling/owner_state/component.yaml": {
+    "bytes": 1557,
+    "sha256": "1f4cf55d568568117d3e2d9494bc5c1636407e1448416d5be8157fc48a9d817f"
+  },
+  "tooling/owner_state/owner_state_persistence.py": {
+    "bytes": 46481,
+    "sha256": "3fbb5a372d0e8273e0eaf5f3e5c1b8647669c935a24f28a45c9f1363e5b6ed9c"
+  },
+  "tooling/publisher/component.yaml": {
+    "bytes": 603,
+    "sha256": "8d59d5b3251c984b9d58b90cc7eddbfb53f30f2a4f964db3cc24c8d1a9b56846"
+  },
+  "tooling/publisher/history-policy.yaml": {
+    "bytes": 148,
+    "sha256": "73cc1fbf851a5193a7467814733bf24449c427958fc6d0934705245dcc6487ef"
+  },
+  "tooling/publisher/README.md": {
+    "bytes": 82,
+    "sha256": "f8afe4f3ef53bef3d89b553a041276e41dd0159d4a511acec0634f1d64bc9b72"
+  },
+  "tooling/return-bridge/Cerebro.ReturnBridgePump.ps1": {
+    "bytes": 19593,
+    "sha256": "3e5961a29e807434eb0c75baa68ad40b17d7d79c386a1e15119716b1c6c0637c"
+  },
+  "tooling/runtime-host/boot_authority_selftest.py": {
+    "bytes": 46156,
+    "sha256": "ce44dada360ed818718166cc9d9ffda554226945100c64b7035364568ab94e92"
+  },
+  "tooling/runtime-host/cerebro_boot.ps1": {
+    "bytes": 64866,
+    "sha256": "b75c7e63f5e84d99fc78fd053d1f80d170612f7aee6c7692ce37bc79c850ee22"
+  },
+  "tooling/runtime-host/cerebro_machine_proof.ps1": {
+    "bytes": 8626,
+    "sha256": "5721e159b49b227079aab22e6be6b2f30ac62ff96887b62051e81695e3058deb"
+  },
+  "tooling/runtime-host/cerebro_resume.ps1": {
+    "bytes": 6554,
+    "sha256": "268c63f933a902e5f91f43aaba53ca676dbe9703846fecf0a1b802ae56d7dee7"
+  },
+  "tooling/runtime-host/cerebro_runtime.ps1": {
+    "bytes": 50388,
+    "sha256": "a0bf6342de74fc80d0adb98b178aa6dd79e50634a113a0fc14a03ad44c80621c"
+  },
+  "tooling/runtime-host/cerebro_runtime.py": {
+    "bytes": 33255,
+    "sha256": "07d13e4a922392dddfe75b4dbcc87ae031426d867f1759254df3a54c3b4171a8"
+  },
+  "tooling/runtime-host/cerebro_runtime_host.ps1": {
+    "bytes": 8451,
+    "sha256": "6698e6639dbf501243684b737295859e7469523b1f06441efa1ec318552b3925"
+  },
+  "tooling/runtime-host/cerebro_user_profile.ps1": {
+    "bytes": 5569,
+    "sha256": "51dd5a0a883909bb552ad96133894a378ab172d54971598140a1ed9be8a8d115"
+  },
+  "tooling/runtime-host/component.yaml": {
+    "bytes": 4143,
+    "sha256": "2686f8666d9d5fd873194a980471316806079f975ab12d318dd155b7460096be"
+  },
+  "tooling/runtime-host/first-light-contract.yaml": {
+    "bytes": 3819,
+    "sha256": "995a9e57307a882d4d920017cf033736194ced44c6a1aa6be2f0b6a324af3730"
+  },
+  "tooling/runtime-host/first_light_runtime.py": {
+    "bytes": 26410,
+    "sha256": "8e32414903511b7591bf4b80a98e2a96258c05614fad1944c6cde98334711789"
+  },
+  "tooling/runtime-host/README.md": {
+    "bytes": 429,
+    "sha256": "3f0156c0fed6b30829e08bd508c2f7e397743d5f17a31113b93cb0b51e2deeb6"
+  },
+  "tooling/runtime-host/runtime2_handoff_consumer.py": {
+    "bytes": 3078,
+    "sha256": "c4b79dbf8889ae24f5bbc3d5380947b556fa2009aa26776e19a4c3d986673833"
+  },
+  "tooling/runtime-host/temporalis.py": {
+    "bytes": 5109,
+    "sha256": "f652a145c1c3e50e72727b8399673e0c50658c7abd260c14aa6d681698ce6217"
+  },
+  "tooling/validator/assistant_overlay_livecut_integration_validation.py": {
+    "bytes": 14177,
+    "sha256": "4713a6f79ef0599a811e1e494eb8e1e9c241e1dc046b7302e548da3fdd1ecbe0"
+  },
+  "tooling/validator/assistant_overlay_owner_operator_validation.py": {
+    "bytes": 15021,
+    "sha256": "997c94f3478dbe0732b6045e12df4d0529996398e0967cab207a1b65b52a68c6"
+  },
+  "tooling/validator/assurance_continuity.py": {
+    "bytes": 2976,
+    "sha256": "9f368dfcfcfdf60b078826937d8d767c7232ef216ee448fd8a3aa477a5560b88"
+  },
+  "tooling/validator/assurance_kernel_validation.py": {
+    "bytes": 44379,
+    "sha256": "6b44dd69afcbd66427a9195ca78d529c76c5bade405f5e4da2b7e9e2f0bc4ef2"
+  },
+  "tooling/validator/bk07_authenticated_caller_projection_validation.py": {
+    "bytes": 6943,
+    "sha256": "a41c32d0fe51a7fc80ff0052b2733a680fc9882e03bd2b7899e28a0449c65aea"
+  },
+  "tooling/validator/bk07_runtime_binding_read_validation.py": {
+    "bytes": 6283,
+    "sha256": "1d28764532749cc6de9fa026c74aeafbcd21e7b6a1ab3da1cc3b9431ff6d6a36"
+  },
+  "tooling/validator/boot_birth_issuer_validation.py": {
+    "bytes": 6143,
+    "sha256": "faa9105f06943da9cc6f8ce03bdb5b462f75b8c3e94314d39cf967f8872919a7"
+  },
+  "tooling/validator/canonical_foundation.py": {
+    "bytes": 5858,
+    "sha256": "ba39b23464fe1a056fd7da6875b5c296fcc201e01dfe96c9d837b94a91c1e288"
+  },
+  "tooling/validator/Cerebro.ActiveSourceIntegrityClosure.ps1": {
+    "bytes": 3765,
+    "sha256": "525ee295eb31f5949a8a3bc0c62c62115590f9519b7cf8287d436c08c364a724"
+  },
+  "tooling/validator/cerebro_active_source_closure.ps1": {
+    "bytes": 11230,
+    "sha256": "d8bc7b80c66ac933c45beb0e90906fafc519c3d0921329f508c4ec48f056fde6"
+  },
+  "tooling/validator/cerebro_contract_activation_closure.ps1": {
+    "bytes": 43126,
+    "sha256": "e168f3e945643b1c6419c9a8c0c69e4e9df7facb45f4f95b29f93d7cde2a1382"
+  },
+  "tooling/validator/change_campaign_closeout.py": {
+    "bytes": 9230,
+    "sha256": "a1f4abb95f8e3082256f1b6385315401bdb0afcf791f66f485873b94907148a7"
+  },
+  "tooling/validator/checks.yaml": {
+    "bytes": 106022,
+    "sha256": "6281bc70f0d49b0adfaea3a4f0507799a940f9cf557a792103b187480d5408e3"
+  },
+  "tooling/validator/component.yaml": {
+    "bytes": 2924,
+    "sha256": "90339b243bbf432d29ade51b25b7e9e3fce36e1589e3796c1878a110244c5ae3"
+  },
+  "tooling/validator/constitution_adaptive_lock.py": {
+    "bytes": 21678,
+    "sha256": "ae02e76183055e2984e988578ab14efdb808f1e3d31b253864c41c720e2032e1"
+  },
+  "tooling/validator/context_host_retention_validation.py": {
+    "bytes": 4254,
+    "sha256": "4cb7c8405ec82299bdcbb69e514b1ebeb04f1f6d7d13a6fc95108bb1a2b4cbfb"
+  },
+  "tooling/validator/continuation_surface_validation.py": {
+    "bytes": 58365,
+    "sha256": "a911c2fa2cf67c86f37f05c23257c0a8445c25bf036013d649b3da46d410127c"
+  },
+  "tooling/validator/contract-activation-bindings.json": {
+    "bytes": 96622,
+    "sha256": "fadb4500cf028d3553d469f865317efaaee55048873a46a086c62ae5a49f4321"
+  },
+  "tooling/validator/control_context_mcp_sdk_validation.py": {
+    "bytes": 32696,
+    "sha256": "39bab58b6e9be706282be41ff1b0deaec001c5a581c0efd2d1b894a2e31d61cc"
+  },
+  "tooling/validator/control_context_owner_persistence_validation.py": {
+    "bytes": 11912,
+    "sha256": "20f884f832930e32501e87370fdac8ca93742b35c9a95b9e632a7439c4cf5a69"
+  },
+  "tooling/validator/control_context_postgres_validation.py": {
+    "bytes": 44898,
+    "sha256": "3010d519e6a7c2d7c4f3603c77d878e1eb587acf6a3f7a75c8614b59f1f17027"
+  },
+  "tooling/validator/control_context_remote_runtime_validation.py": {
+    "bytes": 24955,
+    "sha256": "1e05c2d5c5897ff5b33c4d0b3d9c4f70134836362b35f70329aeefce7c758c51"
+  },
+  "tooling/validator/control_context_remote_service_validation.py": {
+    "bytes": 23316,
+    "sha256": "41bb32cf92b5c9386365b0e0a5b9db7e624c691cd6ea92d78edcd36b584768df"
+  },
+  "tooling/validator/control_context_scenarios.json": {
+    "bytes": 9870,
+    "sha256": "e0d3a2e467b8f6a87ff1bbe91d836da5922a2fe7d52ce66ab6f4cf0328573fd5"
+  },
+  "tooling/validator/control_context_tools_validation.py": {
+    "bytes": 80161,
+    "sha256": "300a086e31d89c1177402e768456d4a25a9e2a8a6f3899a227982940bdbfb8ac"
+  },
+  "tooling/validator/control_context_validation.py": {
+    "bytes": 48489,
+    "sha256": "f02c914d8850b77d18bda47f10db68a0f162828940c3ebc1430132d88b515344"
+  },
+  "tooling/validator/control_resolution_host_validation.py": {
+    "bytes": 50508,
+    "sha256": "0c925efefc1a78de1fc90733278414cff5c6194929e1003870da0c440ef2a5f3"
+  },
+  "tooling/validator/delivery-kernel-regression.yaml": {
+    "bytes": 1522,
+    "sha256": "ee1e902525897ed63a844259d4c0e7bb05131ea995ba445d63fe4e42bd21dc0b"
+  },
+  "tooling/validator/doctor_validation.py": {
+    "bytes": 3553,
+    "sha256": "2fdc5586d0167d08b166c530e8db97b84353c90a1949d5567a403e89d4d71117"
+  },
+  "tooling/validator/first_light_runtime_validation.py": {
+    "bytes": 39411,
+    "sha256": "45adf0fcee12b46e165bba6d492f019c0b6df4b084f28be32241f8b942e7c7c9"
+  },
+  "tooling/validator/human_admin_projection_validation.py": {
+    "bytes": 28213,
+    "sha256": "ba50d3b23703bdbeb3359dc2287d8eb05925f3a998dc11865a8f1ca4d62fc867"
+  },
+  "tooling/validator/human_execution_handoff.py": {
+    "bytes": 25466,
+    "sha256": "c4e776c32972870bc30a2a5484878e0c254c7381fa0a3ea134b14e2aa9c05324"
+  },
+  "tooling/validator/human_navigation_surface_validation.py": {
+    "bytes": 29979,
+    "sha256": "1dc77a5dc8d317b16ca8b3a831bc7fd800c9b06c0deb1d62a80a85438de8445c"
+  },
+  "tooling/validator/integrity_validation.py": {
+    "bytes": 28067,
+    "sha256": "98efcf3f701e85b47f88a5fc6fbcde99cd8902180e638c554ea998b9b3e6c88c"
+  },
+  "tooling/validator/kompass_obsidian_validation.py": {
+    "bytes": 6778,
+    "sha256": "b2cddb0093eacf78d164d3bc5a428b8ce318b962ad2467668f6572246c817522"
+  },
+  "tooling/validator/live_shadow_projection_validation.py": {
+    "bytes": 3625,
+    "sha256": "2ff4c33992d2151719ba9cb12614478c062eab8fd51642a38b2c11cd25f812ab"
+  },
+  "tooling/validator/owner_state_persistence_validation.py": {
+    "bytes": 17221,
+    "sha256": "6089661de688816cc430202d3e492ebb0e1ed23ae72320bc94d7edb6cba56912"
+  },
+  "tooling/validator/patch_result_return_bridge_validation.py": {
+    "bytes": 14298,
+    "sha256": "616fc096a902823e64b878a46b380e346abcc0a0ad7caf034d626a894e36c725"
+  },
+  "tooling/validator/pm_owner_atomic_validation.py": {
+    "bytes": 7403,
+    "sha256": "f0661f0e3ebd9848bae79d78eb4ddbf8e8340b9cbd1bd61e75e5a7d7fbb7773a"
+  },
+  "tooling/validator/project_manager_control_governor_validation.py": {
+    "bytes": 28078,
+    "sha256": "8e1c5a8f0b7d45d881e41492aa4cdf9e8b24e56fd67fa9a836196caa95d4a439"
+  },
+  "tooling/validator/quality_trace.py": {
+    "bytes": 19083,
+    "sha256": "8aa6f66f5a27a716edab18f15e77619a4afb3e8aeb39f1e1fcd914f497959308"
+  },
+  "tooling/validator/README.md": {
+    "bytes": 227,
+    "sha256": "d71d36afe5bcc1fc8265af24b6bded1d3544114dc1de5ff39ee9680a9f2e866e"
+  },
+  "tooling/validator/runtime2_human_execution_handoff.py": {
+    "bytes": 37312,
+    "sha256": "29e38b0995d069fbb6dd930d5aacc03305fc77e13124dc5e924c4b574295258b"
+  },
+  "tooling/validator/runtime2_target_runtime.py": {
+    "bytes": 21187,
+    "sha256": "fa1908159b49ef21e229c9862f47ff8fe960199e53205ee32a93ac6c9686c220"
+  },
+  "tooling/validator/standing_worker_attach_validation.py": {
+    "bytes": 4020,
+    "sha256": "2d24f1470a277a082d67df3d1bb020ee2e32b9f4d132e633a33e5748f912c53a"
+  },
+  "tooling/validator/target-runtime/Invoke-CerebroWindowsPowerShellValidation.ps1": {
+    "bytes": 21787,
+    "sha256": "79a7819e3870c46215b2b490b74d25a5fa364818ae20b45d20c4ab98d9ca5ef6"
+  },
+  "tooling/validator/target-runtime/windows-powershell.json": {
+    "bytes": 542,
+    "sha256": "17615c158abff94b61ad1d3af64dbf99eef55689c10235982f205e5d43a01566"
+  },
+  "tooling/validator/target-runtime-validation.yaml": {
+    "bytes": 3900,
+    "sha256": "6aa621edf512e4247f6e8dc415a8006c729443338ae6584678d5556e23fc771d"
+  },
+  "tooling/validator/target_runtime_validation.py": {
+    "bytes": 34546,
+    "sha256": "ce6c1fbcf430481c0d975581e5285edcc5bac5dff8dafed970f94a796abba4fa"
+  },
+  "tooling/validator/test_runtime_session_bootstrap.py": {
+    "bytes": 3294,
+    "sha256": "1c601a909c9bd4c654687248b24b8ff5af096562b68349fbbcbf17826c29960b"
+  },
+  "tooling/validator/test_signalvev_notice_bridge.py": {
+    "bytes": 23730,
+    "sha256": "8fa3e0b34e4af7acbae7ffbfa41ae6b28ab9f144b87f37c6ace7a00884c016a7"
+  },
+  "tooling/validator/working_source_currentization_validation.py": {
+    "bytes": 2712,
+    "sha256": "bdc28698e43909a88a04be236403fc10d7a966ee37d5f111768169daeb2c9f31"
+  },
+  "tooling/validator/x9_producer_host_validation.py": {
+    "bytes": 10576,
+    "sha256": "a67dcbf0f948e16351debaf73928506a1993098e51c507cbd2c0ec9bc0966823"
+  },
+  "tooling/validator/x9_receiver_host_validation.py": {
+    "bytes": 11634,
+    "sha256": "cbb18ddcd8fd2aa4abdf24657d352661432822085af0ba8ef525d8dff2987c39"
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "state": "R2_NARROW_DOCKER_SAFE_DIRECTORY_FIX_P24_LINUX_CHECK_PENDING",
+  "installed_target_preserved": "be7ed744-4f0a-47dd-908d-7a113ec7337b has no public PM resolve port",
+  "source_owner_selection": "P24 ONE-REAL-PG-TO-RECIPIENT separate_live_preparation; PM same A1 source package",
+  "canonical_source_commit": "b1aafd7cee9385227dd757a64884df2f816296d4",
+  "authentic_bundle": {
+    "bytes": 3863626,
+    "sha256": "9e33807e60ab65aefaa24666525ad9f0a55f697674234d0c319544e4c9d72b27"
+  },
+  "base_files": 439,
+  "overlay": {
+    "deployment/app.py": {
+      "bytes": 22280,
+      "sha256": "eb3764018dad8507d30e7601d339deadf741ead7eed643632a91e6ce7dcb889a",
+      "base_sha256": "451b09a37db2a28a713a5cb4fa0c8f31db8d6ecfcc4a3a3a25652c42612e749b"
+    },
+    "deployment/pm_public_resolution_wiring.py": {
+      "bytes": 2161,
+      "sha256": "df308e5d961272f59ec70ab90622f463b463d9b8056ba428edab9a7963ae294b",
+      "base_sha256": null
+    },
+    "Dockerfile": {
+      "bytes": 1493,
+      "sha256": "f10d9aebd2bd2d95238b47a3e89a6a1758c4078a3a5c49a2661312c04cc5177b",
+      "base_sha256": "644bb08e50745f6c750e0bafa95b174acad9f96bea0f4cf9d0f71de0d1a18a6e"
+    },
+    "mcp/authenticated-binding-basis.schema.json": {
+      "bytes": 1598,
+      "sha256": "20319d809ef643b1da07c71bbac99b9f844965137bd64acf807692a4a786da5f",
+      "base_sha256": "20319d809ef643b1da07c71bbac99b9f844965137bd64acf807692a4a786da5f"
+    },
+    "mcp/authenticated-caller-observation.schema.json": {
+      "bytes": 3747,
+      "sha256": "fefd137611d032027408b89e07aa70946826232eabbb9a282b08029774152d75",
+      "base_sha256": "fefd137611d032027408b89e07aa70946826232eabbb9a282b08029774152d75"
+    },
+    "mcp/control_context_remote_runtime.py": {
+      "bytes": 33045,
+      "sha256": "adcf48ac44ba66f7a4cfe945efd0b51eaf52ed5a5afe9d0a731f63a9248c23a3",
+      "base_sha256": "e985db44dfe0f6caeb22af13e563cb8db5eb813d0956c11b7b6b5d5237e57434"
+    },
+    "mcp/control_context_remote_service.py": {
+      "bytes": 30243,
+      "sha256": "3c7274d5c9d5bdba1d711174e32473d5bcd1d883c0ed9f338bf45023774d5780",
+      "base_sha256": "9df88565d92f679dbcd6dcc7792620ad6412a173e893013b53afa77f70178d63"
+    },
+    "mcp/control_context_tools.py": {
+      "bytes": 181923,
+      "sha256": "98e8e80d7c6412e2bd1b66a4ce584376887e35ed2259397529af3d51e10a9669",
+      "base_sha256": "2179c45f6374677ba2cb55a67a58f1ecaf5fe85b25270d1cb41154560d8026fc"
+    },
+    "mcp/human-t3-break-glass.schema.json": {
+      "bytes": 5072,
+      "sha256": "a7a13cb59db2ce83f06b3180854096a6f1be879d45c4ca15b77cfeda29fbd1e4",
+      "base_sha256": "a7a13cb59db2ce83f06b3180854096a6f1be879d45c4ca15b77cfeda29fbd1e4"
+    },
+    "mcp/pm_control_resolution_port.py": {
+      "bytes": 6165,
+      "sha256": "89eeff13108506a9d32d85769580870cef08b4afdbf4522ba2d6c139234d5304",
+      "base_sha256": null
+    },
+    "mcp/standing-worker-policy-observation.schema.json": {
+      "bytes": 2653,
+      "sha256": "f369c1fb446b2a4ee72d34aa511fd6c8d38f1b9ed6d061f6bde7d28ea8c07e1e",
+      "base_sha256": "f369c1fb446b2a4ee72d34aa511fd6c8d38f1b9ed6d061f6bde7d28ea8c07e1e"
+    },
+    "requirements.txt": {
+      "bytes": 99,
+      "sha256": "84b6afdf49818b982c17955c99af6f2c3032ef259ab0a449597026be44ef93ed",
+      "base_sha256": "a6a1be04a7c6c5ca72680fb4b10f8a3a56a7f85871ed93ea3a92a1d8e61dbf21"
+    },
+    "tooling/context/control_context_state_port.py": {
+      "bytes": 54275,
+      "sha256": "213f7b35165ecd868c43168cb3477467624e92f81b35d324097730d7bf39787d",
+      "base_sha256": "a351c719844144c32007bc7823b75e1cdc664994982e2b8d803518c288b0d63c"
+    },
+    "tooling/context/control_context_state_postgres.py": {
+      "bytes": 125592,
+      "sha256": "3603ce40a0f86fb1384a5c7892cdbccf7fd75f9340f0861d5ad79edd1e9b3c2c",
+      "base_sha256": "f5559357ba18ffe332be99d17f5a7c253f1a63285f8779c23a0cc5c041e30d98"
+    }
+  },
+  "local_dependency_observation": {
+    "python": "3.13.15",
+    "PyYAML": "6.0.3",
+    "mcp": "2.0.0",
+    "psycopg": "3.3.6"
+  },
+  "target_dependency_contract": "Existing Python3.12-slim, mcp==2.0.0, psycopg>=3.2<4, PyJWTcrypto>=2.10<3, uvicorn>=0.35<1; add PyYAML==6.0.3 and OS git. Exact Linux image/dependency lock/build SBOM not yet produced.",
+  "remaining": "P24 sole Linux builder verifies UID10001 revparse/status/promotionbasis and rejection of another root-owned repo; actual image/dependency/base/caller/profile and future release/readback gates remain. No parallel A1 build.",
+  "previous_package_sha256": "1ad0dbeac8e87c2c71d9cb24a365d50abb76597878e83f2bb526a6171678b74d",
+  "r2_delta": "Only Dockerfile: immutable exact b1 root trusted through root-owned0644 system Git config; sole exact safe.directory entry, no wildcard or service ownership."
+}
