@@ -1,0 +1,117 @@
+{
+  "schema": "a1-qualified-pg18-operator-source/v1",
+  "state": "REAL_LOCAL_PG18_QUALIFIED_SOURCE_NOT_PRODUCTION_AUTHORITY",
+  "helper_sha256": "f39084133e102142706fc6d349a2594f51ffeeb032e2c14e9c51bc755f493640",
+  "parent_helper_sha256": "581ed3a38ad7beb03d0bd0ca4162131d1a5f8557f31f06ca1c81efa03b048599",
+  "only_changed_function": "schema_snapshot",
+  "qualified_server_version_num": 180006,
+  "D1_local_final_sha256": "c6c8b8b703cb1f7064406643ecacc606416c83022bcb9096e8d53aad071844b7",
+  "E2_source_sha256": "36e7383a1e0975709634ccf80ec3d39e07a1851b270f4291cd1fb20f801eff75",
+  "E2_final_sha256": "d2915e8b846db449d2df65fb93ca18990510e4888dec7abf23a92e99fbe54546",
+  "production_constraint_rows": "NOT_CAPTURED",
+  "actual_local_ACL": "All9NULL, public/foreign lists empty, runtime14table+36column denials and functionEXECUTEguard completed. No ACL failure/normalization/grants. Privileged custodian, no global leastprivilege claim.",
+  "runtime_sources": "Existing real BackendWitness b400; actual migrator f555/3603. r3 app/image/criticalfive unchanged; operator-only supplement.",
+  "qualification_scope": "One selected full actual local PG18 course; authority guard local fixtures/deadline, not production finite/caller/provider authority. No old suite or production retry.",
+  "files": {
+    "deployment/pm-pg-store-install-helper-r2/pm_2872_store_install.py": {
+      "bytes": 22464,
+      "sha256": "f39084133e102142706fc6d349a2594f51ffeeb032e2c14e9c51bc755f493640",
+      "git_blob": "5cb4b0a2763d05bc1867cbf15c1fd3d9d657c2a1"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_postgres_migrations.json": {
+      "bytes": 5057,
+      "sha256": "e515e0b5179dee92df62a22f5bf72caf5236819fc62d0e75171c65e865fa4950",
+      "git_blob": "3ddd2cd7d561d81cd922a3cfb5c0dce9433b09f5"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres.sql": {
+      "bytes": 25922,
+      "sha256": "6312ab6d5fae58cfa52bfb1d13b1d361ebe73e3a4b37bb34f4875e480afc420d",
+      "git_blob": "1aa29a7e1f78b3d13064634ecc8802e628c60664"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0002_actor_claim_shadow.sql": {
+      "bytes": 6374,
+      "sha256": "9b51fa1cb0b46618f5677670a7ad48411ceb50febb05503c8948df8844e02b0c",
+      "git_blob": "c802ba4776f5c6af85a6ee8e5777a1582c166d5d"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0003_human_t3_break_glass.sql": {
+      "bytes": 3737,
+      "sha256": "5c83038f88d7946554ee6cc7a01cdb703d23da739cd0734bd6c50b5e51a34167",
+      "git_blob": "b9d2b310a4754f21bde9bd38cf5c574b5b17026e"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0004_principal_succession_permit.sql": {
+      "bytes": 3807,
+      "sha256": "71c64f0caca37fa116a68e8c05bb9b08c63671e80b132c1f85f34177f5fdfde6",
+      "git_blob": "64cf9819737ba0119f344e6f08f33db23b51a318"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0005_pre_role_generation.sql": {
+      "bytes": 4895,
+      "sha256": "6465fec59b0ae07e43408fbc3d3394efe1ca6d4537f1c57bb35d06f6517207dd",
+      "git_blob": "5dab2357bb58478f0fecda10f34e289c46d87367"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0006_pm_owner_ready.sql": {
+      "bytes": 3123,
+      "sha256": "a11ea2b46ef33f404e97a5319e93a399353a94da061f0e5cf6daeb13c09f6332",
+      "git_blob": "75ce5e9242c161382d53b374680a2660fe3eacc1"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0007_x9_channel.sql": {
+      "bytes": 7803,
+      "sha256": "139d6704defe4f6758fb1b285d5e5ba55fd4170697a103a0ab8eb391fdfd36b4",
+      "git_blob": "ccfd22dd10c1d5335fbb98d26e327174d071d637"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0008_assistant_overlay_decision.sql": {
+      "bytes": 3306,
+      "sha256": "e24301ac096da7bc30c917dfc84d525b7b5d96a6db12e52099c06d387a0933d1",
+      "git_blob": "76a38cfd7a884c4bdb0277377ee1390d28610683"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0009_bk11_owner_backend_custody.sql": {
+      "bytes": 18551,
+      "sha256": "dd10acd0804bc4715d9243d9caf60522d7ba5262227623d9832dd44adf6ae6cc",
+      "git_blob": "954890e8648c9cdd5141c865f8b41a7cedcd3c19"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0010_room_return_d1_outbox.sql": {
+      "bytes": 11109,
+      "sha256": "eb54b59323c42f9d36a2a1b4d0f5a39d498f07b5e41f1019e85897e1caeb0f69",
+      "git_blob": "8b059f9acf02b0df30b0d292012168d480f97d91"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0011_bk11_assignment_family.sql": {
+      "bytes": 2940,
+      "sha256": "b3acb5b89aeef2c8534110b5fdbd76bda12932f95615092f1857ce3c12299814",
+      "git_blob": "64959a327ef901bd514c7d83111d08117f4c1e32"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0012_worker_method_owner.sql": {
+      "bytes": 5356,
+      "sha256": "410b461007c64846ec3edde3b2c7791770f8d89f0a5ac26090da3c32c57d4101",
+      "git_blob": "55793b8646e61359c04e22bd9dd8fe7f3bec3c8c"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0013_room_return_actor_read.sql": {
+      "bytes": 8430,
+      "sha256": "e80444d02933ba37ecf10de2efada29de5150db08ec37506641619c5849f9967",
+      "git_blob": "676271d01dbd583f50a0752220bc5b29d2f9859a"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0014_actor_admission_owner.sql": {
+      "bytes": 9292,
+      "sha256": "2a460c9452b7306be08bfe9cd76beaeaeb68f41ca9e6baf37a6c1776f94e18b0",
+      "git_blob": "174e07dc632bbca2b13b1ac7b4d555b71d3fe755"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0015_pm_admission_owner.sql": {
+      "bytes": 3164,
+      "sha256": "a80ad58627047f382c016dfa60d3682753189c72ca4ad74bb20ae2556d182b42",
+      "git_blob": "137dce861034452939cf1ba701738a5e09fe507a"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/control_context_state_postgres_0016_pm_2872_accepted_store.sql": {
+      "bytes": 2224,
+      "sha256": "e78a3070c5ec924207bc1f04a30393deaa78cf1fd041f11f6e475c0e42761e73",
+      "git_blob": "2fe35e2285094653157c9441a1a7a9a7f5566965"
+    },
+    "deployment/pm-pg-store-install-helper-r2/migrations/PREFIX-0015.json": {
+      "bytes": 4746,
+      "sha256": "b956299d863187eea8dde6a8f1d74adc2a4c0a485f9017f496975a82cd84094a",
+      "git_blob": "7bbd4634a794b453d71afd95efd04eaed2d28ad1"
+    },
+    "deployment/pm-pg-store-install-helper-r2/README.md": {
+      "bytes": 2876,
+      "sha256": "e1d03e77ed1389a0f96fca0e44b723dd326fd11cbad1841cc8e184e6224b3789",
+      "git_blob": "da968938bfbd05bc329da762308bd7ae42fbc02a"
+    }
+  }
+}
