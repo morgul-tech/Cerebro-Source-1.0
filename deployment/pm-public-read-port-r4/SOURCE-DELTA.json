@@ -1,0 +1,15 @@
+{
+  "basis_source_commit": "0a0ccbcb613c3eee7aaab1d176314a59fb82b103",
+  "basis_archive_sha256": "a995f42545a0d72e3685db5582646a38a4536ee0a5bdb8612ed343935515dbee",
+  "changes": [
+    {
+      "path": "mcp/control_context_remote_runtime.py",
+      "before": "adcf48ac44ba66f7a4cfe945efd0b51eaf52ed5a5afe9d0a731f63a9248c23a3",
+      "after": "fe49349d8bb5464a68b316033d116b53d89fbdf3a6582cd1d868e4ab773b36d6",
+      "bytes": 33687
+    }
+  ],
+  "unchanged_archive_members": 442,
+  "canonical_publication": "NOT_PERFORMED",
+  "live_introduction": "NOT_PERFORMED"
+}

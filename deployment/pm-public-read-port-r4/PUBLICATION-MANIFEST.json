@@ -1,0 +1,57 @@
+{
+  "state": "SEALED_LOCAL_R4_PAYLOAD_NOT_PUBLISHED_OR_INSTALLED",
+  "repository": "morgul-tech/Cerebro-Source-1.0",
+  "prefix": "deployment/pm-public-read-port-r4",
+  "predecessor_source_commit": "0a0ccbcb613c3eee7aaab1d176314a59fb82b103",
+  "files": {
+    "EXPECTED-INNER-CONTEXT-MAP.json": {
+      "bytes": 70030,
+      "sha256": "97408b412d38a66fc1bc9e6d81844a9f22728f021fab800d7cb8f063f3e7f5d1"
+    },
+    "INSTALL-AND-READBACK.md": {
+      "bytes": 1573,
+      "sha256": "ae5c5824b571041a47fc94dc85bd350aaff0cf2244ac6691b0e8d7d501a1d84d"
+    },
+    "PACKAGE-FIT-RESULT.json": {
+      "bytes": 474,
+      "sha256": "1842bb8f60f6208ac6624dcd753255e02a0e307ce67dccd565777e85119cc962"
+    },
+    "PACKAGE-MANIFEST.json": {
+      "bytes": 7285,
+      "sha256": "cdb2c0a3a70698e723fc91d802f44edbf99560b13d81fc663888132b5e1c025e"
+    },
+    "PUBLIC-READ-PORT-SERVICE-PACKAGE.zip": {
+      "bytes": 5588687,
+      "sha256": "2fdeaef7d9930f4edb61bdbdb3d425112d6ae04666079777fcb65403df64b301"
+    },
+    "REGRESSION-RESULT.json": {
+      "bytes": 2437,
+      "sha256": "f43870f27a6a5fd8196e9004341c346b4073a441e4142ca6e524d0f80a02402b"
+    },
+    "run_regression.py": {
+      "bytes": 2352,
+      "sha256": "46021cd7a2558abc2b09687e9ddf4f2b0145fcb0b8c43876c28fd4af3c075783"
+    },
+    "shared-state.patch": {
+      "bytes": 1189,
+      "sha256": "5381d34a64a0304f8c2903aa3375df5f184ddcbea42a658399795daf8efc00ab"
+    },
+    "source/mcp/control_context_remote_runtime.py": {
+      "bytes": 33687,
+      "sha256": "fe49349d8bb5464a68b316033d116b53d89fbdf3a6582cd1d868e4ab773b36d6"
+    },
+    "SOURCE-DELTA.json": {
+      "bytes": 576,
+      "sha256": "b121d917c77feda7223d3caab39b4fa646f124d0522743ac2ea986dc078d3afa"
+    },
+    "test_normal_deployment.py": {
+      "bytes": 6176,
+      "sha256": "30922e977dfef30b22be955f41ebfd76bda10a055a78749034803f32ad95caa1"
+    }
+  },
+  "manifest_itself": "Upload this exact manifest in addition to listed files; its hash is in the local CURRENT/return.",
+  "package_sha256": "2fdeaef7d9930f4edb61bdbdb3d425112d6ae04666079777fcb65403df64b301",
+  "code_sha256": "fe49349d8bb5464a68b316033d116b53d89fbdf3a6582cd1d868e4ab773b36d6",
+  "P24_independent_Linux": "Reported PASS by current PM; exact independent original remains owned by P24/PM, not fabricated here.",
+  "publication_or_live_effect": "NONE"
+}

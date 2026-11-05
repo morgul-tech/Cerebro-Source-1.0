@@ -1,0 +1,10 @@
+{
+  "state": "R4_EXACT_ONE_FILE_BUILD_CONTEXT_DELTA",
+  "predecessor_package_sha256": "a995f42545a0d72e3685db5582646a38a4536ee0a5bdb8612ed343935515dbee",
+  "changed_build_context_members": [
+    "mcp/control_context_remote_runtime.py"
+  ],
+  "unchanged_build_context_members": 442,
+  "composition_regression_sha256": "f43870f27a6a5fd8196e9004341c346b4073a441e4142ca6e524d0f80a02402b",
+  "effects": "No live introduction, provider, SQL, key, candidate or transfer action."
+}

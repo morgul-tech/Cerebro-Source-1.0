@@ -1,0 +1,21 @@
+--- a/mcp/control_context_remote_runtime.py
++++ b/mcp/control_context_remote_runtime.py
+@@ -492,7 +492,17 @@
+         "runtime-resolution-attestation-verifier-required",
+     )
+     _require(callable(clock), "runtime-clock-required")
+-    state_port = PostgresControlContextStatePort(connection_factory)
++    # The deployment owner already owns the legitimate port. Reuse that exact
++    # object so the service, lifecycle verifier and own-profile reader agree.
++    # Reject an owner from another factory rather than silently rebinding it.
++    if type(pm_profile_verifier) is PostgresPmAdmissionOwner:
++        state_port = pm_profile_verifier.state_port
++        _require(type(state_port) is PostgresControlContextStatePort,
++                 "runtime-PM-admission-state-port-invalid")
++        _require(state_port._connection_factory is connection_factory,
++                 "runtime-PM-admission-connection-factory-mismatch")
++    else:
++        state_port = PostgresControlContextStatePort(connection_factory)
+     pm_owner = None
+     d1_outbox = None
+     _require(pm_owner_d1_publisher_assignment is None or pm_owner_assignment is not None,

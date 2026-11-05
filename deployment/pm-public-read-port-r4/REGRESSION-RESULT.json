@@ -1,0 +1,38 @@
+{
+  "recorded_utc": "2026-11-05T22:23:55.888366+00:00",
+  "state": "PASS",
+  "python": "3.13.15 (tags/v3.13.15:4061bc4, Aug  5 2026, 13:05:39) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "win32",
+  "test_sha256": "30922e977dfef30b22be955f41ebfd76bda10a055a78749034803f32ad95caa1",
+  "source_delta": {
+    "basis_source_commit": "0a0ccbcb613c3eee7aaab1d176314a59fb82b103",
+    "basis_archive_sha256": "a995f42545a0d72e3685db5582646a38a4536ee0a5bdb8612ed343935515dbee",
+    "changes": [
+      {
+        "path": "mcp/control_context_remote_runtime.py",
+        "before": "adcf48ac44ba66f7a4cfe945efd0b51eaf52ed5a5afe9d0a731f63a9248c23a3",
+        "after": "fe49349d8bb5464a68b316033d116b53d89fbdf3a6582cd1d868e4ab773b36d6",
+        "bytes": 33687
+      }
+    ],
+    "unchanged_archive_members": 442,
+    "canonical_publication": "NOT_PERFORMED",
+    "live_introduction": "NOT_PERFORMED"
+  },
+  "runs": [
+    {
+      "case": "predecessor",
+      "exit_code": 0,
+      "stdout": "{\"state\": \"PREDECESSOR_NORMAL_APP_REPRODUCED\", \"result\": {\"schema\": \"cerebro-own-pm-profile-read/v1\", \"status\": \"REFUSED\", \"reason\": \"PROFILE_OWNER_NOT_BOUND\", \"profile\": \"PROJECT_MANAGER\", \"verifier_ref\": \"PM_OWNER_ADMISSION_V1\", \"authority\": \"NONE\"}}\n",
+      "stderr": ""
+    },
+    {
+      "case": "corrected",
+      "exit_code": 0,
+      "stdout": "{\"state\": \"CORRECTED_NORMAL_APP_COMPOSITION_REGRESSION_PASS\", \"normal_entry\": \"deployment.app:app\", \"shared_owner_service_lifecycle_port\": true, \"registered_reader_dispatched\": true, \"reader_reached_unchanged_snapshot_boundary\": true, \"authentication_scope_session_arguments_and_identity_guards_retained\": true, \"foreign_factory_and_invalid_port_rejected\": true, \"profile_disabled_normal_entry_pass\": true, \"actual_sql_or_oauth_verification_or_linux_uid_proof\": false, \"public_resolution_enabled_in_fixture\": false, \"network_database_or_candidate_actions\": false}\n",
+      "stderr": ""
+    }
+  ],
+  "fixture_correction_before_recorded_run": "Initial invalid-port fixture used object(), refused by unchanged owner constructor before target boundary; corrected fixture supplies _transaction. No source fix was changed.",
+  "ceiling": "Local real app assembly/registered reader dispatch with snapshot sentinel; not actual SQL, remote OAuth, Linux UID/GID, enabled public resolver, candidate or production proof."
+}
