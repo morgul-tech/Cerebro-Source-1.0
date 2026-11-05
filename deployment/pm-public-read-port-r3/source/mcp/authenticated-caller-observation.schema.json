@@ -1,0 +1,167 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "service_revision",
+    "resource",
+    "issuer",
+    "consumer_ref",
+    "client_observation",
+    "transport_observation",
+    "receipt_ref",
+    "authority",
+    "installed_B1_binding",
+    "role_grant_generation_admission"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-authenticated-caller-observation/v1"
+    },
+    "status": {
+      "enum": [
+        "AVAILABLE",
+        "NOT_AVAILABLE"
+      ]
+    },
+    "service_revision": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Configured service_version, not deployed Source/image/native identity."
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "source"
+      ],
+      "properties": {
+        "ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "SERVICE_CONFIG",
+            "NOT_AVAILABLE"
+          ]
+        }
+      }
+    },
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "source"
+      ],
+      "properties": {
+        "ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "enum": [
+            "SAME_VERIFIED_BEARER_ISS",
+            "NOT_AVAILABLE"
+          ]
+        }
+      }
+    },
+    "consumer_ref": {
+      "type": "string"
+    },
+    "client_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "client_ref",
+        "claim_sources",
+        "owner_match_possible"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "OBSERVED_SIGNED_CLAIM",
+            "UNKNOWN_ABSENT",
+            "UNKNOWN_INVALID_OR_CONFLICT",
+            "UNKNOWN_NOT_AVAILABLE"
+          ]
+        },
+        "client_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "$comment": "Actual same-verified optional azp/client_id must pass max256 UTF8bytes, nonempty trimmed identifier, no ASCII control/DEL/CRLF/NUL."
+        },
+        "claim_sources": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "azp",
+              "client_id"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 2
+        },
+        "owner_match_possible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "transport_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "source",
+        "authority"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "AVAILABLE",
+            "ABSENT",
+            "AMBIGUOUS_INVALID"
+          ]
+        },
+        "source": {
+          "enum": [
+            "openai/session",
+            "cerebro/session",
+            null,
+            "SDK_SESSION_ALIASES"
+          ]
+        },
+        "authority": {
+          "const": "REQUEST_METADATA_UNATTESTED"
+        }
+      }
+    },
+    "receipt_ref": {
+      "type": "string",
+      "pattern": "^CALLER-OBS-[0-9a-f]{32}$"
+    },
+    "authority": {
+      "const": "NONE"
+    },
+    "installed_B1_binding": {
+      "const": "NOT_ESTABLISHED"
+    },
+    "role_grant_generation_admission": {
+      "const": "NOT_ESTABLISHED"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

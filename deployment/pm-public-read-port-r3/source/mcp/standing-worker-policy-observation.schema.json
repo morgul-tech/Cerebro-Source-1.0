@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "provenance",
+    "revision",
+    "scope",
+    "current",
+    "revoked",
+    "policy_digest",
+    "owner_policy_currentness",
+    "revocation_fence",
+    "inflight_status",
+    "expiry_status",
+    "destination_eligibility",
+    "authority"
+  ],
+  "properties": {
+    "schema": {
+      "const": "cerebro-standing-worker-policy-observation/v1"
+    },
+    "status": {
+      "enum": [
+        "UNBOUND",
+        "ABSENT",
+        "MALFORMED",
+        "UNMATCHED",
+        "MATCHED"
+      ]
+    },
+    "provenance": {
+      "enum": [
+        "UNBOUND",
+        "RESIDENT_TOOLS_COPY"
+      ]
+    },
+    "revision": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "scope": {
+      "enum": [
+        "WORKER_ATTACH",
+        null
+      ]
+    },
+    "current": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "revoked": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "policy_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "owner_policy_currentness": {
+      "const": "UNKNOWN"
+    },
+    "revocation_fence": {
+      "const": "UNKNOWN"
+    },
+    "inflight_status": {
+      "const": "UNKNOWN"
+    },
+    "expiry_status": {
+      "const": "UNKNOWN"
+    },
+    "destination_eligibility": {
+      "const": "UNKNOWN"
+    },
+    "authority": {
+      "const": "NONE"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "MATCHED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "revision": {
+            "type": "integer"
+          },
+          "scope": {
+            "const": "WORKER_ATTACH"
+          },
+          "current": {
+            "type": "boolean"
+          },
+          "revoked": {
+            "type": "boolean"
+          },
+          "policy_digest": {
+            "type": "string"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "revision": {
+            "type": "null"
+          },
+          "scope": {
+            "type": "null"
+          },
+          "current": {
+            "type": "null"
+          },
+          "revoked": {
+            "type": "null"
+          },
+          "policy_digest": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

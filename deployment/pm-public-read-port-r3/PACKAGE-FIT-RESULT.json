@@ -1,0 +1,25 @@
+{
+  "state": "EXACT_R3_PACKAGE_DELTA_FIT_NOT_LINUX_OR_DEPLOYED_PROOF",
+  "predecessor_package_sha256": "837859e655d2667009ba04bb30b2d4ee8d7f389bc23f33007bc43c5c74382203",
+  "changed_build_context_members": [
+    "Dockerfile",
+    "mcp/control_context_remote_service.py",
+    "mcp/control_context_tools.py",
+    "mcp/pm_own_profile_read.py"
+  ],
+  "inner_files": 443,
+  "unchanged_inner_files": 439,
+  "unchanged_owner_sha256": "9ee6b63e025d3e863b061f8cc727f2e7b29a788d508d532b298c9345926fa895",
+  "returns": {
+    "E2": {
+      "path": "C:\\Users\\morgu\\Documents\\Codex\\2026-10-11\\fresh-eyes-fresh-world-deep-roots\\work\\PM-NATIVE-ENTRY-PREQUALIFICATION-20261104\\E2-A-ENTRY-AND-B-BINDING-REVIEW-r1\\E2-R3-SOURCE-PACKAGING-GATE-REVIEW.json",
+      "sha256": "12afe2d45811c1ec5e0e620b460f163d626c26685053fc9dd1c797868d8e3a80"
+    },
+    "D1": {
+      "path": "C:\\Users\\morgu\\Documents\\Codex\\2026-10-11\\fortsett-eksisterende-a1-romleder-p-p55\\work\\PM-ROLLERING-20261104\\R2-METHOD-DISPOSITION\\public-service-package-r3\\qualification\\D1-FINAL-FRAME-DISPATCH-3fc87a18.json",
+      "sha256": "3fc87a18d347a13a40796d47851f859879d6fd600363c7ce3854abb4aa376744"
+    }
+  },
+  "checks": "Archive exact predecessor+four surfaces; every overlay size/hash and exposed source match; unchanged full authentic bundle and owner; pinned Docker FROM/base config declaration.",
+  "effects": "No test replay, image build, provider/DB/key/native/current action."
+}

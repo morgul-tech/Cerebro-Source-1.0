@@ -1,0 +1,151 @@
+{
+  "schema": "a1-canonical-pm-distribution-source-package-map/v1",
+  "state": "QUALIFIED_R3_SOURCE_PACKAGE_NOT_LINUX_BUILT_OR_INSTALLED",
+  "repository": "morgul-tech/Cerebro-Source-1.0",
+  "expected_parent": "e1b46584b88e47359a8c93a80bb8cd3ea4f738bf",
+  "profile": "deployment/pm-public-read-port-r3",
+  "existing_files_overwritten": 0,
+  "package_sha256": "a995f42545a0d72e3685db5582646a38a4536ee0a5bdb8612ed343935515dbee",
+  "package_bytes": 5590247,
+  "inner_files": 443,
+  "source_manifest_sha256": "ec6cca9f2a150f6ae428d595c5e9c3f72d2293ac4e247b07db3baa79471b1d93",
+  "affected_qualification_returns": {
+    "E2": {
+      "path": "C:\\Users\\morgu\\Documents\\Codex\\2026-10-11\\fresh-eyes-fresh-world-deep-roots\\work\\PM-NATIVE-ENTRY-PREQUALIFICATION-20261104\\E2-A-ENTRY-AND-B-BINDING-REVIEW-r1\\E2-R3-SOURCE-PACKAGING-GATE-REVIEW.json",
+      "sha256": "12afe2d45811c1ec5e0e620b460f163d626c26685053fc9dd1c797868d8e3a80"
+    },
+    "D1": {
+      "path": "C:\\Users\\morgu\\Documents\\Codex\\2026-10-11\\fortsett-eksisterende-a1-romleder-p-p55\\work\\PM-ROLLERING-20261104\\R2-METHOD-DISPOSITION\\public-service-package-r3\\qualification\\D1-FINAL-FRAME-DISPATCH-3fc87a18.json",
+      "sha256": "3fc87a18d347a13a40796d47851f859879d6fd600363c7ce3854abb4aa376744"
+    }
+  },
+  "base_image": {
+    "manifest_digest": "05a994d2344eb364cc186910f4fc8786a38215f39f00d0acc25bff33a08f4177",
+    "expected_linux_amd64_config_id": "78976a69c067520ef8be34cde307ef9f6fea6dcefa50edb57039773d241ca0db"
+  },
+  "separate_pg_support": {
+    "commit": "e1b46584b88e47359a8c93a80bb8cd3ea4f738bf",
+    "path": "deployment/pm-public-read-port-r2/pg-support",
+    "image_membership": false,
+    "new_helper_installation": false
+  },
+  "existing_base_correlation_ceiling": "Held historical439be7 byte correlation; no new runtime/backend/current candidate claim.",
+  "next": "PM/P24 exact r3 Linux qualification and source/image eligibility; D1 A operator/source/install/readback; actual own preB and separate B remain owner gates.",
+  "files": {
+    "deployment/pm-public-read-port-r3/source/deployment/app.py": {
+      "bytes": 22280,
+      "sha256": "eb3764018dad8507d30e7601d339deadf741ead7eed643632a91e6ce7dcb889a",
+      "git_blob": "3dcfc708c7ebcbc1fe62bb038f5d369f4a333b8e"
+    },
+    "deployment/pm-public-read-port-r3/source/deployment/pm_public_resolution_wiring.py": {
+      "bytes": 2161,
+      "sha256": "df308e5d961272f59ec70ab90622f463b463d9b8056ba428edab9a7963ae294b",
+      "git_blob": "2b0e28a5c0483f9db51c9e69ad85735301de30d0"
+    },
+    "deployment/pm-public-read-port-r3/source/Dockerfile": {
+      "bytes": 1565,
+      "sha256": "301ebf16600898eeff52bf0ff5a5654dee3107ccf2c77587cae38c43c702007d",
+      "git_blob": "b7370458fb464021518d938704613c481158aef3"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/authenticated-binding-basis.schema.json": {
+      "bytes": 1598,
+      "sha256": "20319d809ef643b1da07c71bbac99b9f844965137bd64acf807692a4a786da5f",
+      "git_blob": "c434c74c1d6caa8d2c11b11a5e4c5c1148543f7f"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/authenticated-caller-observation.schema.json": {
+      "bytes": 3747,
+      "sha256": "fefd137611d032027408b89e07aa70946826232eabbb9a282b08029774152d75",
+      "git_blob": "cf5c20db9542a72720d981a5c75b2ab76308ba37"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/control_context_remote_runtime.py": {
+      "bytes": 33045,
+      "sha256": "adcf48ac44ba66f7a4cfe945efd0b51eaf52ed5a5afe9d0a731f63a9248c23a3",
+      "git_blob": "2bde1e3d1f8092301c926ae9949eccb53a1a9b3e"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/control_context_remote_service.py": {
+      "bytes": 30295,
+      "sha256": "5bedfb368272fe147c203f0a32ef1906009f897e96b843e70c7f5aa2904ba06a",
+      "git_blob": "421e035300928cf23d3640890f55faa5111cf0fc"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/control_context_tools.py": {
+      "bytes": 182274,
+      "sha256": "fed5cb53865e3362292fcdebdf5937df3f0b0cf7fc3ffb2e1dd59bdb5634d132",
+      "git_blob": "3ad3beab2d9711adf9106057f49a15be590c45f9"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/human-t3-break-glass.schema.json": {
+      "bytes": 5072,
+      "sha256": "a7a13cb59db2ce83f06b3180854096a6f1be879d45c4ca15b77cfeda29fbd1e4",
+      "git_blob": "0a05f13771c940c9d34b7ee365b69998b8bf368e"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/pm_control_resolution_port.py": {
+      "bytes": 6165,
+      "sha256": "89eeff13108506a9d32d85769580870cef08b4afdbf4522ba2d6c139234d5304",
+      "git_blob": "9907bcc3154f9f0e6c0c0b1deb56249b87d75a20"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/standing-worker-policy-observation.schema.json": {
+      "bytes": 2653,
+      "sha256": "f369c1fb446b2a4ee72d34aa511fd6c8d38f1b9ed6d061f6bde7d28ea8c07e1e",
+      "git_blob": "3b1aec07f5d577faf3966579dfe7ce8dabfaf6b0"
+    },
+    "deployment/pm-public-read-port-r3/source/requirements.txt": {
+      "bytes": 99,
+      "sha256": "84b6afdf49818b982c17955c99af6f2c3032ef259ab0a449597026be44ef93ed",
+      "git_blob": "3d8a999953500883e0e73a383c336cd456e50b80"
+    },
+    "deployment/pm-public-read-port-r3/source/tooling/context/control_context_state_port.py": {
+      "bytes": 54275,
+      "sha256": "213f7b35165ecd868c43168cb3477467624e92f81b35d324097730d7bf39787d",
+      "git_blob": "db0927ee915a6b507d502a2653afe4698f7c95c1"
+    },
+    "deployment/pm-public-read-port-r3/source/tooling/context/control_context_state_postgres.py": {
+      "bytes": 125592,
+      "sha256": "3603ce40a0f86fb1384a5c7892cdbccf7fd75f9340f0861d5ad79edd1e9b3c2c",
+      "git_blob": "8f5c3ed53f8dc0d0aa2c5410636f985af9cdffc7"
+    },
+    "deployment/pm-public-read-port-r3/source/mcp/pm_own_profile_read.py": {
+      "bytes": 10047,
+      "sha256": "87139b468d42b9d06cdfa84350aa471f95af75339852b03f80de1e04b8d4ad68",
+      "git_blob": "db36c30b693b56ca1d22d48bf0035399f2e6fccc"
+    },
+    "deployment/pm-public-read-port-r3/PUBLIC-READ-PORT-SERVICE-PACKAGE.zip": {
+      "bytes": 5590247,
+      "sha256": "a995f42545a0d72e3685db5582646a38a4536ee0a5bdb8612ed343935515dbee",
+      "git_blob": "9e7dfb6aeec1711c0f23504b1ed59f905ce83620"
+    },
+    "deployment/pm-public-read-port-r3/PACKAGE-MANIFEST.json": {
+      "bytes": 6832,
+      "sha256": "691f2994be58dc68f56a2c270c73740d5c0e5668f3459d99f0d36b4773241799",
+      "git_blob": "34bfa5a5ac675b31ebb3bb0628ba5ebf3329636e"
+    },
+    "deployment/pm-public-read-port-r3/PACKAGE-FIT-RESULT.json": {
+      "bytes": 1459,
+      "sha256": "868083a3716f8ba9ef3439ee67868a7a707586861429b1425a7093efe81fe090",
+      "git_blob": "f64b08f281140a4e3ff3f7294f78b62808375656"
+    },
+    "deployment/pm-public-read-port-r3/INSTALL-AND-READBACK.md": {
+      "bytes": 4335,
+      "sha256": "9bd9716463d254354e6241c9160100b439e8bbac744930009c0c92207229ba57",
+      "git_blob": "5d4a39cb6ff75d265a7a4369cbf24e74c8fe45d5"
+    },
+    "deployment/pm-public-read-port-r3/BASE-LOCAL-MANIFEST.json": {
+      "bytes": 69434,
+      "sha256": "e3e6f804f8bd8fcc1214cfbff3c15e705153e64d8e65a0c4876f1225bd917bf5",
+      "git_blob": "ccb99dd06ae73f3476ef8204bef12e739b3ea294"
+    },
+    "deployment/pm-public-read-port-r3/CANONICAL-MATERIAL-MANIFEST.json": {
+      "bytes": 224346,
+      "sha256": "7d40b61f72cd1049773e4c3efd92cd757a01aa9f4379ab04c66079f6d0869dfe",
+      "git_blob": "7bd02f12c6759d7276abb9d978423687853d328b"
+    },
+    "deployment/pm-public-read-port-r3/FIVE-MODULE-PACKAGED-CORRELATION.json": {
+      "bytes": 2065,
+      "sha256": "ad409df9e0344ba15f3e1a0e3c2289c3eb1a50635460c2ab10d014fb963b2f8b",
+      "git_blob": "8c48cf96add6fad9d8c9a32bb0c69469f5164f2d"
+    },
+    "deployment/pm-public-read-port-r3/README.md": {
+      "bytes": 2048,
+      "sha256": "4b31ce8791b4b63c8f52e529c58b2d9e653ca04a7374e34c896ff1c996b60fee",
+      "git_blob": "76e4ceb373d40b9c5a3b06ee3b95028ec39dc7dc"
+    }
+  }
+}

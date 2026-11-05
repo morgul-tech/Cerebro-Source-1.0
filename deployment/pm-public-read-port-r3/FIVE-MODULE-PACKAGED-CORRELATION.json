@@ -1,0 +1,40 @@
+{
+  "state": "ACTUAL_FINISHED_ZIP_FIVE_MEMBERS_PINNED_NO_MODULE_NAME_COLLISIONS",
+  "package_sha256": "a995f42545a0d72e3685db5582646a38a4536ee0a5bdb8612ed343935515dbee",
+  "source_pins": {
+    "pm_admission_owner": "9ee6b63e025d3e863b061f8cc727f2e7b29a788d508d532b298c9345926fa895",
+    "pm_bounded_qualification": "5f5a470a3e83edf8ecf576d8fa1381a3a5f9d17fc5dfa4ef696e772c59c743fb",
+    "pm_admission_owner_operator": "b0614e3b72fd7c7bb70cb0ba9d03b4f3063b54a17de02fb8c25299d33383b58c",
+    "control_context_registry": "4ca14de7d182e0ddc38e64c2cc0065038d9e4ff63fa63af7dd12182bb8025fd7",
+    "pm_protected_owner_entry": "b400ebf739710341fe0d698e53358d6426c12d61fdde6b62b26103547365c3f0"
+  },
+  "members": {
+    "pm_admission_owner": {
+      "path": "build-context/mcp/pm_admission_owner.py",
+      "bytes": 19849,
+      "sha256": "9ee6b63e025d3e863b061f8cc727f2e7b29a788d508d532b298c9345926fa895"
+    },
+    "pm_bounded_qualification": {
+      "path": "build-context/mcp/pm_bounded_qualification.py",
+      "bytes": 7840,
+      "sha256": "5f5a470a3e83edf8ecf576d8fa1381a3a5f9d17fc5dfa4ef696e772c59c743fb"
+    },
+    "pm_admission_owner_operator": {
+      "path": "build-context/tooling/context/pm_admission_owner_operator.py",
+      "bytes": 12994,
+      "sha256": "b0614e3b72fd7c7bb70cb0ba9d03b4f3063b54a17de02fb8c25299d33383b58c"
+    },
+    "control_context_registry": {
+      "path": "build-context/tooling/context/control_context_registry.py",
+      "bytes": 82184,
+      "sha256": "4ca14de7d182e0ddc38e64c2cc0065038d9e4ff63fa63af7dd12182bb8025fd7"
+    },
+    "pm_protected_owner_entry": {
+      "path": "build-context/deployment/pm_protected_owner_entry.py",
+      "bytes": 14440,
+      "sha256": "b400ebf739710341fe0d698e53358d6426c12d61fdde6b62b26103547365c3f0"
+    }
+  },
+  "prepack_receipt_sha256": "be932337860a403037e98bb2d20c9bbe60f3d1ba956a835447c80b742240fef4",
+  "runtime_import_ceiling": "D1 actual A-preflight must enforce runtime file locations/hashes; archive/source fit is not installed import evidence."
+}

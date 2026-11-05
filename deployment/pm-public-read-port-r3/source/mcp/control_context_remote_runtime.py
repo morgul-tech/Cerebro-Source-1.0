@@ -1,0 +1,677 @@
+#!/usr/bin/env python3
+"""Provider-neutral production composition for the remote control-context MCP.
+
+This module assembles the already-governed PostgreSQL state port, OAuth service
+boundary and official MCP SDK ASGI app.  It does not select an identity provider,
+store credentials, apply database migrations, open a listener or deploy itself.
+Secrets and provider adapters are constructor-bound runtime dependencies.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import sys
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Callable, Mapping
+
+
+SOURCE_ROOT = Path(__file__).resolve().parents[1]
+CONTEXT_TOOLING = SOURCE_ROOT / "tooling" / "context"
+if str(CONTEXT_TOOLING) not in sys.path:
+    sys.path.insert(0, str(CONTEXT_TOOLING))
+
+from control_context_mcp_sdk import (  # noqa: E402
+    DEFAULT_MAX_REQUEST_BODY_SIZE,
+    create_streamable_http_app,
+    official_mcp_sdk_runtime,
+)
+from control_context_remote_service import (  # noqa: E402
+    HEALTH_PATH,
+    MCP_PATH,
+    PROTECTED_RESOURCE_PATH,
+    ControlContextRemoteMcpService,
+    RemoteMcpServiceConfig,
+)
+from control_context_state_postgres import (  # noqa: E402
+    DEFAULT_MANIFEST,
+    MIGRATION_MANIFEST_SCHEMA,
+    PostgresControlContextStatePort,
+    make_psycopg_connection_factory,
+)
+from control_context_tools import ContextLifecycleEffectAdapter, ControlContextMcpTools  # noqa: E402
+from control_context_principal_succession_provider import PrincipalSuccessionPermitProvider  # noqa: E402
+from control_resolution_host import HumanT3BreakGlassHost  # noqa: E402
+from pm_admission_owner import PostgresPmAdmissionOwner  # noqa: E402
+
+
+REMOTE_RUNTIME_SCHEMA = "cerebro-control-context-remote-runtime/v1"
+REMOTE_RUNTIME_CONFIG_SCHEMA = "cerebro-control-context-remote-runtime-config/v1"
+RUNTIME_BACKEND = "POSTGRESQL"
+APPLICATION_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,62}$")
+PM_ADMISSION_POSTGRES_RELATIONS = (
+    "cerebro_pm_current_heads", "cerebro_pm_current_revisions", "cerebro_pm_admission_decisions",
+)
+REQUIRED_POSTGRES_RELATIONS = (
+    "cerebro_schema_migrations",
+    "cerebro_project_instances",
+    "cerebro_project_basis_revisions",
+    "cerebro_principal_project_bindings",
+    "cerebro_control_contexts",
+    "cerebro_project_bootstrap_receipts",
+    "cerebro_control_session_bindings",
+    "cerebro_continuation_bindings",
+    "cerebro_control_events",
+    "cerebro_transition_receipts",
+    "cerebro_state_commit_receipts",
+    "cerebro_owner_state_heads",
+    "cerebro_owner_state_revisions",
+    "cerebro_owner_state_commit_receipts",
+    "cerebro_actor_generation_shadow_heads",
+    "cerebro_actor_generation_shadow_revisions",
+    "cerebro_pre_role_generation_heads",
+    "cerebro_pre_role_generation_revisions",
+    "cerebro_assistant_overlay_decision_heads",
+    "cerebro_human_t3_break_glass_heads",
+    "cerebro_human_t3_break_glass_revisions",
+    "cerebro_human_t3_break_glass_receipts",
+    "cerebro_principal_succession_permit_heads",
+    "cerebro_principal_succession_permit_revisions",
+    "cerebro_principal_succession_permit_receipts",
+    "cerebro_pm_owner_heads",
+    "cerebro_pm_owner_receipts",
+    "cerebro_pm_owner_current",
+    "cerebro_x9_channel_role_assignments",
+    "cerebro_x9_channel_records",
+    "cerebro_pm_owner_d1_outbox_meta",
+    "cerebro_pm_owner_d1_routes",
+    "cerebro_pm_owner_d1_outbox",
+)
+
+
+class ControlContextRemoteRuntimeError(RuntimeError):
+    pass
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ControlContextRemoteRuntimeError(message)
+
+
+def _exact_keys(value: Mapping[str, Any], allowed: set[str], required: set[str], prefix: str) -> None:
+    _require(not required.difference(value), f"{prefix}-required-fields-missing")
+    _require(not set(value).difference(allowed), f"{prefix}-unknown-field-prohibited")
+
+
+def _tuple_of_text(value: Any, *, field_name: str, allow_empty: bool) -> tuple[str, ...]:
+    _require(isinstance(value, list), f"{field_name}-array-required")
+    _require(allow_empty or bool(value), f"{field_name}-must-not-be-empty")
+    result: list[str] = []
+    for item in value:
+        _require(isinstance(item, str) and item == item.strip() and bool(item), f"{field_name}-item-invalid")
+        result.append(item)
+    _require(len(result) == len(set(result)), f"{field_name}-duplicate")
+    return tuple(result)
+
+
+@dataclass(frozen=True)
+class ControlContextRemoteRuntimeConfig:
+    service: RemoteMcpServiceConfig
+    allowed_hosts: tuple[str, ...]
+    allowed_origins: tuple[str, ...] = ()
+    max_request_body_size: int = DEFAULT_MAX_REQUEST_BODY_SIZE
+    postgres_connect_timeout_seconds: int = 10
+    postgres_application_name: str = "cerebro-control-context-state-service"
+    state_backend: str = RUNTIME_BACKEND
+    runtime_applies_migrations: bool = False
+
+    def __post_init__(self) -> None:
+        _require(isinstance(self.service, RemoteMcpServiceConfig), "runtime-service-config-required")
+        _require(isinstance(self.allowed_hosts, tuple) and bool(self.allowed_hosts), "runtime-allowed-hosts-required")
+        _require(isinstance(self.allowed_origins, tuple), "runtime-allowed-origins-tuple-required")
+        _require(
+            isinstance(self.max_request_body_size, int)
+            and not isinstance(self.max_request_body_size, bool)
+            and 1024 <= self.max_request_body_size <= 4 * 1024 * 1024,
+            "runtime-max-request-body-size-invalid",
+        )
+        _require(
+            isinstance(self.postgres_connect_timeout_seconds, int)
+            and not isinstance(self.postgres_connect_timeout_seconds, bool)
+            and 1 <= self.postgres_connect_timeout_seconds <= 60,
+            "runtime-postgres-connect-timeout-invalid",
+        )
+        _require(
+            isinstance(self.postgres_application_name, str)
+            and APPLICATION_NAME.fullmatch(self.postgres_application_name) is not None,
+            "runtime-postgres-application-name-invalid",
+        )
+        _require(self.state_backend == RUNTIME_BACKEND, "runtime-state-backend-must-be-PostgreSQL")
+        _require(self.runtime_applies_migrations is False, "runtime-role-must-not-apply-migrations")
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "ControlContextRemoteRuntimeConfig":
+        _require(isinstance(value, Mapping), "runtime-config-object-required")
+        _exact_keys(
+            value,
+            {"schema", "service", "transport_security", "state_backend", "postgres"},
+            {"schema", "service", "transport_security", "state_backend", "postgres"},
+            "runtime-config",
+        )
+        _require(value.get("schema") == REMOTE_RUNTIME_CONFIG_SCHEMA, "runtime-config-schema-mismatch")
+
+        service_value = value.get("service")
+        _require(isinstance(service_value, Mapping), "runtime-service-object-required")
+        service_allowed = {
+            "schema", "resource", "authorization_servers", "resource_documentation",
+            "service_name", "service_version", "identity_claims", "clock_skew_seconds",
+            "transport", "paths",
+        }
+        service_required = service_allowed.difference({"clock_skew_seconds"})
+        _exact_keys(service_value, service_allowed, service_required, "runtime-service")
+        _require(
+            service_value.get("schema") == "cerebro-control-context-remote-mcp-service-config/v1",
+            "runtime-service-schema-mismatch",
+        )
+        _require(service_value.get("transport") == "STREAMABLE_HTTP", "runtime-transport-mismatch")
+        paths = service_value.get("paths")
+        _require(
+            paths
+            == {
+                "mcp": MCP_PATH,
+                "protected_resource_metadata": PROTECTED_RESOURCE_PATH,
+                "health": HEALTH_PATH,
+            },
+            "runtime-service-paths-mismatch",
+        )
+        claims = service_value.get("identity_claims")
+        _require(isinstance(claims, Mapping), "runtime-identity-claims-object-required")
+        _exact_keys(claims, {"tenant", "workspace", "principal"}, {"tenant", "workspace", "principal"}, "runtime-identity-claims")
+        issuers = _tuple_of_text(
+            service_value.get("authorization_servers"),
+            field_name="runtime-authorization-servers",
+            allow_empty=False,
+        )
+        service = RemoteMcpServiceConfig(
+            resource=service_value.get("resource"),
+            authorization_servers=issuers,
+            resource_documentation=service_value.get("resource_documentation"),
+            service_name=service_value.get("service_name"),
+            service_version=service_value.get("service_version"),
+            tenant_claim=claims.get("tenant"),
+            workspace_claim=claims.get("workspace"),
+            principal_claim=claims.get("principal"),
+            clock_skew_seconds=service_value.get("clock_skew_seconds", 60),
+        )
+
+        security = value.get("transport_security")
+        _require(isinstance(security, Mapping), "runtime-transport-security-object-required")
+        _exact_keys(
+            security,
+            {"allowed_hosts", "allowed_origins", "max_request_body_size"},
+            {"allowed_hosts", "allowed_origins", "max_request_body_size"},
+            "runtime-transport-security",
+        )
+        postgres = value.get("postgres")
+        _require(isinstance(postgres, Mapping), "runtime-postgres-object-required")
+        _exact_keys(
+            postgres,
+            {"connect_timeout_seconds", "application_name", "runtime_applies_migrations"},
+            {"connect_timeout_seconds", "application_name", "runtime_applies_migrations"},
+            "runtime-postgres",
+        )
+        return cls(
+            service=service,
+            allowed_hosts=_tuple_of_text(
+                security.get("allowed_hosts"),
+                field_name="runtime-allowed-hosts",
+                allow_empty=False,
+            ),
+            allowed_origins=_tuple_of_text(
+                security.get("allowed_origins"),
+                field_name="runtime-allowed-origins",
+                allow_empty=True,
+            ),
+            max_request_body_size=security.get("max_request_body_size"),
+            postgres_connect_timeout_seconds=postgres.get("connect_timeout_seconds"),
+            postgres_application_name=postgres.get("application_name"),
+            state_backend=value.get("state_backend"),
+            runtime_applies_migrations=postgres.get("runtime_applies_migrations"),
+        )
+
+    def public_descriptor(self) -> dict[str, Any]:
+        return {
+            "schema": REMOTE_RUNTIME_CONFIG_SCHEMA,
+            "resource": self.service.resource,
+            "service_name": self.service.service_name,
+            "service_version": self.service.service_version,
+            "transport": "STREAMABLE_HTTP",
+            "mcp_path": MCP_PATH,
+            "state_backend": self.state_backend,
+            "runtime_applies_migrations": self.runtime_applies_migrations,
+            "allowed_host_count": len(self.allowed_hosts),
+            "allowed_origin_count": len(self.allowed_origins),
+            "max_request_body_size": self.max_request_body_size,
+        }
+
+
+def _file_sha256(path: Path) -> str:
+    # Match the migration runner's canonical Git-text identity on Windows and
+    # POSIX checkouts without weakening content-drift detection.
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
+def _close_safely(value: Any) -> None:
+    try:
+        value.close()
+    except Exception:
+        pass
+
+
+def _rollback_safely(connection: Any) -> None:
+    try:
+        connection.rollback()
+    except Exception:
+        pass
+
+
+def _row_value(row: Any, field_name: str, index: int) -> Any:
+    if isinstance(row, Mapping):
+        return row.get(field_name)
+    if isinstance(row, (tuple, list)) and len(row) > index:
+        return row[index]
+    return None
+
+
+class PostgresStateServiceReadinessProbe:
+    """Fail-closed schema and migration readiness probe for the runtime role."""
+
+    def __init__(
+        self,
+        connection_factory: Callable[[], Any],
+        manifest_path: str | Path = DEFAULT_MANIFEST,
+        *, require_pm_admission: bool = False,
+    ) -> None:
+        _require(callable(connection_factory), "readiness-connection-factory-required")
+        self._connection_factory = connection_factory
+        _require(type(require_pm_admission) is bool, 'readiness-PM-enable-flag-invalid')
+        self._required_relations = REQUIRED_POSTGRES_RELATIONS + (
+            PM_ADMISSION_POSTGRES_RELATIONS if require_pm_admission else ())
+        self._expected_migrations = self._load_manifest(manifest_path)
+
+    @staticmethod
+    def _load_manifest(manifest_path: str | Path) -> tuple[tuple[str, str, str], ...]:
+        path = Path(manifest_path).resolve()
+        try:
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ControlContextRemoteRuntimeError("readiness-migration-manifest-unreadable") from exc
+        _require(manifest.get("schema") == MIGRATION_MANIFEST_SCHEMA, "readiness-migration-manifest-schema-mismatch")
+        _require(manifest.get("runtime_role_may_apply_migrations") is False, "readiness-runtime-migration-authority-prohibited")
+        migrations = manifest.get("migrations")
+        _require(isinstance(migrations, list) and bool(migrations), "readiness-migrations-required")
+        expected: list[tuple[str, str, str]] = []
+        seen: set[str] = set()
+        for entry in migrations:
+            _require(isinstance(entry, Mapping), "readiness-migration-entry-invalid")
+            migration_id = entry.get("migration_id")
+            schema_version = entry.get("schema_version")
+            relative_path = entry.get("path")
+            checksum = entry.get("checksum_sha256")
+            _require(isinstance(migration_id, str) and migration_id not in seen, "readiness-migration-id-invalid")
+            _require(isinstance(schema_version, str) and bool(schema_version), "readiness-migration-version-invalid")
+            _require(isinstance(relative_path, str) and bool(relative_path), "readiness-migration-path-invalid")
+            _require(isinstance(checksum, str) and len(checksum) == 64, "readiness-migration-checksum-invalid")
+            migration_file = (path.parent / relative_path).resolve()
+            _require(migration_file.parent == path.parent, "readiness-migration-path-escape-prohibited")
+            try:
+                actual_checksum = _file_sha256(migration_file)
+            except OSError as exc:
+                raise ControlContextRemoteRuntimeError("readiness-migration-source-unreadable") from exc
+            _require(actual_checksum == checksum, "readiness-migration-source-drift")
+            expected.append((migration_id, schema_version, checksum))
+            seen.add(migration_id)
+        return tuple(sorted(expected))
+
+    def _probe(self) -> bool:
+        connection = None
+        cursor = None
+        try:
+            connection = self._connection_factory()
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                SELECT count(*) AS present
+                  FROM unnest(%s::text[]) AS required(relation_name)
+                 WHERE to_regclass(required.relation_name) IS NOT NULL
+                """,
+                (list(self._required_relations),),
+            )
+            relation_row = cursor.fetchone()
+            if _row_value(relation_row, "present", 0) != len(self._required_relations):
+                return False
+            migration_ids = [entry[0] for entry in self._expected_migrations]
+            cursor.execute(
+                """
+                SELECT migration_id, schema_version, checksum_sha256
+                  FROM cerebro_schema_migrations
+                 WHERE migration_id = ANY(%s)
+                 ORDER BY migration_id
+                """,
+                (migration_ids,),
+            )
+            actual = tuple(
+                sorted(
+                    (
+                        _row_value(row, "migration_id", 0),
+                        _row_value(row, "schema_version", 1),
+                        _row_value(row, "checksum_sha256", 2),
+                    )
+                    for row in cursor.fetchall()
+                )
+            )
+            return actual == self._expected_migrations
+        finally:
+            if connection is not None:
+                _rollback_safely(connection)
+            if cursor is not None:
+                _close_safely(cursor)
+            if connection is not None:
+                _close_safely(connection)
+
+    def __call__(self) -> bool:
+        try:
+            return self._probe() is True
+        except Exception:
+            return False
+
+
+@dataclass(frozen=True)
+class ControlContextRemoteRuntime:
+    config: ControlContextRemoteRuntimeConfig
+    service: ControlContextRemoteMcpService = field(repr=False)
+    state_port: PostgresControlContextStatePort = field(repr=False)
+    readiness_probe: PostgresStateServiceReadinessProbe = field(repr=False)
+    app: Any = field(repr=False)
+    pm_lifecycle_verifier: Any | None = field(default=None, repr=False)
+    provider_tail_reader: Any | None = field(default=None, repr=False)
+    principal_succession_reader: Any | None = field(default=None, repr=False)
+    machine_diary_effect_verifier: Any | None = field(default=None, repr=False)
+    human_t3_host: HumanT3BreakGlassHost | None = field(default=None, repr=False)
+
+    def descriptor(self) -> dict[str, Any]:
+        sdk = official_mcp_sdk_runtime()
+        return {
+            "schema": REMOTE_RUNTIME_SCHEMA,
+            "status": "ASSEMBLED_NOT_DEPLOYED",
+            "service": self.config.service.service_name,
+            "version": self.config.service.service_version,
+            "resource": self.config.service.resource,
+            "transport": "STREAMABLE_HTTP",
+            "mcp_path": MCP_PATH,
+            "state_backend": RUNTIME_BACKEND,
+            "official_mcp_sdk_version": sdk["version"],
+            "runtime_applies_migrations": False,
+            "repository_credentials": "NONE",
+            "identity_provider_selected": False,
+            "pm_lifecycle_verifier_bound": self.pm_lifecycle_verifier is not None,
+            "provider_tail_reader_bound": self.provider_tail_reader is not None,
+            "principal_succession_reader_bound": self.principal_succession_reader is not None,
+            "principal_succession_custody_provider_bound": isinstance(self.principal_succession_reader, PrincipalSuccessionPermitProvider),
+            "principal_succession_live_custody_proven": False,
+            "machine_diary_effect_verifier_bound": self.machine_diary_effect_verifier is not None,
+            "human_t3_host_bound": self.human_t3_host is not None,
+            "human_t3_remote_activation": "NOT_PROVEN",
+            "deployed": False,
+        }
+
+    def bind_public_pm_control_resolution(self, *, persistence_verifier, capability_resolver,
+                                          resolution_attestor, source_root):
+        from pm_control_resolution_port import PublicPmControlResolution
+        host = self.bind_control_resolution_host(persistence_verifier=persistence_verifier,
+                                                 capability_resolver=capability_resolver)
+        port = PublicPmControlResolution(state_port=self.state_port, host=host,
+            attestor=resolution_attestor,
+            attestation_verifier=self.service._tools._resolution_attestation_verifier,
+            root=source_root)
+        self.service._tools.bind_public_pm_resolution(port)
+        return port
+
+    def bind_control_resolution_host(
+        self,
+        *,
+        persistence_verifier: Any,
+        capability_resolver: Any,
+    ) -> Any:
+        _require(self.pm_lifecycle_verifier is not None, "runtime-pm-lifecycle-verifier-unbound")
+        from control_resolution_host import BoundControlResolutionHost
+        return BoundControlResolutionHost(
+            persistence_verifier=persistence_verifier,
+            capability_resolver=capability_resolver,
+            pm_profile_verifier=self.pm_lifecycle_verifier,
+        )
+
+
+def assemble_postgres_control_context_remote_runtime_from_connection_factory(
+    *,
+    config: ControlContextRemoteRuntimeConfig,
+    connection_factory: Callable[[], Any],
+    token_verifier: Any,
+    resolution_attestation_verifier: Any,
+    boot_birth_attestation_issuer: Any | None = None,
+    assistant_overlay_control_resolver: Any | None = None,
+    assistant_overlay_attestation_issuer: Any | None = None,
+    assistant_overlay_source_continuity_verifier: Any | None = None,
+    standing_worker_grant: dict[str, Any] | None = None,
+    worker_method_adoption_authorizer: Any | None = None,
+    pm_owner_assignment: Any | None = None,
+    x9_configuration: Any | None = None,
+    pm_owner_d1_publisher_assignment: Any | None = None,
+    runtime_notice_connection_factory: Callable[[], Any] | None = None,
+    pm_profile_verifier: Any | None = None,
+    provider_tail_reader: Any | None = None,
+    principal_succession_reader: Any | None = None,
+    machine_diary_effect_verifier: Any | None = None,
+    principal_succession_inputs_reader: Any | None = None,
+    principal_succession_mcp_authorizer: Any | None = None,
+    human_t3_current_reader: Any | None = None,
+    human_t3_effect_capability: Any | None = None,
+    clock: Callable[[], float] = time.time,
+    manifest_path: str | Path = DEFAULT_MANIFEST,
+) -> ControlContextRemoteRuntime:
+    """Assemble the complete ASGI runtime around an injected PostgreSQL pool/factory."""
+
+    _require(isinstance(config, ControlContextRemoteRuntimeConfig), "runtime-config-required")
+    _require(callable(connection_factory), "runtime-connection-factory-required")
+    _require(callable(getattr(token_verifier, "verify", None)), "runtime-token-verifier-required")
+    _require(
+        callable(getattr(resolution_attestation_verifier, "verify", None)),
+        "runtime-resolution-attestation-verifier-required",
+    )
+    _require(callable(clock), "runtime-clock-required")
+    state_port = PostgresControlContextStatePort(connection_factory)
+    pm_owner = None
+    d1_outbox = None
+    _require(pm_owner_d1_publisher_assignment is None or pm_owner_assignment is not None,
+             "runtime-PM-owner-D1-outbox-requires-PM-owner")
+    if pm_owner_assignment is not None:
+        from pm_owner_atomic import PmOwnerAssignment, PostgresPmOwner
+        _require(type(pm_owner_assignment) is PmOwnerAssignment,
+                 "runtime-PM-owner-assignment-invalid")
+        d1_outbox = None
+        if pm_owner_d1_publisher_assignment is not None:
+            # BK11 D1 owner outbox: host-assigned publisher required; legacy X9 resolve separately requires its configuration.
+            from pm_owner_d1_outbox import D1PublisherAssignment, PmOwnerD1Outbox
+            _require(type(pm_owner_d1_publisher_assignment) is D1PublisherAssignment,
+                      "runtime-PM-owner-D1-outbox-binding-invalid")
+            d1_outbox = PmOwnerD1Outbox(state_port=state_port, pm_assignment=pm_owner_assignment,
+                                        publisher_assignment=pm_owner_d1_publisher_assignment,
+                                        x9_configuration=x9_configuration)
+        pm_owner = PostgresPmOwner(state_port=state_port, assignment=pm_owner_assignment, d1_outbox=d1_outbox)
+    if principal_succession_inputs_reader is not None or principal_succession_mcp_authorizer is not None:
+        _require(principal_succession_reader is None, "runtime-ambiguous-succession-reader-prohibited")
+        _require(pm_profile_verifier is not None, "runtime-succession-PM-profile-verifier-required")
+        principal_succession_reader = PrincipalSuccessionPermitProvider(
+            state_port=state_port, trusted_inputs_reader=principal_succession_inputs_reader,
+            mcp_authorizer=principal_succession_mcp_authorizer,
+            machine_diary_effect_verifier=machine_diary_effect_verifier)
+    _require(human_t3_effect_capability is None or human_t3_current_reader is not None,
+             "T3-effect-capability-requires-trusted-current-reader")
+    human_t3_host = (HumanT3BreakGlassHost(state_port=state_port, current_reader=human_t3_current_reader,
+                                        effect_capability=human_t3_effect_capability)
+                     if human_t3_current_reader is not None else None)
+    readiness_probe = PostgresStateServiceReadinessProbe(connection_factory, manifest_path,
+        require_pm_admission=type(pm_profile_verifier) is PostgresPmAdmissionOwner)
+    pm_lifecycle_verifier = (
+        ContextLifecycleEffectAdapter(
+            state_port,
+            pm_profile_verifier,
+            principal_succession_reader=principal_succession_reader,
+            machine_diary_effect_verifier=machine_diary_effect_verifier,
+        )
+        if pm_profile_verifier is not None
+        else None
+    )
+    tools = ControlContextMcpTools(
+        state_port,
+        resolution_attestation_verifier,
+        local_runtime_binding=config.service.local_runtime_binding,
+        boot_birth_attestation_issuer=boot_birth_attestation_issuer,
+        assistant_overlay_control_resolver=assistant_overlay_control_resolver,
+        assistant_overlay_attestation_issuer=assistant_overlay_attestation_issuer,
+        **({"assistant_overlay_source_continuity_verifier": assistant_overlay_source_continuity_verifier}
+           if assistant_overlay_source_continuity_verifier is not None else {}),
+        standing_worker_grant=standing_worker_grant,
+        worker_method_adoption_authorizer=worker_method_adoption_authorizer,
+        pm_owner=pm_owner,
+        lifecycle_effect_adapter=pm_lifecycle_verifier,
+        provider_tail_reader=provider_tail_reader,
+        human_t3_host=human_t3_host,
+    )
+    service = ControlContextRemoteMcpService(
+        config=config.service,
+        tools=tools,
+        token_verifier=token_verifier,
+        readiness_probe=readiness_probe,
+        clock=clock,
+    )
+    if x9_configuration is not None:
+        from providers.x9_role_binding import TrustedCustodyConfiguration
+        from x9_receiver_host import X9ReceiverHost
+        _require(isinstance(x9_configuration, TrustedCustodyConfiguration),
+                 "runtime-X9-configuration-invalid")
+        tools.bind_x9_receiver(X9ReceiverHost(
+            config=x9_configuration, authenticator=service._authenticator,
+            connection_factory=connection_factory,
+            pm_owner_assignment=pm_owner_assignment))
+        if pm_owner_assignment is not None:
+            from x9_producer_host import X9ProducerHost
+            tools.bind_x9_producer(X9ProducerHost(
+                config=x9_configuration, pm_owner_assignment=pm_owner_assignment,
+                authenticator=service._authenticator,
+                connection_factory=connection_factory))
+    if d1_outbox is not None:
+        from pm_owner_d1_outbox import D1OutboxHost
+        tools.bind_pm_owner_d1_outbox(D1OutboxHost(outbox=d1_outbox, authenticator=service._authenticator,
+                                                   connection_factory=connection_factory))
+    runtime_binding = config.service.local_runtime_binding
+    if runtime_binding is not None and runtime_binding.enabled is True:
+        _require(pm_owner_assignment is not None and x9_configuration is not None,
+                 "runtime-notice-PM-X9-custody-required")
+        _require(callable(runtime_notice_connection_factory)
+                 and runtime_notice_connection_factory is not connection_factory,
+                 "dedicated-read-only-runtime-connection-required")
+        from signalvev_runtime_resolution import (
+            RuntimeBinding, RuntimeResolutionHost, PostgresRuntimeNoticeReader,
+        )
+        binding = RuntimeBinding(runtime_binding.tenant_ref, runtime_binding.workspace_ref,
+                                 runtime_binding.project_ref, runtime_binding.principal_ref,
+                                 runtime_binding.session_ref)
+        reader = PostgresRuntimeNoticeReader(
+            binding=binding, pm_owner=pm_owner_assignment,
+            x9_config=x9_configuration, connection_factory=runtime_notice_connection_factory)
+        tools.bind_runtime_notice_resolver(RuntimeResolutionHost(
+            binding=binding, reader=reader, enabled=True))
+    app = create_streamable_http_app(
+        service,
+        allowed_hosts=config.allowed_hosts,
+        allowed_origins=config.allowed_origins,
+        max_request_body_size=config.max_request_body_size,
+    )
+    return ControlContextRemoteRuntime(
+        config=config,
+        service=service,
+        state_port=state_port,
+        readiness_probe=readiness_probe,
+        app=app,
+        human_t3_host=human_t3_host,
+        pm_lifecycle_verifier=pm_lifecycle_verifier,
+        provider_tail_reader=provider_tail_reader,
+        principal_succession_reader=principal_succession_reader,
+        machine_diary_effect_verifier=machine_diary_effect_verifier,
+    )
+
+
+def assemble_postgres_control_context_remote_runtime(
+    *,
+    config: ControlContextRemoteRuntimeConfig,
+    postgres_dsn: str,
+    token_verifier: Any,
+    resolution_attestation_verifier: Any,
+    boot_birth_attestation_issuer: Any | None = None,
+    assistant_overlay_control_resolver: Any | None = None,
+    assistant_overlay_attestation_issuer: Any | None = None,
+    assistant_overlay_source_continuity_verifier: Any | None = None,
+    standing_worker_grant: dict[str, Any] | None = None,
+    worker_method_adoption_authorizer: Any | None = None,
+    pm_owner_assignment: Any | None = None,
+    x9_configuration: Any | None = None,
+    pm_owner_d1_publisher_assignment: Any | None = None,
+    runtime_notice_connection_factory: Callable[[], Any] | None = None,
+    pm_profile_verifier: Any | None = None,
+    provider_tail_reader: Any | None = None,
+    principal_succession_reader: Any | None = None,
+    machine_diary_effect_verifier: Any | None = None,
+    principal_succession_inputs_reader: Any | None = None,
+    principal_succession_mcp_authorizer: Any | None = None,
+    human_t3_current_reader: Any | None = None,
+    human_t3_effect_capability: Any | None = None,
+    clock: Callable[[], float] = time.time,
+    manifest_path: str | Path = DEFAULT_MANIFEST,
+) -> ControlContextRemoteRuntime:
+    """Assemble from an injected DSN without persisting or exposing it."""
+
+    connection_factory = make_psycopg_connection_factory(
+        postgres_dsn,
+        connect_timeout_seconds=config.postgres_connect_timeout_seconds,
+        application_name=config.postgres_application_name,
+    )
+    return assemble_postgres_control_context_remote_runtime_from_connection_factory(
+        config=config,
+        connection_factory=connection_factory,
+        token_verifier=token_verifier,
+        resolution_attestation_verifier=resolution_attestation_verifier,
+        boot_birth_attestation_issuer=boot_birth_attestation_issuer,
+        assistant_overlay_control_resolver=assistant_overlay_control_resolver,
+        assistant_overlay_attestation_issuer=assistant_overlay_attestation_issuer,
+        assistant_overlay_source_continuity_verifier=assistant_overlay_source_continuity_verifier,
+        standing_worker_grant=standing_worker_grant,
+        worker_method_adoption_authorizer=worker_method_adoption_authorizer,
+        pm_owner_assignment=pm_owner_assignment,
+        x9_configuration=x9_configuration,
+        pm_owner_d1_publisher_assignment=pm_owner_d1_publisher_assignment,
+        runtime_notice_connection_factory=runtime_notice_connection_factory,
+        pm_profile_verifier=pm_profile_verifier,
+        provider_tail_reader=provider_tail_reader,
+        principal_succession_reader=principal_succession_reader,
+        machine_diary_effect_verifier=machine_diary_effect_verifier,
+        principal_succession_inputs_reader=principal_succession_inputs_reader,
+        principal_succession_mcp_authorizer=principal_succession_mcp_authorizer,
+        human_t3_current_reader=human_t3_current_reader,
+        human_t3_effect_capability=human_t3_effect_capability,
+        clock=clock,
+        manifest_path=manifest_path,
+    )
