@@ -26,3 +26,7 @@ Cerebro Source v1.0 er den stabiliserte autoritative kildekoden for Cerebro.
 Cerebro Source v1.0 er den autoritative kilden. En Cerebro Release er et senere bygget og validert produkt av denne kilden.
 
 MASTER_v1.1 er bevart i `history/MASTER_v1.1.txt` som migrerings- og revisjonsgrunnlag.
+
+## Ordinary PM succession
+
+The maintained [PM succession entry](standards/pm-succession-entry.md) separates support establishment, ordinary future rotations and candidate-specific exceptions. Its current-owner step-by-step route confers no execution authority.
