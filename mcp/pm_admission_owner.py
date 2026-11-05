@@ -75,6 +75,41 @@ def lock_current_head(cursor, who, *, shared):
     cursor.execute('SELECT ' + function + '(hashtextextended(%s,0))', (key,))
 
 
+def _valid_session_ref(value):
+    """Producer-compatible opaque data UNION previously admitted legacy REF.
+
+    Never normalize, decode or replace the authenticated value. This predicate
+    grants no identity/authority; exact caller/current-session equality remains.
+    """
+    if type(value) is not str:
+        return False
+    if REF.fullmatch(value) is not None:
+        return True  # Preserve every formerly accepted legacy reference.
+    namespace, separator, suffix = value.partition(':')
+    if (separator != ':' or namespace not in ('chatgpt', 'local')
+            or not suffix or suffix != suffix.strip() or len(suffix) > 512):
+        return False
+    try:
+        return len(suffix.encode('utf-8')) <= 512
+    except UnicodeEncodeError:
+        return False
+
+
+def _valid_principal_ref(value):
+    """Accept only exact already-produced principal claim data, no new alias.
+
+    The verified producer has already stripped its claim; preserve that output.
+    Every old ASCII REF principal is in this domain. Auth and equality stay put.
+    """
+    if (type(value) is not str or not value or value != value.strip()
+            or len(value) > 256 or any(ord(character) < 32 for character in value)):
+        return False
+    try:
+        return len(value.encode('utf-8')) <= 256
+    except UnicodeEncodeError:
+        return False
+
+
 def validate_decision(value):
     need(type(value) is dict, "PM_DECISION_EXACT_FIELDS")
     bounded = value.get("generation_ref") == BOUNDED_GENERATION
@@ -84,7 +119,10 @@ def validate_decision(value):
     hashes = {"owner_original_sha256", "pre_role_fingerprint", "ready_unbound_receipt_fingerprint", "method_fingerprint"}
     integers = {"expected_revision", "expected_current_revision"}
     for field in DECISION_FIELDS - hashes - integers - {"schema", "not_before", "expires_at", "source_revision", "candidate_chat"}:
-        need(type(value[field]) is str and REF.fullmatch(value[field]), "PM_DECISION_REF:" + field)
+        valid = (_valid_session_ref(value[field]) if field == "session_ref"
+                 else _valid_principal_ref(value[field]) if field == "principal_ref"
+                 else type(value[field]) is str and REF.fullmatch(value[field]))
+        need(valid, "PM_DECISION_REF:" + field)
     for field in hashes:
         need(type(value[field]) is str and SHA.fullmatch(value[field]), "PM_DECISION_HASH:" + field)
     for field in integers:
