@@ -1,7 +1,7 @@
 schema: cerebro-implementation-learning-loop/v1
 implementation_learning_loop:
   id: CEREBRO-IMPLEMENTATION-LEARNING-001
-  version: "1.35"
+  version: "1.36"
   status: ACTIVE
   authority: Cerebro Source 1.0
   adaptive_analysis_model_ref: standards/development/adaptive-analysis-model.yaml
@@ -107,6 +107,22 @@ implementation_learning_loop:
       where relevant; do not repeat per task or actor or generalize one local PASS.
       Fault, interruption, retry and recovery checks are required only for the
       selected promise and gaps not already covered by valid evidence.
+    installation_ready_and_recovery: >
+      At existing installation issuance and ordinary executable start, use the
+      same maintained versioned entry contract for owner, selected package,
+      release and timing. Keep actual authorization, source, target, expiry and
+      applicable writer checks inside the tested route. Bind readiness to
+      exercised entry, exact package, target platform and component rendering,
+      affected writes, a failure after partial effect, a fresh corrected action
+      in the same bounded own session and independent installed-state readback.
+      Name substitutions and preserve the proof ceiling of helper or prewrite
+      trials. Reuse unchanged equivalent evidence within its exact scope.
+      A failed command preserves the own session for covered diagnosis and
+      correction. Reconcile unknown effect before dependent writes, preserve
+      completed effects and spent actions, then admit a fresh exact action.
+      Close on verified completion, authorized cancellation, actual expiry or
+      concrete authority/safety failure. Return the failed step, safe concrete
+      original error, source location, observed effects and next covered action.
     text_only_change: >
       Direct readback and relevant link or syntax checks suffice for text-only
       changes; do not manufacture an integration test or production-use claim.
